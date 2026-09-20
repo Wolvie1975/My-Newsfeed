@@ -3,17 +3,17 @@ using System.Globalization;
 namespace MyNewsFeed.Web.Data;
 
 /// <summary>
-/// Turns stored UTC publish dates into the labels the feed shows ("Today", "Yesterday", "Sep 18"). "Today" is
-/// decided in one configured time zone (Display:TimeZone), so every visitor sees the same labels.
+/// Turns stored UTC publish dates into the dates the feed shows ("Sep 20, 2026"). Which calendar day an article
+/// falls on is decided in one configured time zone (Display:TimeZone), so every visitor sees the same date.
 /// </summary>
-public sealed class FeedDates(TimeZoneInfo zone, TimeProvider clock)
+public sealed class FeedDates(TimeZoneInfo zone)
 {
     private static readonly CultureInfo Culture = CultureInfo.InvariantCulture;
 
     public TimeZoneInfo Zone => zone;
 
     /// <summary>Reads the zone from configuration. An unknown or empty id falls back to UTC.</summary>
-    public static FeedDates Create(string? timeZoneId, TimeProvider clock)
+    public static FeedDates Create(string? timeZoneId)
     {
         var zone = TimeZoneInfo.Utc;
         if (!string.IsNullOrWhiteSpace(timeZoneId))
@@ -22,39 +22,36 @@ public sealed class FeedDates(TimeZoneInfo zone, TimeProvider clock)
             catch (Exception ex) when (ex is TimeZoneNotFoundException or InvalidTimeZoneException) { }
         }
 
-        return new FeedDates(zone, clock);
+        return new FeedDates(zone);
     }
 
-    private DateOnly Local(DateTime utc) =>
-        DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(utc, DateTimeKind.Utc), zone));
+    private static DateTime AsUtc(DateTime value) => DateTime.SpecifyKind(value, DateTimeKind.Utc);
 
-    public DateOnly Today => DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(clock.GetUtcNow(), zone).DateTime);
+    private DateTime Local(DateTime utc) => TimeZoneInfo.ConvertTimeFromUtc(AsUtc(utc), zone);
 
     /// <summary>The calendar day (in the display zone) an article belongs to, as yyyy-MM-dd.</summary>
     public string DayKey(DateTime utc) => Local(utc).ToString("yyyy-MM-dd", Culture);
 
-    /// <summary>"Today", "Yesterday", or a short date such as "Sep 18" (with the year when it isn't this year).</summary>
-    public string Short(DateTime utc)
+    /// <summary>The date an article was published, for example "Sep 20, 2026".</summary>
+    public string Published(DateTime utc) => Local(utc).ToString("MMM d, yyyy", Culture);
+
+    /// <summary>The time of day an article was published, for example "9:52 AM".</summary>
+    public string Time(DateTime utc) => Local(utc).ToString("h:mm tt", Culture);
+
+    /// <summary>The full moment with its UTC offset, for tooltips and the "last updated" line: "Sep 20, 2026, 9:52 AM (UTC-5)".</summary>
+    public string PublishedFull(DateTime utc)
     {
-        var day = Local(utc);
-        var today = Today;
-        if (day == today) return "Today";
-        if (day == today.AddDays(-1)) return "Yesterday";
-        return day.ToString(day.Year == today.Year ? "MMM d" : "MMM d, yyyy", Culture);
+        var offset = zone.GetUtcOffset(AsUtc(utc));
+        var sign = offset < TimeSpan.Zero ? "-" : "+";
+        var hours = Math.Abs(offset.Hours);
+        var minutes = Math.Abs(offset.Minutes);
+        var text = minutes == 0 ? $"UTC{sign}{hours}" : $"UTC{sign}{hours}:{minutes:00}";
+        return $"{Local(utc).ToString("MMM d, yyyy, h:mm tt", Culture)} ({text})";
     }
 
-    /// <summary>The heading over a group of articles: "Today · Sun Sep 20", "Yesterday · Sat Sep 19", "Fri Sep 18".</summary>
-    public string GroupLabel(string dayKey)
-    {
-        if (!DateOnly.TryParseExact(dayKey, "yyyy-MM-dd", Culture, DateTimeStyles.None, out var day))
-        {
-            return dayKey;
-        }
-
-        var today = Today;
-        var text = day.ToString(day.Year == today.Year ? "ddd MMM d" : "ddd MMM d, yyyy", Culture);
-        if (day == today) return $"Today · {text}";
-        if (day == today.AddDays(-1)) return $"Yesterday · {text}";
-        return text;
-    }
+    /// <summary>The heading over a group of articles from one day, for example "Sun Sep 20, 2026".</summary>
+    public string GroupLabel(string dayKey) =>
+        DateOnly.TryParseExact(dayKey, "yyyy-MM-dd", Culture, DateTimeStyles.None, out var day)
+            ? day.ToString("ddd MMM d, yyyy", Culture)
+            : dayKey;
 }

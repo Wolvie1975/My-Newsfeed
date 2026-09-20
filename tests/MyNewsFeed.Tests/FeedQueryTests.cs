@@ -262,6 +262,28 @@ public class FeedQueryTests
     }
 
     [Fact]
+    public async Task Last_updated_is_the_latest_successful_scrape_of_an_enabled_source()
+    {
+        await using var db = Create();
+        await using var tx = await db.Database.BeginTransactionAsync();
+        var token = $"upd{Guid.NewGuid():N}";
+
+        // Dates far in the future so these rows out-rank whatever real sources are stored.
+        var good = new Source { Url = $"https://test.invalid/{token}/good", Enabled = true, LastScrapedAt = new(2099, 1, 1, 9, 0, 0) };
+        var disabled = new Source { Url = $"https://test.invalid/{token}/off", Enabled = false, LastScrapedAt = new(2099, 6, 1) };
+        var failing = new Source { Url = $"https://test.invalid/{token}/bad", Enabled = true, LastScrapedAt = new(2099, 3, 1), LastError = "timed out" };
+        db.Sources.AddRange(good, disabled, failing);
+        await db.SaveChangesAsync();
+
+        Assert.Equal(new DateTime(2099, 1, 1, 9, 0, 0), await FeedQuery.GetLastUpdatedAsync(db));
+
+        // Once the failing source recovers, its (later) scrape counts.
+        failing.LastError = null;
+        await db.SaveChangesAsync();
+        Assert.Equal(new DateTime(2099, 3, 1), await FeedQuery.GetLastUpdatedAsync(db));
+    }
+
+    [Fact]
     public async Task Feed_cuts_very_long_descriptions_in_the_query()
     {
         await using var db = Create();

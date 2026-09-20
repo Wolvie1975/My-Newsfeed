@@ -237,7 +237,13 @@
 .pub .article--lead .summary { display: block; line-height: 1.55; }
 .pub .article--lead .more { display: inline-flex; justify-self: start; }
 
-.pub .src__mark, .pub .src__sep, .pub .src time { display: none; }
+.pub .src__mark, .pub .src__sep { display: none; }
+
+/* Mobile: the day heading gives the date, so each row shows only the time next to the source. */
+.pub .src time { display: inline; margin-left: 8px; font-size: 12px; color: var(--text-2); white-space: nowrap; }
+.pub .pubdate__day { display: none; }
+
+.pub .updated { margin: 0; font-size: 13px; color: var(--text-2); }
 .pub .src__name {
     display: inline-block; padding: 3px 8px; border-radius: 6px;
     background: var(--pill-bg); color: var(--pill-fg); font-size: 12px; font-weight: 600;
@@ -301,7 +307,9 @@
         width: 22px; height: 22px; border-radius: 6px;
         background: var(--mark-bg); color: var(--mark-fg); font-size: 11px; font-weight: 700;
     }
-    .pub .src__sep, .pub .src time { display: inline; }
+    .pub .src__sep { display: inline; }
+    .pub .src time { margin-left: 0; font-size: inherit; color: inherit; }
+    .pub .pubdate__day { display: inline; }
     .pub .src__name { padding: 0; background: none; color: var(--text); font-size: 14px; }
 
     /* Lead card, stacked at tablet width */

@@ -39,10 +39,8 @@ if (!string.IsNullOrEmpty(keysPath))
         .PersistKeysToFileSystem(new DirectoryInfo(keysPath));
 }
 
-// "Today" and "Yesterday" on the public feed are decided in one configured time zone (Display:TimeZone).
-builder.Services.AddSingleton(TimeProvider.System);
-builder.Services.AddSingleton(sp => FeedDates.Create(
-    sp.GetRequiredService<IConfiguration>()["Display:TimeZone"], sp.GetRequiredService<TimeProvider>()));
+// The date shown on each article is the calendar day in one configured time zone (Display:TimeZone).
+builder.Services.AddSingleton(sp => FeedDates.Create(sp.GetRequiredService<IConfiguration>()["Display:TimeZone"]));
 
 // Blazor Server circuits are long-lived, so components create short-lived contexts from a factory.
 builder.Services.AddDbContextFactory<WebScraperContext>(options =>

@@ -38,6 +38,14 @@
     }
 </div>
 
+@if (lastUpdated is { } updated)
+{
+    <p class="updated">
+        Feed last updated
+        <time datetime="@updated.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'")">@Dates.PublishedFull(updated)</time>
+    </p>
+}
+
 @if (feed is null || feed.Items.Count == 0)
 {
     <p class="empty">
@@ -84,6 +92,7 @@ else
     private IReadOnlyList<FeedCategory> categories = [];
     private FeedPage? feed;
     private string? lastDay;
+    private DateTime? lastUpdated;
 
     protected override async Task OnParametersSetAsync()
     {
@@ -92,6 +101,7 @@ else
         feed = await FeedQuery.GetFeedAsync(
             db, Category, Q, After, After is null ? FeedQuery.FirstBatch : FeedQuery.MoreBatch);
         lastDay = feed.Items.Count > 0 ? Dates.DayKey(feed.Items[^1].Date) : null;
+        lastUpdated = await FeedQuery.GetLastUpdatedAsync(db);
     }
 
     /// <summary>A link that keeps the current search and switches category and position.</summary>

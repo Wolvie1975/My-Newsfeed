@@ -77,6 +77,16 @@ public static class FeedQuery
             .ToListAsync();
 
     /// <summary>
+    /// When the feed was last refreshed: the most recent successful scrape of an enabled source. Sources whose last
+    /// attempt failed are ignored, so a broken scraper shows an old time instead of a falsely fresh one.
+    /// Null when nothing has been scraped yet.
+    /// </summary>
+    public static async Task<DateTime?> GetLastUpdatedAsync(WebScraperContext db) =>
+        await db.Sources.AsNoTracking()
+            .Where(s => s.Enabled && s.LastError == null)
+            .MaxAsync(s => s.LastScrapedAt);
+
+    /// <summary>
     /// Newest first, by publish date when known and otherwise by when the page was scraped. Returns up to
     /// <paramref name="take"/> articles that come after <paramref name="after"/> (or from the start when it is null).
     /// </summary>

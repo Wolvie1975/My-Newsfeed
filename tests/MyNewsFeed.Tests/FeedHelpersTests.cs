@@ -134,58 +134,77 @@ public class FeedHelpersTests
 
     // ---- Dates --------------------------------------------------------------------------------------------------
 
-    private sealed class FixedClock(DateTimeOffset now) : TimeProvider
-    {
-        public override DateTimeOffset GetUtcNow() => now;
-    }
-
-    // Sunday 20 Sep 2026, 14:00 UTC.
-    private static readonly FixedClock Noon = new(new DateTimeOffset(2026, 9, 20, 14, 0, 0, TimeSpan.Zero));
-
     [Theory]
-    [InlineData("2026-09-20 01:00", "Today")]
-    [InlineData("2026-09-20 23:59", "Today")]
-    [InlineData("2026-09-19 23:00", "Yesterday")]
-    [InlineData("2026-09-19 00:00", "Yesterday")]
-    [InlineData("2026-09-18 12:00", "Sep 18")]
-    [InlineData("2026-01-02 12:00", "Jan 2")]
+    [InlineData("2026-09-20 01:00", "Sep 20, 2026")]
+    [InlineData("2026-09-20 23:59", "Sep 20, 2026")]
+    [InlineData("2026-09-19 00:00", "Sep 19, 2026")]
+    [InlineData("2026-01-02 12:00", "Jan 2, 2026")]
     [InlineData("2025-12-31 12:00", "Dec 31, 2025")]
-    public void Short_labels_use_today_yesterday_then_a_date(string when, string expected)
+    public void Published_shows_the_actual_date(string when, string expected) =>
+        Assert.Equal(expected, FeedDates.Create("UTC").Published(DateTime.Parse(when)));
+
+    [Fact]
+    public void Published_never_uses_relative_words_even_for_today()
     {
-        var dates = FeedDates.Create("UTC", Noon);
-        Assert.Equal(expected, dates.Short(DateTime.Parse(when)));
+        var dates = FeedDates.Create("UTC");
+        foreach (var moment in new[] { DateTime.UtcNow, DateTime.UtcNow.AddDays(-1) })
+        {
+            var text = dates.Published(moment);
+            Assert.DoesNotContain("Today", text);
+            Assert.DoesNotContain("Yesterday", text);
+            Assert.Matches(@"^[A-Z][a-z]{2} \d{1,2}, \d{4}$", text);
+        }
     }
 
     [Fact]
-    public void Group_labels_name_the_day()
+    public void Group_labels_are_real_dates()
     {
-        var dates = FeedDates.Create("UTC", Noon);
-        Assert.Equal("Today · Sun Sep 20", dates.GroupLabel("2026-09-20"));
-        Assert.Equal("Yesterday · Sat Sep 19", dates.GroupLabel("2026-09-19"));
-        Assert.Equal("Fri Sep 18", dates.GroupLabel("2026-09-18"));
+        var dates = FeedDates.Create("UTC");
+        Assert.Equal("Sun Sep 20, 2026", dates.GroupLabel("2026-09-20"));
+        Assert.Equal("Sat Sep 19, 2026", dates.GroupLabel("2026-09-19"));
         Assert.Equal("Wed Dec 31, 2025", dates.GroupLabel("2025-12-31"));
         Assert.Equal("garbage", dates.GroupLabel("garbage"));
     }
 
     [Fact]
-    public void Day_key_is_the_calendar_day_in_the_display_zone()
+    public void The_date_follows_the_display_zone()
     {
         // 02:00 UTC on 20 Sep is 21:00 on 19 Sep in Chicago (UTC-5 in September).
         var utc = new DateTime(2026, 9, 20, 2, 0, 0);
-        Assert.Equal("2026-09-20", FeedDates.Create("UTC", Noon).DayKey(utc));
-        Assert.Equal("2026-09-19", FeedDates.Create("America/Chicago", Noon).DayKey(utc));
+        var chicago = FeedDates.Create("America/Chicago");
+
+        Assert.Equal("Sep 20, 2026", FeedDates.Create("UTC").Published(utc));
+        Assert.Equal("Sep 19, 2026", chicago.Published(utc));
+        Assert.Equal("2026-09-20", FeedDates.Create("UTC").DayKey(utc));
+        Assert.Equal("2026-09-19", chicago.DayKey(utc));
     }
 
     [Fact]
-    public void Today_is_decided_in_the_display_zone_not_in_utc()
+    public void The_tooltip_gives_the_full_date_time_and_offset()
     {
-        // The clock reads 03:00 UTC on 20 Sep, which is still the evening of 19 Sep in Chicago.
-        var clock = new FixedClock(new DateTimeOffset(2026, 9, 20, 3, 0, 0, TimeSpan.Zero));
-        var chicago = FeedDates.Create("America/Chicago", clock);
+        var utc = new DateTime(2026, 9, 20, 9, 52, 0);
 
-        Assert.Equal("Today", chicago.Short(new DateTime(2026, 9, 20, 2, 0, 0)));      // 21:00 on the 19th, local
-        Assert.Equal("Yesterday", chicago.Short(new DateTime(2026, 9, 19, 2, 0, 0)));  // 21:00 on the 18th, local
-        Assert.Equal("Today · Sat Sep 19", chicago.GroupLabel("2026-09-19"));
+        Assert.Equal("Sep 20, 2026, 9:52 AM (UTC+0)", FeedDates.Create("UTC").PublishedFull(utc));
+        Assert.Equal("Sep 20, 2026, 4:52 AM (UTC-5)", FeedDates.Create("America/Chicago").PublishedFull(utc));
+        Assert.Equal("Jan 15, 2026, 9:00 AM (UTC-6)", FeedDates.Create("America/Chicago").PublishedFull(new DateTime(2026, 1, 15, 15, 0, 0)));
+        Assert.Equal("Sep 20, 2026, 3:22 PM (UTC+5:30)", FeedDates.Create("Asia/Kolkata").PublishedFull(utc));
+    }
+
+    [Theory]
+    [InlineData("2026-09-20 09:52", "9:52 AM")]
+    [InlineData("2026-09-20 00:05", "12:05 AM")]
+    [InlineData("2026-09-20 12:30", "12:30 PM")]
+    [InlineData("2026-09-20 13:07", "1:07 PM")]
+    [InlineData("2026-09-20 23:59", "11:59 PM")]
+    public void Time_is_a_12_hour_clock_time(string when, string expected) =>
+        Assert.Equal(expected, FeedDates.Create("UTC").Time(DateTime.Parse(when)));
+
+    [Fact]
+    public void Time_follows_the_display_zone_including_daylight_saving()
+    {
+        var chicago = FeedDates.Create("America/Chicago");
+        Assert.Equal("4:52 AM", chicago.Time(new DateTime(2026, 9, 20, 9, 52, 0)));   // CDT, UTC-5
+        Assert.Equal("3:52 AM", chicago.Time(new DateTime(2026, 1, 20, 9, 52, 0)));   // CST, UTC-6
     }
 
     [Theory]
@@ -193,5 +212,5 @@ public class FeedHelpersTests
     [InlineData("")]
     [InlineData("Not/AZone")]
     public void An_unknown_time_zone_falls_back_to_utc(string? id) =>
-        Assert.Equal(TimeZoneInfo.Utc, FeedDates.Create(id, Noon).Zone);
+        Assert.Equal(TimeZoneInfo.Utc, FeedDates.Create(id).Zone);
 }

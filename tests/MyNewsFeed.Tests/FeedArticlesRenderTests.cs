@@ -10,11 +10,6 @@ namespace MyNewsFeed.Tests;
 // Renders the article component to HTML (the same way the "Load more" endpoint does) and checks the markup.
 public class FeedArticlesRenderTests
 {
-    private sealed class FixedClock(DateTimeOffset now) : TimeProvider
-    {
-        public override DateTimeOffset GetUtcNow() => now;
-    }
-
     private static FeedItem Item(int id, string title, DateTime date, string? description = "A summary.",
         string? image = "https://img.example.com/a.jpg", string? label = "ESPN", string url = "https://www.espn.com/a",
         string? category = "Sports", string? sourceUrl = "https://www.espn.com/espn/rss/news") =>
@@ -25,7 +20,7 @@ public class FeedArticlesRenderTests
     {
         var services = new ServiceCollection()
             .AddLogging()
-            .AddSingleton(FeedDates.Create("UTC", new FixedClock(new DateTimeOffset(2026, 9, 20, 14, 0, 0, TimeSpan.Zero))))
+            .AddSingleton(FeedDates.Create("UTC"))
             .BuildServiceProvider();
 
         await using var renderer = new HtmlRenderer(services, services.GetRequiredService<ILoggerFactory>());
@@ -121,14 +116,26 @@ public class FeedArticlesRenderTests
     }
 
     [Fact]
-    public async Task Each_article_shows_the_date_it_was_published()
+    public async Task Each_article_shows_the_actual_date_it_was_published_never_today_or_yesterday()
     {
-        var html = await RenderAsync([Item(1, "New", Today), Item(2, "Old", Yesterday), Item(3, "Older", new DateTime(2026, 9, 10, 9, 0, 0))]);
+        var html = System.Net.WebUtility.HtmlDecode(await RenderAsync([Item(1, "New", Today), Item(2, "Old", Yesterday), Item(3, "Older", new DateTime(2026, 9, 10, 9, 0, 0))]));
 
-        Assert.Contains(">Today</time>", html);
-        Assert.Contains(">Yesterday</time>", html);
-        Assert.Contains(">Sep 10</time>", html);
+        Assert.Contains("class=\"pubdate__day\">Sep 20, 2026<", html);
+        Assert.Contains("class=\"pubdate__day\">Sep 19, 2026<", html);
+        Assert.Contains("class=\"pubdate__day\">Sep 10, 2026<", html);
+        Assert.DoesNotContain("Today", html);
+        Assert.DoesNotContain("Yesterday", html);
         Assert.Contains("datetime=\"2026-09-20T09:00:00Z\"", html);
+        Assert.Contains("title=\"Sep 20, 2026, 9:00 AM (UTC+0)\"", html);
+    }
+
+    [Fact]
+    public async Task Each_article_shows_the_time_it_was_published_next_to_the_date()
+    {
+        var html = System.Net.WebUtility.HtmlDecode(await RenderAsync([Item(1, "Morning", new DateTime(2026, 9, 20, 9, 52, 0)), Item(2, "Afternoon", new DateTime(2026, 9, 20, 15, 7, 0))]));
+
+        Assert.Contains("<span class=\"pubdate__day\">Sep 20, 2026<span class=\"pubdate__sep\" aria-hidden=\"true\"> · </span></span><span class=\"pubdate__time\">9:52 AM</span>", html);
+        Assert.Contains("<span class=\"pubdate__time\">3:07 PM</span>", html);
     }
 
     [Fact]
@@ -137,8 +144,8 @@ public class FeedArticlesRenderTests
         var items = new[] { Item(1, "A", Today), Item(2, "B", Today), Item(3, "C", Yesterday) };
         var html = System.Net.WebUtility.HtmlDecode(await RenderAsync(items, total: 130));
 
-        Assert.Single(System.Text.RegularExpressions.Regex.Matches(html, "Today · Sun Sep 20"));
-        Assert.Single(System.Text.RegularExpressions.Regex.Matches(html, "Yesterday · Sat Sep 19"));
+        Assert.Single(System.Text.RegularExpressions.Regex.Matches(html, "Sun Sep 20, 2026"));
+        Assert.Single(System.Text.RegularExpressions.Regex.Matches(html, "Sat Sep 19, 2026"));
         Assert.Contains("130 articles", html);
     }
 
@@ -148,8 +155,8 @@ public class FeedArticlesRenderTests
         var items = new[] { Item(1, "A", Today), Item(2, "B", Yesterday) };
         var html = System.Net.WebUtility.HtmlDecode(await RenderAsync(items, previousDay: "2026-09-20"));
 
-        Assert.DoesNotContain("Today · Sun Sep 20", html);
-        Assert.Contains("Yesterday · Sat Sep 19", html);
+        Assert.DoesNotContain("Sun Sep 20, 2026", html);
+        Assert.Contains("Sat Sep 19, 2026", html);
     }
 
     [Fact]
