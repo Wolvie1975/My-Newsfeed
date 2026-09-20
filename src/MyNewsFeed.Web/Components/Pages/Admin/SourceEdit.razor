@@ -1,0 +1,195 @@
+@page "/admin/sources/new"
+@page "/admin/sources/{Id:int}/edit"
+@rendermode InteractiveServer
+@inject IDbContextFactory<WebScraperContext> Factory
+@inject NavigationManager Nav
+
+<PageTitle>@(IsNew ? "Add source" : "Edit source")</PageTitle>
+
+<h1>@(IsNew ? "Add source" : "Edit source")</h1>
+
+@if (notFound)
+{
+    <div class="alert alert-warning">That source no longer exists. <a href="admin/sources">Back to sources</a></div>
+}
+else if (form is null)
+{
+    <p><em>Loading…</em></p>
+}
+else
+{
+    <EditForm Model="form" OnValidSubmit="SaveAsync" style="max-width: 40rem;">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        @if (error is not null)
+        {
+            <div class="alert alert-danger" role="alert">@error</div>
+        }
+
+        <div class="mb-3">
+            <label for="url" class="form-label">Website URL</label>
+            <InputText id="url" class="form-control" @bind-Value="form.Url" placeholder="https://example.com/" />
+        </div>
+
+        <div class="mb-3">
+            <label for="label" class="form-label">Label (optional)</label>
+            <InputText id="label" class="form-control" @bind-Value="form.Label" />
+        </div>
+
+        <div class="mb-3">
+            <label for="category" class="form-label">Category</label>
+            <InputSelect id="category" class="form-select" @bind-Value="form.SourceCategoryId">
+                <option value="">No category</option>
+                @foreach (var category in categories)
+                {
+                    <option value="@category.Id">@category.CategoryName</option>
+                }
+            </InputSelect>
+        </div>
+
+        <div class="form-check mb-3">
+            <InputCheckbox id="enabled" class="form-check-input" @bind-Value="form.Enabled" />
+            <label for="enabled" class="form-check-label">Enabled (scraper will read this source)</label>
+        </div>
+
+        @if (!IsNew && existing is not null)
+        {
+            <dl class="row small text-muted">
+                <dt class="col-sm-3">Created</dt>
+                <dd class="col-sm-9">@AdminData.Utc(existing.CreatedAt)</dd>
+                <dt class="col-sm-3">Last scraped</dt>
+                <dd class="col-sm-9">@AdminData.Utc(existing.LastScrapedAt)</dd>
+                <dt class="col-sm-3">Pages</dt>
+                <dd class="col-sm-9"><a href="admin/pages?sourceId=@existing.Id">@pageCount</a></dd>
+                @if (!string.IsNullOrEmpty(existing.LastError))
+                {
+                    <dt class="col-sm-3">Last error</dt>
+                    <dd class="col-sm-9 text-danger">@existing.LastError</dd>
+                }
+            </dl>
+        }
+
+        <button type="submit" class="btn btn-primary me-2" disabled="@saving">Save</button>
+        <a class="btn btn-secondary" href="admin/sources">Cancel</a>
+    </EditForm>
+}
+
+@code {
+    [Parameter] public int? Id { get; set; }
+
+    public sealed class SourceForm
+    {
+        [Required, StringLength(2048)]
+        public string Url { get; set; } = "";
+
+        [StringLength(200)]
+        public string? Label { get; set; }
+
+        public bool Enabled { get; set; } = true;
+
+        // Bound to a <select>, so it is text; "" means no category.
+        public string? SourceCategoryId { get; set; }
+    }
+
+    private List<SourceCategory> categories = [];
+    private SourceForm? form;
+    private Source? existing;
+    private int pageCount;
+    private bool notFound;
+    private bool saving;
+    private string? error;
+
+    private bool IsNew => Id is null;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await using var db = await Factory.CreateDbContextAsync();
+        categories = await db.SourceCategories.AsNoTracking().OrderBy(c => c.CategoryName).ToListAsync();
+
+        if (IsNew)
+        {
+            form = new SourceForm();
+            return;
+        }
+
+        existing =await db.Sources.AsNoTracking().FirstOrDefaultAsync(s => s.Id == Id);
+        if (existing is null)
+        {
+            notFound = true;
+            return;
+        }
+
+        pageCount = await db.Pages.CountAsync(p => p.SourceId == Id);
+        form = new SourceForm
+        {
+            Url = existing.Url,
+            Label = existing.Label,
+            Enabled = existing.Enabled,
+            SourceCategoryId = existing.SourceCategoryId?.ToString(),
+        };
+    }
+
+    private async Task SaveAsync()
+    {
+        if (form is null)
+        {
+            return;
+        }
+
+        error = null;
+        var url = form.Url.Trim();
+        var label = string.IsNullOrWhiteSpace(form.Label) ? null : form.Label.Trim();
+        int? categoryId = int.TryParse(form.SourceCategoryId, out var parsedCategoryId) ? parsedCategoryId : null;
+
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri)
+            || (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
+        {
+            error = "Enter a full URL that starts with http:// or https://.";
+            return;
+        }
+
+        saving = true;
+        try
+        {
+            await using var db = await Factory.CreateDbContextAsync();
+            if (IsNew)
+            {
+                db.Sources.Add(new Source { Url = url, Label = label, Enabled = form.Enabled, SourceCategoryId = categoryId });
+            }
+            else
+            {
+                var source = await db.Sources.FindAsync(Id);
+                if (source is null)
+                {
+                    notFound = true;
+                    return;
+                }
+
+                source.Url = url;
+                source.Label = label;
+                source.Enabled = form.Enabled;
+                source.SourceCategoryId = categoryId;
+            }
+
+            await db.SaveChangesAsync();
+            Nav.NavigateTo("admin/sources");
+        }
+        catch (DbUpdateException ex) when (AdminData.IsUniqueViolation(ex))
+        {
+            error = "That URL is already a source.";
+        }
+        catch (DbUpdateException ex) when (AdminData.IsForeignKeyViolation(ex))
+        {
+            // The chosen category was deleted after this form loaded.
+            error = "That category no longer exists. Pick another one.";
+            await using var db = await Factory.CreateDbContextAsync();
+            categories = await db.SourceCategories.AsNoTracking().OrderBy(c => c.CategoryName).ToListAsync();
+            form.SourceCategoryId = null;
+        }
+        finally
+        {
+            saving = false;
+        }
+    }
+}

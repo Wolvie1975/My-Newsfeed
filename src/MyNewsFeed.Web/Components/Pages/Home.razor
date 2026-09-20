@@ -1,0 +1,155 @@
+@page "/"
+@layout PublicLayout
+@inject IDbContextFactory<WebScraperContext> Factory
+
+<PageTitle>MyNewsFeed</PageTitle>
+
+@* Static (non-interactive) page: filters are plain GET links and a GET form, so every view has a shareable URL. *@
+
+<form method="get" action="" class="row g-2 mb-3" role="search">
+    @if (Category is int selected)
+    {
+        <input type="hidden" name="category" value="@selected" />
+    }
+    <div class="col">
+        <label for="q" class="visually-hidden">Search articles</label>
+        <input id="q" name="q" type="search" class="form-control" placeholder="Search articles" value="@Q" />
+    </div>
+    <div class="col-auto">
+        <button type="submit" class="btn btn-primary">Search</button>
+    </div>
+</form>
+
+@if (categories.Count > 0)
+{
+    <nav aria-label="Categories" class="mb-4">
+        <ul class="nav nav-pills gap-1">
+            <li class="nav-item">
+                <a class="nav-link py-1 @(Category is null ? "active" : "")" href="@Href(null, 1)">All</a>
+            </li>
+            @foreach (var category in categories)
+            {
+                <li class="nav-item">
+                    <a class="nav-link py-1 @(Category == category.Id ? "active" : "")" href="@Href(category.Id, 1)">
+                        @category.Name <span class="badge text-bg-light">@category.Count</span>
+                    </a>
+                </li>
+            }
+        </ul>
+    </nav>
+}
+
+@if (feed is null || feed.Items.Count == 0)
+{
+    <p class="text-muted">
+        @if (!string.IsNullOrWhiteSpace(Q) || Category is not null)
+        {
+            <span>No articles match. <a href="">Clear filters</a></span>
+        }
+        else
+        {
+            <span>No articles yet. Check back soon.</span>
+        }
+    </p>
+}
+else
+{
+    <p class="text-muted small">@feed.Total @(feed.Total == 1 ? "article" : "articles")</p>
+
+    @foreach (var item in feed.Items)
+    {
+        var href = FeedQuery.SafeHref(item.Url);
+        var excerpt = FeedQuery.Excerpt(item.Description);
+
+        <article class="mb-4 pb-3 border-bottom">
+            <h2 class="h5 mb-1">
+                @if (href is not null)
+                {
+                    <a href="@href" target="_blank" rel="noopener noreferrer" class="text-decoration-none">@item.Title</a>
+                }
+                else
+                {
+                    @item.Title
+                }
+            </h2>
+            <p class="small text-muted mb-2">
+                <span>@item.SourceName</span>
+                @if (item.CategoryName is not null)
+                {
+                    <span class="badge text-bg-secondary ms-1">@item.CategoryName</span>
+                }
+                <span class="mx-1">·</span>
+                <time datetime="@item.Date.ToString("yyyy-MM-dd")">@item.Date.ToString("MMM d, yyyy")</time>
+            </p>
+            @if (excerpt is not null)
+            {
+                <p class="mb-0">@excerpt</p>
+            }
+        </article>
+    }
+
+    @if (feed.TotalPages > 1)
+    {
+        <nav aria-label="Pages" class="d-flex justify-content-between align-items-center">
+            @if (feed.Page > 1)
+            {
+                <a class="btn btn-outline-secondary btn-sm" href="@Href(Category, feed.Page - 1)" rel="prev">← Newer</a>
+            }
+            else
+            {
+                <span></span>
+            }
+            <span class="small text-muted">Page @feed.Page of @feed.TotalPages</span>
+            @if (feed.Page < feed.TotalPages)
+            {
+                <a class="btn btn-outline-secondary btn-sm" href="@Href(Category, feed.Page + 1)" rel="next">Older →</a>
+            }
+            else
+            {
+                <span></span>
+            }
+        </nav>
+    }
+}
+
+@code {
+    // Query values arrive as text and are parsed leniently: a hand-edited "?category=abc" must not throw.
+    [SupplyParameterFromQuery(Name = "category")] private string? CategoryQuery { get; set; }
+    [SupplyParameterFromQuery(Name = "q")] private string? Q { get; set; }
+    [SupplyParameterFromQuery(Name = "page")] private string? PageQuery { get; set; }
+
+    private int? Category => int.TryParse(CategoryQuery, out var id) ? id : null;
+    private int PageNumber => int.TryParse(PageQuery, out var page) ? page : 1;
+
+    private IReadOnlyList<FeedCategory> categories = [];
+    private FeedPage? feed;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await using var db = await Factory.CreateDbContextAsync();
+        categories = await FeedQuery.GetCategoriesAsync(db);
+        feed = await FeedQuery.GetFeedAsync(db, Category, Q, PageNumber);
+    }
+
+    /// <summary>Builds a link that keeps the current search but switches category and page.</summary>
+    private string Href(int? category, int page)
+    {
+        var parts = new List<string>();
+        if (category is int id)
+        {
+            parts.Add($"category={id}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(Q))
+        {
+            parts.Add($"q={Uri.EscapeDataString(Q.Trim())}");
+        }
+
+        if (page > 1)
+        {
+            parts.Add($"page={page}");
+        }
+
+        return parts.Count == 0 ? "" : "?" + string.Join("&", parts);
+    }
+}

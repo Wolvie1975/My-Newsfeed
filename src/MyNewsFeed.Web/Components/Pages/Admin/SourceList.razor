@@ -1,0 +1,215 @@
+@page "/admin/sources"
+@rendermode InteractiveServer
+@inject IDbContextFactory<WebScraperContext> Factory
+
+<PageTitle>Sources</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="mb-0">Sources</h1>
+    <a class="btn btn-primary" href="admin/sources/new">Add source</a>
+</div>
+
+@if (message is not null)
+{
+    <div class="alert alert-@messageKind" role="alert">@message</div>
+}
+
+<div class="row mb-3">
+    <div class="col-md-4">
+        <label for="category" class="visually-hidden">Category</label>
+        <select id="category" class="form-select" @bind="categoryFilter" @bind:after="LoadAsync">
+            <option value="">All categories</option>
+            <option value="none">Uncategorized</option>
+            @foreach (var category in categories)
+            {
+                <option value="@category.Id">@category.CategoryName</option>
+            }
+        </select>
+    </div>
+</div>
+
+@if (pendingDelete is { } target)
+{
+    <div class="alert alert-warning" role="alert">
+        @if (target.PageCount == 0)
+        {
+            <p class="mb-2">Delete <strong>@target.Name</strong>? This cannot be undone.</p>
+            <button class="btn btn-danger btn-sm me-2" @onclick="() => ConfirmDeleteAsync(false)">Delete source</button>
+        }
+        else
+        {
+            <p class="mb-2">
+                <strong>@target.Name</strong> has @target.PageCount collected @(target.PageCount == 1 ? "page" : "pages").
+                Deleting the source also permanently deletes them.
+            </p>
+            <button class="btn btn-danger btn-sm me-2" @onclick="() => ConfirmDeleteAsync(true)">
+                Delete source and @target.PageCount @(target.PageCount == 1 ? "page" : "pages")
+            </button>
+        }
+        <button class="btn btn-secondary btn-sm" @onclick="CancelDelete">Cancel</button>
+    </div>
+}
+
+@if (rows is null)
+{
+    <p><em>Loading…</em></p>
+}
+else if (rows.Count == 0)
+{
+    <p>No sources found. <a href="admin/sources/new">Add one.</a></p>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-sm align-middle">
+            <thead>
+                <tr>
+                    <th>Source</th>
+                    <th>Enabled</th>
+                    <th>Category</th>
+                    <th>Pages</th>
+                    <th>Last scraped</th>
+                    <th>Last error</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in rows)
+                {
+                    <tr>
+                        <td>
+                            @if (!string.IsNullOrWhiteSpace(row.Label))
+                            {
+                                <div class="fw-semibold">@row.Label</div>
+                            }
+                            <a href="@row.Url" target="_blank" rel="noopener noreferrer" class="small text-break">@row.Url</a>
+                        </td>
+                        <td>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" role="switch"
+                                       aria-label="Enabled: @row.Name"
+                                       checked="@row.Enabled" @onchange="() => ToggleAsync(row.Id)" />
+                            </div>
+                        </td>
+                        <td>@(row.CategoryName ?? "—")</td>
+                        <td><a href="admin/pages?sourceId=@row.Id">@row.PageCount</a></td>
+                        <td class="text-nowrap">@AdminData.Utc(row.LastScrapedAt)</td>
+                        <td>
+                            @if (!string.IsNullOrEmpty(row.LastError))
+                            {
+                                <span class="badge text-bg-danger" title="@row.LastError">Error</span>
+                                <span class="small text-danger">@Truncate(row.LastError, 80)</span>
+                            }
+                        </td>
+                        <td class="text-nowrap text-end">
+                            <a class="btn btn-outline-primary btn-sm" href="admin/sources/@row.Id/edit">Edit</a>
+                            <button class="btn btn-outline-danger btn-sm" @onclick="() => StartDelete(row)">Delete</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    private sealed record SourceRow(
+        int Id, string Url, string? Label, bool Enabled, DateTime? LastScrapedAt, string? LastError, int PageCount, string? CategoryName)
+    {
+        public string Name => string.IsNullOrWhiteSpace(Label) ? Url : Label;
+    }
+
+    private List<SourceRow>? rows;
+    private SourceRow? pendingDelete;
+    private string? message;
+    private string messageKind = "success";
+
+    private List<SourceCategory> categories = [];
+    [SupplyParameterFromQuery(Name = "categoryId")] private string? CategoryIdText { get; set; }
+
+    private int? CategoryIdQuery => int.TryParse(CategoryIdText, out var id) ? id : null;
+
+    private string? categoryFilter;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await using var db = await Factory.CreateDbContextAsync();
+        categories = await db.SourceCategories.AsNoTracking().OrderBy(c => c.CategoryName).ToListAsync();
+
+        if (CategoryIdQuery is int id && categories.Any(c => c.Id == id))
+        {
+            categoryFilter = id.ToString();
+        }
+
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        await using var db = await Factory.CreateDbContextAsync();
+        IQueryable<Source> query = db.Sources;
+        if (categoryFilter == "none")
+        {
+            query = query.Where(s => s.SourceCategoryId == null);
+        }
+        else if (int.TryParse(categoryFilter, out var categoryId))
+        {
+            query = query.Where(s => s.SourceCategoryId == categoryId);
+        }
+
+        rows = await query
+            .AsNoTracking()
+            .OrderBy(s => s.Label ?? s.Url)
+            .Select(s => new SourceRow(s.Id, s.Url, s.Label, s.Enabled, s.LastScrapedAt, s.LastError, s.Pages.Count,
+                s.SourceCategory != null ? s.SourceCategory.CategoryName : null))
+            .ToListAsync();
+    }
+
+    private async Task ToggleAsync(int id)
+    {
+        await using var db = await Factory.CreateDbContextAsync();
+        var source = await db.Sources.FindAsync(id);
+        if (source is not null)
+        {
+            source.Enabled = !source.Enabled;
+            await db.SaveChangesAsync();
+        }
+
+        await LoadAsync();
+    }
+
+    private void StartDelete(SourceRow row)
+    {
+        message = null;
+        pendingDelete = row;
+    }
+
+    private void CancelDelete() => pendingDelete = null;
+
+    private async Task ConfirmDeleteAsync(bool includePages)
+    {
+        if (pendingDelete is not { } target)
+        {
+            return;
+        }
+
+        try
+        {
+            await using var db = await Factory.CreateDbContextAsync();
+            var deleted = await AdminData.DeleteSourceAsync(db, target.Id, includePages);
+            messageKind = deleted ? "success" : "warning";
+            message = deleted ? $"Deleted {target.Name}." : $"{target.Name} was already deleted.";
+        }
+        catch (Exception ex) when (AdminData.IsForeignKeyViolation(ex))
+        {
+            // Pages were added after this screen loaded.
+            messageKind = "danger";
+            message = $"{target.Name} gained pages since this list loaded, so it was not deleted. Review it and try again.";
+        }
+
+        pendingDelete = null;
+        await LoadAsync();
+    }
+
+    private static string Truncate(string text, int max) => text.Length <= max ? text : text[..max] + "…";
+}

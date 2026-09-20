@@ -1,0 +1,25 @@
+@inherits LayoutComponentBase
+
+<header class="feed-header">
+    <div class="container d-flex align-items-center gap-3 py-3">
+        <a class="feed-brand" href="">MyNewsFeed</a>
+        <AuthorizeView>
+            <Authorized>
+                <a class="ms-auto small" href="admin/sources">Admin</a>
+            </Authorized>
+            <NotAuthorized>
+                <a class="ms-auto small" href="login">Admin sign in</a>
+            </NotAuthorized>
+        </AuthorizeView>
+    </div>
+</header>
+
+<main class="container py-4">
+    @Body
+</main>
+
+<div id="blazor-error-ui" data-nosnippet>
+    An unhandled error has occurred.
+    <a href="." class="reload">Reload</a>
+    <span class="dismiss">🗙</span>
+</div>

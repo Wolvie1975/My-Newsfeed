@@ -1,0 +1,116 @@
+@page "/admin/pages/{Id:int}/edit"
+@rendermode InteractiveServer
+@inject IDbContextFactory<WebScraperContext> Factory
+@inject NavigationManager Nav
+
+<PageTitle>Edit page</PageTitle>
+
+<h1>Edit page</h1>
+
+@if (notFound)
+{
+    <div class="alert alert-warning">That page no longer exists. <a href="admin/pages">Back to pages</a></div>
+}
+else if (form is null || existing is null)
+{
+    <p><em>Loading…</em></p>
+}
+else
+{
+    <EditForm Model="form" OnValidSubmit="SaveAsync" style="max-width: 44rem;">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <dl class="row small text-muted">
+            <dt class="col-sm-3">URL</dt>
+            <dd class="col-sm-9 text-break"><a href="@existing.Url" target="_blank" rel="noopener noreferrer">@existing.Url</a></dd>
+            <dt class="col-sm-3">Source</dt>
+            <dd class="col-sm-9">@sourceName</dd>
+            <dt class="col-sm-3">Scraped</dt>
+            <dd class="col-sm-9">@AdminData.Utc(existing.ScrapedAt)</dd>
+        </dl>
+
+        <div class="mb-3">
+            <label for="title" class="form-label">Title</label>
+            <InputText id="title" class="form-control" @bind-Value="form.Title" />
+        </div>
+
+        <div class="mb-3">
+            <label for="description" class="form-label">Description</label>
+            <InputTextArea id="description" class="form-control" rows="5" @bind-Value="form.Description" />
+        </div>
+
+        <div class="mb-3">
+            <label for="published" class="form-label">Published (UTC)</label>
+            <InputDate id="published" Type="InputDateType.DateTimeLocal" class="form-control" @bind-Value="form.Published" />
+            <div class="form-text">Leave empty when the publish date is unknown.</div>
+        </div>
+
+        <button type="submit" class="btn btn-primary me-2" disabled="@saving">Save</button>
+        <a class="btn btn-secondary" href="admin/pages">Cancel</a>
+    </EditForm>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    public sealed class PageForm
+    {
+        [Required, StringLength(500)]
+        public string Title { get; set; } = "";
+
+        public string? Description { get; set; }
+
+        public DateTime? Published { get; set; }
+    }
+
+    private PageForm? form;
+    private Page? existing;
+    private string sourceName = "";
+    private bool notFound;
+    private bool saving;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await using var db = await Factory.CreateDbContextAsync();
+        existing = await db.Pages.AsNoTracking().Include(p => p.Source).FirstOrDefaultAsync(p => p.Id == Id);
+        if (existing is null)
+        {
+            notFound = true;
+            return;
+        }
+
+        sourceName = existing.Source.Label ?? existing.Source.Url;
+        form = new PageForm { Title = existing.Title, Description = existing.Description, Published = existing.Published };
+    }
+
+    private async Task SaveAsync()
+    {
+        if (form is null)
+        {
+            return;
+        }
+
+        saving = true;
+        try
+        {
+            await using var db = await Factory.CreateDbContextAsync();
+            var page = await db.Pages.FindAsync(Id);
+            if (page is null)
+            {
+                notFound = true;
+                return;
+            }
+
+            page.Title = form.Title.Trim();
+            page.Description = string.IsNullOrWhiteSpace(form.Description) ? null : form.Description.Trim();
+            page.Published = form.Published;
+            await db.SaveChangesAsync();
+            Nav.NavigateTo("admin/pages");
+        }
+        finally
+        {
+            saving = false;
+        }
+    }
+}
