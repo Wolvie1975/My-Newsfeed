@@ -2,10 +2,13 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MyNewsFeed.Web.Auth;
 using MyNewsFeed.Web.Components;
+using MyNewsFeed.Web.Components.Feed;
 using MyNewsFeed.Web.Data;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -35,6 +38,11 @@ if (!string.IsNullOrEmpty(keysPath))
         .SetApplicationName("MyNewsFeed")
         .PersistKeysToFileSystem(new DirectoryInfo(keysPath));
 }
+
+// "Today" and "Yesterday" on the public feed are decided in one configured time zone (Display:TimeZone).
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddSingleton(sp => FeedDates.Create(
+    sp.GetRequiredService<IConfiguration>()["Display:TimeZone"], sp.GetRequiredService<TimeProvider>()));
 
 // Blazor Server circuits are long-lived, so components create short-lived contexts from a factory.
 builder.Services.AddDbContextFactory<WebScraperContext>(options =>
@@ -84,6 +92,44 @@ app.MapGet("/healthz", async (IDbContextFactory<WebScraperContext> factory) =>
 {
     await using var db = await factory.CreateDbContextAsync();
     return await db.Database.CanConnectAsync() ? Results.Ok("ok") : Results.StatusCode(StatusCodes.Status503ServiceUnavailable);
+});
+
+// "Load more" on the public feed: the next batch of article cards, rendered by the same component as the page.
+app.MapGet("/feed/more", async (HttpContext http, IDbContextFactory<WebScraperContext> factory, ILoggerFactory loggers,
+    string? after, string? category, string? q, string? day) =>
+{
+    if (FeedCursor.Parse(after) is not { } cursor)
+    {
+        return Results.BadRequest();
+    }
+
+    int? categoryId = int.TryParse(category, out var parsedCategory) ? parsedCategory : null;
+    await using var db = await factory.CreateDbContextAsync();
+    var page = await FeedQuery.GetFeedAsync(db, categoryId, q, cursor, FeedQuery.MoreBatch);
+
+    await using var renderer = new HtmlRenderer(http.RequestServices, loggers);
+    var html = await renderer.Dispatcher.InvokeAsync(async () =>
+    {
+        var output = await renderer.RenderComponentAsync<FeedArticles>(ParameterView.FromDictionary(
+            new Dictionary<string, object?>
+            {
+                [nameof(FeedArticles.Items)] = page.Items,
+                [nameof(FeedArticles.PreviousDay)] = day,
+            }));
+        return output.ToHtmlString();
+    });
+
+    var dates = http.RequestServices.GetRequiredService<FeedDates>();
+    http.Response.Headers.CacheControl = "no-store";
+    return Results.Json(new
+    {
+        html,
+        nextHref = page.Next is { } next ? FeedQuery.QueryString(categoryId, q, next.ToToken()) : null,
+        shown = page.Shown,
+        total = page.Total,
+        added = page.Items.Count,
+        lastDay = page.Items.Count > 0 ? dates.DayKey(page.Items[^1].Date) : day,
+    });
 });
 
 app.MapRazorComponents<App>()

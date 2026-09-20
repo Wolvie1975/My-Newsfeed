@@ -1,48 +1,47 @@
 @page "/"
 @layout PublicLayout
+@using MyNewsFeed.Web.Components.Feed
 @inject IDbContextFactory<WebScraperContext> Factory
+@inject FeedDates Dates
 
 <PageTitle>MyNewsFeed</PageTitle>
 
-@* Static (non-interactive) page: filters are plain GET links and a GET form, so every view has a shareable URL. *@
+@* Static (non-interactive) page. Filters are plain links and a GET form, so every view has a shareable URL and works
+   without JavaScript; public.js only upgrades "Load more" to append in place. *@
 
-<form method="get" action="" class="row g-2 mb-3" role="search">
+<h1 class="sr-only">Latest articles</h1>
+
+<form class="search" role="search" method="get" action="">
     @if (Category is int selected)
     {
         <input type="hidden" name="category" value="@selected" />
     }
-    <div class="col">
-        <label for="q" class="visually-hidden">Search articles</label>
-        <input id="q" name="q" type="search" class="form-control" placeholder="Search articles" value="@Q" />
+    <div class="search__field">
+        <label class="sr-only" for="q">Search articles</label>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+        <input id="q" name="q" type="search" placeholder="Search articles" value="@Q" />
     </div>
-    <div class="col-auto">
-        <button type="submit" class="btn btn-primary">Search</button>
-    </div>
+    <button class="nf-btn nf-btn--primary" type="submit">Search</button>
 </form>
 
-@if (categories.Count > 0)
-{
-    <nav aria-label="Categories" class="mb-4">
-        <ul class="nav nav-pills gap-1">
-            <li class="nav-item">
-                <a class="nav-link py-1 @(Category is null ? "active" : "")" href="@Href(null, 1)">All</a>
-            </li>
-            @foreach (var category in categories)
-            {
-                <li class="nav-item">
-                    <a class="nav-link py-1 @(Category == category.Id ? "active" : "")" href="@Href(category.Id, 1)">
-                        @category.Name <span class="badge text-bg-light">@category.Count</span>
-                    </a>
-                </li>
-            }
-        </ul>
+<div class="filters">
+    <nav class="chips" aria-label="Categories">
+        <a class="chip" href="@Href(null, null)" aria-current="@(Category is null ? "true" : null)">All</a>
+        @foreach (var category in categories)
+        {
+            <a class="chip" href="@Href(category.Id, null)" aria-current="@(Category == category.Id ? "true" : null)">@category.Name</a>
+        }
     </nav>
-}
+    @if (feed is not null)
+    {
+        <span class="count count--toolbar">@feed.Total @(feed.Total == 1 ? "article" : "articles")</span>
+    }
+</div>
 
 @if (feed is null || feed.Items.Count == 0)
 {
-    <p class="text-muted">
-        @if (!string.IsNullOrWhiteSpace(Q) || Category is not null)
+    <p class="empty">
+        @if (!string.IsNullOrWhiteSpace(Q) || Category is not null || After is not null)
         {
             <span>No articles match. <a href="">Clear filters</a></span>
         }
@@ -54,102 +53,47 @@
 }
 else
 {
-    <p class="text-muted small">@feed.Total @(feed.Total == 1 ? "article" : "articles")</p>
-
-    @foreach (var item in feed.Items)
+    @if (After is not null)
     {
-        var href = FeedQuery.SafeHref(item.Url);
-        var excerpt = FeedQuery.Excerpt(item.Description);
-
-        <article class="mb-4 pb-3 border-bottom">
-            <h2 class="h5 mb-1">
-                @if (href is not null)
-                {
-                    <a href="@href" target="_blank" rel="noopener noreferrer" class="text-decoration-none">@item.Title</a>
-                }
-                else
-                {
-                    @item.Title
-                }
-            </h2>
-            <p class="small text-muted mb-2">
-                <span>@item.SourceName</span>
-                @if (item.CategoryName is not null)
-                {
-                    <span class="badge text-bg-secondary ms-1">@item.CategoryName</span>
-                }
-                <span class="mx-1">·</span>
-                <time datetime="@item.Date.ToString("yyyy-MM-dd")">@item.Date.ToString("MMM d, yyyy")</time>
-            </p>
-            @if (excerpt is not null)
-            {
-                <p class="mb-0">@excerpt</p>
-            }
-        </article>
+        <p><a href="@Href(Category, null)">← Back to the newest articles</a></p>
     }
 
-    @if (feed.TotalPages > 1)
-    {
-        <nav aria-label="Pages" class="d-flex justify-content-between align-items-center">
-            @if (feed.Page > 1)
-            {
-                <a class="btn btn-outline-secondary btn-sm" href="@Href(Category, feed.Page - 1)" rel="prev">← Newer</a>
-            }
-            else
-            {
-                <span></span>
-            }
-            <span class="small text-muted">Page @feed.Page of @feed.TotalPages</span>
-            @if (feed.Page < feed.TotalPages)
-            {
-                <a class="btn btn-outline-secondary btn-sm" href="@Href(Category, feed.Page + 1)" rel="next">Older →</a>
-            }
-            else
-            {
-                <span></span>
-            }
-        </nav>
-    }
+    <section class="feed" aria-label="Articles" data-last-day="@lastDay">
+        <FeedArticles Items="feed.Items" LeadFirst="@(After is null)" Total="@(After is null ? feed.Total : null)" />
+    </section>
+
+    <div class="loadmore">
+        @if (feed.Next is { } next)
+        {
+            <a class="nf-btn nf-btn--secondary" data-load-more data-enhance-nav="false" href="@Href(Category, next.ToToken())">Load more articles</a>
+        }
+        <span class="count" data-shown-total>Showing @feed.Shown of @feed.Total</span>
+        <span class="sr-only" role="status" data-load-status></span>
+    </div>
 }
 
 @code {
     // Query values arrive as text and are parsed leniently: a hand-edited "?category=abc" must not throw.
     [SupplyParameterFromQuery(Name = "category")] private string? CategoryQuery { get; set; }
     [SupplyParameterFromQuery(Name = "q")] private string? Q { get; set; }
-    [SupplyParameterFromQuery(Name = "page")] private string? PageQuery { get; set; }
+    [SupplyParameterFromQuery(Name = "after")] private string? AfterQuery { get; set; }
 
     private int? Category => int.TryParse(CategoryQuery, out var id) ? id : null;
-    private int PageNumber => int.TryParse(PageQuery, out var page) ? page : 1;
+    private FeedCursor? After => FeedCursor.Parse(AfterQuery);
 
     private IReadOnlyList<FeedCategory> categories = [];
     private FeedPage? feed;
+    private string? lastDay;
 
     protected override async Task OnParametersSetAsync()
     {
         await using var db = await Factory.CreateDbContextAsync();
         categories = await FeedQuery.GetCategoriesAsync(db);
-        feed = await FeedQuery.GetFeedAsync(db, Category, Q, PageNumber);
+        feed = await FeedQuery.GetFeedAsync(
+            db, Category, Q, After, After is null ? FeedQuery.FirstBatch : FeedQuery.MoreBatch);
+        lastDay = feed.Items.Count > 0 ? Dates.DayKey(feed.Items[^1].Date) : null;
     }
 
-    /// <summary>Builds a link that keeps the current search but switches category and page.</summary>
-    private string Href(int? category, int page)
-    {
-        var parts = new List<string>();
-        if (category is int id)
-        {
-            parts.Add($"category={id}");
-        }
-
-        if (!string.IsNullOrWhiteSpace(Q))
-        {
-            parts.Add($"q={Uri.EscapeDataString(Q.Trim())}");
-        }
-
-        if (page > 1)
-        {
-            parts.Add($"page={page}");
-        }
-
-        return parts.Count == 0 ? "" : "?" + string.Join("&", parts);
-    }
+    /// <summary>A link that keeps the current search and switches category and position.</summary>
+    private string Href(int? category, string? after) => FeedQuery.QueryString(category, Q, after);
 }

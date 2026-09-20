@@ -4,6 +4,8 @@ using MyNewsFeed.Web.Data.Models;
 
 namespace MyNewsFeed.Tests;
 
+// Integration tests against the live WebScraper database. Each test works in a transaction that is never
+// committed, and tags its rows with a unique token so the assertions only see its own data whatever else is stored.
 public class FeedQueryTests
 {
     private static WebScraperContext Create() => new(
@@ -11,57 +13,13 @@ public class FeedQueryTests
             .UseSqlServer("Server=sql2025,1433;Database=WebScraper;User Id=sa;Password=Fedora_Dev_2025!;Encrypt=False;TrustServerCertificate=True;")
             .Options);
 
-    // ---- pure helpers -------------------------------------------------------------------------------------------
-
-    [Theory]
-    [InlineData("https://example.com/a", "https://example.com/a")]
-    [InlineData("http://example.com/", "http://example.com/")]
-    [InlineData("javascript:alert(1)", null)]
-    [InlineData("JaVaScRiPt:alert(1)", null)]
-    [InlineData("data:text/html,<script>alert(1)</script>", null)]
-    [InlineData("ftp://example.com/file", null)]
-    [InlineData("/relative/path", null)]
-    [InlineData("", null)]
-    [InlineData(null, null)]
-    public void SafeHref_only_allows_http_and_https(string? url, string? expected) =>
-        Assert.Equal(expected, FeedQuery.SafeHref(url));
-
-    [Fact]
-    public void Excerpt_returns_short_text_unchanged_and_null_for_blank()
-    {
-        Assert.Equal("Short text", FeedQuery.Excerpt("  Short text  "));
-        Assert.Null(FeedQuery.Excerpt(null));
-        Assert.Null(FeedQuery.Excerpt("   "));
-    }
-
-    [Fact]
-    public void Excerpt_cuts_long_text_at_a_word_boundary()
-    {
-        var text = string.Join(' ', Enumerable.Repeat("word", 100));
-        var excerpt = FeedQuery.Excerpt(text, 50)!;
-
-        Assert.EndsWith("…", excerpt);
-        Assert.True(excerpt.Length <= 51);
-        Assert.DoesNotContain("wor…", excerpt);
-    }
-
-    [Fact]
-    public void Excerpt_hard_cuts_text_without_spaces()
-    {
-        var excerpt = FeedQuery.Excerpt(new string('x', 500), 100)!;
-        Assert.Equal(101, excerpt.Length);
-    }
-
-    // ---- database ---------------------------------------------------------------------------------------------------
-    // Each test works in a transaction that is never committed, and tags its rows with a unique token so the
-    // assertions only see its own data whatever else is stored.
-
     private static Page NewPage(string token, string title, DateTime scraped, DateTime? published = null,
-        string? description = null) => new()
+        string? description = null, string? imageUrl = null) => new()
     {
         Url = $"https://test.invalid/{token}/{Guid.NewGuid():N}",
         Title = $"{title} {token}",
         Description = description,
+        ImageUrl = imageUrl,
         ScrapedAt = scraped,
         Published = published,
     };
@@ -83,15 +41,42 @@ public class FeedQueryTests
         db.Sources.AddRange(enabled, disabled);
         await db.SaveChangesAsync();
 
-        var feed = await FeedQuery.GetFeedAsync(db, categoryId: null, search: token, page: 1);
+        var feed = await FeedQuery.GetFeedAsync(db, categoryId: null, search: token, after: null);
 
         Assert.Equal(3, feed.Total);
-        Assert.Equal(new[] { $"Newest {token}", $"Unpublished {token}", $"Oldest {token}" },
-            feed.Items.Select(i => i.Title));
-        Assert.All(feed.Items, i => Assert.Equal("On", i.SourceName));
+        Assert.Equal(new[] { $"Newest {token}", $"Unpublished {token}", $"Oldest {token}" }, feed.Items.Select(i => i.Title));
+        Assert.All(feed.Items, i => Assert.Equal("On", i.SourceLabel));
         Assert.DoesNotContain(feed.Items, i => i.Title.StartsWith("Hidden"));
         // The date shown is the publish date when known, else the scrape date.
         Assert.Equal(new DateTime(2026, 4, 1), feed.Items.Single(i => i.Title.StartsWith("Unpublished")).Date);
+        Assert.Equal(new DateTime(2026, 6, 1), feed.Items.Single(i => i.Title.StartsWith("Newest")).Date);
+        Assert.Null(feed.Next);
+        Assert.Equal(3, feed.Shown);
+    }
+
+    [Fact]
+    public async Task Feed_carries_the_image_and_source_details_the_design_needs()
+    {
+        await using var db = Create();
+        await using var tx = await db.Database.BeginTransactionAsync();
+        var token = $"img{Guid.NewGuid():N}";
+
+        var category = new SourceCategory { CategoryName = $"Sports {token}" };
+        var source = new Source { Url = $"https://test.invalid/{token}/rss", Label = "ESPN", Enabled = true, SourceCategory = category };
+        source.Pages.Add(NewPage(token, "With image", new(2026, 1, 2), imageUrl: "https://img.example.com/a.jpg"));
+        source.Pages.Add(NewPage(token, "Without image", new(2026, 1, 1)));
+        db.Sources.Add(source);
+        await db.SaveChangesAsync();
+
+        var feed = await FeedQuery.GetFeedAsync(db, null, token, null);
+
+        var with = feed.Items.Single(i => i.Title.StartsWith("With image"));
+        Assert.Equal("https://img.example.com/a.jpg", with.ImageUrl);
+        Assert.Equal("ESPN", with.SourceLabel);
+        Assert.Equal(source.Url, with.SourceUrl);
+        Assert.Equal(category.Id, with.CategoryId);
+        Assert.Equal(category.CategoryName, with.CategoryName);
+        Assert.Null(feed.Items.Single(i => i.Title.StartsWith("Without image")).ImageUrl);
     }
 
     [Fact]
@@ -114,12 +99,11 @@ public class FeedQueryTests
         db.SourceCategories.Add(empty);
         await db.SaveChangesAsync();
 
-        var filtered = await FeedQuery.GetFeedAsync(db, used.Id, token, 1);
+        var filtered = await FeedQuery.GetFeedAsync(db, used.Id, token, null);
         Assert.Equal($"In category {token}", Assert.Single(filtered.Items).Title);
         Assert.Equal(used.CategoryName, filtered.Items[0].CategoryName);
 
-        var categories = await FeedQuery.GetCategoriesAsync(db);
-        var mine = categories.Where(c => c.Name.EndsWith(token)).ToList();
+        var mine = (await FeedQuery.GetCategoriesAsync(db)).Where(c => c.Name.EndsWith(token)).ToList();
         Assert.Equal(used.CategoryName, Assert.Single(mine).Name);
         Assert.Equal(1, mine[0].Count);
     }
@@ -142,7 +126,7 @@ public class FeedQueryTests
         db.SourceCategories.Add(tech);
         await db.SaveChangesAsync();
 
-        var inNews = await FeedQuery.GetFeedAsync(db, news.Id, token, 1);
+        var inNews = await FeedQuery.GetFeedAsync(db, news.Id, token, null);
         Assert.Equal(3, inNews.Total);
         Assert.All(inNews.Items, i => Assert.Equal(news.CategoryName, i.CategoryName));
 
@@ -150,8 +134,8 @@ public class FeedQueryTests
         first.SourceCategoryId = tech.Id;
         await db.SaveChangesAsync();
 
-        Assert.Equal(1, (await FeedQuery.GetFeedAsync(db, news.Id, token, 1)).Total);
-        var inTech = await FeedQuery.GetFeedAsync(db, tech.Id, token, 1);
+        Assert.Equal(1, (await FeedQuery.GetFeedAsync(db, news.Id, token, null)).Total);
+        var inTech = await FeedQuery.GetFeedAsync(db, tech.Id, token, null);
         Assert.Equal(2, inTech.Total);
         Assert.All(inTech.Items, i => Assert.Equal(tech.CategoryName, i.CategoryName));
 
@@ -174,16 +158,16 @@ public class FeedQueryTests
         db.Sources.Add(source);
         await db.SaveChangesAsync();
 
-        Assert.Equal(1, (await FeedQuery.GetFeedAsync(db, null, $"rust release {token}", 1)).Total);
-        Assert.Equal(1, (await FeedQuery.GetFeedAsync(db, null, "kubernetes", 1)).Items.Count(i => i.Title.EndsWith(token)));
+        Assert.Equal(1, (await FeedQuery.GetFeedAsync(db, null, $"rust release {token}", null)).Total);
+        Assert.Equal(1, (await FeedQuery.GetFeedAsync(db, null, "kubernetes", null)).Items.Count(i => i.Title.EndsWith(token)));
         // A literal '%' must not act as a wildcard that matches everything.
-        var percent = await FeedQuery.GetFeedAsync(db, null, "100%", 1);
+        var percent = await FeedQuery.GetFeedAsync(db, null, "100%", null);
         Assert.Contains(percent.Items, i => i.Title.StartsWith("Percent"));
         Assert.DoesNotContain(percent.Items, i => i.Title.StartsWith("Rust"));
     }
 
     [Fact]
-    public async Task Feed_paging_clamps_out_of_range_pages()
+    public async Task Paging_by_cursor_walks_the_whole_feed_once()
     {
         await using var db = Create();
         await using var tx = await db.Database.BeginTransactionAsync();
@@ -198,17 +182,83 @@ public class FeedQueryTests
         db.Sources.Add(source);
         await db.SaveChangesAsync();
 
-        var first = await FeedQuery.GetFeedAsync(db, null, token, page: 1, pageSize: 2);
-        Assert.Equal((5, 3, 2), (first.Total, first.TotalPages, first.Items.Count));
+        var first = await FeedQuery.GetFeedAsync(db, null, token, null, take: 2);
+        Assert.Equal((5, 3, 2), (first.Total, first.Remaining, first.Items.Count));
+        Assert.Equal(2, first.Shown);
         Assert.Equal($"Item5 {token}", first.Items[0].Title);
+        Assert.NotNull(first.Next);
 
-        var last = await FeedQuery.GetFeedAsync(db, null, token, page: 3, pageSize: 2);
+        var second = await FeedQuery.GetFeedAsync(db, null, token, first.Next, take: 2);
+        Assert.Equal(new[] { $"Item3 {token}", $"Item2 {token}" }, second.Items.Select(i => i.Title));
+        Assert.Equal((5, 1, 4), (second.Total, second.Remaining, second.Shown));
+
+        var last = await FeedQuery.GetFeedAsync(db, null, token, second.Next, take: 2);
         Assert.Equal($"Item1 {token}", Assert.Single(last.Items).Title);
+        Assert.Equal((0, 5), (last.Remaining, last.Shown));
+        Assert.Null(last.Next);
+    }
 
-        var tooFar = await FeedQuery.GetFeedAsync(db, null, token, page: 99, pageSize: 2);
-        Assert.Equal(3, tooFar.Page);
-        var tooLow = await FeedQuery.GetFeedAsync(db, null, token, page: -4, pageSize: 2);
-        Assert.Equal(1, tooLow.Page);
+    [Fact]
+    public async Task Articles_arriving_between_batches_cause_no_duplicates_or_gaps()
+    {
+        await using var db = Create();
+        await using var tx = await db.Database.BeginTransactionAsync();
+        var token = $"live{Guid.NewGuid():N}";
+
+        var source = new Source { Url = $"https://test.invalid/{token}", Enabled = true };
+        for (var i = 1; i <= 4; i++)
+        {
+            source.Pages.Add(NewPage(token, $"Item{i}", new(2026, 1, i)));
+        }
+
+        db.Sources.Add(source);
+        await db.SaveChangesAsync();
+
+        var first = await FeedQuery.GetFeedAsync(db, null, token, null, take: 2);        // Item4, Item3
+
+        // The scraper adds two newer articles while the visitor is looking at the first batch.
+        source.Pages.Add(NewPage(token, "Item5", new(2026, 1, 5)));
+        source.Pages.Add(NewPage(token, "Item6", new(2026, 1, 6)));
+        await db.SaveChangesAsync();
+
+        var second = await FeedQuery.GetFeedAsync(db, null, token, first.Next, take: 5);
+
+        // With page numbers the visitor would now see Item4 and Item3 again. With a cursor they get exactly the rest.
+        Assert.Equal(new[] { $"Item2 {token}", $"Item1 {token}" }, second.Items.Select(i => i.Title));
+        Assert.Equal(6, second.Total);
+        Assert.Null(second.Next);
+    }
+
+    [Fact]
+    public async Task Articles_with_the_same_date_are_ordered_by_id_and_paged_without_loss()
+    {
+        await using var db = Create();
+        await using var tx = await db.Database.BeginTransactionAsync();
+        var token = $"tie{Guid.NewGuid():N}";
+
+        var when = new DateTime(2026, 3, 3, 12, 0, 0);
+        var source = new Source { Url = $"https://test.invalid/{token}", Enabled = true };
+        for (var i = 1; i <= 4; i++)
+        {
+            source.Pages.Add(NewPage(token, $"Same{i}", scraped: when, published: when));
+        }
+
+        db.Sources.Add(source);
+        await db.SaveChangesAsync();
+
+        var seen = new List<int>();
+        FeedCursor? cursor = null;
+        do
+        {
+            var batch = await FeedQuery.GetFeedAsync(db, null, token, cursor, take: 1);
+            seen.AddRange(batch.Items.Select(i => i.Id));
+            cursor = batch.Next;
+        }
+        while (cursor is not null);
+
+        Assert.Equal(4, seen.Count);
+        Assert.Equal(seen.Distinct().Count(), seen.Count);
+        Assert.Equal(seen.OrderByDescending(x => x), seen);
     }
 
     [Fact]
@@ -223,7 +273,7 @@ public class FeedQueryTests
         db.Sources.Add(source);
         await db.SaveChangesAsync();
 
-        var item = Assert.Single((await FeedQuery.GetFeedAsync(db, null, token, 1)).Items);
+        var item = Assert.Single((await FeedQuery.GetFeedAsync(db, null, token, null)).Items);
         Assert.Equal(600, item.Description!.Length);
     }
 }

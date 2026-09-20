@@ -3,19 +3,56 @@ using Microsoft.EntityFrameworkCore;
 namespace MyNewsFeed.Web.Data;
 
 public sealed record FeedItem(
-    int Id, string Title, string Url, string? Description, string SourceName, string? CategoryName, DateTime Date);
+    int Id,
+    string Title,
+    string Url,
+    string? Description,
+    string? ImageUrl,
+    string? SourceLabel,
+    string SourceUrl,
+    int? CategoryId,
+    string? CategoryName,
+    DateTime Date);
 
 public sealed record FeedCategory(int Id, string Name, int Count);
 
-public sealed record FeedPage(IReadOnlyList<FeedItem> Items, int Total, int Page, int PageSize)
+/// <summary>
+/// A position in the feed: the sort date and id of the last article already shown. Paging by position (not by page
+/// number) means articles the scraper adds while someone is scrolling cannot cause duplicates or skips.
+/// </summary>
+public sealed record FeedCursor(DateTime Date, int Id)
 {
-    public int TotalPages => Math.Max(1, (int)Math.Ceiling(Total / (double)PageSize));
+    public string ToToken() => $"{Date.Ticks}.{Id}";
+
+    public static FeedCursor? Parse(string? token)
+    {
+        var parts = token?.Split('.');
+        if (parts is { Length: 2 }
+            && long.TryParse(parts[0], out var ticks) && ticks is >= 0 and <= 3155378975999999999
+            && int.TryParse(parts[1], out var id))
+        {
+            return new FeedCursor(new DateTime(ticks), id);
+        }
+
+        return null;
+    }
+}
+
+/// <param name="Total">Every article matching the filters.</param>
+/// <param name="Remaining">Matching articles older than the last one in <paramref name="Items"/>.</param>
+/// <param name="Next">Cursor for the next batch, or null when this batch reaches the end.</param>
+public sealed record FeedPage(IReadOnlyList<FeedItem> Items, int Total, int Remaining, FeedCursor? Next)
+{
+    public int Shown => Total - Remaining;
 }
 
 /// <summary>Read side of the public news feed.</summary>
 public static class FeedQuery
 {
-    public const int DefaultPageSize = 20;
+    /// <summary>First batch: the lead article plus twelve, which fills the three-column grid.</summary>
+    public const int FirstBatch = 13;
+
+    public const int MoreBatch = 12;
 
     // Descriptions are cut in SQL so one huge scraped description cannot bloat the page.
     private const int DescriptionFetchLimit = 600;
@@ -39,15 +76,18 @@ public static class FeedQuery
             .Select(c => new FeedCategory(c.Id, c.CategoryName, c.Count))
             .ToListAsync();
 
-    /// <summary>Newest first, by publish date when known and otherwise by when the page was scraped.</summary>
+    /// <summary>
+    /// Newest first, by publish date when known and otherwise by when the page was scraped. Returns up to
+    /// <paramref name="take"/> articles that come after <paramref name="after"/> (or from the start when it is null).
+    /// </summary>
     public static async Task<FeedPage> GetFeedAsync(
-        WebScraperContext db, int? categoryId, string? search, int page, int pageSize = DefaultPageSize)
+        WebScraperContext db, int? categoryId, string? search, FeedCursor? after, int take = FirstBatch)
     {
         var query = Visible(db);
 
-        if (categoryId is int id)
+        if (categoryId is int cid)
         {
-            query = query.Where(p => p.Source.SourceCategoryId == id);
+            query = query.Where(p => p.Source.SourceCategoryId == cid);
         }
 
         var term = search?.Trim();
@@ -58,14 +98,22 @@ public static class FeedQuery
         }
 
         var total = await query.CountAsync();
-        var lastPage = Math.Max(1, (int)Math.Ceiling(total / (double)pageSize));
-        page = Math.Clamp(page, 1, lastPage);
 
-        var items = await query
+        var older = query;
+        var olderCount = total;
+        if (after is { } cursor)
+        {
+            var date = cursor.Date;
+            var id = cursor.Id;
+            older = query.Where(p => (p.Published ?? p.ScrapedAt) < date
+                || ((p.Published ?? p.ScrapedAt) == date && p.Id < id));
+            olderCount = await older.CountAsync();
+        }
+
+        var items = await older
             .OrderByDescending(p => p.Published ?? p.ScrapedAt)
             .ThenByDescending(p => p.Id)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
+            .Take(take)
             .Select(p => new FeedItem(
                 p.Id,
                 p.Title,
@@ -73,16 +121,21 @@ public static class FeedQuery
                 p.Description != null && p.Description.Length > DescriptionFetchLimit
                     ? p.Description.Substring(0, DescriptionFetchLimit)
                     : p.Description,
-                p.Source.Label ?? p.Source.Url,
+                p.ImageUrl,
+                p.Source.Label,
+                p.Source.Url,
+                p.Source.SourceCategoryId,
                 p.Source.SourceCategory != null ? p.Source.SourceCategory.CategoryName : null,
                 p.Published ?? p.ScrapedAt))
             .ToListAsync();
 
-        return new FeedPage(items, total, page, pageSize);
+        var remaining = olderCount - items.Count;
+        var next = remaining > 0 && items.Count > 0 ? new FeedCursor(items[^1].Date, items[^1].Id) : null;
+        return new FeedPage(items, total, remaining, next);
     }
 
     /// <summary>
-    /// Scraped URLs are untrusted: only http(s) may be used as a link target, so a stored
+    /// Scraped URLs are untrusted: only http(s) may be used as a link target or image source, so a stored
     /// <c>javascript:</c> or <c>data:</c> URL can never become a clickable link.
     /// </summary>
     public static string? SafeHref(string? url) =>
@@ -90,6 +143,28 @@ public static class FeedQuery
         && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps)
             ? uri.AbsoluteUri
             : null;
+
+    /// <summary>Builds the query string that keeps the current filters. Empty when nothing is set.</summary>
+    public static string QueryString(int? categoryId, string? search, string? after)
+    {
+        var parts = new List<string>();
+        if (categoryId is int id)
+        {
+            parts.Add($"category={id}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            parts.Add($"q={Uri.EscapeDataString(search.Trim())}");
+        }
+
+        if (after is not null)
+        {
+            parts.Add($"after={after}");
+        }
+
+        return parts.Count == 0 ? "" : "?" + string.Join("&", parts);
+    }
 
     /// <summary>Shortens text to at most about <paramref name="max"/> characters, preferring a word boundary.</summary>
     public static string? Excerpt(string? text, int max = 280)

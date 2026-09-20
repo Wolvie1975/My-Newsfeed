@@ -13,6 +13,7 @@ services:
     environment:
       ConnectionStrings__DefaultConnection: ${SQL_CONNECTION:?Set SQL_CONNECTION in .env}
       Admin__Password: ${ADMIN_PASSWORD:?Set ADMIN_PASSWORD in .env}
+      Display__TimeZone: ${DISPLAY_TIMEZONE:-UTC}
     volumes:
       - mynewsfeed-keys:/keys
     networks:

@@ -1,0 +1,90 @@
+@using MyNewsFeed.Web.Data
+@inject FeedDates Dates
+
+@* The article cards (and, on mobile, the day headings between them). Rendered by the home page for the first
+   batch and by the /feed/more endpoint for "Load more", so both produce identical markup. *@
+
+@{
+    var previousDay = PreviousDay;
+}
+
+@for (var i = 0; i < Items.Count; i++)
+{
+    var item = Items[i];
+    var dayKey = Dates.DayKey(item.Date);
+    var isLead = LeadFirst && i == 0;
+    var href = FeedQuery.SafeHref(item.Url);
+    var image = FeedQuery.SafeHref(item.ImageUrl);
+    var sourceName = FeedText.SourceName(item.SourceLabel, item.SourceUrl);
+    var title = FeedText.StripEmoji(item.Title);
+    var summary = FeedText.StripEmoji(FeedQuery.Excerpt(item.Description));
+
+    if (dayKey != previousDay)
+    {
+        previousDay = dayKey;
+        <p class="daylabel">
+            <span>@Dates.GroupLabel(dayKey)</span>
+            @if (i == 0 && Total is int total)
+            {
+                <span>@total @(total == 1 ? "article" : "articles")</span>
+            }
+        </p>
+    }
+
+    <article class="article @(isLead ? "article--lead" : "")">
+        @* Default image: the placeholder background shows through when there is no image or it fails to load. *@
+        <div class="thumb" aria-hidden="true">
+            @if (image is not null)
+            {
+                <img src="@image" alt="" loading="@(isLead ? "eager" : "lazy")" decoding="async"
+                     referrerpolicy="no-referrer" onerror="this.remove()" />
+            }
+        </div>
+        <div class="body">
+            @if (item.CategoryName is not null)
+            {
+                <a class="cat" href="?category=@item.CategoryId">@item.CategoryName</a>
+            }
+            <h2 class="title">
+                @if (href is not null)
+                {
+                    <a href="@href" target="_blank" rel="noopener noreferrer">@(title.Length > 0 ? title : item.Title)</a>
+                }
+                else
+                {
+                    @(title.Length > 0 ? title : item.Title)
+                }
+            </h2>
+            @if (!string.IsNullOrEmpty(summary))
+            {
+                <p class="summary">@summary</p>
+            }
+            <p class="src">
+                <span class="src__mark" aria-hidden="true">@FeedText.SourceMark(sourceName)</span>
+                <span class="src__name">@sourceName</span>
+                <span class="src__sep" aria-hidden="true">·</span>
+                <time datetime="@item.Date.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'")">@Dates.Short(item.Date)</time>
+            </p>
+            @if (isLead && href is not null)
+            {
+                <a class="more" href="@href" target="_blank" rel="noopener noreferrer">
+                    Read on @sourceName
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="m13 6 6 6-6 6"></path></svg>
+                </a>
+            }
+        </div>
+    </article>
+}
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<FeedItem> Items { get; set; } = [];
+
+    /// <summary>The first article is the large lead card (only on the first batch).</summary>
+    [Parameter] public bool LeadFirst { get; set; }
+
+    /// <summary>Day (yyyy-MM-dd) of the last article already on the page, so a batch doesn't repeat its heading.</summary>
+    [Parameter] public string? PreviousDay { get; set; }
+
+    /// <summary>When set, the first day heading also shows the total article count (mobile).</summary>
+    [Parameter] public int? Total { get; set; }
+}

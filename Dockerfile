@@ -11,7 +11,16 @@ COPY tests/MyNewsFeed.Tests/MyNewsFeed.Tests.csproj tests/MyNewsFeed.Tests/
 RUN dotnet restore src/MyNewsFeed.Web/MyNewsFeed.Web.csproj
 
 COPY src/ src/
-RUN dotnet publish src/MyNewsFeed.Web/MyNewsFeed.Web.csproj -c Release --no-restore -o /app/publish
+# No --no-restore: the early restore above only saw the .csproj, not the .razor files, and skips the package that
+# supplies _framework/blazor.web.js. Restoring again with the full source picks it up.
+RUN dotnet publish src/MyNewsFeed.Web/MyNewsFeed.Web.csproj -c Release -o /app/publish
+
+# Guard: fail the build if the published site cannot serve the Blazor script. Without it the admin pages are not
+# interactive and every form post is rejected with a 400, and nothing else would notice until someone used the site.
+RUN grep -q "_framework/blazor.web.js" /app/publish/MyNewsFeed.Web.staticwebassets.endpoints.json || { \
+      echo "ERROR: _framework/blazor.web.js is missing from the published static assets." >&2; \
+      echo "The admin pages would not be interactive. Check that restore ran with the full source (see the publish step)." >&2; \
+      exit 1; }
 
 # ---- runtime ----
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
