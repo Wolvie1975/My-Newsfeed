@@ -222,4 +222,33 @@ public class EventsTests
         await using var db = Create();
         Assert.False(await db.SportsEvents.AnyAsync(e => e.Url.Contains("test.invalid")));
     }
+
+    [Theory]
+    [InlineData("Kansas", "Houston", true, "Kansas at Houston")]
+    [InlineData("Kansas", "Houston", false, "Kansas vs Houston")]
+    [InlineData("Kansas", "Houston", null, "Kansas / Houston")]
+    [InlineData(null, " Houston ", false, "Our team vs Houston")]
+    [InlineData("Kansas", null, true, "Kansas at Opponent to be announced")]
+    public void Matchups_put_the_school_first(string? school, string? opponent, bool? isAway, string expected) =>
+        Assert.Equal(expected, EventsText.Matchup(school, opponent, isAway));
+
+    [Fact]
+    public async Task Todays_games_are_only_that_date_in_start_order_with_time_tbd_last()
+    {
+        await using var db = Create();
+        await using var tx = await db.Database.BeginTransactionAsync();
+        var token = Tag();
+        var day = new DateOnly(2031, 3, 4);
+        db.SportsEvents.AddRange(
+            Game(token, "yesterday", day.AddDays(-1), new DateTime(2031, 3, 3, 20, 0, 0)),
+            Game(token, "b tbd", day, tbd: true),
+            Game(token, "c evening", day, new DateTime(2031, 3, 5, 0, 0, 0)),
+            Game(token, "a afternoon", day, new DateTime(2031, 3, 4, 19, 0, 0)),
+            Game(token, "tomorrow", day.AddDays(1), new DateTime(2031, 3, 5, 20, 0, 0)));
+        await db.SaveChangesAsync();
+
+        var games = (await EventsQuery.GetOnDateAsync(db, day)).Where(g => g.Title.Contains(token));
+
+        Assert.Equal(new[] { "a afternoon", "c evening", "b tbd" }, games.Select(g => g.Title.Replace($"zz {token} ", "")));
+    }
 }

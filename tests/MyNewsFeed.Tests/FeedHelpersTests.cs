@@ -277,4 +277,18 @@ public class FeedHelpersTests
     [InlineData("Not/AZone")]
     public void An_unknown_time_zone_falls_back_to_utc(string? id) =>
         Assert.Equal(TimeZoneInfo.Utc, FeedDates.Create(id).Zone);
+
+    [Theory]
+    [InlineData("2026-09-21T09:30:00", "Good morning", "Monday, September 21")]     // 4:30 AM in Chicago
+    [InlineData("2026-09-21T16:59:00", "Good morning", "Monday, September 21")]     // 11:59 AM
+    [InlineData("2026-09-21T17:00:00", "Good afternoon", "Monday, September 21")]   // 12:00 PM
+    [InlineData("2026-09-21T23:00:00", "Good evening", "Monday, September 21")]     // 6:00 PM
+    [InlineData("2026-09-22T03:00:00", "Good evening", "Monday, September 21")]     // 10:00 PM, still the 21st
+    public void The_greeting_and_date_follow_the_display_zone(string utc, string greeting, string date)
+    {
+        var chicago = FeedDates.Create("America/Chicago");
+        var now = DateTime.Parse(utc, System.Globalization.CultureInfo.InvariantCulture);
+        Assert.Equal(date, chicago.TodayLabel(now));
+        Assert.Equal(greeting, chicago.Greeting(now));
+    }
 }

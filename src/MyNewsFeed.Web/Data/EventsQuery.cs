@@ -89,6 +89,24 @@ public static class EventsQuery
         return new EventsPage(items, total);
     }
 
+    /// <summary>
+    /// Every game on <paramref name="date"/> (the host school's calendar date, never converted), in start order; games
+    /// whose time is still to be announced come last.
+    /// </summary>
+    public static async Task<IReadOnlyList<EventItem>> GetOnDateAsync(WebScraperContext db, DateOnly date) =>
+        await db.SportsEvents.AsNoTracking()
+            .Where(e => e.EventDate == date)
+            .OrderBy(e => e.StartsAtUtc == null ? 1 : 0)
+            .ThenBy(e => e.StartsAtUtc)
+            .ThenBy(e => e.Sport)
+            .ThenBy(e => e.Id)
+            .Take(Limit)
+            .Select(e => new EventItem(
+                e.Id, e.Url, e.Title, e.Sport, e.Opponent, e.IsAway, e.Location, e.EventDate, e.StartsAtUtc, e.TimeTbd,
+                e.Tv, e.StreamUrl, e.LiveStatsUrl, e.TeamLogoUrl, e.OpponentLogoUrl,
+                e.SportsEventsType != null ? e.SportsEventsType.SchoolName : null))
+            .ToListAsync();
+
     /// <summary>Builds the query string that keeps the current filters. Empty when nothing is set.</summary>
     public static string QueryString(string? sport, string? search)
     {
@@ -135,6 +153,17 @@ public static class EventsText
 
         var parts = location.Split(" / ", 2, StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
         return parts.Length == 2 ? (parts[0], parts[1]) : (parts.Length == 1 ? parts[0] : null, null);
+    }
+
+    /// <summary>
+    /// "Kansas at Houston" for an away game, "Kansas vs Houston" for a home game, "Kansas / Houston" when it is not known
+    /// which. The school always comes first, as on its own calendar.
+    /// </summary>
+    public static string Matchup(string? school, string? opponent, bool? isAway)
+    {
+        var us = string.IsNullOrWhiteSpace(school) ? "Our team" : school.Trim();
+        var them = string.IsNullOrWhiteSpace(opponent) ? "Opponent to be announced" : opponent.Trim();
+        return $"{us} {(isAway is null ? "/" : isAway.Value ? "at" : "vs")} {them}";
     }
 
     /// <summary>Two or three letters for a team badge when it has no logo: "Grand Canyon" gives "GC", "Kansas" gives "KAN".</summary>

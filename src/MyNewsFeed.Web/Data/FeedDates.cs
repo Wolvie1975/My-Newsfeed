@@ -90,6 +90,17 @@ public sealed class FeedDates(TimeZoneInfo zone)
         return $"{hour}:{local.Minute:00} {half} {ZoneLabel ?? OffsetText(utc)}";
     }
 
+    /// <summary>"Good morning", "Good afternoon" or "Good evening" by the hour in the display zone.</summary>
+    public string Greeting(DateTime utcNow) => Local(utcNow).Hour switch
+    {
+        < 12 => "Good morning",
+        < 18 => "Good afternoon",
+        _ => "Good evening",
+    };
+
+    /// <summary>Today's date for the home page heading, in the display zone: "Monday, September 21".</summary>
+    public string TodayLabel(DateTime utcNow) => Local(utcNow).ToString("dddd, MMMM d", Culture);
+
     /// <summary>A calendar date written out for a heading, for example "Friday, September 25, 2026".</summary>
     public static string LongDate(DateOnly date) => date.ToString("dddd, MMMM d, yyyy", Culture);
 

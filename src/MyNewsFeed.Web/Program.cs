@@ -122,7 +122,7 @@ app.MapGet("/feed/more", async (HttpContext http, IDbContextFactory<WebScraperCo
     return Results.Json(new
     {
         html,
-        nextHref = page.Next is { } next ? FeedQuery.QueryString(categoryId, q, next.ToToken()) : null,
+        nextHref = page.Next is { } next ? "news" + FeedQuery.QueryString(categoryId, q, next.ToToken()) : null,
         shown = page.Shown,
         total = page.Total,
         added = page.Items.Count,

@@ -91,6 +91,29 @@ public static class VideosQuery
         return new VideosPage(items, total);
     }
 
+    /// <summary>Each channel's newest video, newest first: one row per channel, for the home page.</summary>
+    public static async Task<IReadOnlyList<VideoItem>> GetLatestPerChannelAsync(WebScraperContext db)
+    {
+        var rows = await db.YouTubeVideos.AsNoTracking()
+            .Where(v => v.PublishedAt == db.YouTubeVideos.Where(o => o.ChannelId == v.ChannelId).Max(o => o.PublishedAt))
+            .Select(v => new
+            {
+                v.Id, v.VideoId, v.ChannelId, v.ChannelName, v.Title, v.Url, v.PublishedAt, v.ThumbnailUrl, v.ViewCount,
+                FeedName = v.YoutubeVideoFeed != null ? v.YoutubeVideoFeed.ChannelName : null,
+            })
+            .ToListAsync();
+
+        // Two videos published at the same instant tie; keep the higher id so each channel appears once.
+        return rows
+            .GroupBy(r => r.ChannelId)
+            .Select(g => g.OrderByDescending(r => r.Id).First())
+            .OrderByDescending(r => r.PublishedAt).ThenBy(r => r.ChannelId)
+            .Select(r => new VideoItem(
+                r.Id, r.VideoId, r.ChannelId, Name(r.FeedName, r.ChannelName, r.ChannelId), r.Title, r.Url, r.PublishedAt,
+                r.ThumbnailUrl, r.ViewCount))
+            .ToList();
+    }
+
     /// <summary>Builds the query string that keeps the current filters. Empty when nothing is set.</summary>
     public static string QueryString(string? channel, string? search)
     {

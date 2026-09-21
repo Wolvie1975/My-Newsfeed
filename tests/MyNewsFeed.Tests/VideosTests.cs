@@ -139,4 +139,30 @@ public class VideosTests
         Assert.Equal(3, page.Items.Count);
         Assert.Equal(5, page.Total);
     }
+
+    [Fact]
+    public async Task The_latest_per_channel_is_one_video_each_newest_channel_first_with_the_feed_name()
+    {
+        await using var db = Create();
+        await using var tx = await db.Database.BeginTransactionAsync();
+        var token = Tag();
+        var feed = new YoutubeVideoFeed
+        {
+            ChannelId = $"UC{token}A", ChannelName = $"Feed {token}", Url = $"https://{token}.test.invalid/feed", DateAdded = DateTime.UtcNow,
+        };
+        db.YouTubeVideos.AddRange(
+            Video(token, "A", "a old", new DateTime(2031, 1, 1), channelName: "Video copy", feed: feed),
+            Video(token, "A", "a new", new DateTime(2031, 3, 1), channelName: "Video copy", feed: feed),
+            Video(token, "B", "b only", new DateTime(2031, 4, 1)),
+            Video(token, "C", "c tie one", new DateTime(2031, 2, 1)),
+            Video(token, "C", "c tie two", new DateTime(2031, 2, 1)));
+        await db.SaveChangesAsync();
+
+        var latest = (await VideosQuery.GetLatestPerChannelAsync(db)).Where(v => v.ChannelId.StartsWith($"UC{token}")).ToList();
+
+        Assert.Equal(new[] { $"UC{token}B", $"UC{token}A", $"UC{token}C" }, latest.Select(v => v.ChannelId));
+        Assert.Equal($"zz {token} a new", latest[1].Title);
+        Assert.Equal($"Feed {token}", latest[1].ChannelName);
+        Assert.Equal($"zz {token} c tie two", latest[2].Title);   // a tie keeps the higher id
+    }
 }

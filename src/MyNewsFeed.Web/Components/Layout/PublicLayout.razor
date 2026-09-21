@@ -5,7 +5,8 @@
     var path = Nav.ToBaseRelativePath(Nav.Uri);
     var onEvents = path.StartsWith("events", StringComparison.OrdinalIgnoreCase);
     var onVideos = path.StartsWith("videos", StringComparison.OrdinalIgnoreCase);
-    var onNews = !onEvents && !onVideos;
+    var onNews = path.StartsWith("news", StringComparison.OrdinalIgnoreCase);
+    var onHome = path.Length == 0 || path[0] is '?' or '#';
 }
 
 <div class="pub">
@@ -15,7 +16,8 @@
         @* Wide screens: the navigation sits in the header. Phones get the same links in a bar under it (below), so the
            sticky header stays one row tall. *@
         <nav class="site-nav site-nav--inline" aria-label="Main">
-            <a href="" aria-current="@(onNews ? "page" : null)">News</a>
+            <a href="" aria-current="@(onHome ? "page" : null)">Home</a>
+            <a href="news" aria-current="@(onNews ? "page" : null)">News</a>
             <a href="events" aria-current="@(onEvents ? "page" : null)">Sports Events</a>
             <a href="videos" aria-current="@(onVideos ? "page" : null)">Videos</a>
         </nav>
@@ -38,7 +40,8 @@
     </header>
 
     <nav class="site-nav site-nav--bar" aria-label="Main">
-        <a href="" aria-current="@(onNews ? "page" : null)">News</a>
+        <a href="" aria-current="@(onHome ? "page" : null)">Home</a>
+        <a href="news" aria-current="@(onNews ? "page" : null)">News</a>
         <a href="events" aria-current="@(onEvents ? "page" : null)">Sports Events</a>
         <a href="videos" aria-current="@(onVideos ? "page" : null)">Videos</a>
     </nav>

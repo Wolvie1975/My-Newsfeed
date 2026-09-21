@@ -116,7 +116,7 @@
     // Capture phase, so this runs before Blazor's own link handling: it must not also navigate to the
     // fallback URL when "Load more" is clicked.
     // Search and category forms are plain GET forms. Leave out empty fields so "All categories" and an empty search
-    // give a clean URL ("/") instead of "/?category=&q=". Capture phase: runs before the form is serialised.
+    // give a clean URL instead of "?category=&q=". Capture phase: runs before the form is serialised.
     document.addEventListener('submit', function (e) {
         var form = e.target;
         if (!form.closest || !form.closest('.pub') || (form.method || '').toLowerCase() !== 'get') return;

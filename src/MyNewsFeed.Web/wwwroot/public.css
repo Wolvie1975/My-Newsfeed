@@ -572,3 +572,117 @@
 @media (min-width: 1024px) {
     .pub .videos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px 16px; }
 }
+
+/* =====================================================================================================================
+   Home (dashboard). Every class is prefixed d- so nothing here can leak into the other pages.
+   ================================================================================================================== */
+.pub .d-hello { padding: 0 0 4px; }
+.pub .d-hello h1:focus { outline: none; }   /* Blazor focuses the first h1 after navigation; it is not interactive */
+.pub .d-hello h1 { margin: 0; font-size: 26px; line-height: 1.2; font-weight: 700; letter-spacing: -0.02em; }
+.pub .d-hello p { margin: 2px 0 0; font-size: 15px; color: var(--text-2); }
+
+/* Phones: full-width blocks in this order: today's events, news, videos. */
+.pub .d-grid { display: flex; flex-direction: column; gap: 12px; }
+.pub .d-today { order: 1; }
+.pub .d-news { order: 2; }
+.pub .d-vids { order: 3; }
+
+.pub .d-card {
+    margin: 0 -20px; background: var(--surface);
+    border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+}
+.pub .d-card__head {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    min-height: 56px; padding: 4px 20px; border-bottom: 1px solid var(--row-border);
+}
+.pub .d-card__title {
+    margin: 0; display: flex; align-items: baseline; gap: 10px;
+    font-size: 17px; line-height: 1.3; font-weight: 700; letter-spacing: -0.01em;
+}
+.pub .d-card__count { font-size: 14px; font-weight: 400; color: var(--text-2); }
+.pub .d-more {
+    flex: none; display: inline-flex; align-items: center; gap: 6px; height: 44px;
+    font-size: 14px; font-weight: 600; color: var(--accent);
+}
+.pub .d-list { list-style: none; margin: 0; padding: 0; }
+.pub .d-list > li + li { border-top: 1px solid var(--row-border); }
+.pub .d-empty { margin: 0; padding: 24px 20px; text-align: center; color: var(--text-2); }
+
+/* News rows */
+.pub .d-story { padding: 16px 20px; display: flex; flex-direction: column; gap: 6px; }
+.pub .d-story__top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.pub .d-src {
+    display: inline-block; min-width: 0; padding: 3px 8px; border-radius: 6px;
+    background: var(--ph-bg); color: var(--chip-fg); font-size: 12px; font-weight: 600;
+}
+.pub .d-cat { font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
+.pub .d-story__title { margin: 0; font-size: 17px; line-height: 1.3; font-weight: 650; letter-spacing: -0.01em; overflow-wrap: anywhere; }
+.pub .d-story__title a:hover, .pub .d-game__match a:hover, .pub .d-vid__title a:hover { color: var(--accent); }
+.pub .d-story__sum {
+    margin: 0; font-size: 15px; line-height: 1.5; color: var(--text-2);
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+
+/* Today's events rows. The time reads "6:00 P.M. CT", so the column is wider than the plain-clock design and never wraps. */
+.pub .d-game { display: grid; grid-template-columns: 104px minmax(0, 1fr); gap: 12px; align-items: start; padding: 14px 20px; }
+.pub .d-game__time { white-space: nowrap; font-size: 14px; line-height: 1.5; font-weight: 700; font-variant-numeric: tabular-nums; }
+.pub .d-game__time.is-tbd { font-weight: 500; color: var(--text-2); }
+.pub .d-game__body { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.pub .d-game__match { margin: 0; font-size: 16px; line-height: 1.3; font-weight: 650; letter-spacing: -0.01em; overflow-wrap: anywhere; }
+.pub .d-game__meta {
+    margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 2px 8px;
+    font-size: 13px; line-height: 1.5; color: var(--text-2);
+}
+.pub .d-tag {
+    display: inline-block; padding: 1px 8px; border-radius: 6px;
+    background: var(--ph-bg); color: var(--chip-fg); font-size: 12px; font-weight: 600;
+}
+.pub .d-tv { font-weight: 600; color: var(--text); }
+
+/* Videos rows (one per channel) */
+.pub .d-vid { display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 12px; align-items: start; padding: 12px 20px; }
+.pub .d-thumb {
+    position: relative; display: block; aspect-ratio: 16 / 9;
+    border-radius: 8px; overflow: hidden; background: var(--ph-bg); color: var(--ph-fg);
+}
+.pub .d-thumb__ph { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+.pub .d-thumb__ph svg { width: 22px; height: 22px; }
+.pub .d-thumb img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.pub .d-vid__body { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.pub .d-vid__chan { margin: 0; display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; }
+.pub .d-vid__name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pub .d-mark {
+    flex: none; display: inline-flex; align-items: center; justify-content: center;
+    width: 20px; height: 20px; border-radius: 6px;
+    background: var(--mark-bg); color: var(--mark-fg); font-size: 11px; font-weight: 700;
+}
+.pub .d-vid__title {
+    margin: 0; font-size: 16px; line-height: 1.3; font-weight: 650; letter-spacing: -0.01em; overflow-wrap: anywhere;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.pub .d-vid__meta {
+    margin: 0; display: flex; flex-wrap: wrap; gap: 0 6px; font-size: 13px; line-height: 1.5; color: var(--text-2);
+}
+
+@media (min-width: 768px) {
+    .pub .d-hello h1 { font-size: 32px; }
+    .pub .d-hello p { font-size: 16px; }
+    .pub .d-grid { gap: 24px; }
+    .pub .d-card { margin: 0; border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
+    .pub .d-card__head { padding: 4px 24px; }
+    .pub .d-empty { padding: 24px; }
+    .pub .d-story { padding: 18px 24px; }
+    .pub .d-game { padding: 16px 24px; }
+    .pub .d-vid { padding: 14px 24px; }
+}
+
+@media (min-width: 1024px) {
+    .pub .d-grid {
+        display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+        grid-template-rows: auto 1fr; grid-template-areas: "news today" "news vids"; align-items: start;
+    }
+    .pub .d-news { grid-area: news; }
+    .pub .d-today { grid-area: today; }
+    .pub .d-vids { grid-area: vids; }
+    .pub .d-story__title { font-size: 18px; }
+}

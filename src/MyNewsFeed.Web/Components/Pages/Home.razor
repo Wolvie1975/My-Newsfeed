@@ -1,129 +1,207 @@
 @page "/"
 @layout PublicLayout
-@using MyNewsFeed.Web.Components.Feed
 @inject IDbContextFactory<WebScraperContext> Factory
 @inject FeedDates Dates
+@inject NavigationManager Nav
 
-<PageTitle>MyNewsFeed</PageTitle>
+<PageTitle>Home · MyNewsFeed</PageTitle>
 
-@* Static (non-interactive) page. Filters are plain links and a GET form, so every view has a shareable URL and works
-   without JavaScript; public.js only upgrades "Load more" to append in place. *@
+@* Static (non-interactive) page: a small slice of News, Sports Events and Videos, each with a "View all" link.
+   Today, the greeting and the date are all decided on the server in the display zone (Central), so every visitor sees
+   the same day and nothing here needs JavaScript. *@
 
-<h1 class="sr-only">Latest articles</h1>
-
-<form class="search" role="search" method="get" action="">
-    @if (Category is int selected)
-    {
-        <input type="hidden" name="category" value="@selected" />
-    }
-    <div class="search__field">
-        <label class="sr-only" for="q">Search articles</label>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
-        <input id="q" name="q" type="search" placeholder="Search articles" value="@Q" />
-    </div>
-    <button class="nf-btn nf-btn--primary" type="submit">Search</button>
-</form>
-
-<div class="filters">
-    @if (categories.Count > 0)
-    {
-        @* Phones: a dropdown replaces the chips. Picking a category submits the form (keeping the search text);
-           the Apply button, shown only when JavaScript is off, covers that case. Tablet and desktop use the chips. *@
-        <form class="catselect" method="get" action="">
-            @if (!string.IsNullOrWhiteSpace(Q))
-            {
-                <input type="hidden" name="q" value="@Q" />
-            }
-            <label class="sr-only" for="category">Category</label>
-            <select id="category" name="category" onchange="this.form.requestSubmit()">
-                <option value="">All categories</option>
-                @foreach (var category in categories)
-                {
-                    <option value="@category.Id" selected="@(Category == category.Id)">@category.Name</option>
-                }
-            </select>
-            <noscript><button class="nf-btn nf-btn--secondary" type="submit">Apply</button></noscript>
-        </form>
-    }
-    <nav class="chips" aria-label="Categories">
-        <a class="chip" href="@Href(null, null)" aria-current="@(Category is null ? "true" : null)">All</a>
-        @foreach (var category in categories)
-        {
-            <a class="chip" href="@Href(category.Id, null)" aria-current="@(Category == category.Id ? "true" : null)">@category.Name</a>
-        }
-    </nav>
-    @if (feed is not null)
-    {
-        <span class="count count--toolbar">@feed.Total @(feed.Total == 1 ? "article" : "articles")</span>
-    }
+<div class="d-hello">
+    <h1>@Dates.Greeting(nowUtc)</h1>
+    <p>@Dates.TodayLabel(nowUtc)</p>
 </div>
 
-@if (lastUpdated is { } updated)
-{
-    <p class="updated">
-        Feed last updated
-        <time datetime="@updated.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'")">@Dates.PublishedFull(updated)</time>
-    </p>
-}
+<div class="d-grid">
 
-@if (feed is null || feed.Items.Count == 0)
-{
-    <p class="empty">
-        @if (!string.IsNullOrWhiteSpace(Q) || Category is not null || After is not null)
+    <section class="d-card d-today" aria-labelledby="h-today">
+        <div class="d-card__head">
+            <h2 class="d-card__title" id="h-today">
+                Today’s events
+                @if (todays.Count > 0)
+                {
+                    <span class="d-card__count">@todays.Count @(todays.Count == 1 ? "event" : "events")</span>
+                }
+            </h2>
+            <a class="d-more" href="events">View all <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="m13 6 6 6-6 6"></path></svg></a>
+        </div>
+        @if (todays.Count == 0)
         {
-            <span>No articles match. <a href="">Clear filters</a></span>
+            <p class="d-empty">No events today.</p>
         }
         else
         {
-            <span>No articles yet. Check back soon.</span>
+            <ul class="d-list">
+                @foreach (var game in todays)
+                {
+                    var time = game.TimeTbd || game.StartsAtUtc is null ? "Time TBD" : Dates.EventTime(game.StartsAtUtc.Value);
+                    var (city, _) = EventsText.SplitLocation(game.Location);
+                    var details = FeedQuery.SafeHref(game.Url);
+                    var match = EventsText.Matchup(game.SchoolName, game.Opponent, game.IsAway);
+                    <li class="d-game">
+                        <div class="d-game__time @(time == "Time TBD" ? "is-tbd" : "")">@time</div>
+                        <div class="d-game__body">
+                            <h3 class="d-game__match">
+                                @if (details is not null)
+                                {
+                                    <a href="@details" target="_blank" rel="noopener noreferrer">@match</a>
+                                }
+                                else
+                                {
+                                    @match
+                                }
+                            </h3>
+                            <p class="d-game__meta">
+                                @if (!string.IsNullOrWhiteSpace(game.Sport))
+                                {
+                                    <span class="d-tag">@game.Sport</span>
+                                }
+                                @if (city is not null)
+                                {
+                                    <span>@city</span>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(game.Tv))
+                                {
+                                    <span class="d-tv">@game.Tv.Trim()</span>
+                                }
+                            </p>
+                        </div>
+                    </li>
+                }
+            </ul>
         }
-    </p>
-}
-else
-{
-    @if (After is not null)
-    {
-        <p><a href="@Href(Category, null)">← Back to the newest articles</a></p>
-    }
-
-    <section class="feed" aria-label="Articles" data-last-day="@lastDay">
-        <FeedArticles Items="feed.Items" LeadFirst="@(After is null)" Total="@(After is null ? feed.Total : null)" />
     </section>
 
-    <div class="loadmore">
-        @if (feed.Next is { } next)
+    <section class="d-card d-news" aria-labelledby="h-news">
+        <div class="d-card__head">
+            <h2 class="d-card__title" id="h-news">Latest news <span class="d-card__count">@news.Count most recent</span></h2>
+            <a class="d-more" href="news">View all <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="m13 6 6 6-6 6"></path></svg></a>
+        </div>
+        @if (news.Count == 0)
         {
-            <a class="nf-btn nf-btn--secondary" data-load-more data-enhance-nav="false" href="@Href(Category, next.ToToken())">Load more articles</a>
+            <p class="d-empty">No articles yet. Check back soon.</p>
         }
-        <span class="count" data-shown-total>Showing @feed.Shown of @feed.Total</span>
-        <span class="sr-only" role="status" data-load-status></span>
-    </div>
-}
+        else
+        {
+            <ul class="d-list">
+                @foreach (var item in news)
+                {
+                    var href = FeedQuery.SafeHref(item.Url);
+                    var title = FeedText.StripEmoji(item.Title);
+                    var summary = FeedText.StripEmoji(FeedQuery.Excerpt(item.Description));
+                    <li class="d-story">
+                        <div class="d-story__top">
+                            <span class="d-src">@FeedText.SourceName(item.SourceLabel, item.SourceUrl)</span>
+                            @if (item.CategoryName is not null)
+                            {
+                                <a class="d-cat" href="news?category=@item.CategoryId">@item.CategoryName</a>
+                            }
+                        </div>
+                        <h3 class="d-story__title">
+                            @if (href is not null)
+                            {
+                                <a href="@href" target="_blank" rel="noopener noreferrer">@(title.Length > 0 ? title : item.Title)</a>
+                            }
+                            else
+                            {
+                                @(title.Length > 0 ? title : item.Title)
+                            }
+                        </h3>
+                        @if (!string.IsNullOrEmpty(summary))
+                        {
+                            <p class="d-story__sum">@summary</p>
+                        }
+                    </li>
+                }
+            </ul>
+        }
+    </section>
+
+    <section class="d-card d-vids" aria-labelledby="h-vids">
+        <div class="d-card__head">
+            <h2 class="d-card__title" id="h-vids">Latest videos <span class="d-card__count">1 per channel</span></h2>
+            <a class="d-more" href="videos">View all <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="m13 6 6 6-6 6"></path></svg></a>
+        </div>
+        @if (videos.Count == 0)
+        {
+            <p class="d-empty">No videos yet. Check back soon.</p>
+        }
+        else
+        {
+            <ul class="d-list">
+                @foreach (var video in videos)
+                {
+                    var href = FeedQuery.SafeHref(video.Url);
+                    var picture = VideosText.Thumbnail(video.ThumbnailUrl, video.VideoId);
+                    var views = VideosText.Views(video.ViewCount);
+                    <li class="d-vid">
+                        <a class="d-thumb" href="@href" target="_blank" rel="noopener noreferrer" tabindex="-1" aria-hidden="true">
+                            <span class="d-thumb__ph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"></rect><circle cx="9" cy="10" r="1.6"></circle><path d="m21 16-5-5-8 9"></path></svg></span>
+                            @if (picture is not null)
+                            {
+                                <img src="@picture" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()" />
+                            }
+                            <span class="play"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15a1 1 0 0 0 1.5.86l12-7.5a1 1 0 0 0 0-1.72l-12-7.5A1 1 0 0 0 7 4.5z"></path></svg></span>
+                        </a>
+                        <div class="d-vid__body">
+                            <p class="d-vid__chan"><span class="d-mark" aria-hidden="true">@VideosText.Initial(video.ChannelName)</span><span class="d-vid__name">@video.ChannelName</span></p>
+                            <h3 class="d-vid__title">
+                                @if (href is not null)
+                                {
+                                    <a href="@href" target="_blank" rel="noopener noreferrer">@video.Title</a>
+                                }
+                                else
+                                {
+                                    @video.Title
+                                }
+                            </h3>
+                            <p class="d-vid__meta">
+                                <time datetime="@video.PublishedAt.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'")" title="@Dates.PublishedFull(video.PublishedAt)">@Dates.Published(video.PublishedAt)</time>
+                                @if (views is not null)
+                                {
+                                    <span aria-hidden="true">·</span>
+                                    <span>@views</span>
+                                }
+                            </p>
+                        </div>
+                    </li>
+                }
+            </ul>
+        }
+    </section>
+
+</div>
 
 @code {
-    // Query values arrive as text and are parsed leniently: a hand-edited "?category=abc" must not throw.
-    [SupplyParameterFromQuery(Name = "category")] private string? CategoryQuery { get; set; }
+    // News used to live at "/", so an old bookmark like "/?category=3" is sent on to "/news" with its query intact.
+    [SupplyParameterFromQuery(Name = "category")] private string? Category { get; set; }
     [SupplyParameterFromQuery(Name = "q")] private string? Q { get; set; }
-    [SupplyParameterFromQuery(Name = "after")] private string? AfterQuery { get; set; }
+    [SupplyParameterFromQuery(Name = "after")] private string? After { get; set; }
 
-    private int? Category => int.TryParse(CategoryQuery, out var id) ? id : null;
-    private FeedCursor? After => FeedCursor.Parse(AfterQuery);
-
-    private IReadOnlyList<FeedCategory> categories = [];
-    private FeedPage? feed;
-    private string? lastDay;
-    private DateTime? lastUpdated;
+    private DateTime nowUtc;
+    private IReadOnlyList<EventItem> todays = [];
+    private IReadOnlyList<FeedItem> news = [];
+    private IReadOnlyList<VideoItem> videos = [];
 
     protected override async Task OnParametersSetAsync()
     {
+        if (Category is not null || Q is not null || After is not null)
+        {
+            Nav.NavigateTo("news" + new Uri(Nav.Uri).Query, replace: true);
+            return;
+        }
+
+        nowUtc = DateTime.UtcNow;
         await using var db = await Factory.CreateDbContextAsync();
-        categories = await FeedQuery.GetCategoriesAsync(db);
-        feed = await FeedQuery.GetFeedAsync(
-            db, Category, Q, After, After is null ? FeedQuery.FirstBatch : FeedQuery.MoreBatch);
-        lastDay = feed.Items.Count > 0 ? Dates.DayKey(feed.Items[^1]) : null;
-        lastUpdated = await FeedQuery.GetLastUpdatedAsync(db);
+
+        // The queries run one after another: one DbContext cannot run two at once.
+        todays = await EventsQuery.GetOnDateAsync(db, Dates.TodayAt(nowUtc));
+        news = (await FeedQuery.GetFeedAsync(db, null, null, null, HomeNewsCount)).Items;
+        videos = await VideosQuery.GetLatestPerChannelAsync(db);
     }
 
-    /// <summary>A link that keeps the current search and switches category and position.</summary>
-    private string Href(int? category, string? after) => FeedQuery.QueryString(category, Q, after);
+    private const int HomeNewsCount = 5;
 }

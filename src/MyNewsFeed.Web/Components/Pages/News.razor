@@ -1,0 +1,129 @@
+@page "/news"
+@layout PublicLayout
+@using MyNewsFeed.Web.Components.Feed
+@inject IDbContextFactory<WebScraperContext> Factory
+@inject FeedDates Dates
+
+<PageTitle>News · MyNewsFeed</PageTitle>
+
+@* Static (non-interactive) page. Filters are plain links and a GET form, so every view has a shareable URL and works
+   without JavaScript; public.js only upgrades "Load more" to append in place. *@
+
+<h1 class="sr-only">Latest articles</h1>
+
+<form class="search" role="search" method="get" action="news">
+    @if (Category is int selected)
+    {
+        <input type="hidden" name="category" value="@selected" />
+    }
+    <div class="search__field">
+        <label class="sr-only" for="q">Search articles</label>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+        <input id="q" name="q" type="search" placeholder="Search articles" value="@Q" />
+    </div>
+    <button class="nf-btn nf-btn--primary" type="submit">Search</button>
+</form>
+
+<div class="filters">
+    @if (categories.Count > 0)
+    {
+        @* Phones: a dropdown replaces the chips. Picking a category submits the form (keeping the search text);
+           the Apply button, shown only when JavaScript is off, covers that case. Tablet and desktop use the chips. *@
+        <form class="catselect" method="get" action="news">
+            @if (!string.IsNullOrWhiteSpace(Q))
+            {
+                <input type="hidden" name="q" value="@Q" />
+            }
+            <label class="sr-only" for="category">Category</label>
+            <select id="category" name="category" onchange="this.form.requestSubmit()">
+                <option value="">All categories</option>
+                @foreach (var category in categories)
+                {
+                    <option value="@category.Id" selected="@(Category == category.Id)">@category.Name</option>
+                }
+            </select>
+            <noscript><button class="nf-btn nf-btn--secondary" type="submit">Apply</button></noscript>
+        </form>
+    }
+    <nav class="chips" aria-label="Categories">
+        <a class="chip" href="@Href(null, null)" aria-current="@(Category is null ? "true" : null)">All</a>
+        @foreach (var category in categories)
+        {
+            <a class="chip" href="@Href(category.Id, null)" aria-current="@(Category == category.Id ? "true" : null)">@category.Name</a>
+        }
+    </nav>
+    @if (feed is not null)
+    {
+        <span class="count count--toolbar">@feed.Total @(feed.Total == 1 ? "article" : "articles")</span>
+    }
+</div>
+
+@if (lastUpdated is { } updated)
+{
+    <p class="updated">
+        Feed last updated
+        <time datetime="@updated.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'")">@Dates.PublishedFull(updated)</time>
+    </p>
+}
+
+@if (feed is null || feed.Items.Count == 0)
+{
+    <p class="empty">
+        @if (!string.IsNullOrWhiteSpace(Q) || Category is not null || After is not null)
+        {
+            <span>No articles match. <a href="news">Clear filters</a></span>
+        }
+        else
+        {
+            <span>No articles yet. Check back soon.</span>
+        }
+    </p>
+}
+else
+{
+    @if (After is not null)
+    {
+        <p><a href="@Href(Category, null)">← Back to the newest articles</a></p>
+    }
+
+    <section class="feed" aria-label="Articles" data-last-day="@lastDay">
+        <FeedArticles Items="feed.Items" LeadFirst="@(After is null)" Total="@(After is null ? feed.Total : null)" />
+    </section>
+
+    <div class="loadmore">
+        @if (feed.Next is { } next)
+        {
+            <a class="nf-btn nf-btn--secondary" data-load-more data-enhance-nav="false" href="@Href(Category, next.ToToken())">Load more articles</a>
+        }
+        <span class="count" data-shown-total>Showing @feed.Shown of @feed.Total</span>
+        <span class="sr-only" role="status" data-load-status></span>
+    </div>
+}
+
+@code {
+    // Query values arrive as text and are parsed leniently: a hand-edited "?category=abc" must not throw.
+    [SupplyParameterFromQuery(Name = "category")] private string? CategoryQuery { get; set; }
+    [SupplyParameterFromQuery(Name = "q")] private string? Q { get; set; }
+    [SupplyParameterFromQuery(Name = "after")] private string? AfterQuery { get; set; }
+
+    private int? Category => int.TryParse(CategoryQuery, out var id) ? id : null;
+    private FeedCursor? After => FeedCursor.Parse(AfterQuery);
+
+    private IReadOnlyList<FeedCategory> categories = [];
+    private FeedPage? feed;
+    private string? lastDay;
+    private DateTime? lastUpdated;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await using var db = await Factory.CreateDbContextAsync();
+        categories = await FeedQuery.GetCategoriesAsync(db);
+        feed = await FeedQuery.GetFeedAsync(
+            db, Category, Q, After, After is null ? FeedQuery.FirstBatch : FeedQuery.MoreBatch);
+        lastDay = feed.Items.Count > 0 ? Dates.DayKey(feed.Items[^1]) : null;
+        lastUpdated = await FeedQuery.GetLastUpdatedAsync(db);
+    }
+
+    /// <summary>A link that keeps the current search and switches category and position.</summary>
+    private string Href(int? category, string? after) => "news" + FeedQuery.QueryString(category, Q, after);
+}
