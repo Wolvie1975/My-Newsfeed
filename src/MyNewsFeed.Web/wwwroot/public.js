@@ -18,13 +18,26 @@
         });
     }
 
+    // The theme in force. Blazor's in-page navigation (News <-> Sports Events) copies the new page's <html> attributes
+    // over the old ones, which has no data-theme, so the attribute is restored below whenever it is changed behind
+    // our back. Without this, switching pages would fall back to the operating system's theme.
+    var applied = currentTheme();
+
     function setTheme(theme, persist) {
+        applied = theme;
         root.setAttribute('data-theme', theme);
         if (persist) {
             try { localStorage.setItem('theme', theme); } catch (e) { }
         }
         syncToggles();
     }
+
+    new MutationObserver(function () {
+        if (root.getAttribute('data-theme') !== applied) {
+            root.setAttribute('data-theme', applied);
+            syncToggles();
+        }
+    }).observe(root, { attributes: true, attributeFilter: ['data-theme'] });
 
     // Follow the operating system until the visitor makes their own choice.
     if (window.matchMedia) {
@@ -102,6 +115,19 @@
 
     // Capture phase, so this runs before Blazor's own link handling: it must not also navigate to the
     // fallback URL when "Load more" is clicked.
+    // Search and category forms are plain GET forms. Leave out empty fields so "All categories" and an empty search
+    // give a clean URL ("/") instead of "/?category=&q=". Capture phase: runs before the form is serialised.
+    document.addEventListener('submit', function (e) {
+        var form = e.target;
+        if (!form.closest || !form.closest('.pub') || (form.method || '').toLowerCase() !== 'get') return;
+        var blanks = [];
+        form.querySelectorAll('select[name], input[name]').forEach(function (el) {
+            if (el.value === '' && !el.disabled) { el.disabled = true; blanks.push(el); }
+        });
+        // The browser (or Blazor) reads the form during this same event, so re-enabling afterwards is safe.
+        setTimeout(function () { blanks.forEach(function (el) { el.disabled = false; }); }, 0);
+    }, true);
+
     document.addEventListener('click', function (e) {
         if (!e.target.closest) return;
 

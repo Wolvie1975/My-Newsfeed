@@ -1,0 +1,169 @@
+@page "/videos"
+@layout PublicLayout
+@inject IDbContextFactory<WebScraperContext> Factory
+@inject FeedDates Dates
+
+<PageTitle>Videos · MyNewsFeed</PageTitle>
+
+@* Static (non-interactive) page. Filters are plain links and a GET form, so every view has a shareable URL and works
+   without JavaScript. One section per channel, newest video first. *@
+
+<h1 class="sr-only">Videos</h1>
+
+<form class="search" role="search" method="get" action="videos">
+    @if (!string.IsNullOrWhiteSpace(Channel))
+    {
+        <input type="hidden" name="channel" value="@Channel" />
+    }
+    <div class="search__field">
+        <label class="sr-only" for="q">Search videos</label>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+        <input id="q" name="q" type="search" placeholder="Search videos" value="@Q" />
+    </div>
+    <button class="nf-btn nf-btn--primary" type="submit">Search</button>
+</form>
+
+<div class="filters">
+    @if (channels.Count > 1)
+    {
+        <form class="catselect" method="get" action="videos">
+            @if (!string.IsNullOrWhiteSpace(Q))
+            {
+                <input type="hidden" name="q" value="@Q" />
+            }
+            <label class="sr-only" for="channel">Channel</label>
+            <select id="channel" name="channel" onchange="this.form.requestSubmit()">
+                <option value="">All channels</option>
+                @foreach (var c in channels)
+                {
+                    <option value="@c.ChannelId" selected="@IsSelected(c)">@c.Name</option>
+                }
+            </select>
+            <noscript><button class="nf-btn nf-btn--secondary" type="submit">Apply</button></noscript>
+        </form>
+        <nav class="chips" aria-label="Channels">
+            <a class="chip" href="@Href(null)" aria-current="@(string.IsNullOrWhiteSpace(Channel) ? "true" : null)">All</a>
+            @foreach (var c in channels)
+            {
+                <a class="chip" href="@Href(c.ChannelId)" aria-current="@(IsSelected(c) ? "true" : null)">@c.Name</a>
+            }
+        </nav>
+    }
+    @if (listing is not null)
+    {
+        <p class="count count--toolbar" aria-live="polite">@listing.Total @(listing.Total == 1 ? "video" : "videos")</p>
+    }
+</div>
+
+@if (listing is not null)
+{
+    <p class="count count--inline">@listing.Total @(listing.Total == 1 ? "video" : "videos")</p>
+}
+
+@if (lastUpdated is { } updated)
+{
+    <p class="updated">
+        Videos last updated
+        <time datetime="@updated.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'")">@Dates.PublishedFull(updated)</time>
+    </p>
+}
+
+@if (listing is null || listing.Items.Count == 0)
+{
+    <p class="empty">
+        @if (!string.IsNullOrWhiteSpace(Channel) || !string.IsNullOrWhiteSpace(Q))
+        {
+            <span>No videos match. <a href="videos">Clear filters</a></span>
+        }
+        else
+        {
+            <span>No videos yet. Check back soon.</span>
+        }
+    </p>
+}
+else
+{
+    <div class="vfeed">
+        @foreach (var group in listing.Items.GroupBy(v => v.ChannelId))
+        {
+            var first = group.First();
+            var link = VideosText.ChannelUrl(group.Key);
+            <section class="channel" aria-labelledby="ch-@group.Key">
+                <header class="channel__head">
+                    <span class="mark" aria-hidden="true">@VideosText.Initial(first.ChannelName)</span>
+                    <h2 class="channel__name" id="ch-@group.Key">@first.ChannelName</h2>
+                    <span class="channel__count">@group.Count() @(group.Count() == 1 ? "video" : "videos")</span>
+                    @if (link is not null)
+                    {
+                        <a class="channel__link" href="@link" target="_blank" rel="noopener noreferrer">View channel <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="m13 6 6 6-6 6"></path></svg></a>
+                    }
+                </header>
+                <ul class="videos">
+                    @foreach (var video in group)
+                    {
+                        var href = FeedQuery.SafeHref(video.Url);
+                        var picture = VideosText.Thumbnail(video.ThumbnailUrl, video.VideoId);
+                        var views = VideosText.Views(video.ViewCount);
+                        <li class="video">
+                            <a class="vthumb" href="@href" target="_blank" rel="noopener noreferrer" tabindex="-1" aria-hidden="true">
+                                <span class="vthumb__ph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"></rect><circle cx="9" cy="10" r="1.6"></circle><path d="m21 16-5-5-8 9"></path></svg></span>
+                                @if (picture is not null)
+                                {
+                                    <img src="@picture" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer"
+                                         onerror="this.remove()" />
+                                }
+                                <span class="play"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15a1 1 0 0 0 1.5.86l12-7.5a1 1 0 0 0 0-1.72l-12-7.5A1 1 0 0 0 7 4.5z"></path></svg></span>
+                            </a>
+                            <div class="vbody">
+                                <h3 class="vtitle">
+                                    @if (href is not null)
+                                    {
+                                        <a href="@href" target="_blank" rel="noopener noreferrer">@video.Title</a>
+                                    }
+                                    else
+                                    {
+                                        @video.Title
+                                    }
+                                </h3>
+                                <p class="vmeta">
+                                    <time datetime="@video.PublishedAt.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'")" title="@Dates.PublishedFull(video.PublishedAt)">@Dates.Published(video.PublishedAt)</time>
+                                    @if (views is not null)
+                                    {
+                                        <span aria-hidden="true">·</span>
+                                        <span>@views</span>
+                                    }
+                                </p>
+                            </div>
+                        </li>
+                    }
+                </ul>
+            </section>
+        }
+    </div>
+
+    @if (listing.Total > listing.Items.Count)
+    {
+        <p class="count">Showing the newest @listing.Items.Count of @listing.Total videos.</p>
+    }
+}
+
+@code {
+    [SupplyParameterFromQuery(Name = "channel")] private string? Channel { get; set; }
+    [SupplyParameterFromQuery(Name = "q")] private string? Q { get; set; }
+
+    private IReadOnlyList<VideoChannel> channels = [];
+    private VideosPage? listing;
+    private DateTime? lastUpdated;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await using var db = await Factory.CreateDbContextAsync();
+        channels = await VideosQuery.GetChannelsAsync(db);
+        listing = await VideosQuery.GetVideosAsync(db, Channel, Q);
+        lastUpdated = await VideosQuery.GetLastUpdatedAsync(db);
+    }
+
+    private bool IsSelected(VideoChannel c) => string.Equals(Channel?.Trim(), c.ChannelId, StringComparison.Ordinal);
+
+    private string Href(string? channel) => "videos" + VideosQuery.QueryString(channel, Q);
+}

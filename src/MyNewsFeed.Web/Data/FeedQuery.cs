@@ -12,7 +12,8 @@ public sealed record FeedItem(
     string SourceUrl,
     int? CategoryId,
     string? CategoryName,
-    DateTime Date);
+    DateTime Date,
+    bool Undated = false);   // Date is the sort date (the publish date, or the scrape date when there is none)
 
 public sealed record FeedCategory(int Id, string Name, int Count);
 
@@ -20,18 +21,25 @@ public sealed record FeedCategory(int Id, string Name, int Count);
 /// A position in the feed: the sort date and id of the last article already shown. Paging by position (not by page
 /// number) means articles the scraper adds while someone is scrolling cannot cause duplicates or skips.
 /// </summary>
-public sealed record FeedCursor(DateTime Date, int Id)
+public sealed record FeedCursor(DateTime Date, int Id, bool Undated = false)
 {
-    public string ToToken() => $"{Date.Ticks}.{Id}";
+    public string ToToken() => $"{(Undated ? 1 : 0)}.{Date.Ticks}.{Id}";
 
     public static FeedCursor? Parse(string? token)
     {
         var parts = token?.Split('.');
-        if (parts is { Length: 2 }
-            && long.TryParse(parts[0], out var ticks) && ticks is >= 0 and <= 3155378975999999999
-            && int.TryParse(parts[1], out var id))
+
+        // "flag.ticks.id"; the older "ticks.id" form (no flag) means a dated article.
+        if (parts is { Length: 2 or 3 })
         {
-            return new FeedCursor(new DateTime(ticks), id);
+            var offset = parts.Length - 2;
+            var flag = offset == 1 ? parts[0] : "0";
+            if ((flag is "0" or "1")
+                && long.TryParse(parts[offset], out var ticks) && ticks is >= 0 and <= 3155378975999999999
+                && int.TryParse(parts[offset + 1], out var id))
+            {
+                return new FeedCursor(new DateTime(ticks), id, flag == "1");
+            }
         }
 
         return null;
@@ -87,7 +95,8 @@ public static class FeedQuery
             .MaxAsync(s => s.LastScrapedAt);
 
     /// <summary>
-    /// Newest first, by publish date when known and otherwise by when the page was scraped. Returns up to
+    /// Newest first by publish date. Articles with no publish date sort last, among themselves by scrape date (that is
+    /// only the tiebreak; no date is shown for them). Returns up to
     /// <paramref name="take"/> articles that come after <paramref name="after"/> (or from the start when it is null).
     /// </summary>
     public static async Task<FeedPage> GetFeedAsync(
@@ -113,15 +122,21 @@ public static class FeedQuery
         var olderCount = total;
         if (after is { } cursor)
         {
+            // Order is: dated articles newest first, then undated ones (newest scrape first). "After" means later in
+            // that order, so an undated article comes after every dated one.
+            var undated = cursor.Undated ? 1 : 0;
             var date = cursor.Date;
             var id = cursor.Id;
-            older = query.Where(p => (p.Published ?? p.ScrapedAt) < date
-                || ((p.Published ?? p.ScrapedAt) == date && p.Id < id));
+            older = query.Where(p => (p.Published == null ? 1 : 0) > undated
+                || ((p.Published == null ? 1 : 0) == undated
+                    && ((p.Published ?? p.ScrapedAt) < date
+                        || ((p.Published ?? p.ScrapedAt) == date && p.Id < id))));
             olderCount = await older.CountAsync();
         }
 
         var items = await older
-            .OrderByDescending(p => p.Published ?? p.ScrapedAt)
+            .OrderBy(p => p.Published == null ? 1 : 0)
+            .ThenByDescending(p => p.Published ?? p.ScrapedAt)
             .ThenByDescending(p => p.Id)
             .Take(take)
             .Select(p => new FeedItem(
@@ -136,11 +151,12 @@ public static class FeedQuery
                 p.Source.Url,
                 p.Source.SourceCategoryId,
                 p.Source.SourceCategory != null ? p.Source.SourceCategory.CategoryName : null,
-                p.Published ?? p.ScrapedAt))
+                p.Published ?? p.ScrapedAt,
+                p.Published == null))
             .ToListAsync();
 
         var remaining = olderCount - items.Count;
-        var next = remaining > 0 && items.Count > 0 ? new FeedCursor(items[^1].Date, items[^1].Id) : null;
+        var next = remaining > 0 && items.Count > 0 ? new FeedCursor(items[^1].Date, items[^1].Id, items[^1].Undated) : null;
         return new FeedPage(items, total, remaining, next);
     }
 

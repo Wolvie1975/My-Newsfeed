@@ -1,0 +1,70 @@
+@using MyNewsFeed.Web.Data
+@inject FeedDates Dates
+
+@* One game as a table row. On phones and tablets CSS lays the cells out as a stacked card; from 1180px it is a real
+   table row. Roles are explicit because the card layout changes the display values that carry table semantics. *@
+
+@{
+    var school = string.IsNullOrWhiteSpace(Item.SchoolName) ? "Our team" : Item.SchoolName.Trim();
+    var opponent = string.IsNullOrWhiteSpace(Item.Opponent) ? "Opponent to be announced" : Item.Opponent.Trim();
+
+    // The calendar is the school's own: IsAway = 1 puts the school in the Away column, 0 in the Home column. A null
+    // (unknown) puts the school in the Home column and shows no Away/Home labels rather than guessing.
+    var known = Item.IsAway is not null;
+    var schoolAway = Item.IsAway == true;
+    var (awayName, awayLogo) = schoolAway ? (school, Item.TeamLogoUrl) : (opponent, Item.OpponentLogoUrl);
+    var (homeName, homeLogo) = schoolAway ? (opponent, Item.OpponentLogoUrl) : (school, Item.TeamLogoUrl);
+
+    var time = Item.TimeTbd || Item.StartsAtUtc is null ? "Time TBD" : Dates.EventTime(Item.StartsAtUtc.Value);
+    var (city, venue) = EventsText.SplitLocation(Item.Location);
+    var stats = FeedQuery.SafeHref(Item.LiveStatsUrl);
+    var video = FeedQuery.SafeHref(Item.StreamUrl);
+    var details = FeedQuery.SafeHref(Item.Url);
+    var hasLinks = !string.IsNullOrWhiteSpace(Item.Tv) || stats is not null || video is not null || details is not null;
+}
+
+<tr class="game" role="row">
+    <td class="td-sport @(string.IsNullOrWhiteSpace(Item.Sport) ? "td-sport--none" : "")" role="cell">@Item.Sport</td>
+    <td class="td-away" role="cell"><TeamCell Name="@awayName" LogoUrl="@awayLogo" Label="@(known ? "Away" : null)" /></td>
+    <td class="td-home" role="cell"><TeamCell Name="@homeName" LogoUrl="@homeLogo" Label="@(known ? "Home" : null)" /></td>
+    <td class="td-time @(time == "Time TBD" ? "is-tbd" : "")" role="cell">@time</td>
+    <td class="td-loc" role="cell">
+        @if (city is not null)
+        {
+            <div class="loc">
+                <span>@city</span>
+                @if (venue is not null)
+                {
+                    <span class="loc__venue">@venue</span>
+                }
+            </div>
+        }
+    </td>
+    <td class="td-links @(hasLinks ? "" : "td-links--none")" role="cell">
+        @if (hasLinks)
+        {
+            <div class="links">
+                @if (!string.IsNullOrWhiteSpace(Item.Tv))
+                {
+                    <span class="tv">TV <span class="tv__net">@Item.Tv.Trim()</span></span>
+                }
+                @if (stats is not null)
+                {
+                    <a href="@stats" target="_blank" rel="noopener noreferrer">Stats</a>
+                }
+                @if (video is not null)
+                {
+                    <a href="@video" target="_blank" rel="noopener noreferrer">Video</a>
+                }
+                @if (details is not null)
+                {
+                    <a href="@details" target="_blank" rel="noopener noreferrer">Details</a>
+                }
+            </div>
+        }
+    </td>
+</tr>
+
+@code {
+    [Parameter, EditorRequired] public EventItem Item { get; set; } = default!;
+}

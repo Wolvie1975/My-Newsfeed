@@ -1,0 +1,191 @@
+@page "/admin/sports-event-types"
+@rendermode InteractiveServer
+@inject IDbContextFactory<WebScraperContext> Factory
+
+<PageTitle>Sports event types</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="mb-0">Sports event types</h1>
+    <a class="btn btn-primary" href="admin/sports-event-types/new">Add type</a>
+</div>
+
+<p class="text-muted">
+    Each type is one events calendar feed the scraper reads. A feed can cover several sports, so a type
+    identifies where events came from; the sport itself is on each event.
+</p>
+
+@if (message is not null)
+{
+    <div class="alert alert-@messageKind" role="alert">@message</div>
+}
+
+@if (unlinkedEvents > 0)
+{
+    <div class="alert alert-info" role="status">
+        <p class="mb-2">
+            @unlinkedEvents @(unlinkedEvents == 1 ? "event is" : "events are") not linked to a type.
+            @if (linkableEvents > 0)
+            {
+                <span>@linkableEvents can be linked automatically, because exactly one type's feed is on the same website.</span>
+            }
+            else
+            {
+                <span>None can be linked automatically. <a href="admin/sports-events?typeId=none">Open them</a> to choose a type by hand.</span>
+            }
+            The scraper adds events without a type, so this catches up.
+        </p>
+        @if (linkableEvents > 0)
+        {
+            <button class="btn btn-info btn-sm" disabled="@linking" @onclick="LinkAsync">Link events by website</button>
+        }
+    </div>
+}
+
+@if (pendingDelete is { } target)
+{
+    <div class="alert alert-warning" role="alert">
+        @if (target.EventCount == 0)
+        {
+            <p class="mb-2">Delete the type <strong>@target.EventsTypeName</strong>? This cannot be undone.</p>
+            <button class="btn btn-danger btn-sm me-2" @onclick="() => ConfirmDeleteAsync(false)">Delete type</button>
+        }
+        else
+        {
+            <p class="mb-2">
+                <strong>@target.EventsTypeName</strong> has @target.EventCount @(target.EventCount == 1 ? "event" : "events").
+                Deleting the type also permanently deletes them.
+            </p>
+            <button class="btn btn-danger btn-sm me-2" @onclick="() => ConfirmDeleteAsync(true)">
+                Delete type and @target.EventCount @(target.EventCount == 1 ? "event" : "events")
+            </button>
+        }
+        <button class="btn btn-secondary btn-sm" @onclick="() => pendingDelete = null">Cancel</button>
+    </div>
+}
+
+@if (rows is null)
+{
+    <p><em>Loading…</em></p>
+}
+else if (rows.Count == 0)
+{
+    <p>No event types yet. <a href="admin/sports-event-types/new">Add the first one.</a></p>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-sm align-middle">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>School</th>
+                    <th>Feed address</th>
+                    <th>Events</th>
+                    <th>Added</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in rows)
+                {
+                    <tr>
+                        <td class="fw-semibold">@row.EventsTypeName</td>
+                        <td>@(row.SchoolName ?? "—")</td>
+                        <td>
+                            @if (FeedQuery.SafeHref(row.RssUrl) is { } href)
+                            {
+                                <a href="@href" target="_blank" rel="noopener noreferrer" class="small text-break">@row.RssUrl</a>
+                            }
+                            else
+                            {
+                                <span class="small text-break">@row.RssUrl</span>
+                            }
+                        </td>
+                        <td><a href="admin/sports-events?typeId=@row.Id">@row.EventCount</a></td>
+                        <td class="text-nowrap">@Dates.Stamp(row.DateAdded)</td>
+                        <td class="text-nowrap text-end">
+                            <a class="btn btn-outline-primary btn-sm" href="admin/sports-event-types/@row.Id/edit">Edit</a>
+                            <button class="btn btn-outline-danger btn-sm" @onclick="() => StartDelete(row)">Delete</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    private sealed record TypeRow(int Id, string RssUrl, string EventsTypeName, string? SchoolName, DateTime DateAdded, int EventCount);
+
+    private List<TypeRow>? rows;
+    private TypeRow? pendingDelete;
+    private string? message;
+    private string messageKind = "success";
+    private int unlinkedEvents;
+    private int linkableEvents;
+    private bool linking;
+
+    protected override Task OnInitializedAsync() => LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        await using var db = await Factory.CreateDbContextAsync();
+        rows = await db.SportsEventsTypes
+            .AsNoTracking()
+            .OrderBy(t => t.EventsTypeName)
+            .Select(t => new TypeRow(t.Id, t.RssUrl, t.EventsTypeName, t.SchoolName, t.DateAdded, t.SportsEvents.Count))
+            .ToListAsync();
+
+        unlinkedEvents = await db.SportsEvents.CountAsync(e => e.SportsEventsTypeId == null);
+        linkableEvents = unlinkedEvents == 0 ? 0 : (await AdminData.PlanSportsEventLinksAsync(db)).Count;
+    }
+
+    private async Task LinkAsync()
+    {
+        linking = true;
+        try
+        {
+            await using var db = await Factory.CreateDbContextAsync();
+            var linked = await AdminData.LinkSportsEventsBySiteAsync(db);
+            messageKind = "success";
+            message = $"Linked {linked} {(linked == 1 ? "event" : "events")}.";
+        }
+        finally
+        {
+            linking = false;
+        }
+
+        await LoadAsync();
+    }
+
+    private void StartDelete(TypeRow row)
+    {
+        message = null;
+        pendingDelete = row;
+    }
+
+    private async Task ConfirmDeleteAsync(bool includeEvents)
+    {
+        if (pendingDelete is not { } target)
+        {
+            return;
+        }
+
+        try
+        {
+            await using var db = await Factory.CreateDbContextAsync();
+            var deleted = await AdminData.DeleteSportsEventsTypeAsync(db, target.Id, includeEvents);
+            messageKind = deleted ? "success" : "warning";
+            message = deleted ? $"Deleted {target.EventsTypeName}." : $"{target.EventsTypeName} was already deleted.";
+        }
+        catch (Exception ex) when (AdminData.IsForeignKeyViolation(ex))
+        {
+            // Events were linked to this type after the list loaded.
+            messageKind = "danger";
+            message = $"{target.EventsTypeName} gained events since this list loaded, so it was not deleted. Review it and try again.";
+        }
+
+        pendingDelete = null;
+        await LoadAsync();
+    }
+}

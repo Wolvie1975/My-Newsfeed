@@ -25,6 +25,26 @@
 </form>
 
 <div class="filters">
+    @if (categories.Count > 0)
+    {
+        @* Phones: a dropdown replaces the chips. Picking a category submits the form (keeping the search text);
+           the Apply button, shown only when JavaScript is off, covers that case. Tablet and desktop use the chips. *@
+        <form class="catselect" method="get" action="">
+            @if (!string.IsNullOrWhiteSpace(Q))
+            {
+                <input type="hidden" name="q" value="@Q" />
+            }
+            <label class="sr-only" for="category">Category</label>
+            <select id="category" name="category" onchange="this.form.requestSubmit()">
+                <option value="">All categories</option>
+                @foreach (var category in categories)
+                {
+                    <option value="@category.Id" selected="@(Category == category.Id)">@category.Name</option>
+                }
+            </select>
+            <noscript><button class="nf-btn nf-btn--secondary" type="submit">Apply</button></noscript>
+        </form>
+    }
     <nav class="chips" aria-label="Categories">
         <a class="chip" href="@Href(null, null)" aria-current="@(Category is null ? "true" : null)">All</a>
         @foreach (var category in categories)
@@ -100,7 +120,7 @@ else
         categories = await FeedQuery.GetCategoriesAsync(db);
         feed = await FeedQuery.GetFeedAsync(
             db, Category, Q, After, After is null ? FeedQuery.FirstBatch : FeedQuery.MoreBatch);
-        lastDay = feed.Items.Count > 0 ? Dates.DayKey(feed.Items[^1].Date) : null;
+        lastDay = feed.Items.Count > 0 ? Dates.DayKey(feed.Items[^1]) : null;
         lastUpdated = await FeedQuery.GetLastUpdatedAsync(db);
     }
 

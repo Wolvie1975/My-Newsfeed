@@ -1,0 +1,190 @@
+@page "/admin/youtube-feeds"
+@rendermode InteractiveServer
+@inject IDbContextFactory<WebScraperContext> Factory
+
+<PageTitle>YouTube feeds</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="mb-0">YouTube feeds</h1>
+    <a class="btn btn-primary" href="admin/youtube-feeds/new">Add feed</a>
+</div>
+
+@if (message is not null)
+{
+    <div class="alert alert-@messageKind" role="alert">@message</div>
+}
+
+@if (unlinkedVideos > 0 || channelsWithoutFeed > 0)
+{
+    <div class="alert alert-info" role="status">
+        <p class="mb-2">
+            @if (unlinkedVideos > 0)
+            {
+                <span>@unlinkedVideos @(unlinkedVideos == 1 ? "video is" : "videos are") not linked to a feed.</span>
+            }
+            @if (channelsWithoutFeed > 0)
+            {
+                <span>@channelsWithoutFeed @(channelsWithoutFeed == 1 ? "channel has" : "channels have") videos but no feed yet.</span>
+            }
+            The scraper adds videos without a feed link, so this catches up.
+        </p>
+        <button class="btn btn-info btn-sm" disabled="@syncing" @onclick="SyncAsync">Create missing feeds and link videos</button>
+    </div>
+}
+
+@if (pendingDelete is { } target)
+{
+    <div class="alert alert-warning" role="alert">
+        @if (target.VideoCount == 0)
+        {
+            <p class="mb-2">Delete the feed <strong>@target.Name</strong>? This cannot be undone.</p>
+            <button class="btn btn-danger btn-sm me-2" @onclick="() => ConfirmDeleteAsync(false)">Delete feed</button>
+        }
+        else
+        {
+            <p class="mb-2">
+                <strong>@target.Name</strong> has @target.VideoCount @(target.VideoCount == 1 ? "video" : "videos").
+                Deleting the feed also permanently deletes them.
+            </p>
+            <button class="btn btn-danger btn-sm me-2" @onclick="() => ConfirmDeleteAsync(true)">
+                Delete feed and @target.VideoCount @(target.VideoCount == 1 ? "video" : "videos")
+            </button>
+        }
+        <button class="btn btn-secondary btn-sm" @onclick="() => pendingDelete = null">Cancel</button>
+    </div>
+}
+
+@if (rows is null)
+{
+    <p><em>Loading…</em></p>
+}
+else if (rows.Count == 0)
+{
+    <p>No YouTube feeds yet. <a href="admin/youtube-feeds/new">Add the first one.</a></p>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-sm align-middle">
+            <thead>
+                <tr>
+                    <th>Channel</th>
+                    <th>Feed address</th>
+                    <th>Videos</th>
+                    <th>Added</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in rows)
+                {
+                    <tr>
+                        <td>
+                            <div class="fw-semibold">@row.Name</div>
+                            <div class="small text-muted text-break">@row.ChannelId</div>
+                        </td>
+                        <td>
+                            @if (FeedQuery.SafeHref(row.Url) is { } href)
+                            {
+                                <a href="@href" target="_blank" rel="noopener noreferrer" class="small text-break">@row.Url</a>
+                            }
+                            else
+                            {
+                                <span class="small text-break">@row.Url</span>
+                            }
+                        </td>
+                        <td><a href="admin/youtube-videos?feedId=@row.Id">@row.VideoCount</a></td>
+                        <td class="text-nowrap">@Dates.Stamp(row.DateAdded)</td>
+                        <td class="text-nowrap text-end">
+                            <a class="btn btn-outline-primary btn-sm" href="admin/youtube-feeds/@row.Id/edit">Edit</a>
+                            <button class="btn btn-outline-danger btn-sm" @onclick="() => StartDelete(row)">Delete</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    private sealed record FeedRow(int Id, string ChannelId, string? ChannelName, string Url, DateTime DateAdded, int VideoCount)
+    {
+        public string Name => string.IsNullOrWhiteSpace(ChannelName) ? ChannelId : ChannelName;
+    }
+
+    private List<FeedRow>? rows;
+    private FeedRow? pendingDelete;
+    private string? message;
+    private string messageKind = "success";
+    private int unlinkedVideos;
+    private int channelsWithoutFeed;
+    private bool syncing;
+
+    protected override Task OnInitializedAsync() => LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        await using var db = await Factory.CreateDbContextAsync();
+        rows = await db.YoutubeVideoFeeds
+            .AsNoTracking()
+            .OrderBy(f => f.ChannelName ?? f.ChannelId)
+            .Select(f => new FeedRow(f.Id, f.ChannelId, f.ChannelName, f.Url, f.DateAdded, f.YouTubeVideos.Count))
+            .ToListAsync();
+
+        unlinkedVideos = await db.YouTubeVideos.CountAsync(v => v.YoutubeVideoFeedId == null);
+        channelsWithoutFeed = await db.YouTubeVideos
+            .Where(v => !db.YoutubeVideoFeeds.Any(f => f.ChannelId == v.ChannelId))
+            .Select(v => v.ChannelId)
+            .Distinct()
+            .CountAsync();
+    }
+
+    private async Task SyncAsync()
+    {
+        syncing = true;
+        try
+        {
+            await using var db = await Factory.CreateDbContextAsync();
+            var result = await AdminData.SyncYoutubeFeedsAsync(db);
+            messageKind = "success";
+            message = $"Created {result.FeedsCreated} {(result.FeedsCreated == 1 ? "feed" : "feeds")} and linked {result.VideosLinked} {(result.VideosLinked == 1 ? "video" : "videos")}.";
+        }
+        finally
+        {
+            syncing = false;
+        }
+
+        await LoadAsync();
+    }
+
+    private void StartDelete(FeedRow row)
+    {
+        message = null;
+        pendingDelete = row;
+    }
+
+    private async Task ConfirmDeleteAsync(bool includeVideos)
+    {
+        if (pendingDelete is not { } target)
+        {
+            return;
+        }
+
+        try
+        {
+            await using var db = await Factory.CreateDbContextAsync();
+            var deleted = await AdminData.DeleteYoutubeFeedAsync(db, target.Id, includeVideos);
+            messageKind = deleted ? "success" : "warning";
+            message = deleted ? $"Deleted {target.Name}." : $"{target.Name} was already deleted.";
+        }
+        catch (Exception ex) when (AdminData.IsForeignKeyViolation(ex))
+        {
+            // Videos were linked to this feed after the list loaded.
+            messageKind = "danger";
+            message = $"{target.Name} gained videos since this list loaded, so it was not deleted. Review it and try again.";
+        }
+
+        pendingDelete = null;
+        await LoadAsync();
+    }
+}

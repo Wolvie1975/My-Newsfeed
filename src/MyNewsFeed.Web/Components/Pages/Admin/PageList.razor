@@ -58,11 +58,11 @@ else
         <table class="table table-sm align-middle">
             <thead>
                 <tr>
-                    <th><button class="btn btn-link p-0 fw-bold text-decoration-none" @onclick='() => SortByAsync("title")'>Title@SortMark("title")</button></th>
+                    <th><button class="btn btn-link p-0 fw-bold text-decoration-none" @onclick='() => SortByAsync("title")'>Title@(SortMark("title"))</button></th>
                     <th>Source</th>
                     <th>Source ID</th>
-                    <th class="text-nowrap"><button class="btn btn-link p-0 fw-bold text-decoration-none" @onclick='() => SortByAsync("published")'>Published@SortMark("published")</button></th>
-                    <th class="text-nowrap"><button class="btn btn-link p-0 fw-bold text-decoration-none" @onclick='() => SortByAsync("scraped")'>Scraped@SortMark("scraped")</button></th>
+                    <th class="text-nowrap"><button class="btn btn-link p-0 fw-bold text-decoration-none" @onclick='() => SortByAsync("published")'>Published@(SortMark("published"))</button></th>
+                    <th class="text-nowrap"><button class="btn btn-link p-0 fw-bold text-decoration-none" @onclick='() => SortByAsync("scraped")'>Scraped@(SortMark("scraped"))</button></th>
                     <th></th>
                 </tr>
             </thead>
@@ -76,8 +76,8 @@ else
                         </td>
                         <td>@row.SourceName</td>
                         <td>@row.SourceId</td>
-                        <td class="text-nowrap">@AdminData.Utc(row.Published)</td>
-                        <td class="text-nowrap">@AdminData.Utc(row.ScrapedAt)</td>
+                        <td class="text-nowrap">@Dates.Stamp(row.Published)</td>
+                        <td class="text-nowrap">@Dates.Stamp(row.ScrapedAt)</td>
                         <td class="text-nowrap text-end">
                             <a class="btn btn-outline-primary btn-sm" href="admin/pages/@row.Id/edit">Edit</a>
                             <button class="btn btn-outline-danger btn-sm" @onclick="() => StartDelete(row)">Delete</button>

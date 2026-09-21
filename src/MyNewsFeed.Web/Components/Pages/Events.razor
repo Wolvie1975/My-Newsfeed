@@ -1,0 +1,151 @@
+@page "/events"
+@layout PublicLayout
+@using MyNewsFeed.Web.Components.Events
+@inject IDbContextFactory<WebScraperContext> Factory
+@inject FeedDates Dates
+
+<PageTitle>Sports Events · MyNewsFeed</PageTitle>
+
+@* Static (non-interactive) page. Filters are plain links and a GET form, so every view has a shareable URL and works
+   without JavaScript. Games are grouped by EventDate, the host school's own calendar date, which is never converted. *@
+
+<h1 class="sr-only">Sports Events</h1>
+
+<form class="search" role="search" method="get" action="events">
+    @if (!string.IsNullOrWhiteSpace(Sport))
+    {
+        <input type="hidden" name="sport" value="@Sport" />
+    }
+    <div class="search__field">
+        <label class="sr-only" for="q">Search teams or locations</label>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+        <input id="q" name="q" type="search" placeholder="Search events" value="@Q" />
+    </div>
+    <button class="nf-btn nf-btn--primary" type="submit">Search</button>
+</form>
+
+<div class="filters">
+    @if (sports.Count > 0)
+    {
+        @* Phones: a dropdown replaces the chips, as on the news page. Picking a sport submits the form (keeping the
+           search text); Apply, shown only when JavaScript is off, covers that case. *@
+        <form class="catselect" method="get" action="events">
+            @if (!string.IsNullOrWhiteSpace(Q))
+            {
+                <input type="hidden" name="q" value="@Q" />
+            }
+            <label class="sr-only" for="sport">Sport</label>
+            <select id="sport" name="sport" onchange="this.form.requestSubmit()">
+                <option value="">All sports</option>
+                @foreach (var sport in sports)
+                {
+                    <option value="@sport" selected="@(IsSelected(sport))">@sport</option>
+                }
+            </select>
+            <noscript><button class="nf-btn nf-btn--secondary" type="submit">Apply</button></noscript>
+        </form>
+    }
+    <nav class="chips" aria-label="Sports">
+        <a class="chip" href="@Href(null)" aria-current="@(string.IsNullOrWhiteSpace(Sport) ? "true" : null)">All</a>
+        @foreach (var sport in sports)
+        {
+            <a class="chip" href="@Href(sport)" aria-current="@(IsSelected(sport) ? "true" : null)">@sport</a>
+        }
+    </nav>
+    @if (listing is not null)
+    {
+        <p class="count count--toolbar" aria-live="polite">@listing.Total @(listing.Total == 1 ? "event" : "events")</p>
+    }
+</div>
+
+@if (listing is not null)
+{
+    <p class="count count--inline">@listing.Total @(listing.Total == 1 ? "event" : "events")</p>
+}
+
+@if (lastUpdated is { } updated)
+{
+    <p class="updated">
+        Schedule last updated
+        <time datetime="@updated.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'")">@Dates.PublishedFull(updated)</time>
+    </p>
+}
+
+@if (listing is null || listing.Items.Count == 0)
+{
+    <p class="empty">
+        @if (!string.IsNullOrWhiteSpace(Sport) || !string.IsNullOrWhiteSpace(Q))
+        {
+            <span>No upcoming events match. <a href="events">Clear filters</a></span>
+        }
+        else
+        {
+            <span>No upcoming events. Check back soon.</span>
+        }
+    </p>
+}
+else
+{
+    @* Column headings, shown once above every day (from 1180px). Each day's table keeps its own visually hidden
+       headings for screen readers. *@
+    <div class="games-head" aria-hidden="true">
+        <span>Sport</span><span>Away</span><span>Home</span><span>Time</span><span>Location</span><span>Links</span>
+    </div>
+
+    <div class="groups">
+        @foreach (var day in listing.Items.GroupBy(e => e.EventDate))
+        {
+            var key = day.Key.ToString("yyyy-MM-dd");
+            <section class="group" aria-labelledby="day-@key">
+                <h2 class="group__bar" id="day-@key"><time datetime="@key">@FeedDates.LongDate(day.Key)</time></h2>
+                <table class="games" role="table" aria-labelledby="day-@key">
+                    <thead role="rowgroup">
+                        <tr role="row">
+                            <th role="columnheader" scope="col">Sport</th>
+                            <th role="columnheader" scope="col">Away</th>
+                            <th role="columnheader" scope="col">Home</th>
+                            <th role="columnheader" scope="col">Time</th>
+                            <th role="columnheader" scope="col">Location</th>
+                            <th role="columnheader" scope="col">Links</th>
+                        </tr>
+                    </thead>
+                    <tbody role="rowgroup">
+                        @foreach (var item in day)
+                        {
+                            <GameRow Item="item" />
+                        }
+                    </tbody>
+                </table>
+            </section>
+        }
+    </div>
+
+    @if (listing.Total > listing.Items.Count)
+    {
+        <p class="count">Showing the next @listing.Items.Count of @listing.Total events.</p>
+    }
+}
+
+@code {
+    [SupplyParameterFromQuery(Name = "sport")] private string? Sport { get; set; }
+    [SupplyParameterFromQuery(Name = "q")] private string? Q { get; set; }
+
+    private IReadOnlyList<string> sports = [];
+    private EventsPage? listing;
+    private DateTime? lastUpdated;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // "Today" is the calendar date in the display zone (Central); events are compared by their own local date.
+        var today = Dates.Today;
+        await using var db = await Factory.CreateDbContextAsync();
+        sports = await EventsQuery.GetSportsAsync(db, today);
+        listing = await EventsQuery.GetUpcomingAsync(db, today, Sport, Q);
+        lastUpdated = await EventsQuery.GetLastUpdatedAsync(db);
+    }
+
+    private bool IsSelected(string sport) => string.Equals(Sport?.Trim(), sport, StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>A link that keeps the current search and switches the sport.</summary>
+    private string Href(string? sport) => "events" + EventsQuery.QueryString(sport, Q);
+}

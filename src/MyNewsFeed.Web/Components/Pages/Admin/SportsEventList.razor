@@ -1,0 +1,324 @@
+@page "/admin/sports-events"
+@rendermode InteractiveServer
+@inject IDbContextFactory<WebScraperContext> Factory
+
+<PageTitle>Sports events</PageTitle>
+
+<h1>Sports events</h1>
+
+@if (message is not null)
+{
+    <div class="alert alert-success" role="alert">@message</div>
+}
+
+<form class="row g-2 mb-3" @onsubmit="SearchAsync">
+    <div class="col-md-2">
+        <label for="type" class="visually-hidden">Type</label>
+        <select id="type" class="form-select" @bind="typeFilter" @bind:after="ApplyFilterAsync">
+            <option value="">All types</option>
+            <option value="none">No type</option>
+            @foreach (var type in types)
+            {
+                <option value="@type.Id">@type.Name</option>
+            }
+        </select>
+    </div>
+    <div class="col-md-2">
+        <label for="sport" class="visually-hidden">Sport</label>
+        <select id="sport" class="form-select" @bind="sportFilter" @bind:after="ApplyFilterAsync">
+            <option value="">All sports</option>
+            @foreach (var sport in sports)
+            {
+                <option value="@sport">@sport</option>
+            }
+        </select>
+    </div>
+    <div class="col-md-2">
+        <label for="when" class="visually-hidden">When</label>
+        <select id="when" class="form-select" @bind="whenFilter" @bind:after="ApplyFilterAsync">
+            <option value="">All dates</option>
+            <option value="upcoming">Upcoming</option>
+            <option value="past">Past</option>
+        </select>
+    </div>
+    <div class="col-md-4">
+        <label for="search" class="visually-hidden">Search</label>
+        <input id="search" class="form-control" placeholder="Search game, opponent or location" @bind="searchInput" />
+    </div>
+    <div class="col-md-2">
+        <button type="submit" class="btn btn-primary">Search</button>
+        @if (HasFilters)
+        {
+            <button type="button" class="btn btn-outline-secondary ms-1" @onclick="ClearAsync">Clear</button>
+        }
+    </div>
+</form>
+
+@if (pendingDelete is { } target)
+{
+    <div class="alert alert-warning" role="alert">
+        <p class="mb-2">Delete the event <strong>@target.Title</strong>? The scraper adds it back on its next run if the feed still lists it.</p>
+        <button class="btn btn-danger btn-sm me-2" @onclick="ConfirmDeleteAsync">Delete event</button>
+        <button class="btn btn-secondary btn-sm" @onclick="() => pendingDelete = null">Cancel</button>
+    </div>
+}
+
+@if (rows is null)
+{
+    <p><em>Loading…</em></p>
+}
+else if (rows.Count == 0)
+{
+    <p>No events match.</p>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-sm align-middle">
+            <thead>
+                <tr>
+                    <th class="text-nowrap"><button class="btn btn-link p-0 fw-bold text-decoration-none" @onclick='() => SortByAsync("date")'>Date@(SortMark("date"))</button></th>
+                    <th><button class="btn btn-link p-0 fw-bold text-decoration-none" @onclick='() => SortByAsync("sport")'>Sport@(SortMark("sport"))</button></th>
+                    <th>Game</th>
+                    <th><button class="btn btn-link p-0 fw-bold text-decoration-none" @onclick='() => SortByAsync("opponent")'>Opponent@(SortMark("opponent"))</button></th>
+                    <th>Home / away</th>
+                    <th>Location</th>
+                    <th>TV</th>
+                    <th>Type</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in rows)
+                {
+                    <tr>
+                        <td class="text-nowrap">
+                            @row.EventDate.ToString("yyyy-MM-dd")
+                            <div class="small text-muted">@TimeText(row)</div>
+                        </td>
+                        <td>@(row.Sport ?? "—")</td>
+                        <td>
+                            @if (FeedQuery.SafeHref(row.Url) is { } href)
+                            {
+                                <a href="@href" target="_blank" rel="noopener noreferrer">@row.Title</a>
+                            }
+                            else
+                            {
+                                @row.Title
+                            }
+                        </td>
+                        <td>@(row.Opponent ?? "—")</td>
+                        <td>@(row.IsAway is bool away ? (away ? "Away" : "Home") : "—")</td>
+                        <td>@(row.Location ?? "—")</td>
+                        <td>@(row.Tv ?? "—")</td>
+                        <td>
+                            @if (row.TypeId is int typeId)
+                            {
+                                <a href="admin/sports-event-types/@typeId/edit">@row.TypeName</a>
+                            }
+                            else
+                            {
+                                <span class="badge text-bg-secondary">No type</span>
+                            }
+                        </td>
+                        <td class="text-nowrap text-end">
+                            <a class="btn btn-outline-primary btn-sm" href="admin/sports-events/@row.Id/edit">Edit</a>
+                            <button class="btn btn-outline-danger btn-sm" @onclick="() => StartDelete(row)">Delete</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center">
+        <span class="text-muted small">Showing @(pageIndex * PageSize + 1)–@(pageIndex * PageSize + rows.Count) of @total</span>
+        <div>
+            <button class="btn btn-outline-secondary btn-sm me-1" disabled="@(pageIndex == 0)" @onclick="() => GoToAsync(pageIndex - 1)">Previous</button>
+            <button class="btn btn-outline-secondary btn-sm" disabled="@((pageIndex + 1) * PageSize >= total)" @onclick="() => GoToAsync(pageIndex + 1)">Next</button>
+        </div>
+    </div>
+}
+
+@code {
+    private const int PageSize = 25;
+
+    private sealed record TypeOption(int Id, string Name);
+
+    private sealed record EventRow(
+        int Id, string Url, string Title, string? Sport, string? Opponent, bool? IsAway, string? Location,
+        DateOnly EventDate, DateTime? StartsAtUtc, bool TimeTbd, string? Tv, int? TypeId, string? TypeName);
+
+    // Query values arrive as text and are parsed leniently: a hand-edited "?typeId=abc" must not throw.
+    [SupplyParameterFromQuery(Name = "typeId")] private string? TypeIdText { get; set; }
+
+    private List<TypeOption> types = [];
+    private List<string> sports = [];
+    private List<EventRow>? rows;
+    private EventRow? pendingDelete;
+    private string? message;
+
+    // typeFilter is bound to the <select>: "" = all types, "none" = events with no type, otherwise a type ID.
+    private string? typeFilter;
+    private string? sportFilter;
+
+    // "upcoming" and "past" are relative to today's date in the display zone (Central); past games are kept as history.
+    private string? whenFilter;
+    private string searchInput = "";
+    private string search = "";
+    private string sortColumn = "date";
+    private bool sortDescending;
+    private int pageIndex;
+    private int total;
+
+    private bool HasFilters => !string.IsNullOrEmpty(search) || !string.IsNullOrEmpty(typeFilter)
+        || !string.IsNullOrEmpty(sportFilter) || !string.IsNullOrEmpty(whenFilter);
+
+    protected override async Task OnInitializedAsync()
+    {
+        await using var db = await Factory.CreateDbContextAsync();
+        types = await db.SportsEventsTypes.AsNoTracking()
+            .OrderBy(t => t.EventsTypeName)
+            .Select(t => new TypeOption(t.Id, t.EventsTypeName))
+            .ToListAsync();
+        sports = await db.SportsEvents.AsNoTracking()
+            .Where(e => e.Sport != null)
+            .Select(e => e.Sport!)
+            .Distinct()
+            .OrderBy(s => s)
+            .ToListAsync();
+
+        if (TypeIdText == "none")
+        {
+            typeFilter = "none";
+        }
+        else if (int.TryParse(TypeIdText, out var id) && types.Any(t => t.Id == id))
+        {
+            typeFilter = id.ToString();
+        }
+
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        await using var db = await Factory.CreateDbContextAsync();
+        IQueryable<SportsEvent> query = db.SportsEvents.AsNoTracking();
+
+        if (typeFilter == "none")
+        {
+            query = query.Where(e => e.SportsEventsTypeId == null);
+        }
+        else if (int.TryParse(typeFilter, out var typeId))
+        {
+            query = query.Where(e => e.SportsEventsTypeId == typeId);
+        }
+
+        if (!string.IsNullOrEmpty(sportFilter))
+        {
+            query = query.Where(e => e.Sport == sportFilter);
+        }
+
+        var today = Dates.Today;
+        if (whenFilter == "upcoming")
+        {
+            query = query.Where(e => e.EventDate >= today);
+        }
+        else if (whenFilter == "past")
+        {
+            query = query.Where(e => e.EventDate < today);
+        }
+
+        if (!string.IsNullOrEmpty(search))
+        {
+            query = query.Where(e => e.Title.Contains(search)
+                || (e.Opponent != null && e.Opponent.Contains(search))
+                || (e.Location != null && e.Location.Contains(search)));
+        }
+
+        total = await query.CountAsync();
+
+        // Id is the tiebreaker so paging is stable when the sort column has duplicates or nulls.
+        var ordered = (sortColumn, sortDescending) switch
+        {
+            ("sport", false) => query.OrderBy(e => e.Sport).ThenBy(e => e.EventDate).ThenBy(e => e.Id),
+            ("sport", true) => query.OrderByDescending(e => e.Sport).ThenBy(e => e.EventDate).ThenBy(e => e.Id),
+            ("opponent", false) => query.OrderBy(e => e.Opponent).ThenBy(e => e.EventDate).ThenBy(e => e.Id),
+            ("opponent", true) => query.OrderByDescending(e => e.Opponent).ThenBy(e => e.EventDate).ThenBy(e => e.Id),
+            (_, false) => query.OrderBy(e => e.EventDate).ThenBy(e => e.StartsAtUtc).ThenBy(e => e.Id),
+            _ => query.OrderByDescending(e => e.EventDate).ThenByDescending(e => e.StartsAtUtc).ThenBy(e => e.Id),
+        };
+
+        // A delete or filter change can leave the current page past the end.
+        var lastPage = Math.Max(0, (total - 1) / PageSize);
+        pageIndex = Math.Min(pageIndex, lastPage);
+
+        rows = await ordered
+            .Skip(pageIndex * PageSize).Take(PageSize)
+            .Select(e => new EventRow(
+                e.Id, e.Url, e.Title, e.Sport, e.Opponent, e.IsAway, e.Location, e.EventDate, e.StartsAtUtc, e.TimeTbd, e.Tv,
+                e.SportsEventsTypeId, e.SportsEventsType != null ? e.SportsEventsType.EventsTypeName : null))
+            .ToListAsync();
+    }
+
+    // The feed's time is the host school's, stored as UTC. It is shown in the site's zone with its offset, not as the venue's clock.
+    private string TimeText(EventRow row) =>
+        row.TimeTbd ? "Time TBD" : row.StartsAtUtc is DateTime start ? Dates.TimeWithOffset(start) : "—";
+
+    private async Task SearchAsync()
+    {
+        search = searchInput.Trim();
+        pageIndex = 0;
+        await LoadAsync();
+    }
+
+    private async Task ApplyFilterAsync()
+    {
+        pageIndex = 0;
+        await LoadAsync();
+    }
+
+    private async Task ClearAsync()
+    {
+        searchInput = search = "";
+        typeFilter = sportFilter = whenFilter = null;
+        pageIndex = 0;
+        await LoadAsync();
+    }
+
+    private async Task SortByAsync(string column)
+    {
+        sortDescending = sortColumn == column && !sortDescending;
+        sortColumn = column;
+        pageIndex = 0;
+        await LoadAsync();
+    }
+
+    private string SortMark(string column) => sortColumn != column ? "" : sortDescending ? " ▼" : " ▲";
+
+    private async Task GoToAsync(int index)
+    {
+        pageIndex = Math.Max(0, index);
+        await LoadAsync();
+    }
+
+    private void StartDelete(EventRow row)
+    {
+        message = null;
+        pendingDelete = row;
+    }
+
+    private async Task ConfirmDeleteAsync()
+    {
+        if (pendingDelete is not { } target)
+        {
+            return;
+        }
+
+        await using var db = await Factory.CreateDbContextAsync();
+        await db.SportsEvents.Where(e => e.Id == target.Id).ExecuteDeleteAsync();
+        message = $"Deleted “{target.Title}”.";
+        pendingDelete = null;
+        await LoadAsync();
+    }
+}

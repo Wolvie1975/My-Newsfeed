@@ -59,6 +59,19 @@ public class FeedHelpersTests
     // ---- Cursor -------------------------------------------------------------------------------------------------
 
     [Fact]
+    public void An_undated_cursor_round_trips_and_the_older_two_part_token_still_reads_as_dated()
+    {
+        var undated = new FeedCursor(new DateTime(2026, 9, 20, 11, 39, 27), 7, Undated: true);
+        Assert.Equal(undated, FeedCursor.Parse(undated.ToToken()));
+        Assert.StartsWith("1.", undated.ToToken());
+
+        var legacy = FeedCursor.Parse("639255090370000000.628");
+        Assert.NotNull(legacy);
+        Assert.False(legacy!.Undated);
+        Assert.Equal(628, legacy.Id);
+    }
+
+    [Fact]
     public void Cursor_round_trips_through_its_token()
     {
         var cursor = new FeedCursor(new DateTime(2026, 9, 20, 11, 39, 27, 123).AddTicks(4567), 542);
@@ -69,7 +82,10 @@ public class FeedHelpersTests
     [InlineData(null)]
     [InlineData("")]
     [InlineData("abc")]
-    [InlineData("1.2.3")]
+    [InlineData("1.2.3.4")]
+    [InlineData("2.5.6")]
+    [InlineData("x.5.6")]
+    [InlineData("1.-5.6")]
     [InlineData("12345")]
     [InlineData("-5.1")]
     [InlineData("99999999999999999999.1")]
@@ -177,6 +193,54 @@ public class FeedHelpersTests
         Assert.Equal("Sep 19, 2026", chicago.Published(utc));
         Assert.Equal("2026-09-20", FeedDates.Create("UTC").DayKey(utc));
         Assert.Equal("2026-09-19", chicago.DayKey(utc));
+    }
+
+    [Fact]
+    public void Admin_stamps_are_in_the_display_zone_with_their_offset()
+    {
+        var utc = new DateTime(2026, 9, 20, 9, 52, 0);
+        Assert.Equal("2026-09-20 09:52 (UTC+0)", FeedDates.Create("UTC").Stamp(utc));
+        Assert.Equal("2026-09-20 04:52 (UTC-5)", FeedDates.Create("America/Chicago").Stamp(utc));
+        Assert.Equal("2026-01-20 03:52 (UTC-6)", FeedDates.Create("America/Chicago").Stamp(new DateTime(2026, 1, 20, 9, 52, 0)));
+        Assert.Equal("—", FeedDates.Create("America/Chicago").Stamp(null));
+    }
+
+    [Fact]
+    public void Times_with_an_offset_are_labelled_so_they_are_not_mistaken_for_the_venues_clock()
+    {
+        Assert.Equal("2:00 PM (UTC-5)", FeedDates.Create("America/Chicago").TimeWithOffset(new DateTime(2026, 9, 20, 19, 0, 0)));
+    }
+
+    [Fact]
+    public void A_time_read_from_sql_is_always_treated_as_utc_whatever_its_kind()
+    {
+        // SQL Server returns DateTimeKind.Unspecified; a Local kind must not shift the result either.
+        var chicago = FeedDates.Create("America/Chicago");
+        var unspecified = new DateTime(2026, 9, 20, 2, 0, 0, DateTimeKind.Unspecified);
+        var local = new DateTime(2026, 9, 20, 2, 0, 0, DateTimeKind.Local);
+
+        Assert.Equal(chicago.Stamp(unspecified), chicago.Stamp(local));
+        Assert.Equal(chicago.DayKey(unspecified), chicago.DayKey(local));
+        Assert.Equal("2026-09-19 21:00 (UTC-5)", chicago.Stamp(unspecified));
+    }
+
+    [Fact]
+    public void Today_is_the_date_in_the_display_zone_not_in_utc()
+    {
+        var justAfterUtcMidnight = new DateTime(2026, 9, 21, 1, 0, 0);   // still the evening of the 20th in Chicago
+        Assert.Equal(new DateOnly(2026, 9, 21), FeedDates.Create("UTC").TodayAt(justAfterUtcMidnight));
+        Assert.Equal(new DateOnly(2026, 9, 20), FeedDates.Create("America/Chicago").TodayAt(justAfterUtcMidnight));
+    }
+
+    [Fact]
+    public void Undated_stories_share_one_group_labelled_date_unknown()
+    {
+        var dates = FeedDates.Create("UTC");
+        var dated = new FeedItem(1, "t", "https://x.test/1", null, null, null, "https://x.test/", null, null, new DateTime(2026, 9, 20, 9, 0, 0));
+
+        Assert.Equal("2026-09-20", dates.DayKey(dated));
+        Assert.Equal(FeedDates.UndatedKey, dates.DayKey(dated with { Undated = true }));
+        Assert.Equal("Date unknown", dates.GroupLabel(FeedDates.UndatedKey));
     }
 
     [Fact]

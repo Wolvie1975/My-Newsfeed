@@ -79,7 +79,7 @@ else
                                 @row.SourceCount
                             }
                         </td>
-                        <td class="text-nowrap">@AdminData.Utc(row.DateAdded)</td>
+                        <td class="text-nowrap">@Dates.Stamp(row.DateAdded)</td>
                         <td class="text-nowrap text-end">
                             <button class="btn btn-outline-primary btn-sm" @onclick="() => StartRename(row)">Rename</button>
                             <button class="btn btn-outline-danger btn-sm" disabled="@(row.SourceCount > 0)"

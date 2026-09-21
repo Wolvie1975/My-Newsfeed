@@ -173,12 +173,15 @@
 
 /* Filters */
 .pub .filters { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
-.pub .chips {
-    display: flex; gap: 8px; flex: 1; min-width: 0;
-    overflow-x: auto; margin: 0 -20px; padding: 0 20px;
-    scrollbar-width: none;
+/* Phones use a dropdown (.catselect); the chips are for tablet and desktop. */
+.pub .catselect { display: flex; gap: 8px; flex: 1; min-width: 0; }
+.pub .catselect select {
+    flex: 1; min-width: 0; height: 48px; padding: 0 14px;
+    border: 1px solid var(--field-border); border-radius: 12px;
+    background: var(--surface); color: var(--text);
+    font: inherit; font-size: 16px; /* 16px keeps iOS from zooming in on focus */
 }
-.pub .chips::-webkit-scrollbar { display: none; }
+.pub .chips { display: none; gap: 8px; }
 .pub .chip {
     flex: none; display: inline-flex; align-items: center;
     height: 44px; padding: 0 20px;
@@ -265,7 +268,8 @@
     .pub .search input { padding-left: 48px; padding-right: 16px; }
     .pub .nf-btn { padding: 0 28px; }
 
-    .pub .chips { flex: none; overflow: visible; margin: 0; padding: 0; flex-wrap: wrap; }
+    .pub .catselect { display: none; }
+    .pub .chips { display: flex; flex: none; flex-wrap: wrap; }
     .pub .count--toolbar { display: block; }
     .pub .daylabel { display: none; }
 
@@ -332,4 +336,239 @@
     .pub .article--lead .thumb { height: auto; min-height: 340px; }
     .pub .article--lead .body { padding: 40px; gap: 14px; align-content: center; }
     .pub .article--lead .title { font-size: 34px; }
+}
+
+/* =====================================================================================================================
+   Header navigation (News | Sports Events) and the Sports Events page.
+   Ported from the approved design (sports-events.html); the game table follows the same stacked-card -> table pattern.
+   ===================================================================================================================== */
+
+:root {
+    --bar-bg: #10264A;
+    --bar-fg: #FFFFFF;
+    --bar-fg-2: #C9D6EE;
+}
+
+:root[data-theme="dark"] {
+    --bar-bg: #1A2540;
+    --bar-fg: #E8ECF4;
+    --bar-fg-2: #A9B7D2;
+}
+
+/* ---------- Navigation ---------- */
+.pub .site-nav { display: flex; gap: 4px; }
+.pub .site-nav a {
+    display: inline-flex; align-items: center; height: 44px; padding: 0 12px;
+    border-radius: 10px; font-size: 15px; font-weight: 500; color: var(--header-fg);
+}
+.pub .site-nav a:hover { text-decoration: none; background: rgba(255, 255, 255, 0.08); }
+.pub .site-nav a[aria-current="page"] { background: rgba(255, 255, 255, 0.14); font-weight: 600; }
+.pub .site-nav :focus-visible { outline-color: #FFFFFF; }
+.pub .site-nav--inline { display: none; }
+/* Phones: the links sit in a bar under the header, so the sticky header stays one row tall. */
+.pub .site-nav--bar {
+    background: var(--header-bg); border-bottom: 1px solid var(--header-border); padding: 0 8px 8px;
+}
+
+/* ---------- Events page ---------- */
+.pub .count--inline { display: block; margin: 0; }
+.pub .games-head { display: none; }
+.pub .groups { display: flex; flex-direction: column; gap: 16px; }
+.pub .group {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden;
+}
+.pub .group__bar {
+    margin: 0; padding: 12px 16px; background: var(--bar-bg); color: var(--bar-fg);
+    font-size: 16px; font-weight: 600; line-height: 1.35;
+}
+
+/* A day's games: stacked cards by default. The table headings are read by screen readers only. */
+.pub .games { display: block; width: 100%; border-collapse: collapse; }
+.pub .games thead {
+    position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+    overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+}
+.pub .games tbody { display: block; }
+.pub .game {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas: "sport sport" "away away" "home home" "time loc" "links links";
+    gap: 0 12px;
+    padding: 16px;
+    border-top: 1px solid var(--row-border);
+}
+.pub .game:first-child { border-top: 0; }
+.pub .game td { display: block; padding: 0; min-width: 0; }
+.pub .td-sport {
+    grid-area: sport; margin-bottom: 10px;
+    font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent);
+}
+.pub .td-sport--none { display: none; }
+.pub .td-away { grid-area: away; }
+.pub .td-home { grid-area: home; margin-top: 12px; }
+.pub .td-time { grid-area: time; margin-top: 12px; align-self: center; font-size: 15px; font-weight: 600; white-space: nowrap; }
+.pub .td-time.is-tbd { font-weight: 500; color: var(--text-2); }
+.pub .td-loc { grid-area: loc; margin-top: 12px; align-self: center; }
+.pub .td-links { grid-area: links; margin-top: 4px; }
+.pub .td-links--none { display: none; }
+
+/* Teams */
+.pub .team { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.pub .team-badge {
+    position: relative; flex: none; width: 32px; height: 32px; border-radius: 8px; overflow: hidden;
+    display: inline-flex; align-items: center; justify-content: center;
+    /* A logo sits on a white tile so dark logos stay visible in the dark theme. */
+    background: #FFFFFF; border: 1px solid var(--border);
+}
+.pub .team-badge img { width: 100%; height: 100%; padding: 3px; object-fit: contain; display: block; }
+.pub .team-badge__fallback {
+    display: none; font-size: 11px; font-weight: 700; letter-spacing: 0.02em; color: var(--pill-fg);
+}
+.pub .team-badge.no-logo, .pub .team-badge.is-broken { background: var(--pill-bg); border-color: transparent; }
+.pub .team-badge.no-logo .team-badge__fallback, .pub .team-badge.is-broken .team-badge__fallback { display: inline; }
+.pub .team__name { min-width: 0; font-size: 16px; font-weight: 500; overflow-wrap: anywhere; }
+.pub .team__label {
+    margin-left: auto; font-size: 12px; font-weight: 600; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--text-2);
+}
+
+/* Location and links */
+.pub .loc { display: flex; flex-direction: column; gap: 2px; font-size: 15px; color: var(--text-2); }
+.pub .loc__venue { font-size: 13px; color: var(--text-3); }
+.pub .links { display: flex; flex-wrap: wrap; align-items: center; gap: 0 20px; }
+.pub .tv { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; font-size: 14px; color: var(--text-2); }
+.pub .tv__net { font-weight: 600; color: var(--text); }
+.pub .links a {
+    display: inline-flex; align-items: center; min-height: 44px;
+    font-size: 15px; font-weight: 600; color: var(--accent);
+}
+
+/* ---------- Tablet and desktop ---------- */
+@media (min-width: 768px) {
+    /* The navigation moves into the header. */
+    .pub .site-nav--inline { display: flex; flex: 1; margin: 0 0 0 32px; }
+    .pub .site-nav--bar { display: none; }
+
+    .pub .count--inline { display: none; }
+    .pub .group__bar { padding: 14px 20px; font-size: 17px; }
+
+    /* Tablet: the two teams sit side by side, then the time and location, then the links. */
+    .pub .game {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        grid-template-areas: "sport sport" "away home" "time loc" "links links";
+        gap: 0 24px;
+        padding: 18px 20px;
+    }
+    .pub .td-home { margin-top: 0; }
+    .pub .td-time, .pub .td-loc { margin-top: 16px; }
+}
+
+@media (min-width: 1180px) {
+    /* Desktop: a real table row. Every day shares one column template, so the single heading row above lines up. */
+    .pub .groups { --games-cols: 10% 19% 19% 12% 20% 20%; }
+    .pub .games-head {
+        display: grid; grid-template-columns: 10% 19% 19% 12% 20% 20%; padding: 0 1px;
+        font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-2);
+    }
+    .pub .games-head span { padding: 0 16px; }
+    .pub .game {
+        grid-template-columns: var(--games-cols);
+        grid-template-areas: "sport away home time loc links";
+        gap: 0; padding: 0; align-items: center;
+    }
+    .pub .game td { padding: 14px 16px; }
+    .pub .td-sport, .pub .td-home, .pub .td-time, .pub .td-loc, .pub .td-links { margin: 0; }
+    .pub .td-sport--none { display: block; }
+    .pub .td-links--none { display: block; }
+    .pub .team__label { display: none; }
+    .pub .tv, .pub .links a { min-height: 32px; }
+}
+
+/* =====================================================================================================================
+   Videos page. Ported from youtube-feed.html: one card per channel, a uniform list of 120px-thumbnail rows.
+   Class names are prefixed (vthumb, vbody, ...) so they do not clash with the news feed's .thumb/.body/.title.
+   ===================================================================================================================== */
+
+:root {
+    --ph-bg: #E4EAF4;
+    --ph-fg: #4F5F7A;
+    --mark-bg: #10264A;
+    --mark-fg: #FFFFFF;
+    --play-bg: rgba(10, 16, 30, 0.78);
+}
+
+:root[data-theme="dark"] {
+    --ph-bg: #1A2540;
+    --ph-fg: #9FB0D0;
+    --mark-bg: #2C3A57;
+    --mark-fg: #E8ECF4;
+    --play-bg: rgba(10, 16, 30, 0.82);
+}
+
+.pub .vfeed { display: flex; flex-direction: column; gap: 16px; }
+.pub .channel {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden;
+}
+.pub .channel__head {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 0 10px; min-height: 56px; padding: 8px 16px;
+    border-bottom: 1px solid var(--row-border);
+}
+.pub .mark {
+    flex: none; display: inline-flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px; border-radius: 8px;
+    background: var(--mark-bg); color: var(--mark-fg); font-size: 13px; font-weight: 700;
+}
+.pub .channel__name {
+    margin: 0; min-width: 0; font-size: 17px; line-height: 1.3; font-weight: 700; letter-spacing: -0.01em;
+    overflow-wrap: break-word;
+}
+.pub .channel__count { flex: none; font-size: 14px; color: var(--text-2); }
+.pub .channel__link {
+    flex: none; margin-left: auto; display: inline-flex; align-items: center; gap: 6px; min-height: 44px;
+    font-size: 14px; font-weight: 600; color: var(--accent);
+}
+
+.pub .videos { list-style: none; margin: 0; padding: 0; }
+.pub .video {
+    display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 12px; align-items: start; padding: 12px 16px;
+}
+.pub .video + .video { border-top: 1px solid var(--row-border); }
+
+.pub .vthumb {
+    position: relative; display: block; aspect-ratio: 16 / 9; border-radius: 8px; overflow: hidden;
+    background: var(--ph-bg); color: var(--ph-fg);
+}
+.pub .vthumb:hover { text-decoration: none; }
+.pub .vthumb__ph { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+.pub .vthumb__ph svg { width: 22px; height: 22px; }
+.pub .vthumb img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.pub .play {
+    position: absolute; right: 5px; bottom: 5px; width: 24px; height: 24px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 999px; background: var(--play-bg); color: #FFFFFF;
+}
+.pub .play svg { width: 10px; height: 10px; margin-left: 1px; }
+
+.pub .vbody { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.pub .vtitle {
+    margin: 0; font-size: 16px; line-height: 1.3; font-weight: 650; letter-spacing: -0.01em;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere;
+}
+.pub .vtitle a:hover { color: var(--accent); }
+.pub .vmeta {
+    margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 0 6px;
+    font-size: 13px; line-height: 1.5; color: var(--text-2);
+}
+
+@media (min-width: 768px) {
+    .pub .vfeed { gap: 24px; }
+    .pub .channel__head { padding: 8px 20px; }
+    .pub .videos { padding: 8px 12px; }
+    .pub .video { padding: 10px 8px; border-radius: 10px; }
+    .pub .video + .video { border-top: 0; }
+    .pub .video:hover { background: var(--bg); }
+}
+
+@media (min-width: 1024px) {
+    .pub .videos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px 16px; }
 }

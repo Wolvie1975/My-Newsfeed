@@ -57,9 +57,9 @@ else
         {
             <dl class="row small text-muted">
                 <dt class="col-sm-3">Created</dt>
-                <dd class="col-sm-9">@AdminData.Utc(existing.CreatedAt)</dd>
+                <dd class="col-sm-9">@Dates.Stamp(existing.CreatedAt)</dd>
                 <dt class="col-sm-3">Last scraped</dt>
-                <dd class="col-sm-9">@AdminData.Utc(existing.LastScrapedAt)</dd>
+                <dd class="col-sm-9">@Dates.Stamp(existing.LastScrapedAt)</dd>
                 <dt class="col-sm-3">Pages</dt>
                 <dd class="col-sm-9"><a href="admin/pages?sourceId=@existing.Id">@pageCount</a></dd>
                 @if (!string.IsNullOrEmpty(existing.LastError))
@@ -69,6 +69,8 @@ else
                 }
             </dl>
         }
+
+        <p class="small text-muted">The scraper picks up new and changed rows on its next run.</p>
 
         <button type="submit" class="btn btn-primary me-2" disabled="@saving">Save</button>
         <a class="btn btn-secondary" href="admin/sources">Cancel</a>

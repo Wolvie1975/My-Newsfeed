@@ -150,6 +150,20 @@ public class FeedArticlesRenderTests
     }
 
     [Fact]
+    public async Task An_undated_story_shows_no_date_and_sits_under_a_date_unknown_heading()
+    {
+        var dated = Item(1, "Has a date", Today);
+        var undated = Item(2, "No date", new DateTime(2026, 9, 21, 8, 0, 0)) with { Undated = true };   // scrape date, not shown
+        var html = System.Net.WebUtility.HtmlDecode(await RenderAsync([dated, undated]));
+
+        Assert.Single(System.Text.RegularExpressions.Regex.Matches(html, "<time"));      // only the dated one has a date
+        Assert.DoesNotContain("Sep 21, 2026", html);                                    // the scrape date never leaks
+        Assert.Contains("Date unknown", html);
+        Assert.Contains("Sun Sep 20, 2026", html);
+        Assert.Contains("No date", html);
+    }
+
+    [Fact]
     public async Task A_continuing_batch_does_not_repeat_the_heading_for_the_day_already_shown()
     {
         var items = new[] { Item(1, "A", Today), Item(2, "B", Yesterday) };

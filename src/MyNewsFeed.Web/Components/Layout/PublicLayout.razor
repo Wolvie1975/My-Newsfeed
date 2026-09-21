@@ -1,8 +1,25 @@
 @inherits LayoutComponentBase
+@inject NavigationManager Nav
+
+@{
+    var path = Nav.ToBaseRelativePath(Nav.Uri);
+    var onEvents = path.StartsWith("events", StringComparison.OrdinalIgnoreCase);
+    var onVideos = path.StartsWith("videos", StringComparison.OrdinalIgnoreCase);
+    var onNews = !onEvents && !onVideos;
+}
 
 <div class="pub">
     <header class="site-header">
         <a class="brand" href="">MyNewsFeed</a>
+
+        @* Wide screens: the navigation sits in the header. Phones get the same links in a bar under it (below), so the
+           sticky header stays one row tall. *@
+        <nav class="site-nav site-nav--inline" aria-label="Main">
+            <a href="" aria-current="@(onNews ? "page" : null)">News</a>
+            <a href="events" aria-current="@(onEvents ? "page" : null)">Sports Events</a>
+            <a href="videos" aria-current="@(onVideos ? "page" : null)">Videos</a>
+        </nav>
+
         <div class="header-actions">
             @* Label and pressed state are kept in sync by public.js. *@
             <button class="theme-toggle" type="button" aria-label="Switch to dark mode" aria-pressed="false" data-theme-toggle>
@@ -19,6 +36,12 @@
             </AuthorizeView>
         </div>
     </header>
+
+    <nav class="site-nav site-nav--bar" aria-label="Main">
+        <a href="" aria-current="@(onNews ? "page" : null)">News</a>
+        <a href="events" aria-current="@(onEvents ? "page" : null)">Sports Events</a>
+        <a href="videos" aria-current="@(onVideos ? "page" : null)">Videos</a>
+    </nav>
 
     <main class="page">
         @Body

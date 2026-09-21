@@ -126,7 +126,7 @@ app.MapGet("/feed/more", async (HttpContext http, IDbContextFactory<WebScraperCo
         shown = page.Shown,
         total = page.Total,
         added = page.Items.Count,
-        lastDay = page.Items.Count > 0 ? dates.DayKey(page.Items[^1].Date) : day,
+        lastDay = page.Items.Count > 0 ? dates.DayKey(page.Items[^1]) : day,
     });
 });
 

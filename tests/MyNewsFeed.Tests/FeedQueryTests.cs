@@ -33,7 +33,7 @@ public class FeedQueryTests
 
         var enabled = new Source { Url = $"https://test.invalid/{token}/on", Label = "On", Enabled = true };
         var disabled = new Source { Url = $"https://test.invalid/{token}/off", Enabled = false };
-        // Newest by publish date, oldest publish date, and one with no publish date that was scraped in between.
+        // Newest publish date, oldest publish date, and one with no publish date (it sorts last, whatever its scrape date).
         enabled.Pages.Add(NewPage(token, "Newest", scraped: new(2026, 1, 1), published: new(2026, 6, 1)));
         enabled.Pages.Add(NewPage(token, "Oldest", scraped: new(2026, 9, 1), published: new(2026, 2, 1)));
         enabled.Pages.Add(NewPage(token, "Unpublished", scraped: new(2026, 4, 1)));
@@ -44,10 +44,11 @@ public class FeedQueryTests
         var feed = await FeedQuery.GetFeedAsync(db, categoryId: null, search: token, after: null);
 
         Assert.Equal(3, feed.Total);
-        Assert.Equal(new[] { $"Newest {token}", $"Unpublished {token}", $"Oldest {token}" }, feed.Items.Select(i => i.Title));
+        Assert.Equal(new[] { $"Newest {token}", $"Oldest {token}", $"Unpublished {token}" }, feed.Items.Select(i => i.Title));
+        Assert.Equal(new[] { false, false, true }, feed.Items.Select(i => i.Undated));
         Assert.All(feed.Items, i => Assert.Equal("On", i.SourceLabel));
         Assert.DoesNotContain(feed.Items, i => i.Title.StartsWith("Hidden"));
-        // The date shown is the publish date when known, else the scrape date.
+        // Undated stories carry their scrape date only as a sort tiebreak; the page shows no date for them.
         Assert.Equal(new DateTime(2026, 4, 1), feed.Items.Single(i => i.Title.StartsWith("Unpublished")).Date);
         Assert.Equal(new DateTime(2026, 6, 1), feed.Items.Single(i => i.Title.StartsWith("Newest")).Date);
         Assert.Null(feed.Next);
@@ -196,6 +197,45 @@ public class FeedQueryTests
         Assert.Equal($"Item1 {token}", Assert.Single(last.Items).Title);
         Assert.Equal((0, 5), (last.Remaining, last.Shown));
         Assert.Null(last.Next);
+    }
+
+    [Fact]
+    public async Task Undated_stories_come_after_every_dated_one_and_paging_walks_across_the_boundary()
+    {
+        await using var db = Create();
+        await using var tx = await db.Database.BeginTransactionAsync();
+        var token = $"undt{Guid.NewGuid():N}";
+
+        var source = new Source { Url = $"https://test.invalid/{token}", Enabled = true };
+        // Undated pages were scraped MORE recently than the dated ones, so a scrape-date sort would put them first.
+        source.Pages.Add(NewPage(token, "Dated1", scraped: new(2026, 1, 1), published: new(2026, 3, 1)));
+        source.Pages.Add(NewPage(token, "Dated2", scraped: new(2026, 1, 1), published: new(2026, 2, 1)));
+        source.Pages.Add(NewPage(token, "Dated3", scraped: new(2026, 1, 1), published: new(2026, 1, 15)));
+        source.Pages.Add(NewPage(token, "UndatedNew", scraped: new(2026, 9, 9)));
+        source.Pages.Add(NewPage(token, "UndatedOld", scraped: new(2026, 9, 1)));
+        db.Sources.Add(source);
+        await db.SaveChangesAsync();
+
+        var seen = new List<string>();
+        FeedCursor? cursor = null;
+        var batches = 0;
+        do
+        {
+            var batch = await FeedQuery.GetFeedAsync(db, null, token, cursor, take: 2);
+            seen.AddRange(batch.Items.Select(i => i.Title.Split(' ')[0]));
+            cursor = batch.Next;
+            batches++;
+        }
+        while (cursor is not null);
+
+        Assert.Equal(new[] { "Dated1", "Dated2", "Dated3", "UndatedNew", "UndatedOld" }, seen);   // dated newest first, then undated
+        Assert.Equal(3, batches);
+
+        // The cursor taken from the last dated story leads straight into the undated ones.
+        var firstTwo = await FeedQuery.GetFeedAsync(db, null, token, null, take: 3);
+        var rest = await FeedQuery.GetFeedAsync(db, null, token, firstTwo.Next, take: 10);
+        Assert.All(rest.Items, i => Assert.True(i.Undated));
+        Assert.Equal(2, rest.Items.Count);
     }
 
     [Fact]

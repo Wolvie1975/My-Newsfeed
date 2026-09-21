@@ -1,0 +1,137 @@
+@page "/admin/sports-events/{Id:int}/edit"
+@rendermode InteractiveServer
+@inject IDbContextFactory<WebScraperContext> Factory
+@inject NavigationManager Nav
+
+<PageTitle>Edit sports event</PageTitle>
+
+<h1>Edit sports event</h1>
+
+@if (notFound)
+{
+    <div class="alert alert-warning">That event no longer exists. <a href="admin/sports-events">Back to events</a></div>
+}
+else if (existing is null)
+{
+    <p><em>Loading…</em></p>
+}
+else
+{
+    <EditForm Model="form" OnValidSubmit="SaveAsync" style="max-width: 44rem;">
+        <dl class="row small">
+            <dt class="col-sm-3">Game</dt>
+            <dd class="col-sm-9">
+                @if (FeedQuery.SafeHref(existing.Url) is { } href)
+                {
+                    <a href="@href" target="_blank" rel="noopener noreferrer">@existing.Title</a>
+                }
+                else
+                {
+                    @existing.Title
+                }
+            </dd>
+            <dt class="col-sm-3">Sport</dt>
+            <dd class="col-sm-9">@(existing.Sport ?? "—")</dd>
+            <dt class="col-sm-3">Opponent</dt>
+            <dd class="col-sm-9">@(existing.Opponent ?? "—") @(existing.IsAway is bool away ? (away ? "(away)" : "(home)") : "")</dd>
+            <dt class="col-sm-3">Date</dt>
+            <dd class="col-sm-9">
+                @existing.EventDate.ToString("yyyy-MM-dd")
+                @(existing.TimeTbd ? "(time TBD)" : existing.StartsAtUtc is DateTime start ? $"· {Dates.TimeWithOffset(start)}" : "")
+            </dd>
+            <dt class="col-sm-3">Location</dt>
+            <dd class="col-sm-9">@(existing.Location ?? "—")</dd>
+            <dt class="col-sm-3">TV</dt>
+            <dd class="col-sm-9">@(existing.Tv ?? "—")</dd>
+            <dt class="col-sm-3">First seen</dt>
+            <dd class="col-sm-9">@Dates.Stamp(existing.FirstSeenAt)</dd>
+            <dt class="col-sm-3">Last seen</dt>
+            <dd class="col-sm-9">@Dates.Stamp(existing.LastSeenAt)</dd>
+        </dl>
+
+        <div class="mb-3">
+            <label for="type" class="form-label">Type</label>
+            <InputSelect id="type" class="form-select" @bind-Value="form.TypeId">
+                <option value="">No type</option>
+                @foreach (var type in types)
+                {
+                    <option value="@type.Id">@type.Name</option>
+                }
+            </InputSelect>
+            @if (types.Count == 0)
+            {
+                <div class="form-text">There are no types yet. <a href="admin/sports-event-types/new">Add one.</a></div>
+            }
+        </div>
+
+        <div class="alert alert-secondary small" role="note">
+            The scraper rewrites every other field on this event each time it runs, so only the type is editable here.
+        </div>
+
+        <button type="submit" class="btn btn-primary me-2" disabled="@saving">Save</button>
+        <a class="btn btn-secondary" href="admin/sports-events">Cancel</a>
+    </EditForm>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    public sealed class EventForm
+    {
+        // Bound to a <select>, so it is text; "" means no type.
+        public string? TypeId { get; set; }
+    }
+
+    private sealed record TypeOption(int Id, string Name);
+
+    private readonly EventForm form = new();
+    private SportsEvent? existing;
+    private List<TypeOption> types = [];
+    private bool notFound;
+    private bool saving;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await using var db = await Factory.CreateDbContextAsync();
+        existing = await db.SportsEvents.AsNoTracking().FirstOrDefaultAsync(e => e.Id == Id);
+        if (existing is null)
+        {
+            notFound = true;
+            return;
+        }
+
+        types = await db.SportsEventsTypes.AsNoTracking()
+            .OrderBy(t => t.EventsTypeName)
+            .Select(t => new TypeOption(t.Id, t.EventsTypeName))
+            .ToListAsync();
+        form.TypeId = existing.SportsEventsTypeId?.ToString();
+    }
+
+    private async Task SaveAsync()
+    {
+        saving = true;
+        try
+        {
+            await using var db = await Factory.CreateDbContextAsync();
+            var sportsEvent = await db.SportsEvents.FindAsync(Id);
+            if (sportsEvent is null)
+            {
+                notFound = true;
+                return;
+            }
+
+            sportsEvent.SportsEventsTypeId = int.TryParse(form.TypeId, out var typeId) ? typeId : null;
+            await db.SaveChangesAsync();
+            Nav.NavigateTo("admin/sports-events");
+        }
+        catch (DbUpdateException ex) when (AdminData.IsForeignKeyViolation(ex))
+        {
+            // The chosen type was deleted after this form loaded.
+            form.TypeId = null;
+        }
+        finally
+        {
+            saving = false;
+        }
+    }
+}

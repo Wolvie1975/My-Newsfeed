@@ -11,7 +11,7 @@
 @for (var i = 0; i < Items.Count; i++)
 {
     var item = Items[i];
-    var dayKey = Dates.DayKey(item.Date);
+    var dayKey = Dates.DayKey(item);
     var isLead = LeadFirst && i == 0;
     var href = FeedQuery.SafeHref(item.Url);
     var image = FeedQuery.SafeHref(item.ImageUrl);
@@ -62,8 +62,11 @@
             <p class="src">
                 <span class="src__mark" aria-hidden="true">@FeedText.SourceMark(sourceName)</span>
                 <span class="src__name">@sourceName</span>
+                @if (!item.Undated)
+                {
                 <span class="src__sep" aria-hidden="true">·</span>
                 <time datetime="@item.Date.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'")" title="@Dates.PublishedFull(item.Date)">@* Date and time in one element; on mobile the day heading already gives the date, so only the time shows. *@<span class="pubdate__day">@Dates.Published(item.Date)<span class="pubdate__sep" aria-hidden="true"> · </span></span><span class="pubdate__time">@Dates.Time(item.Date)</span></time>
+                }
             </p>
             @if (isLead && href is not null)
             {

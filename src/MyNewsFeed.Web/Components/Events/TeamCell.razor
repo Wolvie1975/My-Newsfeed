@@ -1,0 +1,33 @@
+@using MyNewsFeed.Web.Data
+
+@* One team in a game: its logo (or, when there is none or it fails to load, a badge of initials), its name, and on
+   stacked cards an Away/Home label. *@
+
+@{
+    var logo = EventsText.LogoUrl(LogoUrl);
+}
+
+<div class="team">
+    <span class="team-badge @(logo is null ? "no-logo" : "")" aria-hidden="true">
+        <span class="team-badge__fallback">@EventsText.Initials(Name)</span>
+        @if (logo is not null)
+        {
+            <img src="@logo" alt="" width="32" height="32" loading="lazy" decoding="async" referrerpolicy="no-referrer"
+                 onerror="this.parentNode.classList.add('is-broken');this.remove()" />
+        }
+    </span>
+    <span class="team__name">@Name</span>
+    @if (!string.IsNullOrEmpty(Label))
+    {
+        <span class="team__label">@Label</span>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Name { get; set; } = "";
+
+    [Parameter] public string? LogoUrl { get; set; }
+
+    /// <summary>"Away" or "Home"; shown on stacked cards, where the column headings are not visible.</summary>
+    [Parameter] public string? Label { get; set; }
+}

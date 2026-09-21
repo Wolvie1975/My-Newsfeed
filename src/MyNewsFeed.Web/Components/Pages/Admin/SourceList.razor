@@ -42,6 +42,14 @@
                 <strong>@target.Name</strong> has @target.PageCount collected @(target.PageCount == 1 ? "page" : "pages").
                 Deleting the source also permanently deletes them.
             </p>
+            @if (target.Enabled)
+            {
+                <p class="mb-2 small">
+                    Disabling is safer: the scraper stops reading the source, its pages stay in the database, and the
+                    public feed hides them. You can turn it back on at any time.
+                </p>
+                <button class="btn btn-warning btn-sm me-2" @onclick="DisableInsteadAsync">Disable instead (recommended)</button>
+            }
             <button class="btn btn-danger btn-sm me-2" @onclick="() => ConfirmDeleteAsync(true)">
                 Delete source and @target.PageCount @(target.PageCount == 1 ? "page" : "pages")
             </button>
@@ -93,7 +101,7 @@ else
                         </td>
                         <td>@(row.CategoryName ?? "—")</td>
                         <td><a href="admin/pages?sourceId=@row.Id">@row.PageCount</a></td>
-                        <td class="text-nowrap">@AdminData.Utc(row.LastScrapedAt)</td>
+                        <td class="text-nowrap">@Dates.Stamp(row.LastScrapedAt)</td>
                         <td>
                             @if (!string.IsNullOrEmpty(row.LastError))
                             {
@@ -185,6 +193,27 @@ else
     }
 
     private void CancelDelete() => pendingDelete = null;
+
+    private async Task DisableInsteadAsync()
+    {
+        if (pendingDelete is not { } target)
+        {
+            return;
+        }
+
+        await using var db = await Factory.CreateDbContextAsync();
+        var source = await db.Sources.FindAsync(target.Id);
+        if (source is not null)
+        {
+            source.Enabled = false;
+            await db.SaveChangesAsync();
+        }
+
+        messageKind = "success";
+        message = $"Disabled {target.Name}. Its pages were kept.";
+        pendingDelete = null;
+        await LoadAsync();
+    }
 
     private async Task ConfirmDeleteAsync(bool includePages)
     {

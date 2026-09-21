@@ -1,0 +1,156 @@
+@page "/admin/youtube-videos/{Id:int}/edit"
+@rendermode InteractiveServer
+@inject IDbContextFactory<WebScraperContext> Factory
+@inject NavigationManager Nav
+
+<PageTitle>Edit YouTube video</PageTitle>
+
+<h1>Edit YouTube video</h1>
+
+@if (notFound)
+{
+    <div class="alert alert-warning">That video no longer exists. <a href="admin/youtube-videos">Back to videos</a></div>
+}
+else if (existing is null)
+{
+    <p><em>Loading…</em></p>
+}
+else
+{
+    <EditForm Model="form" OnValidSubmit="SaveAsync" style="max-width: 44rem;">
+        @if (FeedQuery.SafeHref(existing.ThumbnailUrl) is { } thumb)
+        {
+            <img src="@thumb" alt="" width="240" height="135" referrerpolicy="no-referrer"
+                 class="mb-3" style="object-fit: cover; border-radius: 6px;" />
+        }
+
+        @* Everything here except the feed link is written by the scraper and rewritten on every run. *@
+        <dl class="row small">
+            <dt class="col-sm-3">Title</dt>
+            <dd class="col-sm-9">
+                @if (FeedQuery.SafeHref(existing.Url) is { } href)
+                {
+                    <a href="@href" target="_blank" rel="noopener noreferrer">@existing.Title</a>
+                }
+                else
+                {
+                    @existing.Title
+                }
+            </dd>
+            <dt class="col-sm-3">Video ID</dt>
+            <dd class="col-sm-9 text-break">@existing.VideoId</dd>
+            <dt class="col-sm-3">Channel</dt>
+            <dd class="col-sm-9">
+                @(currentFeed?.ChannelName ?? "No feed") <span class="text-break text-muted">(@existing.ChannelId)</span>
+                @if (!string.IsNullOrWhiteSpace(existing.ChannelName)
+                    && !string.Equals(existing.ChannelName, currentFeed?.ChannelName, StringComparison.OrdinalIgnoreCase))
+                {
+                    <div class="text-muted">YouTube author: @existing.ChannelName</div>
+                }
+            </dd>
+            <dt class="col-sm-3">Published</dt>
+            <dd class="col-sm-9">@Dates.Stamp(existing.PublishedAt)</dd>
+            <dt class="col-sm-3">Updated</dt>
+            <dd class="col-sm-9">@Dates.Stamp(existing.UpdatedAt)</dd>
+            <dt class="col-sm-3">Views</dt>
+            <dd class="col-sm-9">@(existing.ViewCount?.ToString("N0") ?? "—")</dd>
+            <dt class="col-sm-3">Rating</dt>
+            <dd class="col-sm-9">@(existing.RatingAverage is decimal average ? $"{average:0.00} ({existing.RatingCount?.ToString("N0") ?? "0"} ratings)" : "—")</dd>
+            <dt class="col-sm-3">First seen</dt>
+            <dd class="col-sm-9">@Dates.Stamp(existing.FirstSeenAt)</dd>
+            <dt class="col-sm-3">Last seen</dt>
+            <dd class="col-sm-9">@Dates.Stamp(existing.LastSeenAt)</dd>
+            <dt class="col-sm-3">Description</dt>
+            <dd class="col-sm-9" style="white-space: pre-wrap;">@(existing.Description ?? "—")</dd>
+        </dl>
+
+        <div class="mb-3">
+            <label for="feed" class="form-label">Feed</label>
+            <InputSelect id="feed" class="form-select" @bind-Value="form.FeedId">
+                <option value="">No feed</option>
+                @foreach (var feed in feeds)
+                {
+                    <option value="@feed.Id">@feed.ChannelName (@feed.ChannelId)</option>
+                }
+            </InputSelect>
+            @if (feeds.Count == 0)
+            {
+                <div class="form-text">There are no feeds yet. <a href="admin/youtube-feeds/new">Add one.</a></div>
+            }
+        </div>
+
+        <div class="alert alert-secondary small" role="note">
+            The scraper owns every other field on this video and rewrites it each time it runs, so only the feed
+            link is editable here.
+        </div>
+
+        <button type="submit" class="btn btn-primary me-2" disabled="@saving">Save</button>
+        <a class="btn btn-secondary" href="admin/youtube-videos">Cancel</a>
+    </EditForm>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    public sealed class VideoForm
+    {
+        // Bound to a <select>, so it is text; "" means no feed.
+        public string? FeedId { get; set; }
+    }
+
+    private sealed record FeedOption(int Id, string ChannelId, string ChannelName);
+
+    private readonly VideoForm form = new();
+    private YouTubeVideo? existing;
+    private List<FeedOption> feeds = [];
+    private bool notFound;
+    private bool saving;
+
+    private FeedOption? currentFeed => feeds.FirstOrDefault(f => f.Id == existing?.YoutubeVideoFeedId);
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await using var db = await Factory.CreateDbContextAsync();
+        existing = await db.YouTubeVideos.AsNoTracking().FirstOrDefaultAsync(v => v.Id == Id);
+        if (existing is null)
+        {
+            notFound = true;
+            return;
+        }
+
+        feeds = await db.YoutubeVideoFeeds.AsNoTracking()
+            .OrderBy(f => f.ChannelName ?? f.ChannelId)
+            .Select(f => new FeedOption(f.Id, f.ChannelId, f.ChannelName ?? f.ChannelId))
+            .ToListAsync();
+
+        form.FeedId = existing.YoutubeVideoFeedId?.ToString();
+    }
+
+    private async Task SaveAsync()
+    {
+        saving = true;
+        try
+        {
+            await using var db = await Factory.CreateDbContextAsync();
+            var video = await db.YouTubeVideos.FindAsync(Id);
+            if (video is null)
+            {
+                notFound = true;
+                return;
+            }
+
+            video.YoutubeVideoFeedId = int.TryParse(form.FeedId, out var feedId) ? feedId : null;
+            await db.SaveChangesAsync();
+            Nav.NavigateTo("admin/youtube-videos");
+        }
+        catch (DbUpdateException ex) when (AdminData.IsForeignKeyViolation(ex))
+        {
+            // The chosen feed was deleted after this form loaded.
+            form.FeedId = null;
+        }
+        finally
+        {
+            saving = false;
+        }
+    }
+}

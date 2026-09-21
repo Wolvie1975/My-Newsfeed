@@ -1,0 +1,168 @@
+@page "/admin/sports-event-types/new"
+@page "/admin/sports-event-types/{Id:int}/edit"
+@rendermode InteractiveServer
+@inject IDbContextFactory<WebScraperContext> Factory
+@inject NavigationManager Nav
+
+<PageTitle>@(IsNew ? "Add sports event type" : "Edit sports event type")</PageTitle>
+
+<h1>@(IsNew ? "Add sports event type" : "Edit sports event type")</h1>
+
+@if (notFound)
+{
+    <div class="alert alert-warning">That type no longer exists. <a href="admin/sports-event-types">Back to types</a></div>
+}
+else if (form is null)
+{
+    <p><em>Loading…</em></p>
+}
+else
+{
+    <EditForm Model="form" OnValidSubmit="SaveAsync" style="max-width: 44rem;">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        @if (error is not null)
+        {
+            <div class="alert alert-danger" role="alert">@error</div>
+        }
+
+        <div class="mb-3">
+            <label for="name" class="form-label">Name</label>
+            <InputText id="name" class="form-control" @bind-Value="form.EventsTypeName" placeholder="For example: Kansas – all sports" />
+        </div>
+
+        <div class="mb-3">
+            <label for="school-name" class="form-label">School (optional)</label>
+            <InputText id="school-name" class="form-control" @bind-Value="form.SchoolName" placeholder="For example: Kansas" />
+            <div class="form-text">
+                The school whose calendar this is. The public events page shows it as the home or away team,
+                because events only store the opponent.
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label for="rss-url" class="form-label">Feed address</label>
+            <InputText id="rss-url" class="form-control" @bind-Value="form.RssUrl" placeholder="https://…/calendar.rss?…" />
+            <div class="form-text">
+                The events calendar feed, the address the scraper's <code>--events-feed</code> option takes.
+                A feed with <code>sport_id=0</code> returns every sport, so a type names a feed, not a sport.
+            </div>
+        </div>
+
+        @if (!IsNew && existing is not null)
+        {
+            <dl class="row small text-muted">
+                <dt class="col-sm-3">Added</dt>
+                <dd class="col-sm-9">@Dates.Stamp(existing.DateAdded)</dd>
+                <dt class="col-sm-3">Events</dt>
+                <dd class="col-sm-9"><a href="admin/sports-events?typeId=@existing.Id">@eventCount</a></dd>
+            </dl>
+        }
+
+        <p class="small text-muted">The scraper picks up new and changed rows on its next run.</p>
+
+        <button type="submit" class="btn btn-primary me-2" disabled="@saving">Save</button>
+        <a class="btn btn-secondary" href="admin/sports-event-types">Cancel</a>
+    </EditForm>
+}
+
+@code {
+    [Parameter] public int? Id { get; set; }
+
+    public sealed class TypeForm
+    {
+        [Required, StringLength(200)]
+        public string EventsTypeName { get; set; } = "";
+
+        // 450 is the longest address the database can keep unique.
+        [Required, StringLength(450)]
+        public string RssUrl { get; set; } = "";
+
+        [StringLength(100)]
+        public string? SchoolName { get; set; }
+    }
+
+    private TypeForm? form;
+    private SportsEventsType? existing;
+    private int eventCount;
+    private bool notFound;
+    private bool saving;
+    private string? error;
+
+    private bool IsNew => Id is null;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsNew)
+        {
+            form = new TypeForm();
+            return;
+        }
+
+        await using var db = await Factory.CreateDbContextAsync();
+        existing = await db.SportsEventsTypes.AsNoTracking().FirstOrDefaultAsync(t => t.Id == Id);
+        if (existing is null)
+        {
+            notFound = true;
+            return;
+        }
+
+        eventCount = await db.SportsEvents.CountAsync(e => e.SportsEventsTypeId == Id);
+        form = new TypeForm { EventsTypeName = existing.EventsTypeName, RssUrl = existing.RssUrl, SchoolName = existing.SchoolName };
+    }
+
+    private async Task SaveAsync()
+    {
+        if (form is null)
+        {
+            return;
+        }
+
+        error = null;
+        var name = form.EventsTypeName.Trim();
+        var url = form.RssUrl.Trim();
+        var school = string.IsNullOrWhiteSpace(form.SchoolName) ? null : form.SchoolName.Trim();
+
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri)
+            || (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
+        {
+            error = "Enter a full feed address that starts with http:// or https://.";
+            return;
+        }
+
+        saving = true;
+        try
+        {
+            await using var db = await Factory.CreateDbContextAsync();
+            if (IsNew)
+            {
+                db.SportsEventsTypes.Add(new SportsEventsType { EventsTypeName = name, RssUrl = url, SchoolName = school });
+            }
+            else
+            {
+                var type = await db.SportsEventsTypes.FindAsync(Id);
+                if (type is null)
+                {
+                    notFound = true;
+                    return;
+                }
+
+                type.EventsTypeName = name;
+                type.RssUrl = url;
+                type.SchoolName = school;
+            }
+
+            await db.SaveChangesAsync();
+            Nav.NavigateTo("admin/sports-event-types");
+        }
+        catch (DbUpdateException ex) when (AdminData.IsUniqueViolation(ex))
+        {
+            error = "That feed address is already a type.";
+        }
+        finally
+        {
+            saving = false;
+        }
+    }
+}

@@ -1,0 +1,175 @@
+@page "/admin/youtube-feeds/new"
+@page "/admin/youtube-feeds/{Id:int}/edit"
+@rendermode InteractiveServer
+@inject IDbContextFactory<WebScraperContext> Factory
+@inject NavigationManager Nav
+
+<PageTitle>@(IsNew ? "Add YouTube feed" : "Edit YouTube feed")</PageTitle>
+
+<h1>@(IsNew ? "Add YouTube feed" : "Edit YouTube feed")</h1>
+
+@if (notFound)
+{
+    <div class="alert alert-warning">That feed no longer exists. <a href="admin/youtube-feeds">Back to feeds</a></div>
+}
+else if (form is null)
+{
+    <p><em>Loading…</em></p>
+}
+else
+{
+    <EditForm Model="form" OnValidSubmit="SaveAsync" style="max-width: 40rem;">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        @if (error is not null)
+        {
+            <div class="alert alert-danger" role="alert">@error</div>
+        }
+
+        <div class="mb-3">
+            <label for="channel-id" class="form-label">Channel ID</label>
+            <InputText id="channel-id" class="form-control" @bind-Value="form.ChannelId" placeholder="UC…" disabled="@channelLocked" />
+            @if (channelLocked)
+            {
+                <div class="form-text">The channel ID can't change while videos are linked to this feed, because each video stores it too.</div>
+            }
+            else
+            {
+                <div class="form-text">The channel's ID (starts with UC), from its YouTube page or feed address.</div>
+            }
+        </div>
+
+        <div class="mb-3">
+            <label for="channel-name" class="form-label">Channel name (optional)</label>
+            <InputText id="channel-name" class="form-control" @bind-Value="form.ChannelName" />
+        </div>
+
+        <div class="mb-3">
+            <label for="feed-url" class="form-label">Feed address</label>
+            <InputText id="feed-url" class="form-control" @bind-Value="form.Url" placeholder="Leave blank to use the standard address for the channel ID" />
+            <div class="form-text">The channel's Atom feed, the address the scraper's <code>--youtube-feed</code> option takes.</div>
+        </div>
+
+        @if (!IsNew && existing is not null)
+        {
+            <dl class="row small text-muted">
+                <dt class="col-sm-3">Added</dt>
+                <dd class="col-sm-9">@Dates.Stamp(existing.DateAdded)</dd>
+                <dt class="col-sm-3">Videos</dt>
+                <dd class="col-sm-9"><a href="admin/youtube-videos?feedId=@existing.Id">@videoCount</a></dd>
+            </dl>
+        }
+
+        <p class="small text-muted">The scraper picks up new and changed rows on its next run.</p>
+
+        <button type="submit" class="btn btn-primary me-2" disabled="@saving">Save</button>
+        <a class="btn btn-secondary" href="admin/youtube-feeds">Cancel</a>
+    </EditForm>
+}
+
+@code {
+    [Parameter] public int? Id { get; set; }
+
+    public sealed class FeedForm
+    {
+        [Required, StringLength(40)]
+        [RegularExpression("^[A-Za-z0-9_-]+$", ErrorMessage = "A channel ID has only letters, numbers, hyphens and underscores.")]
+        public string ChannelId { get; set; } = "";
+
+        [StringLength(200)]
+        public string? ChannelName { get; set; }
+
+        [StringLength(2048)]
+        public string? Url { get; set; }
+    }
+
+    private FeedForm? form;
+    private YoutubeVideoFeed? existing;
+    private int videoCount;
+    private bool notFound;
+    private bool saving;
+    private bool channelLocked;
+    private string? error;
+
+    private bool IsNew => Id is null;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsNew)
+        {
+            form = new FeedForm();
+            return;
+        }
+
+        await using var db = await Factory.CreateDbContextAsync();
+        existing = await db.YoutubeVideoFeeds.AsNoTracking().FirstOrDefaultAsync(f => f.Id == Id);
+        if (existing is null)
+        {
+            notFound = true;
+            return;
+        }
+
+        videoCount = await db.YouTubeVideos.CountAsync(v => v.YoutubeVideoFeedId == Id);
+        channelLocked = videoCount > 0;
+        form = new FeedForm { ChannelId = existing.ChannelId, ChannelName = existing.ChannelName, Url = existing.Url };
+    }
+
+    private async Task SaveAsync()
+    {
+        if (form is null)
+        {
+            return;
+        }
+
+        error = null;
+        var channelId = form.ChannelId.Trim();
+        var name = string.IsNullOrWhiteSpace(form.ChannelName) ? null : form.ChannelName.Trim();
+        var url = string.IsNullOrWhiteSpace(form.Url) ? AdminData.YoutubeFeedUrl(channelId) : form.Url.Trim();
+
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri)
+            || (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
+        {
+            error = "Enter a full feed address that starts with http:// or https://.";
+            return;
+        }
+
+        saving = true;
+        try
+        {
+            await using var db = await Factory.CreateDbContextAsync();
+            if (IsNew)
+            {
+                db.YoutubeVideoFeeds.Add(new YoutubeVideoFeed { ChannelId = channelId, ChannelName = name, Url = url });
+            }
+            else
+            {
+                var feed = await db.YoutubeVideoFeeds.FindAsync(Id);
+                if (feed is null)
+                {
+                    notFound = true;
+                    return;
+                }
+
+                if (!channelLocked)
+                {
+                    feed.ChannelId = channelId;
+                }
+
+                feed.ChannelName = name;
+                feed.Url = url;
+            }
+
+            await db.SaveChangesAsync();
+            Nav.NavigateTo("admin/youtube-feeds");
+        }
+        catch (DbUpdateException ex) when (AdminData.IsUniqueViolation(ex))
+        {
+            error = "A feed for that channel already exists.";
+        }
+        finally
+        {
+            saving = false;
+        }
+    }
+}
