@@ -195,62 +195,70 @@
     color: var(--chip-on-fg); font-weight: 600;
 }
 .pub .count { font-size: 14px; color: var(--text-2); white-space: nowrap; }
-.pub .count--toolbar { display: none; }
-.pub .daylabel {
-    display: flex; align-items: baseline; justify-content: space-between;
-    margin: 0; padding: 12px 20px 0;
-    font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
-    color: var(--text-2);
-}
-.pub .daylabel span:last-child:not(:first-child) { font-size: 14px; font-weight: 400; letter-spacing: 0; text-transform: none; }
+/* Every card shows its full date, so the day headings FeedArticles renders are not shown. */
+.pub .daylabel { display: none; }
 
-/* ---------- Feed: mobile list (default) ---------- */
-.pub .feed { display: flex; flex-direction: column; margin: 0 -20px; }
-.pub .article { display: block; padding: 16px 20px; border-bottom: 1px solid var(--row-border); }
-.pub .article--lead {
-    padding: 18px 20px; background: var(--surface);
-    border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+/* ---------- Feed: the same cards as desktop, one column on phones ---------- */
+.pub .feed { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; margin: 0; }
+.pub .article {
+    display: flex; flex-direction: column;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden;
 }
-.pub .thumb { display: none; }
+.pub .article--lead { grid-column: 1 / -1; border-radius: 16px; }
+
+/* The default image is a neutral picture centred on the placeholder colour; a real image covers it. */
+.pub .thumb {
+    position: relative; display: block; overflow: hidden;
+    aspect-ratio: 16 / 9; background: var(--ph-bg) url("img/default-article.svg") center / 44px no-repeat;
+}
+.pub .thumb img {
+    position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block;
+}
+.pub .article--lead .thumb { background-size: 64px; }
 
 .pub .body {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-areas: "src cat" "title title" "summary summary" "more more";
-    gap: 8px 12px; align-items: center;
+    flex: 1; display: grid; padding: 16px; gap: 8px; align-items: start;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "cat" "title" "summary" "src";
+    grid-template-rows: auto auto auto 1fr;
 }
-.pub .src { grid-area: src; margin: 0; justify-self: start; }
 .pub .cat {
-    grid-area: cat; font-size: 12px; font-weight: 700; letter-spacing: 0.08em;
+    grid-area: cat; justify-self: start; font-size: 12px; font-weight: 700; letter-spacing: 0.08em;
     text-transform: uppercase; color: var(--accent);
 }
 .pub .title {
-    grid-area: title; margin: 0; font-size: 17px; line-height: 1.3; font-weight: 650; letter-spacing: -0.01em;
+    grid-area: title; margin: 0; font-size: 18px; line-height: 1.3; font-weight: 650; letter-spacing: -0.01em;
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
 }
 .pub .title a:hover { color: var(--accent); }
 .pub .summary {
     grid-area: summary; margin: 0; font-size: 15px; line-height: 1.5; color: var(--text-2);
-    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
 }
-.pub .more {
-    grid-area: more; display: none; align-items: center; gap: 6px;
-    height: 44px; font-size: 15px; font-weight: 600; color: var(--accent);
+/* The whole title is the link, so the lead's "Read on ..." link is not shown. */
+.pub .more { display: none; }
+.pub .src {
+    grid-area: src; align-self: end; margin: 0; display: flex; align-items: center; gap: 8px;
+    padding-top: 4px; font-size: 14px; color: var(--text-2);
 }
-.pub .article--lead .title { font-size: 20px; font-weight: 700; }
-.pub .article--lead .summary { display: block; line-height: 1.55; }
-.pub .article--lead .more { display: inline-flex; justify-self: start; }
+.pub .src__mark {
+    display: inline-flex; align-items: center; justify-content: center; flex: none;
+    width: 22px; height: 22px; border-radius: 6px;
+    background: var(--mark-bg); color: var(--mark-fg); font-size: 11px; font-weight: 700;
+}
+.pub .src__name { min-width: 0; color: var(--text); font-weight: 600; }
+.pub .src time { white-space: nowrap; }
 
-.pub .src__mark, .pub .src__sep { display: none; }
-
-/* Mobile: the day heading gives the date, so each row shows only the time next to the source. */
-.pub .src time { display: inline; margin-left: 8px; font-size: 12px; color: var(--text-2); white-space: nowrap; }
-.pub .pubdate__day { display: none; }
+/* Lead card */
+.pub .article--lead .body { padding: 20px; gap: 10px; grid-template-rows: auto auto auto auto; }
+.pub .article--lead .title {
+    display: block; font-size: 24px; line-height: 1.2; font-weight: 700; letter-spacing: -0.02em;
+    text-wrap: balance;
+}
+.pub .article--lead .summary { display: block; font-size: 16px; line-height: 1.55; }
+.pub .article--lead .src { align-self: start; padding-top: 0; }
 
 .pub .updated { margin: 0; font-size: 13px; color: var(--text-2); }
-.pub .src__name {
-    display: inline-block; padding: 3px 8px; border-radius: 6px;
-    background: var(--pill-bg); color: var(--pill-fg); font-size: 12px; font-weight: 600;
-}
 
 .pub .loadmore { display: flex; flex-direction: column; align-items: stretch; gap: 12px; padding-top: 12px; text-align: center; }
 .pub .empty { color: var(--text-2); }
@@ -267,63 +275,21 @@
     .pub .search__field svg { left: 16px; top: 16px; width: 20px; height: 20px; }
     .pub .search input { padding-left: 48px; padding-right: 16px; }
     .pub .nf-btn { padding: 0 28px; }
-
     .pub .catselect { display: none; }
     .pub .chips { display: flex; flex: none; flex-wrap: wrap; }
-    .pub .count--toolbar { display: block; }
-    .pub .daylabel { display: none; }
 
-    .pub .feed { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; margin: 0; }
-    .pub .article, .pub .article--lead {
-        display: flex; flex-direction: column; padding: 0;
-        background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden;
-    }
-    .pub .article--lead { grid-column: 1 / -1; border-radius: 16px; }
-
-    /* The default image is a neutral picture centred on the placeholder colour; a real image covers it. */
-    .pub .thumb {
-        position: relative; display: block; overflow: hidden;
-        height: 200px; background: var(--ph-bg) url("img/default-article.svg") center / 44px no-repeat;
-    }
-    .pub .thumb img {
-        position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block;
-    }
-    .pub .article--lead .thumb { height: 240px; background-size: 64px; }
-
-    .pub .body {
-        flex: 1; padding: 20px; gap: 10px; align-items: start;
-        grid-template-columns: minmax(0, 1fr);
-        grid-template-areas: "cat" "title" "summary" "src";
-        grid-template-rows: auto auto auto 1fr;
-    }
-    .pub .cat { justify-self: start; }
-    .pub .title {
-        font-size: 20px; line-height: 1.25;
-        display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
-    }
-    .pub .summary { -webkit-line-clamp: 3; }
-    .pub .src {
-        align-self: end; display: flex; align-items: center; gap: 8px;
-        padding-top: 6px; font-size: 14px; color: var(--text-2);
-    }
-    .pub .src__mark {
-        display: inline-flex; align-items: center; justify-content: center; flex: none;
-        width: 22px; height: 22px; border-radius: 6px;
-        background: var(--mark-bg); color: var(--mark-fg); font-size: 11px; font-weight: 700;
-    }
-    .pub .src__sep { display: inline; }
-    .pub .src time { margin-left: 0; font-size: inherit; color: inherit; }
-    .pub .pubdate__day { display: inline; }
-    .pub .src__name { padding: 0; background: none; color: var(--text); font-size: 14px; }
+    .pub .feed { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+    .pub .thumb { aspect-ratio: auto; height: 200px; }
+    .pub .article--lead .thumb { height: 240px; }
+    .pub .body { padding: 20px; gap: 10px; }
+    .pub .title { font-size: 20px; line-height: 1.25; }
+    .pub .src { padding-top: 6px; }
 
     /* Lead card, stacked at tablet width */
-    .pub .article--lead .body { padding: 28px; gap: 12px; grid-template-rows: auto auto auto auto; }
-    .pub .article--lead .title {
-        display: block; font-size: 28px; line-height: 1.15; font-weight: 700; letter-spacing: -0.02em;
-        text-wrap: balance;
-    }
-    .pub .article--lead .summary { display: block; font-size: 17px; line-height: 1.55; }
-    .pub .article--lead .src { align-self: start; padding-top: 0; }
+    .pub .article--lead .body { padding: 28px; gap: 12px; }
+    .pub .article--lead .title { font-size: 28px; line-height: 1.15; }
+    .pub .article--lead .summary { font-size: 17px; }
+
     .pub .article--lead .more { display: none; }
 
     .pub .loadmore { align-items: center; padding-top: 20px; }
@@ -581,19 +547,19 @@
 .pub .d-hello h1 { margin: 0; font-size: 26px; line-height: 1.2; font-weight: 700; letter-spacing: -0.02em; }
 .pub .d-hello p { margin: 2px 0 0; font-size: 15px; color: var(--text-2); }
 
-/* Phones: full-width blocks in this order: today's events, news, videos. */
+/* Phones: the same cards as desktop, stacked in this order: today's events, news, videos. */
 .pub .d-grid { display: flex; flex-direction: column; gap: 12px; }
 .pub .d-today { order: 1; }
 .pub .d-news { order: 2; }
 .pub .d-vids { order: 3; }
 
 .pub .d-card {
-    margin: 0 -20px; background: var(--surface);
-    border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+    margin: 0; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 14px; overflow: hidden;
 }
 .pub .d-card__head {
     display: flex; align-items: center; justify-content: space-between; gap: 12px;
-    min-height: 56px; padding: 4px 20px; border-bottom: 1px solid var(--row-border);
+    min-height: 56px; padding: 4px 16px; border-bottom: 1px solid var(--row-border);
 }
 .pub .d-card__title {
     margin: 0; display: flex; align-items: baseline; gap: 10px;
@@ -606,17 +572,29 @@
 }
 .pub .d-list { list-style: none; margin: 0; padding: 0; }
 .pub .d-list > li + li { border-top: 1px solid var(--row-border); }
-.pub .d-empty { margin: 0; padding: 24px 20px; text-align: center; color: var(--text-2); }
+.pub .d-empty { margin: 0; padding: 24px 16px; text-align: center; color: var(--text-2); }
 
 /* News rows */
-.pub .d-story { padding: 16px 20px; display: flex; flex-direction: column; gap: 6px; }
-.pub .d-story__top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+/* News rows. Phones: source and category on top, the picture beside the headline, the summary full width below. */
+.pub .d-story {
+    display: grid; grid-template-columns: clamp(88px, 28vw, 120px) minmax(0, 1fr);
+    grid-template-areas: "top top" "thumb title" "sum sum";
+    gap: 8px 12px; align-items: start; padding: 16px;
+}
+.pub .d-story > .d-thumb { grid-area: thumb; }
+.pub .d-story__body { display: contents; }
+.pub .d-story__top { grid-area: top; }
+.pub .d-story__title { grid-area: title; }
+.pub .d-story__sum { grid-area: sum; }
+.pub .d-story__top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 12px; }
 .pub .d-src {
     display: inline-block; min-width: 0; padding: 3px 8px; border-radius: 6px;
     background: var(--ph-bg); color: var(--chip-fg); font-size: 12px; font-weight: 600;
 }
 .pub .d-cat { font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
-.pub .d-story__title { margin: 0; font-size: 17px; line-height: 1.3; font-weight: 650; letter-spacing: -0.01em; overflow-wrap: anywhere; }
+.pub .d-story__title { margin: 0; font-size: 17px; line-height: 1.3; font-weight: 650; letter-spacing: -0.01em; overflow-wrap: anywhere;
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+}
 .pub .d-story__title a:hover, .pub .d-game__match a:hover, .pub .d-vid__title a:hover { color: var(--accent); }
 .pub .d-story__sum {
     margin: 0; font-size: 15px; line-height: 1.5; color: var(--text-2);
@@ -624,7 +602,7 @@
 }
 
 /* Today's events rows. The time reads "6:00 P.M. CT", so the column is wider than the plain-clock design and never wraps. */
-.pub .d-game { display: grid; grid-template-columns: 104px minmax(0, 1fr); gap: 12px; align-items: start; padding: 14px 20px; }
+.pub .d-game { display: grid; grid-template-columns: 104px minmax(0, 1fr); gap: 12px; align-items: start; padding: 14px 16px; }
 .pub .d-game__time { white-space: nowrap; font-size: 14px; line-height: 1.5; font-weight: 700; font-variant-numeric: tabular-nums; }
 .pub .d-game__time.is-tbd { font-weight: 500; color: var(--text-2); }
 .pub .d-game__body { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
@@ -640,7 +618,7 @@
 .pub .d-tv { font-weight: 600; color: var(--text); }
 
 /* Videos rows (one per channel) */
-.pub .d-vid { display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 12px; align-items: start; padding: 12px 20px; }
+.pub .d-vid { display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 12px; align-items: start; padding: 12px 16px; }
 .pub .d-thumb {
     position: relative; display: block; aspect-ratio: 16 / 9;
     border-radius: 8px; overflow: hidden; background: var(--ph-bg); color: var(--ph-fg);
@@ -668,10 +646,11 @@
     .pub .d-hello h1 { font-size: 32px; }
     .pub .d-hello p { font-size: 16px; }
     .pub .d-grid { gap: 24px; }
-    .pub .d-card { margin: 0; border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
     .pub .d-card__head { padding: 4px 24px; }
     .pub .d-empty { padding: 24px; }
-    .pub .d-story { padding: 18px 24px; }
+    /* Wider screens: picture on the left, everything else stacked beside it, like the video rows. */
+    .pub .d-story { grid-template-columns: 168px minmax(0, 1fr); grid-template-areas: "thumb body"; gap: 16px; padding: 18px 24px; }
+    .pub .d-story__body { grid-area: body; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
     .pub .d-game { padding: 16px 24px; }
     .pub .d-vid { padding: 14px 24px; }
 }

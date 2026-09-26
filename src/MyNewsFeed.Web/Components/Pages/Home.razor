@@ -92,28 +92,39 @@
                     var href = FeedQuery.SafeHref(item.Url);
                     var title = FeedText.StripEmoji(item.Title);
                     var summary = FeedText.StripEmoji(FeedQuery.Excerpt(item.Description));
+                    var image = FeedQuery.SafeHref(item.ImageUrl);
                     <li class="d-story">
-                        <div class="d-story__top">
-                            <span class="d-src">@FeedText.SourceName(item.SourceLabel, item.SourceUrl)</span>
-                            @if (item.CategoryName is not null)
+                        @* The title is the real link; the picture repeats it for mouse and touch only. *@
+                        <a class="d-thumb" href="@href" target="_blank" rel="noopener noreferrer" tabindex="-1" aria-hidden="true">
+                            <span class="d-thumb__ph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"></rect><circle cx="9" cy="10" r="1.6"></circle><path d="m21 16-5-5-8 9"></path></svg></span>
+                            @if (image is not null)
                             {
-                                <a class="d-cat" href="news?category=@item.CategoryId">@item.CategoryName</a>
+                                <img src="@image" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()" />
+                            }
+                        </a>
+                        <div class="d-story__body">
+                            <div class="d-story__top">
+                                <span class="d-src">@FeedText.SourceName(item.SourceLabel, item.SourceUrl)</span>
+                                @if (item.CategoryName is not null)
+                                {
+                                    <a class="d-cat" href="news?category=@item.CategoryId">@item.CategoryName</a>
+                                }
+                            </div>
+                            <h3 class="d-story__title">
+                                @if (href is not null)
+                                {
+                                    <a href="@href" target="_blank" rel="noopener noreferrer">@(title.Length > 0 ? title : item.Title)</a>
+                                }
+                                else
+                                {
+                                    @(title.Length > 0 ? title : item.Title)
+                                }
+                            </h3>
+                            @if (!string.IsNullOrEmpty(summary))
+                            {
+                                <p class="d-story__sum">@summary</p>
                             }
                         </div>
-                        <h3 class="d-story__title">
-                            @if (href is not null)
-                            {
-                                <a href="@href" target="_blank" rel="noopener noreferrer">@(title.Length > 0 ? title : item.Title)</a>
-                            }
-                            else
-                            {
-                                @(title.Length > 0 ? title : item.Title)
-                            }
-                        </h3>
-                        @if (!string.IsNullOrEmpty(summary))
-                        {
-                            <p class="d-story__sum">@summary</p>
-                        }
                     </li>
                 }
             </ul>
