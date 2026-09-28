@@ -6,6 +6,7 @@
     var onEvents = path.StartsWith("events", StringComparison.OrdinalIgnoreCase);
     var onVideos = path.StartsWith("videos", StringComparison.OrdinalIgnoreCase);
     var onNews = path.StartsWith("news", StringComparison.OrdinalIgnoreCase);
+    var onSaved = path.StartsWith("saved", StringComparison.OrdinalIgnoreCase);
     var onHome = path.Length == 0 || path[0] is '?' or '#';
 }
 
@@ -23,6 +24,12 @@
         </nav>
 
         <div class="header-actions">
+            @* An icon, not a sixth nav link: the phone bar has no room for another word. public.js fills in the count. *@
+            <a class="saved-link" href="saved" aria-current="@(onSaved ? "page" : null)" title="Saved articles">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4.5L5 21V4a1 1 0 0 1 1-1z"></path></svg>
+                <span class="sr-only">Saved articles</span>
+                <span class="saved-link__count" data-saved-count hidden></span>
+            </a>
             @* Label and pressed state are kept in sync by public.js. *@
             <button class="theme-toggle" type="button" aria-label="Switch to dark mode" aria-pressed="false" data-theme-toggle>
                 <svg class="icon-moon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"></path></svg>
@@ -30,7 +37,7 @@
             </button>
             <AuthorizeView>
                 <Authorized>
-                    <a class="admin-link" href="admin/sources">Admin</a>
+                    <a class="admin-link" href="admin">Admin</a>
                 </Authorized>
                 <NotAuthorized>
                     <a class="admin-link" href="login">Admin sign in</a>

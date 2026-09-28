@@ -7,7 +7,7 @@ namespace MyNewsFeed.Web.Auth;
 public static class AdminAuth
 {
     public const string Scheme = CookieAuthenticationDefaults.AuthenticationScheme;
-    public const string DefaultLandingPath = "/admin/sources";
+    public const string DefaultLandingPath = "/admin";
 
     /// <summary>Fails closed: an unset or empty configured password never matches.</summary>
     public static bool PasswordMatches(string? configured, string? supplied)

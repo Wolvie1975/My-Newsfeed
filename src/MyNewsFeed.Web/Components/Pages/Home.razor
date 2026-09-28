@@ -93,6 +93,7 @@
                     var title = FeedText.StripEmoji(item.Title);
                     var summary = FeedText.StripEmoji(FeedQuery.Excerpt(item.Description));
                     var image = FeedQuery.SafeHref(item.ImageUrl);
+                    var sourceName = FeedText.SourceName(item.SourceLabel, item.SourceUrl);
                     <li class="d-story">
                         @* The title is the real link; the picture repeats it for mouse and touch only. *@
                         <a class="d-thumb" href="@href" target="_blank" rel="noopener noreferrer" tabindex="-1" aria-hidden="true">
@@ -104,11 +105,14 @@
                         </a>
                         <div class="d-story__body">
                             <div class="d-story__top">
-                                <span class="d-src">@FeedText.SourceName(item.SourceLabel, item.SourceUrl)</span>
-                                @if (item.CategoryName is not null)
-                                {
-                                    <a class="d-cat" href="news?category=@item.CategoryId">@item.CategoryName</a>
-                                }
+                                <span class="d-src">@sourceName</span>
+                                <span class="d-story__tools">
+                                    @if (item.CategoryName is not null)
+                                    {
+                                        <a class="d-cat" href="news?category=@item.CategoryId">@item.CategoryName</a>
+                                    }
+                                    <MyNewsFeed.Web.Components.Feed.SaveButton Item="item" Title="@(title.Length > 0 ? title : item.Title)" Source="@sourceName" Summary="@summary" />
+                                </span>
                             </div>
                             <h3 class="d-story__title">
                                 @if (href is not null)

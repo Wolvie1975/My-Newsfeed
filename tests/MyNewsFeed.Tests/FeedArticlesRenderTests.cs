@@ -200,4 +200,42 @@ public class FeedArticlesRenderTests
         Assert.DoesNotContain("<img src=x", html);
         Assert.Contains("&lt;script&gt;", html);
     }
+
+    [Fact]
+    public async Task Each_card_carries_a_hidden_save_button_with_a_copy_of_the_article()
+    {
+        var html = await RenderAsync([Item(1, "Big \"game\" 🏈 tonight", Today)]);
+
+        Assert.Contains("data-save", html);
+        Assert.Contains(" hidden", html);   // shown by public.js only when storage works
+        Assert.Contains("data-url=\"https://www.espn.com/a\"", html);
+        Assert.Contains("data-title=\"Big &quot;game&quot; tonight\"", html);   // as shown on the card: emoji removed
+        Assert.Contains("data-source=\"ESPN\"", html);
+        Assert.Contains("data-image=\"https://img.example.com/a.jpg\"", html);
+        Assert.Contains("data-summary=\"A summary.\"", html);
+        Assert.Contains("data-date=\"2026-09-20T09:00:00Z\"", html);
+        Assert.Contains("data-date-label=\"Sep 20, 2026\"", html);
+    }
+
+    [Fact]
+    public async Task No_save_button_for_an_article_without_a_safe_link_and_no_unsafe_picture()
+    {
+        var unsafeLink = await RenderAsync([Item(1, "One", Today, url: "javascript:alert(1)")]);
+        Assert.DoesNotContain("data-save", unsafeLink);
+
+        var unsafePicture = await RenderAsync([Item(1, "One", Today, image: "javascript:alert(1)")]);
+        Assert.Contains("data-save", unsafePicture);
+        Assert.DoesNotContain("data-image=\"javascript", unsafePicture);
+    }
+
+    [Fact]
+    public async Task An_undated_article_is_saved_without_a_date()
+    {
+        var item = Item(1, "One", Today) with { Undated = true };
+        var html = await RenderAsync([item]);
+
+        Assert.Contains("data-save", html);
+        Assert.DoesNotContain("data-date=", html);
+        Assert.DoesNotContain("data-date-label=", html);
+    }
 }

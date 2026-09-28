@@ -1,0 +1,133 @@
+@page "/admin"
+@rendermode InteractiveServer
+@inject IDbContextFactory<WebScraperContext> Factory
+@inject IConfiguration Config
+
+<PageTitle>Scraper status</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="mb-0">Scraper status</h1>
+    <button class="btn btn-outline-primary" disabled="@loading" @onclick="LoadAsync">Refresh</button>
+</div>
+
+@if (report is null)
+{
+    <p><em>Loading…</em></p>
+}
+else
+{
+    @* The headline: is the scraper running at all? A stale scraper makes every row below stale too, so it is said once. *@
+    @if (report.LastRun is null)
+    {
+        <div class="alert alert-danger" role="alert">The scraper has not written anything to the database yet.</div>
+    }
+    else if (report.Stale)
+    {
+        <div class="alert alert-danger" role="alert">
+            <p class="mb-1"><strong>The scraper has not run for @ScraperHealth.Age(report.CheckedAt - report.LastRun.Value).</strong></p>
+            <p class="mb-0">
+                Its last write was @Dates.Stamp(report.LastRun). It normally runs every hour, so the public pages are
+                showing old news, videos and games. Check that the scraper's job or container is still running.
+            </p>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-@(report.Problems > 0 ? "warning" : "success")" role="status">
+            The scraper last ran @ScraperHealth.Age(report.CheckedAt - report.LastRun.Value) ago (@Dates.Stamp(report.LastRun)).
+            @if (report.Problems > 0)
+            {
+                <span>@report.Problems @(report.Problems == 1 ? "item needs" : "items need") attention below.</span>
+            }
+            else
+            {
+                <span>Everything it reads is up to date.</span>
+            }
+        </div>
+    }
+
+    <p class="text-muted small">
+        Anything the scraper has not refreshed for more than @ScraperHealth.Age(report.StaleAfter) is flagged
+        (Scraper:StaleAfterHours). Checked @Dates.Stamp(report.CheckedAt).
+    </p>
+
+    <h2 class="h4 mt-4">News sources</h2>
+    @if (report.Sources.Count == 0)
+    {
+        <p>No sources. <a href="admin/sources/new">Add one.</a></p>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-sm align-middle">
+                <thead>
+                    <tr><th>Status</th><th>Source</th><th>Articles</th><th>Last scraped</th><th>Detail</th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in report.Sources)
+                    {
+                        <tr class="@(row.Enabled ? null : "text-muted")">
+                            <td><StatusBadge Level="row.Level" /></td>
+                            <td><a href="admin/sources/@row.Id/edit">@row.Name</a></td>
+                            <td>@row.ItemCount</td>
+                            <td class="text-nowrap">@Dates.Stamp(row.LastSeen)</td>
+                            <td>
+                                @row.Note
+                                @if (row.Error is not null)
+                                {
+                                    <div class="small text-danger text-break" title="@row.Error">@Truncate(row.Error, 160)</div>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+
+    <h2 class="h4 mt-4">YouTube channels</h2>
+    @if (report.UnlinkedVideos > 0)
+    {
+        <p class="small text-muted">
+            @report.UnlinkedVideos @(report.UnlinkedVideos == 1 ? "video is" : "videos are") not linked to a channel row.
+            They still count below (matched by channel id); <a href="admin/youtube-feeds">YouTube feeds</a> can link them.
+        </p>
+    }
+    <HealthTable Rows="report.Channels" ItemLabel="Videos" EditBase="admin/youtube-feeds" Empty="No channels." />
+
+    <h2 class="h4 mt-4">Sports event feeds</h2>
+    @if (report.UnlinkedEvents > 0)
+    {
+        <p class="small text-muted">
+            @report.UnlinkedEvents @(report.UnlinkedEvents == 1 ? "event is" : "events are") not linked to a feed, so
+            @(report.UnlinkedEvents == 1 ? "it is" : "they are") not counted below.
+            <a href="admin/sports-event-types">Sports event types</a> can link them.
+        </p>
+    }
+    <HealthTable Rows="report.EventFeeds" ItemLabel="Games" ShowUpcoming="true" EditBase="admin/sports-event-types" Empty="No event feeds." />
+}
+
+@code {
+    private ScraperHealthReport? report;
+    private bool loading;
+
+    protected override Task OnInitializedAsync() => LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        loading = true;
+        try
+        {
+            var now = DateTime.UtcNow;
+            await using var db = await Factory.CreateDbContextAsync();
+            report = await ScraperHealth.GetReportAsync(
+                db, now, Dates.TodayAt(now), ScraperHealth.StaleAfter(Config["Scraper:StaleAfterHours"]));
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private static string Truncate(string text, int max) => text.Length <= max ? text : text[..max] + "…";
+}

@@ -1,0 +1,46 @@
+@* The table for YouTube channels and events feeds on the scraper status page (both have no error column of their own). *@
+@if (Rows.Count == 0)
+{
+    <p>@Empty</p>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-sm align-middle">
+            <thead>
+                <tr>
+                    <th>Status</th><th>Name</th><th>@ItemLabel</th>
+                    @if (ShowUpcoming)
+                    {
+                        <th>Upcoming</th>
+                    }
+                    <th>Last refreshed</th><th>Detail</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in Rows)
+                {
+                    <tr>
+                        <td><StatusBadge Level="row.Level" /></td>
+                        <td><a href="@EditBase/@row.Id/edit">@row.Name</a></td>
+                        <td>@row.ItemCount</td>
+                        @if (ShowUpcoming)
+                        {
+                            <td>@row.Upcoming</td>
+                        }
+                        <td class="text-nowrap">@Dates.Stamp(row.LastSeen)</td>
+                        <td>@row.Note</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<HealthRow> Rows { get; set; } = [];
+    [Parameter, EditorRequired] public string ItemLabel { get; set; } = "";
+    [Parameter, EditorRequired] public string EditBase { get; set; } = "";
+    [Parameter] public bool ShowUpcoming { get; set; }
+    [Parameter] public string Empty { get; set; } = "";
+}

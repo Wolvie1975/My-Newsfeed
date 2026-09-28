@@ -263,12 +263,43 @@
 .pub .loadmore { display: flex; flex-direction: column; align-items: stretch; gap: 12px; padding-top: 12px; text-align: center; }
 .pub .empty { color: var(--text-2); }
 
+/* ---------- Saved articles (kept in this browser; see public.js) ---------- */
+/* The bookmark on each card. Hidden until public.js knows storage works; filled in when the article is saved. */
+.pub .save {
+    display: inline-flex; align-items: center; justify-content: center; flex: none;
+    width: 36px; height: 36px; margin: -6px -8px -6px auto; padding: 0;
+    border: 0; border-radius: 8px; background: transparent; color: var(--text-2); cursor: pointer;
+}
+.pub .save[hidden] { display: none; }
+.pub .save:hover { color: var(--accent); background: var(--pill-bg); }
+.pub .save[aria-pressed="true"] { color: var(--accent); }
+.pub .save[aria-pressed="true"] path { fill: currentColor; }
+.pub .d-story__tools { display: inline-flex; align-items: center; gap: 8px; margin-left: auto; }
+.pub .d-story__tools .save { margin: -8px -8px -8px 0; }
+
+/* The header's link to the Saved page, with the number saved. */
+.pub .saved-link {
+    position: relative; width: 44px; height: 44px; flex: none;
+    display: inline-flex; align-items: center; justify-content: center; border-radius: 10px; color: inherit;
+}
+.pub .saved-link:hover { text-decoration: none; background: rgba(255, 255, 255, 0.08); }
+.pub .saved-link[aria-current="page"] { background: rgba(255, 255, 255, 0.14); }
+.pub .saved-link__count {
+    position: absolute; top: 4px; right: 2px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px;
+    background: var(--btn-bg); color: var(--btn-fg); font-size: 11px; font-weight: 700; line-height: 18px; text-align: center;
+}
+.pub .saved-link__count[hidden] { display: none; }
+.pub .saved-head { margin: 0; font-size: 24px; letter-spacing: -0.02em; }
+.pub .count:empty { display: none; }
+
 /* ---------- Tablet and desktop ---------- */
 @media (min-width: 768px) {
     .pub .site-header { height: 72px; padding: 0 80px; }
     .pub .brand { font-size: 22px; }
     .pub .header-actions { gap: 12px; }
     .pub .theme-toggle { border: 1px solid var(--header-line); }
+    .pub .saved-link { border: 1px solid var(--header-line); }
+    .pub .saved-head { font-size: 28px; }
     .pub .admin-link { padding: 0 18px; border: 1px solid var(--header-line); border-radius: 10px; font-size: 15px; }
 
     .pub .page { padding: 32px 80px 64px; gap: 20px; }

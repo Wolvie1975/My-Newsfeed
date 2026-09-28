@@ -1,0 +1,20 @@
+@page "/saved"
+@layout PublicLayout
+
+<PageTitle>Saved · MyNewsFeed</PageTitle>
+
+@* Saved articles live only in this browser (localStorage), so the server sends an empty shell and public.js draws the
+   cards from each article's saved copy. They stay after the scraper drops the article from the database. *@
+
+<h1 class="saved-head">Saved articles</h1>
+<p class="updated">Saved in this browser only. They are not shared with your other devices.</p>
+
+<p class="count" data-saved-status aria-live="polite"></p>
+
+<section class="feed" aria-label="Saved articles" data-saved-list></section>
+
+<p class="empty" data-saved-empty hidden>
+    Nothing saved yet. Use the bookmark on any article in <a href="news">News</a> to keep it here.
+</p>
+
+<noscript><p class="empty">Saved articles need JavaScript turned on.</p></noscript>
