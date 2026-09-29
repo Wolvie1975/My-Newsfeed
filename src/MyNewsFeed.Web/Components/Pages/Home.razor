@@ -111,6 +111,7 @@
                                     {
                                         <a class="d-cat" href="news?category=@item.CategoryId">@item.CategoryName</a>
                                     }
+                                    <MyNewsFeed.Web.Components.Feed.CopyLinkButton Url="@item.Url" Title="@(title.Length > 0 ? title : item.Title)" />
                                     <MyNewsFeed.Web.Components.Feed.SaveButton Item="item" Title="@(title.Length > 0 ? title : item.Title)" Source="@sourceName" Summary="@summary" />
                                 </span>
                             </div>

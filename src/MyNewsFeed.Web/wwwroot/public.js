@@ -148,6 +148,17 @@
             src.appendChild(time);
         }
 
+        // Copy link, as on News cards (CopyLinkButton.razor).
+        var copy = el('button', 'copy');
+        copy.type = 'button';
+        copy.setAttribute('data-copy-link', '');
+        copy.setAttribute('data-url', href);
+        copy.setAttribute('data-title', text(a.title));
+        copy.setAttribute('aria-label', 'Copy link');
+        copy.setAttribute('title', 'Copy link');
+        copy.innerHTML = COPY_ICONS;
+        src.appendChild(copy);
+
         // The card's own bookmark, pressed: clicking it removes the article from the list.
         var button = el('button', 'save');
         button.type = 'button';
@@ -219,9 +230,72 @@
         }
         if (!writeSaved(list)) message = 'Could not save: this browser\'s storage is full or blocked.';
 
-        var status = document.querySelector('[data-saved-status]') || document.querySelector('[data-load-status]');
-        if (status) status.textContent = message;
+        announce(message);
         syncSaves();
+    }
+
+    // Tells screen readers what just happened, through the page's own status line. Pages without one (the home page)
+    // get a hidden one, added once.
+    function announce(message) {
+        var status = document.querySelector('[data-saved-status]') || document.querySelector('[data-load-status]')
+            || document.querySelector('[data-copy-status]');
+        if (!status) {
+            status = el('span', 'sr-only');
+            status.setAttribute('role', 'status');
+            status.setAttribute('data-copy-status', '');
+            (document.querySelector('.pub') || document.body).appendChild(status);
+        }
+        status.textContent = message;
+    }
+
+    // ---- copy link ------------------------------------------------------------------------------------------
+
+    var COPY_ICONS =
+        '<svg class="copy__link" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>' +
+        '<svg class="copy__done" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg>';
+
+    // The buttons are rendered hidden so they never show without JavaScript.
+    function syncCopies() {
+        document.querySelectorAll('[data-copy-link][hidden]').forEach(function (button) { button.hidden = false; });
+    }
+
+    // navigator.clipboard exists only on https and localhost; over plain http (the site on the LAN) fall back to
+    // the older copy command on a temporary text box.
+    function writeClipboard(value) {
+        if (navigator.clipboard && window.isSecureContext) {
+            return navigator.clipboard.writeText(value);
+        }
+        return new Promise(function (resolve, reject) {
+            var box = el('textarea');
+            box.value = value;
+            box.setAttribute('readonly', '');
+            box.style.position = 'fixed';
+            box.style.opacity = '0';
+            document.body.appendChild(box);
+            box.select();
+            var ok = false;
+            try { ok = document.execCommand('copy'); } catch (e) { }
+            box.remove();
+            if (ok) resolve(); else reject(new Error('copy failed'));
+        });
+    }
+
+    function copyLink(button) {
+        var url = safeUrl(button.getAttribute('data-url'));
+        if (!url) return;
+        var title = button.getAttribute('data-title') || 'Article';
+        writeClipboard(url).then(function () {
+            button.setAttribute('data-copied', '');
+            button.setAttribute('title', 'Link copied');
+            announce('Link copied: ' + title);
+            clearTimeout(button._copyTimer);
+            button._copyTimer = setTimeout(function () {
+                button.removeAttribute('data-copied');
+                button.setAttribute('title', 'Copy link');
+            }, 1500);
+        }, function () {
+            announce('Could not copy the link.');
+        });
     }
 
     // Another tab saved or removed something.
@@ -233,10 +307,11 @@
     new MutationObserver(function () {
         if (pending) return;
         pending = true;
-        requestAnimationFrame(function () { pending = false; syncToggles(); syncSaves(); });
+        requestAnimationFrame(function () { pending = false; syncToggles(); syncSaves(); syncCopies(); });
     }).observe(document.body, { childList: true, subtree: true });
     syncToggles();
     syncSaves();
+    syncCopies();
 
     // ---- load more ------------------------------------------------------------------------------------------
 
@@ -317,6 +392,12 @@
         var save = e.target.closest('[data-save]');
         if (save) {
             toggleSave(save);
+            return;
+        }
+
+        var copy = e.target.closest('[data-copy-link]');
+        if (copy) {
+            copyLink(copy);
             return;
         }
 

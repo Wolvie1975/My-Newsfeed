@@ -277,6 +277,22 @@
 .pub .d-story__tools { display: inline-flex; align-items: center; gap: 8px; margin-left: auto; }
 .pub .d-story__tools .save { margin: -8px -8px -8px 0; }
 
+/* Copy link, just before the bookmark. Hidden until public.js runs; shows a check mark briefly after a copy. */
+.pub .copy {
+    display: inline-flex; align-items: center; justify-content: center; flex: none;
+    width: 36px; height: 36px; margin: -6px 0 -6px auto; padding: 0;
+    border: 0; border-radius: 8px; background: transparent; color: var(--text-2); cursor: pointer;
+}
+.pub .copy[hidden] { display: none; }
+.pub .copy:hover { color: var(--accent); background: var(--pill-bg); }
+.pub .copy .copy__done { display: none; }
+.pub .copy[data-copied] { color: var(--accent); }
+.pub .copy[data-copied] .copy__link { display: none; }
+.pub .copy[data-copied] .copy__done { display: block; }
+/* The copy button takes over pushing the pair to the right edge. */
+.pub .copy:not([hidden]) + .save { margin-left: 0; }
+.pub .d-story__tools .copy { margin: -8px 0; }
+
 /* The header's link to the Saved page, with the number saved. */
 .pub .saved-link {
     position: relative; width: 44px; height: 44px; flex: none;

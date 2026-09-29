@@ -67,6 +67,7 @@
                 <span class="src__sep" aria-hidden="true">·</span>
                 <time datetime="@item.Date.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'")" title="@Dates.PublishedFull(item.Date)">@* Date and time in one element; on mobile the day heading already gives the date, so only the time shows. *@<span class="pubdate__day">@Dates.Published(item.Date)<span class="pubdate__sep" aria-hidden="true"> · </span></span><span class="pubdate__time">@Dates.Time(item.Date)</span></time>
                 }
+                <CopyLinkButton Url="@item.Url" Title="@(title.Length > 0 ? title : item.Title)" />
                 <SaveButton Item="item" Title="@(title.Length > 0 ? title : item.Title)" Source="@sourceName" Summary="@summary" />
             </p>
             @if (isLead && href is not null)

@@ -1,0 +1,21 @@
+@using MyNewsFeed.Web.Data
+
+@* Copies the article's link to the clipboard, handled by public.js. It starts hidden: public.js shows it once it is
+   running, so without JavaScript it never appears as a dead control. The check mark shows briefly after a copy. *@
+@if (FeedQuery.SafeHref(Url) is { } href)
+{
+    <button class="copy" type="button" hidden data-copy-link
+            data-url="@href"
+            data-title="@Title"
+            aria-label="Copy link" title="Copy link">
+        <svg class="copy__link" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+        <svg class="copy__done" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg>
+    </button>
+}
+
+@code {
+    [Parameter, EditorRequired] public string? Url { get; set; }
+
+    /// <summary>The title as shown on the card, for the "Link copied" announcement.</summary>
+    [Parameter, EditorRequired] public string Title { get; set; } = "";
+}
