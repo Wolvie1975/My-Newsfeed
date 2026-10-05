@@ -13,7 +13,7 @@
 }
 
 <tr class="result" role="row">
-    <td class="td-comp" role="cell">@Item.LeagueName</td>
+    <td class="td-comp" role="cell"><abbr title="@Item.LeagueName">@Item.LeagueTag</abbr></td>
     <td class="td-raway @(Item.WinnerSide == "away" ? "is-winner" : "")" role="cell"><TeamCell Name="@Item.AwayName" LogoUrl="@EspnClient.SmallLogo(Item.AwayLogoUrl)" Label="Away" /></td>
     <td class="td-score" role="cell">
         <span class="score">@score</span>

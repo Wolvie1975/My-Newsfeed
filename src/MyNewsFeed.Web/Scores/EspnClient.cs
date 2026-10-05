@@ -20,28 +20,29 @@ public sealed class ScoresOptions
 }
 
 /// <summary>
-/// A league ESPN covers that the admin can follow: its sport and league slugs as ESPN's addresses use them, its name, and
-/// a short label that tells a team's follows apart ("Kansas Jayhawks · Volleyball").
+/// A league ESPN covers that the admin can follow: its sport and league slugs as ESPN's addresses use them, its name, a
+/// short label that tells a team's follows apart ("Kansas Jayhawks · Volleyball"), and the scoreboard tag shown on each
+/// result ("NCAAF"), short enough to stay on one line in the results table.
 /// </summary>
-public sealed record EspnLeague(string Sport, string League, string Name, string Short);
+public sealed record EspnLeague(string Sport, string League, string Name, string Short, string Tag);
 
 /// <summary>The leagues offered on the admin page. Any other ESPN sport/league pair can be added here.</summary>
 public static class EspnLeagues
 {
     public static readonly IReadOnlyList<EspnLeague> All =
     [
-        new("football", "nfl", "NFL", "NFL"),
-        new("football", "college-football", "College Football", "Football"),
-        new("baseball", "mlb", "MLB", "MLB"),
-        new("basketball", "nba", "NBA", "NBA"),
-        new("basketball", "wnba", "WNBA", "WNBA"),
-        new("basketball", "mens-college-basketball", "Men's College Basketball", "Men's Basketball"),
-        new("basketball", "womens-college-basketball", "Women's College Basketball", "Women's Basketball"),
-        new("volleyball", "womens-college-volleyball", "Women's College Volleyball", "Volleyball"),
-        new("hockey", "nhl", "NHL", "NHL"),
-        new("soccer", "usa.1", "MLS", "MLS"),
-        new("soccer", "usa.nwsl", "NWSL", "NWSL"),
-        new("soccer", "eng.1", "Premier League", "Premier League"),
+        new("football", "nfl", "NFL", "NFL", "NFL"),
+        new("football", "college-football", "College Football", "Football", "NCAAF"),
+        new("baseball", "mlb", "MLB", "MLB", "MLB"),
+        new("basketball", "nba", "NBA", "NBA", "NBA"),
+        new("basketball", "wnba", "WNBA", "WNBA", "WNBA"),
+        new("basketball", "mens-college-basketball", "Men's College Basketball", "Men's Basketball", "NCAAM"),
+        new("basketball", "womens-college-basketball", "Women's College Basketball", "Women's Basketball", "NCAAW"),
+        new("volleyball", "womens-college-volleyball", "Women's College Volleyball", "Volleyball", "NCAA VB"),
+        new("hockey", "nhl", "NHL", "NHL", "NHL"),
+        new("soccer", "usa.1", "MLS", "MLS", "MLS"),
+        new("soccer", "usa.nwsl", "NWSL", "NWSL", "NWSL"),
+        new("soccer", "eng.1", "Premier League", "Premier League", "EPL"),
     ];
 
     public static EspnLeague? Find(string sport, string league) =>
@@ -49,6 +50,25 @@ public static class EspnLeagues
 
     /// <summary>The display name of a league, falling back to its slug for one no longer in the list.</summary>
     public static string NameOf(string sport, string league) => Find(sport, league)?.Name ?? league;
+
+    /// <summary>The scoreboard tag of a league ("NCAAF"), falling back to its slug for one no longer in the list.</summary>
+    public static string TagOf(string sport, string league) => Find(sport, league)?.Tag ?? league;
+
+    /// <summary>
+    /// Whether a team name matches the admin's filter: every word typed must start a word of the name, ignoring case.
+    /// "Kansas" finds Kansas Jayhawks and Kansas State Wildcats but not Arkansas Razorbacks; "kan st" finds Kansas State.
+    /// </summary>
+    public static bool TeamMatches(string name, string? filter)
+    {
+        var wanted = (filter ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (wanted.Length == 0)
+        {
+            return true;
+        }
+
+        var words = name.Split([' ', '-', '(', ')', '.', '\''], StringSplitOptions.RemoveEmptyEntries);
+        return wanted.All(w => words.Any(word => word.StartsWith(w, StringComparison.OrdinalIgnoreCase)));
+    }
 
     /// <summary>
     /// How a follow is named on the results page: a league by its name, a team with its league's short label, so the

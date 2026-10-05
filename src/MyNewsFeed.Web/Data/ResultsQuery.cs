@@ -6,6 +6,7 @@ namespace MyNewsFeed.Web.Data;
 public sealed record ResultItem(
     string EventId,
     string LeagueName,
+    string LeagueTag,
     DateTime StartsAtUtc,
     string? StatusText,
     string HomeName,
@@ -82,7 +83,7 @@ public static class ResultsQuery
             .Take(limit)
             .ToListAsync();
 
-        var items = rows.Select(g => new ResultItem(g.EventId, EspnLeagues.NameOf(g.Sport, g.League), g.StartsAtUtc, g.StatusText,
+        var items = rows.Select(g => new ResultItem(g.EventId, EspnLeagues.NameOf(g.Sport, g.League), EspnLeagues.TagOf(g.Sport, g.League), g.StartsAtUtc, g.StatusText,
                 g.HomeName, g.HomeLogoUrl, g.HomeScore, g.HomeShootout,
                 g.AwayName, g.AwayLogoUrl, g.AwayScore, g.AwayShootout, g.WinnerSide, g.Venue))
             .ToList();

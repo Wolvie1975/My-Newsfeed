@@ -385,7 +385,9 @@
     overflow-x: auto; scrollbar-width: none;
 }
 .pub .site-nav--bar::-webkit-scrollbar { display: none; }
-.pub .site-nav--bar a { flex: none; white-space: nowrap; }
+.pub .site-nav--bar { gap: 0; }
+/* Tighter than the header links so all five fit on a 390px phone; narrower screens still scroll. */
+.pub .site-nav--bar a { flex: none; white-space: nowrap; padding: 0 9px; font-size: 14.5px; }
 
 /* ---------- Events page ---------- */
 .pub .count--inline { display: block; margin: 0; }
@@ -514,6 +516,7 @@
 }
 .pub .result:first-child { border-top: 0; }
 .pub .result td { display: block; padding: 0; min-width: 0; }
+.pub .td-comp abbr { text-decoration: none; }
 .pub .td-comp {
     grid-area: comp;
     font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent);

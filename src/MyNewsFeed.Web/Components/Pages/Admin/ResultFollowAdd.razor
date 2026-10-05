@@ -90,7 +90,7 @@
     private static string Key(EspnLeague l) => $"{l.Sport}/{l.League}";
 
     private IEnumerable<EspnTeam> Matching =>
-        (teams ?? []).Where(t => string.IsNullOrWhiteSpace(filter) || t.Name.Contains(filter.Trim(), StringComparison.OrdinalIgnoreCase));
+        (teams ?? []).Where(t => EspnLeagues.TeamMatches(t.Name, filter));
 
     private IEnumerable<EspnTeam> Filtered => Matching.Take(Shown);
 

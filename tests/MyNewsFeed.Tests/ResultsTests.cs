@@ -217,6 +217,19 @@ public class ResultsTests
     public void Follows_are_labelled_so_one_school_in_several_sports_reads_clearly(string kind, string name, string sport, string league, string expected) =>
         Assert.Equal(expected, EspnLeagues.FollowLabel(kind, name, sport, league));
 
+    [Theory]
+    [InlineData("Kansas Jayhawks", "Kansas", true)]
+    [InlineData("Kansas State Wildcats", "kansas", true)]
+    [InlineData("Arkansas Razorbacks", "Kansas", false)]           // "Kansas" inside a word is not a match
+    [InlineData("Central Arkansas Bears", "Kansas", false)]
+    [InlineData("Kansas State Wildcats", "kan st", true)]          // every typed word starts a word of the name
+    [InlineData("Kansas Jayhawks", "kan st", false)]
+    [InlineData("Arkansas-Pine Bluff Golden Lions", "pine", true)] // hyphens split words
+    [InlineData("Anything", "  ", true)]
+    [InlineData("Anything", null, true)]
+    public void The_team_filter_matches_the_start_of_words(string name, string? filter, bool expected) =>
+        Assert.Equal(expected, EspnLeagues.TeamMatches(name, filter));
+
     // ---- display ---------------------------------------------------------------------------------------------------------
 
     [Theory]
@@ -231,7 +244,7 @@ public class ResultsTests
 
     private static ResultItem Result(int? away = 1, int? home = 3, string? winner = "home", int? awayShootout = null, int? homeShootout = null,
         string? venue = "Pittsburgh, Pennsylvania / Petersen Events Center") =>
-        new("1", "Women's College Volleyball", new DateTime(2026, 8, 28, 22, 30, 0), "Final",
+        new("1", "Women's College Volleyball", "NCAA VB", new DateTime(2026, 8, 28, 22, 30, 0), "Final",
             "Pittsburgh Panthers", null, home, homeShootout, "Kansas Jayhawks", null, away, awayShootout, winner, venue);
 
     private static async Task<string> RenderAsync(ResultItem item)
@@ -254,6 +267,7 @@ public class ResultsTests
         Assert.True(html.IndexOf("Kansas Jayhawks", StringComparison.Ordinal) < html.IndexOf("Pittsburgh Panthers", StringComparison.Ordinal));
         Assert.Contains(">1 – 3<", html);
         Assert.Contains(">Final<", html);
+        Assert.Contains("<abbr title=\"Women's College Volleyball\">NCAA VB</abbr>", html);
         Assert.Contains("td-rhome is-winner", html);
         Assert.DoesNotContain("td-raway is-winner", html);
         Assert.Contains("Petersen Events Center", html);
