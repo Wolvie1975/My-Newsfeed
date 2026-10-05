@@ -521,8 +521,9 @@
 .pub .td-rhome { grid-area: home; }
 .pub .td-raway { grid-area: away; }
 .pub .td-rloc { grid-area: loc; }
-.pub .td-rloc--none { display: none; }
-.pub .td-score { grid-area: score; display: flex; align-items: baseline; gap: 10px; }
+.pub .result .td-rloc--none { display: none; }
+/* .pub .result td sets display: block, so the score cell needs the extra class to stay a flex row. */
+.pub .result .td-score { grid-area: score; display: flex; align-items: baseline; gap: 10px; }
 .pub .score { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .pub .score__status { font-size: 13px; color: var(--text-2); }
 /* The winner's name is bold; a draw leaves both teams plain. */
@@ -537,9 +538,14 @@
         padding: 18px 20px;
         align-items: center;
     }
-    .pub .td-score { flex-direction: column; align-items: center; gap: 2px; text-align: center; }
+    .pub .result .td-score { flex-direction: column; align-items: center; gap: 2px; text-align: center; }
     .pub .td-rhome .team { flex-direction: row-reverse; text-align: right; }
-    .pub .td-rhome .team__label { margin-left: 0; margin-right: auto; }
+    /* With the teams either side of the score, position says which is away and which is home. */
+    .pub .result .team__label { display: none; }
+    /* Many follows: the chips wrap instead of pushing the count off the page. */
+    .pub .filters--results { align-items: flex-start; }
+    .pub .filters--results .chips { flex: 1 1 auto; min-width: 0; }
+    .pub .filters--results .count--toolbar { flex: none; margin-top: 10px; }
 }
 
 @media (min-width: 1180px) {
@@ -556,7 +562,7 @@
         gap: 0; padding: 0;
     }
     .pub .result td { padding: 14px 16px; }
-    .pub .td-rloc--none { display: block; }
+    .pub .result .td-rloc--none { display: block; }
     .pub .td-rhome .team { flex-direction: row; text-align: left; }
 }
 

@@ -261,6 +261,24 @@ public sealed class EspnClient
             : null;
     }
 
+    /// <summary>
+    /// A small version of an ESPN logo, for the 32px team badges. ESPN's logo files are large (a 4096px, 280 KB PNG for
+    /// an NFL scoreboard logo), so a page of results would load megabytes; its image resizer serves the same logo at
+    /// 64px (sharp on high-density screens) in a few KB. Anything not on ESPN's image host is returned unchanged.
+    /// </summary>
+    public static string? SmallLogo(string? url)
+    {
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri)
+            || !uri.Host.Equals("a.espncdn.com", StringComparison.OrdinalIgnoreCase)
+            || !uri.AbsolutePath.StartsWith("/i/", StringComparison.Ordinal)
+            || uri.Query.Length > 0)
+        {
+            return url;
+        }
+
+        return $"https://a.espncdn.com/combiner/i?img={uri.AbsolutePath}&w=64&h=64";
+    }
+
     /// <summary>"Pittsburgh, Pennsylvania / Petersen Events Center", the events page's "City / Venue" shape.</summary>
     private static string? Venue(JsonElement venue)
     {

@@ -219,6 +219,16 @@ public class ResultsTests
 
     // ---- display ---------------------------------------------------------------------------------------------------------
 
+    [Theory]
+    [InlineData("https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/gb.png", "https://a.espncdn.com/combiner/i?img=/i/teamlogos/nfl/500/scoreboard/gb.png&w=64&h=64")]
+    [InlineData("https://a.espncdn.com/i/teamlogos/ncaa/500/2305.png", "https://a.espncdn.com/combiner/i?img=/i/teamlogos/ncaa/500/2305.png&w=64&h=64")]
+    [InlineData("https://a.espncdn.com/guid/335fd2d2/logos/default.png", "https://a.espncdn.com/guid/335fd2d2/logos/default.png")]   // not under /i/
+    [InlineData("https://a.espncdn.com/combiner/i?img=/i/x.png&w=64", "https://a.espncdn.com/combiner/i?img=/i/x.png&w=64")]       // already resized
+    [InlineData("https://example.test/logo.png", "https://example.test/logo.png")]
+    [InlineData(null, null)]
+    public void Espn_logos_are_served_small_through_its_resizer(string? url, string? expected) =>
+        Assert.Equal(expected, EspnClient.SmallLogo(url));
+
     private static ResultItem Result(int? away = 1, int? home = 3, string? winner = "home", int? awayShootout = null, int? homeShootout = null,
         string? venue = "Pittsburgh, Pennsylvania / Petersen Events Center") =>
         new("1", "Women's College Volleyball", new DateTime(2026, 8, 28, 22, 30, 0), "Final",
