@@ -1,0 +1,160 @@
+@page "/admin/results/new"
+@rendermode InteractiveServer
+@using MyNewsFeed.Web.Scores
+@inject IDbContextFactory<WebScraperContext> Factory
+@inject EspnClient Espn
+@inject ScoresSync Sync
+@inject NavigationManager Nav
+
+<PageTitle>Follow a league or team</PageTitle>
+
+<h1>Follow a league or team</h1>
+
+<div style="max-width: 44rem;">
+    <div class="mb-3">
+        <label for="league" class="form-label">League</label>
+        <select id="league" class="form-select" value="@leagueKey" @onchange="LeagueChanged">
+            <option value="">Choose a league…</option>
+            @foreach (var l in EspnLeagues.All)
+            {
+                <option value="@Key(l)">@l.Name</option>
+            }
+        </select>
+    </div>
+
+    @if (error is not null)
+    {
+        <div class="alert alert-danger" role="alert">@error</div>
+    }
+
+    @if (league is not null)
+    {
+        <div class="d-flex flex-wrap gap-2 mb-3">
+            <button class="btn btn-primary" disabled="@saving" @onclick="FollowLeagueAsync">Follow all of @league.Name</button>
+            <span class="align-self-center text-muted">or pick one team below</span>
+        </div>
+
+        @if (teams is null)
+        {
+            <p><em>Loading teams from ESPN…</em></p>
+        }
+        else
+        {
+            <div class="mb-2">
+                <label class="visually-hidden" for="filter">Filter teams</label>
+                <input id="filter" class="form-control" placeholder="Filter @teams.Count teams, for example: Kansas"
+                       @bind="filter" @bind:event="oninput" />
+            </div>
+
+            <div class="table-responsive" style="max-height: 28rem; overflow-y: auto;">
+                <table class="table table-sm align-middle">
+                    <tbody>
+                        @foreach (var team in Filtered)
+                        {
+                            <tr>
+                                <td style="width: 32px;">
+                                    @if (EventsText.LogoUrl(team.LogoUrl) is { } logo)
+                                    {
+                                        <img src="@logo" alt="" width="24" height="24" style="object-fit: contain;" loading="lazy" referrerpolicy="no-referrer" />
+                                    }
+                                </td>
+                                <td class="fw-semibold">@team.Name</td>
+                                <td class="text-end">
+                                    <button class="btn btn-outline-primary btn-sm" disabled="@saving" @onclick="() => FollowTeamAsync(team)">Follow</button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            @if (FilteredCount > Shown)
+            {
+                <p class="small text-muted">Showing @Shown of @FilteredCount. Type to narrow the list.</p>
+            }
+        }
+    }
+
+    <a class="btn btn-secondary mt-2" href="admin/results">Back to follows</a>
+</div>
+
+@code {
+    private const int Shown = 100;
+
+    private string leagueKey = "";
+    private EspnLeague? league;
+    private IReadOnlyList<EspnTeam>? teams;
+    private string filter = "";
+    private string? error;
+    private bool saving;
+
+    private static string Key(EspnLeague l) => $"{l.Sport}/{l.League}";
+
+    private IEnumerable<EspnTeam> Matching =>
+        (teams ?? []).Where(t => string.IsNullOrWhiteSpace(filter) || t.Name.Contains(filter.Trim(), StringComparison.OrdinalIgnoreCase));
+
+    private IEnumerable<EspnTeam> Filtered => Matching.Take(Shown);
+
+    private int FilteredCount => Matching.Count();
+
+    private async Task LeagueChanged(ChangeEventArgs e)
+    {
+        leagueKey = e.Value?.ToString() ?? "";
+        league = EspnLeagues.All.FirstOrDefault(l => Key(l) == leagueKey);
+        teams = null;
+        filter = "";
+        error = null;
+        if (league is null)
+        {
+            return;
+        }
+
+        // One request; a college list is a few hundred teams, filtered here as you type.
+        var requested = league;
+        var result = await Espn.GetTeamsAsync(requested.Sport, requested.League);
+        if (league != requested)
+        {
+            return;   // the league changed while this list was loading
+        }
+
+        teams = result.Value ?? [];
+        error = result.Error;
+    }
+
+    private Task FollowLeagueAsync() =>
+        FollowAsync(new ResultFollow { Kind = FollowKinds.League, Sport = league!.Sport, League = league.League, Name = league.Name });
+
+    private Task FollowTeamAsync(EspnTeam team) =>
+        FollowAsync(new ResultFollow
+        {
+            Kind = FollowKinds.Team,
+            Sport = league!.Sport,
+            League = league.League,
+            TeamId = team.Id,
+            Name = team.Name.Length > 200 ? team.Name[..200] : team.Name,
+            LogoUrl = team.LogoUrl,
+        });
+
+    private async Task FollowAsync(ResultFollow follow)
+    {
+        error = null;
+        follow.Enabled = true;
+        saving = true;
+        try
+        {
+            await using var db = await Factory.CreateDbContextAsync();
+            db.ResultFollows.Add(follow);
+            await db.SaveChangesAsync();
+        }
+        catch (DbUpdateException ex) when (AdminData.IsUniqueViolation(ex))
+        {
+            error = $"{EspnLeagues.FollowLabel(follow.Kind, follow.Name, follow.Sport, follow.League)} is already followed.";
+            saving = false;
+            return;
+        }
+
+        // Fetch its games straight away so the results page fills without waiting for the next background run. The
+        // buttons stay disabled meanwhile: a new league backfills a week, about eight requests.
+        await Sync.SyncNowAsync(follow.Id);
+        Nav.NavigateTo("admin/results");
+    }
+}

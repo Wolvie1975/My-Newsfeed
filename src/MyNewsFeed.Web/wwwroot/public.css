@@ -378,10 +378,14 @@
 .pub .site-nav a[aria-current="page"] { background: rgba(255, 255, 255, 0.14); font-weight: 600; }
 .pub .site-nav :focus-visible { outline-color: #FFFFFF; }
 .pub .site-nav--inline { display: none; }
-/* Phones: the links sit in a bar under the header, so the sticky header stays one row tall. */
+/* Phones: the links sit in a bar under the header, so the sticky header stays one row tall. Five links can be wider
+   than a small phone, so the bar scrolls sideways rather than wrapping or squeezing the words. */
 .pub .site-nav--bar {
     background: var(--header-bg); border-bottom: 1px solid var(--header-border); padding: 0 8px 8px;
+    overflow-x: auto; scrollbar-width: none;
 }
+.pub .site-nav--bar::-webkit-scrollbar { display: none; }
+.pub .site-nav--bar a { flex: none; white-space: nowrap; }
 
 /* ---------- Events page ---------- */
 .pub .count--inline { display: block; margin: 0; }
@@ -495,6 +499,65 @@
     .pub .td-links--none { display: block; }
     .pub .team__label { display: none; }
     .pub .tv, .pub .links a { min-height: 32px; }
+}
+
+/* ---------- Results page ---------- */
+/* Same day cards, team badges and location as the events page; only the row layout differs. Phones: one column. */
+.pub .results-head { display: none; }
+.pub .result {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "comp" "away" "score" "home" "loc";
+    gap: 10px 0;
+    padding: 16px;
+    border-top: 1px solid var(--row-border);
+}
+.pub .result:first-child { border-top: 0; }
+.pub .result td { display: block; padding: 0; min-width: 0; }
+.pub .td-comp {
+    grid-area: comp;
+    font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent);
+}
+.pub .td-rhome { grid-area: home; }
+.pub .td-raway { grid-area: away; }
+.pub .td-rloc { grid-area: loc; }
+.pub .td-rloc--none { display: none; }
+.pub .td-score { grid-area: score; display: flex; align-items: baseline; gap: 10px; }
+.pub .score { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pub .score__status { font-size: 13px; color: var(--text-2); }
+/* The winner's name is bold; a draw leaves both teams plain. */
+.pub .is-winner .team__name { font-weight: 700; }
+
+@media (min-width: 768px) {
+    /* Tablet: away, score and home on one line, between the competition and the venue. */
+    .pub .result {
+        grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+        grid-template-areas: "comp comp comp" "away score home" "loc loc loc";
+        gap: 12px 24px;
+        padding: 18px 20px;
+        align-items: center;
+    }
+    .pub .td-score { flex-direction: column; align-items: center; gap: 2px; text-align: center; }
+    .pub .td-rhome .team { flex-direction: row-reverse; text-align: right; }
+    .pub .td-rhome .team__label { margin-left: 0; margin-right: auto; }
+}
+
+@media (min-width: 1180px) {
+    .pub .results { --results-cols: 18% 25% 14% 25% 18%; }
+    .pub .results-head {
+        display: grid; grid-template-columns: 18% 25% 14% 25% 18%; padding: 0 1px;
+        font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-2);
+    }
+    .pub .results-head span { padding: 0 16px; }
+    .pub .results-head span:nth-child(3) { text-align: center; }
+    .pub .result {
+        grid-template-columns: var(--results-cols);
+        grid-template-areas: "comp away score home loc";
+        gap: 0; padding: 0;
+    }
+    .pub .result td { padding: 14px 16px; }
+    .pub .td-rloc--none { display: block; }
+    .pub .td-rhome .team { flex-direction: row; text-align: left; }
 }
 
 /* =====================================================================================================================

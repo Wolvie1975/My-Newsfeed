@@ -1,0 +1,170 @@
+@page "/admin/results"
+@rendermode InteractiveServer
+@using MyNewsFeed.Web.Scores
+@inject IDbContextFactory<WebScraperContext> Factory
+@inject ScoresSync Sync
+
+<PageTitle>Results follows</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="mb-0">Results follows</h1>
+    <div>
+        <button class="btn btn-outline-primary me-2" disabled="@(syncing || rows is not { Count: > 0 })"
+                @onclick="() => SyncAsync(null)">Sync all now</button>
+        <a class="btn btn-primary" href="admin/results/new">Follow a league or team</a>
+    </div>
+</div>
+
+<p class="text-muted">
+    Leagues and teams whose final scores appear on the public <a href="results" target="_blank">Results</a> page,
+    from ESPN's public scoreboard data. A background sync refreshes each enabled one every few hours: a team is two
+    requests (regular season and postseason), a league one request per day since its last sync. ESPN's data is unofficial and
+    could change without notice; if it does, the error shows under the follow and the page keeps what it has.
+</p>
+
+@if (message is not null)
+{
+    <div class="alert alert-@messageKind" role="alert">@message</div>
+}
+
+@if (pendingDelete is { } target)
+{
+    <div class="alert alert-warning" role="alert">
+        <p class="mb-2">
+            Stop following <strong>@Label(target)</strong>? Its results leave the public page. Stored games are kept, so
+            following it again shows them straight away.
+        </p>
+        <button class="btn btn-danger btn-sm me-2" @onclick="ConfirmDeleteAsync">Stop following</button>
+        <button class="btn btn-secondary btn-sm" @onclick="() => pendingDelete = null">Cancel</button>
+    </div>
+}
+
+@if (rows is null)
+{
+    <p><em>Loading…</em></p>
+}
+else if (rows.Count == 0)
+{
+    <p>Nothing followed yet. <a href="admin/results/new">Follow the first league or team.</a></p>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-sm align-middle">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>League</th>
+                    <th>Kind</th>
+                    <th>Enabled</th>
+                    <th>Last synced</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in rows)
+                {
+                    <tr class="@(row.Enabled ? "" : "text-muted")">
+                        <td class="fw-semibold">
+                            @if (EventsText.LogoUrl(row.LogoUrl) is { } logo)
+                            {
+                                <img src="@logo" alt="" width="20" height="20" class="me-2" style="object-fit: contain;" referrerpolicy="no-referrer" />
+                            }
+                            @row.Name
+                        </td>
+                        <td>@EspnLeagues.NameOf(row.Sport, row.League)</td>
+                        <td class="text-capitalize">@row.Kind</td>
+                        <td>
+                            <div class="form-check form-switch mb-0">
+                                <input class="form-check-input" type="checkbox" role="switch" checked="@row.Enabled"
+                                       aria-label="Enabled" @onchange="e => SetEnabledAsync(row, (bool)e.Value!)" />
+                            </div>
+                        </td>
+                        <td class="text-nowrap">
+                            @Dates.Stamp(row.LastSyncedAt)
+                            @if (row.LastError is not null)
+                            {
+                                <div class="small text-danger text-wrap" style="max-width: 24rem;">@row.LastError</div>
+                            }
+                        </td>
+                        <td class="text-nowrap text-end">
+                            <button class="btn btn-outline-primary btn-sm" disabled="@syncing" @onclick="() => SyncAsync(row.Id)">Sync now</button>
+                            <button class="btn btn-outline-danger btn-sm" @onclick="() => StartDelete(row)">Remove</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    private List<ResultFollow>? rows;
+    private ResultFollow? pendingDelete;
+    private string? message;
+    private string messageKind = "success";
+    private bool syncing;
+
+    protected override Task OnInitializedAsync() => LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        await using var db = await Factory.CreateDbContextAsync();
+        rows = (await db.ResultFollows.AsNoTracking().ToListAsync())
+            .OrderBy(f => f.Kind == FollowKinds.League ? 0 : 1)
+            .ThenBy(f => f.Name, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(f => EspnLeagues.NameOf(f.Sport, f.League))
+            .ToList();
+    }
+
+    private static string Label(ResultFollow f) => EspnLeagues.FollowLabel(f.Kind, f.Name, f.Sport, f.League);
+
+    private async Task SyncAsync(int? followId)
+    {
+        syncing = true;
+        message = null;
+        try
+        {
+            var report = await Sync.SyncNowAsync(followId);
+            messageKind = report.Failed == 0 ? "success" : "warning";
+            message = report.Failed == 0
+                ? $"Synced {report.Synced} {(report.Synced == 1 ? "follow" : "follows")}: {report.Games} games added or updated ({report.Requests} ESPN requests)."
+                : $"{report.Synced} synced, {report.Failed} failed (see the error under each).";
+        }
+        finally
+        {
+            syncing = false;
+        }
+
+        await LoadAsync();
+    }
+
+    private async Task SetEnabledAsync(ResultFollow row, bool enabled)
+    {
+        await using var db = await Factory.CreateDbContextAsync();
+        await db.ResultFollows.Where(f => f.Id == row.Id).ExecuteUpdateAsync(s => s.SetProperty(f => f.Enabled, enabled));
+        message = null;
+        await LoadAsync();
+    }
+
+    private void StartDelete(ResultFollow row)
+    {
+        message = null;
+        pendingDelete = row;
+    }
+
+    private async Task ConfirmDeleteAsync()
+    {
+        if (pendingDelete is not { } target)
+        {
+            return;
+        }
+
+        await using var db = await Factory.CreateDbContextAsync();
+        var deleted = await db.ResultFollows.Where(f => f.Id == target.Id).ExecuteDeleteAsync();
+        messageKind = deleted > 0 ? "success" : "warning";
+        message = deleted > 0 ? $"Stopped following {Label(target)}." : $"{Label(target)} was already removed.";
+        pendingDelete = null;
+        await LoadAsync();
+    }
+}

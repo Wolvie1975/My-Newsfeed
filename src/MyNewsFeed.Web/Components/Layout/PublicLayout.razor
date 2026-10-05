@@ -5,6 +5,7 @@
     var path = Nav.ToBaseRelativePath(Nav.Uri);
     var onEvents = path.StartsWith("events", StringComparison.OrdinalIgnoreCase);
     var onVideos = path.StartsWith("videos", StringComparison.OrdinalIgnoreCase);
+    var onResults = path.StartsWith("results", StringComparison.OrdinalIgnoreCase);
     var onNews = path.StartsWith("news", StringComparison.OrdinalIgnoreCase);
     var onSaved = path.StartsWith("saved", StringComparison.OrdinalIgnoreCase);
     var onHome = path.Length == 0 || path[0] is '?' or '#';
@@ -20,6 +21,7 @@
             <a href="" aria-current="@(onHome ? "page" : null)">Home</a>
             <a href="news" aria-current="@(onNews ? "page" : null)">News</a>
             <a href="events" aria-current="@(onEvents ? "page" : null)">Sports Events</a>
+            <a href="results" aria-current="@(onResults ? "page" : null)">Results</a>
             <a href="videos" aria-current="@(onVideos ? "page" : null)">Videos</a>
         </nav>
 
@@ -50,6 +52,7 @@
         <a href="" aria-current="@(onHome ? "page" : null)">Home</a>
         <a href="news" aria-current="@(onNews ? "page" : null)">News</a>
         <a href="events" aria-current="@(onEvents ? "page" : null)">Sports Events</a>
+        <a href="results" aria-current="@(onResults ? "page" : null)">Results</a>
         <a href="videos" aria-current="@(onVideos ? "page" : null)">Videos</a>
     </nav>
 

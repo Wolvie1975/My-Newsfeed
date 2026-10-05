@@ -1,0 +1,41 @@
+@using MyNewsFeed.Web.Data
+
+@* One finished game as a table row, away team first as on the events page. Phones stack it as a card (competition,
+   away, score, home, venue); tablets put the teams either side of the score; from 1180px it is a real table row.
+   The winner is ESPN's own call, so a shoot-out or a forfeit is shown the way ESPN reports it. *@
+
+@{
+    var score = Item.AwayScore is { } a && Item.HomeScore is { } h ? $"{a} – {h}" : "–";
+    var shootout = Item.AwayShootout is { } sa && Item.HomeShootout is { } sh ? $"Shootout {sa} – {sh}" : null;
+    var status = string.Join(" · ", new[] { Item.StatusText, shootout }.Where(s => !string.IsNullOrWhiteSpace(s)));
+    var (city, venue) = EventsText.SplitLocation(Item.Venue);
+}
+
+<tr class="result" role="row">
+    <td class="td-comp" role="cell">@Item.LeagueName</td>
+    <td class="td-raway @(Item.WinnerSide == "away" ? "is-winner" : "")" role="cell"><TeamCell Name="@Item.AwayName" LogoUrl="@Item.AwayLogoUrl" Label="Away" /></td>
+    <td class="td-score" role="cell">
+        <span class="score">@score</span>
+        @if (status.Length > 0)
+        {
+            <span class="score__status">@status</span>
+        }
+    </td>
+    <td class="td-rhome @(Item.WinnerSide == "home" ? "is-winner" : "")" role="cell"><TeamCell Name="@Item.HomeName" LogoUrl="@Item.HomeLogoUrl" Label="Home" /></td>
+    <td class="td-rloc @(city is null ? "td-rloc--none" : "")" role="cell">
+        @if (city is not null)
+        {
+            <div class="loc">
+                <span>@city</span>
+                @if (venue is not null)
+                {
+                    <span class="loc__venue">@venue</span>
+                }
+            </div>
+        }
+    </td>
+</tr>
+
+@code {
+    [Parameter, EditorRequired] public ResultItem Item { get; set; } = default!;
+}

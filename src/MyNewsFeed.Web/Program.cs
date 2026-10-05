@@ -10,6 +10,7 @@ using MyNewsFeed.Web.Auth;
 using MyNewsFeed.Web.Components;
 using MyNewsFeed.Web.Components.Feed;
 using MyNewsFeed.Web.Data;
+using MyNewsFeed.Web.Scores;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -45,6 +46,18 @@ builder.Services.AddSingleton(sp => FeedDates.Create(sp.GetRequiredService<IConf
 // Blazor Server circuits are long-lived, so components create short-lived contexts from a factory.
 builder.Services.AddDbContextFactory<WebScraperContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Game results from ESPN's public scoreboard data: a background sync stores followed leagues' and teams' games; pages
+// only read the database.
+builder.Services.Configure<ScoresOptions>(builder.Configuration.GetSection(ScoresOptions.Section));
+builder.Services.AddHttpClient<EspnClient>(http =>
+    {
+        http.Timeout = TimeSpan.FromSeconds(30);
+        http.DefaultRequestHeaders.UserAgent.ParseAdd("MyNewsFeed/1.0 (personal results page)");
+    })
+    .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AutomaticDecompression = System.Net.DecompressionMethods.All });
+builder.Services.AddTransient<ScoresSync>();
+builder.Services.AddHostedService<ScoresSyncService>();
 
 var app = builder.Build();
 

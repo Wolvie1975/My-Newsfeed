@@ -1,0 +1,128 @@
+@page "/results"
+@layout PublicLayout
+@using MyNewsFeed.Web.Components.Events
+@inject IDbContextFactory<WebScraperContext> Factory
+@inject FeedDates Dates
+
+<PageTitle>Results · MyNewsFeed</PageTitle>
+
+@* Static (non-interactive) page, like Events: the filter is plain links, so every view has a shareable URL. Games come
+   from dbo.ResultGames, which the ESPN background sync fills; this page never calls ESPN. Games are grouped by start
+   day in the display zone. *@
+
+<h1 class="sr-only">Results</h1>
+
+<div class="filters">
+    @if (follows.Count > 1)
+    {
+        <form class="catselect" method="get" action="results">
+            <label class="sr-only" for="follow">Team or league</label>
+            <select id="follow" name="follow" onchange="this.form.requestSubmit()">
+                <option value="">Everything I follow</option>
+                @foreach (var f in follows)
+                {
+                    <option value="@f.Id" selected="@(f.Id == Follow)">@f.Label</option>
+                }
+            </select>
+            <noscript><button class="nf-btn nf-btn--secondary" type="submit">Apply</button></noscript>
+        </form>
+        <nav class="chips" aria-label="Teams and leagues">
+            <a class="chip" href="results" aria-current="@(Follow is null ? "true" : null)">All</a>
+            @foreach (var f in follows)
+            {
+                <a class="chip" href="results?follow=@f.Id" aria-current="@(f.Id == Follow ? "true" : null)">@f.Label</a>
+            }
+        </nav>
+    }
+    @if (listing is not null)
+    {
+        <p class="count count--toolbar" aria-live="polite">@listing.Total @(listing.Total == 1 ? "result" : "results")</p>
+    }
+</div>
+
+@if (listing is not null)
+{
+    <p class="count count--inline">@listing.Total @(listing.Total == 1 ? "result" : "results")</p>
+}
+
+@if (lastSynced is { } synced)
+{
+    <p class="updated">
+        Results last updated
+        <time datetime="@synced.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'")">@Dates.PublishedFull(synced)</time>
+    </p>
+}
+
+@if (listing is null || listing.Items.Count == 0)
+{
+    <p class="empty">
+        @if (follows.Count == 0)
+        {
+            <span>No teams or leagues are followed yet.</span>
+        }
+        else if (Follow is not null)
+        {
+            <span>No results for this one yet. <a href="results">Show everything</a></span>
+        }
+        else
+        {
+            <span>No results yet. Check back after the next game.</span>
+        }
+    </p>
+}
+else
+{
+    <div class="results-head" aria-hidden="true">
+        <span>Competition</span><span>Away</span><span>Score</span><span>Home</span><span>Venue</span>
+    </div>
+
+    <div class="groups results">
+        @foreach (var day in listing.Items.GroupBy(r => Dates.DayKey(r.StartsAtUtc)))
+        {
+            <section class="group" aria-labelledby="day-@day.Key">
+                <h2 class="group__bar" id="day-@day.Key"><time datetime="@day.Key">@LongDate(day.Key)</time></h2>
+                <table class="games" role="table" aria-labelledby="day-@day.Key">
+                    <thead role="rowgroup">
+                        <tr role="row">
+                            <th role="columnheader" scope="col">Competition</th>
+                            <th role="columnheader" scope="col">Away</th>
+                            <th role="columnheader" scope="col">Score</th>
+                            <th role="columnheader" scope="col">Home</th>
+                            <th role="columnheader" scope="col">Venue</th>
+                        </tr>
+                    </thead>
+                    <tbody role="rowgroup">
+                        @foreach (var item in day)
+                        {
+                            <ResultRow Item="item" />
+                        }
+                    </tbody>
+                </table>
+            </section>
+        }
+    </div>
+
+    @if (listing.Total > listing.Items.Count)
+    {
+        <p class="count">Showing the latest @listing.Items.Count of @listing.Total results.</p>
+    }
+}
+
+@code {
+    [SupplyParameterFromQuery(Name = "follow")] private int? Follow { get; set; }
+
+    private IReadOnlyList<FollowChip> follows = [];
+    private ResultsPage? listing;
+    private DateTime? lastSynced;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await using var db = await Factory.CreateDbContextAsync();
+        follows = await ResultsQuery.GetFollowsAsync(db);
+        listing = await ResultsQuery.GetResultsAsync(db, Follow);
+        lastSynced = await ResultsQuery.GetLastSyncedAsync(db);
+    }
+
+    private static string LongDate(string dayKey) =>
+        DateOnly.TryParseExact(dayKey, "yyyy-MM-dd", out var day) ? FeedDates.LongDate(day) : dayKey;
+}
