@@ -182,6 +182,48 @@ public class ResultsTests
         Assert.StartsWith("Unexpected response", result.Error);
     }
 
+    [Fact]
+    public async Task A_conference_lineup_is_requested_from_the_core_api_for_the_current_season()
+    {
+        // Trimmed from ESPN's core API: the league names its current season by link, and the lineup is a list of links.
+        var league = new FakeHandler(HttpStatusCode.OK, """
+            { "id": "41", "season": { "$ref": "http://sports.core.api.espn.com/v2/sports/basketball/leagues/mens-college-basketball/seasons/2027?lang=en" } }
+            """);
+        var lineup = new FakeHandler(HttpStatusCode.OK, """
+            { "count": 3, "items": [
+              { "$ref": "http://sports.core.api.espn.com/v2/sports/basketball/leagues/mens-college-basketball/seasons/2027/teams/2305?lang=en&region=us" },
+              { "$ref": "http://sports.core.api.espn.com/v2/sports/basketball/leagues/mens-college-basketball/seasons/2027/teams/12?lang=en&region=us" },
+              { "$ref": "http://sports.core.api.espn.com/v2/sports/basketball/leagues/mens-college-basketball/seasons/2027/teams/2305?lang=en&region=us" } ] }
+            """);
+
+        var season = await Client(league).GetCurrentSeasonAsync("basketball", "mens-college-basketball");
+        var members = await Client(lineup).GetConferenceTeamIdsAsync("basketball", "mens-college-basketball", season.Value, "8");
+
+        Assert.Equal(2027, season.Value);
+        Assert.Equal(["2305", "12"], members.Value);
+        Assert.Equal("https://sports.core.api.espn.com/v2/sports/basketball/leagues/mens-college-basketball", league.Requests.Single().ToString());
+        Assert.Equal("https://sports.core.api.espn.com/v2/sports/basketball/leagues/mens-college-basketball/seasons/2027/types/2/groups/8/teams?limit=200",
+            lineup.Requests.Single().ToString());
+    }
+
+    [Fact]
+    public void A_season_given_as_a_year_is_read_too_and_a_league_without_one_is_an_error()
+    {
+        Assert.Equal(2026, EspnClient.ParseSeasonYear(Json("""{ "season": { "year": 2026 } }""")));
+        Assert.Throws<FormatException>(() => EspnClient.ParseSeasonYear(Json("""{ "season": { "$ref": "http://x.test/leagues/1" } }""")));
+    }
+
+    [Theory]
+    [InlineData("volleyball", "womens-college-volleyball", "basketball", "mens-college-basketball")] // ESPN's own is stale
+    [InlineData("football", "college-football", "football", "college-football")]
+    [InlineData("basketball", "mens-college-basketball", "basketball", "mens-college-basketball")]
+    public void College_leagues_name_where_their_conference_lineups_come_from(string sport, string league, string fromSport, string fromLeague) =>
+        Assert.Equal((fromSport, fromLeague), EspnLeagues.Find(sport, league)!.ConferencesFrom);
+
+    [Fact]
+    public void A_professional_league_has_no_conferences() =>
+        Assert.Null(EspnLeagues.Find("football", "nfl")!.ConferencesFrom);
+
     // ---- sync planning ---------------------------------------------------------------------------------------------------
 
     [Fact]
@@ -213,6 +255,7 @@ public class ResultsTests
     [InlineData("team", "Kansas Jayhawks", "volleyball", "womens-college-volleyball", "Kansas Jayhawks · Volleyball")]
     [InlineData("team", "Kansas Jayhawks", "basketball", "mens-college-basketball", "Kansas Jayhawks · Men's Basketball")]
     [InlineData("league", "NFL", "football", "nfl", "NFL")]
+    [InlineData("conference", "Big 12", "football", "college-football", "Big 12 · Football")]
     [InlineData("team", "Somebody", "cricket", "ipl", "Somebody · ipl")]
     public void Follows_are_labelled_so_one_school_in_several_sports_reads_clearly(string kind, string name, string sport, string league, string expected) =>
         Assert.Equal(expected, EspnLeagues.FollowLabel(kind, name, sport, league));
@@ -408,5 +451,105 @@ public class ResultsTests
 
         Assert.True((await db.ResultFollows.AsNoTracking().SingleAsync(f => f.Id == on.Id)).Enabled);
         Assert.False((await db.ResultFollows.AsNoTracking().SingleAsync(f => f.Id == off.Id)).Enabled);
+    }
+
+    [Fact]
+    public async Task A_conference_shows_its_members_games_in_its_own_league_including_non_conference_games()
+    {
+        await using var db = Create();
+        await using var tx = await db.Database.BeginTransactionAsync();
+        await db.ResultFollows.ExecuteDeleteAsync();
+
+        string college = Tag(), otherCollege = Tag();
+        var conference = new ResultFollow { Kind = FollowKinds.Conference, Sport = "s", League = college, GroupId = "8", Name = "Big 12", Enabled = true };
+        db.ResultFollows.Add(conference);
+        await db.SaveChangesAsync();
+        await ScoresSync.ReplaceMembersAsync(db, conference.Id, ["2305", "12"]);
+
+        await ScoresSync.UpsertGamesAsync(db, "s", college,
+            [Game("in", "2305", "12"), Game("non", "999", "12"), Game("out", "998", "999"), Game("later", "2305", "999", completed: false)], DateTime.UtcNow);
+        await ScoresSync.UpsertGamesAsync(db, "s", otherCollege, [Game("other", "2305", "12")], DateTime.UtcNow);
+        await db.SaveChangesAsync();
+
+        Assert.Equal(["in", "non"], (await ResultsQuery.GetResultsAsync(db, conference.Id)).Items.Select(r => r.EventId).Order());
+        Assert.Equal(["in", "non"], (await ResultsQuery.GetResultsAsync(db, null)).Items.Select(r => r.EventId).Order());
+        Assert.Equal(["Big 12 · " + college], (await ResultsQuery.GetFollowsAsync(db)).Select(f => f.Label));
+    }
+
+    [Fact]
+    public async Task Replacing_a_conference_lineup_drops_schools_that_left_and_adds_new_ones()
+    {
+        await using var db = Create();
+        await using var tx = await db.Database.BeginTransactionAsync();
+        var conference = new ResultFollow { Kind = FollowKinds.Conference, Sport = "s", League = Tag(), GroupId = "8", Name = "C" };
+        db.ResultFollows.Add(conference);
+        await db.SaveChangesAsync();
+
+        await ScoresSync.ReplaceMembersAsync(db, conference.Id, ["1", "2"]);
+        await db.SaveChangesAsync();
+        await ScoresSync.ReplaceMembersAsync(db, conference.Id, ["2", "3"]);
+        await db.SaveChangesAsync();
+
+        Assert.Equal(["2", "3"], await db.ResultFollowTeams.Where(m => m.FollowId == conference.Id).Select(m => m.TeamId).OrderBy(t => t).ToListAsync());
+
+        // Removing the follow removes its lineup.
+        await db.ResultFollows.Where(f => f.Id == conference.Id).ExecuteDeleteAsync();
+        Assert.False(await db.ResultFollowTeams.AnyAsync(m => m.FollowId == conference.Id));
+    }
+
+    [Fact]
+    public async Task A_conference_needs_a_group_id_and_is_followed_once_per_league_beside_the_whole_league()
+    {
+        await using var db = Create();
+        await using var tx = await db.Database.BeginTransactionAsync();
+        var league = Tag();
+
+        db.ResultFollows.Add(new ResultFollow { Kind = FollowKinds.Conference, Sport = "s", League = league, Name = "No group" });
+        await Assert.ThrowsAsync<DbUpdateException>(() => db.SaveChangesAsync());
+        db.ChangeTracker.Clear();
+
+        db.ResultFollows.Add(new ResultFollow { Kind = FollowKinds.League, Sport = "s", League = league, GroupId = "8", Name = "League with a group" });
+        await Assert.ThrowsAsync<DbUpdateException>(() => db.SaveChangesAsync());
+        db.ChangeTracker.Clear();
+
+        db.ResultFollows.AddRange(
+            new ResultFollow { Kind = FollowKinds.League, Sport = "s", League = league, Name = "Whole league" },
+            new ResultFollow { Kind = FollowKinds.Conference, Sport = "s", League = league, GroupId = "8", Name = "Big 12" },
+            new ResultFollow { Kind = FollowKinds.Conference, Sport = "s", League = league, GroupId = "2", Name = "ACC" });
+        await db.SaveChangesAsync();
+
+        db.ResultFollows.Add(new ResultFollow { Kind = FollowKinds.Conference, Sport = "s", League = league, GroupId = "8", Name = "Big 12 again" });
+        var ex = await Assert.ThrowsAsync<DbUpdateException>(() => db.SaveChangesAsync());
+        Assert.True(AdminData.IsUniqueViolation(ex));
+    }
+
+    [Fact]
+    public async Task A_follow_without_a_finished_game_is_left_out_of_the_filter_unless_it_is_the_one_selected()
+    {
+        await using var db = Create();
+        await using var tx = await db.Database.BeginTransactionAsync();
+        await db.ResultFollows.ExecuteDeleteAsync();
+
+        string played = Tag(), offSeason = Tag();
+        var league = new ResultFollow { Kind = FollowKinds.League, Sport = "s", League = played, Name = "Played", Enabled = true };
+        var waiting = new ResultFollow { Kind = FollowKinds.League, Sport = "s", League = offSeason, Name = "Waiting", Enabled = true };
+        var team = new ResultFollow { Kind = FollowKinds.Team, Sport = "s", League = offSeason, TeamId = "2305", Name = "Kansas", Enabled = true };
+        var conference = new ResultFollow { Kind = FollowKinds.Conference, Sport = "s", League = offSeason, GroupId = "8", Name = "Big 12", Enabled = true };
+        db.ResultFollows.AddRange(league, waiting, team, conference);
+        await db.SaveChangesAsync();
+        await ScoresSync.ReplaceMembersAsync(db, conference.Id, ["2305", "12"]);
+
+        // Off season: only scheduled games, which do not count.
+        await ScoresSync.UpsertGamesAsync(db, "s", played, [Game("p1", "a", "b")], DateTime.UtcNow);
+        await ScoresSync.UpsertGamesAsync(db, "s", offSeason, [Game("o1", "2305", "12", completed: false)], DateTime.UtcNow);
+        await db.SaveChangesAsync();
+
+        Assert.Equal(["Played"], (await ResultsQuery.GetFollowsAsync(db)).Select(f => f.Label));
+        Assert.Equal(["Played", $"Kansas · {offSeason}"], (await ResultsQuery.GetFollowsAsync(db, team.Id)).Select(f => f.Label));
+
+        // The first final brings back the league, the team and the conference.
+        await ScoresSync.UpsertGamesAsync(db, "s", offSeason, [Game("o1", "2305", "12")], DateTime.UtcNow);
+        await db.SaveChangesAsync();
+        Assert.Equal(["Played", "Waiting", $"Big 12 · {offSeason}", $"Kansas · {offSeason}"], (await ResultsQuery.GetFollowsAsync(db)).Select(f => f.Label));
     }
 }

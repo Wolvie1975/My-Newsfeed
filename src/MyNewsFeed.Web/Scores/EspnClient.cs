@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using Microsoft.Extensions.Options;
 
 namespace MyNewsFeed.Web.Scores;
@@ -12,6 +13,9 @@ public sealed class ScoresOptions
     /// <summary>ESPN's public site API. Unofficial and undocumented, so it is configurable in case it moves.</summary>
     public string BaseUrl { get; set; } = "https://site.api.espn.com/apis/site/v2/sports/";
 
+    /// <summary>ESPN's core API, the only one that lists a conference's member schools. Also unofficial.</summary>
+    public string CoreBaseUrl { get; set; } = "https://sports.core.api.espn.com/v2/sports/";
+
     /// <summary>How long a follow stays fresh before the background sync fetches it again.</summary>
     public double SyncIntervalHours { get; set; } = 3;
 
@@ -22,23 +26,29 @@ public sealed class ScoresOptions
 /// <summary>
 /// A league ESPN covers that the admin can follow: its sport and league slugs as ESPN's addresses use them, its name, a
 /// short label that tells a team's follows apart ("Kansas Jayhawks · Volleyball"), and the scoreboard tag shown on each
-/// result ("NCAAF"), short enough to stay on one line in the results table.
+/// result ("NCAAF"), short enough to stay on one line in the results table. A college league also names the league
+/// whose conference lineups it uses (<paramref name="ConferencesFrom"/>): ESPN keeps football's and men's basketball's
+/// current, but not, for one, volleyball's (its 2026 Big 12 still had nine schools), and every Division I conference
+/// plays men's basketball. A school without a team in the sport simply has an empty schedule.
 /// </summary>
-public sealed record EspnLeague(string Sport, string League, string Name, string Short, string Tag);
+public sealed record EspnLeague(string Sport, string League, string Name, string Short, string Tag,
+    (string Sport, string League)? ConferencesFrom = null);
 
 /// <summary>The leagues offered on the admin page. Any other ESPN sport/league pair can be added here.</summary>
 public static class EspnLeagues
 {
+    private static readonly (string, string) MensBasketball = ("basketball", "mens-college-basketball");
+
     public static readonly IReadOnlyList<EspnLeague> All =
     [
         new("football", "nfl", "NFL", "NFL", "NFL"),
-        new("football", "college-football", "College Football", "Football", "NCAAF"),
+        new("football", "college-football", "College Football", "Football", "NCAAF", ("football", "college-football")),
         new("baseball", "mlb", "MLB", "MLB", "MLB"),
         new("basketball", "nba", "NBA", "NBA", "NBA"),
         new("basketball", "wnba", "WNBA", "WNBA", "WNBA"),
-        new("basketball", "mens-college-basketball", "Men's College Basketball", "Men's Basketball", "NCAAM"),
-        new("basketball", "womens-college-basketball", "Women's College Basketball", "Women's Basketball", "NCAAW"),
-        new("volleyball", "womens-college-volleyball", "Women's College Volleyball", "Volleyball", "NCAA VB"),
+        new("basketball", "mens-college-basketball", "Men's College Basketball", "Men's Basketball", "NCAAM", MensBasketball),
+        new("basketball", "womens-college-basketball", "Women's College Basketball", "Women's Basketball", "NCAAW", MensBasketball),
+        new("volleyball", "womens-college-volleyball", "Women's College Volleyball", "Volleyball", "NCAA VB", MensBasketball),
         new("hockey", "nhl", "NHL", "NHL", "NHL"),
         new("soccer", "usa.1", "MLS", "MLS", "MLS"),
         new("soccer", "usa.nwsl", "NWSL", "NWSL", "NWSL"),
@@ -71,11 +81,12 @@ public static class EspnLeagues
     }
 
     /// <summary>
-    /// How a follow is named on the results page: a league by its name, a team with its league's short label, so the
-    /// same school followed in three sports reads "Kansas Jayhawks · Football", "· Men's Basketball", "· Volleyball".
+    /// How a follow is named on the results page: a league by its name, a team or conference with its league's short
+    /// label, so the same school followed in three sports reads "Kansas Jayhawks · Football", "· Men's Basketball",
+    /// "· Volleyball", and a conference "Big 12 · Football".
     /// </summary>
     public static string FollowLabel(string kind, string name, string sport, string league) =>
-        kind == FollowKinds.Team ? $"{name} · {Find(sport, league)?.Short ?? league}" : name;
+        kind == FollowKinds.League ? name : $"{name} · {Find(sport, league)?.Short ?? league}";
 }
 
 /// <summary>One game as ESPN reports it, reduced to what the site stores.</summary>
@@ -104,6 +115,10 @@ public static class FollowKinds
 {
     public const string Team = "team";
     public const string League = "league";
+    public const string Conference = "conference";
+
+    /// <summary>The order follows are listed in: leagues, then conferences, then teams.</summary>
+    public static int Order(string kind) => kind switch { League => 0, Conference => 1, _ => 2 };
 }
 
 /// <summary>
@@ -112,14 +127,16 @@ public static class FollowKinds
 /// error message on the follow rather than an exception. Pages never call it: the background sync stores games and
 /// pages read the database.
 /// </summary>
-public sealed class EspnClient
+public sealed partial class EspnClient
 {
     private readonly HttpClient http;
+    private readonly string coreBase;
 
     public EspnClient(HttpClient http, IOptions<ScoresOptions> options)
     {
         this.http = http;
         http.BaseAddress = new Uri(options.Value.BaseUrl.TrimEnd('/') + "/");
+        coreBase = options.Value.CoreBaseUrl.TrimEnd('/') + "/";
     }
 
     /// <summary>ESPN season types: 2 is the regular season, 3 the postseason (bowls, tournaments, playoffs).</summary>
@@ -145,14 +162,25 @@ public sealed class EspnClient
     public Task<EspnResult<IReadOnlyList<EspnTeam>>> GetTeamsAsync(string sport, string league, CancellationToken ct = default) =>
         GetAsync($"{sport}/{league}/teams?limit=1000", ParseTeams, ct);
 
-    private async Task<EspnResult<IReadOnlyList<T>>> GetAsync<T>(string path, Func<JsonElement, IReadOnlyList<T>> parse, CancellationToken ct)
+    /// <summary>The year ESPN files a league's current season under (college basketball's 2026-27 season is 2027).</summary>
+    public Task<EspnResult<int>> GetCurrentSeasonAsync(string sport, string league, CancellationToken ct = default) =>
+        GetAsync($"{coreBase}{sport}/leagues/{league}", ParseSeasonYear, ct);
+
+    /// <summary>The ESPN team ids of a conference's members in one season's regular season.</summary>
+    public Task<EspnResult<IReadOnlyList<string>>> GetConferenceTeamIdsAsync(
+        string sport, string league, int season, string groupId, CancellationToken ct = default) =>
+        GetAsync($"{coreBase}{sport}/leagues/{league}/seasons/{season}/types/2/groups/{Uri.EscapeDataString(groupId)}/teams?limit=200",
+            ParseTeamRefs, ct);
+
+    /// <param name="path">Relative to the site API, or a full address (the core API).</param>
+    private async Task<EspnResult<T>> GetAsync<T>(string path, Func<JsonElement, T> parse, CancellationToken ct)
     {
         try
         {
             using var response = await http.GetAsync(path, ct);
             if (!response.IsSuccessStatusCode)
             {
-                return new(null, $"ESPN answered HTTP {(int)response.StatusCode} for {path}.");
+                return new(default, $"ESPN answered HTTP {(int)response.StatusCode} for {path}.");
             }
 
             await using var body = await response.Content.ReadAsStreamAsync(ct);
@@ -161,12 +189,12 @@ public sealed class EspnClient
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException && !ct.IsCancellationRequested)
         {
-            return new(null, $"Could not reach ESPN: {ex.Message}");
+            return new(default, $"Could not reach ESPN: {ex.Message}");
         }
         catch (Exception ex) when (ex is JsonException or KeyNotFoundException or InvalidOperationException or FormatException)
         {
             // ESPN changed its data: report it rather than store half a game.
-            return new(null, $"Unexpected response from ESPN for {path}: {ex.Message}");
+            return new(default, $"Unexpected response from ESPN for {path}: {ex.Message}");
         }
     }
 
@@ -217,6 +245,35 @@ public sealed class EspnClient
 
         return games;
     }
+
+    /// <summary>The year in a core-API league's {"season": {"$ref": ".../seasons/2027?lang=en"}}.</summary>
+    public static int ParseSeasonYear(JsonElement root)
+    {
+        var season = root.GetProperty("season");
+        if (season.TryGetProperty("year", out var year) && year.TryGetInt32(out var y))
+        {
+            return y;
+        }
+
+        var match = SeasonRef().Match(Str(season, "$ref") ?? "");
+        return match.Success ? int.Parse(match.Groups[1].Value, CultureInfo.InvariantCulture)
+            : throw new FormatException("the league has no current season");
+    }
+
+    /// <summary>The team ids in a core-API list of team links: items[].$ref ending ".../teams/2305?lang=en".</summary>
+    public static IReadOnlyList<string> ParseTeamRefs(JsonElement root) =>
+        root.GetProperty("items").EnumerateArray()
+            .Select(item => TeamRef().Match(Str(item, "$ref") ?? ""))
+            .Where(m => m.Success)
+            .Select(m => m.Groups[1].Value)
+            .Distinct()
+            .ToList();
+
+    [GeneratedRegex(@"/seasons/(\d+)")]
+    private static partial Regex SeasonRef();
+
+    [GeneratedRegex(@"/teams/(\d+)")]
+    private static partial Regex TeamRef();
 
     /// <summary>The teams of a league: sports[0].leagues[0].teams[].team.</summary>
     public static IReadOnlyList<EspnTeam> ParseTeams(JsonElement root)

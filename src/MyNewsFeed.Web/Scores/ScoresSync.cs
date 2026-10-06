@@ -11,7 +11,7 @@ namespace MyNewsFeed.Web.Scores;
 /// <param name="Requests">Requests made to ESPN.</param>
 public sealed record ScoresSyncReport(int Synced, int Failed, int Games, int Requests);
 
-/// <summary>Fetches followed teams' and leagues' games from ESPN and upserts them into dbo.ResultGames.</summary>
+/// <summary>Fetches followed teams', conferences' and leagues' games from ESPN and upserts them into dbo.ResultGames.</summary>
 public sealed class ScoresSync(
     IDbContextFactory<WebScraperContext> factory,
     EspnClient espn,
@@ -73,41 +73,81 @@ public sealed class ScoresSync(
 
             var fetched = new List<EspnGame>();
             string? error = null;
-            if (follow.Kind == FollowKinds.Team)
+
+            // Every ESPN request goes through here: a pause between requests, and a failure is recorded on the follow.
+            async Task<EspnResult<T>> Ask<T>(Func<Task<EspnResult<T>>> request)
             {
-                // Regular season and postseason, two requests; a postseason not yet scheduled is simply empty.
+                if (requests > 0)
+                {
+                    await Task.Delay(Politeness, ct);
+                }
+
+                var result = await request();
+                requests++;
+                error ??= result.Error;
+                return result;
+            }
+
+            // Regular season and postseason, two requests; a postseason not yet scheduled is simply empty.
+            async Task<bool> FetchTeamAsync(string sport, string league, string teamId)
+            {
                 foreach (var seasonType in EspnClient.ScheduleSeasonTypes)
                 {
-                    if (requests > 0)
-                    {
-                        await Task.Delay(Politeness, ct);
-                    }
-
-                    var result = await espn.GetTeamScheduleAsync(follow.Sport, follow.League, follow.TeamId!, seasonType, ct);
-                    requests++;
+                    var result = await Ask(() => espn.GetTeamScheduleAsync(sport, league, teamId, seasonType, ct));
                     if (!result.Ok)
                     {
-                        error = result.Error;
-                        break;
+                        return false;
                     }
 
                     fetched.AddRange(result.Value!);
+                }
+
+                return true;
+            }
+
+            if (follow.Kind == FollowKinds.Team)
+            {
+                await FetchTeamAsync(follow.Sport, follow.League, follow.TeamId!);
+            }
+            else if (follow.Kind == FollowKinds.Conference)
+            {
+                // The lineup first (two requests), then every member's schedule, so the page gets each school's whole
+                // season. The lineup is read again every run, so a school joining or leaving is picked up by itself.
+                if (EspnLeagues.Find(follow.Sport, follow.League)?.ConferencesFrom is not { } from)
+                {
+                    error = $"ESPN has no conferences for {follow.Sport}/{follow.League}.";
+                }
+                else
+                {
+                    var season = await Ask(() => espn.GetCurrentSeasonAsync(from.Sport, from.League, ct));
+                    var members = season.Ok
+                        ? await Ask(() => espn.GetConferenceTeamIdsAsync(from.Sport, from.League, season.Value, follow.GroupId!, ct))
+                        : null;
+                    if (members is { Ok: true, Value.Count: 0 })
+                    {
+                        // Keep the last known lineup rather than empty the conference.
+                        error = $"ESPN lists no schools in conference {follow.GroupId} of {from.Sport}/{from.League}.";
+                    }
+                    else if (members is { Ok: true })
+                    {
+                        await ReplaceMembersAsync(db, follow.Id, members.Value!, ct);
+                        foreach (var teamId in members.Value!)
+                        {
+                            if (!await FetchTeamAsync(follow.Sport, follow.League, teamId))
+                            {
+                                break;
+                            }
+                        }
+                    }
                 }
             }
             else
             {
                 foreach (var day in DaysToFetch(follow.LastSyncedAt, TodayEastern(utcNow), settings.BackfillDays))
                 {
-                    if (requests > 0)
-                    {
-                        await Task.Delay(Politeness, ct);
-                    }
-
-                    var result = await espn.GetScoreboardAsync(follow.Sport, follow.League, day, ct);
-                    requests++;
+                    var result = await Ask(() => espn.GetScoreboardAsync(follow.Sport, follow.League, day, ct));
                     if (!result.Ok)
                     {
-                        error = result.Error;
                         break;
                     }
 
@@ -141,6 +181,19 @@ public sealed class ScoresSync(
         }
 
         return new(synced, failed, games, requests);
+    }
+
+    /// <summary>
+    /// Makes a conference follow's members exactly <paramref name="teamIds"/>, keeping rows that stay; saving is left
+    /// to the caller.
+    /// </summary>
+    public static async Task ReplaceMembersAsync(WebScraperContext db, int followId, IReadOnlyCollection<string> teamIds, CancellationToken ct = default)
+    {
+        var wanted = teamIds.Select(t => Cut(t, 20)!).ToHashSet();
+        var current = await db.ResultFollowTeams.Where(m => m.FollowId == followId).ToListAsync(ct);
+        db.ResultFollowTeams.RemoveRange(current.Where(m => !wanted.Contains(m.TeamId)));
+        db.ResultFollowTeams.AddRange(wanted.Except(current.Select(m => m.TeamId))
+            .Select(t => new ResultFollowTeam { FollowId = followId, TeamId = t }));
     }
 
     /// <summary>

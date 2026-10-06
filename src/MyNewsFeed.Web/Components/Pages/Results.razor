@@ -8,7 +8,7 @@
 
 @* Static (non-interactive) page, like Events: the filter is plain links, so every view has a shareable URL. Games come
    from dbo.ResultGames, which the ESPN background sync fills; this page never calls ESPN. Games are grouped by start
-   day in the display zone. *@
+   day in the display zone. The filter is a dropdown at every width, not chips: the follow labels are long. *@
 
 <h1 class="sr-only">Results</h1>
 
@@ -26,13 +26,6 @@
             </select>
             <noscript><button class="nf-btn nf-btn--secondary" type="submit">Apply</button></noscript>
         </form>
-        <nav class="chips" aria-label="Teams and leagues">
-            <a class="chip" href="results" aria-current="@(Follow is null ? "true" : null)">All</a>
-            @foreach (var f in follows)
-            {
-                <a class="chip" href="results?follow=@f.Id" aria-current="@(f.Id == Follow ? "true" : null)">@f.Label</a>
-            }
-        </nav>
     }
     @if (listing is not null)
     {
@@ -118,7 +111,7 @@ else
     protected override async Task OnParametersSetAsync()
     {
         await using var db = await Factory.CreateDbContextAsync();
-        follows = await ResultsQuery.GetFollowsAsync(db);
+        follows = await ResultsQuery.GetFollowsAsync(db, Follow);
         listing = await ResultsQuery.GetResultsAsync(db, Follow);
         lastSynced = await ResultsQuery.GetLastSyncedAsync(db);
     }

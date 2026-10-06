@@ -545,10 +545,8 @@
     .pub .td-rhome .team { flex-direction: row-reverse; text-align: right; }
     /* With the teams either side of the score, position says which is away and which is home. */
     .pub .result .team__label { display: none; }
-    /* Many follows: the chips wrap instead of pushing the count off the page. */
-    .pub .filters--results { align-items: flex-start; }
-    .pub .filters--results .chips { flex: 1 1 auto; min-width: 0; }
-    .pub .filters--results .count--toolbar { flex: none; margin-top: 10px; }
+    /* Results keeps its dropdown on wide screens instead of switching to chips. */
+    .pub .filters--results .catselect { display: flex; flex: 0 1 360px; }
 }
 
 @media (min-width: 1180px) {
@@ -783,4 +781,24 @@
     .pub .d-today { grid-area: today; }
     .pub .d-vids { grid-area: vids; }
     .pub .d-story__title { font-size: 18px; }
+}
+
+/* =====================================================================================================================
+   Wide screens. The page grows past 1280px and its side padding shrinks, so a desktop monitor is used rather than
+   framed; the header keeps its content in line with the page's edges at every width.
+   ===================================================================================================================== */
+@media (min-width: 1024px) {
+    .pub { --page-max: 1280px; --page-pad: 40px; }
+    .pub .page { max-width: var(--page-max); padding-left: var(--page-pad); padding-right: var(--page-pad); }
+    .pub .site-header { padding: 0 max(var(--page-pad), calc((100% - var(--page-max)) / 2 + var(--page-pad))); }
+}
+
+@media (min-width: 1440px) {
+    .pub { --page-max: 1840px; --page-pad: 48px; }
+    .pub .videos { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (min-width: 1680px) {
+    .pub .feed { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .pub .article--lead .title { font-size: 38px; }
 }

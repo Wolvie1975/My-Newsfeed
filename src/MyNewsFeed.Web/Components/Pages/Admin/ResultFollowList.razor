@@ -16,9 +16,10 @@
 </div>
 
 <p class="text-muted">
-    Leagues and teams whose final scores appear on the public <a href="results" target="_blank">Results</a> page,
+    Leagues, conferences and teams whose final scores appear on the public <a href="results" target="_blank">Results</a> page,
     from ESPN's public scoreboard data. A background sync refreshes each enabled one every few hours: a team is two
-    requests (regular season and postseason), a league one request per day since its last sync. ESPN's data is unofficial and
+    requests (regular season and postseason), a conference two for its lineup plus two per member school, a league one
+    request per day since its last sync. ESPN's data is unofficial and
     could change without notice; if it does, the error shows under the follow and the page keeps what it has.
 </p>
 
@@ -111,7 +112,7 @@ else
     {
         await using var db = await Factory.CreateDbContextAsync();
         rows = (await db.ResultFollows.AsNoTracking().ToListAsync())
-            .OrderBy(f => f.Kind == FollowKinds.League ? 0 : 1)
+            .OrderBy(f => FollowKinds.Order(f.Kind))
             .ThenBy(f => f.Name, StringComparer.OrdinalIgnoreCase)
             .ThenBy(f => EspnLeagues.NameOf(f.Sport, f.League))
             .ToList();
