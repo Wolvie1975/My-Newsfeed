@@ -76,6 +76,21 @@ public class ScraperHealthTests
         Assert.Equal((HealthLevel.Warning, "No upcoming games"), ScraperHealth.ClassifyFeed(Now.AddHours(-1), 5, 0, Now, Threshold));
     }
 
+    [Fact]
+    public void Movie_sources_report_empty_success_failed_checks_and_staleness()
+    {
+        Assert.Equal((HealthLevel.Warning, "Scraped, but no releases"),
+            ScraperHealth.ClassifyMovieSource(true, Now, null, 0, Now, Threshold));
+        Assert.Equal((HealthLevel.Problem, "Never scraped"),
+            ScraperHealth.ClassifyMovieSource(true, null, null, 0, Now, Threshold));
+        Assert.Equal((HealthLevel.Problem, "Last scrape failed"),
+            ScraperHealth.ClassifyMovieSource(true, Now, "HTTP 500", 4, Now, Threshold));
+        Assert.Equal((HealthLevel.Problem, "Not refreshed for 4 hours"),
+            ScraperHealth.ClassifyMovieSource(true, Now.AddHours(-4), null, 4, Now, Threshold));
+        Assert.Equal((HealthLevel.Ok, "Disabled"),
+            ScraperHealth.ClassifyMovieSource(false, null, "HTTP 500", 0, Now, Threshold));
+    }
+
     // ---- against the database (each test rolls back) -----------------------------------------------------------------
 
     private static WebScraperContext Create() => new(

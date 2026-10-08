@@ -14,6 +14,12 @@ public partial class WebScraperContext
 
     public virtual DbSet<ResultFollowTeam> ResultFollowTeams { get; set; }
 
+    public DbSet<Movie> Movies { get; set; }
+    public DbSet<MovieRelease> MovieReleases { get; set; }
+    public DbSet<MovieReleaseSource> MovieReleaseSources { get; set; }
+    public DbSet<MovieSourceLink> MovieSourceLinks { get; set; }
+    public DbSet<MovieCatalog> MovieCatalogs { get; set; }
+
     partial void OnModelCreatingPartial(ModelBuilder modelBuilder)
     {
         // The database defaults Enabled to 1. Without this, EF treats a CLR `false` as "unset" and would

@@ -5,9 +5,9 @@ namespace MyNewsFeed.Web.Data;
 
 public enum HealthLevel { Ok, Warning, Problem }
 
-/// <summary>One thing the scraper reads (a news source, a YouTube channel, an events feed) and how it is doing.</summary>
+/// <summary>One thing the scraper reads (a news source, a YouTube channel, an events feed, a movie source) and how it is doing.</summary>
 /// <param name="LastSeen">The scraper's last successful touch: the source's LastScrapedAt, or the newest LastSeenAt.</param>
-/// <param name="Upcoming">Events feeds only: games from today onward.</param>
+/// <param name="Upcoming">Events or movie feeds: scheduled games or dated releases from today onward.</param>
 public sealed record HealthRow(
     int Id, string Name, bool Enabled, DateTime? LastSeen, int ItemCount, int? Upcoming, string? Error,
     HealthLevel Level, string? Note);
@@ -23,7 +23,9 @@ public sealed record ScraperHealthReport(
     /// <summary>The scraper as a whole has not written anything for longer than the threshold.</summary>
     public bool Stale => ScraperHealth.IsStale(LastRun, CheckedAt, StaleAfter);
 
-    public IEnumerable<HealthRow> All => Sources.Concat(Channels).Concat(EventFeeds);
+    public IReadOnlyList<HealthRow> MovieSources { get; init; } = [];
+
+    public IEnumerable<HealthRow> All => Sources.Concat(Channels).Concat(EventFeeds).Concat(MovieSources);
 
     public int Problems => All.Count(r => r.Level == HealthLevel.Problem);
 
@@ -32,7 +34,7 @@ public sealed record ScraperHealthReport(
 
 /// <summary>
 /// Whether the scraper is keeping the database fresh. Every table it fills is checked on its own, because one pipeline
-/// (news, videos or events) can stop while the others carry on. Everything here is read-only.
+/// (news, videos, events or movies) can stop while the others carry on. Everything here is read-only.
 /// </summary>
 public static class ScraperHealth
 {
@@ -119,6 +121,15 @@ public static class ScraperHealth
         return upcoming == 0 ? (HealthLevel.Warning, "No upcoming games") : (HealthLevel.Ok, null);
     }
 
+    /// <summary>Movie sources record successful checks even when no releases are found.</summary>
+    public static (HealthLevel, string?) ClassifyMovieSource(
+        bool enabled, DateTime? lastScraped, string? error, int releases, DateTime nowUtc, TimeSpan staleAfter)
+    {
+        var result = ClassifySource(enabled, true, lastScraped, error, releases, nowUtc, staleAfter);
+        return result == (HealthLevel.Warning, "Scraped, but no articles")
+            ? (HealthLevel.Warning, "Scraped, but no releases") : result;
+    }
+
     private static int Rank(HealthLevel level) => level switch { HealthLevel.Problem => 0, HealthLevel.Warning => 1, _ => 2 };
 
     private static IReadOnlyList<HealthRow> Ordered(IEnumerable<HealthRow> rows) =>
@@ -156,6 +167,21 @@ public static class ScraperHealth
             })
             .ToListAsync();
 
+        var movieSources = await db.MovieReleaseSources.AsNoTracking()
+            .Select(s => new
+            {
+                s.ID, s.Name, s.Enabled, s.LastScrapedAt, s.LastError,
+                Releases = (from r in db.MovieReleases
+                            join link in db.MovieSourceLinks on r.MovieSourceLinkId equals link.ID
+                            where link.MovieReleaseSourceId == s.ID
+                            select r.ID).Count(),
+                Upcoming = (from r in db.MovieReleases
+                            join link in db.MovieSourceLinks on r.MovieSourceLinkId equals link.ID
+                            where link.MovieReleaseSourceId == s.ID && r.CountryCode == "US"
+                                && r.ReleaseStatus == "scheduled" && r.ReleaseDate >= today
+                            select r.ID).Count()
+            }).ToListAsync();
+
         var unlinkedVideos = await db.YouTubeVideos.CountAsync(v => v.YoutubeVideoFeedId == null);
         var unlinkedEvents = await db.SportsEvents.CountAsync(e => e.SportsEventsTypeId == null);
 
@@ -165,6 +191,8 @@ public static class ScraperHealth
             await db.Sources.MaxAsync(s => s.LastScrapedAt),
             await db.YouTubeVideos.MaxAsync(v => (DateTime?)v.LastSeenAt),
             await db.SportsEvents.MaxAsync(e => (DateTime?)e.LastSeenAt),
+            await db.MovieReleaseSources.Where(s => s.Enabled).MaxAsync(s => s.LastScrapedAt),
+            await db.MovieReleases.MaxAsync(r => (DateTime?)r.LastSeenAt),
         }.Max();
 
         var sourceRows = sources.Select(s =>
@@ -188,7 +216,14 @@ public static class ScraperHealth
             return new HealthRow(f.Id, f.EventsTypeName, true, f.LastSeen, f.Events, f.Upcoming, null, level, note);
         });
 
+        var movieRows = movieSources.Select(s =>
+        {
+            var (level, note) = ClassifyMovieSource(s.Enabled, s.LastScrapedAt, s.LastError, s.Releases, nowUtc, staleAfter);
+            return new HealthRow(s.ID, s.Name, s.Enabled, s.LastScrapedAt, s.Releases, s.Upcoming,
+                s.Enabled ? s.LastError : null, level, note);
+        });
+
         return new ScraperHealthReport(nowUtc, staleAfter, lastRun,
-            Ordered(sourceRows), Ordered(channelRows), Ordered(feedRows), unlinkedVideos, unlinkedEvents);
+            Ordered(sourceRows), Ordered(channelRows), Ordered(feedRows), unlinkedVideos, unlinkedEvents) { MovieSources = Ordered(movieRows) };
     }
 }

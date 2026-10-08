@@ -27,7 +27,7 @@ else
             <p class="mb-1"><strong>The scraper has not run for @ScraperHealth.Age(report.CheckedAt - report.LastRun.Value).</strong></p>
             <p class="mb-0">
                 Its last write was @Dates.Stamp(report.LastRun). It normally runs every hour, so the public pages are
-                showing old news, videos and games. Check that the scraper's job or container is still running.
+                showing old news, videos, games and movie releases. Check that the scraper's job or container is still running.
             </p>
         </div>
     }
@@ -94,6 +94,9 @@ else
         </p>
     }
     <HealthTable Rows="report.Channels" ItemLabel="Videos" EditBase="admin/youtube-feeds" Empty="No channels." />
+
+    <h2 class="h4 mt-4">Movie release sources</h2>
+    <HealthTable Rows="report.MovieSources" ItemLabel="Releases" ShowUpcoming="true" Empty="No movie release sources configured yet." />
 
     <h2 class="h4 mt-4">Sports event feeds</h2>
     @if (report.UnlinkedEvents > 0)

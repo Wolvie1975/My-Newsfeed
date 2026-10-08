@@ -1,0 +1,119 @@
+@page "/movies"
+@layout PublicLayout
+@inject IDbContextFactory<WebScraperContext> Factory
+@inject FeedDates Dates
+
+<PageTitle>Movies · MyNewsFeed</PageTitle>
+<header class="movies-heading">
+    <p class="movies-eyebrow">THE RELEASE CALENDAR</p>
+    <h1>Movies</h1>
+    <p>Find your next movie night. US releases in theaters, on streaming, and at home.</p>
+</header>
+<form class="movies-filters" method="get" action="movies">
+    <div class="movies-field">
+        <label for="movie-type">Watch it</label>
+        <select id="movie-type" name="type">
+            <option value="">Anywhere</option>
+            @foreach (var type in MoviesQuery.Types)
+            {
+                <option value="@type.Key" selected="@(Type == type.Key)">@type.Value</option>
+            }
+        </select>
+    </div>
+    <div class="movies-field">
+        <label for="movie-platform">Platform</label>
+        <select id="movie-platform" name="platform">
+            <option value="">All platforms</option>
+            @foreach (var platform in listing.Platforms)
+            {
+                <option value="@platform" selected="@(Platform == platform)">@platform</option>
+            }
+            @if (!string.IsNullOrWhiteSpace(Platform) && !listing.Platforms.Contains(Platform))
+            {
+                <option value="@Platform" selected>@Platform</option>
+            }
+        </select>
+    </div>
+    <div class="movies-field">
+        <label for="movie-period">When</label>
+        <select id="movie-period" name="period">
+            <option value="upcoming" selected="@(Period is not ("recent" or "tbd" or "all"))">Upcoming</option>
+            <option value="recent" selected="@(Period == "recent")">Past 30 days</option>
+            <option value="tbd" selected="@(Period == "tbd")">Date to be announced</option>
+            <option value="all" selected="@(Period == "all")">All dates</option>
+        </select>
+    </div>
+    <button class="nf-btn nf-btn--primary" type="submit">Apply filters</button>
+</form>
+<div class="movies-summary">
+    <p class="count">@listing.Total @(listing.Total == 1 ? "release" : "releases")</p>
+    @if (Filtered) { <a href="movies">Reset filters</a> }
+</div>
+@if (listing.Updated is { } updated)
+{
+    <p class="updated">Releases last updated @Dates.PublishedFull(updated)</p>
+}
+@if (listing.Items.Count == 0)
+{
+    <section class="movies-empty">
+        <span class="movies-empty__icon" aria-hidden="true">▷</span>
+        <h2>@(Filtered ? "No matching releases" : "Your next movie night is coming")</h2>
+        <p>@(Filtered ? "Try another release type, platform, or date range." : "Movie releases will appear here as the calendar fills up. Check back soon for theater, streaming, and home releases.")</p>
+        @if (Filtered) { <a class="nf-btn nf-btn--secondary" href="movies">Show upcoming releases</a> }
+    </section>
+}
+else
+{
+    @foreach (var group in listing.Items.GroupBy(x => x.Date))
+    {
+        <section class="movies-day">
+            <h2>@(group.Key is { } day ? FeedDates.LongDate(day) : "Date to be announced")</h2>
+            <ul class="movie-grid">
+                @foreach (var movie in group)
+                {
+                    <li class="movie-card">
+                        <div class="movie-poster">
+                            <span aria-hidden="true">@movie.Title</span>
+                            @if (EventsText.LogoUrl(movie.Poster) is { } poster)
+                            {
+                                <img src="@poster" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()" />
+                            }
+                        </div>
+                        <div class="movie-body">
+                            <p class="movie-kind">@(MoviesQuery.Types.GetValueOrDefault(movie.Type, movie.Type))</p>
+                            <h3>@movie.Title</h3>
+                            <p class="movie-meta">@string.Join(" · ", new[] { movie.Year?.ToString(), movie.Certification, movie.Runtime is { } runtime ? $"{runtime} min" : null }.Where(x => !string.IsNullOrWhiteSpace(x)))</p>
+                            @if (movie.DateStatus == "estimated") { <p class="movie-meta">Estimated release date</p> }
+                            @if (movie.Platform is not null) { <p class="movie-platform">@movie.Platform</p> }
+                            @if (movie.Format is not null) { <p class="movie-meta">@movie.Format</p> }
+                            @if (movie.ReRelease) { <p class="movie-meta">Re-release</p> }
+                            @if (!string.IsNullOrWhiteSpace(movie.Description)) { <p class="movie-description">@movie.Description</p> }
+                            @if (FeedQuery.SafeHref(movie.SourceUrl) is { } href)
+                            {
+                                <a class="movie-source" href="@href" target="_blank" rel="noopener noreferrer">Details at @movie.Source ↗</a>
+                            }
+                        </div>
+                    </li>
+                }
+            </ul>
+        </section>
+    }
+    @if (listing.Total > listing.Items.Count)
+    {
+        <p class="count">Showing @listing.Items.Count of @listing.Total releases. Narrow your filters to find more.</p>
+    }
+}
+
+@code {
+    [SupplyParameterFromQuery(Name = "type")] private string? Type { get; set; }
+    [SupplyParameterFromQuery(Name = "platform")] private string? Platform { get; set; }
+    [SupplyParameterFromQuery(Name = "period")] private string? Period { get; set; }
+    private MoviesPage listing = new([], 0, [], null);
+    private bool Filtered => !string.IsNullOrWhiteSpace(Type)
+        || !string.IsNullOrWhiteSpace(Platform) || Period is "recent" or "tbd" or "all";
+    protected override async Task OnParametersSetAsync()
+    {
+        await using var db = await Factory.CreateDbContextAsync();
+        listing = await MoviesQuery.GetAsync(db, Dates.Today, null, Type, Platform, Period);
+    }
+}

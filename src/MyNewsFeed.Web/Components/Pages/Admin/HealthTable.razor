@@ -1,4 +1,4 @@
-@* The table for YouTube channels and events feeds on the scraper status page (both have no error column of their own). *@
+@* Shared scraper status table. Sources without an editor display their name as plain text. *@
 @if (Rows.Count == 0)
 {
     <p>@Empty</p>
@@ -20,16 +20,31 @@ else
             <tbody>
                 @foreach (var row in Rows)
                 {
-                    <tr>
+                    <tr class="@(row.Enabled ? null : "text-muted")">
                         <td><StatusBadge Level="row.Level" /></td>
-                        <td><a href="@EditBase/@row.Id/edit">@row.Name</a></td>
+                        <td>
+                            @if (EditBase is not null)
+                            {
+                                <a href="@EditBase/@row.Id/edit">@row.Name</a>
+                            }
+                            else
+                            {
+                                @row.Name
+                            }
+                        </td>
                         <td>@row.ItemCount</td>
                         @if (ShowUpcoming)
                         {
                             <td>@row.Upcoming</td>
                         }
                         <td class="text-nowrap">@Dates.Stamp(row.LastSeen)</td>
-                        <td>@row.Note</td>
+                        <td>
+                            @row.Note
+                            @if (!string.IsNullOrWhiteSpace(row.Error))
+                            {
+                                <div class="small text-danger text-break" title="@row.Error">@(row.Error.Length <= 160 ? row.Error : row.Error[..160] + "…")</div>
+                            }
+                        </td>
                     </tr>
                 }
             </tbody>
@@ -40,7 +55,7 @@ else
 @code {
     [Parameter, EditorRequired] public IReadOnlyList<HealthRow> Rows { get; set; } = [];
     [Parameter, EditorRequired] public string ItemLabel { get; set; } = "";
-    [Parameter, EditorRequired] public string EditBase { get; set; } = "";
+    [Parameter] public string? EditBase { get; set; }
     [Parameter] public bool ShowUpcoming { get; set; }
     [Parameter] public string Empty { get; set; } = "";
 }
