@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.HttpOverrides;
+using System.Net;
 using Microsoft.EntityFrameworkCore;
 using MyNewsFeed.Web.Auth;
 using MyNewsFeed.Web.Components;
@@ -66,7 +68,16 @@ builder.Services.AddHttpClient<MyNewsFeed.Web.Tv.TvmazeClient>(http =>
     http.DefaultRequestHeaders.UserAgent.ParseAdd("MyNewsFeed/1.0");
 });
 
+// Only explicitly configured reverse proxies may supply the HTTPS scheme.
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    foreach (var proxy in builder.Configuration.GetSection("ReverseProxy:KnownProxies").GetChildren())
+        if (IPAddress.TryParse(proxy.Value, out var address)) options.KnownProxies.Add(address);
+});
+
 var app = builder.Build();
+app.UseForwardedHeaders();
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
