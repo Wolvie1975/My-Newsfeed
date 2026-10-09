@@ -25,6 +25,47 @@ public class FeedQueryTests
     };
 
     [Fact]
+    public async Task Home_takes_the_latest_story_from_five_distinct_enabled_sources()
+    {
+        await using var db = Create();
+        await using var tx = await db.Database.BeginTransactionAsync();
+        // Isolate this scenario from existing sources; the transaction rolls all changes back.
+        await db.Sources.ExecuteUpdateAsync(set => set.SetProperty(s => s.Enabled, false));
+        var token = Guid.NewGuid().ToString("N");
+        var date = new DateTime(2026, 10, 9);
+        var sources = Enumerable.Range(0, 6).Select(i => new Source
+        {
+            Url = $"https://test.invalid/{token}/{i}", Label = $"Source {i}", Enabled = true
+        }).ToList();
+        for (int i = 0; i < sources.Count; i++)
+        {
+            sources[i].Pages.Add(NewPage(token, $"Newest {i}", date, date.AddMinutes(-i)));
+            sources[i].Pages.Add(NewPage(token, $"Older {i}", date, date.AddDays(-1)));
+            sources[i].Pages.Add(NewPage(token, $"Undated {i}", date.AddDays(1)));
+        }
+        // A tie within the newest source is resolved by the higher ID.
+        sources[0].Pages.Add(NewPage(token, "Tie winner", date, date));
+        var disabled = new Source { Url = $"https://test.invalid/{token}/off", Enabled = false };
+        disabled.Pages.Add(NewPage(token, "Disabled", date, date.AddDays(1)));
+        db.Sources.AddRange(sources);
+        db.Sources.Add(disabled);
+        await db.SaveChangesAsync();
+        var items = await FeedQuery.GetLatestPerSourceAsync(db);
+        Assert.Equal(5, items.Count);
+        Assert.Equal(5, items.Select(x => x.SourceUrl).Distinct().Count());
+        Assert.Equal(sources[0].Pages.Max(x => x.Id), items[0].Id);
+        Assert.Equal(Enumerable.Range(0, 5).Select(i => $"Source {i}"), items.Select(x => x.SourceLabel));
+        Assert.All(items, x => Assert.False(x.Undated));
+        Assert.Equal(6, (await FeedQuery.GetLatestPerSourceAsync(db, 10)).Count);
+        await db.Pages.ExecuteDeleteAsync();
+        db.ChangeTracker.Clear();
+        db.Pages.Add(new Page { SourceId = sources[0].Id, Url = $"https://test.invalid/{token}/only",
+            Title = "Undated only", ScrapedAt = date });
+        await db.SaveChangesAsync();
+        Assert.True(Assert.Single(await FeedQuery.GetLatestPerSourceAsync(db)).Undated);
+    }
+
+    [Fact]
     public async Task Feed_shows_only_pages_from_enabled_sources_newest_first()
     {
         await using var db = Create();

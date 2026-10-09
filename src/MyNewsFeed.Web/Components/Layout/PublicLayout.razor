@@ -10,25 +10,26 @@
     var onNews = path.StartsWith("news", StringComparison.OrdinalIgnoreCase);
     var onSaved = path.StartsWith("saved", StringComparison.OrdinalIgnoreCase);
     var onHome = path.Length == 0 || path[0] is '?' or '#';
+    var section = onEvents ? "Sports Events" : onMovies ? "Movies" : onVideos ? "Videos"
+        : onResults ? "Results" : onNews ? "News" : onSaved ? "Saved articles" : onHome ? "Home" : "Browse";
 }
 
 <div class="pub">
     <header class="site-header">
         <a class="brand" href="">MyNewsFeed</a>
 
-        @* Wide screens: the navigation sits in the header. Phones get the same links in a bar under it (below), so the
-           sticky header stays one row tall. *@
+        @* Wide screens: the navigation sits in the header. Smaller screens get a dropdown below it. *@
         <nav class="site-nav site-nav--inline" aria-label="Main">
             <a href="" aria-current="@(onHome ? "page" : null)">Home</a>
             <a href="news" aria-current="@(onNews ? "page" : null)">News</a>
             <a href="events" aria-current="@(onEvents ? "page" : null)">Sports Events</a>
             <a href="results" aria-current="@(onResults ? "page" : null)">Results</a>
             <a href="movies" aria-current="@(onMovies ? "page" : null)">Movies</a>
-        <a href="videos" aria-current="@(onVideos ? "page" : null)">Videos</a>
+            <a href="videos" aria-current="@(onVideos ? "page" : null)">Videos</a>
         </nav>
 
         <div class="header-actions">
-            @* An icon, not a sixth nav link: the phone bar has no room for another word. public.js fills in the count. *@
+            @* Saved articles stay in the header; public.js fills in the count. *@
             <a class="saved-link" href="saved" aria-current="@(onSaved ? "page" : null)" title="Saved articles">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4.5L5 21V4a1 1 0 0 1 1-1z"></path></svg>
                 <span class="sr-only">Saved articles</span>
@@ -50,14 +51,21 @@
         </div>
     </header>
 
-    <nav class="site-nav site-nav--bar" aria-label="Main">
-        <a href="" aria-current="@(onHome ? "page" : null)">Home</a>
-        <a href="news" aria-current="@(onNews ? "page" : null)">News</a>
-        <a href="events" aria-current="@(onEvents ? "page" : null)">Sports Events</a>
-        <a href="results" aria-current="@(onResults ? "page" : null)">Results</a>
-        <a href="movies" aria-current="@(onMovies ? "page" : null)">Movies</a>
-        <a href="videos" aria-current="@(onVideos ? "page" : null)">Videos</a>
-    </nav>
+    <details class="mobile-nav" data-mobile-nav>
+        <summary>
+            <span class="mobile-nav__context">Browse</span>
+            <span class="mobile-nav__section">@section</span>
+            <svg class="mobile-nav__chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg>
+        </summary>
+        <nav aria-label="Main" class="mobile-nav__links">
+            <a href="" aria-current="@(onHome ? "page" : null)">Home</a>
+            <a href="news" aria-current="@(onNews ? "page" : null)">News</a>
+            <a href="events" aria-current="@(onEvents ? "page" : null)">Sports Events</a>
+            <a href="results" aria-current="@(onResults ? "page" : null)">Results</a>
+            <a href="movies" aria-current="@(onMovies ? "page" : null)">Movies</a>
+            <a href="videos" aria-current="@(onVideos ? "page" : null)">Videos</a>
+        </nav>
+    </details>
 
     <main class="page">
         @Body

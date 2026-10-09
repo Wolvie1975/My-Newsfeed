@@ -4,6 +4,21 @@
 (function () {
     var root = document.documentElement;
 
+    // Close the section menu on selection, outside clicks, or Escape.
+    document.addEventListener('click', function (event) {
+        document.querySelectorAll('[data-mobile-nav][open]').forEach(function (menu) {
+            if (!menu.contains(event.target) || event.target.closest('a')) menu.open = false;
+        });
+    });
+    document.addEventListener('keydown', function (event) {
+        if (event.key !== 'Escape') return;
+        document.querySelectorAll('[data-mobile-nav][open]').forEach(function (menu) {
+            var hadFocus = menu.contains(document.activeElement);
+            menu.open = false;
+            if (hadFocus) menu.querySelector('summary').focus();
+        });
+    });
+
     // ---- theme ----------------------------------------------------------------------------------------------
 
     function currentTheme() {

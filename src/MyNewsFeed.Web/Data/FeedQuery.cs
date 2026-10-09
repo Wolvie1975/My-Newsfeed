@@ -160,6 +160,27 @@ public static class FeedQuery
         return new FeedPage(items, total, remaining, next);
     }
 
+    /// <summary>The newest article per enabled source, then the newest five source winners for Home.</summary>
+    public static async Task<IReadOnlyList<FeedItem>> GetLatestPerSourceAsync(WebScraperContext db, int take = 5) =>
+        await Visible(db)
+            .Where(p => p.Id == db.Pages.Where(other => other.SourceId == p.SourceId)
+                .OrderBy(other => other.Published == null ? 1 : 0)
+                .ThenByDescending(other => other.Published ?? other.ScrapedAt)
+                .ThenByDescending(other => other.Id)
+                .Select(other => other.Id).First())
+            .OrderBy(p => p.Published == null ? 1 : 0)
+            .ThenByDescending(p => p.Published ?? p.ScrapedAt)
+            .ThenByDescending(p => p.Id)
+            .Take(take)
+            .Select(p => new FeedItem(
+                p.Id, p.Title, p.Url,
+                p.Description != null && p.Description.Length > DescriptionFetchLimit
+                    ? p.Description.Substring(0, DescriptionFetchLimit) : p.Description,
+                p.ImageUrl, p.Source.Label, p.Source.Url, p.Source.SourceCategoryId,
+                p.Source.SourceCategory != null ? p.Source.SourceCategory.CategoryName : null,
+                p.Published ?? p.ScrapedAt, p.Published == null))
+            .ToListAsync();
+
     /// <summary>
     /// Scraped URLs are untrusted: only http(s) may be used as a link target or image source, so a stored
     /// <c>javascript:</c> or <c>data:</c> URL can never become a clickable link.

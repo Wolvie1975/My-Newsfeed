@@ -77,7 +77,7 @@
 
     <section class="d-card d-news" aria-labelledby="h-news">
         <div class="d-card__head">
-            <h2 class="d-card__title" id="h-news">Latest news <span class="d-card__count">@news.Count most recent</span></h2>
+            <h2 class="d-card__title" id="h-news">Latest news <span class="d-card__count">1 per source</span></h2>
             <a class="d-more" href="news">View all <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="m13 6 6 6-6 6"></path></svg></a>
         </div>
         @if (news.Count == 0)
@@ -215,7 +215,7 @@
 
         // The queries run one after another: one DbContext cannot run two at once.
         todays = await EventsQuery.GetOnDateAsync(db, Dates.TodayAt(nowUtc));
-        news = (await FeedQuery.GetFeedAsync(db, null, null, null, HomeNewsCount)).Items;
+        news = await FeedQuery.GetLatestPerSourceAsync(db, HomeNewsCount);
         videos = await VideosQuery.GetLatestPerChannelAsync(db);
     }
 
