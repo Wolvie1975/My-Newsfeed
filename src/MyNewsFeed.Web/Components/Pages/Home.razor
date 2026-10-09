@@ -136,6 +136,53 @@
         }
     </section>
 
+    <section class="d-card d-movies" aria-labelledby="h-movies">
+        <div class="d-card__head">
+            <h2 class="d-card__title" id="h-movies">Friday theater releases</h2>
+            <a class="d-more" href="movies?type=theatrical">View all <span aria-hidden="true">→</span></a>
+        </div>
+        @if (movies.Count == 0)
+        {
+            <p class="d-empty">No upcoming Friday theater releases announced yet.</p>
+        }
+        else
+        {
+            <ul class="d-list" tabindex="0" aria-label="Upcoming Friday theater releases">
+                @foreach (var movie in movies)
+                {
+                    var poster = EventsText.LogoUrl(movie.Poster);
+                    var href = FeedQuery.SafeHref(movie.SourceUrl);
+                    <li class="d-movie">
+                        <div class="d-movie__poster" aria-hidden="true">
+                            <span>▶</span>
+                            @if (poster is not null)
+                            {
+                                <img src="@poster" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()" />
+                            }
+                        </div>
+                        <div class="d-movie__body">
+                            @if (movie.Date is { } date)
+                            {
+                                <p class="d-movie__date"><time datetime="@date.ToString("yyyy-MM-dd")">@date.ToString("ddd, MMM d, yyyy", System.Globalization.CultureInfo.InvariantCulture)</time>@(movie.DateStatus == "estimated" ? " · Estimated" : "")</p>
+                            }
+                            <h3 class="d-vid__title">
+                                @if (href is not null)
+                                {
+                                    <a href="@href" target="_blank" rel="noopener noreferrer">@movie.Title</a>
+                                }
+                                else
+                                {
+                                    @movie.Title
+                                }
+                            </h3>
+                            <p class="d-vid__meta">@string.Join(" · ", new[] { movie.Certification, movie.Runtime is { } runtime ? $"{runtime} min" : null, movie.ReRelease ? "Re-release" : null }.Where(x => !string.IsNullOrWhiteSpace(x)))</p>
+                        </div>
+                    </li>
+                }
+            </ul>
+        }
+    </section>
+
     <section class="d-card d-vids" aria-labelledby="h-vids">
         <div class="d-card__head">
             <h2 class="d-card__title" id="h-vids">Latest videos <span class="d-card__count">1 per channel</span></h2>
@@ -201,6 +248,7 @@
     private IReadOnlyList<EventItem> todays = [];
     private IReadOnlyList<FeedItem> news = [];
     private IReadOnlyList<VideoItem> videos = [];
+    private IReadOnlyList<MovieReleaseItem> movies = [];
 
     protected override async Task OnParametersSetAsync()
     {
@@ -217,6 +265,7 @@
         todays = await EventsQuery.GetOnDateAsync(db, Dates.TodayAt(nowUtc));
         news = await FeedQuery.GetLatestPerSourceAsync(db, HomeNewsCount);
         videos = await VideosQuery.GetLatestPerChannelAsync(db);
+        movies = await MoviesQuery.GetFridayTheatricalAsync(db, Dates.TodayAt(nowUtc));
     }
 
     private const int HomeNewsCount = 5;

@@ -675,11 +675,12 @@
 .pub .d-hello h1 { margin: 0; font-size: 26px; line-height: 1.2; font-weight: 700; letter-spacing: -0.02em; }
 .pub .d-hello p { margin: 2px 0 0; font-size: 15px; color: var(--text-2); }
 
-/* Phones: the same cards as desktop, stacked in this order: today's events, news, videos. */
+/* Phones: events, news, the movie strip, then videos. */
 .pub .d-grid { display: flex; flex-direction: column; gap: 12px; }
 .pub .d-today { order: 1; }
 .pub .d-news { order: 2; }
-.pub .d-vids { order: 3; }
+.pub .d-movies { order: 3; }
+.pub .d-vids { order: 4; }
 
 .pub .d-card {
     margin: 0; background: var(--surface);
@@ -786,10 +787,11 @@
 @media (min-width: 1024px) {
     .pub .d-grid {
         display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
-        grid-template-rows: auto 1fr; grid-template-areas: "news today" "news vids"; align-items: start;
+        grid-template-rows: auto auto auto; grid-template-areas: "news today" "movies movies" "vids vids"; align-items: start;
     }
     .pub .d-news { grid-area: news; }
     .pub .d-today { grid-area: today; }
+    .pub .d-movies { grid-area: movies; }
     .pub .d-vids { grid-area: vids; }
     .pub .d-story__title { font-size: 18px; }
 }
@@ -849,3 +851,22 @@
 /* A small crimson accent carries the school palette through dashboard and page headings. */
 .pub .d-card__title { border-left: 3px solid var(--brand-accent); padding-left: 10px; }
 .pub .movies-eyebrow { color: var(--brand-accent); }
+
+/* Home: movies form a poster strip on phones and a full-width row on desktop. */
+.pub .d-movies .d-list { display: flex; gap: 16px; padding: 20px; overflow-x: auto; scroll-snap-type: x proximity; scroll-padding-inline: 20px; }
+.pub .d-movies .d-list > li { border: 0; }
+.pub .d-movie { display: flex; flex-direction: column; gap: 12px; flex: 0 0 160px; min-width: 0; scroll-snap-align: start; }
+.pub .d-movie__poster { position: relative; width: 100%; aspect-ratio: 2 / 3; display: grid; place-items: center; overflow: hidden; border-radius: 8px; background: var(--ph-bg); color: var(--ph-fg); }
+.pub .d-movie__poster img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.pub .d-movie__body { min-width: 0; }
+.pub .d-movie__date { margin: 0 0 6px; color: var(--accent); font-size: 12px; font-weight: 600; }
+.pub .d-movies .d-vid__meta { margin-top: 6px; }
+@media (min-width: 768px) {
+    .pub .d-vids .d-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .pub .d-vids .d-list > li { border-top: 0; border-bottom: 1px solid var(--row-border); }
+}
+@media (min-width: 1024px) {
+    .pub .d-movies .d-list { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); padding: 24px; overflow: visible; }
+    .pub .d-movie { flex: none; }
+    .pub .d-vids .d-list { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}

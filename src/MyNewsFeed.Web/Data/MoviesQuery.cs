@@ -49,4 +49,27 @@ public static class MoviesQuery
                 x.r.ReleaseType, x.r.Platform, x.r.Format, x.r.IsReRelease, x.source.Name, x.r.SourceUrl)).ToListAsync();
         return new(items, total, platforms, updated);
     }
+    /// <summary>Upcoming Friday theatrical releases, one entry per movie and date across enabled sources.</summary>
+    public static async Task<IReadOnlyList<MovieReleaseItem>> GetFridayTheatricalAsync(
+        WebScraperContext db, DateOnly today, int take = 5)
+    {
+        // A fixed Friday avoids dependence on SQL Server's DATEFIRST setting.
+        var friday = new DateOnly(1970, 1, 2);
+        var eligible = from r in db.MovieReleases.AsNoTracking()
+                       join link in db.MovieSourceLinks on r.MovieSourceLinkId equals link.ID
+                       join movie in db.Movies on link.MovieId equals movie.ID
+                       join source in db.MovieReleaseSources on link.MovieReleaseSourceId equals source.ID
+                       where source.Enabled && r.CountryCode == "US" && r.ReleaseStatus == "scheduled"
+                           && r.ReleaseType == "theatrical" && r.ReleaseDate >= today
+                           && EF.Functions.DateDiffDay(friday, r.ReleaseDate) % 7 == 0
+                       select new { r, link.MovieId, movie, source };
+        var uniqueIds = eligible.GroupBy(x => new { x.MovieId, x.r.ReleaseDate }).Select(g => g.Min(x => x.r.ID));
+        return await eligible.Where(x => uniqueIds.Contains(x.r.ID))
+            .OrderBy(x => x.r.ReleaseDate).ThenBy(x => x.movie.Title).ThenBy(x => x.r.ID).Take(take)
+            .Select(x => new MovieReleaseItem(x.r.ID, x.movie.Title, x.movie.OriginalYear, x.movie.Description,
+                x.movie.PosterUrl, x.movie.Certification, x.movie.RuntimeMinutes, x.r.ReleaseDate, x.r.DateStatus,
+                x.r.ReleaseType, x.r.Platform, x.r.Format, x.r.IsReRelease, x.source.Name, x.r.SourceUrl))
+            .ToListAsync();
+    }
+
 }
