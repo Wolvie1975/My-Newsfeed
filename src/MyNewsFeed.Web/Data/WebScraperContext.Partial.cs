@@ -16,6 +16,10 @@ public partial class WebScraperContext
 
     public DbSet<SportsEventSource> SportsEventSources { get; set; }
 
+    public DbSet<TvSeries> TvSeries { get; set; }
+    public DbSet<TvEpisode> TvEpisodes { get; set; }
+    public DbSet<TvTrackedSeries> TvTrackedSeries { get; set; }
+
     public DbSet<Movie> Movies { get; set; }
     public DbSet<MovieRelease> MovieReleases { get; set; }
     public DbSet<MovieReleaseSource> MovieReleaseSources { get; set; }
@@ -24,6 +28,15 @@ public partial class WebScraperContext
 
     partial void OnModelCreatingPartial(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<TvEpisode>().HasOne(e => e.Series).WithMany(s => s.Episodes)
+            .HasForeignKey(e => e.SeriesId).OnDelete(DeleteBehavior.NoAction);
+        modelBuilder.Entity<TvTrackedSeries>(entity =>
+        {
+            entity.HasOne(e => e.Series).WithMany().HasForeignKey(e => e.SeriesId).OnDelete(DeleteBehavior.NoAction);
+            entity.Property(e => e.Enabled).HasDefaultValue(true).HasSentinel(true);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("sysutcdatetime()");
+            entity.HasIndex(e => e.TvmazeShowId).IsUnique();
+        });
         modelBuilder.Entity<SportsEventsType>().Property(e => e.Enabled).HasDefaultValue(true).HasSentinel(true);
         modelBuilder.Entity<SportsEventSource>(entity =>
         {

@@ -25,7 +25,9 @@ public sealed record ScraperHealthReport(
 
     public IReadOnlyList<HealthRow> MovieSources { get; init; } = [];
 
-    public IEnumerable<HealthRow> All => Sources.Concat(Channels).Concat(EventFeeds).Concat(MovieSources);
+    public IReadOnlyList<HealthRow> TvSeries { get; init; } = [];
+
+    public IEnumerable<HealthRow> All => Sources.Concat(Channels).Concat(EventFeeds).Concat(MovieSources).Concat(TvSeries);
 
     public int Problems => All.Count(r => r.Level == HealthLevel.Problem);
 
@@ -182,6 +184,14 @@ public static class ScraperHealth
                             select r.ID).Count()
             }).ToListAsync();
 
+        var tv = await db.TvTrackedSeries.AsNoTracking().Select(t => new
+        {
+            t.Id, Name = t.Series != null ? t.Series.Title : t.ExpectedTitle, t.Enabled,
+            t.LastAttemptAt, t.LastSuccessAt, t.LastError, t.LastIssueCount,
+            Episodes = db.TvEpisodes.Count(e => e.SeriesId == t.SeriesId),
+            Upcoming = db.TvEpisodes.Count(e => e.SeriesId == t.SeriesId && e.Airdate >= today)
+        }).ToListAsync();
+
         var unlinkedVideos = await db.YouTubeVideos.CountAsync(v => v.YoutubeVideoFeedId == null);
         var unlinkedEvents = await db.SportsEvents.CountAsync(e => e.SportsEventsTypeId == null);
 
@@ -194,6 +204,7 @@ public static class ScraperHealth
             await db.SportsEventsTypes.Where(t => t.Enabled).MaxAsync(t => t.LastSuccessAt),
             await db.MovieReleaseSources.Where(s => s.Enabled).MaxAsync(s => s.LastScrapedAt),
             await db.MovieReleases.MaxAsync(r => (DateTime?)r.LastSeenAt),
+            await db.TvTrackedSeries.Where(t => t.Enabled).MaxAsync(t => t.LastSuccessAt),
         }.Max();
 
         var sourceRows = sources.Select(s =>
@@ -231,7 +242,20 @@ public static class ScraperHealth
                 s.Enabled ? s.LastError : null, level, note);
         });
 
+        var tvRows = tv.Select(t =>
+        {
+            var (level, note) = ClassifySource(t.Enabled, true, t.LastSuccessAt, null, t.Episodes, nowUtc, staleAfter);
+            if (t.Enabled && !string.IsNullOrWhiteSpace(t.LastError)
+                && (t.LastSuccessAt == null || t.LastAttemptAt > t.LastSuccessAt))
+            { level = HealthLevel.Problem; note = "Last episode import failed"; }
+            else if (t.Enabled && level != HealthLevel.Problem && (t.LastIssueCount > 0 || !string.IsNullOrWhiteSpace(t.LastError)))
+            { level = HealthLevel.Warning; note = $"Imported with {t.LastIssueCount ?? 0} issues"; }
+            else if (t.Enabled && t.Episodes == 0 && level == HealthLevel.Warning) note = "No episodes announced yet";
+            return new HealthRow(t.Id, t.Name, t.Enabled, t.LastSuccessAt, t.Episodes, t.Upcoming,
+                t.Enabled ? t.LastError : null, level, note);
+        });
+
         return new ScraperHealthReport(nowUtc, staleAfter, lastRun,
-            Ordered(sourceRows), Ordered(channelRows), Ordered(feedRows), unlinkedVideos, unlinkedEvents) { MovieSources = Ordered(movieRows) };
+            Ordered(sourceRows), Ordered(channelRows), Ordered(feedRows), unlinkedVideos, unlinkedEvents) { MovieSources = Ordered(movieRows), TvSeries = Ordered(tvRows) };
     }
 }

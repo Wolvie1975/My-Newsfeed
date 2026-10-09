@@ -59,6 +59,13 @@ builder.Services.AddHttpClient<EspnClient>(http =>
 builder.Services.AddTransient<ScoresSync>();
 builder.Services.AddHostedService<ScoresSyncService>();
 
+builder.Services.AddHttpClient<MyNewsFeed.Web.Tv.TvmazeClient>(http =>
+{
+    http.BaseAddress = new Uri("https://api.tvmaze.com/");
+    http.Timeout = TimeSpan.FromSeconds(15);
+    http.DefaultRequestHeaders.UserAgent.ParseAdd("MyNewsFeed/1.0");
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

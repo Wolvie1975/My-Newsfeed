@@ -183,6 +183,49 @@
         }
     </section>
 
+    <section class="d-card d-episodes" aria-labelledby="h-tv">
+        <div class="d-card__head">
+            <h2 class="d-card__title" id="h-tv">Today’s episodes <span class="d-card__count">@episodes.Count @(episodes.Count == 1 ? "episode" : "episodes")</span></h2>
+            <a class="d-more" href="tv">View calendar <span aria-hidden="true">→</span></a>
+        </div>
+        @if (episodes.Count == 0)
+        {
+            <p class="d-empty">No new episodes from followed series today.</p>
+        }
+        else
+        {
+            <ul class="d-list d-tv__list">
+                @foreach (var group in episodes.GroupBy(e => e.ShowId))
+                {
+                    var series = group.First();
+                    <li class="d-tv__show">
+                        <div class="tv-poster" aria-hidden="true">
+                            @if (EventsText.LogoUrl(series.Poster) is { } poster)
+                            { <img src="@poster" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()" /> }
+                        </div>
+                        <div class="d-tv__body">
+                            <p class="movie-kind">@(series.Platform ?? "Network not announced")</p>
+                            <h3 class="d-vid__title">@series.SeriesTitle</h3>
+                            <ul class="d-tv__episodes">
+                                @foreach (var episode in group)
+                                {
+                                    var label = episode.Special ? "Special" : episode.Season is { } season && episode.Number is { } number ? $"S{season:00} E{number:00}" : "Episode";
+                                    <li>
+                                        @if (FeedQuery.SafeHref(episode.Url) is { } link)
+                                        { <a href="@link" target="_blank" rel="noopener noreferrer">@label · @(episode.Title ?? "Title to be announced")</a> }
+                                        else { <span>@label · @episode.Title</span> }
+                                        <span class="movie-meta">@(episode.StartsUtc is { } time ? Dates.TimeWithOffset(time) : "Time not confirmed")</span>
+                                    </li>
+                                }
+                            </ul>
+                        </div>
+                    </li>
+                }
+            </ul>
+        }
+        <p class="d-tv__credit">Episode data and images: <a href="https://www.tvmaze.com" target="_blank" rel="noopener noreferrer">TVmaze</a> · <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener noreferrer">CC BY-SA 4.0</a>. Date-only releases retain their original date; confirmed times use @Dates.Zone.Id.</p>
+    </section>
+
     <section class="d-card d-vids" aria-labelledby="h-vids">
         <div class="d-card__head">
             <h2 class="d-card__title" id="h-vids">Latest videos <span class="d-card__count">1 per channel</span></h2>
@@ -249,6 +292,7 @@
     private IReadOnlyList<FeedItem> news = [];
     private IReadOnlyList<VideoItem> videos = [];
     private IReadOnlyList<MovieReleaseItem> movies = [];
+    private IReadOnlyList<TvEpisodeItem> episodes = [];
 
     protected override async Task OnParametersSetAsync()
     {
@@ -266,6 +310,7 @@
         news = await FeedQuery.GetLatestPerSourceAsync(db, HomeNewsCount);
         videos = await VideosQuery.GetLatestPerChannelAsync(db);
         movies = await MoviesQuery.GetFridayTheatricalAsync(db, Dates.TodayAt(nowUtc));
+        episodes = await TvQuery.GetOnDateAsync(db, Dates, Dates.TodayAt(nowUtc));
     }
 
     private const int HomeNewsCount = 5;
