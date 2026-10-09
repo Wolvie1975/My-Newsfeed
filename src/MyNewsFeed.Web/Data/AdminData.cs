@@ -207,6 +207,9 @@ public static class AdminData
     /// </summary>
     public static async Task<bool> DeleteSportsEventsTypeAsync(WebScraperContext db, int id, bool includeEvents)
     {
+        if (await db.SportsEventSources.AnyAsync(s => s.SportsEventsTypeId == id)
+            || await db.SportsEventsTypes.AnyAsync(t => t.Id == id && t.ProviderKey != null))
+            throw new InvalidOperationException("This feed has shared event attribution. Disable it instead of deleting it.");
         var ownsTransaction = db.Database.CurrentTransaction is null;
         await using var tx = ownsTransaction ? await db.Database.BeginTransactionAsync() : null;
 

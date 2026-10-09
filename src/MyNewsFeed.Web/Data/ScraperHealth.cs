@@ -160,9 +160,9 @@ public static class ScraperHealth
             .Select(t => new
             {
                 t.Id,
-                t.EventsTypeName,
-                Events = t.SportsEvents.Count,
-                Upcoming = t.SportsEvents.Count(e => e.EventDate >= today),
+                t.EventsTypeName, t.Enabled, t.ProviderKey, t.LastAttemptAt, t.LastSuccessAt, t.LastError, t.LastEventCount, t.LastIssueCount,
+                Events = db.SportsEvents.Count(e => e.SportsEventsTypeId == t.Id || e.EventSources.Any(s => s.SportsEventsTypeId == t.Id)),
+                Upcoming = db.SportsEvents.Count(e => e.EventDate >= today && (e.SportsEventsTypeId == t.Id || e.EventSources.Any(s => s.SportsEventsTypeId == t.Id))),
                 LastSeen = t.SportsEvents.Max(e => (DateTime?)e.LastSeenAt),
             })
             .ToListAsync();
@@ -191,6 +191,7 @@ public static class ScraperHealth
             await db.Sources.MaxAsync(s => s.LastScrapedAt),
             await db.YouTubeVideos.MaxAsync(v => (DateTime?)v.LastSeenAt),
             await db.SportsEvents.MaxAsync(e => (DateTime?)e.LastSeenAt),
+            await db.SportsEventsTypes.Where(t => t.Enabled).MaxAsync(t => t.LastSuccessAt),
             await db.MovieReleaseSources.Where(s => s.Enabled).MaxAsync(s => s.LastScrapedAt),
             await db.MovieReleases.MaxAsync(r => (DateTime?)r.LastSeenAt),
         }.Max();
@@ -212,8 +213,15 @@ public static class ScraperHealth
 
         var feedRows = feeds.Select(f =>
         {
-            var (level, note) = ClassifyFeed(f.LastSeen, f.Events, f.Upcoming, nowUtc, staleAfter);
-            return new HealthRow(f.Id, f.EventsTypeName, true, f.LastSeen, f.Events, f.Upcoming, null, level, note);
+            var lastSeen = f.ProviderKey == null ? f.LastSeen : f.LastSuccessAt;
+            var (level, note) = ClassifyFeed(lastSeen, f.Events, f.Upcoming, nowUtc, staleAfter);
+            if (!f.Enabled) { level = HealthLevel.Ok; note = "Disabled"; }
+            else if (f.LastError != null && (f.LastSuccessAt == null || f.LastAttemptAt > f.LastSuccessAt))
+            { level = HealthLevel.Problem; note = "Last import failed"; }
+            else if (level != HealthLevel.Problem && (f.LastIssueCount > 0 || f.LastError != null))
+            { level = HealthLevel.Warning; note = $"Imported with {f.LastIssueCount ?? 0} issues"; }
+            return new HealthRow(f.Id, f.EventsTypeName, f.Enabled, lastSeen, f.Events, f.Upcoming,
+                f.Enabled ? f.LastError : null, level, note);
         });
 
         var movieRows = movieSources.Select(s =>

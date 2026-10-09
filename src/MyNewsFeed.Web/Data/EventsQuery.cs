@@ -18,14 +18,25 @@ public sealed record EventItem(
     string? LiveStatsUrl,
     string? TeamLogoUrl,
     string? OpponentLogoUrl,
-    string? SchoolName);
+    string? SchoolName,
+    bool? IsNeutral = null, string? Radio = null, string? AudioUrl = null);
 
 /// <param name="Total">Every upcoming event matching the filters (the list itself is capped).</param>
+public sealed record EventSchool(int Id, string Name);
+
 public sealed record EventsPage(IReadOnlyList<EventItem> Items, int Total);
 
 /// <summary>Read side of the public sports events page.</summary>
 public static class EventsQuery
 {
+    private static IQueryable<Models.SportsEvent> Visible(WebScraperContext db) => db.SportsEvents.AsNoTracking()
+        .Where(e => e.EventSources.Any(s => s.Feed.Enabled)
+            || (!e.EventSources.Any() && (e.SportsEventsType == null || e.SportsEventsType.Enabled)));
+
+    public static async Task<IReadOnlyList<EventSchool>> GetSchoolsAsync(WebScraperContext db) =>
+        await db.SportsEventsTypes.AsNoTracking().Where(t => t.Enabled && t.SchoolName != null)
+            .OrderBy(t => t.SchoolName).Select(t => new EventSchool(t.Id, t.SchoolName!)).ToListAsync();
+
     /// <summary>A safety cap on one page; a season is far smaller than this.</summary>
     public const int Limit = 200;
 
@@ -34,9 +45,11 @@ public static class EventsQuery
     /// <see cref="SportsEvent.EventDate"/>, which is already the host school's calendar date, so "today" is compared
     /// with it directly and never converted.
     /// </summary>
-    public static async Task<IReadOnlyList<string>> GetSportsAsync(WebScraperContext db, DateOnly today) =>
-        await db.SportsEvents.AsNoTracking()
-            .Where(e => e.EventDate >= today && e.Sport != null)
+    public static async Task<IReadOnlyList<string>> GetSportsAsync(WebScraperContext db, DateOnly today, int? school = null) =>
+        await Visible(db)
+            .Where(e => e.EventDate >= today && e.Sport != null
+                && (school == null || e.EventSources.Any(s => s.SportsEventsTypeId == school && s.Feed.Enabled)
+                    || (!e.EventSources.Any() && e.SportsEventsTypeId == school)))
             .Select(e => e.Sport!)
             .Distinct()
             .OrderBy(s => s)
@@ -51,9 +64,12 @@ public static class EventsQuery
     /// with a known start time come before games whose time is still to be announced.
     /// </summary>
     public static async Task<EventsPage> GetUpcomingAsync(
-        WebScraperContext db, DateOnly today, string? sport, string? search, int limit = Limit)
+        WebScraperContext db, DateOnly today, string? sport, string? search, int limit = Limit, int? school = null)
     {
-        var query = db.SportsEvents.AsNoTracking().Where(e => e.EventDate >= today);
+        var query = Visible(db).Where(e => e.EventDate >= today);
+        if (school is { } schoolId)
+            query = query.Where(e => e.EventSources.Any(s => s.SportsEventsTypeId == schoolId && s.Feed.Enabled)
+                || (!e.EventSources.Any() && e.SportsEventsTypeId == schoolId));
 
         if (!string.IsNullOrWhiteSpace(sport))
         {
@@ -68,6 +84,7 @@ public static class EventsQuery
                 || (e.Opponent != null && e.Opponent.Contains(term))
                 || (e.Location != null && e.Location.Contains(term))
                 || (e.Sport != null && e.Sport.Contains(term))
+                || (e.SchoolName != null && e.SchoolName.Contains(term))
                 || (e.SportsEventsType != null && e.SportsEventsType.SchoolName != null
                     && e.SportsEventsType.SchoolName.Contains(term)));
         }
@@ -83,7 +100,7 @@ public static class EventsQuery
             .Select(e => new EventItem(
                 e.Id, e.Url, e.Title, e.Sport, e.Opponent, e.IsAway, e.Location, e.EventDate, e.StartsAtUtc, e.TimeTbd,
                 e.Tv, e.StreamUrl, e.LiveStatsUrl, e.TeamLogoUrl, e.OpponentLogoUrl,
-                e.SportsEventsType != null ? e.SportsEventsType.SchoolName : null))
+                e.SchoolName ?? (e.SportsEventsType != null ? e.SportsEventsType.SchoolName : null), e.IsNeutral, e.Radio, e.AudioUrl))
             .ToListAsync();
 
         return new EventsPage(items, total);
@@ -94,7 +111,7 @@ public static class EventsQuery
     /// whose time is still to be announced come last.
     /// </summary>
     public static async Task<IReadOnlyList<EventItem>> GetOnDateAsync(WebScraperContext db, DateOnly date) =>
-        await db.SportsEvents.AsNoTracking()
+        await Visible(db)
             .Where(e => e.EventDate == date)
             .OrderBy(e => e.StartsAtUtc == null ? 1 : 0)
             .ThenBy(e => e.StartsAtUtc)
@@ -104,11 +121,11 @@ public static class EventsQuery
             .Select(e => new EventItem(
                 e.Id, e.Url, e.Title, e.Sport, e.Opponent, e.IsAway, e.Location, e.EventDate, e.StartsAtUtc, e.TimeTbd,
                 e.Tv, e.StreamUrl, e.LiveStatsUrl, e.TeamLogoUrl, e.OpponentLogoUrl,
-                e.SportsEventsType != null ? e.SportsEventsType.SchoolName : null))
+                e.SchoolName ?? (e.SportsEventsType != null ? e.SportsEventsType.SchoolName : null), e.IsNeutral, e.Radio, e.AudioUrl))
             .ToListAsync();
 
     /// <summary>Builds the query string that keeps the current filters. Empty when nothing is set.</summary>
-    public static string QueryString(string? sport, string? search)
+    public static string QueryString(string? sport, string? search, int? school = null)
     {
         var parts = new List<string>();
         if (!string.IsNullOrWhiteSpace(sport))
@@ -120,6 +137,8 @@ public static class EventsQuery
         {
             parts.Add($"q={Uri.EscapeDataString(search.Trim())}");
         }
+
+        if (school is { } id) parts.Add($"school={id}");
 
         return parts.Count == 0 ? "" : "?" + string.Join("&", parts);
     }

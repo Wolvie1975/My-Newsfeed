@@ -251,4 +251,52 @@ public class EventsTests
 
         Assert.Equal(new[] { "a afternoon", "c evening", "b tbd" }, games.Select(g => g.Title.Replace($"zz {token} ", "")));
     }
+
+    [Fact]
+    public async Task Expanded_calendars_match_both_schools_without_duplicate_events_and_respect_disabled_feeds()
+    {
+        await using var db = Create();
+        await using var tx = await db.Database.BeginTransactionAsync();
+        var tag = Guid.NewGuid().ToString("N");
+        var first = new SportsEventsType { EventsTypeName = tag, SchoolName = "First", RssUrl = $"https://test.invalid/{tag}/1", Enabled = true };
+        var second = new SportsEventsType { EventsTypeName = tag, SchoolName = "Second", RssUrl = $"https://test.invalid/{tag}/2", Enabled = true };
+        db.AddRange(first, second);
+        await db.SaveChangesAsync();
+        var game = new SportsEvent { Title = tag, Url = $"https://test.invalid/{tag}/game", EventDate = new DateOnly(2030, 1, 1),
+            SchoolName = "Canonical school", Sport = "Basketball", Opponent = "Second", IsNeutral = true,
+            TimeTbd = true, SportsEventsTypeId = first.Id, FirstSeenAt = DateTime.UtcNow, LastSeenAt = DateTime.UtcNow };
+        db.Add(game);
+        await db.SaveChangesAsync();
+        db.SportsEventSources.AddRange(
+            new SportsEventSource { SportsEventId = game.Id, SportsEventsTypeId = first.Id, ProviderGameId = 1, SourceUrl = game.Url, FirstSeenAt = DateTime.UtcNow, LastSeenAt = DateTime.UtcNow },
+            new SportsEventSource { SportsEventId = game.Id, SportsEventsTypeId = second.Id, ProviderGameId = 2, SourceUrl = game.Url, FirstSeenAt = DateTime.UtcNow, LastSeenAt = DateTime.UtcNow });
+        await db.SaveChangesAsync();
+        var today = game.EventDate;
+        var combined = await EventsQuery.GetUpcomingAsync(db, today, null, tag);
+        Assert.Equal(game.Id, Assert.Single(combined.Items).Id);
+        Assert.Equal("Canonical school", combined.Items[0].SchoolName);
+        Assert.True(combined.Items[0].IsNeutral);
+        foreach (var school in new[] { first.Id, second.Id })
+            Assert.Equal(game.Id, Assert.Single((await EventsQuery.GetUpcomingAsync(db, today, null, tag, school: school)).Items).Id);
+        first.ProviderKey = "big12";
+        first.LastSuccessAt = DateTime.UtcNow;
+        first.LastAttemptAt = first.LastSuccessAt.Value.AddMinutes(-1);
+        first.LastIssueCount = 1;
+        first.LastError = "RSS/JSON timing disagreement";
+        await db.SaveChangesAsync();
+        var health = await ScraperHealth.GetReportAsync(db, DateTime.UtcNow, today, TimeSpan.FromHours(3));
+        Assert.Equal(HealthLevel.Warning, health.EventFeeds.Single(f => f.Id == first.Id).Level);
+        first.LastAttemptAt = first.LastSuccessAt.Value.AddMinutes(1);
+        await db.SaveChangesAsync();
+        health = await ScraperHealth.GetReportAsync(db, DateTime.UtcNow, today, TimeSpan.FromHours(3));
+        Assert.Equal(HealthLevel.Problem, health.EventFeeds.Single(f => f.Id == first.Id).Level);
+        second.Enabled = false;
+        await db.SaveChangesAsync();
+        Assert.Empty((await EventsQuery.GetUpcomingAsync(db, today, null, tag, school: second.Id)).Items);
+        Assert.Single((await EventsQuery.GetUpcomingAsync(db, today, null, tag)).Items);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => AdminData.DeleteSportsEventsTypeAsync(db, first.Id, true));
+        first.Enabled = false;
+        await db.SaveChangesAsync();
+        Assert.Empty((await EventsQuery.GetUpcomingAsync(db, today, null, tag)).Items);
+    }
 }

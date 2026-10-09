@@ -211,7 +211,7 @@ else
         }
         else if (int.TryParse(typeFilter, out var typeId))
         {
-            query = query.Where(e => e.SportsEventsTypeId == typeId);
+            query = query.Where(e => e.SportsEventsTypeId == typeId || e.EventSources.Any(s => s.SportsEventsTypeId == typeId));
         }
 
         if (!string.IsNullOrEmpty(sportFilter))

@@ -20,6 +20,13 @@ public sealed record ResultItem(
     string? WinnerSide,
     string? Venue);
 
+public sealed record ResultsWindow(DateTime StartUtc, DateTime EndUtc)
+{
+    public static ResultsWindow ForDay(DateOnly day, TimeZoneInfo zone) => new(
+        TimeZoneInfo.ConvertTimeToUtc(day.ToDateTime(TimeOnly.MinValue), zone),
+        TimeZoneInfo.ConvertTimeToUtc(day.AddDays(1).ToDateTime(TimeOnly.MinValue), zone));
+}
+
 public sealed record FollowChip(int Id, string Label);
 
 /// <param name="Total">Every finished game matching the filter (the list itself is capped).</param>
@@ -37,7 +44,7 @@ public static class ResultsQuery
     /// the filter never offers an empty page; <paramref name="selected"/> is kept regardless, so a shared link to it
     /// still shows which follow it is.
     /// </summary>
-    public static async Task<IReadOnlyList<FollowChip>> GetFollowsAsync(WebScraperContext db, int? selected = null)
+    public static async Task<IReadOnlyList<FollowChip>> GetFollowsAsync(WebScraperContext db, int? selected = null, ResultsWindow? window = null)
     {
         var follows = await db.ResultFollows.AsNoTracking()
             .Where(f => f.Enabled)
@@ -46,6 +53,7 @@ public static class ResultsQuery
 
         // Which leagues and which teams in them have a finished game: a few hundred keys, read once.
         var finished = db.ResultGames.AsNoTracking().Where(g => g.Completed);
+        if (window is not null) finished = finished.Where(g => g.StartsAtUtc >= window.StartUtc && g.StartsAtUtc < window.EndUtc);
         var leaguesPlayed = (await finished.Select(g => g.Sport + "|" + g.League).Distinct().ToListAsync()).ToHashSet();
         var teamsPlayed = (await finished.Select(g => g.Sport + "|" + g.League + "|" + g.HomeTeamId)
             .Union(finished.Select(g => g.Sport + "|" + g.League + "|" + g.AwayTeamId))
@@ -81,7 +89,7 @@ public static class ResultsQuery
     /// matches every game in it; a followed team matches its games in that league; a followed conference matches the
     /// games of its member schools in that league, non-conference games included.
     /// </summary>
-    public static async Task<ResultsPage> GetResultsAsync(WebScraperContext db, int? followId, int limit = Limit)
+    public static async Task<ResultsPage> GetResultsAsync(WebScraperContext db, int? followId, int limit = Limit, ResultsWindow? window = null)
     {
         var follows = await db.ResultFollows.AsNoTracking()
             .Where(f => f.Enabled && (followId == null || f.Id == followId))
@@ -110,6 +118,8 @@ public static class ResultsQuery
             .Where(g => leagueKeys.Contains(g.Sport + "|" + g.League)
                 || teamKeys.Contains(g.Sport + "|" + g.League + "|" + g.HomeTeamId)
                 || teamKeys.Contains(g.Sport + "|" + g.League + "|" + g.AwayTeamId));
+
+        if (window is not null) query = query.Where(g => g.StartsAtUtc >= window.StartUtc && g.StartsAtUtc < window.EndUtc);
 
         var total = await query.CountAsync();
         var rows = await query

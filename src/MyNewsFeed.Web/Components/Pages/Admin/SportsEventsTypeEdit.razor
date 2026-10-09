@@ -27,6 +27,10 @@ else
             <div class="alert alert-danger" role="alert">@error</div>
         }
 
+        <div class="form-check mb-3">
+            <InputCheckbox id="enabled" class="form-check-input" @bind-Value="form.Enabled" />
+            <label for="enabled" class="form-check-label">Enabled</label>
+        </div>
         <div class="mb-3">
             <label for="name" class="form-label">Name</label>
             <InputText id="name" class="form-control" @bind-Value="form.EventsTypeName" placeholder="For example: Kansas – all sports" />
@@ -37,7 +41,7 @@ else
             <InputText id="school-name" class="form-control" @bind-Value="form.SchoolName" placeholder="For example: Kansas" />
             <div class="form-text">
                 The school whose calendar this is. The public events page shows it as the home or away team,
-                because events only store the opponent.
+                with neutral-site games labeled separately.
             </div>
         </div>
 
@@ -55,6 +59,11 @@ else
             <dl class="row small text-muted">
                 <dt class="col-sm-3">Added</dt>
                 <dd class="col-sm-9">@Dates.Stamp(existing.DateAdded)</dd>
+                <dt class="col-sm-3">Provider</dt><dd class="col-sm-9">@existing.ProviderKey / @existing.ProviderSchoolId</dd>
+                <dt class="col-sm-3">Last attempt</dt><dd class="col-sm-9">@Dates.Stamp(existing.LastAttemptAt)</dd>
+                <dt class="col-sm-3">Last success</dt><dd class="col-sm-9">@Dates.Stamp(existing.LastSuccessAt)</dd>
+                <dt class="col-sm-3">Last import</dt><dd class="col-sm-9">@existing.LastEventCount observations · @existing.LastIssueCount issues</dd>
+                <dt class="col-sm-3">Detail</dt><dd class="col-sm-9 text-break">@existing.LastError</dd>
                 <dt class="col-sm-3">Events</dt>
                 <dd class="col-sm-9"><a href="admin/sports-events?typeId=@existing.Id">@eventCount</a></dd>
             </dl>
@@ -81,6 +90,8 @@ else
 
         [StringLength(100)]
         public string? SchoolName { get; set; }
+
+        public bool Enabled { get; set; } = true;
     }
 
     private TypeForm? form;
@@ -108,8 +119,8 @@ else
             return;
         }
 
-        eventCount = await db.SportsEvents.CountAsync(e => e.SportsEventsTypeId == Id);
-        form = new TypeForm { EventsTypeName = existing.EventsTypeName, RssUrl = existing.RssUrl, SchoolName = existing.SchoolName };
+        eventCount = await db.SportsEvents.CountAsync(e => e.SportsEventsTypeId == Id || e.EventSources.Any(s => s.SportsEventsTypeId == Id));
+        form = new TypeForm { EventsTypeName = existing.EventsTypeName, RssUrl = existing.RssUrl, SchoolName = existing.SchoolName, Enabled = existing.Enabled };
     }
 
     private async Task SaveAsync()
@@ -137,7 +148,7 @@ else
             await using var db = await Factory.CreateDbContextAsync();
             if (IsNew)
             {
-                db.SportsEventsTypes.Add(new SportsEventsType { EventsTypeName = name, RssUrl = url, SchoolName = school });
+                db.SportsEventsTypes.Add(new SportsEventsType { EventsTypeName = name, RssUrl = url, SchoolName = school, Enabled = form.Enabled });
             }
             else
             {
@@ -151,6 +162,7 @@ else
                 type.EventsTypeName = name;
                 type.RssUrl = url;
                 type.SchoolName = school;
+                type.Enabled = form.Enabled;
             }
 
             await db.SaveChangesAsync();

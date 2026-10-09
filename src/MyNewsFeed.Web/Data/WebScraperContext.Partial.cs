@@ -14,6 +14,8 @@ public partial class WebScraperContext
 
     public virtual DbSet<ResultFollowTeam> ResultFollowTeams { get; set; }
 
+    public DbSet<SportsEventSource> SportsEventSources { get; set; }
+
     public DbSet<Movie> Movies { get; set; }
     public DbSet<MovieRelease> MovieReleases { get; set; }
     public DbSet<MovieReleaseSource> MovieReleaseSources { get; set; }
@@ -22,6 +24,12 @@ public partial class WebScraperContext
 
     partial void OnModelCreatingPartial(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<SportsEventsType>().Property(e => e.Enabled).HasDefaultValue(true).HasSentinel(true);
+        modelBuilder.Entity<SportsEventSource>(entity =>
+        {
+            entity.HasOne(e => e.Event).WithMany(e => e.EventSources).HasForeignKey(e => e.SportsEventId).OnDelete(DeleteBehavior.NoAction);
+            entity.HasOne(e => e.Feed).WithMany(e => e.EventSources).HasForeignKey(e => e.SportsEventsTypeId).OnDelete(DeleteBehavior.NoAction);
+        });
         // The database defaults Enabled to 1. Without this, EF treats a CLR `false` as "unset" and would
         // insert the default (true), making it impossible to add a source in the disabled state.
         modelBuilder.Entity<Source>().Property(e => e.Enabled).HasDefaultValue(true).HasSentinel(true);

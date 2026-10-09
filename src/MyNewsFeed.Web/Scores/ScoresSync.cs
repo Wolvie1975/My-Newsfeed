@@ -91,7 +91,9 @@ public sealed class ScoresSync(
             // Regular season and postseason, two requests; a postseason not yet scheduled is simply empty.
             async Task<bool> FetchTeamAsync(string sport, string league, string teamId)
             {
-                foreach (var seasonType in EspnClient.ScheduleSeasonTypes)
+                IEnumerable<int?> seasonTypes = EspnLeagues.Find(sport, league)?.DefaultScheduleSeason == true
+                    ? [null] : EspnClient.ScheduleSeasonTypes.Select(t => (int?)t);
+                foreach (var seasonType in seasonTypes)
                 {
                     var result = await Ask(() => espn.GetTeamScheduleAsync(sport, league, teamId, seasonType, ct));
                     if (!result.Ok)
@@ -123,6 +125,17 @@ public sealed class ScoresSync(
                     var members = season.Ok
                         ? await Ask(() => espn.GetConferenceTeamIdsAsync(from.Sport, from.League, season.Value, follow.GroupId!, ct))
                         : null;
+                    if (members is { Ok: true } && EspnLeagues.Find(follow.Sport, follow.League)?.SeparateTeamIds == true)
+                    {
+                        var schools = await Ask(() => espn.GetTeamsAsync(from.Sport, from.League, ct));
+                        var sportTeams = await Ask(() => espn.GetTeamsAsync(follow.Sport, follow.League, ct));
+                        if (schools.Ok && sportTeams.Ok)
+                        {
+                            members = EspnLeagues.MapConferenceTeams(members.Value!, schools.Value!, sportTeams.Value!);
+                            error ??= members.Error;
+                        }
+                        else members = new(null, error);
+                    }
                     if (members is { Ok: true, Value.Count: 0 })
                     {
                         // Keep the last known lineup rather than empty the conference.

@@ -40,7 +40,7 @@
                     var time = game.TimeTbd || game.StartsAtUtc is null ? "Time TBD" : Dates.EventTime(game.StartsAtUtc.Value);
                     var (city, _) = EventsText.SplitLocation(game.Location);
                     var details = FeedQuery.SafeHref(game.Url);
-                    var match = EventsText.Matchup(game.SchoolName, game.Opponent, game.IsAway);
+                    var match = EventsText.Matchup(game.SchoolName, game.Opponent, game.IsNeutral == true ? null : game.IsAway);
                     <li class="d-game">
                         <div class="d-game__time @(time == "Time TBD" ? "is-tbd" : "")">@time</div>
                         <div class="d-game__body">
@@ -58,6 +58,7 @@
                                 @if (!string.IsNullOrWhiteSpace(game.Sport))
                                 {
                                     <span class="d-tag">@game.Sport</span>
+                                    @if (game.IsNeutral == true) { <span>Neutral site</span> }
                                 }
                                 @if (city is not null)
                                 {
@@ -154,7 +155,6 @@
                     var href = FeedQuery.SafeHref(movie.SourceUrl);
                     <li class="d-movie">
                         <div class="d-movie__poster" aria-hidden="true">
-                            <span>▶</span>
                             @if (poster is not null)
                             {
                                 <img src="@poster" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()" />

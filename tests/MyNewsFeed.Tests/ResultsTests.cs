@@ -552,4 +552,47 @@ public class ResultsTests
         await db.SaveChangesAsync();
         Assert.Equal(["Played", "Waiting", $"Big 12 · {offSeason}", $"Kansas · {offSeason}"], (await ResultsQuery.GetFollowsAsync(db)).Select(f => f.Label));
     }
+
+    [Fact]
+    public async Task Daily_results_use_local_midnight_boundaries_and_filter_counts()
+    {
+        await using var db = Create();
+        await using var tx = await db.Database.BeginTransactionAsync();
+        var league = Tag();
+        var follow = new ResultFollow { Kind = FollowKinds.League, Sport = "s", League = league, Name = "Daily", Enabled = true };
+        db.Add(follow);
+        await db.SaveChangesAsync();
+        var window = ResultsWindow.ForDay(new DateOnly(2026, 10, 8), TimeZoneInfo.FindSystemTimeZoneById("America/Chicago"));
+        Assert.Equal(new DateTime(2026, 10, 8, 5, 0, 0, DateTimeKind.Utc), window.StartUtc);
+        await ScoresSync.UpsertGamesAsync(db, "s", league,
+            [Game("before", "a", "b") with { StartsAtUtc = window.StartUtc.AddTicks(-1) },
+             Game("start", "a", "b") with { StartsAtUtc = window.StartUtc },
+             Game("late", "a", "b") with { StartsAtUtc = window.EndUtc.AddSeconds(-1) },
+             Game("today", "a", "b") with { StartsAtUtc = window.EndUtc }], DateTime.UtcNow);
+        await db.SaveChangesAsync();
+        var results = await ResultsQuery.GetResultsAsync(db, follow.Id, window: window);
+        Assert.Equal(2, results.Total);
+        Assert.Equal(["late", "start"], results.Items.Select(x => x.EventId));
+        Assert.Contains(await ResultsQuery.GetFollowsAsync(db, window: window), x => x.Id == follow.Id);
+        var nextDay = ResultsWindow.ForDay(new DateOnly(2026, 10, 10), TimeZoneInfo.FindSystemTimeZoneById("America/Chicago"));
+        Assert.DoesNotContain(await ResultsQuery.GetFollowsAsync(db, window: nextDay), x => x.Id == follow.Id);
+        Assert.Contains(await ResultsQuery.GetFollowsAsync(db, follow.Id, nextDay), x => x.Id == follow.Id);
+        var dst = ResultsWindow.ForDay(new DateOnly(2026, 11, 1), TimeZoneInfo.FindSystemTimeZoneById("America/Chicago"));
+        Assert.Equal(TimeSpan.FromHours(25), dst.EndUtc - dst.StartUtc);
+    }
+
+    [Fact]
+    public async Task Womens_soccer_uses_its_default_season_and_maps_sport_specific_team_ids()
+    {
+        var handler = new FakeHandler(HttpStatusCode.OK, "{\"events\": []}");
+        await Client(handler).GetTeamScheduleAsync("soccer", "usa.ncaa.w.1", "20494", null);
+        Assert.Equal("https://site.api.espn.com/apis/site/v2/sports/soccer/usa.ncaa.w.1/teams/20494/schedule", handler.Requests.Single().ToString());
+        var mapped = EspnLeagues.MapConferenceTeams(["2305"], [new("2305", "Kansas Jayhawks", null)], [new("20494", "Kansas Jayhawks", null)]);
+        Assert.True(mapped.Ok);
+        Assert.Equal(["20494"], mapped.Value);
+        Assert.False(EspnLeagues.MapConferenceTeams(["2305"], [new("2305", "Kansas Jayhawks", null)], []).Ok);
+        Assert.False(EspnLeagues.MapConferenceTeams(["2305"], [new("2305", "Kansas Jayhawks", null)],
+            [new("20494", "Kansas Jayhawks", null), new("999", "Kansas Jayhawks", null)]).Ok);
+        Assert.True(EspnLeagues.Find("soccer", "usa.ncaa.w.1")!.DefaultScheduleSeason);
+    }
 }

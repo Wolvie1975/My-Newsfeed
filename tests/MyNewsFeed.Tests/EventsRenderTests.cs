@@ -166,4 +166,15 @@ public class EventsRenderTests
         Assert.DoesNotContain("<script>alert", html);
         Assert.Contains("&lt;script&gt;", html);
     }
+
+    [Fact]
+    public async Task Neutral_games_show_neutral_site_and_no_home_away_labels()
+    {
+        var html = await RenderAsync(Game() with { IsNeutral = true, Radio = "Test radio", AudioUrl = "https://test.invalid/audio" });
+        Assert.Contains("Neutral site", html);
+        Assert.DoesNotContain("team__label\">Home", html);
+        Assert.DoesNotContain("team__label\">Away", html);
+        Assert.Contains("Test radio", html);
+        Assert.Contains("https://test.invalid/audio", html);
+    }
 }

@@ -32,7 +32,7 @@ public sealed class ScoresOptions
 /// plays men's basketball. A school without a team in the sport simply has an empty schedule.
 /// </summary>
 public sealed record EspnLeague(string Sport, string League, string Name, string Short, string Tag,
-    (string Sport, string League)? ConferencesFrom = null);
+    (string Sport, string League)? ConferencesFrom = null, bool SeparateTeamIds = false, bool DefaultScheduleSeason = false);
 
 /// <summary>The leagues offered on the admin page. Any other ESPN sport/league pair can be added here.</summary>
 public static class EspnLeagues
@@ -50,6 +50,7 @@ public static class EspnLeagues
         new("basketball", "womens-college-basketball", "Women's College Basketball", "Women's Basketball", "NCAAW", MensBasketball),
         new("volleyball", "womens-college-volleyball", "Women's College Volleyball", "Volleyball", "NCAA VB", MensBasketball),
         new("hockey", "nhl", "NHL", "NHL", "NHL"),
+        new("soccer", "usa.ncaa.w.1", "Women's College Soccer", "Women's Soccer", "NCAA WSOC", MensBasketball, true, true),
         new("soccer", "usa.1", "MLS", "MLS", "MLS"),
         new("soccer", "usa.nwsl", "NWSL", "NWSL", "NWSL"),
         new("soccer", "eng.1", "Premier League", "Premier League", "EPL"),
@@ -57,6 +58,22 @@ public static class EspnLeagues
 
     public static EspnLeague? Find(string sport, string league) =>
         All.FirstOrDefault(l => l.Sport == sport && l.League == league);
+
+    /// <summary>Translate a conference's NCAA school IDs into a sport's separate IDs using exact ESPN names.</summary>
+    public static EspnResult<IReadOnlyList<string>> MapConferenceTeams(
+        IReadOnlyList<string> members, IReadOnlyList<EspnTeam> schools, IReadOnlyList<EspnTeam> sportTeams)
+    {
+        var ids = new List<string>();
+        foreach (var member in members)
+        {
+            var school = schools.SingleOrDefault(t => t.Id == member);
+            var matches = sportTeams.Where(t => string.Equals(t.Name, school?.Name, StringComparison.OrdinalIgnoreCase)).ToList();
+            if (school is null || matches.Count != 1)
+                return new(null, $"Could not uniquely match conference school {school?.Name ?? member} to its sport-specific ESPN team.");
+            ids.Add(matches[0].Id);
+        }
+        return new(ids.Distinct().ToList(), null);
+    }
 
     /// <summary>The display name of a league, falling back to its slug for one no longer in the list.</summary>
     public static string NameOf(string sport, string league) => Find(sport, league)?.Name ?? league;
@@ -148,8 +165,8 @@ public sealed partial class EspnClient
     /// empty preseason (college basketball in October).
     /// </summary>
     public Task<EspnResult<IReadOnlyList<EspnGame>>> GetTeamScheduleAsync(
-        string sport, string league, string teamId, int seasonType, CancellationToken ct = default) =>
-        GetAsync($"{sport}/{league}/teams/{Uri.EscapeDataString(teamId)}/schedule?seasontype={seasonType}", ParseGames, ct);
+        string sport, string league, string teamId, int? seasonType, CancellationToken ct = default) =>
+        GetAsync($"{sport}/{league}/teams/{Uri.EscapeDataString(teamId)}/schedule{(seasonType is null ? "" : $"?seasontype={seasonType}")}", ParseGames, ct);
 
     /// <summary>
     /// Every game in a league on one day (ESPN's own calendar day, US Eastern). ESPN rejects date ranges, so a league is

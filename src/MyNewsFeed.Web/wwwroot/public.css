@@ -870,3 +870,15 @@
     .pub .d-movie { flex: none; }
     .pub .d-vids .d-list { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
+
+.pub .event-school-filter { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; }
+.pub .event-school-filter select { background: var(--surface); color: var(--text); border: 1px solid var(--field-border); border-radius: 8px; padding: 10px 12px; min-height: 44px; font: inherit; max-width: 100%; }
+.pub .neutral-label { display: block; font-size: 11px; font-weight: 500; color: var(--text-2); text-transform: none; letter-spacing: 0; }
+
+/* Source posters overlay this shared fallback; failed images reveal it again. */
+.pub .movie-poster, .pub .d-movie__poster {
+    background-image: url("img/movie-placeholder.svg");
+    background-position: center;
+    background-size: cover;
+    background-repeat: no-repeat;
+}

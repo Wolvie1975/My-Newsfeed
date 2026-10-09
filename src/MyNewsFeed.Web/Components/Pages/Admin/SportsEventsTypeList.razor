@@ -78,7 +78,7 @@ else
             <thead>
                 <tr>
                     <th>Name</th>
-                    <th>School</th>
+                    <th>School</th><th>Enabled</th><th>Last successful import</th>
                     <th>Feed address</th>
                     <th>Events</th>
                     <th>Added</th>
@@ -90,7 +90,7 @@ else
                 {
                     <tr>
                         <td class="fw-semibold">@row.EventsTypeName</td>
-                        <td>@(row.SchoolName ?? "—")</td>
+                        <td>@(row.SchoolName ?? "—")</td><td>@(row.Enabled ? "Yes" : "No")</td><td>@Dates.Stamp(row.LastSuccessAt)</td>
                         <td>
                             @if (FeedQuery.SafeHref(row.RssUrl) is { } href)
                             {
@@ -105,7 +105,8 @@ else
                         <td class="text-nowrap">@Dates.Stamp(row.DateAdded)</td>
                         <td class="text-nowrap text-end">
                             <a class="btn btn-outline-primary btn-sm" href="admin/sports-event-types/@row.Id/edit">Edit</a>
-                            <button class="btn btn-outline-danger btn-sm" @onclick="() => StartDelete(row)">Delete</button>
+                            @if (row.ProviderKey is null) { <button class="btn btn-outline-danger btn-sm" @onclick="() => StartDelete(row)">Delete</button> }
+                            else { <span class="small text-muted ms-2">Disable in Edit</span> }
                         </td>
                     </tr>
                 }
@@ -115,7 +116,7 @@ else
 }
 
 @code {
-    private sealed record TypeRow(int Id, string RssUrl, string EventsTypeName, string? SchoolName, DateTime DateAdded, int EventCount);
+    private sealed record TypeRow(int Id, string RssUrl, string EventsTypeName, string? SchoolName, DateTime DateAdded, int EventCount, bool Enabled, DateTime? LastSuccessAt, string? ProviderKey);
 
     private List<TypeRow>? rows;
     private TypeRow? pendingDelete;
@@ -133,7 +134,7 @@ else
         rows = await db.SportsEventsTypes
             .AsNoTracking()
             .OrderBy(t => t.EventsTypeName)
-            .Select(t => new TypeRow(t.Id, t.RssUrl, t.EventsTypeName, t.SchoolName, t.DateAdded, t.SportsEvents.Count))
+            .Select(t => new TypeRow(t.Id, t.RssUrl, t.EventsTypeName, t.SchoolName, t.DateAdded, db.SportsEvents.Count(e => e.SportsEventsTypeId == t.Id || e.EventSources.Any(s => s.SportsEventsTypeId == t.Id)), t.Enabled, t.LastSuccessAt, t.ProviderKey))
             .ToListAsync();
 
         unlinkedEvents = await db.SportsEvents.CountAsync(e => e.SportsEventsTypeId == null);
