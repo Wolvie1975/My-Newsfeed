@@ -1,0 +1,62 @@
+@using MyNewsFeed.Web.Data
+
+@{
+    var showRank = (Provider is "espn-nwsl" or "espn-mls") && Group.Teams.Any(t => t.Row.Rank != null);
+}
+<section class="standings-group" aria-labelledby="@HeadingId">
+    <h3 id="@HeadingId">@Group.Name</h3>
+    <div class="standings-scroll" role="region" aria-labelledby="@HeadingId" tabindex="0">
+        <table class="standings-table league-standings-table">
+            <caption>@(Group.Teams.FirstOrDefault()?.Row.Title ?? SourceName) · @Group.Name</caption>
+            <thead><tr>
+                <th scope="col" class="standing-team">Team</th>
+                @if (showRank) { <th scope="col" class="standing-extra">Rank</th> }
+                @foreach (var column in Group.Columns) { <th scope="col" class="@(IsCompactColumn(column) ? null : "standing-extra")">@column.Label</th> }
+            </tr></thead>
+            <tbody>
+            @foreach (var team in Group.Teams)
+            {
+                var row = team.Row;
+                var highlight = Provider == "espn-nwsl" && row.TeamId == "20907";
+                <tr class="@(highlight ? "standing-highlight" : null)">
+                    <th scope="row" class="standing-team">
+                        <span class="standing-team-name">
+                            @if (EventsText.LogoUrl(row.LogoUrl) is { } logo)
+                            { <img src="@logo" alt="" width="28" height="28" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()" /> }
+                            @if (FeedQuery.SafeHref(row.TeamUrl) is { } url)
+                            { <a href="@url" target="_blank" rel="noopener noreferrer">@row.TeamName</a> }
+                            else { <span>@row.TeamName</span> }
+                        </span>
+                    </th>
+                    @if (showRank) { <td class="standing-extra">@(row.Rank?.ToString() ?? "—")</td> }
+                    @foreach (var column in Group.Columns) { <td class="@(IsCompactColumn(column) ? null : "standing-extra")">@StandingsQuery.StatisticValue(team, column.Name)</td> }
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+    @if (Group.Teams.Any(t => !string.IsNullOrWhiteSpace(t.Row.Note)))
+    {
+        <details class="ranking-info"><summary>Team notes</summary>
+        <ul class="standing-notes">
+            @foreach (var team in Group.Teams.Where(t => !string.IsNullOrWhiteSpace(t.Row.Note)))
+            { <li><strong>@team.Row.TeamName:</strong> @team.Row.Note</li> }
+        </ul>
+        </details>
+    }
+</section>
+
+@code {
+    private bool IsCompactColumn(StandingColumn column) => Provider switch
+    {
+        "espn-nfl" => column.Name is "wins" or "losses" or "ties" or "winPercent",
+        "espn-mlb" or "espn-wnba" => column.Name is "wins" or "losses" or "winPercent",
+        "espn-nwsl" or "espn-mls" => column.Name is "wins" or "ties" or "losses" or "points",
+        _ => Group.Columns.Take(3).Contains(column)
+    };
+
+    [Parameter, EditorRequired] public StandingGroup Group { get; set; } = default!;
+    [Parameter, EditorRequired] public string Provider { get; set; } = "";
+    [Parameter, EditorRequired] public string SourceName { get; set; } = "";
+    [Parameter, EditorRequired] public string HeadingId { get; set; } = "";
+}

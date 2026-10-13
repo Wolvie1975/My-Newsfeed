@@ -4,50 +4,10 @@
 @inject FeedDates Dates
 
 <PageTitle>Movies · MyNewsFeed</PageTitle>
-<header class="movies-heading">
-    <p class="movies-eyebrow">THE RELEASE CALENDAR</p>
-    <h1>Movies</h1>
-    <p>Find your next movie night. US releases in theaters, on streaming, and at home.</p>
-</header>
-<form class="movies-filters" method="get" action="movies">
-    <div class="movies-field">
-        <label for="movie-type">Watch it</label>
-        <select id="movie-type" name="type">
-            <option value="">Anywhere</option>
-            @foreach (var type in MoviesQuery.Types)
-            {
-                <option value="@type.Key" selected="@(Type == type.Key)">@type.Value</option>
-            }
-        </select>
-    </div>
-    <div class="movies-field">
-        <label for="movie-platform">Platform</label>
-        <select id="movie-platform" name="platform">
-            <option value="">All platforms</option>
-            @foreach (var platform in listing.Platforms)
-            {
-                <option value="@platform" selected="@(Platform == platform)">@platform</option>
-            }
-            @if (!string.IsNullOrWhiteSpace(Platform) && !listing.Platforms.Contains(Platform))
-            {
-                <option value="@Platform" selected>@Platform</option>
-            }
-        </select>
-    </div>
-    <div class="movies-field">
-        <label for="movie-period">When</label>
-        <select id="movie-period" name="period">
-            <option value="upcoming" selected="@(Period is not ("recent" or "tbd" or "all"))">Upcoming</option>
-            <option value="recent" selected="@(Period == "recent")">Past 30 days</option>
-            <option value="tbd" selected="@(Period == "tbd")">Date to be announced</option>
-            <option value="all" selected="@(Period == "all")">All dates</option>
-        </select>
-    </div>
-    <button class="nf-btn nf-btn--primary" type="submit">Apply filters</button>
-</form>
+<PageHeading Title="Movies" Eyebrow="THE RELEASE CALENDAR" Description="Find your next movie night. US releases in theaters, on streaming, and at home." />
+<p><a class="nf-btn nf-btn--secondary" href="movies/digital">Upcoming Digital / VOD →</a></p>
 <div class="movies-summary">
     <p class="count">@listing.Total @(listing.Total == 1 ? "release" : "releases")</p>
-    @if (Filtered) { <a href="movies">Reset filters</a> }
 </div>
 @if (listing.Updated is { } updated)
 {
@@ -57,9 +17,8 @@
 {
     <section class="movies-empty">
         <span class="movies-empty__icon" aria-hidden="true">▷</span>
-        <h2>@(Filtered ? "No matching releases" : "Your next movie night is coming")</h2>
-        <p>@(Filtered ? "Try another release type, platform, or date range." : "Movie releases will appear here as the calendar fills up. Check back soon for theater, streaming, and home releases.")</p>
-        @if (Filtered) { <a class="nf-btn nf-btn--secondary" href="movies">Show upcoming releases</a> }
+        <h2>Your next movie night is coming</h2>
+        <p>Movie releases will appear here as the calendar fills up. Check back soon for theater, streaming, and home releases.</p>
     </section>
 }
 else
@@ -97,22 +56,32 @@ else
             </ul>
         </section>
     }
-    @if (listing.Total > listing.Items.Count)
+    @if (listing.Total > 50 || page > 1)
     {
-        <p class="count">Showing @listing.Items.Count of @listing.Total releases. Narrow your filters to find more.</p>
+        <nav class="tv-week" aria-label="Movie pages">
+            @if (page > 1) { <a class="nf-btn nf-btn--secondary" href="@PageHref(page - 1)">← Previous</a> }
+            <span>Page @(page) · @listing.Total releases</span>
+            @if (offset + listing.Items.Count < listing.Total) { <a class="nf-btn nf-btn--secondary" href="@PageHref(page + 1)">Next releases →</a> }
+        </nav>
     }
 }
 
 @code {
-    [SupplyParameterFromQuery(Name = "type")] private string? Type { get; set; }
-    [SupplyParameterFromQuery(Name = "platform")] private string? Platform { get; set; }
-    [SupplyParameterFromQuery(Name = "period")] private string? Period { get; set; }
+    [SupplyParameterFromQuery(Name = "page")] private string? PageText { get; set; }
+    private int page;
+    private int offset;
+    private string PageHref(int target) => "movies?page=" + target;
     private MoviesPage listing = new([], 0, [], null);
-    private bool Filtered => !string.IsNullOrWhiteSpace(Type)
-        || !string.IsNullOrWhiteSpace(Platform) || Period is "recent" or "tbd" or "all";
     protected override async Task OnParametersSetAsync()
     {
         await using var db = await Factory.CreateDbContextAsync();
-        listing = await MoviesQuery.GetAsync(db, Dates.Today, null, Type, Platform, Period);
+        page = int.TryParse(PageText, out var requested) ? Math.Clamp(requested, 1, 1000000) : 1;
+        offset = (page - 1) * 50;
+        listing = await MoviesQuery.GetAsync(db, Dates.Today, null, null, null, null, offset: offset, take: 50);
+        if (offset >= listing.Total && page > 1)
+        {
+            page = Math.Max(1, (listing.Total + 49) / 50); offset = (page - 1) * 50;
+            listing = await MoviesQuery.GetAsync(db, Dates.Today, null, null, null, null, offset: offset, take: 50);
+        }
     }
 }

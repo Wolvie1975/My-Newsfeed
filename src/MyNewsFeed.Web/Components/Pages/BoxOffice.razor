@@ -1,0 +1,69 @@
+@page "/box-office"
+@layout PublicLayout
+@using MyNewsFeed.Web.Components.Feed
+@inject IDbContextFactory<WebScraperContext> Factory
+@inject FeedDates Dates
+@inject ILogger<BoxOffice> Log
+
+<PageTitle>Box Office · MyNewsFeed</PageTitle>
+<PageHeading Title="Box Office" Eyebrow="THE WEEKEND AND BEYOND" Description="Headlines, weekend reporting, and box-office analysis from the publishers we follow." />
+<p><a href="news">All news</a></p>
+@if (data is null)
+{
+    <p class="empty" role="status">Box-office stories are temporarily unavailable. <a href="box-office">Try again</a></p>
+}
+else
+{
+    @if (data.Publishers.Count > 0)
+    {
+        <form class="catselect" method="get" action="box-office">
+            <label class="sr-only" for="boxoffice-source">Publisher</label>
+            <select id="boxoffice-source" name="source" onchange="this.form.requestSubmit()">
+                <option value="">All publishers</option>
+                @foreach (var publisher in data.Publishers) { <option value="@publisher.Id" selected="@(data.SelectedSource == publisher.Id)">@publisher.Label</option> }
+            </select>
+            <noscript><button class="nf-btn nf-btn--secondary" type="submit">Apply</button></noscript>
+        </form>
+        @foreach (var publisher in data.Publishers.Where(p => data.SelectedSource == null || p.Id == data.SelectedSource))
+        {
+            <p class="updated">@publisher.Label @if (publisher.LastChecked is { } time) { <span>· Last checked @Dates.PublishedFull(time)</span> }</p>
+            @if (BoxOfficeQuery.Health(publisher, DateTime.UtcNow) is { } message) { <p class="standing-status" role="status">@publisher.Label: @message</p> }
+        }
+    }
+    @if (data.Publishers.Count == 0) { <p class="empty">No box-office news sources are enabled.</p> }
+    else if (data.Feed.Items.Count == 0) { <p class="empty">No box-office stories available yet. <a href="box-office">Show all publishers</a></p> }
+    else
+    {
+        @if (After is not null) { <p><a href="@Href(null)">← Newest stories</a></p> }
+        <section class="feed" aria-label="Box-office articles" data-last-day="@lastDay">
+            <FeedArticles Items="data.Feed.Items" LeadFirst="@(After is null)" Total="@(After is null ? data.Feed.Total : null)" />
+        </section>
+        <div class="loadmore">
+            @if (data.Feed.Next is { } next)
+            { <a class="nf-btn nf-btn--secondary" data-load-more data-feed-view="box-office" data-enhance-nav="false" href="@Href(next.ToToken())">Load more stories</a> }
+            <span class="count" data-shown-total>Showing @data.Feed.Shown of @data.Feed.Total</span>
+            <span class="sr-only" role="status" data-load-status></span>
+        </div>
+    }
+}
+
+@code {
+    [SupplyParameterFromQuery(Name = "source")] private string? Source { get; set; }
+    [SupplyParameterFromQuery(Name = "after")] private string? Cursor { get; set; }
+    private FeedCursor? After => FeedCursor.Parse(Cursor);
+    private BoxOfficePage? data;
+    private string? lastDay;
+    private string Href(string? after) => "box-office" + FeedQuery.QueryString(data?.CategoryId, null, after, data?.SelectedSource);
+    protected override async Task OnParametersSetAsync()
+    {
+        try
+        {
+            await using var db = await Factory.CreateDbContextAsync();
+            var sourceId = int.TryParse(Source, out var id) && id > 0 ? (int?)id : null;
+            data = await BoxOfficeQuery.GetAsync(db, sourceId, After);
+            lastDay = data.Feed.Items.Count > 0 ? Dates.DayKey(data.Feed.Items[^1]) : null;
+        }
+        catch (Exception ex) when (ex is System.Data.Common.DbException or InvalidOperationException)
+        { Log.LogError(ex, "Box-office feed read failed."); data = null; }
+    }
+}

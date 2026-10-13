@@ -11,7 +11,7 @@
     <div class="alert alert-@messageKind" role="alert">@message</div>
 }
 
-<form class="row g-2 mb-4" @onsubmit="AddAsync">
+<form class="row g-2 mb-4" @onsubmit="AddAsync" @onsubmit:preventDefault>
     <div class="col-md-6">
         <label for="new-category" class="visually-hidden">New category name</label>
         <input id="new-category" class="form-control" maxlength="@MaxNameLength" placeholder="New category name" @bind="newName" />
@@ -57,7 +57,7 @@ else
                         <td>
                             @if (editingId == row.Id)
                             {
-                                <form class="d-flex gap-2" @onsubmit="SaveRenameAsync">
+                                <form class="d-flex gap-2" @onsubmit="SaveRenameAsync" @onsubmit:preventDefault>
                                     <input class="form-control form-control-sm" maxlength="@MaxNameLength"
                                            aria-label="Category name" @bind="editName" />
                                     <button type="submit" class="btn btn-primary btn-sm">Save</button>

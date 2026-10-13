@@ -2,7 +2,7 @@
 const CACHE = 'mynewsfeed-pwa-v1';
 const OFFLINE = '/offline.html';
 const ASSETS = [OFFLINE, '/manifest.webmanifest', '/icons/icon-192.png', '/icons/icon-512.png', '/icons/maskable-512.png'];
-const PUBLIC_PAGES = new Set(['/', '/news', '/events', '/results', '/movies', '/tv', '/videos', '/saved']);
+const PUBLIC_PAGES = new Set(['/', '/news', '/box-office', '/events', '/results', '/standings', '/rankings', '/movies', '/movies/digital', '/tv', '/videos', '/saved']);
 self.addEventListener('install', event => {
     event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(ASSETS)).then(() => self.skipWaiting()));
 });

@@ -4,11 +4,7 @@
 @inject FeedDates Dates
 
 <PageTitle>TV &amp; Streaming · MyNewsFeed</PageTitle>
-<header class="movies-heading">
-    <p class="movies-eyebrow">YOUR EPISODE CALENDAR</p>
-    <h1>TV &amp; Streaming</h1>
-    <p>Upcoming original releases for the series we follow.</p>
-</header>
+<PageHeading Title="TV &amp; Streaming" Eyebrow="YOUR EPISODE CALENDAR" Description="Upcoming original releases for the series we follow." />
 <nav class="tv-week" aria-label="Episode calendar dates">
     <span>@start.ToString("MMM d", System.Globalization.CultureInfo.InvariantCulture) – @start.AddDays(6).ToString("MMM d, yyyy", System.Globalization.CultureInfo.InvariantCulture)</span>
     <a class="nf-btn nf-btn--secondary" href="@Href(start.AddDays(7))">Next →</a>

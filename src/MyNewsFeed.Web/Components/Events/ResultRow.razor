@@ -1,5 +1,6 @@
 @using MyNewsFeed.Web.Data
 @using MyNewsFeed.Web.Scores
+@inject FeedDates Dates
 
 @* One finished game as a table row, away team first as on the events page. Phones stack it as a card (competition,
    away, score, home, venue); tablets put the teams either side of the score; from 1180px it is a real table row.
@@ -16,6 +17,7 @@
     <td class="td-comp" role="cell"><abbr title="@Item.LeagueName">@Item.LeagueTag</abbr></td>
     <td class="td-raway @(Item.WinnerSide == "away" ? "is-winner" : "")" role="cell"><TeamCell Name="@Item.AwayName" LogoUrl="@EspnClient.SmallLogo(Item.AwayLogoUrl)" Label="Away" /></td>
     <td class="td-score" role="cell">
+        <span class="score__time">@Dates.EventTime(Item.StartsAtUtc)</span>
         <span class="score">@score</span>
         @if (status.Length > 0)
         {

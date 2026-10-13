@@ -18,6 +18,7 @@ else if (existing is null)
 else
 {
     <EditForm Model="form" OnValidSubmit="SaveAsync" style="max-width: 44rem;">
+        @if (error is not null) { <div class="alert alert-danger" role="alert">@error</div> }
         <dl class="row small">
             <dt class="col-sm-3">Game</dt>
             <dd class="col-sm-9">
@@ -51,7 +52,7 @@ else
 
         <div class="mb-3">
             <label for="type" class="form-label">Type</label>
-            <InputSelect id="type" class="form-select" @bind-Value="form.TypeId">
+            <InputSelect id="type" disabled="@attributionLocked" class="form-select" @bind-Value="form.TypeId">
                 <option value="">No type</option>
                 @foreach (var type in types)
                 {
@@ -65,10 +66,10 @@ else
         </div>
 
         <div class="alert alert-secondary small" role="note">
-            The scraper rewrites every other field on this event each time it runs, so only the type is editable here.
+            @(attributionLocked ? "This event’s feed attribution is managed by the scraper and is read-only. Disable the feed to hide its events." : "The scraper rewrites the game details. Only a legacy type can be assigned here.")
         </div>
 
-        <button type="submit" class="btn btn-primary me-2" disabled="@saving">Save</button>
+        <button type="submit" class="btn btn-primary me-2" disabled="@(saving || attributionLocked)">Save</button>
         <a class="btn btn-secondary" href="admin/sports-events">Cancel</a>
     </EditForm>
 }
@@ -89,9 +90,13 @@ else
     private List<TypeOption> types = [];
     private bool notFound;
     private bool saving;
+    private string? error;
+    private bool attributionLocked;
 
     protected override async Task OnParametersSetAsync()
     {
+        notFound = false;
+        error = null;
         await using var db = await Factory.CreateDbContextAsync();
         existing = await db.SportsEvents.AsNoTracking().FirstOrDefaultAsync(e => e.Id == Id);
         if (existing is null)
@@ -100,7 +105,9 @@ else
             return;
         }
 
+        attributionLocked = existing.ProviderKey != null || await db.SportsEventSources.AnyAsync(s => s.SportsEventId == Id);
         types = await db.SportsEventsTypes.AsNoTracking()
+            .Where(t => t.ProviderKey == null || t.Id == existing.SportsEventsTypeId)
             .OrderBy(t => t.EventsTypeName)
             .Select(t => new TypeOption(t.Id, t.EventsTypeName))
             .ToListAsync();
@@ -109,6 +116,7 @@ else
 
     private async Task SaveAsync()
     {
+        error = null;
         saving = true;
         try
         {
@@ -120,14 +128,15 @@ else
                 return;
             }
 
-            sportsEvent.SportsEventsTypeId = int.TryParse(form.TypeId, out var typeId) ? typeId : null;
-            await db.SaveChangesAsync();
+            if (!await AdminData.AssignSportsEventTypeAsync(db, Id, int.TryParse(form.TypeId, out var typeId) ? typeId : null))
+            { notFound = true; return; }
             Nav.NavigateTo("admin/sports-events");
         }
-        catch (DbUpdateException ex) when (AdminData.IsForeignKeyViolation(ex))
+        catch (InvalidOperationException ex) { error = ex.Message; }
+        catch (Exception ex) when (AdminData.IsForeignKeyViolation(ex))
         {
             // The chosen type was deleted after this form loaded.
-            form.TypeId = null;
+            error = "That type no longer exists. Reload and choose another type.";
         }
         finally
         {

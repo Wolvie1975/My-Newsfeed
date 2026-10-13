@@ -25,6 +25,7 @@ public sealed class ScoresSync(
     private static readonly TimeSpan Politeness = TimeSpan.FromMilliseconds(300);
 
     private readonly ScoresOptions settings = options.Value;
+    private static readonly SemaphoreSlim SyncGate = new(1, 1);
 
     /// <summary>The background run: every enabled follow not synced within SyncIntervalHours, oldest first.</summary>
     public async Task<ScoresSyncReport> SyncDueAsync(DateTime utcNow, CancellationToken ct = default)
@@ -59,6 +60,13 @@ public sealed class ScoresSync(
     }
 
     private async Task<ScoresSyncReport> SyncAsync(List<int> followIds, DateTime utcNow, CancellationToken ct)
+    {
+        await SyncGate.WaitAsync(ct);
+        try { return await SyncCoreAsync(followIds, utcNow, ct); }
+        finally { SyncGate.Release(); }
+    }
+
+    private async Task<ScoresSyncReport> SyncCoreAsync(List<int> followIds, DateTime utcNow, CancellationToken ct)
     {
         int synced = 0, failed = 0, games = 0, requests = 0;
 
@@ -302,14 +310,14 @@ public sealed class ScoresSync(
 }
 
 /// <summary>
-/// Runs <see cref="ScoresSync.SyncDueAsync"/> shortly after startup and then every 30 minutes. A check that finds
+/// Runs <see cref="ScoresSync.SyncDueAsync"/> shortly after startup and then every 10 minutes. A check that finds
 /// nothing due costs one database query and no ESPN request; ESPN is only asked about follows older than
 /// Results:SyncIntervalHours.
 /// </summary>
 public sealed class ScoresSyncService(IServiceScopeFactory scopes, ILogger<ScoresSyncService> log) : BackgroundService
 {
     private static readonly TimeSpan StartDelay = TimeSpan.FromMinutes(1);
-    private static readonly TimeSpan CheckEvery = TimeSpan.FromMinutes(30);
+    private static readonly TimeSpan CheckEvery = TimeSpan.FromMinutes(10);
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {

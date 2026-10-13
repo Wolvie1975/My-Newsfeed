@@ -125,7 +125,7 @@ app.MapGet("/healthz", async (IDbContextFactory<WebScraperContext> factory) =>
 
 // "Load more" on the public feed: the next batch of article cards, rendered by the same component as the page.
 app.MapGet("/feed/more", async (HttpContext http, IDbContextFactory<WebScraperContext> factory, ILoggerFactory loggers,
-    string? after, string? category, string? q, string? day) =>
+    string? after, string? category, string? q, string? day, string? source, string? view) =>
 {
     if (FeedCursor.Parse(after) is not { } cursor)
     {
@@ -134,7 +134,17 @@ app.MapGet("/feed/more", async (HttpContext http, IDbContextFactory<WebScraperCo
 
     int? categoryId = int.TryParse(category, out var parsedCategory) ? parsedCategory : null;
     await using var db = await factory.CreateDbContextAsync();
-    var page = await FeedQuery.GetFeedAsync(db, categoryId, q, cursor, FeedQuery.MoreBatch);
+    var boxOffice = view == "box-office";
+    if (boxOffice)
+    {
+        categoryId = await BoxOfficeQuery.CategoryIdAsync(db);
+        if (categoryId is null) return Results.NotFound();
+        q = null;
+    }
+    int? sourceId = int.TryParse(source, out var parsedSource) && parsedSource > 0 ? parsedSource : null;
+    if (sourceId is not null && !await db.Sources.AnyAsync(s => s.Id == sourceId && s.Enabled
+        && (categoryId == null || s.SourceCategoryId == categoryId))) sourceId = null;
+    var page = await FeedQuery.GetFeedAsync(db, categoryId, q, cursor, FeedQuery.MoreBatch, sourceId);
 
     await using var renderer = new HtmlRenderer(http.RequestServices, loggers);
     var html = await renderer.Dispatcher.InvokeAsync(async () =>
@@ -153,7 +163,7 @@ app.MapGet("/feed/more", async (HttpContext http, IDbContextFactory<WebScraperCo
     return Results.Json(new
     {
         html,
-        nextHref = page.Next is { } next ? "news" + FeedQuery.QueryString(categoryId, q, next.ToToken()) : null,
+        nextHref = page.Next is { } next ? (boxOffice ? "box-office" : "news") + FeedQuery.QueryString(categoryId, q, next.ToToken(), sourceId) : null,
         shown = page.Shown,
         total = page.Total,
         added = page.Items.Count,

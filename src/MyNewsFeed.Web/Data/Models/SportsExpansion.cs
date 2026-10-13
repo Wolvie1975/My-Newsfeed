@@ -5,6 +5,7 @@ namespace MyNewsFeed.Web.Data.Models;
 
 public partial class SportsEvent
 {
+    [StringLength(100)] public string? ScheduleStatus { get; set; }
     [Column(TypeName = "varchar(100)")] public string? CanonicalKey { get; set; }
     [Column(TypeName = "varchar(50)")] public string? ProviderKey { get; set; }
     public int? SchoolId { get; set; }

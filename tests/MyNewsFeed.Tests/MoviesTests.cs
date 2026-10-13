@@ -43,8 +43,27 @@ public class MoviesTests
         Assert.Single((await MoviesQuery.GetAsync(db, today, tag, "subscription", "Test streaming", "recent")).Items);
         Assert.Single((await MoviesQuery.GetAsync(db, today, tag, null, null, "tbd")).Items);
         Assert.Equal(4, (await MoviesQuery.GetAsync(db, today, tag, null, null, "all")).Total);
+        var firstPage = await MoviesQuery.GetAsync(db, today, tag, null, null, "all", take: 2);
+        var secondPage = await MoviesQuery.GetAsync(db, today, tag, null, null, "all", offset: 2, take: 2);
+        Assert.Equal(4, firstPage.Total); Assert.Equal(4, secondPage.Total);
+        Assert.Equal(4, firstPage.Items.Concat(secondPage.Items).Select(i => i.Id).Distinct().Count());
+        Assert.Empty((await MoviesQuery.GetAsync(db, today, tag, null, null, "all", offset: 4, take: 2)).Items);
+        Assert.Single((await MoviesQuery.GetAsync(db, today, tag, null, null, null, onDate: today)).Items);
         Assert.Empty((await MoviesQuery.GetAsync(db, today, tag, "disc", null, "all")).Items);
         Assert.Empty((await MoviesQuery.GetAsync(db, today, tag, null, "Another platform", "all")).Items);
+        var dvd = Release("dvd", today); dvd.ReleaseType = "disc"; dvd.Format = "DVD";
+        var bluray = Release("bluray", today); bluray.ReleaseType = "disc"; bluray.Format = "Blu-ray + Digital";
+        var repeated = Release("bluray-repeat", today); repeated.ReleaseType = "disc"; repeated.Format = "Blu-ray + Digital";
+        db.AddRange(dvd, bluray, repeated);
+        await db.SaveChangesAsync();
+        var combined = await MoviesQuery.GetAsync(db, today, tag, null, null, "all", take: 2);
+        var combinedNext = await MoviesQuery.GetAsync(db, today, tag, null, null, "all", offset: 2, take: 2);
+        var combinedLast = await MoviesQuery.GetAsync(db, today, tag, null, null, "all", offset: 4, take: 2);
+        Assert.Equal(5, combined.Total);
+        var disc = Assert.Single(combined.Items.Concat(combinedNext.Items).Concat(combinedLast.Items), x => x.Type == "disc");
+        Assert.Equal("Blu-ray + Digital · DVD", disc.Format);
+        Assert.Equal(5, combined.Items.Concat(combinedNext.Items).Concat(combinedLast.Items).Select(x => x.Id).Distinct().Count());
+        await db.MovieReleases.Where(r => r.ID == dvd.ID || r.ID == bluray.ID || r.ID == repeated.ID).ExecuteDeleteAsync();
         source.LastScrapedAt = DateTime.UtcNow;
         await db.SaveChangesAsync();
         var now = DateTime.UtcNow;
@@ -128,8 +147,19 @@ public class MoviesTests
         Assert.Equal(friday, items[0].Date);
         Assert.All(items, x => Assert.Equal(DayOfWeek.Friday, x.Date!.Value.DayOfWeek));
         Assert.Equal(7, (await MoviesQuery.GetFridayTheatricalAsync(db, today, 10)).Count);
+        db.AddRange(Release("digital-today", today, "digital_purchase"),
+            Release("digital-duplicate", friday, "digital_rental"),
+            Release("digital-past", today.AddDays(-1), "digital"),
+            Release("digital-cancelled", today, "digital", "cancelled"),
+            Release("digital-tbd", null, "digital"));
+        await db.SaveChangesAsync();
+        var digital = await MoviesQuery.GetUpcomingDigitalAsync(db, today);
+        Assert.Equal(new[] { today, friday }, digital.Select(x => x.Date!.Value));
+        Assert.Equal("digital_purchase", digital[0].Type);
+        Assert.Single(await MoviesQuery.GetUpcomingDigitalAsync(db, today, take: 1));
         source.Enabled = false;
         await db.SaveChangesAsync();
         Assert.Empty(await MoviesQuery.GetFridayTheatricalAsync(db, today));
+        Assert.Empty(await MoviesQuery.GetUpcomingDigitalAsync(db, today));
     }
 }

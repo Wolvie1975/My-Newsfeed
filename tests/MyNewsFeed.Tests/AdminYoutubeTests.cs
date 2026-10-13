@@ -184,4 +184,25 @@ public class AdminYoutubeTests
         Assert.False(await db.YouTubeVideos.AnyAsync(v => v.VideoId.StartsWith("zt")));
         Assert.False(await db.YoutubeVideoFeeds.AnyAsync(f => f.ChannelId.StartsWith("UCzt")));
     }
+    [Fact]
+    public async Task Feed_assignment_rejects_other_channels_and_allows_matching_or_no_feed()
+    {
+        await using var db = Create();
+        await using var tx = await db.Database.BeginTransactionAsync();
+        var tag = Tag();
+        var channel = $"UCzt{tag}";
+        var matching = new YoutubeVideoFeed { ChannelId = channel, ChannelName = "Matching", Url = AdminData.YoutubeFeedUrl(channel) };
+        var other = new YoutubeVideoFeed { ChannelId = channel + "other", ChannelName = "Other", Url = AdminData.YoutubeFeedUrl(channel + "other") };
+        var video = Video(tag, channel);
+        db.AddRange(matching, other, video);
+        await db.SaveChangesAsync();
+        await Assert.ThrowsAsync<InvalidOperationException>(() => AdminData.AssignYoutubeVideoFeedAsync(db, video.Id, other.Id));
+        Assert.Null(await db.YouTubeVideos.Where(v => v.Id == video.Id).Select(v => v.YoutubeVideoFeedId).SingleAsync());
+        Assert.True(await AdminData.AssignYoutubeVideoFeedAsync(db, video.Id, matching.Id));
+        Assert.Equal(matching.Id, await db.YouTubeVideos.Where(v => v.Id == video.Id).Select(v => v.YoutubeVideoFeedId).SingleAsync());
+        Assert.True(await AdminData.AssignYoutubeVideoFeedAsync(db, video.Id, null));
+        Assert.Null(await db.YouTubeVideos.Where(v => v.Id == video.Id).Select(v => v.YoutubeVideoFeedId).SingleAsync());
+        Assert.False(await AdminData.AssignYoutubeVideoFeedAsync(db, -1, matching.Id));
+    }
+
 }

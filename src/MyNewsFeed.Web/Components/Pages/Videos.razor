@@ -8,22 +8,10 @@
 @* Static (non-interactive) page. Filters are plain links and a GET form, so every view has a shareable URL and works
    without JavaScript. One section per channel, newest video first. *@
 
-<h1 class="sr-only">Videos</h1>
+<PageHeading Title="Videos" Eyebrow="FROM OUR CHANNELS" Description="Latest videos from the channels we follow." />
 
-<form class="search" role="search" method="get" action="videos">
-    @if (!string.IsNullOrWhiteSpace(Channel))
-    {
-        <input type="hidden" name="channel" value="@Channel" />
-    }
-    <div class="search__field">
-        <label class="sr-only" for="q">Search videos</label>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
-        <input id="q" name="q" type="search" placeholder="Search videos" value="@Q" />
-    </div>
-    <button class="nf-btn nf-btn--primary" type="submit">Search</button>
-</form>
 
-<div class="filters">
+<div class="filters filters--videos">
     @if (channels.Count > 1)
     {
         <form class="catselect" method="get" action="videos">
@@ -41,13 +29,6 @@
             </select>
             <noscript><button class="nf-btn nf-btn--secondary" type="submit">Apply</button></noscript>
         </form>
-        <nav class="chips" aria-label="Channels">
-            <a class="chip" href="@Href(null)" aria-current="@(string.IsNullOrWhiteSpace(Channel) ? "true" : null)">All</a>
-            @foreach (var c in channels)
-            {
-                <a class="chip" href="@Href(c.ChannelId)" aria-current="@(IsSelected(c) ? "true" : null)">@c.Name</a>
-            }
-        </nav>
     }
     @if (listing is not null)
     {
@@ -84,7 +65,8 @@
 else
 {
     <div class="vfeed">
-        @foreach (var group in listing.Items.GroupBy(v => v.ChannelId))
+        @foreach (var group in listing.Items.GroupBy(v => v.ChannelId)
+            .OrderBy(g => g.First().ChannelName, StringComparer.OrdinalIgnoreCase).ThenBy(g => g.Key, StringComparer.Ordinal))
         {
             var first = group.First();
             var link = VideosText.ChannelUrl(group.Key);
@@ -141,13 +123,21 @@ else
         }
     </div>
 
-    @if (listing.Total > listing.Items.Count)
+    @if (listing.Total > 50 || page > 1)
     {
-        <p class="count">Showing the newest @listing.Items.Count of @listing.Total videos.</p>
+        <nav class="tv-week" aria-label="Video pages">
+            @if (page > 1) { <a class="nf-btn nf-btn--secondary" href="@PageHref(page - 1)">← Newer videos</a> }
+            <span>Page @(page) · @listing.Total videos</span>
+            @if (offset + listing.Items.Count < listing.Total) { <a class="nf-btn nf-btn--secondary" href="@PageHref(page + 1)">Older videos →</a> }
+        </nav>
     }
 }
 
 @code {
+    [SupplyParameterFromQuery(Name = "page")] private string? PageText { get; set; }
+    private int page;
+    private int offset;
+    private string PageHref(int target) => "videos?page=" + target + (string.IsNullOrWhiteSpace(Channel) ? "" : "&channel=" + Uri.EscapeDataString(Channel));
     [SupplyParameterFromQuery(Name = "channel")] private string? Channel { get; set; }
     [SupplyParameterFromQuery(Name = "q")] private string? Q { get; set; }
 
@@ -159,11 +149,17 @@ else
     {
         await using var db = await Factory.CreateDbContextAsync();
         channels = await VideosQuery.GetChannelsAsync(db);
-        listing = await VideosQuery.GetVideosAsync(db, Channel, Q);
+        page = int.TryParse(PageText, out var requested) ? Math.Clamp(requested, 1, 1000000) : 1;
+        offset = (page - 1) * 50;
+        listing = await VideosQuery.GetVideosAsync(db, Channel, Q, limit: 50, offset: offset);
+        if (offset >= listing.Total && page > 1)
+        {
+            page = Math.Max(1, (listing.Total + 49) / 50); offset = (page - 1) * 50;
+            listing = await VideosQuery.GetVideosAsync(db, Channel, Q, limit: 50, offset: offset);
+        }
         lastUpdated = await VideosQuery.GetLastUpdatedAsync(db);
     }
 
     private bool IsSelected(VideoChannel c) => string.Equals(Channel?.Trim(), c.ChannelId, StringComparison.Ordinal);
 
-    private string Href(string? channel) => "videos" + VideosQuery.QueryString(channel, Q);
 }

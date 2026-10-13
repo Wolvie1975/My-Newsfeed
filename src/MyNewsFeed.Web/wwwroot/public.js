@@ -184,6 +184,10 @@
         src.appendChild(button);
         body.appendChild(src);
 
+        var read = el('button', 'nf-btn nf-btn--secondary', a.read === true ? 'Mark unread' : 'Mark read');
+        read.type = 'button'; read.setAttribute('data-mark-read', href);
+        read.setAttribute('aria-pressed', String(a.read === true));
+        body.appendChild(read);
         card.appendChild(body);
         return card;
     }
@@ -193,7 +197,13 @@
     function renderSavedPage(list) {
         var container = document.querySelector('[data-saved-list]');
         if (!container) return;
-        var signature = list.map(function (a) { return a.url; }).join('\n');
+        var filter = document.querySelector('[data-reading-filter]');
+        var mode = filter ? filter.value : 'all';
+        var total = list.length;
+        list = list.filter(function (a) { return mode === 'all' || (mode === 'read' ? a.read === true : a.read !== true); });
+        var signature = mode + list.map(function (a) { return a.url + ':' + (a.read === true); }).join('\n');
+        var count = document.querySelector('[data-reading-count]');
+        if (count && count.textContent !== list.length + ' of ' + total + ' saved articles') count.textContent = list.length + ' of ' + total + ' saved articles';
         if (container.getAttribute('data-rendered') === signature) return;
         container.setAttribute('data-rendered', signature);
 
@@ -226,6 +236,8 @@
             if (badge.textContent !== value) badge.textContent = value;
         });
 
+        var toolbar = document.querySelector("[data-reading-toolbar]");
+        if (toolbar) toolbar.hidden = !storageOk;
         renderSavedPage(list);
     }
 
@@ -313,6 +325,9 @@
         });
     }
 
+    document.addEventListener('change', function (e) {
+        if (e.target.matches('[data-reading-filter]')) syncSaves();
+    });
     // Another tab saved or removed something.
     window.addEventListener('storage', function (e) { if (e.key === SAVED_KEY) syncSaves(); });
 
@@ -341,6 +356,7 @@
         var endpoint = new URL('feed/more', document.baseURI);
         new URL(link.href).searchParams.forEach(function (value, key) { endpoint.searchParams.set(key, value); });
         endpoint.searchParams.set('day', feed.getAttribute('data-last-day') || '');
+        endpoint.searchParams.set('view', link.getAttribute('data-feed-view') || 'news');
 
         var label = link.textContent;
         link.setAttribute('aria-busy', 'true');
@@ -404,6 +420,17 @@
             return;
         }
 
+        var read = e.target.closest('[data-mark-read]');
+        if (read) {
+            var list = readSaved();
+            var article = list.find(function (a) { return a.url === read.getAttribute('data-mark-read'); });
+            if (article) {
+                article.read = article.read !== true;
+                if (!writeSaved(list)) announce('Could not update reading status. Browser storage is full or blocked.');
+                syncSaves();
+            }
+            return;
+        }
         var save = e.target.closest('[data-save]');
         if (save) {
             toggleSave(save);
@@ -423,4 +450,56 @@
             loadMore(more);
         }
     }, true);
+})();
+
+// Enhance the shared admin chrome after initial load and Blazor navigation.
+(function () {
+    function adminChrome() {
+        var page = document.querySelector('.page');
+        if (!page) return;
+        var bar = page.querySelector('main > .top-row');
+        if (bar && !bar.querySelector('.admin-heading')) {
+            var heading = document.createElement('span');
+            heading.className = 'admin-heading';
+            heading.textContent = 'MyNewsFeed administration';
+            bar.prepend(heading);
+        }
+        var about = bar && bar.querySelector('a[href="https://learn.microsoft.com/aspnet/core/"]');
+        if (about) {
+            about.href = '/';
+            about.textContent = 'View newsfeed ↗';
+            about.rel = 'noopener noreferrer';
+        }
+        var nav = page.querySelector('.sidebar nav');
+        if (!nav) return;
+        nav.setAttribute('aria-label', 'Administration');
+        var brand = page.querySelector('.sidebar .navbar-brand');
+        if (brand) brand.setAttribute('href', 'admin');
+        var homeIcon = nav.querySelector('.bi-house-door-fill-nav-menu');
+        var home = homeIcon && homeIcon.closest('a');
+        if (home) {
+            home.setAttribute('href', 'admin');
+            var isHome = location.pathname.replace(/\/$/, '') === '/admin';
+            home.classList.toggle('active', isHome);
+            if (isHome) home.setAttribute('aria-current', 'page');
+            else home.removeAttribute('aria-current');
+        }
+        [['admin', 'Overview'], ['admin/sources', 'News'], ['admin/youtube-feeds', 'Videos'],
+         ['admin/sports-event-types', 'Sports'], ['admin/tv-series', 'Television']].forEach(function (group) {
+            var link = nav.querySelector('a[href="' + group[0] + '"]');
+            var item = link && link.closest('.nav-item');
+            if (!item || (item.previousElementSibling && item.previousElementSibling.classList.contains('admin-nav-group'))) return;
+            var label = document.createElement('div');
+            label.className = 'admin-nav-group';
+            label.textContent = group[1];
+            item.before(label);
+        });
+    }
+    var pending = false;
+    new MutationObserver(function () {
+        if (pending) return;
+        pending = true;
+        requestAnimationFrame(function () { pending = false; adminChrome(); });
+    }).observe(document.body, { childList: true, subtree: true });
+    adminChrome();
 })();

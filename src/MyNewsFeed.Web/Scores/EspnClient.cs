@@ -17,7 +17,7 @@ public sealed class ScoresOptions
     public string CoreBaseUrl { get; set; } = "https://sports.core.api.espn.com/v2/sports/";
 
     /// <summary>How long a follow stays fresh before the background sync fetches it again.</summary>
-    public double SyncIntervalHours { get; set; } = 3;
+    public double SyncIntervalHours { get; set; } = 1d / 6;
 
     /// <summary>How many past days of scoreboards a newly followed league fetches (one request per day).</summary>
     public int BackfillDays { get; set; } = 7;

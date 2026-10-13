@@ -138,6 +138,9 @@ public class VideosTests
         var page = await VideosQuery.GetVideosAsync(db, null, token, limit: 3);
         Assert.Equal(3, page.Items.Count);
         Assert.Equal(5, page.Total);
+        var next = await VideosQuery.GetVideosAsync(db, null, token, limit: 3, offset: 3);
+        Assert.Equal(2, next.Items.Count); Assert.Equal(5, next.Total);
+        Assert.Equal(5, page.Items.Concat(next.Items).Select(i => i.Id).Distinct().Count());
     }
 
     [Fact]

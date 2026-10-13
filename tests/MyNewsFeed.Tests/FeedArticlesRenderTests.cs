@@ -238,4 +238,13 @@ public class FeedArticlesRenderTests
         Assert.DoesNotContain("data-date=", html);
         Assert.DoesNotContain("data-date-label=", html);
     }
+    [Fact]
+    public async Task Missing_publication_date_is_explicit_and_does_not_claim_the_scrape_date()
+    {
+        var html = await RenderAsync([Item(123, "Undated story", new DateTime(2026, 10, 12)) with { Undated = true }]);
+        Assert.Contains("Publication date unavailable", html);
+        Assert.DoesNotContain("<time", html);
+        Assert.Contains("data-article-id=\"123\"", html);
+    }
+
 }

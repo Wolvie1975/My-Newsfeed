@@ -177,4 +177,25 @@ public class EventsRenderTests
         Assert.Contains("Test radio", html);
         Assert.Contains("https://test.invalid/audio", html);
     }
+    [Theory]
+    [InlineData("STATUS_POSTPONED", "Postponed")]
+    [InlineData("STATUS_DELAYED", "Delayed")]
+    [InlineData("STATUS_SUSPENDED", "Suspended")]
+    public async Task Interrupted_games_show_their_status_and_tbd_even_with_a_stale_start(string status, string label)
+    {
+        var html = await RenderAsync(Game() with { ScheduleStatus = status });
+        Assert.Contains($"{label} · Time TBD", Cell(html, "td-time"));
+        Assert.DoesNotContain("6:00 P.M. CT", html);
+    }
+
+    [Fact]
+    public async Task Wnba_uses_stored_home_and_away_teams_and_missing_starts_are_tbd()
+    {
+        var html = await RenderAsync(Game(school: "Connecticut Sun", opponent: "Atlanta Dream", sport: "Basketball")
+            with { StartsAtUtc = null });
+        Assert.Contains("Connecticut Sun", Cell(html, "td-home"));
+        Assert.Contains("Atlanta Dream", Cell(html, "td-away"));
+        Assert.Contains("Time TBD", Cell(html, "td-time"));
+    }
+
 }

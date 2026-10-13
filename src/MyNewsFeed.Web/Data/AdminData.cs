@@ -228,4 +228,38 @@ public static class AdminData
         return deleted > 0;
     }
 
+    /// <summary>Only legacy events without shared attribution can be deleted manually.</summary>
+    public static async Task<bool> DeleteSportsEventAsync(WebScraperContext db, int id)
+    {
+        var deleted = await db.SportsEvents
+            .Where(e => e.Id == id && e.ProviderKey == null && !e.EventSources.Any())
+            .ExecuteDeleteAsync();
+        if (deleted == 0 && await db.SportsEvents.AnyAsync(e => e.Id == id))
+            throw new InvalidOperationException("This event is maintained by a provider or shared calendar. Disable its feed instead of deleting it.");
+        return deleted > 0;
+    }
+
+    /// <summary>Provider and shared-source attribution is owned by the scraper.</summary>
+    public static async Task<bool> AssignSportsEventTypeAsync(WebScraperContext db, int id, int? typeId)
+    {
+        var updated = await db.SportsEvents.Where(e => e.Id == id && e.ProviderKey == null
+                && !e.EventSources.Any()
+                && (typeId == null || db.SportsEventsTypes.Any(t => t.Id == typeId && t.ProviderKey == null)))
+            .ExecuteUpdateAsync(s => s.SetProperty(e => e.SportsEventsTypeId, typeId));
+        if (updated == 0 && await db.SportsEvents.AnyAsync(e => e.Id == id))
+            throw new InvalidOperationException("Only legacy events can be assigned to a legacy type. Provider and shared-calendar attribution is read-only.");
+        return updated > 0;
+    }
+
+    /// <summary>A feed link must refer to the video's own channel.</summary>
+    public static async Task<bool> AssignYoutubeVideoFeedAsync(WebScraperContext db, int id, int? feedId)
+    {
+        var updated = await db.YouTubeVideos.Where(v => v.Id == id
+                && (feedId == null || db.YoutubeVideoFeeds.Any(f => f.Id == feedId && f.ChannelId == v.ChannelId)))
+            .ExecuteUpdateAsync(s => s.SetProperty(v => v.YoutubeVideoFeedId, feedId));
+        if (updated == 0 && await db.YouTubeVideos.AnyAsync(v => v.Id == id))
+            throw new InvalidOperationException("Choose a feed for this video's channel. The selected feed is missing or belongs to another channel.");
+        return updated > 0;
+    }
+
 }

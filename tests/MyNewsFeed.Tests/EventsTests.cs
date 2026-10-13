@@ -88,6 +88,16 @@ public class EventsTests
             .UseSqlServer("Server=sql2025,1433;Database=WebScraper;User Id=sa;Password=Fedora_Dev_2025!;Encrypt=False;TrustServerCertificate=True;")
             .Options);
 
+    // The scraper normally initializes this additive column. Exercise the same migration inside
+    // each rollback transaction so tests also work against a pre-deployment development database.
+    private static async Task<Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction> BeginScheduleTransactionAsync(WebScraperContext db)
+    {
+        var transaction = await db.Database.BeginTransactionAsync();
+        await db.Database.ExecuteSqlRawAsync(
+            "IF COL_LENGTH('dbo.SportsEvents', 'ScheduleStatus') IS NULL ALTER TABLE dbo.SportsEvents ADD ScheduleStatus nvarchar(100) NULL;");
+        return transaction;
+    }
+
     private static string Tag() => Guid.NewGuid().ToString("N")[..10];
 
     private static SportsEvent Game(string token, string title, DateOnly date, DateTime? startsUtc = null, bool tbd = false,
@@ -104,10 +114,10 @@ public class EventsTests
     };
 
     [Fact]
-    public async Task Upcoming_starts_today_and_includes_todays_finished_games_but_not_yesterdays()
+    public async Task Upcoming_starts_today_and_preserves_legacy_games_with_unknown_status()
     {
         await using var db = Create();
-        await using var tx = await db.Database.BeginTransactionAsync();
+        await using var tx = await BeginScheduleTransactionAsync(db);
         var token = Tag();
         var today = new DateOnly(2026, 6, 15);
         db.SportsEvents.AddRange(
@@ -124,7 +134,7 @@ public class EventsTests
     public async Task Games_are_ordered_by_day_then_start_time_with_time_tbd_last()
     {
         await using var db = Create();
-        await using var tx = await db.Database.BeginTransactionAsync();
+        await using var tx = await BeginScheduleTransactionAsync(db);
         var token = Tag();
         var day = new DateOnly(2026, 6, 15);
         db.SportsEvents.AddRange(
@@ -143,7 +153,7 @@ public class EventsTests
     public async Task The_sport_filter_and_search_narrow_the_list()
     {
         await using var db = Create();
-        await using var tx = await db.Database.BeginTransactionAsync();
+        await using var tx = await BeginScheduleTransactionAsync(db);
         var token = Tag();
         var day = new DateOnly(2026, 6, 15);
         var type = new SportsEventsType { EventsTypeName = "Type", RssUrl = $"https://{token}.test.invalid/rss", SchoolName = $"School{token}" };
@@ -165,7 +175,7 @@ public class EventsTests
     public async Task Each_event_carries_its_schools_name_from_its_type()
     {
         await using var db = Create();
-        await using var tx = await db.Database.BeginTransactionAsync();
+        await using var tx = await BeginScheduleTransactionAsync(db);
         var token = Tag();
         var day = new DateOnly(2026, 6, 15);
         var type = new SportsEventsType { EventsTypeName = "Type", RssUrl = $"https://{token}.test.invalid/rss", SchoolName = "Testville" };
@@ -184,7 +194,7 @@ public class EventsTests
     public async Task The_list_is_capped_but_the_total_is_not()
     {
         await using var db = Create();
-        await using var tx = await db.Database.BeginTransactionAsync();
+        await using var tx = await BeginScheduleTransactionAsync(db);
         var token = Tag();
         var day = new DateOnly(2026, 6, 15);
         db.SportsEvents.AddRange(Game(token, "1", day), Game(token, "2", day.AddDays(1)), Game(token, "3", day.AddDays(2)));
@@ -200,7 +210,7 @@ public class EventsTests
     public async Task The_sport_filter_lists_only_sports_with_upcoming_games_and_last_updated_follows_the_scraper()
     {
         await using var db = Create();
-        await using var tx = await db.Database.BeginTransactionAsync();
+        await using var tx = await BeginScheduleTransactionAsync(db);
         var token = Tag();
         var day = new DateOnly(2026, 6, 15);
         var upcoming = Game(token, "upcoming", day, sport: $"ZZUp{token}");
@@ -236,7 +246,7 @@ public class EventsTests
     public async Task Todays_games_are_only_that_date_in_start_order_with_time_tbd_last()
     {
         await using var db = Create();
-        await using var tx = await db.Database.BeginTransactionAsync();
+        await using var tx = await BeginScheduleTransactionAsync(db);
         var token = Tag();
         var day = new DateOnly(2031, 3, 4);
         db.SportsEvents.AddRange(
@@ -256,7 +266,7 @@ public class EventsTests
     public async Task Expanded_calendars_match_both_schools_without_duplicate_events_and_respect_disabled_feeds()
     {
         await using var db = Create();
-        await using var tx = await db.Database.BeginTransactionAsync();
+        await using var tx = await BeginScheduleTransactionAsync(db);
         var tag = Guid.NewGuid().ToString("N");
         var first = new SportsEventsType { EventsTypeName = tag, SchoolName = "First", RssUrl = $"https://test.invalid/{tag}/1", Enabled = true };
         var second = new SportsEventsType { EventsTypeName = tag, SchoolName = "Second", RssUrl = $"https://test.invalid/{tag}/2", Enabled = true };
@@ -299,4 +309,107 @@ public class EventsTests
         await db.SaveChangesAsync();
         Assert.Empty((await EventsQuery.GetUpcomingAsync(db, today, null, tag)).Items);
     }
+    [Fact]
+    public async Task Professional_schedules_filter_status_dates_and_provider_identity()
+    {
+        await using var db = Create();
+        await using var tx = await BeginScheduleTransactionAsync(db);
+        var token = Tag();
+        var day = new DateOnly(2031, 3, 4);
+        var nwsl = await db.SportsEventsTypes.SingleOrDefaultAsync(f => f.ProviderKey == "espn-nwsl" && f.ProviderSchoolId == 20907) ?? new SportsEventsType { EventsTypeName = token, RssUrl = $"https://test.invalid/{token}/nwsl",
+            ProviderKey = "espn-nwsl", ProviderSchoolId = 20907, Enabled = true };
+        var wnba = await db.SportsEventsTypes.SingleOrDefaultAsync(f => f.ProviderKey == "espn-wnba" && f.ProviderSchoolId == 0) ?? new SportsEventsType { EventsTypeName = token, RssUrl = $"https://test.invalid/{token}/wnba",
+            ProviderKey = "espn-wnba", ProviderSchoolId = 0, Enabled = true };
+        foreach (var status in new[] { "STATUS_SCHEDULED", "STATUS_POSTPONED", "STATUS_DELAYED", "STATUS_SUSPENDED",
+            "STATUS_CANCELED", "STATUS_CANCELLED", "STATUS_FULL_TIME", "STATUS_FINAL", "STATUS_FINAL_PEN" })
+        {
+            var game = Game(token, status, day);
+            game.ProviderKey = "espn-nwsl";
+            game.SportsEventsType = nwsl;
+            game.ScheduleStatus = status;
+            game.SchoolName = "Kansas City Current";
+            db.Add(game);
+        }
+        var leagueGame = Game(token, "wnba", day.AddDays(1), new DateTime(2031, 3, 6, 1, 0, 0));
+        leagueGame.ProviderKey = "espn-wnba";
+        leagueGame.SportsEventsType = wnba;
+        leagueGame.SchoolName = "Home team";
+        leagueGame.Opponent = "Away team";
+        leagueGame.IsAway = false;
+        leagueGame.SchoolId = 3; // An ESPN ID must not resolve to a Big 12 school.
+        db.Add(leagueGame);
+        db.AddRange(Game(token, "yesterday", day.AddDays(-1)), Game(token, "outside range", day.AddDays(2)));
+        await db.SaveChangesAsync();
+
+        var page = await EventsQuery.GetUpcomingAsync(db, day, null, token, from: day.AddDays(-1), to: day.AddDays(1));
+        Assert.Equal(5, page.Total);
+        Assert.DoesNotContain(page.Items, e => e.ScheduleStatus is not null &&
+            (e.ScheduleStatus.Contains("CANCEL") || e.ScheduleStatus.Contains("FINAL") || e.ScheduleStatus == "STATUS_FULL_TIME"));
+        Assert.Equal("Home team", Assert.Single(page.Items, e => e.Id == leagueGame.Id).SchoolName);
+        Assert.Single((await EventsQuery.GetUpcomingAsync(db, day, null, token, school: wnba.Id)).Items);
+        Assert.Equal(4, (await EventsQuery.GetOnDateAsync(db, day)).Count(e => e.Title.Contains(token)));
+        var sources = await EventsQuery.GetSchoolsAsync(db);
+        Assert.Equal("WNBA", sources.Single(e => e.Id == wnba.Id).Name);
+        Assert.Equal("Kansas City Current", sources.Single(e => e.Id == nwsl.Id).Name);
+        Assert.Empty((await EventsQuery.GetUpcomingAsync(db, day, null, token, from: day.AddDays(3), to: day)).Items);
+        wnba.Enabled = false;
+        nwsl.ProviderSchoolId = 3;
+        await db.SaveChangesAsync();
+        Assert.Empty((await EventsQuery.GetUpcomingAsync(db, day, null, token, to: day.AddDays(1))).Items);
+    }
+
+    [Theory]
+    [InlineData("2026-10-10T00:30:00", "2026-10-09")]
+    [InlineData("2026-11-01T05:30:00", "2026-11-01")]
+    [InlineData("2026-11-02T05:30:00", "2026-11-01")]
+    public void Central_date_boundaries_respect_midnight_and_dst(string utc, string expected) =>
+        Assert.Equal(DateOnly.Parse(expected), FeedDates.Create("America/Chicago").TodayAt(DateTime.Parse(utc)));
+
+    [Fact]
+    public void Schedule_links_preserve_the_selected_date_range() =>
+        Assert.Equal("?sport=Basketball&from=2026-10-09&to=2026-10-16&school=7",
+            EventsQuery.QueryString("Basketball", null, 7, new DateOnly(2026, 10, 9), new DateOnly(2026, 10, 16)));
+
+    [Fact]
+    public async Task Mlb_has_a_schedule_choice_and_filters_to_its_enabled_league_feed()
+    {
+        await using var db = Create();
+        await using var tx = await BeginScheduleTransactionAsync(db);
+        var token = Tag();
+        var day = new DateOnly(2031, 3, 4);
+        var feed = await db.SportsEventsTypes.SingleOrDefaultAsync(f => f.ProviderKey == "espn-mlb" && f.ProviderSchoolId == 0) ?? new SportsEventsType { EventsTypeName = "MLB", RssUrl = $"https://test.invalid/{token}/mlb",
+            ProviderKey = "espn-mlb", ProviderSchoolId = 0, Enabled = true };
+        var game = Game(token, "mlb", day, sport: "Baseball");
+        game.ProviderKey = "espn-mlb";
+        game.SportsEventsType = feed;
+        game.SchoolName = "Home baseball team";
+        game.Opponent = "Away baseball team";
+        game.IsAway = false;
+        db.Add(game);
+        db.Add(Game(token, "school", day));
+        await db.SaveChangesAsync();
+        Assert.Equal("MLB", (await EventsQuery.GetSchoolsAsync(db)).Single(f => f.Id == feed.Id).Name);
+        var selected = await EventsQuery.GetUpcomingAsync(db, day, null, token, school: feed.Id);
+        Assert.Equal(game.Id, Assert.Single(selected.Items).Id);
+        feed.Enabled = false;
+        await db.SaveChangesAsync();
+        Assert.DoesNotContain(await EventsQuery.GetSchoolsAsync(db), f => f.Id == feed.Id);
+        Assert.Empty((await EventsQuery.GetUpcomingAsync(db, day, null, token, school: feed.Id)).Items);
+    }
+
+    [Fact]
+    public async Task College_games_wait_for_the_current_seasons_opening_fixture()
+    {
+        await using var db = Create();
+        await using var tx = await BeginScheduleTransactionAsync(db);
+        var token = Tag(); var day = new DateOnly(2031, 10, 11);
+        var first = Game(token, "opening", day.AddDays(1), sport: "Football"); first.ProviderKey = "big12";
+        var later = Game(token, "later", day.AddDays(8), sport: "Football"); later.ProviderKey = "big12";
+        var old = Game(token, "last season", new DateOnly(2030, 11, 1), sport: "Football"); old.ProviderKey = "big12";
+        db.AddRange(first, later, old); await db.SaveChangesAsync();
+        Assert.Empty((await EventsQuery.GetUpcomingAsync(db, day, null, token)).Items);
+        first.EventDate = day; await db.SaveChangesAsync();
+        Assert.Equal(2, (await EventsQuery.GetUpcomingAsync(db, day, null, token)).Items.Count);
+    }
+
 }

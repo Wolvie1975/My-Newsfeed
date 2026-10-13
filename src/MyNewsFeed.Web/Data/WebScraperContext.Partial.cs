@@ -14,6 +14,13 @@ public partial class WebScraperContext
 
     public virtual DbSet<ResultFollowTeam> ResultFollowTeams { get; set; }
 
+    public DbSet<SportsRankingSource> SportsRankingSources { get; set; }
+    public DbSet<SportsRankingPoll> SportsRankingPolls { get; set; }
+    public DbSet<SportsRankingTeam> SportsRankingTeams { get; set; }
+
+    public DbSet<SportsStandingsSource> SportsStandingsSources { get; set; }
+    public DbSet<SportsStanding> SportsStandings { get; set; }
+
     public DbSet<SportsEventSource> SportsEventSources { get; set; }
 
     public DbSet<TvSeries> TvSeries { get; set; }

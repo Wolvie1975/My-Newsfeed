@@ -8,7 +8,7 @@
 
 @if (message is not null)
 {
-    <div class="alert alert-success" role="alert">@message</div>
+    <div class="alert alert-@messageKind" role="alert">@message</div>
 }
 
 <form class="row g-2 mb-3" @onsubmit="SearchAsync">
@@ -123,7 +123,7 @@ else
                         </td>
                         <td class="text-nowrap text-end">
                             <a class="btn btn-outline-primary btn-sm" href="admin/sports-events/@row.Id/edit">Edit</a>
-                            <button class="btn btn-outline-danger btn-sm" @onclick="() => StartDelete(row)">Delete</button>
+                            <button class="btn btn-outline-danger btn-sm" disabled="@row.AttributionLocked" title="@(row.AttributionLocked ? "Managed by the scraper. Disable its feed instead." : "Delete event")" @onclick="() => StartDelete(row)">Delete</button>
                         </td>
                     </tr>
                 }
@@ -147,7 +147,7 @@ else
 
     private sealed record EventRow(
         int Id, string Url, string Title, string? Sport, string? Opponent, bool? IsAway, string? Location,
-        DateOnly EventDate, DateTime? StartsAtUtc, bool TimeTbd, string? Tv, int? TypeId, string? TypeName);
+        DateOnly EventDate, DateTime? StartsAtUtc, bool TimeTbd, string? Tv, int? TypeId, string? TypeName, bool AttributionLocked);
 
     // Query values arrive as text and are parsed leniently: a hand-edited "?typeId=abc" must not throw.
     [SupplyParameterFromQuery(Name = "typeId")] private string? TypeIdText { get; set; }
@@ -157,6 +157,7 @@ else
     private List<EventRow>? rows;
     private EventRow? pendingDelete;
     private string? message;
+    private string messageKind = "success";
 
     // typeFilter is bound to the <select>: "" = all types, "none" = events with no type, otherwise a type ID.
     private string? typeFilter;
@@ -257,7 +258,7 @@ else
             .Skip(pageIndex * PageSize).Take(PageSize)
             .Select(e => new EventRow(
                 e.Id, e.Url, e.Title, e.Sport, e.Opponent, e.IsAway, e.Location, e.EventDate, e.StartsAtUtc, e.TimeTbd, e.Tv,
-                e.SportsEventsTypeId, e.SportsEventsType != null ? e.SportsEventsType.EventsTypeName : null))
+                e.SportsEventsTypeId, e.SportsEventsType != null ? e.SportsEventsType.EventsTypeName : null, e.ProviderKey != null || e.EventSources.Any()))
             .ToListAsync();
     }
 
@@ -316,8 +317,15 @@ else
         }
 
         await using var db = await Factory.CreateDbContextAsync();
-        await db.SportsEvents.Where(e => e.Id == target.Id).ExecuteDeleteAsync();
-        message = $"Deleted “{target.Title}”.";
+        try
+        {
+            var deleted = await AdminData.DeleteSportsEventAsync(db, target.Id);
+            messageKind = deleted ? "success" : "warning";
+            message = deleted ? $"Deleted “{target.Title}”." : "That event was already deleted.";
+        }
+        catch (InvalidOperationException ex) { messageKind = "warning"; message = ex.Message; }
+        catch (Exception ex) when (AdminData.IsForeignKeyViolation(ex))
+        { messageKind = "warning"; message = "This event gained shared source references. Disable its feed instead of deleting it."; }
         pendingDelete = null;
         await LoadAsync();
     }

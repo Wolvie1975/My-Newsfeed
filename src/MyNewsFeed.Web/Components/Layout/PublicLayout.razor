@@ -7,12 +7,15 @@
     var onMovies = path.StartsWith("movies", StringComparison.OrdinalIgnoreCase);
     var onTv = path.StartsWith("tv", StringComparison.OrdinalIgnoreCase);
     var onVideos = path.StartsWith("videos", StringComparison.OrdinalIgnoreCase);
+    var onRankings = path.StartsWith("rankings", StringComparison.OrdinalIgnoreCase);
+    var onStandings = path.StartsWith("standings", StringComparison.OrdinalIgnoreCase);
     var onResults = path.StartsWith("results", StringComparison.OrdinalIgnoreCase);
+    var onBoxOffice = path.StartsWith("box-office", StringComparison.OrdinalIgnoreCase);
     var onNews = path.StartsWith("news", StringComparison.OrdinalIgnoreCase);
     var onSaved = path.StartsWith("saved", StringComparison.OrdinalIgnoreCase);
     var onHome = path.Length == 0 || path[0] is '?' or '#';
     var section = onTv ? "TV & Streaming" : onEvents ? "Sports Events" : onMovies ? "Movies" : onVideos ? "Videos"
-        : onResults ? "Results" : onNews ? "News" : onSaved ? "Saved articles" : onHome ? "Home" : "Browse";
+        : onRankings ? "Top 25" : onStandings ? "Standings" : onResults ? "Results" : onBoxOffice ? "Box Office" : onNews ? "News" : onSaved ? "Saved articles" : onHome ? "Home" : "Browse";
 }
 
 <div class="pub">
@@ -23,8 +26,11 @@
         <nav class="site-nav site-nav--inline" aria-label="Main">
             <a href="" aria-current="@(onHome ? "page" : null)">Home</a>
             <a href="news" aria-current="@(onNews ? "page" : null)">News</a>
+            <a href="box-office" aria-current="@(onBoxOffice ? "page" : null)">Box Office</a>
             <a href="events" aria-current="@(onEvents ? "page" : null)">Sports Events</a>
             <a href="results" aria-current="@(onResults ? "page" : null)">Results</a>
+            <a href="standings" aria-current="@(onStandings ? "page" : null)">Standings</a>
+            <a href="rankings" aria-current="@(onRankings ? "page" : null)">Top 25</a>
             <a href="movies" aria-current="@(onMovies ? "page" : null)">Movies</a>
             <a href="tv" aria-current="@(onTv ? "page" : null)">TV &amp; Streaming</a>
             <a href="videos" aria-current="@(onVideos ? "page" : null)">Videos</a>
@@ -62,8 +68,11 @@
         <nav aria-label="Main" class="mobile-nav__links">
             <a href="" aria-current="@(onHome ? "page" : null)">Home</a>
             <a href="news" aria-current="@(onNews ? "page" : null)">News</a>
+            <a href="box-office" aria-current="@(onBoxOffice ? "page" : null)">Box Office</a>
             <a href="events" aria-current="@(onEvents ? "page" : null)">Sports Events</a>
             <a href="results" aria-current="@(onResults ? "page" : null)">Results</a>
+            <a href="standings" aria-current="@(onStandings ? "page" : null)">Standings</a>
+            <a href="rankings" aria-current="@(onRankings ? "page" : null)">Top 25</a>
             <a href="movies" aria-current="@(onMovies ? "page" : null)">Movies</a>
             <a href="tv" aria-current="@(onTv ? "page" : null)">TV &amp; Streaming</a>
             <a href="videos" aria-current="@(onVideos ? "page" : null)">Videos</a>

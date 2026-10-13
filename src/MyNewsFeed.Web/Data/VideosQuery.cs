@@ -31,7 +31,7 @@ public static class VideosQuery
         : !string.IsNullOrWhiteSpace(videoName) ? videoName.Trim()
         : channelId;
 
-    /// <summary>The channels that have videos, most recently published first.</summary>
+    /// <summary>The channels that have videos, alphabetically by their displayed name.</summary>
     public static async Task<IReadOnlyList<VideoChannel>> GetChannelsAsync(WebScraperContext db)
     {
         var rows = await db.YouTubeVideos.AsNoTracking()
@@ -46,7 +46,8 @@ public static class VideosQuery
             .OrderByDescending(r => r.Latest).ThenBy(r => r.ChannelId)
             .ToListAsync();
 
-        return rows.Select(r => new VideoChannel(r.ChannelId, Name(r.FeedName, r.VideoName, r.ChannelId))).ToList();
+        return rows.Select(r => new VideoChannel(r.ChannelId, Name(r.FeedName, r.VideoName, r.ChannelId)))
+            .OrderBy(c => c.Name, StringComparer.OrdinalIgnoreCase).ThenBy(c => c.ChannelId, StringComparer.Ordinal).ToList();
     }
 
     /// <summary>When the videos were last refreshed by the scraper, or null when there are none.</summary>
@@ -55,7 +56,7 @@ public static class VideosQuery
 
     /// <summary>Newest first. Filters by channel id and by a search over the title and channel name.</summary>
     public static async Task<VideosPage> GetVideosAsync(
-        WebScraperContext db, string? channelId, string? search, int limit = Limit)
+        WebScraperContext db, string? channelId, string? search, int limit = Limit, int offset = 0)
     {
         var query = db.YouTubeVideos.AsNoTracking().AsQueryable();
 
@@ -77,7 +78,7 @@ public static class VideosQuery
         var total = await query.CountAsync();
         var rows = await query
             .OrderByDescending(v => v.PublishedAt).ThenByDescending(v => v.Id)
-            .Take(limit)
+            .Skip(Math.Max(0, offset)).Take(limit)
             .Select(v => new
             {
                 v.Id, v.VideoId, v.ChannelId, v.ChannelName, v.Title, v.Url, v.PublishedAt, v.ThumbnailUrl, v.ViewCount,

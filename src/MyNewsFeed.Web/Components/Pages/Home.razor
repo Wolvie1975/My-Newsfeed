@@ -17,63 +17,21 @@
 
 <div class="d-grid">
 
-    <section class="d-card d-today" aria-labelledby="h-today">
-        <div class="d-card__head">
-            <h2 class="d-card__title" id="h-today">
-                Today’s events
-                @if (todays.Count > 0)
-                {
-                    <span class="d-card__count">@todays.Count @(todays.Count == 1 ? "event" : "events")</span>
-                }
-            </h2>
-            <a class="d-more" href="events">View all <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="m13 6 6 6-6 6"></path></svg></a>
-        </div>
-        @if (todays.Count == 0)
-        {
-            <p class="d-empty">No events today.</p>
-        }
-        else
-        {
-            <ul class="d-list">
-                @foreach (var game in todays)
-                {
-                    var time = game.TimeTbd || game.StartsAtUtc is null ? "Time TBD" : Dates.EventTime(game.StartsAtUtc.Value);
-                    var (city, _) = EventsText.SplitLocation(game.Location);
-                    var details = FeedQuery.SafeHref(game.Url);
-                    var match = EventsText.Matchup(game.SchoolName, game.Opponent, game.IsNeutral == true ? null : game.IsAway);
-                    <li class="d-game">
-                        <div class="d-game__time @(time == "Time TBD" ? "is-tbd" : "")">@time</div>
-                        <div class="d-game__body">
-                            <h3 class="d-game__match">
-                                @if (details is not null)
-                                {
-                                    <a href="@details" target="_blank" rel="noopener noreferrer">@match</a>
-                                }
-                                else
-                                {
-                                    @match
-                                }
-                            </h3>
-                            <p class="d-game__meta">
-                                @if (!string.IsNullOrWhiteSpace(game.Sport))
-                                {
-                                    <span class="d-tag">@game.Sport</span>
-                                    @if (game.IsNeutral == true) { <span>Neutral site</span> }
-                                }
-                                @if (city is not null)
-                                {
-                                    <span>@city</span>
-                                }
-                                @if (!string.IsNullOrWhiteSpace(game.Tv))
-                                {
-                                    <span class="d-tv">@game.Tv.Trim()</span>
-                                }
-                            </p>
-                        </div>
-                    </li>
-                }
-            </ul>
-        }
+    <section class="d-card d-today" aria-labelledby="h-tonight">
+        <div class="d-card__head"><h2 class="d-card__title" id="h-tonight">Today &amp; Tonight</h2><a href="events">All games</a></div>
+        @if (tonight.Count == 0) { <p class="d-empty">Nothing scheduled today. Explore the calendars for what’s next.</p> }
+        <ul class="d-list">
+            @foreach (var item in tonight)
+            {
+                <li class="d-game">
+                    <div class="d-game__time">@item.TimeLabel</div>
+                    <div class="d-game__body"><h3 class="d-game__match">
+                        @if (item.Url is not null) { <a href="@item.Url" target="_blank" rel="noopener noreferrer">@item.Title</a> }
+                        else { @item.Title }
+                    </h3><p class="d-game__meta">@item.Kind</p></div>
+                </li>
+            }
+        </ul>
     </section>
 
     <section class="d-card d-news" aria-labelledby="h-news">
@@ -137,10 +95,10 @@
         }
     </section>
 
-    <section class="d-card d-movies" aria-labelledby="h-movies">
+    <section class="d-card d-movies" aria-labelledby="h-movies h-digital">
         <div class="d-card__head">
             <h2 class="d-card__title" id="h-movies">Friday theater releases</h2>
-            <a class="d-more" href="movies?type=theatrical">View all <span aria-hidden="true">→</span></a>
+            <a class="d-more" href="movies">View all <span aria-hidden="true">→</span></a>
         </div>
         @if (movies.Count == 0)
         {
@@ -175,6 +133,55 @@
                                     @movie.Title
                                 }
                             </h3>
+                            <p class="d-vid__meta">@string.Join(" · ", new[] { movie.Certification, movie.Runtime is { } runtime ? $"{runtime} min" : null, movie.ReRelease ? "Re-release" : null }.Where(x => !string.IsNullOrWhiteSpace(x)))</p>
+                        </div>
+                    </li>
+                }
+            </ul>
+        }
+        <div class="d-card__head">
+            <h2 class="d-card__title" id="h-digital">Upcoming Digital / VOD</h2>
+            <a class="d-more" href="movies/digital">View all <span aria-hidden="true">→</span></a>
+        </div>
+        @if (digitalData?.Selected is { } digitalSource)
+        {
+            <p class="updated">@digitalSource.Name · From today onward</p>
+            @if (!string.IsNullOrWhiteSpace(digitalSource.LastError)) { <p class="updated">Latest collection failed; showing previously collected releases when available.</p> }
+        }
+        @if (digitalMovies.Count == 0)
+        {
+            <p class="d-empty">No confirmed digital releases from the selected source from today onward.</p>
+        }
+        else
+        {
+            <ul class="d-list" tabindex="0" aria-label="Upcoming Digital / VOD">
+                @foreach (var movie in digitalMovies)
+                {
+                    var poster = EventsText.LogoUrl(movie.Poster);
+                    var href = FeedQuery.SafeHref(movie.SourceUrl);
+                    <li class="d-movie">
+                        <div class="d-movie__poster" aria-hidden="true">
+                            @if (poster is not null)
+                            {
+                                <img src="@poster" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()" />
+                            }
+                        </div>
+                        <div class="d-movie__body">
+                            @if (movie.Date is { } date)
+                            {
+                                <p class="d-movie__date"><time datetime="@date.ToString("yyyy-MM-dd")">@date.ToString("ddd, MMM d, yyyy", System.Globalization.CultureInfo.InvariantCulture)</time>@(movie.DateStatus == "estimated" ? " · Estimated" : "")</p>
+                            }
+                            <h3 class="d-vid__title">
+                                @if (href is not null)
+                                {
+                                    <a href="@href" target="_blank" rel="noopener noreferrer">@movie.Title</a>
+                                }
+                                else
+                                {
+                                    @movie.Title
+                                }
+                            </h3>
+                            <p class="d-vid__meta">VOD / Digital · @movie.Source</p>
                             <p class="d-vid__meta">@string.Join(" · ", new[] { movie.Certification, movie.Runtime is { } runtime ? $"{runtime} min" : null, movie.ReRelease ? "Re-release" : null }.Where(x => !string.IsNullOrWhiteSpace(x)))</p>
                         </div>
                     </li>
@@ -289,9 +296,12 @@
 
     private DateTime nowUtc;
     private IReadOnlyList<EventItem> todays = [];
+    private IReadOnlyList<TonightItem> tonight = [];
     private IReadOnlyList<FeedItem> news = [];
     private IReadOnlyList<VideoItem> videos = [];
     private IReadOnlyList<MovieReleaseItem> movies = [];
+    private IReadOnlyList<MovieReleaseItem> digitalMovies = [];
+    private DigitalReleasePage? digitalData;
     private IReadOnlyList<TvEpisodeItem> episodes = [];
 
     protected override async Task OnParametersSetAsync()
@@ -310,7 +320,11 @@
         news = await FeedQuery.GetLatestPerSourceAsync(db, HomeNewsCount);
         videos = await VideosQuery.GetLatestPerChannelAsync(db);
         movies = await MoviesQuery.GetFridayTheatricalAsync(db, Dates.TodayAt(nowUtc));
+        digitalData = await DigitalReleasesQuery.GetAsync(db, Dates.TodayAt(nowUtc), null);
+        digitalMovies = digitalData.Items.Take(5).ToList();
         episodes = await TvQuery.GetOnDateAsync(db, Dates, Dates.TodayAt(nowUtc));
+        var releasedToday = await MoviesQuery.GetAsync(db, Dates.TodayAt(nowUtc), null, null, null, null, onDate: Dates.TodayAt(nowUtc), take: 200);
+        tonight = TodayTonight.Build(todays, episodes, releasedToday.Items, Dates);
     }
 
     private const int HomeNewsCount = 5;

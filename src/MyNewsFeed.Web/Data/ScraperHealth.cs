@@ -123,6 +123,11 @@ public static class ScraperHealth
         return upcoming == 0 ? (HealthLevel.Warning, "No upcoming games") : (HealthLevel.Ok, null);
     }
 
+    public static (HealthLevel, string?) ClassifyScheduleFeed(bool providerBacked, DateTime? lastSuccess,
+        int items, int upcoming, DateTime nowUtc, TimeSpan staleAfter) =>
+        providerBacked && items == 0 && lastSuccess != null && !IsStale(lastSuccess, nowUtc, staleAfter)
+            ? (HealthLevel.Warning, "No upcoming games") : ClassifyFeed(lastSuccess, items, upcoming, nowUtc, staleAfter);
+
     /// <summary>Movie sources record successful checks even when no releases are found.</summary>
     public static (HealthLevel, string?) ClassifyMovieSource(
         bool enabled, DateTime? lastScraped, string? error, int releases, DateTime nowUtc, TimeSpan staleAfter)
@@ -164,7 +169,8 @@ public static class ScraperHealth
                 t.Id,
                 t.EventsTypeName, t.Enabled, t.ProviderKey, t.LastAttemptAt, t.LastSuccessAt, t.LastError, t.LastEventCount, t.LastIssueCount,
                 Events = db.SportsEvents.Count(e => e.SportsEventsTypeId == t.Id || e.EventSources.Any(s => s.SportsEventsTypeId == t.Id)),
-                Upcoming = db.SportsEvents.Count(e => e.EventDate >= today && (e.SportsEventsTypeId == t.Id || e.EventSources.Any(s => s.SportsEventsTypeId == t.Id))),
+                Upcoming = db.SportsEvents.Count(e => e.EventDate >= today
+                    && (e.ScheduleStatus == null || (e.ScheduleStatus != "STATUS_CANCELED" && e.ScheduleStatus != "STATUS_CANCELLED" && e.ScheduleStatus != "STATUS_FULL_TIME" && !e.ScheduleStatus.StartsWith("STATUS_FINAL"))) && (e.SportsEventsTypeId == t.Id || e.EventSources.Any(s => s.SportsEventsTypeId == t.Id))),
                 LastSeen = t.SportsEvents.Max(e => (DateTime?)e.LastSeenAt),
             })
             .ToListAsync();
@@ -225,7 +231,7 @@ public static class ScraperHealth
         var feedRows = feeds.Select(f =>
         {
             var lastSeen = f.ProviderKey == null ? f.LastSeen : f.LastSuccessAt;
-            var (level, note) = ClassifyFeed(lastSeen, f.Events, f.Upcoming, nowUtc, staleAfter);
+            var (level, note) = ClassifyScheduleFeed(f.ProviderKey != null, lastSeen, f.Events, f.Upcoming, nowUtc, staleAfter);
             if (!f.Enabled) { level = HealthLevel.Ok; note = "Disabled"; }
             else if (f.LastError != null && (f.LastSuccessAt == null || f.LastAttemptAt > f.LastSuccessAt))
             { level = HealthLevel.Problem; note = "Last import failed"; }

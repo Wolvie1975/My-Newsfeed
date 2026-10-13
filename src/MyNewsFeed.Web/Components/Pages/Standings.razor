@@ -1,0 +1,77 @@
+@page "/standings"
+@layout PublicLayout
+@using MyNewsFeed.Web.Components.Standings
+@inject IDbContextFactory<WebScraperContext> Factory
+@inject FeedDates Dates
+@inject IConfiguration Config
+@inject ILogger<Standings> Log
+
+<PageTitle>Standings · MyNewsFeed</PageTitle>
+<PageHeading Title="Standings" Eyebrow="THE LEAGUE PICTURE" Description="Full league and conference standings, in the provider’s published order." />
+@if (page.Sources.Count > 0)
+{
+    <form class="catselect" method="get" action="standings">
+        <label class="sr-only" for="standings-source">League or sport</label>
+        <select id="standings-source" name="sourceId" onchange="this.form.requestSubmit()">
+            @foreach (var source in page.Sources)
+            { <option value="@source.Id" selected="@(page.Selected?.Id == source.Id)">@source.DisplayName</option> }
+        </select>
+        <noscript><button class="nf-btn nf-btn--secondary" type="submit">Apply</button></noscript>
+    </form>
+}
+@if (page.AvailabilityError is { } unavailable)
+{
+    <p class="empty" role="status">@unavailable <a href="@RetryHref">Try again</a></p>
+}
+else if (page.Selected is null)
+{
+    <p class="empty">No standings sources are enabled.</p>
+}
+else
+{
+    var selected = page.Selected;
+    var rows = page.Groups.SelectMany(g => g.Teams).Select(t => t.Row).ToList();
+    var seasons = rows.Select(r => r.Season).Where(s => !string.IsNullOrWhiteSpace(s)).Distinct().ToList();
+    if (seasons.Count == 0 && selected.LatestSeason is { Length: > 0 } season) seasons.Add(season);
+    <h2>@selected.DisplayName</h2>
+    @if (seasons.Count > 0) { <p class="updated">Published season: @string.Join(" · ", seasons)</p> }
+    <details class="ranking-info"><summary>About these standings</summary>
+    @if (selected.LastSuccessAt is { } refreshed)
+    { <p class="updated">Last refreshed <time datetime="@refreshed.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'")">@Dates.PublishedFull(refreshed)</time></p> }
+    @if (rows.Select(r => FeedQuery.SafeHref(r.SourceUrl)).FirstOrDefault(u => u != null) is { } sourceUrl)
+    { <p><a href="@sourceUrl" target="_blank" rel="noopener noreferrer">View source table ↗</a></p> }
+    <p class="updated">Tables retain the published season and provider order. Refresh times describe collection by MyNewsFeed.</p>
+    </details>
+    @if (page.Groups.Count == 0)
+    { <p class="empty">Standings not available yet.</p> }
+    else
+    {
+        @if (StandingsQuery.Freshness(selected, DateTime.UtcNow) is { } message)
+        { <p class="standing-status" role="status">@message</p> }
+        <div class="standings-view">
+        <label class="ranking-detail-toggle"><input type="checkbox" /> Show all statistics</label>
+        @{ var index = 0; }
+        @foreach (var group in page.Groups)
+        { <StandingsTable Group="group" Provider="@selected.ProviderKey" SourceName="@selected.DisplayName" HeadingId="@($"standings-group-{index++}")" /> }
+        </div>
+    }
+}
+
+@code {
+    [SupplyParameterFromQuery(Name = "sourceId")] private string? SourceId { get; set; }
+    private StandingsPage page = new([], null, []);
+    private string RetryHref => "standings" + (page.Selected is { } source ? $"?sourceId={source.Id}" : "");
+    protected override async Task OnParametersSetAsync()
+    {
+        try
+        {
+            await using var db = await Factory.CreateDbContextAsync();
+            page = await StandingsQuery.GetAsync(db, StandingsQuery.ParseSourceId(SourceId), Log, Dates.Today, Config.GetSection("Standings:HiddenProviders").Get<string[]>());
+        }
+        catch (Exception ex) when (ex is System.Data.Common.DbException or InvalidOperationException)
+        {
+            Log.LogError(ex, "Standings database read failed.");
+            page = new([], null, [], "Standings are temporarily unavailable. Please try again.");
+        }
+    }
+}

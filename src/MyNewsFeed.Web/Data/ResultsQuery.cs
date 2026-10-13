@@ -89,7 +89,7 @@ public static class ResultsQuery
     /// matches every game in it; a followed team matches its games in that league; a followed conference matches the
     /// games of its member schools in that league, non-conference games included.
     /// </summary>
-    public static async Task<ResultsPage> GetResultsAsync(WebScraperContext db, int? followId, int limit = Limit, ResultsWindow? window = null)
+    public static async Task<ResultsPage> GetResultsAsync(WebScraperContext db, int? followId, int limit = Limit, ResultsWindow? window = null, string? team = null)
     {
         var follows = await db.ResultFollows.AsNoTracking()
             .Where(f => f.Enabled && (followId == null || f.Id == followId))
@@ -121,6 +121,11 @@ public static class ResultsQuery
 
         if (window is not null) query = query.Where(g => g.StartsAtUtc >= window.StartUtc && g.StartsAtUtc < window.EndUtc);
 
+        if (!string.IsNullOrWhiteSpace(team))
+        {
+            var aliases = TeamNames.Aliases(team);
+            query = query.Where(g => aliases.Contains(g.HomeName) || aliases.Contains(g.AwayName));
+        }
         var total = await query.CountAsync();
         var rows = await query
             .OrderByDescending(g => g.StartsAtUtc)

@@ -9,26 +9,14 @@
 @* Static (non-interactive) page. Filters are plain links and a GET form, so every view has a shareable URL and works
    without JavaScript; public.js only upgrades "Load more" to append in place. *@
 
-<h1 class="sr-only">Latest articles</h1>
+<PageHeading Title="News" Eyebrow="THE LATEST STORIES" Description="Latest articles from the sources we follow." />
 
-<form class="search" role="search" method="get" action="news">
-    @if (Category is int selected)
-    {
-        <input type="hidden" name="category" value="@selected" />
-    }
-    <div class="search__field">
-        <label class="sr-only" for="q">Search articles</label>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
-        <input id="q" name="q" type="search" placeholder="Search articles" value="@Q" />
-    </div>
-    <button class="nf-btn nf-btn--primary" type="submit">Search</button>
-</form>
 
+<p><a href="box-office">Box Office news →</a></p>
 <div class="filters">
     @if (categories.Count > 0)
     {
-        @* Phones: a dropdown replaces the chips. Picking a category submits the form (keeping the search text);
-           the Apply button, shown only when JavaScript is off, covers that case. Tablet and desktop use the chips. *@
+        @* Selecting a filter submits the form; Apply remains available without JavaScript. *@
         <form class="catselect" method="get" action="news">
             @if (!string.IsNullOrWhiteSpace(Q))
             {
@@ -45,13 +33,6 @@
             <noscript><button class="nf-btn nf-btn--secondary" type="submit">Apply</button></noscript>
         </form>
     }
-    <nav class="chips" aria-label="Categories">
-        <a class="chip" href="@Href(null, null)" aria-current="@(Category is null ? "true" : null)">All</a>
-        @foreach (var category in categories)
-        {
-            <a class="chip" href="@Href(category.Id, null)" aria-current="@(Category == category.Id ? "true" : null)">@category.Name</a>
-        }
-    </nav>
     @if (feed is not null)
     {
         <span class="count count--toolbar">@feed.Total @(feed.Total == 1 ? "article" : "articles")</span>

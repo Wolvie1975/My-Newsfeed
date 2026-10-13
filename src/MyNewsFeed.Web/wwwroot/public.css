@@ -179,7 +179,7 @@
 
 /* Filters */
 .pub .filters { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
-/* Phones use a dropdown (.catselect); the chips are for tablet and desktop. */
+/* Filter navigation uses dropdowns on every screen size. */
 .pub .catselect { display: flex; gap: 8px; flex: 1; min-width: 0; }
 .pub .catselect select {
     flex: 1; min-width: 0; height: 48px; padding: 0 14px;
@@ -224,9 +224,9 @@
 
 .pub .body {
     flex: 1; display: grid; padding: 16px; gap: 8px; align-items: start;
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-areas: "cat" "title" "summary" "src";
-    grid-template-rows: auto auto auto 1fr;
+    grid-template-columns: 22px minmax(0, 1fr) auto auto;
+    grid-template-areas: "cat cat cat cat" "title title title title" "pubdate pubdate pubdate pubdate" "summary summary summary summary" "mark source copy save";
+    grid-template-rows: auto auto auto 1fr auto;
 }
 .pub .cat {
     grid-area: cat; justify-self: start; font-size: 12px; font-weight: 700; letter-spacing: 0.08em;
@@ -243,20 +243,30 @@
 }
 /* The whole title is the link, so the lead's "Read on ..." link is not shown. */
 .pub .more { display: none; }
-.pub .src {
-    grid-area: src; align-self: end; margin: 0; display: flex; align-items: center; gap: 8px;
-    padding-top: 4px; font-size: 14px; color: var(--text-2);
-}
+.pub .src { display: contents; }
 .pub .src__mark {
     display: inline-flex; align-items: center; justify-content: center; flex: none;
     width: 22px; height: 22px; border-radius: 6px;
     background: var(--mark-bg); color: var(--mark-fg); font-size: 11px; font-weight: 700;
 }
-.pub .src__name { min-width: 0; color: var(--text); font-weight: 600; }
-.pub .src time { white-space: nowrap; }
+.pub .src__mark { grid-area: mark; align-self: center; }
+.pub .src__name {
+    grid-area: source; align-self: center; min-width: 0; overflow-wrap: anywhere;
+    font-size: 14px; line-height: 1.5;
+    color: var(--text); font-weight: 600;
+}
+.pub .src__sep { display: none; }
+.pub .src time, .pub .src .publication-unavailable {
+    grid-area: pubdate; min-width: 0; overflow-wrap: anywhere;
+    font-size: 14px; line-height: 1.5; color: var(--text-2);
+}
+.pub .src .pubdate__day, .pub .src .pubdate__time { display: inline-block; }
+.pub .src .copy { grid-area: copy; align-self: center; margin: 0; }
+.pub .src .save { grid-area: save; align-self: center; margin: 0; }
+.pub .article .body > .nf-btn { grid-column: 1 / -1; }
 
 /* Lead card */
-.pub .article--lead .body { padding: 20px; gap: 10px; grid-template-rows: auto auto auto auto; }
+.pub .article--lead .body { padding: 20px; gap: 10px; grid-template-rows: auto auto auto auto auto; }
 .pub .article--lead .title {
     display: block; font-size: 24px; line-height: 1.2; font-weight: 700; letter-spacing: -0.02em;
     text-wrap: balance;
@@ -328,8 +338,7 @@
     .pub .search__field svg { left: 16px; top: 16px; width: 20px; height: 20px; }
     .pub .search input { padding-left: 48px; padding-right: 16px; }
     .pub .nf-btn { padding: 0 28px; }
-    .pub .catselect { display: none; }
-    .pub .chips { display: flex; flex: none; flex-wrap: wrap; }
+    .pub .catselect { display: flex; flex: 0 1 360px; }
 
     .pub .feed { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
     .pub .thumb { aspect-ratio: auto; height: 200px; }
@@ -819,10 +828,10 @@
 }
 
 /* Movie release calendar */
-.pub .movies-heading { margin: 8px 0 28px; }
-.pub .movies-eyebrow { color: var(--accent); font-size: 11px; letter-spacing: .16em; font-weight: 700; }
-.pub .movies-heading h1 { font-size: clamp(32px, 5vw, 48px); margin: 8px 0; letter-spacing: -.04em; }
-.pub .movies-heading > p:last-child { color: var(--text-2); max-width: 650px; line-height: 1.6; }
+.pub .page-heading { margin: 8px 0 12px; }
+.pub .page-eyebrow { color: var(--accent); font-size: 11px; letter-spacing: .16em; font-weight: 700; }
+.pub .page-heading h1 { font-size: clamp(32px, 5vw, 48px); margin: 8px 0; letter-spacing: -.04em; }
+.pub .page-heading > p:last-child { margin-bottom: 0; color: var(--text-2); max-width: 650px; line-height: 1.6; }
 .pub .movies-filters { display: flex; flex-wrap: wrap; gap: 16px; padding: 22px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; align-items: end; }
 .pub .movies-field { flex: 1 1 160px; min-width: 0; }
 .pub .movies-field label { display: block; margin-bottom: 8px; font-size: 12px; font-weight: 700; color: var(--text-2); }
@@ -852,7 +861,7 @@
 
 /* A small crimson accent carries the school palette through dashboard and page headings. */
 .pub .d-card__title { border-left: 3px solid var(--brand-accent); padding-left: 10px; }
-.pub .movies-eyebrow { color: var(--brand-accent); }
+.pub .page-eyebrow { color: var(--brand-accent); }
 
 /* Home: movies form a poster strip on phones and a full-width row on desktop. */
 .pub .d-movies .d-list { display: flex; gap: 16px; padding: 20px; overflow-x: auto; scroll-snap-type: x proximity; scroll-padding-inline: 20px; }
@@ -914,3 +923,70 @@
 .pub .d-tv__credit { border-top: 1px solid var(--row-border); padding: 12px 20px; margin: 0; font-size: 11px; color: var(--text-3); }
 .pub .d-tv__credit a { text-decoration: underline; }
 @media (max-width: 767px) { .pub .d-tv__list { grid-template-columns: 1fr; } }
+
+/* Video channel navigation stays a dropdown at every screen size. */
+.pub .filters--videos .catselect { display: flex; flex: 0 1 360px; }
+
+.pub .favorites-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
+.pub .favorites-toolbar[hidden], .pub [data-team-home][hidden], .pub .group[hidden] { display: none; }
+.pub .favorites-toolbar select { padding: 8px 12px; border-radius: 8px; border: 1px solid var(--field-border); background: var(--surface); color: var(--text); font: inherit; }
+.pub .favorite-list { display: flex; flex-wrap: wrap; gap: 12px; }
+
+.pub .page > .catselect { flex: none; width: min(100%, 360px); }
+
+.pub .league-heading { margin: 16px 12px 8px; font-size: 17px; font-weight: 700; color: var(--text); }
+.pub .score__time { font-size: 12px; font-weight: 400; color: var(--text-2); }
+
+.pub .standings-group { min-width: 0; }
+.pub .standings-scroll { overflow-x: auto; max-width: 100%; border: 1px solid var(--field-border); border-radius: 12px; }
+.pub .standings-scroll:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.pub .standings-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 14px; }
+.pub .standings-table caption { padding: 12px; text-align: left; color: var(--text-2); }
+.pub .standings-table th, .pub .standings-table td { padding: 12px; white-space: nowrap; border-bottom: 1px solid var(--field-border); text-align: right; }
+.pub .standings-table thead th { background: var(--surface); font-weight: 700; }
+.pub .standings-table .standing-team { position: sticky; left: 0; z-index: 1; text-align: left; min-width: 170px; background: var(--surface); }
+.pub .standing-team-name { display: flex; align-items: center; gap: 10px; }
+.pub .standing-team-name img { flex: none; object-fit: contain; }
+.pub .standing-highlight th { border-left: 4px solid var(--accent); }
+.pub .standing-highlight td { font-weight: 700; }
+.pub .standing-notes, .pub .standing-status { font-size: 14px; color: var(--text-2); line-height: 1.6; }
+@media (max-width: 767px) { .pub .standing-team-name { white-space: normal; max-width: 180px; } }
+
+.pub .big12-badge { display: inline-block; padding: 2px 6px; border: 1px solid var(--accent); border-radius: 5px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+.pub .ranking-big12 td, .pub .ranking-big12 .standing-team { background: var(--surface); border-bottom-color: var(--accent); }
+
+/* Rankings prioritize the team list; poll metadata and voting columns are optional. */
+.pub .ranking-date { margin-bottom: 12px; }
+.pub .ranking-info { margin: 12px 0; color: var(--text-2); font-size: 14px; }
+.pub .ranking-info summary { cursor: pointer; padding: 8px 0; color: var(--accent); }
+.pub .ranking-info[open] { padding-bottom: 8px; }
+.pub .ranking-info .updated { margin-top: 6px; }
+.pub .ranking-legend { margin: 12px 0; }
+.pub .ranking-detail-toggle { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--text-2); padding: 12px 0; cursor: pointer; }
+.pub .ranking-detail-toggle input { width: 18px; height: 18px; accent-color: var(--accent); }
+.pub .rankings-table .ranking-extra { display: none; }
+.pub .ranking-view:has(.ranking-detail-toggle input:checked) .ranking-extra { display: table-cell; }
+.pub .rankings-table .standing-team { position: static; }
+@media (max-width: 767px) {
+    .pub .rankings-table { font-size: 13px; }
+    .pub .rankings-table th, .pub .rankings-table td { padding: 10px 8px; }
+    .pub .rankings-table .standing-team { min-width: 0; white-space: normal; }
+    .pub .rankings-table .standing-team-name { flex-wrap: wrap; gap: 6px; max-width: none; }
+    .pub .rankings-table .standing-team-name img { width: 20px; height: 20px; }
+    .pub .rankings-table .standing-team-name a { flex: 1; min-width: 70px; }
+    .pub .rankings-table .big12-badge { font-size: 9px; padding: 2px 4px; }
+    .pub .rankings-table td:last-child { white-space: normal; }
+}
+
+/* Standings: league-specific essentials first, additional statistics on demand. */
+.pub .standings-view .standing-extra { display: none; }
+.pub .standings-view:has(.ranking-detail-toggle input:checked) .standing-extra { display: table-cell; }
+.pub .standings-view .standings-group { margin-top: 20px; }
+@media (max-width: 767px) {
+    .pub .league-standings-table { font-size: 13px; }
+    .pub .league-standings-table th, .pub .league-standings-table td { padding: 10px 7px; }
+    .pub .league-standings-table .standing-team { position: static; min-width: 0; }
+    .pub .league-standings-table .standing-team-name { gap: 6px; max-width: 150px; }
+    .pub .league-standings-table .standing-team-name img { width: 20px; height: 20px; }
+    .pub .league-standings-table .standing-team-name a, .pub .league-standings-table .standing-team-name > span { min-width: 0; overflow-wrap: anywhere; }
+}

@@ -79,7 +79,7 @@ public static class FeedQuery
                 c.CategoryName,
                 Count = db.Pages.Count(p => p.Source.Enabled && p.Source.SourceCategoryId == c.Id),
             })
-            .Where(c => c.Count > 0)
+            .Where(c => db.Sources.Any(s => s.Enabled && s.SourceCategoryId == c.Id))
             .OrderBy(c => c.CategoryName)
             .Select(c => new FeedCategory(c.Id, c.CategoryName, c.Count))
             .ToListAsync();
@@ -100,7 +100,7 @@ public static class FeedQuery
     /// <paramref name="take"/> articles that come after <paramref name="after"/> (or from the start when it is null).
     /// </summary>
     public static async Task<FeedPage> GetFeedAsync(
-        WebScraperContext db, int? categoryId, string? search, FeedCursor? after, int take = FirstBatch)
+        WebScraperContext db, int? categoryId, string? search, FeedCursor? after, int take = FirstBatch, int? sourceId = null)
     {
         var query = Visible(db);
 
@@ -108,6 +108,8 @@ public static class FeedQuery
         {
             query = query.Where(p => p.Source.SourceCategoryId == cid);
         }
+
+        if (sourceId is { } sid) query = query.Where(p => p.SourceId == sid);
 
         var term = search?.Trim();
         if (!string.IsNullOrEmpty(term))
@@ -192,7 +194,7 @@ public static class FeedQuery
             : null;
 
     /// <summary>Builds the query string that keeps the current filters. Empty when nothing is set.</summary>
-    public static string QueryString(int? categoryId, string? search, string? after)
+    public static string QueryString(int? categoryId, string? search, string? after, int? sourceId = null)
     {
         var parts = new List<string>();
         if (categoryId is int id)
@@ -204,6 +206,8 @@ public static class FeedQuery
         {
             parts.Add($"q={Uri.EscapeDataString(search.Trim())}");
         }
+
+        if (sourceId is { } sid) parts.Add($"source={sid}");
 
         if (after is not null)
         {

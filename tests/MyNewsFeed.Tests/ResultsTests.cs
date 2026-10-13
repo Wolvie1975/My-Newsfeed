@@ -292,7 +292,7 @@ public class ResultsTests
 
     private static async Task<string> RenderAsync(ResultItem item)
     {
-        var services = new ServiceCollection().AddLogging().BuildServiceProvider();
+        var services = new ServiceCollection().AddLogging().AddSingleton(FeedDates.Create("America/Chicago")).BuildServiceProvider();
         await using var renderer = new HtmlRenderer(services, services.GetRequiredService<ILoggerFactory>());
         return await renderer.Dispatcher.InvokeAsync(async () =>
         {

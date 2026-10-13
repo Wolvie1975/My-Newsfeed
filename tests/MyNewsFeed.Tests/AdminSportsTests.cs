@@ -187,4 +187,39 @@ public class AdminSportsTests
         Assert.False(await db.SportsEvents.AnyAsync(e => e.Url.Contains("test.invalid")));
         Assert.False(await db.SportsEventsTypes.AnyAsync(t => t.RssUrl.Contains("test.invalid")));
     }
+    [Fact]
+    public async Task Protected_events_cannot_be_deleted_or_reassigned_and_legacy_events_still_can()
+    {
+        await using var db = Create();
+        await using var tx = await db.Database.BeginTransactionAsync();
+        var tag = Tag();
+        var legacyType = Type($"legacy{tag}.test.invalid");
+        var providerType = Type($"provider{tag}.test.invalid");
+        providerType.ProviderKey = "test-provider";
+        var legacy = Event($"legacy{tag}.test.invalid", 1, legacyType);
+        var provider = Event($"provider{tag}.test.invalid", 2, providerType);
+        provider.ProviderKey = "test-provider";
+        var shared = Event($"shared{tag}.test.invalid", 3, legacyType);
+        db.AddRange(legacy, provider, shared);
+        await db.SaveChangesAsync();
+        db.SportsEventSources.Add(new SportsEventSource { SportsEventId = shared.Id,
+            SportsEventsTypeId = legacyType.Id, ProviderGameId = 3, SourceUrl = shared.Url,
+            FirstSeenAt = DateTime.UtcNow, LastSeenAt = DateTime.UtcNow });
+        await db.SaveChangesAsync();
+        foreach (var game in new[] { provider, shared })
+        {
+            await Assert.ThrowsAsync<InvalidOperationException>(() => AdminData.DeleteSportsEventAsync(db, game.Id));
+            await Assert.ThrowsAsync<InvalidOperationException>(() => AdminData.AssignSportsEventTypeAsync(db, game.Id, legacyType.Id));
+            await Assert.ThrowsAsync<InvalidOperationException>(() => AdminData.AssignSportsEventTypeAsync(db, game.Id, null));
+            Assert.True(await db.SportsEvents.AnyAsync(e => e.Id == game.Id));
+        }
+        await Assert.ThrowsAsync<InvalidOperationException>(() => AdminData.AssignSportsEventTypeAsync(db, legacy.Id, providerType.Id));
+        Assert.True(await AdminData.AssignSportsEventTypeAsync(db, legacy.Id, null));
+        Assert.Null(await db.SportsEvents.Where(e => e.Id == legacy.Id).Select(e => e.SportsEventsTypeId).SingleAsync());
+        Assert.True(await AdminData.AssignSportsEventTypeAsync(db, legacy.Id, legacyType.Id));
+        Assert.True(await AdminData.DeleteSportsEventAsync(db, legacy.Id));
+        Assert.False(await AdminData.DeleteSportsEventAsync(db, legacy.Id));
+        Assert.False(await AdminData.AssignSportsEventTypeAsync(db, legacy.Id, legacyType.Id));
+    }
+
 }
