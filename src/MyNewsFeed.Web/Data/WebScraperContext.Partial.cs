@@ -20,6 +20,7 @@ public partial class WebScraperContext
 
     public DbSet<SportsStandingsSource> SportsStandingsSources { get; set; }
     public DbSet<SportsStanding> SportsStandings { get; set; }
+    public DbSet<SportsMatchResult> SportsMatchResults { get; set; }
 
     public DbSet<SportsEventSource> SportsEventSources { get; set; }
 

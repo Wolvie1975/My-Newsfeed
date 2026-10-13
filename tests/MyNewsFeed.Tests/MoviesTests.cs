@@ -49,6 +49,12 @@ public class MoviesTests
         Assert.Equal(4, firstPage.Items.Concat(secondPage.Items).Select(i => i.Id).Distinct().Count());
         Assert.Empty((await MoviesQuery.GetAsync(db, today, tag, null, null, "all", offset: 4, take: 2)).Items);
         Assert.Single((await MoviesQuery.GetAsync(db, today, tag, null, null, null, onDate: today)).Items);
+        var vod = Release("vod", today); vod.ReleaseType = "digital";
+        db.Add(vod); await db.SaveChangesAsync();
+        var timeline = await MoviesQuery.GetTodayTimelineAsync(db, today);
+        Assert.Single(timeline, item => item.Title == tag);
+        Assert.DoesNotContain(timeline, item => item.Type is "digital" or "digital_rental" or "digital_purchase");
+        await db.MovieReleases.Where(r => r.ID == vod.ID).ExecuteDeleteAsync();
         Assert.Empty((await MoviesQuery.GetAsync(db, today, tag, "disc", null, "all")).Items);
         Assert.Empty((await MoviesQuery.GetAsync(db, today, tag, null, "Another platform", "all")).Items);
         var dvd = Release("dvd", today); dvd.ReleaseType = "disc"; dvd.Format = "DVD";

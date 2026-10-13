@@ -1,0 +1,24 @@
+@inject IDbContextFactory<WebScraperContext> Factory
+@if (Provider is "espn-championship" or "espn-epl")
+{
+    <nav class="tv-week soccer-league-links" aria-label="League views">
+        @if (scheduleId is { } feed) { <a class="nf-btn nf-btn--secondary" href="events?school=@feed">Schedule</a> }
+        @if (tableId is { } table) { <a class="nf-btn nf-btn--secondary" href="standings?sourceId=@table">Table</a> }
+        @if (Provider == "espn-championship" && scheduleId is not null) { <a class="nf-btn nf-btn--secondary" href="championship/results">Season results</a> }
+    </nav>
+}
+@code {
+    [Parameter] public string? Provider { get; set; }
+    private int? scheduleId;
+    private int? tableId;
+    protected override async Task OnParametersSetAsync()
+    {
+        scheduleId = tableId = null;
+        if (Provider is not ("espn-championship" or "espn-epl")) return;
+        await using var db = await Factory.CreateDbContextAsync();
+        scheduleId = await db.SportsEventsTypes.AsNoTracking().Where(s => s.Enabled && s.ProviderKey == Provider)
+            .OrderBy(s => s.Id).Select(s => (int?)s.Id).FirstOrDefaultAsync();
+        tableId = await db.SportsStandingsSources.AsNoTracking().Where(s => s.Enabled && s.ProviderKey == Provider)
+            .OrderBy(s => s.Id).Select(s => (int?)s.Id).FirstOrDefaultAsync();
+    }
+}

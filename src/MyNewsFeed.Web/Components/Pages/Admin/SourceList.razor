@@ -17,7 +17,7 @@
 <div class="row mb-3">
     <div class="col-md-4">
         <label for="category" class="visually-hidden">Category</label>
-        <select id="category" class="form-select" @bind="categoryFilter" @bind:after="LoadAsync">
+        <select id="category" class="form-select" @bind="categoryFilter" @bind:after="ResetAndLoadAsync">
             <option value="">All categories</option>
             <option value="none">Uncategorized</option>
             @foreach (var category in categories)
@@ -120,7 +120,21 @@ else
     </div>
 }
 
+<AdminPager Total="totalRows" PageIndex="pageIndex" PageSize="PageSize" Busy="paging" PageChanged="ChangePageAsync" />
+
 @code {
+    private const int PageSize = 25;
+    private int pageIndex;
+    private int totalRows;
+    private bool paging;
+    private async Task ChangePageAsync(int value)
+    {
+        if (paging) return;
+        paging = true;
+        try { pageIndex = Math.Max(0, value); pendingDelete = null; await LoadAsync(); }
+        finally { paging = false; }
+    }
+
     private sealed record SourceRow(
         int Id, string Url, string? Label, bool Enabled, DateTime? LastScrapedAt, string? LastError, int PageCount, string? CategoryName)
     {
@@ -152,6 +166,8 @@ else
         await LoadAsync();
     }
 
+    private Task ResetAndLoadAsync() { pageIndex = 0; pendingDelete = null; return LoadAsync(); }
+
     private async Task LoadAsync()
     {
         await using var db = await Factory.CreateDbContextAsync();
@@ -165,9 +181,12 @@ else
             query = query.Where(s => s.SourceCategoryId == categoryId);
         }
 
+        totalRows = await query.CountAsync();
+        pageIndex = Math.Min(pageIndex, Math.Max(0, (totalRows - 1) / PageSize));
         rows = await query
             .AsNoTracking()
-            .OrderBy(s => s.Label ?? s.Url)
+            .OrderBy(s => s.Label ?? s.Url).ThenBy(s => s.Id)
+            .Skip(pageIndex * PageSize).Take(PageSize)
             .Select(s => new SourceRow(s.Id, s.Url, s.Label, s.Enabled, s.LastScrapedAt, s.LastError, s.Pages.Count,
                 s.SourceCategory != null ? s.SourceCategory.CategoryName : null))
             .ToListAsync();

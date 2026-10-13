@@ -34,6 +34,8 @@ else
     var seasons = rows.Select(r => r.Season).Where(s => !string.IsNullOrWhiteSpace(s)).Distinct().ToList();
     if (seasons.Count == 0 && selected.LatestSeason is { Length: > 0 } season) seasons.Add(season);
     <h2>@selected.DisplayName</h2>
+    <SoccerLeagueLinks Provider="@selected.ProviderKey" />
+    @if (selected.ProviderKey == "espn-championship") { <p class="updated">Wrexham AFC is highlighted; the full league table remains visible.</p> }
     @if (seasons.Count > 0) { <p class="updated">Published season: @string.Join(" · ", seasons)</p> }
     <details class="ranking-info"><summary>About these standings</summary>
     @if (selected.LastSuccessAt is { } refreshed)

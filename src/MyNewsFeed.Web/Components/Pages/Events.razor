@@ -12,6 +12,7 @@
 <PageHeading Title="Sports Events" Eyebrow="YOUR SPORTS CALENDAR" Description="Upcoming games, start times, venues, and broadcasts." />
 
 <form class="event-school-filter" method="get" action="events">
+    @if (selectedProvider == "espn-championship" && Team == 352) { <input type="hidden" name="team" value="352" /> }
     @if (!string.IsNullOrWhiteSpace(Sport)) { <input type="hidden" name="sport" value="@Sport" /> }
     <label for="school">Schedule</label>
     <select id="school" name="school">
@@ -20,12 +21,23 @@
     </select>
     <button class="nf-btn nf-btn--secondary" type="submit">Apply</button>
 </form>
+<SoccerLeagueLinks Provider="@selectedProvider" />
+@if (selectedProvider == "espn-championship")
+{
+    <form class="ranking-detail-toggle" method="get" action="events">
+        <input type="hidden" name="school" value="@School" />
+        @if (!string.IsNullOrWhiteSpace(Sport)) { <input type="hidden" name="sport" value="@Sport" /> }
+        <label><input type="checkbox" name="team" value="352" checked="@(Team == 352)" onchange="this.form.requestSubmit()" /> Wrexham AFC only</label>
+        <noscript><button class="nf-btn nf-btn--secondary" type="submit">Apply</button></noscript>
+    </form>
+}
 <div class="filters">
     @if (sports.Count > 0)
     {
         @* Selecting a filter submits the form; Apply remains available without JavaScript. *@
         <form class="catselect" method="get" action="events">
             @if (School is not null) { <input type="hidden" name="school" value="@School" /> }
+            @if (selectedProvider == "espn-championship" && Team == 352) { <input type="hidden" name="team" value="352" /> }
             <label class="sr-only" for="sport">Sport</label>
             <select id="sport" name="sport" onchange="this.form.requestSubmit()">
                 <option value="">All sports</option>
@@ -113,7 +125,11 @@ else
 
     @if (listing.Total > listing.Items.Count)
     {
-        <p class="count">Showing the next @listing.Items.Count of @listing.Total events.</p>
+        <nav class="tv-week" aria-label="Schedule pages">
+            @if (pageIndex > 0) { <a class="nf-btn nf-btn--secondary" href="@PageHref(pageIndex - 1)">← Earlier</a> }
+            <span>Page @(pageIndex + 1) of @((listing.Total + EventsQuery.Limit - 1) / EventsQuery.Limit)</span>
+            @if ((pageIndex + 1) * EventsQuery.Limit < listing.Total) { <a class="nf-btn nf-btn--secondary" href="@PageHref(pageIndex + 1)">Later →</a> }
+        </nav>
     }
 }
 
@@ -121,6 +137,11 @@ else
     [SupplyParameterFromQuery(Name = "sport")] private string? Sport { get; set; }
 
     [SupplyParameterFromQuery(Name = "school")] private int? School { get; set; }
+    [SupplyParameterFromQuery(Name = "team")] private int? Team { get; set; }
+    [SupplyParameterFromQuery(Name = "page")] private string? Page { get; set; }
+    private int pageIndex;
+    private string PageHref(int page) => "events?page=" + page + (School is { } school ? "&school=" + school : "") + (!string.IsNullOrWhiteSpace(Sport) ? "&sport=" + Uri.EscapeDataString(Sport) : "") + (selectedProvider == "espn-championship" && Team == 352 ? "&team=352" : "");
+    private string? selectedProvider;
     private IReadOnlyList<EventSchool> schools = [];
 
     private IReadOnlyList<string> sports = [];
@@ -133,8 +154,11 @@ else
         var today = FeedDates.Create("America/Chicago").Today;
         await using var db = await Factory.CreateDbContextAsync();
         schools = await EventsQuery.GetSchoolsAsync(db);
+        selectedProvider = await db.SportsEventsTypes.AsNoTracking().Where(s => s.Enabled && s.Id == School).Select(s => s.ProviderKey).FirstOrDefaultAsync();
         sports = await EventsQuery.GetSportsAsync(db, today, School);
-        listing = await EventsQuery.GetUpcomingAsync(db, today, Sport, null, school: School);
+        pageIndex = int.TryParse(Page, out var page) ? Math.Clamp(page, 0, 10000) : 0;
+        listing = await EventsQuery.GetUpcomingAsync(db, today, Sport, null, school: School, providerTeamId: selectedProvider == "espn-championship" && Team == 352 ? 352 : null, offset: pageIndex * EventsQuery.Limit);
+        pageIndex = Math.Min(pageIndex, Math.Max(0, (listing.Total - 1) / EventsQuery.Limit));
         lastUpdated = await EventsQuery.GetLastUpdatedAsync(db);
     }
 

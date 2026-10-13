@@ -204,6 +204,7 @@ public class EventsTests
 
         Assert.Equal(2, page.Items.Count);
         Assert.Equal(3, page.Total);
+        Assert.Single((await EventsQuery.GetUpcomingAsync(db, day, null, token, limit: 2, offset: 2)).Items);
     }
 
     [Fact]
@@ -309,6 +310,38 @@ public class EventsTests
         await db.SaveChangesAsync();
         Assert.Empty((await EventsQuery.GetUpcomingAsync(db, today, null, tag)).Items);
     }
+    [Fact]
+    public async Task English_schedules_scope_team_ids_and_hide_final_disabled_and_past_games()
+    {
+        await using var db = Create();
+        await using var tx = await BeginScheduleTransactionAsync(db);
+        var token = Tag(); var day = new DateOnly(2031, 3, 4);
+        var championship = new SportsEventsType { EventsTypeName = token, RssUrl = $"https://test.invalid/{token}/championship", ProviderKey = "espn-championship", Enabled = true };
+        var epl = new SportsEventsType { EventsTypeName = token, RssUrl = $"https://test.invalid/{token}/epl", ProviderKey = "espn-epl", Enabled = true };
+        SportsEvent Match(string name, int home, int away, string? status = null)
+        {
+            var game = Game(token, name, day); game.SportsEventsType = championship; game.ProviderKey = "espn-championship";
+            game.SchoolId = home; game.OpponentSchoolId = away; game.SchoolName = name; game.Opponent = "Away";
+            game.ScheduleStatus = status; game.IsAway = true; return game;
+        }
+        var home = Match("Wrexham home", 352, 1); home.TimeTbd = true;
+        var away = Match("Wrexham away", 1, 352);
+        var other = Match("Other league", 352, 2); other.ProviderKey = "espn-epl"; other.SportsEventsType = epl;
+        var past = Match("Past", 352, 1); past.EventDate = day.AddDays(-1);
+        db.AddRange(home, away, other, past, Match("Final", 352, 1, "STATUS_FINAL_PEN"), Match("Canceled", 352, 1, "STATUS_CANCELED"), Match("Unnecessary", 352, 1, "STATUS_UNNECESSARY"));
+        await db.SaveChangesAsync();
+        var focused = await EventsQuery.GetUpcomingAsync(db, day, null, token, providerTeamId: 352);
+        Assert.Equal(2, focused.Total); Assert.All(focused.Items, item => Assert.False(item.IsAway));
+        Assert.Equal(day, focused.Items.Single(item => item.Id == home.Id).EventDate);
+        Assert.Equal("Time TBD", EventsText.TimeLabel(focused.Items.Single(item => item.Id == home.Id), FeedDates.Create("America/Chicago")));
+        Assert.Equal(3, (await EventsQuery.GetUpcomingAsync(db, day, null, token)).Total);
+        var selectors = await EventsQuery.GetSchoolsAsync(db);
+        Assert.Contains(selectors, source => source.Id == championship.Id && source.Name == "EFL Championship");
+        Assert.Contains(selectors, source => source.Id == epl.Id && source.Name == "Premier League");
+        championship.Enabled = false; await db.SaveChangesAsync();
+        Assert.Empty((await EventsQuery.GetUpcomingAsync(db, day, null, token, providerTeamId: 352)).Items);
+    }
+
     [Fact]
     public async Task Professional_schedules_filter_status_dates_and_provider_identity()
     {

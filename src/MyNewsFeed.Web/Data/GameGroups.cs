@@ -6,6 +6,8 @@ public static class GameGroups
 {
     public static string ScheduleLeague(EventItem game) => game.ProviderKey switch
     {
+        "espn-championship" => "EFL Championship",
+        "espn-epl" => "Premier League",
         "espn-mlb" => "MLB",
         "espn-nwsl" => "NWSL",
         "espn-wnba" => "WNBA",

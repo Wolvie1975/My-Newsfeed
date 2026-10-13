@@ -7,7 +7,8 @@
 <input type="checkbox" title="Navigation menu" class="navbar-toggler" />
 
 <div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
-    <nav class="nav flex-column">
+    <nav class="nav flex-column" aria-label="Administration">
+        <div class="admin-nav-group">Overview</div>
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="admin" Match="NavLinkMatch.All">
                 <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
@@ -22,6 +23,7 @@
                     </NavLink>
                 </div>
 
+                <div class="admin-nav-group">News</div>
                 <div class="nav-item px-3">
                     <NavLink class="nav-link" href="admin/sources">
                         <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Sources
@@ -40,6 +42,7 @@
                     </NavLink>
                 </div>
 
+                <div class="admin-nav-group">Videos</div>
                 <div class="nav-item px-3">
                     <NavLink class="nav-link" href="admin/youtube-feeds">
                         <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> YouTube feeds
@@ -52,6 +55,7 @@
                     </NavLink>
                 </div>
 
+                <div class="admin-nav-group">Sports</div>
                 <div class="nav-item px-3">
                     <NavLink class="nav-link" href="admin/sports-event-types">
                         <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Sports event types
@@ -70,6 +74,7 @@
                     </NavLink>
                 </div>
 
+                <div class="admin-nav-group">Television</div>
                 <div class="nav-item px-3">
                     <NavLink class="nav-link" href="admin/tv-series"><span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> TV series</NavLink>
                 </div>

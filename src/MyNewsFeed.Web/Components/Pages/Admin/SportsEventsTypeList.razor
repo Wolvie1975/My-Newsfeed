@@ -115,7 +115,21 @@ else
     </div>
 }
 
+<AdminPager Total="totalRows" PageIndex="pageIndex" PageSize="PageSize" Busy="paging" PageChanged="ChangePageAsync" />
+
 @code {
+    private const int PageSize = 25;
+    private int pageIndex;
+    private int totalRows;
+    private bool paging;
+    private async Task ChangePageAsync(int value)
+    {
+        if (paging) return;
+        paging = true;
+        try { pageIndex = Math.Max(0, value); pendingDelete = null; await LoadAsync(); }
+        finally { paging = false; }
+    }
+
     private sealed record TypeRow(int Id, string RssUrl, string EventsTypeName, string? SchoolName, DateTime DateAdded, int EventCount, bool Enabled, DateTime? LastSuccessAt, string? ProviderKey);
 
     private List<TypeRow>? rows;
@@ -131,9 +145,12 @@ else
     private async Task LoadAsync()
     {
         await using var db = await Factory.CreateDbContextAsync();
+        totalRows = await db.SportsEventsTypes.CountAsync();
+        pageIndex = Math.Min(pageIndex, Math.Max(0, (totalRows - 1) / PageSize));
         rows = await db.SportsEventsTypes
             .AsNoTracking()
-            .OrderBy(t => t.EventsTypeName)
+            .OrderBy(t => t.EventsTypeName).ThenBy(t => t.Id)
+            .Skip(pageIndex * PageSize).Take(PageSize)
             .Select(t => new TypeRow(t.Id, t.RssUrl, t.EventsTypeName, t.SchoolName, t.DateAdded, db.SportsEvents.Count(e => e.SportsEventsTypeId == t.Id || e.EventSources.Any(s => s.SportsEventsTypeId == t.Id)), t.Enabled, t.LastSuccessAt, t.ProviderKey))
             .ToListAsync();
 

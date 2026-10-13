@@ -29,7 +29,21 @@ else
         </tbody>
     </table></div>
 }
+<AdminPager Total="totalRows" PageIndex="pageIndex" PageSize="PageSize" Busy="paging" PageChanged="ChangePageAsync" />
+
 @code {
+    private const int PageSize = 25;
+    private int pageIndex;
+    private int totalRows;
+    private bool paging;
+    private async Task ChangePageAsync(int value)
+    {
+        if (paging) return;
+        paging = true;
+        try { pageIndex = Math.Max(0, value);  await LoadAsync(); }
+        finally { paging = false; }
+    }
+
     private List<TvTrackedSeries>? rows;
     private bool busy;
     private string? error;
@@ -37,7 +51,9 @@ else
     private async Task LoadAsync()
     {
         await using var db = await Factory.CreateDbContextAsync();
-        rows = await db.TvTrackedSeries.AsNoTracking().Include(t => t.Series).OrderByDescending(t => t.Enabled).ThenBy(t => t.ExpectedTitle).ToListAsync();
+        totalRows = await db.TvTrackedSeries.CountAsync();
+        pageIndex = Math.Min(pageIndex, Math.Max(0, (totalRows - 1) / PageSize));
+        rows = await db.TvTrackedSeries.AsNoTracking().Include(t => t.Series).OrderByDescending(t => t.Enabled).ThenBy(t => t.ExpectedTitle).ThenBy(t => t.Id).Skip(pageIndex * PageSize).Take(PageSize).ToListAsync();
     }
     private async Task ToggleAsync(TvTrackedSeries row)
     {

@@ -32,12 +32,12 @@ public static class EventsQuery
     private static IQueryable<Models.SportsEvent> Visible(WebScraperContext db) => db.SportsEvents.AsNoTracking()
         .Where(e => e.ScheduleStatus == null ||
             (e.ScheduleStatus != "STATUS_CANCELED" && e.ScheduleStatus != "STATUS_CANCELLED"
-             && e.ScheduleStatus != "STATUS_FULL_TIME" && !e.ScheduleStatus.StartsWith("STATUS_FINAL")))
-        .Where(e => e.ProviderKey == "espn-nwsl" || e.ProviderKey == "espn-wnba" || e.ProviderKey == "espn-mlb"
+             && e.ScheduleStatus != "STATUS_UNNECESSARY" && e.ScheduleStatus != "STATUS_FULL_TIME" && !e.ScheduleStatus.StartsWith("STATUS_FINAL")))
+        .Where(e => e.ProviderKey == "espn-nwsl" || e.ProviderKey == "espn-wnba" || e.ProviderKey == "espn-mlb" || e.ProviderKey == "espn-championship" || e.ProviderKey == "espn-epl"
             ? e.SportsEventsType != null && e.SportsEventsType.Enabled
                 && e.SportsEventsType.ProviderKey == e.ProviderKey
                 && (e.ProviderKey == "espn-nwsl" ? e.SportsEventsType.ProviderSchoolId == 20907
-                    : e.SportsEventsType.ProviderSchoolId == 0)
+                    : e.ProviderKey == "espn-championship" || e.ProviderKey == "espn-epl" || e.SportsEventsType.ProviderSchoolId == 0)
             : e.EventSources.Any(s => s.Feed.Enabled)
                 || (!e.EventSources.Any() && (e.SportsEventsType == null || e.SportsEventsType.Enabled)));
 
@@ -52,8 +52,8 @@ public static class EventsQuery
     }
 
     public static async Task<IReadOnlyList<EventSchool>> GetSchoolsAsync(WebScraperContext db) =>
-        await db.SportsEventsTypes.AsNoTracking().Where(t => t.Enabled && (t.SchoolName != null || t.ProviderKey == "espn-nwsl" || t.ProviderKey == "espn-wnba" || t.ProviderKey == "espn-mlb"))
-            .OrderBy(t => t.SchoolName).Select(t => new EventSchool(t.Id, t.ProviderKey == "espn-mlb" ? "MLB" : t.ProviderKey == "espn-wnba" ? "WNBA" : t.ProviderKey == "espn-nwsl" ? "Kansas City Current" : t.SchoolName!)).ToListAsync();
+        await db.SportsEventsTypes.AsNoTracking().Where(t => t.Enabled && (t.SchoolName != null || t.ProviderKey == "espn-nwsl" || t.ProviderKey == "espn-wnba" || t.ProviderKey == "espn-mlb" || t.ProviderKey == "espn-championship" || t.ProviderKey == "espn-epl"))
+            .OrderBy(t => t.SchoolName).Select(t => new EventSchool(t.Id, t.ProviderKey == "espn-championship" ? "EFL Championship" : t.ProviderKey == "espn-epl" ? "Premier League" : t.ProviderKey == "espn-mlb" ? "MLB" : t.ProviderKey == "espn-wnba" ? "WNBA" : t.ProviderKey == "espn-nwsl" ? "Kansas City Current" : t.SchoolName!)).ToListAsync();
 
     /// <summary>A safety cap on one page; a season is far smaller than this.</summary>
     public const int Limit = 200;
@@ -82,7 +82,7 @@ public static class EventsQuery
     /// with a known start time come before games whose time is still to be announced.
     /// </summary>
     public static async Task<EventsPage> GetUpcomingAsync(
-        WebScraperContext db, DateOnly today, string? sport, string? search, int limit = Limit, int? school = null, DateOnly? from = null, DateOnly? to = null, string? team = null)
+        WebScraperContext db, DateOnly today, string? sport, string? search, int limit = Limit, int? school = null, DateOnly? from = null, DateOnly? to = null, string? team = null, int? providerTeamId = null, int offset = 0)
     {
         var query = InStartedSeasons(db, today).Where(e => e.EventDate >= today && (from == null || e.EventDate >= from) && (to == null || e.EventDate <= to));
         if (school is { } schoolId)
@@ -113,16 +113,19 @@ public static class EventsQuery
             query = query.Where(e => aliases.Contains(e.SchoolName!) || aliases.Contains(e.Opponent!)
                 || (e.SchoolName == null && e.SportsEventsType != null && aliases.Contains(e.SportsEventsType.SchoolName!)));
         }
+        if (providerTeamId == 352)
+            query = query.Where(e => e.ProviderKey == "espn-championship" && (e.SchoolId == 352 || e.OpponentSchoolId == 352));
         var total = await query.CountAsync();
+        offset = limit > 0 ? Math.Clamp(offset, 0, Math.Max(0, (total - 1) / limit) * limit) : 0;
         var items = await query
             .OrderBy(e => e.EventDate)
             .ThenBy(e => e.StartsAtUtc == null ? 1 : 0)
             .ThenBy(e => e.StartsAtUtc)
             .ThenBy(e => e.Sport)
             .ThenBy(e => e.Id)
-            .Take(limit)
+            .Skip(offset).Take(limit)
             .Select(e => new EventItem(
-                e.Id, e.Url, e.Title, e.Sport, e.Opponent, e.IsAway, e.Location, e.EventDate, e.StartsAtUtc, e.TimeTbd,
+                e.Id, e.Url, e.Title, e.Sport, e.Opponent, e.ProviderKey == "espn-championship" || e.ProviderKey == "espn-epl" ? false : e.IsAway, e.Location, e.EventDate, e.StartsAtUtc, e.TimeTbd,
                 e.Tv, e.StreamUrl, e.LiveStatsUrl, e.TeamLogoUrl, e.OpponentLogoUrl,
                 e.SchoolName ?? (e.SportsEventsType != null ? e.SportsEventsType.SchoolName : null), e.IsNeutral, e.Radio, e.AudioUrl, e.ScheduleStatus, e.ProviderKey ?? (e.SportsEventsType != null ? e.SportsEventsType.ProviderKey : null)))
             .ToListAsync();

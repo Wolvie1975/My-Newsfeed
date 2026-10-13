@@ -1,7 +1,7 @@
 @using MyNewsFeed.Web.Data
 
 @{
-    var showRank = (Provider is "espn-nwsl" or "espn-mls") && Group.Teams.Any(t => t.Row.Rank != null);
+    var showRank = (Provider is "espn-nwsl" or "espn-mls" or "espn-championship" or "espn-epl") && Group.Teams.Any(t => t.Row.Rank != null);
 }
 <section class="standings-group" aria-labelledby="@HeadingId">
     <h3 id="@HeadingId">@Group.Name</h3>
@@ -17,7 +17,7 @@
             @foreach (var team in Group.Teams)
             {
                 var row = team.Row;
-                var highlight = Provider == "espn-nwsl" && row.TeamId == "20907";
+                var highlight = (Provider == "espn-nwsl" && row.TeamId == "20907") || (Provider == "espn-championship" && row.TeamId == "352");
                 <tr class="@(highlight ? "standing-highlight" : null)">
                     <th scope="row" class="standing-team">
                         <span class="standing-team-name">
@@ -51,7 +51,7 @@
     {
         "espn-nfl" => column.Name is "wins" or "losses" or "ties" or "winPercent",
         "espn-mlb" or "espn-wnba" => column.Name is "wins" or "losses" or "winPercent",
-        "espn-nwsl" or "espn-mls" => column.Name is "wins" or "ties" or "losses" or "points",
+        "espn-nwsl" or "espn-mls" or "espn-championship" or "espn-epl" => column.Name is "wins" or "ties" or "losses" or "points",
         _ => Group.Columns.Take(3).Contains(column)
     };
 

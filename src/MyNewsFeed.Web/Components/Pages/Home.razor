@@ -70,7 +70,7 @@
                                     {
                                         <a class="d-cat" href="news?category=@item.CategoryId">@item.CategoryName</a>
                                     }
-                                    <MyNewsFeed.Web.Components.Feed.CopyLinkButton Url="@item.Url" Title="@(title.Length > 0 ? title : item.Title)" />
+                                    <MyNewsFeed.Web.Components.Feed.ShareButton Url="@item.Url" Title="@(title.Length > 0 ? title : item.Title)" />
                                     <MyNewsFeed.Web.Components.Feed.SaveButton Item="item" Title="@(title.Length > 0 ? title : item.Title)" Source="@sourceName" Summary="@summary" />
                                 </span>
                             </div>
@@ -320,11 +320,11 @@
         news = await FeedQuery.GetLatestPerSourceAsync(db, HomeNewsCount);
         videos = await VideosQuery.GetLatestPerChannelAsync(db);
         movies = await MoviesQuery.GetFridayTheatricalAsync(db, Dates.TodayAt(nowUtc));
-        digitalData = await DigitalReleasesQuery.GetAsync(db, Dates.TodayAt(nowUtc), null);
-        digitalMovies = digitalData.Items.Take(5).ToList();
+        digitalData = await DigitalReleasesQuery.GetAsync(db, Dates.TodayAt(nowUtc), null, take: 5);
+        digitalMovies = digitalData.Items;
         episodes = await TvQuery.GetOnDateAsync(db, Dates, Dates.TodayAt(nowUtc));
-        var releasedToday = await MoviesQuery.GetAsync(db, Dates.TodayAt(nowUtc), null, null, null, null, onDate: Dates.TodayAt(nowUtc), take: 200);
-        tonight = TodayTonight.Build(todays, episodes, releasedToday.Items, Dates);
+        var releasedToday = await MoviesQuery.GetTodayTimelineAsync(db, Dates.TodayAt(nowUtc));
+        tonight = TodayTonight.Build(todays, episodes, releasedToday, Dates);
     }
 
     private const int HomeNewsCount = 5;

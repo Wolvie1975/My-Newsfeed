@@ -65,11 +65,11 @@ public static class StandingsQuery
                 new("winPercent", "Pct"), new("pointsFor", "PF"),
                 new("pointsAgainst", "PA"), new("pointDifferential", "Diff"),
                 new("streak", "Streak")];
-        if (provider is not ("espn-mlb" or "espn-wnba" or "espn-nwsl" or "espn-mls"))
+        if (provider is not ("espn-mlb" or "espn-wnba" or "espn-nwsl" or "espn-mls" or "espn-championship" or "espn-epl"))
             return teams.SelectMany(t => t.Statistics).DistinctBy(s => s.Name)
                 .Select(s => new StandingColumn(s.Name, string.IsNullOrWhiteSpace(s.DisplayName) ? s.Name : s.DisplayName)).ToList();
-        return provider is "espn-nwsl" or "espn-mls"
-            ? [new("gamesPlayed", "GP"), new("wins", "W"), new("ties", "D"), new("losses", "L"),
+        return provider is "espn-nwsl" or "espn-mls" or "espn-championship" or "espn-epl"
+            ? [new("gamesPlayed", provider is "espn-championship" or "espn-epl" ? "P" : "GP"), new("wins", "W"), new("ties", "D"), new("losses", "L"),
                 new("pointsFor", "GF"), new("pointsAgainst", "GA"), new("pointDifferential", "GD"), new("points", "Pts")]
             : [new("wins", "W"), new("losses", "L"), new("winPercent", "Pct"), new("gamesBehind", "GB"), new("streak", "Streak")];
     }

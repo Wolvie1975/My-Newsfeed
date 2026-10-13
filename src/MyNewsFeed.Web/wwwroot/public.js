@@ -90,16 +90,19 @@
 
     function text(value) { return typeof value === 'string' ? value : ''; }
 
+    var savedCache = null;
     function readSaved() {
+        if (savedCache !== null) return savedCache;
         if (!storageOk) return [];
         try {
             var list = JSON.parse(localStorage.getItem(SAVED_KEY) || '[]');
-            return Array.isArray(list) ? list.filter(function (a) { return a && safeUrl(a.url); }) : [];
+            savedCache = Array.isArray(list) ? list.filter(function (a) { return a && safeUrl(a.url); }) : [];
+            return savedCache;
         } catch (e) { return []; }
     }
 
     function writeSaved(list) {
-        try { localStorage.setItem(SAVED_KEY, JSON.stringify(list.slice(0, SAVED_MAX))); return true; }
+        try { var trimmed = list.slice(0, SAVED_MAX); localStorage.setItem(SAVED_KEY, JSON.stringify(trimmed)); savedCache = trimmed; return true; }
         catch (e) { return false; }
     }
 
@@ -163,16 +166,15 @@
             src.appendChild(time);
         }
 
-        // Copy link, as on News cards (CopyLinkButton.razor).
-        var copy = el('button', 'copy');
-        copy.type = 'button';
-        copy.setAttribute('data-copy-link', '');
-        copy.setAttribute('data-url', href);
-        copy.setAttribute('data-title', text(a.title));
-        copy.setAttribute('aria-label', 'Copy link');
-        copy.setAttribute('title', 'Copy link');
-        copy.innerHTML = COPY_ICONS;
-        src.appendChild(copy);
+        var share = el('button', 'share-button');
+        share.type = 'button'; share.hidden = true;
+        share.setAttribute('data-share-open', '');
+        share.setAttribute('data-url', href);
+        share.setAttribute('data-title', text(a.title));
+        share.setAttribute('aria-label', 'Share article');
+        share.title = 'Share article';
+        share.innerHTML = SHARE_ICON;
+        src.appendChild(share);
 
         // The card's own bookmark, pressed: clicking it removes the article from the list.
         var button = el('button', 'save');
@@ -214,12 +216,13 @@
         if (empty) empty.hidden = list.length > 0;
     }
 
-    function syncSaves() {
+    function syncSaves(scope) {
+        scope = scope || document;
         var list = readSaved();
         var saved = {};
         list.forEach(function (a) { saved[a.url] = true; });
 
-        document.querySelectorAll('[data-save]').forEach(function (button) {
+        matchesWithin(scope, '[data-save]').forEach(function (button) {
             var on = saved[button.getAttribute('data-url')] === true;
             button.hidden = !storageOk;
             if (button.getAttribute('aria-pressed') !== String(on)) button.setAttribute('aria-pressed', String(on));
@@ -230,7 +233,7 @@
             }
         });
 
-        document.querySelectorAll('[data-saved-count]').forEach(function (badge) {
+        matchesWithin(scope, '[data-saved-count]').forEach(function (badge) {
             var value = list.length > 99 ? '99+' : String(list.length);
             badge.hidden = list.length === 0;
             if (badge.textContent !== value) badge.textContent = value;
@@ -238,13 +241,13 @@
 
         var toolbar = document.querySelector("[data-reading-toolbar]");
         if (toolbar) toolbar.hidden = !storageOk;
-        renderSavedPage(list);
+        if (scope === document || matchesWithin(scope, '[data-saved-list]').length) renderSavedPage(list);
     }
 
     function toggleSave(button) {
         var url = button.getAttribute('data-url');
         if (!storageOk || !safeUrl(url)) return;
-        var list = readSaved();
+        var list = readSaved().map(function (article) { return Object.assign({}, article); });
         var index = list.findIndex(function (a) { return a.url === url; });
         var title = button.getAttribute('data-title') || 'Article';
         var message;
@@ -275,15 +278,66 @@
         status.textContent = message;
     }
 
-    // ---- copy link ------------------------------------------------------------------------------------------
+    // ---- article sharing ------------------------------------------------------------------------------------
 
-    var COPY_ICONS =
-        '<svg class="copy__link" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>' +
-        '<svg class="copy__done" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg>';
+    var SHARE_ICON = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 10.5 6.8-4M8.6 13.5l6.8 4"/></svg>';
 
-    // The buttons are rendered hidden so they never show without JavaScript.
-    function syncCopies() {
-        document.querySelectorAll('[data-copy-link][hidden]').forEach(function (button) { button.hidden = false; });
+    function matchesWithin(scope, selector) {
+        var elements = Array.from(scope.querySelectorAll(selector));
+        if (scope.nodeType === 1 && scope.matches(selector)) elements.unshift(scope);
+        return elements;
+    }
+
+    function syncShares(scope) {
+        matchesWithin(scope || document, '[data-share-open][hidden]').forEach(function (button) { button.hidden = false; });
+    }
+
+    function openShare(button) {
+        var url = safeUrl(button.getAttribute('data-url'));
+        var host = button.closest('.pub');
+        if (!url || !host) return;
+        var title = button.getAttribute('data-title') || 'Article';
+        var dialog = el('dialog', 'article-share');
+        var heading = el('h2', null, 'Share article');
+        heading.id = 'article-share-title';
+        dialog.setAttribute('aria-labelledby', heading.id);
+        dialog.appendChild(heading);
+        dialog.appendChild(el('p', 'article-share__title', title));
+        var copy = el('button', 'nf-btn nf-btn--secondary', 'Copy link');
+        copy.type = 'button';
+        copy.addEventListener('click', function () {
+            writeClipboard(url).then(function () { announce('Link copied: ' + title); dialog.close(); },
+                function () { announce('Could not copy the link.'); });
+        });
+        dialog.appendChild(copy);
+        var phone = (navigator.userAgentData && navigator.userAgentData.mobile === true)
+            || /iPhone|iPod|Android.*Mobile/i.test(navigator.userAgent);
+        if (phone) {
+            var sms = el('a', 'nf-btn nf-btn--secondary', 'Send by SMS');
+            sms.href = 'sms:' + (/iPhone|iPod/i.test(navigator.userAgent) ? '&' : '?')
+                + 'body=' + encodeURIComponent(title + '\n' + url);
+            dialog.appendChild(sms);
+        }
+        if (window.isSecureContext && typeof navigator.share === 'function') {
+            var apps = el('button', 'nf-btn nf-btn--secondary', 'Share via apps');
+            apps.type = 'button';
+            apps.addEventListener('click', function () {
+                try {
+                    Promise.resolve(navigator.share({ title: title, url: url })).then(function () { dialog.close(); }, function (error) {
+                        if (error.name !== 'AbortError') announce('Could not open sharing. Try copying the link.');
+                    });
+                } catch (error) { announce('Could not open sharing. Try copying the link.'); }
+            });
+            dialog.appendChild(apps);
+        }
+        if (phone) dialog.appendChild(el('p', 'article-share__hint', 'SMS opens your messaging app. Choose a recipient and send when you’re ready.'));
+        var close = el('button', 'nf-btn nf-btn--secondary', 'Close');
+        close.type = 'button';
+        close.addEventListener('click', function () { dialog.close(); });
+        dialog.appendChild(close);
+        dialog.addEventListener('close', function () { dialog.remove(); if (button.isConnected) button.focus(); });
+        host.appendChild(dialog);
+        dialog.showModal();
     }
 
     // navigator.clipboard exists only on https and localhost; over plain http (the site on the LAN) fall back to
@@ -298,7 +352,7 @@
             box.setAttribute('readonly', '');
             box.style.position = 'fixed';
             box.style.opacity = '0';
-            document.body.appendChild(box);
+            (document.querySelector('dialog[open]') || document.body).appendChild(box);
             box.select();
             var ok = false;
             try { ok = document.execCommand('copy'); } catch (e) { }
@@ -307,41 +361,37 @@
         });
     }
 
-    function copyLink(button) {
-        var url = safeUrl(button.getAttribute('data-url'));
-        if (!url) return;
-        var title = button.getAttribute('data-title') || 'Article';
-        writeClipboard(url).then(function () {
-            button.setAttribute('data-copied', '');
-            button.setAttribute('title', 'Link copied');
-            announce('Link copied: ' + title);
-            clearTimeout(button._copyTimer);
-            button._copyTimer = setTimeout(function () {
-                button.removeAttribute('data-copied');
-                button.setAttribute('title', 'Copy link');
-            }, 1500);
-        }, function () {
-            announce('Could not copy the link.');
-        });
-    }
-
     document.addEventListener('change', function (e) {
         if (e.target.matches('[data-reading-filter]')) syncSaves();
     });
     // Another tab saved or removed something.
-    window.addEventListener('storage', function (e) { if (e.key === SAVED_KEY) syncSaves(); });
+    window.addEventListener('storage', function (e) { if (e.key === SAVED_KEY || e.key === null) { savedCache = null; syncSaves(); } });
 
     // Blazor re-renders the toggle button on navigation (and swaps in new pages with fresh save buttons); put labels,
     // pressed states and the saved list back in step.
+    var addedScopes = new Set();
     var pending = false;
-    new MutationObserver(function () {
-        if (pending) return;
+    new MutationObserver(function (records) {
+        records.forEach(function (record) {
+            record.addedNodes.forEach(function (node) {
+                if (node.nodeType !== 1) return;
+                var selector = '[data-share-open], [data-save], [data-saved-list], [data-saved-count], [data-theme-toggle]';
+                if (node.matches(selector) || node.querySelector(selector)) addedScopes.add(node);
+            });
+        });
+        if (pending || !addedScopes.size) return;
         pending = true;
-        requestAnimationFrame(function () { pending = false; syncToggles(); syncSaves(); syncCopies(); });
+        requestAnimationFrame(function () {
+            pending = false;
+            var scopes = Array.from(addedScopes); addedScopes.clear();
+            scopes.filter(function (node) { return node.isConnected && !scopes.some(function (other) { return other !== node && other.contains(node); }); })
+                .forEach(function (node) { syncSaves(node); syncShares(node); });
+            syncToggles();
+        });
     }).observe(document.body, { childList: true, subtree: true });
     syncToggles();
     syncSaves();
-    syncCopies();
+    syncShares();
 
     // ---- load more ------------------------------------------------------------------------------------------
 
@@ -422,7 +472,7 @@
 
         var read = e.target.closest('[data-mark-read]');
         if (read) {
-            var list = readSaved();
+            var list = readSaved().map(function (article) { return Object.assign({}, article); });
             var article = list.find(function (a) { return a.url === read.getAttribute('data-mark-read'); });
             if (article) {
                 article.read = article.read !== true;
@@ -437,11 +487,8 @@
             return;
         }
 
-        var copy = e.target.closest('[data-copy-link]');
-        if (copy) {
-            copyLink(copy);
-            return;
-        }
+        var share = e.target.closest('[data-share-open]');
+        if (share) { openShare(share); return; }
 
         var more = e.target.closest('[data-load-more]');
         if (more && !(e.ctrlKey || e.metaKey || e.shiftKey || e.button > 0)) {
@@ -450,56 +497,4 @@
             loadMore(more);
         }
     }, true);
-})();
-
-// Enhance the shared admin chrome after initial load and Blazor navigation.
-(function () {
-    function adminChrome() {
-        var page = document.querySelector('.page');
-        if (!page) return;
-        var bar = page.querySelector('main > .top-row');
-        if (bar && !bar.querySelector('.admin-heading')) {
-            var heading = document.createElement('span');
-            heading.className = 'admin-heading';
-            heading.textContent = 'MyNewsFeed administration';
-            bar.prepend(heading);
-        }
-        var about = bar && bar.querySelector('a[href="https://learn.microsoft.com/aspnet/core/"]');
-        if (about) {
-            about.href = '/';
-            about.textContent = 'View newsfeed ↗';
-            about.rel = 'noopener noreferrer';
-        }
-        var nav = page.querySelector('.sidebar nav');
-        if (!nav) return;
-        nav.setAttribute('aria-label', 'Administration');
-        var brand = page.querySelector('.sidebar .navbar-brand');
-        if (brand) brand.setAttribute('href', 'admin');
-        var homeIcon = nav.querySelector('.bi-house-door-fill-nav-menu');
-        var home = homeIcon && homeIcon.closest('a');
-        if (home) {
-            home.setAttribute('href', 'admin');
-            var isHome = location.pathname.replace(/\/$/, '') === '/admin';
-            home.classList.toggle('active', isHome);
-            if (isHome) home.setAttribute('aria-current', 'page');
-            else home.removeAttribute('aria-current');
-        }
-        [['admin', 'Overview'], ['admin/sources', 'News'], ['admin/youtube-feeds', 'Videos'],
-         ['admin/sports-event-types', 'Sports'], ['admin/tv-series', 'Television']].forEach(function (group) {
-            var link = nav.querySelector('a[href="' + group[0] + '"]');
-            var item = link && link.closest('.nav-item');
-            if (!item || (item.previousElementSibling && item.previousElementSibling.classList.contains('admin-nav-group'))) return;
-            var label = document.createElement('div');
-            label.className = 'admin-nav-group';
-            label.textContent = group[1];
-            item.before(label);
-        });
-    }
-    var pending = false;
-    new MutationObserver(function () {
-        if (pending) return;
-        pending = true;
-        requestAnimationFrame(function () { pending = false; adminChrome(); });
-    }).observe(document.body, { childList: true, subtree: true });
-    adminChrome();
 })();

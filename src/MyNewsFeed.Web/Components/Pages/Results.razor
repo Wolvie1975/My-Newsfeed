@@ -11,6 +11,7 @@
    day in the display zone. The filter is a dropdown at every width, not chips: the follow labels are long. *@
 
 <PageHeading Title="Results" Eyebrow="THE FINAL SCORES" Description="Recent results from the leagues and teams we follow." />
+@if (hasChampionship) { <p><a href="championship/results">EFL Championship season results →</a></p> }
 <nav class="tv-week" aria-label="Result dates">
     @if (resultDay == Dates.Today)
     {
@@ -112,6 +113,7 @@ else
 @code {
     [SupplyParameterFromQuery(Name = "follow")] private int? Follow { get; set; }
 
+    private bool hasChampionship;
     private IReadOnlyList<FollowChip> follows = [];
     private ResultsPage? listing;
     private DateTime? lastSynced;
@@ -122,6 +124,7 @@ else
     protected override async Task OnParametersSetAsync()
     {
         await using var db = await Factory.CreateDbContextAsync();
+        hasChampionship = await db.SportsEventsTypes.AsNoTracking().AnyAsync(s => s.Enabled && s.ProviderKey == "espn-championship");
         resultDay = DateOnly.TryParseExact(Day, "yyyy-MM-dd", out var parsed)
             && parsed >= Dates.Today.AddDays(-1) && parsed <= Dates.Today ? parsed : Dates.Today;
         var window = ResultsWindow.ForDay(resultDay, Dates.Zone);

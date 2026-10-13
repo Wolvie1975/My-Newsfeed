@@ -106,7 +106,21 @@ else
     </div>
 }
 
+<AdminPager Total="totalRows" PageIndex="pageIndex" PageSize="PageSize" Busy="paging" PageChanged="ChangePageAsync" />
+
 @code {
+    private const int PageSize = 25;
+    private int pageIndex;
+    private int totalRows;
+    private bool paging;
+    private async Task ChangePageAsync(int value)
+    {
+        if (paging) return;
+        paging = true;
+        try { pageIndex = Math.Max(0, value); pendingDelete = null; await LoadAsync(); }
+        finally { paging = false; }
+    }
+
     private sealed record FeedRow(int Id, string ChannelId, string? ChannelName, string Url, DateTime DateAdded, int VideoCount)
     {
         public string Name => string.IsNullOrWhiteSpace(ChannelName) ? ChannelId : ChannelName;
@@ -125,9 +139,12 @@ else
     private async Task LoadAsync()
     {
         await using var db = await Factory.CreateDbContextAsync();
+        totalRows = await db.YoutubeVideoFeeds.CountAsync();
+        pageIndex = Math.Min(pageIndex, Math.Max(0, (totalRows - 1) / PageSize));
         rows = await db.YoutubeVideoFeeds
             .AsNoTracking()
-            .OrderBy(f => f.ChannelName ?? f.ChannelId)
+            .OrderBy(f => f.ChannelName ?? f.ChannelId).ThenBy(f => f.Id)
+            .Skip(pageIndex * PageSize).Take(PageSize)
             .Select(f => new FeedRow(f.Id, f.ChannelId, f.ChannelName, f.Url, f.DateAdded, f.YouTubeVideos.Count))
             .ToListAsync();
 

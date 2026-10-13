@@ -15,8 +15,15 @@ public static class MoviesQuery
         ["digital_rental"] = "Digital rental", ["digital_purchase"] = "Digital purchase", ["disc"] = "On disc"
     };
 
-    public static async Task<MoviesPage> GetAsync(WebScraperContext db, DateOnly today, string? search,
-        string? type, string? platform, string? period, int offset = 0, int take = 50, DateOnly? onDate = null)
+    public static Task<MoviesPage> GetAsync(WebScraperContext db, DateOnly today, string? search,
+        string? type, string? platform, string? period, int offset = 0, int take = 50, DateOnly? onDate = null) =>
+        GetCoreAsync(db, today, search, type, platform, period, offset, take, onDate, false);
+
+    public static async Task<IReadOnlyList<MovieReleaseItem>> GetTodayTimelineAsync(WebScraperContext db, DateOnly today) =>
+        (await GetCoreAsync(db, today, null, null, null, null, 0, 200, today, true)).Items;
+
+    private static async Task<MoviesPage> GetCoreAsync(WebScraperContext db, DateOnly today, string? search,
+        string? type, string? platform, string? period, int offset, int take, DateOnly? onDate, bool timelineOnly)
     {
         var releases = from r in db.MovieReleases.AsNoTracking()
                        join link in db.MovieSourceLinks on r.MovieSourceLinkId equals link.ID
@@ -24,9 +31,11 @@ public static class MoviesQuery
                        join source in db.MovieReleaseSources on link.MovieReleaseSourceId equals source.ID
                        where source.Enabled && r.CountryCode == "US" && r.ReleaseStatus == "scheduled"
                        select new { r, movie, source };
-        var platforms = await releases.Where(x => x.r.Platform != null && x.r.Platform != "")
+        if (timelineOnly) releases = releases.Where(x => x.r.ReleaseType != "digital"
+            && x.r.ReleaseType != "digital_rental" && x.r.ReleaseType != "digital_purchase");
+        var platforms = timelineOnly ? new List<string>() : await releases.Where(x => x.r.Platform != null && x.r.Platform != "")
             .Select(x => x.r.Platform!).Distinct().OrderBy(x => x).ToListAsync();
-        var updated = await releases.MaxAsync(x => (DateTime?)x.r.LastSeenAt);
+        var updated = timelineOnly ? (DateTime?)null : await releases.MaxAsync(x => (DateTime?)x.r.LastSeenAt);
         if (!string.IsNullOrWhiteSpace(search))
         {
             var term = search.Trim();
@@ -46,7 +55,7 @@ public static class MoviesQuery
         // duplicate cards after Take(), which would leave incomplete pages and inflated totals.
         var representatives = releases.GroupBy(x => new { MovieId = x.movie.ID, x.r.ReleaseDate, x.r.ReleaseType, x.r.IsReRelease })
             .Select(g => g.Min(x => x.r.ID));
-        var total = await representatives.CountAsync();
+        var total = timelineOnly ? 0 : await representatives.CountAsync();
         var rows = await releases.Where(x => representatives.Contains(x.r.ID))
             .OrderBy(x => x.r.ReleaseDate == null).ThenBy(x => x.r.ReleaseDate)
             .ThenBy(x => x.movie.Title).ThenBy(x => x.r.ID).Skip(Math.Max(0, offset)).Take(take)

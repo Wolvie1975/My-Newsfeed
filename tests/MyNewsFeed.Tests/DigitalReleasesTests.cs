@@ -58,6 +58,9 @@ public class DigitalReleasesTests
         await db.SaveChangesAsync();
         var page = await DigitalReleasesQuery.GetAsync(db, monday.AddDays(6), null);
         Assert.Equal(insider.ID, page.Selected!.ID);
+        var preview = await DigitalReleasesQuery.GetAsync(db, monday.AddDays(6), null, take: 2);
+        Assert.Equal(page.Items.Take(2).Select(i => i.Id), preview.Items.Select(i => i.Id));
+        Assert.Empty((await DigitalReleasesQuery.GetAsync(db, monday, null, take: 0)).Items);
         var own = page.Items.Where(i => i.Title == tag).ToList();
         Assert.Equal(new[] { sunday.ID, next.ID }, own.Select(i => i.Id));
         Assert.All(own, i => Assert.Null(i.Year));
