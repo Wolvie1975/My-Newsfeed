@@ -1,0 +1,400 @@
+# Sports data and public views
+
+Current behavior, reviewed against the web source on October 13, 2026 (Central).
+For rollout and credentials see [Deployment](../DEPLOY.md); for dated evidence see
+[Release history](release-history.md). Provider setup commands below belong to the
+Rust scraper repository and are operational reference, not automatic setup steps.
+
+## Ownership and coverage
+
+| Feature | Owner / tables | Public route |
+| --- | --- | --- |
+| Upcoming fixtures | Rust scraper: SportsEvents, SportsEventsType, SportsEventSources | `/events` |
+| Recent final scores | Web app ESPN score sync: ResultFollows, ResultFollowTeams, ResultGames | `/results` |
+| Championship / MLS season scores | Rust scraper: SportsMatchResults | `/championship/results`, `/mls/results` |
+| League/conference tables | Rust scraper: SportsStandingsSources, SportsStandings | `/standings` |
+| National polls | Rust scraper: SportsRankingSources, SportsRankingPolls, SportsRankingTeams | `/rankings` |
+
+Standings and polls are snapshots, not records reconstructed from fixtures or scores.
+Web page requests read stored data; they do not scrape sports providers. The separate
+score service calls ESPN. Provider keys scope team/game IDs: never resolve an ESPN
+participant ID through Big 12 metadata or merge games by names and dates alone.
+
+The reviewed schedule supports all 16 Big 12 member feeds (football, soccer,
+volleyball and men's/women's basketball), Kansas City Current, league-wide WNBA/MLB,
+EFL Championship, Premier League and league-wide MLS. MLS also has independently
+collected season results. NFL has standings and recent-score support. Subsequent
+scraper additions need matching frontend provider rules and coverage verification.
+
+## Upcoming schedule
+
+`/events` lists enabled, unfinished fixtures from today forward. The Schedule and
+sport dropdowns narrow the list; `school`, `sport` and `page` selections survive
+paging. Retired `from`, `to` and `q` filters are ignored. No favorites-only view exists.
+Pages contain up to 200 games, with Earlier/Later controls. Games group by calendar
+date, then league; leagues sort alphabetically and confirmed starts precede TBD.
+
+The college schedule no longer requires a stored past opening fixture. Retention
+can remove past games without hiding upcoming football, soccer, volleyball or
+basketball. Basketball fixtures may appear before their November opening games.
+This change applies to sport options and date-specific schedule reads too.
+
+Exclude canceled/cancelled, unnecessary, full-time and `STATUS_FINAL*` fixtures.
+Legacy NULL statuses remain valid. Postponed/delayed/suspended games show their
+status and Time TBD. Unknown starts use stored EventDate, not a timezone conversion
+of a placeholder. Confirmed StartsAtUtc values are marked UTC before Central display.
+Big 12 dates retain the source school's calendar day; ESPN providers normally use
+Central dates, with provider-date preservation for unconfirmed Eastern/London
+midnight placeholders. Do not fabricate venue, time, logo or broadcast fields.
+
+Big 12 mirrored games have one canonical SportsEvents row with multiple source
+observations. Enabled school filtering uses SportsEventSources, not just the primary
+SportsEventsTypeId. Respect primary perspective and shared-record ownership.
+
+Professional fixtures are read directly from SportsEvents rather than the Big 12
+school-calendar view. Validate matching enabled provider configuration:
+
+| ProviderKey | Configuration identity | Stored perspective / canonical identity |
+| --- | --- | --- |
+| `espn-nwsl` | ProviderSchoolId `20907` | Kansas City Current; `espn:usa.nwsl:<event ID>` |
+| `espn-wnba` | ProviderSchoolId `0` | Home team; `espn:wnba:<event ID>` |
+| `espn-mlb` | ProviderSchoolId `0` | Home team |
+| `espn-mls` | ProviderSchoolId `0`; league `usa.1`, league ID `770` | Home team; `espn:usa.1:<event ID>` |
+| `espn-championship` | League `eng.2`; Wrexham team `352` | Home team; `espn:eng.2:<event ID>` |
+| `espn-epl` | League `eng.1`, league ID `700` | Home team; `espn:eng.1:<event ID>` |
+
+WNBA SchoolId/SchoolName/TeamLogoUrl identify home, and OpponentSchoolId/Opponent/
+OpponentLogoUrl identify away. Neutral sites retain supplied identities with
+IsNeutral and nullable IsAway. Kansas City's IsAway is from its own perspective.
+Use `LiveStatsUrl ?? Url` for game navigation and actual supplied watch links only.
+
+Representative professional read contract (parameterize provider/day/team):
+
+```sql
+SELECT e.*
+FROM dbo.SportsEvents e
+JOIN dbo.SportsEventsType f ON f.ID=e.SportsEventsTypeId
+WHERE f.Enabled=1 AND f.ProviderKey=e.ProviderKey
+  AND e.ProviderKey=@ProviderKey AND e.EventDate>=@TodayCentral
+  AND (e.ScheduleStatus IS NULL OR
+       (e.ScheduleStatus NOT IN ('STATUS_CANCELED','STATUS_CANCELLED',
+                                'STATUS_UNNECESSARY','STATUS_FULL_TIME')
+        AND e.ScheduleStatus NOT LIKE 'STATUS_FINAL%'))
+ORDER BY e.EventDate,e.StartsAtUtc,e.ID;
+```
+
+For Championship, `team=352` matches SchoolId OR OpponentSchoolId. Resolve enabled
+feed IDs by ProviderKey; production IDs recorded in old reports are not portable.
+
+## Provider collection and prerequisites
+
+Apply scraper schema and runtime grants before enabling collectors. The web principal
+needs appropriate SELECT access. `db/016_add_schedule_status.sql` adds nullable
+ScheduleStatus when the scraper has not already supplied it. Result coverage seed
+`db/017_seed_schedule_result_coverage.sql` adds WNBA and Big 12 women's basketball
+without changing existing enabled choices; earlier seeds cover other supported follows.
+
+Scraper configuration: `--configure-big12`, `--configure-nwsl`, `--configure-wnba`,
+`--configure-mlb`, `--configure-championship`, `--configure-epl`, `--configure-mls`. Configuration normally
+registers feeds disabled and preserves edited URLs/settings. Enable intended feeds
+through administration, then preview and import:
+
+```bash
+cargo run --locked -- --events-from-db --dry-run -o /tmp/schedule-preview.xml
+cargo run --locked -- --events-from-db -o /tmp/schedule-preview.xml
+```
+
+Keep `--events-from-db` in hourly collection. WNBA's default scoreboard URL is
+`https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/scoreboard`.
+Kansas City's is the soccer `usa.nwsl/scoreboard?team=20907` endpoint. Monthly
+`dates=YYYYMM` requests cover current month through next calendar year; long date
+ranges and the Current team-schedule endpoint proved unsuitable for future coverage.
+NWSL uses the provider-specific `My-Newsfeed/1.0` user agent.
+
+Optional `season=YYYY` is a validation restriction, not an ongoing collection default.
+WNBA `team=18,20` filters either participant using ESPN IDs. It does not remove older
+stored observations; narrowing existing coverage needs matching frontend filtering.
+Use one registered league row, not a separate row for every team/year. League
+ProviderSchoolId `0` is not a participant ID.
+
+Stable IDs/FirstSeenAt survive re-imports and rescheduling. Explicit changed statuses
+update the same row; missing observations do not themselves infer cancellation.
+Fetch/validation failures preserve last-good schedules. Routine retention and public
+date filters remain separate from that missing-observation rule. End times are not guessed.
+
+## Recent results
+
+`/results` defaults to today's finished games in the configured Central display zone,
+with navigation limited to today and yesterday. It selects by the game's start date;
+a final after midnight stays with its start day. Retired/out-of-window dates fall back
+to today. Enabled follows without a final in the selected date window are omitted
+from the dropdown unless explicitly selected. This can make football/college options
+absent even though their follows are enabled and healthy.
+
+Results appear only after ESPN reports a final and synchronization succeeds. The
+background service checks about every ten minutes; production uses
+`Results__SyncIntervalHours=0.16666666666666666`. Today's visible page refreshes
+approximately every two minutes; background tabs do not reload. A process-wide gate
+serializes background/admin syncs in one instance, not across multiple instances.
+Postponed or canceled games do not have final scores. Provider coverage and reporting
+latency can still leave gaps. Raw errors remain in administration/logs.
+
+Admin → Schedule coverage reports enabled follows, missing coverage, unmapped sports
+and sync errors without enabling anything automatically. Schedule and results
+registration are separate: adding a schedule provider does not create score coverage.
+
+## Championship season results and English soccer
+
+Premier League has Schedule/Table views and 20 teams. Historical EPL match results
+are not imported by this collector. Championship has Schedule/Table/Season results,
+all 24 table teams, and a Wrexham focus (`team=352`) on schedule/results only.
+Wrexham is highlighted in the full table; the table is never reduced to one club.
+
+`SportsMatchResults` is independent of ResultGames/Follows and past schedule cleanup.
+Its ID is a .NET `long`; SourceId/GameId/Season/team IDs are integers. MatchDate is a
+calendar date; StartsAtUtc/FirstSeenAt/LastSeenAt are UTC. Names, logos, final goals,
+ScheduleStatus and SourceUrl are provider values. Select the latest validated stored
+season and page 25 matches at a time:
+
+```sql
+SELECT r.*
+FROM dbo.SportsMatchResults r
+JOIN dbo.SportsEventsType f ON f.ID=r.SourceId
+WHERE f.Enabled=1 AND r.ProviderKey='espn-championship'
+  AND r.Season=@SeasonStartYear
+  AND (@WrexhamOnly=0 OR r.HomeTeamId=352 OR r.AwayTeamId=352)
+ORDER BY r.StartsAtUtc DESC,r.GameId DESC;
+```
+
+Show only validated final scores; missing goals are not zero. W/D/L uses Wrexham's
+home/away perspective. Penalty finals are labeled without inventing a shootout winner
+from tied goal totals. Corrections preserve row identities. A validated new-season
+import replaces older-season results; failed/empty replacement retains last-good data.
+Provision the scraper-owned table and SELECT permission before deploying its web view.
+
+## Standings
+
+`/standings?sourceId=<ID>` discovers enabled sources dynamically. Invalid/disabled IDs
+fall back to the first visible source in display-name order; visible empty sources
+remain selectable. Source visibility additionally respects
+`Standings:HiddenProviders`: MLB/WNBA were temporarily hidden during playoffs without
+disabling collection. Big 12 tables still require current-season labels and a stored
+non-canceled opening fixture. That separate gate was not changed by the schedule fix;
+see [Maintenance](maintenance.md) for the retention risk.
+
+Read source status separately from rows:
+
+```sql
+SELECT ID,ProviderKey,Sport,DisplayName,LastAttemptAt,LastSuccessAt,
+       LastError,LatestSeason,LastTeamCount
+FROM dbo.SportsStandingsSources WHERE Enabled=1 ORDER BY DisplayName,ID;
+
+SELECT t.*
+FROM dbo.SportsStandings t
+JOIN dbo.SportsStandingsSources s ON s.ID=t.SourceId
+WHERE s.Enabled=1 AND s.ID=@SourceId AND t.IsCurrent=1
+ORDER BY t.GroupId,t.Position,t.TeamName,t.ID;
+```
+
+BIGINT row IDs map to `long`; TeamId/GroupId are strings, Rank and timestamps nullable.
+Group by GroupId and display GroupName. Preserve all teams and source Season/Title;
+never apply schedule today-forward bounds to tables or derive rank from Position.
+MLS sorts points descending within each East/West conference, breaking ties by
+provider Position and sorting unavailable points last. Other tables retain Position.
+Highlight Kansas City Current in full NWSL and Wrexham in full Championship.
+
+StatsJson is an array of name/displayName/displayValue and optional numeric value.
+Ignore extra fields, log invalid JSON by row ID, and show missing values as an em dash.
+Use supplied displayValue; don't calculate absent percentages, points or records.
+Big 12 uses ordered `column1`, `column2`, … keys; match by key and preserve duplicate
+header labels and source record strings. ESPN team IDs never become Big 12 lookups.
+
+| Provider | Full statistic names, in display order |
+| --- | --- |
+| NFL | wins, losses, ties, winPercent, pointsFor, pointsAgainst, pointDifferential, streak |
+| MLB / WNBA | wins, losses, winPercent, gamesBehind, streak |
+| NWSL / MLS / Championship / EPL | gamesPlayed, wins, ties, losses, pointsFor, pointsAgainst, pointDifferential, points |
+| Big 12 | Published positional keys and headers, preserving conference/overall sections |
+
+Compact defaults: NFL W/L/T/Pct; MLB/WNBA W/L/Pct; soccer W/D/L/Pts; other sources
+first three provider columns. Show all statistics reveals the rest and supplied
+soccer ranks. About these standings contains refresh/source/order metadata; notes
+use native disclosures. Team names wrap and expanded tables scroll inside the page.
+
+Freshness older than two hours warns while keeping last-good data. LastError shows a
+generic failed-refresh message, never diagnostic text. Source timestamps are UTC
+collection times, not provider publication dates. Preserve official season labels
+and notes/clincher markers without inventing qualifications.
+
+Schema/setup in the scraper: `sql/standings.sql`, `sql/standings_seed.sql`,
+`--configure-standings`, hourly `--standings-from-db`. NFL has 32 teams in AFC/NFC;
+MLS has 30 across Eastern/Western; Championship/EPL have 24/20. These recorded
+verification counts do not create inferred ranks or permanent IDs.
+
+## National Top 25
+
+Rankings are separate from standings. The configured polls are:
+
+| Sport | ESPN path | League ID | Poll ID / name |
+| --- | --- | --- | --- |
+| Football | football/college-football | 23 | 1, AP Top 25 (FBS) |
+| Men's basketball | basketball/mens-college-basketball | 41 | 1, AP Top 25 |
+| Women's basketball | basketball/womens-college-basketball | 54 | 1, AP Top 25 |
+| Women's soccer | soccer/usa.ncaa.w.1 | 5499 | 86, United Soccer Coaches/IWSOC |
+| Women's volleyball | volleyball/womens-college-volleyball | 402 | 89, AVCA Division I |
+
+`/rankings?sourceId=<ID>` selects enabled visible sources. Basketball choices additionally
+require a current-season poll and stored opening fixture; last season's polls are not
+reachable by sourceId. Other polls retain full national tables and age labels.
+
+```sql
+SELECT ID,DisplayName,Sport,LastSuccessAt,LastError
+FROM dbo.SportsRankingSources WHERE Enabled=1 ORDER BY DisplayName,ID;
+
+SELECT p.ID AS PollRowId,p.PollName,p.Season,p.SeasonLabel,p.PublishedAtUtc,
+       p.ProviderUpdatedAtUtc,p.Period,p.SeasonPhase,p.SourceUrl,p.FetchedAt,
+       t.ID AS RankingRowId,t.TeamId,t.TeamName,t.Rank,t.PreviousRank,
+       t.PreviouslyUnranked,t.Points,t.FirstPlaceVotes,t.Record,
+       t.LogoUrl,t.TeamUrl,t.Big12SchoolId,t.IsBig12
+FROM dbo.SportsRankingSources s
+JOIN dbo.SportsRankingPolls p ON p.SourceId=s.ID AND p.IsCurrent=1
+JOIN dbo.SportsRankingTeams t ON t.PollRowId=p.ID AND t.IsCurrent=1
+WHERE s.Enabled=1 AND s.ID=@SourceId
+ORDER BY t.Rank,t.TeamName,t.ID;
+```
+
+Both IsCurrent filters are required. Snapshot identity is
+`(SourceId, PollId, Season, PublishedAtUtc)`; teams key by snapshot and ESPN TeamId.
+Complete corrections commit atomically and preserve IDs; older versions, wrong polls,
+incomplete payloads or failed writes retain last-good data. Schema/seed/grants are
+scraper-owned: `sql/rankings.sql`, `sql/rankings_seed.sql`, `sql/runtime_permissions.sql`.
+Configure with `--configure-rankings`, explicitly enable intended sources, then preview
+`--rankings-from-db --dry-run` and add `--rankings-from-db` to hourly collection.
+Grant the web principal SELECT on all three tables; do not give it ingestion permissions
+solely to read. Optional pinned seasons must match returned provider seasons.
+
+Use supplied tied ranks without renumbering or enforcing exactly 25 rows. IsBig12/
+Big12SchoolId comes from verified active full-member metadata, never numeric ESPN ID
+conversion. Keep every national team, mark Big 12 visibly and accessibly, and don't
+highlight former members based on history. Preserve provider poll/season/phase/period,
+record strings and supplied zeros; unavailable points/votes remain unavailable.
+Previous rank → movement is previous minus current; previously unranked → NR/New;
+unknown previous → em dash. Soccer/volleyball polls are not labeled AP.
+
+Default columns are Rank/Team/Record/Change. Show full poll details reveals Previous,
+Points and First-place votes when available. About this poll reveals source/refresh
+metadata; poll date, season and warnings stay visible. Poll age over 14 days is
+Latest available poll — dated; collection age over two hours has a separate warning.
+A refreshed old poll never becomes a new poll.
+
+## MLS schedule and season-results contract
+
+MLS now has league-wide fixtures and current-season final results from ESPN
+competition `usa.1` (league ID `770`). Existing MLS standings remain unchanged.
+Production schedule/results source ID: **5525**, ProviderKey `espn-mls`.
+Standings source ID: **9**. Resolve IDs by ProviderKey in other environments.
+
+### Upcoming schedule
+
+```sql
+SELECT e.* FROM dbo.SportsEvents e
+JOIN dbo.SportsEventsType f ON f.ID=e.SportsEventsTypeId
+WHERE f.Enabled=1 AND e.ProviderKey='espn-mls'
+ AND e.EventDate>=@TodayCentral
+ AND (e.ScheduleStatus IS NULL OR
+      (e.ScheduleStatus NOT IN ('STATUS_CANCELED','STATUS_CANCELLED','STATUS_UNNECESSARY','STATUS_FULL_TIME')
+       AND e.ScheduleStatus NOT LIKE 'STATUS_FINAL%'))
+ORDER BY e.EventDate,e.StartsAtUtc,e.ID;
+```
+
+Use existing schedule UI: home team is SchoolId, away team is OpponentSchoolId.
+Show kickoff, venue, team logos and provider-supplied watch links. Convert known
+StartsAtUtc values to America/Chicago; preserve TBD when a kickoff is not known.
+Canonical game key is `espn:usa.1:<gameId>`. Optional team filters should match
+both SchoolId and OpponentSchoolId; do not add separate team feeds.
+
+### Results
+
+```sql
+SELECT r.* FROM dbo.SportsMatchResults r
+JOIN dbo.SportsEventsType f ON f.ID=r.SourceId
+WHERE f.Enabled=1 AND r.ProviderKey='espn-mls' AND r.Season=@Season
+ORDER BY r.MatchDate DESC,r.StartsAtUtc DESC,r.ID DESC;
+```
+
+Use the current provider season (initially 2026). Results include regular-season
+and playoff games when ESPN publishes them. They are independent of the pruned
+SportsEvents table and do not populate existing ResultGames/ResultFollows.
+
+Map these fields:
+
+| Field | Meaning |
+| --- | --- |
+| ID | bigint / .NET long; stable local result ID |
+| SourceId / GameId | int; source and stable ESPN game ID |
+| Season | Provider season year; initial season 2026 |
+| MatchDate / StartsAtUtc | Central date / UTC kickoff |
+| HomeTeamId / AwayTeamId | ESPN team IDs |
+| HomeTeamName / AwayTeamName | Provider names |
+| HomeScore / AwayScore | Final match goals, excluding shootout penalties |
+| HomeShootoutScore / AwayShootoutScore | Nullable int; separate penalty shootout tallies |
+| HomeLogoUrl / AwayLogoUrl | Nullable provider logos |
+| ScheduleStatus | Provider final status |
+| SourceUrl | Original ESPN match page |
+| FirstSeenAt / LastSeenAt | UTC first import / most recent observation |
+
+For STATUS_FINAL_PEN, display match goals plus the penalty tally, e.g.
+**1–1 (2–4 on penalties)**. Use penalties to identify the winner; do not show a
+shootout match as a draw or add penalty tallies to match goals. For other final
+statuses, show the match score and supplied status (including extra time). The web
+query excludes nonfinal, missing/negative-goal, same-team and malformed penalty rows.
+Do not infer playoff-series aggregate winners from a single match.
+
+### Standings and collection
+
+Keep the existing MLS conference standings and route `/standings?sourceId=9`.
+The source's Eastern/Western conference groups provide membership; fixture rows
+are league-wide and do not carry a conference label.
+
+`--configure-mls` registers the schedule disabled and adds nullable shootout
+columns to the shared results table using migration credentials. Enable its
+SportsEventsType row to collect. Existing `--events-from-db` hourly collection
+then discovers MLS automatically; no extra scheduler argument is required.
+
+Current calendar-season months are fetched to reconcile score corrections and
+reschedules. Results require an explicit final status, valid nonnegative goals,
+and distinct teams. Final penalty games require valid unequal shootout scores.
+Repeated imports/corrections preserve IDs and FirstSeenAt. Disabled sources are
+protected by the writer; provider/game identity keeps MLS separate from other
+leagues, including Championship results using the same table.
+
+### Retention and empty states
+
+Upcoming schedules follow existing rules: past dates and canceled/unnecessary
+fixtures are removed. Current-season final results remain available for the
+Results view. Prior-season results are removed after a successful nonempty
+new-season results import; this avoids deleting the last good season during the
+off-season or after a failed request. The front-end filters Season explicitly.
+
+Show an empty schedule when no future MLS fixtures have been published. Do not
+invent playoff matchups or next-season fixtures. Show source import errors via
+the existing sports source status UI; retain the last good data on fetch/parse
+failure. The frontend is deployed: select MLS in `/events`, or open `/mls/results` for
+the latest validated stored season, paged 25 matches at a time. Schedule/Table/Season
+results links resolve enabled source IDs by ProviderKey. The ordinary Results page
+links to MLS season results while its existing today/yesterday score view remains
+independent. Source freshness older than two hours warns without dropping data.
+
+October 13, 2026 verification: 90 upcoming fixtures and 421 completed 2026 results;
+no past or canceled fixtures remained after retention.
+
+## Validation
+
+Use existing EventsTests, ResultsTests, EnglishSoccerTests,
+StandingsTests and RankingsTests as applicable. Check enabled/disabled selection,
+retention, past/final/canceled status exclusion, TBD dates, provider identity, home/away,
+paging, last-good behavior, unknown statistics and no invented ranks/scores. Check
+phone/desktop layouts, themes, keyboard scrolling and no-JavaScript selectors.
+Rust provider fixtures and isolated tests live in the scraper repository. For SQL
+validation use explicitly named staging databases, never production; configure
+NWSL_TEST_DATABASE, WNBA_TEST_DATABASE or RANKINGS_TEST_DATABASE as appropriate.

@@ -1,0 +1,142 @@
+@page "/results"
+@layout PublicLayout
+@using MyNewsFeed.Web.Components.Events
+@inject IDbContextFactory<WebScraperContext> Factory
+@inject FeedDates Dates
+
+<PageTitle>Results · MyNewsFeed</PageTitle>
+
+@* Static (non-interactive) page, like Events: the filter is plain links, so every view has a shareable URL. Games come
+   from dbo.ResultGames, which the ESPN background sync fills; this page never calls ESPN. Games are grouped by start
+   day in the display zone. The filter is a dropdown at every width, not chips: the follow labels are long. *@
+
+<PageHeading Title="Results" Eyebrow="THE FINAL SCORES" Description="Recent results from the leagues and teams we follow." />
+@if (hasChampionship) { <p><a href="championship/results">EFL Championship season results →</a></p> }
+@if (hasMls) { <p><a href="mls/results">MLS season results →</a></p> }
+<nav class="tv-week" aria-label="Result dates">
+    @if (resultDay == Dates.Today)
+    {
+        <a class="nf-btn nf-btn--secondary" href="@DayHref(Dates.Today.AddDays(-1))">← Yesterday</a>
+    }
+    <span>@(resultDay == Dates.Today ? "Today’s results" : "Yesterday’s results") · @FeedDates.LongDate(resultDay)</span>
+    @if (resultDay < Dates.Today)
+    {
+        <a class="nf-btn nf-btn--secondary" href="@DayHref(Dates.Today)">Today →</a>
+    }
+</nav>
+@if (resultDay == Dates.Today) { <p class="updated" data-results-refresh>Final scores refresh about every 10 minutes. This page checks for updates automatically.</p> }
+
+<div class="filters filters--results">
+    @if (follows.Count > 1)
+    {
+        <form class="catselect" method="get" action="results">
+            <input type="hidden" name="day" value="@resultDay.ToString("yyyy-MM-dd")" />
+            <label class="sr-only" for="follow">Team or league</label>
+            <select id="follow" name="follow" onchange="this.form.requestSubmit()">
+                <option value="">Everything I follow</option>
+                @foreach (var f in follows)
+                {
+                    <option value="@f.Id" selected="@(f.Id == Follow)">@f.Label</option>
+                }
+            </select>
+            <noscript><button class="nf-btn nf-btn--secondary" type="submit">Apply</button></noscript>
+        </form>
+    }
+    @if (listing is not null)
+    {
+        <p class="count count--toolbar" aria-live="polite">@listing.Total @(listing.Total == 1 ? "result" : "results")</p>
+    }
+</div>
+
+@if (listing is not null)
+{
+    <p class="count count--inline">@listing.Total @(listing.Total == 1 ? "result" : "results")</p>
+}
+
+@if (lastSynced is { } synced)
+{
+    <p class="updated">
+        Results last updated
+        <time datetime="@synced.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'")">@Dates.PublishedFull(synced)</time>
+    </p>
+}
+
+@if (listing is null || listing.Items.Count == 0)
+{
+    <p class="empty">
+        <span>No finished games for @FeedDates.LongDate(resultDay). @if (Follow is not null) { <a href="results">Show all teams and leagues</a> }</span>
+        @if (resultDay == Dates.Today) { <a class="nf-btn nf-btn--secondary" href="@DayHref(Dates.Today.AddDays(-1))">View yesterday’s results</a> }
+    </p>
+}
+else
+{
+    <div class="results-head" aria-hidden="true">
+        <span>Competition</span><span>Away</span><span>Score</span><span>Home</span><span>Venue</span>
+    </div>
+
+    <div class="groups results">
+        @foreach (var day in listing.Items.GroupBy(r => Dates.DayKey(r.StartsAtUtc)))
+        {
+            <section class="group" aria-labelledby="day-@day.Key">
+                <h2 class="group__bar" id="day-@day.Key"><time datetime="@day.Key">@LongDate(day.Key)</time></h2>
+                @{ var leagueIndex = 0; }
+                @foreach (var league in GameGroups.Results(day))
+                {
+                    var leagueId = $"day-{day.Key}-league-{leagueIndex++}";
+                    <h3 class="league-heading" id="@leagueId">@league.Name</h3>
+                <table class="games" role="table" aria-labelledby="@leagueId">
+                    <thead role="rowgroup">
+                        <tr role="row">
+                            <th role="columnheader" scope="col">Competition</th>
+                            <th role="columnheader" scope="col">Away</th>
+                            <th role="columnheader" scope="col">Score</th>
+                            <th role="columnheader" scope="col">Home</th>
+                            <th role="columnheader" scope="col">Venue</th>
+                        </tr>
+                    </thead>
+                    <tbody role="rowgroup">
+                        @foreach (var item in league.Games)
+                        {
+                            <ResultRow Item="item" />
+                        }
+                    </tbody>
+                </table>
+                }
+            </section>
+        }
+    </div>
+
+    @if (listing.Total > listing.Items.Count)
+    {
+        <p class="count">Showing the latest @listing.Items.Count of @listing.Total results.</p>
+    }
+}
+
+@code {
+    [SupplyParameterFromQuery(Name = "follow")] private int? Follow { get; set; }
+
+    private bool hasChampionship;
+    private bool hasMls;
+    private IReadOnlyList<FollowChip> follows = [];
+    private ResultsPage? listing;
+    private DateTime? lastSynced;
+    private DateOnly resultDay;
+    [SupplyParameterFromQuery(Name = "day")] private string? Day { get; set; }
+    private string DayHref(DateOnly day) => $"results?day={day:yyyy-MM-dd}" + (Follow is { } id ? $"&follow={id}" : "");
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await using var db = await Factory.CreateDbContextAsync();
+        hasChampionship = await db.SportsEventsTypes.AsNoTracking().AnyAsync(s => s.Enabled && s.ProviderKey == "espn-championship");
+        hasMls = await db.SportsEventsTypes.AsNoTracking().AnyAsync(s => s.Enabled && s.ProviderKey == "espn-mls");
+        resultDay = DateOnly.TryParseExact(Day, "yyyy-MM-dd", out var parsed)
+            && parsed >= Dates.Today.AddDays(-1) && parsed <= Dates.Today ? parsed : Dates.Today;
+        var window = ResultsWindow.ForDay(resultDay, Dates.Zone);
+        follows = await ResultsQuery.GetFollowsAsync(db, Follow, window);
+        listing = await ResultsQuery.GetResultsAsync(db, Follow, window: window);
+        lastSynced = await ResultsQuery.GetLastSyncedAsync(db);
+    }
+
+    private static string LongDate(string dayKey) =>
+        DateOnly.TryParseExact(dayKey, "yyyy-MM-dd", out var day) ? FeedDates.LongDate(day) : dayKey;
+}

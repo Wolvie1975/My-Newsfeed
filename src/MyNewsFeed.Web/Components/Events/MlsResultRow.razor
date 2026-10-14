@@ -1,0 +1,20 @@
+@using MyNewsFeed.Web.Data.Models
+<tr>
+    <th scope="row"><span class="standing-team-name">
+        @if (EventsText.LogoUrl(Game.HomeLogoUrl) is { } logo) { <img src="@logo" alt="" width="24" height="24" loading="lazy" onerror="this.remove()" /> }
+        @Game.HomeTeamName</span></th>
+    <td>
+        @if (FeedQuery.SafeHref(Game.SourceUrl) is { } url) { <a href="@url" target="_blank" rel="noopener noreferrer">@MlsResultsQuery.Score(Game)</a> }
+        else { <span>@MlsResultsQuery.Score(Game)</span> }
+        <div class="updated">@Dates.EventTime(Game.StartsAtUtc)</div>
+        <div class="updated">@MlsResultsQuery.Status(Game)</div>
+        @if (MlsResultsQuery.Winner(Game) is { } winner) { <div class="updated">@winner</div> }
+    </td>
+    <td><span class="standing-team-name">
+        @if (EventsText.LogoUrl(Game.AwayLogoUrl) is { } awayLogo) { <img src="@awayLogo" alt="" width="24" height="24" loading="lazy" onerror="this.remove()" /> }
+        @Game.AwayTeamName</span></td>
+</tr>
+@code {
+    [Parameter, EditorRequired] public SportsMatchResult Game { get; set; } = default!;
+    [Parameter, EditorRequired] public FeedDates Dates { get; set; } = default!;
+}

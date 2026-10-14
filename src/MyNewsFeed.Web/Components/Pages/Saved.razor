@@ -1,0 +1,21 @@
+@page "/saved"
+@layout PublicLayout
+
+<PageTitle>Saved · MyNewsFeed</PageTitle>
+
+@* Saved articles live only in this browser (localStorage), so the server sends an empty shell and public.js draws the
+   cards from each article's saved copy. They stay after the scraper drops the article from the database. *@
+
+<PageHeading Title="Saved articles" Eyebrow="YOUR READING LIST" Description="Saved in this browser only. They are not shared with your other devices." />
+
+<div class="favorites-toolbar" hidden data-reading-toolbar>
+    <label>Reading list <select data-reading-filter><option value="all">All saved</option><option value="unread">Unread</option><option value="read">Read</option></select></label>
+</div>
+<p class="count" data-reading-count></p>
+<p class="count" data-saved-status aria-live="polite"></p>
+
+<section class="feed" aria-label="Saved articles" data-saved-list></section>
+
+<section class="empty saved-empty" data-saved-empty hidden><h2 data-saved-empty-title></h2><p data-saved-empty-description></p><a class="nf-btn nf-btn--primary" href="news" data-saved-empty-action>Browse news</a><button class="nf-btn nf-btn--secondary" type="button" data-show-all-saved hidden>Show all saved</button></section>
+
+<noscript><p class="empty">Saved articles need JavaScript turned on.</p></noscript>

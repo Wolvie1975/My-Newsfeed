@@ -1,0 +1,65 @@
+@page "/admin/tv-series"
+@rendermode InteractiveServer
+@inject IDbContextFactory<WebScraperContext> Factory
+
+<PageTitle>Tracked TV series</PageTitle>
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>Tracked TV series</h1><a class="btn btn-primary" href="admin/tv-series/new">Add series</a>
+</div>
+<p>Follow series to collect their episode schedules. Removing a series from the followed list stops collection and hides its episodes; history is retained. The scraper imports added series on its next run.</p>
+@if (error is not null) { <div class="alert alert-danger" role="alert">@error</div> }
+@if (rows is null) { <p>Loading…</p> }
+else if (rows.Count == 0) { <p>No series followed yet. <a href="admin/tv-series/new">Add a series.</a></p> }
+else
+{
+    <div class="table-responsive"><table class="table table-sm align-middle">
+        <thead><tr><th>Series</th><th>Network / platform</th><th>Following</th><th>Episodes</th><th>Last success</th><th>Detail</th><th></th></tr></thead>
+        <tbody>
+        @foreach (var row in rows)
+        {
+            <tr class="@(row.Enabled ? null : "text-muted")">
+                <td><a href="https://www.tvmaze.com/shows/@row.TvmazeShowId" target="_blank" rel="noopener noreferrer">@(row.Series?.Title ?? row.ExpectedTitle)</a><div class="small">TVmaze @row.TvmazeShowId</div></td>
+                <td>@(row.Series?.WebChannelName ?? row.Series?.NetworkName ?? "Pending import")</td>
+                <td>@(row.Enabled ? "Yes" : "No")</td><td>@(row.EpisodeCount?.ToString() ?? "—")</td>
+                <td>@Dates.Stamp(row.LastSuccessAt)</td>
+                <td class="small text-break">@row.LastError @if (row.LastSuccessAt is null && row.Enabled) { <span>Awaiting first import</span> }</td>
+                <td><button class="btn btn-sm @(row.Enabled ? "btn-outline-danger" : "btn-outline-primary")" disabled="@busy" @onclick="() => ToggleAsync(row)">@(row.Enabled ? "Stop following" : "Follow again")</button></td>
+            </tr>
+        }
+        </tbody>
+    </table></div>
+}
+<AdminPager Total="totalRows" PageIndex="pageIndex" PageSize="PageSize" Busy="paging" PageChanged="ChangePageAsync" />
+
+@code {
+    private const int PageSize = 25;
+    private int pageIndex;
+    private int totalRows;
+    private bool paging;
+    private async Task ChangePageAsync(int value)
+    {
+        if (paging) return;
+        paging = true;
+        try { pageIndex = Math.Max(0, value);  await LoadAsync(); }
+        finally { paging = false; }
+    }
+
+    private List<TvTrackedSeries>? rows;
+    private bool busy;
+    private string? error;
+    protected override Task OnInitializedAsync() => LoadAsync();
+    private async Task LoadAsync()
+    {
+        await using var db = await Factory.CreateDbContextAsync();
+        totalRows = await db.TvTrackedSeries.CountAsync();
+        pageIndex = Math.Min(pageIndex, Math.Max(0, (totalRows - 1) / PageSize));
+        rows = await db.TvTrackedSeries.AsNoTracking().Include(t => t.Series).OrderByDescending(t => t.Enabled).ThenBy(t => t.ExpectedTitle).ThenBy(t => t.Id).Skip(pageIndex * PageSize).Take(PageSize).ToListAsync();
+    }
+    private async Task ToggleAsync(TvTrackedSeries row)
+    {
+        busy = true; error = null;
+        try { await using var db = await Factory.CreateDbContextAsync(); await TvQuery.SetEnabledAsync(db, row.Id, !row.Enabled); await LoadAsync(); }
+        catch (DbUpdateException) { error = "Could not update tracking. Please try again."; }
+        finally { busy = false; }
+    }
+}

@@ -1,0 +1,8 @@
+@* One status word with a colour, for the scraper status page. The word carries the meaning, not only the colour. *@
+<span class="badge text-bg-@(Level switch { HealthLevel.Problem => "danger", HealthLevel.Warning => "warning", _ => "success" })">
+    @(Level switch { HealthLevel.Problem => "Problem", HealthLevel.Warning => "Check", _ => "OK" })
+</span>
+
+@code {
+    [Parameter] public HealthLevel Level { get; set; }
+}

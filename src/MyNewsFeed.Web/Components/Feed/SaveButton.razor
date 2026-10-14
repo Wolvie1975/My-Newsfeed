@@ -1,0 +1,32 @@
+@using MyNewsFeed.Web.Data
+@inject FeedDates Dates
+
+@* Save for later. Saved articles live only in this browser (localStorage), handled by public.js. The button carries a
+   copy of what the Saved page shows, because the scraper keeps only the latest articles per source and the database
+   row will be gone later. It starts hidden: public.js shows it only when storage works, so without JavaScript it never
+   appears as a dead control. *@
+@if (FeedQuery.SafeHref(Item.Url) is { } href)
+{
+    <button class="save" type="button" hidden data-save
+            data-url="@href"
+            data-title="@Title"
+            data-source="@Source"
+            data-image="@FeedQuery.SafeHref(Item.ImageUrl)"
+            data-summary="@Summary"
+            data-date="@(Item.Undated ? null : Item.Date.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'"))"
+            data-date-label="@(Item.Undated ? null : Dates.Published(Item.Date))"
+            aria-pressed="false" aria-label="Save for later" title="Save for later">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4.5L5 21V4a1 1 0 0 1 1-1z"></path></svg>
+    </button>
+}
+
+@code {
+    [Parameter, EditorRequired] public FeedItem Item { get; set; } = null!;
+
+    /// <summary>The title as shown on the card (emoji removed).</summary>
+    [Parameter, EditorRequired] public string Title { get; set; } = "";
+
+    [Parameter, EditorRequired] public string Source { get; set; } = "";
+
+    [Parameter] public string? Summary { get; set; }
+}

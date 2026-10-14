@@ -1,0 +1,73 @@
+@page "/box-office"
+@layout PublicLayout
+@inject IDbContextFactory<WebScraperContext> Factory
+@inject FeedDates Dates
+@inject ILogger<BoxOffice> Log
+
+<PageTitle>Box Office · MyNewsFeed</PageTitle>
+<PageHeading Title="Domestic box office" Eyebrow="RESULTS &amp; FORECASTS" Description="Reported weekend totals from The Numbers and upcoming predictions from Boxoffice Pro." />
+<h2>Weekend results — Top 10</h2>
+@if (failed)
+{
+    <p class="empty" role="status">Box-office totals are temporarily unavailable. <a href="box-office">Try again</a></p>
+}
+else if (movies.Count == 0)
+{
+    <p class="empty">No weekend box-office chart is available yet. <a href="box-office">Check again</a></p>
+}
+else
+{
+    var friday = movies[0].WeekendStart;
+    <h3 class="boxoffice-weekend">@BoxOfficeChartQuery.WeekendLabel(friday)</h3>
+    @if (BoxOfficeChartQuery.IsStale(friday, Dates.Today))
+    { <p class="standing-status" role="status">This chart may be out of date; showing the last available weekend.</p> }
+    <ol class="boxoffice-chart" aria-label="Domestic weekend box-office top ten">
+        @foreach (var movie in movies)
+        {
+            <li class="boxoffice-movie" @key="movie.Rank">
+                <span class="boxoffice-rank" aria-label="@($"Rank {movie.Rank}")">@movie.Rank</span>
+                <MoviePoster Url="@movie.PosterUrl" Title="@movie.Title" Class="boxoffice-poster" />
+                <div class="boxoffice-movie-body">
+                    <h3>@if (movie.MovieUrl is { } url) { <a href="@url" target="_blank" rel="noopener noreferrer">@movie.Title</a> } else { @movie.Title }</h3>
+                    <dl class="boxoffice-stats">
+                        <div><dt>Weekend</dt><dd>@BoxOfficeChartQuery.Money(movie.WeekendGross)</dd></div>
+                        <div><dt>Total domestic</dt><dd>@BoxOfficeChartQuery.Money(movie.TotalDomesticGross)</dd></div>
+                        <div><dt>Weekly change</dt><dd>@BoxOfficeChartQuery.Change(movie.WeeklyChangePercent)</dd></div>
+                    </dl>
+                </div>
+            </li>
+        }
+    </ol>
+    <p class="updated">Source: @if (movies[0].SourceUrl is { } source) { <a href="@source" target="_blank" rel="noopener noreferrer">The Numbers</a> } else { <span>The Numbers</span> } · Last checked @Dates.PublishedFull(movies.Min(m => m.FetchedAt))</p>
+    <p class="updated">Reported totals may be revised. — means weekly change is unavailable or the movie is new.</p>
+}
+
+@foreach (var kind in new[] { BoxOfficeForecastQuery.Preview, BoxOfficeForecastQuery.LongRange })
+{
+    <BoxOfficeForecastSection Kind="@kind" Rows="@(forecasts.Movies.Where(m => m.Kind == kind).ToList())"
+        Source="@(forecasts.Sources.SingleOrDefault(s => s.Kind == kind))" UtcNow="@utcNow" />
+}
+
+@code {
+    private IReadOnlyList<BoxOfficeMovie> movies = [];
+    private bool failed;
+    private BoxOfficeForecastSnapshot forecasts = new([], []);
+    private readonly DateTime utcNow = DateTime.UtcNow;
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            await using var db = await Factory.CreateDbContextAsync();
+            movies = await BoxOfficeChartQuery.GetAsync(db);
+        }
+        catch (Exception ex) when (ex is System.Data.Common.DbException or InvalidOperationException)
+        { Log.LogError(ex, "Box-office chart read failed."); failed = true; }
+        try
+        {
+            await using var db = await Factory.CreateDbContextAsync();
+            forecasts = await BoxOfficeForecastQuery.GetAsync(db, Dates.TodayAt(utcNow));
+        }
+        catch (Exception ex) when (ex is System.Data.Common.DbException or InvalidOperationException)
+        { Log.LogError(ex, "Box-office forecast read failed."); }
+    }
+}
