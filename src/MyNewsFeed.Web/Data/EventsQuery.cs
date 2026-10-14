@@ -33,27 +33,17 @@ public static class EventsQuery
         .Where(e => e.ScheduleStatus == null ||
             (e.ScheduleStatus != "STATUS_CANCELED" && e.ScheduleStatus != "STATUS_CANCELLED"
              && e.ScheduleStatus != "STATUS_UNNECESSARY" && e.ScheduleStatus != "STATUS_FULL_TIME" && !e.ScheduleStatus.StartsWith("STATUS_FINAL")))
-        .Where(e => e.ProviderKey == "espn-nwsl" || e.ProviderKey == "espn-wnba" || e.ProviderKey == "espn-mlb" || e.ProviderKey == "espn-championship" || e.ProviderKey == "espn-epl"
+        .Where(e => e.ProviderKey == "espn-nwsl" || e.ProviderKey == "espn-wnba" || e.ProviderKey == "espn-mlb" || e.ProviderKey == "espn-championship" || e.ProviderKey == "espn-epl" || e.ProviderKey == "espn-mls"
             ? e.SportsEventsType != null && e.SportsEventsType.Enabled
                 && e.SportsEventsType.ProviderKey == e.ProviderKey
                 && (e.ProviderKey == "espn-nwsl" ? e.SportsEventsType.ProviderSchoolId == 20907
-                    : e.ProviderKey == "espn-championship" || e.ProviderKey == "espn-epl" || e.SportsEventsType.ProviderSchoolId == 0)
+                    : e.ProviderKey == "espn-championship" || e.ProviderKey == "espn-epl" || e.ProviderKey == "espn-mls" || e.SportsEventsType.ProviderSchoolId == 0)
             : e.EventSources.Any(s => s.Feed.Enabled)
                 || (!e.EventSources.Any() && (e.SportsEventsType == null || e.SportsEventsType.Enabled)));
 
-    private static IQueryable<Models.SportsEvent> InStartedSeasons(WebScraperContext db, DateOnly today)
-    {
-        var calendar = CollegeSeasons.Start(null, today);
-        var basketball = CollegeSeasons.Start("Basketball", today);
-        return Visible(db).Where(e => e.ProviderKey != "big12" || db.SportsEvents.Any(first =>
-            first.ProviderKey == "big12" && first.Sport == e.Sport && first.EventDate <= today
-            && first.EventDate >= ((e.Sport == "Men's Basketball" || e.Sport == "Women's Basketball") ? basketball : calendar)
-            && (first.ScheduleStatus == null || (first.ScheduleStatus != "STATUS_CANCELED" && first.ScheduleStatus != "STATUS_CANCELLED"))));
-    }
-
     public static async Task<IReadOnlyList<EventSchool>> GetSchoolsAsync(WebScraperContext db) =>
-        await db.SportsEventsTypes.AsNoTracking().Where(t => t.Enabled && (t.SchoolName != null || t.ProviderKey == "espn-nwsl" || t.ProviderKey == "espn-wnba" || t.ProviderKey == "espn-mlb" || t.ProviderKey == "espn-championship" || t.ProviderKey == "espn-epl"))
-            .OrderBy(t => t.SchoolName).Select(t => new EventSchool(t.Id, t.ProviderKey == "espn-championship" ? "EFL Championship" : t.ProviderKey == "espn-epl" ? "Premier League" : t.ProviderKey == "espn-mlb" ? "MLB" : t.ProviderKey == "espn-wnba" ? "WNBA" : t.ProviderKey == "espn-nwsl" ? "Kansas City Current" : t.SchoolName!)).ToListAsync();
+        await db.SportsEventsTypes.AsNoTracking().Where(t => t.Enabled && (t.SchoolName != null || t.ProviderKey == "espn-nwsl" || t.ProviderKey == "espn-wnba" || t.ProviderKey == "espn-mlb" || t.ProviderKey == "espn-championship" || t.ProviderKey == "espn-epl" || t.ProviderKey == "espn-mls"))
+            .OrderBy(t => t.SchoolName).Select(t => new EventSchool(t.Id, t.ProviderKey == "espn-championship" ? "EFL Championship" : t.ProviderKey == "espn-epl" ? "Premier League" : t.ProviderKey == "espn-mls" ? "MLS" : t.ProviderKey == "espn-mlb" ? "MLB" : t.ProviderKey == "espn-wnba" ? "WNBA" : t.ProviderKey == "espn-nwsl" ? "Kansas City Current" : t.SchoolName!)).ToListAsync();
 
     /// <summary>A safety cap on one page; a season is far smaller than this.</summary>
     public const int Limit = 200;
@@ -64,7 +54,7 @@ public static class EventsQuery
     /// with it directly and never converted.
     /// </summary>
     public static async Task<IReadOnlyList<string>> GetSportsAsync(WebScraperContext db, DateOnly today, int? school = null, DateOnly? from = null, DateOnly? to = null) =>
-        await InStartedSeasons(db, today)
+        await Visible(db)
             .Where(e => e.EventDate >= today && (from == null || e.EventDate >= from) && (to == null || e.EventDate <= to) && e.Sport != null
                 && (school == null || e.EventSources.Any(s => s.SportsEventsTypeId == school && s.Feed.Enabled)
                     || (!e.EventSources.Any() && e.SportsEventsTypeId == school)))
@@ -84,7 +74,7 @@ public static class EventsQuery
     public static async Task<EventsPage> GetUpcomingAsync(
         WebScraperContext db, DateOnly today, string? sport, string? search, int limit = Limit, int? school = null, DateOnly? from = null, DateOnly? to = null, string? team = null, int? providerTeamId = null, int offset = 0)
     {
-        var query = InStartedSeasons(db, today).Where(e => e.EventDate >= today && (from == null || e.EventDate >= from) && (to == null || e.EventDate <= to));
+        var query = Visible(db).Where(e => e.EventDate >= today && (from == null || e.EventDate >= from) && (to == null || e.EventDate <= to));
         if (school is { } schoolId)
             query = query.Where(e => e.EventSources.Any(s => s.SportsEventsTypeId == schoolId && s.Feed.Enabled)
                 || (!e.EventSources.Any() && e.SportsEventsTypeId == schoolId));
@@ -125,7 +115,7 @@ public static class EventsQuery
             .ThenBy(e => e.Id)
             .Skip(offset).Take(limit)
             .Select(e => new EventItem(
-                e.Id, e.Url, e.Title, e.Sport, e.Opponent, e.ProviderKey == "espn-championship" || e.ProviderKey == "espn-epl" ? false : e.IsAway, e.Location, e.EventDate, e.StartsAtUtc, e.TimeTbd,
+                e.Id, e.Url, e.Title, e.Sport, e.Opponent, e.ProviderKey == "espn-championship" || e.ProviderKey == "espn-epl" || e.ProviderKey == "espn-mls" ? false : e.IsAway, e.Location, e.EventDate, e.StartsAtUtc, e.TimeTbd,
                 e.Tv, e.StreamUrl, e.LiveStatsUrl, e.TeamLogoUrl, e.OpponentLogoUrl,
                 e.SchoolName ?? (e.SportsEventsType != null ? e.SportsEventsType.SchoolName : null), e.IsNeutral, e.Radio, e.AudioUrl, e.ScheduleStatus, e.ProviderKey ?? (e.SportsEventsType != null ? e.SportsEventsType.ProviderKey : null)))
             .ToListAsync();
@@ -138,7 +128,7 @@ public static class EventsQuery
     /// whose time is still to be announced come last.
     /// </summary>
     public static async Task<IReadOnlyList<EventItem>> GetOnDateAsync(WebScraperContext db, DateOnly date) =>
-        await InStartedSeasons(db, date)
+        await Visible(db)
             .Where(e => e.EventDate == date)
             .OrderBy(e => e.StartsAtUtc == null ? 1 : 0)
             .ThenBy(e => e.StartsAtUtc)
@@ -146,9 +136,9 @@ public static class EventsQuery
             .ThenBy(e => e.Id)
             .Take(Limit)
             .Select(e => new EventItem(
-                e.Id, e.Url, e.Title, e.Sport, e.Opponent, e.IsAway, e.Location, e.EventDate, e.StartsAtUtc, e.TimeTbd,
+                e.Id, e.Url, e.Title, e.Sport, e.Opponent, e.ProviderKey == "espn-mls" ? false : e.IsAway, e.Location, e.EventDate, e.StartsAtUtc, e.TimeTbd,
                 e.Tv, e.StreamUrl, e.LiveStatsUrl, e.TeamLogoUrl, e.OpponentLogoUrl,
-                e.SchoolName ?? (e.SportsEventsType != null ? e.SportsEventsType.SchoolName : null), e.IsNeutral, e.Radio, e.AudioUrl, e.ScheduleStatus))
+                e.SchoolName ?? (e.SportsEventsType != null ? e.SportsEventsType.SchoolName : null), e.IsNeutral, e.Radio, e.AudioUrl, e.ScheduleStatus, e.ProviderKey ?? (e.SportsEventsType != null ? e.SportsEventsType.ProviderKey : null)))
             .ToListAsync();
 
     /// <summary>Builds the query string that keeps the current filters. Empty when nothing is set.</summary>

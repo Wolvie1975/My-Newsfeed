@@ -203,9 +203,9 @@
         var mode = filter ? filter.value : 'all';
         var total = list.length;
         list = list.filter(function (a) { return mode === 'all' || (mode === 'read' ? a.read === true : a.read !== true); });
-        var signature = mode + list.map(function (a) { return a.url + ':' + (a.read === true); }).join('\n');
+        var signature = mode + ':' + total + ':' + list.map(function (a) { return a.url + ':' + (a.read === true); }).join('\n');
         var count = document.querySelector('[data-reading-count]');
-        if (count && count.textContent !== list.length + ' of ' + total + ' saved articles') count.textContent = list.length + ' of ' + total + ' saved articles';
+        if (count) { count.hidden = total === 0; var label = mode === 'all' ? total + ' saved articles' : list.length + ' of ' + total + ' saved articles'; if (count.textContent !== label) count.textContent = label; }
         if (container.getAttribute('data-rendered') === signature) return;
         container.setAttribute('data-rendered', signature);
 
@@ -213,7 +213,14 @@
         list.forEach(function (a) { container.appendChild(savedCard(a)); });
 
         var empty = document.querySelector('[data-saved-empty]');
-        if (empty) empty.hidden = list.length > 0;
+        if (empty) {
+            empty.hidden = list.length > 0;
+            var filtered = total > 0;
+            empty.querySelector('[data-saved-empty-title]').textContent = filtered ? 'No articles match this filter' : 'Your reading list is empty';
+            empty.querySelector('[data-saved-empty-description]').textContent = filtered ? 'Try viewing all saved articles.' : 'Tap the bookmark on a news article to save it for later in this browser.';
+            empty.querySelector('[data-saved-empty-action]').hidden = filtered;
+            empty.querySelector('[data-show-all-saved]').hidden = !filtered;
+        }
     }
 
     function syncSaves(scope) {
@@ -240,7 +247,7 @@
         });
 
         var toolbar = document.querySelector("[data-reading-toolbar]");
-        if (toolbar) toolbar.hidden = !storageOk;
+        if (toolbar) toolbar.hidden = !storageOk || list.length === 0;
         if (scope === document || matchesWithin(scope, '[data-saved-list]').length) renderSavedPage(list);
     }
 
@@ -469,6 +476,8 @@
             setTheme(currentTheme() === 'dark' ? 'light' : 'dark', true);
             return;
         }
+
+        if (e.target.closest('[data-show-all-saved]')) { var filter = document.querySelector('[data-reading-filter]'); if (filter) filter.value = 'all'; syncSaves(); return; }
 
         var read = e.target.closest('[data-mark-read]');
         if (read) {

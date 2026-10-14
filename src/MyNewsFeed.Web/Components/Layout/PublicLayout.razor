@@ -4,18 +4,20 @@
 @{
     var path = Nav.ToBaseRelativePath(Nav.Uri);
     var onEvents = path.StartsWith("events", StringComparison.OrdinalIgnoreCase);
+    var onDigital = path.StartsWith("movies/digital", StringComparison.OrdinalIgnoreCase);
     var onMovies = path.StartsWith("movies", StringComparison.OrdinalIgnoreCase);
     var onTv = path.StartsWith("tv", StringComparison.OrdinalIgnoreCase);
     var onVideos = path.StartsWith("videos", StringComparison.OrdinalIgnoreCase);
     var onRankings = path.StartsWith("rankings", StringComparison.OrdinalIgnoreCase);
     var onStandings = path.StartsWith("standings", StringComparison.OrdinalIgnoreCase);
     var onResults = path.StartsWith("results", StringComparison.OrdinalIgnoreCase)
-        || path.StartsWith("championship/results", StringComparison.OrdinalIgnoreCase);
+        || path.StartsWith("championship/results", StringComparison.OrdinalIgnoreCase)
+        || path.StartsWith("mls/results", StringComparison.OrdinalIgnoreCase);
     var onBoxOffice = path.StartsWith("box-office", StringComparison.OrdinalIgnoreCase);
     var onNews = path.StartsWith("news", StringComparison.OrdinalIgnoreCase);
     var onSaved = path.StartsWith("saved", StringComparison.OrdinalIgnoreCase);
     var onHome = path.Length == 0 || path[0] is '?' or '#';
-    var section = onTv ? "TV & Streaming" : onEvents ? "Sports Events" : onMovies ? "Movies" : onVideos ? "Videos"
+    var section = onTv ? "TV & Streaming" : onEvents ? "Sports Events" : onDigital ? "Digital rental / purchase" : onMovies ? "Movies" : onVideos ? "Videos"
         : onRankings ? "Top 25" : onStandings ? "Standings" : onResults ? "Results" : onBoxOffice ? "Box Office" : onNews ? "News" : onSaved ? "Saved articles" : onHome ? "Home" : "Browse";
 }
 
@@ -28,13 +30,13 @@
             <a href="" aria-current="@(onHome ? "page" : null)">Home</a>
             <a href="news" aria-current="@(onNews ? "page" : null)">News</a>
             <a href="box-office" aria-current="@(onBoxOffice ? "page" : null)">Box Office</a>
-            <a href="events" aria-current="@(onEvents ? "page" : null)">Sports Events</a>
+            <details class="desktop-nav-group" data-mobile-nav><summary class="@((onEvents || onResults || onStandings || onRankings) ? "is-current" : null)">Sports ▾</summary><div class="desktop-nav-links">            <a href="events" aria-current="@(onEvents ? "page" : null)">Sports Events</a>
             <a href="results" aria-current="@(onResults ? "page" : null)">Results</a>
             <a href="standings" aria-current="@(onStandings ? "page" : null)">Standings</a>
-            <a href="rankings" aria-current="@(onRankings ? "page" : null)">Top 25</a>
-            <a href="movies" aria-current="@(onMovies ? "page" : null)">Movies</a>
+            <a href="rankings" aria-current="@(onRankings ? "page" : null)">Top 25</a></div></details>
+            <details class="desktop-nav-group" data-mobile-nav><summary class="@((onMovies || onTv || onVideos) ? "is-current" : null)">Entertainment ▾</summary><div class="desktop-nav-links">            <a href="movies" aria-current="@(onMovies && !onDigital ? "page" : null)">Movies</a>
             <a href="tv" aria-current="@(onTv ? "page" : null)">TV &amp; Streaming</a>
-            <a href="videos" aria-current="@(onVideos ? "page" : null)">Videos</a>
+            <a href="videos" aria-current="@(onVideos ? "page" : null)">Videos</a><a href="movies/digital" aria-current="@(onDigital ? "page" : null)">Digital rental / purchase</a></div></details>
         </nav>
 
         <div class="header-actions">
@@ -67,16 +69,23 @@
             <svg class="mobile-nav__chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg>
         </summary>
         <nav aria-label="Main" class="mobile-nav__links">
+            <span class="nav-group-label">News</span>
             <a href="" aria-current="@(onHome ? "page" : null)">Home</a>
             <a href="news" aria-current="@(onNews ? "page" : null)">News</a>
             <a href="box-office" aria-current="@(onBoxOffice ? "page" : null)">Box Office</a>
+            <span class="nav-group-label">Sports</span>
             <a href="events" aria-current="@(onEvents ? "page" : null)">Sports Events</a>
             <a href="results" aria-current="@(onResults ? "page" : null)">Results</a>
             <a href="standings" aria-current="@(onStandings ? "page" : null)">Standings</a>
             <a href="rankings" aria-current="@(onRankings ? "page" : null)">Top 25</a>
+            <span class="nav-group-label">Entertainment</span>
             <a href="movies" aria-current="@(onMovies ? "page" : null)">Movies</a>
             <a href="tv" aria-current="@(onTv ? "page" : null)">TV &amp; Streaming</a>
             <a href="videos" aria-current="@(onVideos ? "page" : null)">Videos</a>
+            <a href="movies/digital">Digital rental / purchase</a>
+            <span class="nav-group-label">Your links</span>
+            <a href="saved" aria-current="@(onSaved ? "page" : null)">Saved articles</a>
+            <AuthorizeView><Authorized><a href="admin">Administration</a></Authorized><NotAuthorized><a href="login">Admin sign in</a></NotAuthorized></AuthorizeView>
         </nav>
     </details>
 

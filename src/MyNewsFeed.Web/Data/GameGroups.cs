@@ -9,6 +9,7 @@ public static class GameGroups
         "espn-championship" => "EFL Championship",
         "espn-epl" => "Premier League",
         "espn-mlb" => "MLB",
+        "espn-mls" => "MLS",
         "espn-nwsl" => "NWSL",
         "espn-wnba" => "WNBA",
         "big12" => game.Sport switch

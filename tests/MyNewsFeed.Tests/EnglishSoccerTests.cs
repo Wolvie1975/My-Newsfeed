@@ -55,7 +55,7 @@ public class EnglishSoccerTests
             CREATE TABLE dbo.EnglishResultFixture (ID bigint PRIMARY KEY, SourceId int NOT NULL, ProviderKey nvarchar(50) NOT NULL,
              GameId int NOT NULL, Season int NOT NULL, MatchDate date NOT NULL, StartsAtUtc datetime2 NOT NULL,
              HomeTeamId int NOT NULL, AwayTeamId int NOT NULL, HomeTeamName nvarchar(200) NOT NULL, AwayTeamName nvarchar(200) NOT NULL,
-             HomeScore int NULL, AwayScore int NULL, HomeLogoUrl nvarchar(2048) NULL, AwayLogoUrl nvarchar(2048) NULL,
+             HomeScore int NULL, AwayScore int NULL, HomeShootoutScore int NULL, AwayShootoutScore int NULL, HomeLogoUrl nvarchar(2048) NULL, AwayLogoUrl nvarchar(2048) NULL,
              ScheduleStatus nvarchar(100) NOT NULL, SourceUrl nvarchar(2048) NULL, FirstSeenAt datetime2 NOT NULL, LastSeenAt datetime2 NOT NULL);
             INSERT dbo.EnglishFeedFixture (ID,RssUrl,EventsTypeName,DateAdded,ProviderKey,Enabled)
              VALUES (1,'https://test.invalid','Championship',GETUTCDATE(),'espn-championship',1),

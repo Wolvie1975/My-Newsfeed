@@ -18,6 +18,8 @@ public sealed class SportsMatchResult
     public string AwayTeamName { get; set; } = "";
     public int? HomeScore { get; set; }
     public int? AwayScore { get; set; }
+    public int? HomeShootoutScore { get; set; }
+    public int? AwayShootoutScore { get; set; }
     public string? HomeLogoUrl { get; set; }
     public string? AwayLogoUrl { get; set; }
     public string ScheduleStatus { get; set; } = "";

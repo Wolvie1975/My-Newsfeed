@@ -4,9 +4,9 @@
 @inject FeedDates Dates
 @inject ILogger<DigitalReleases> Log
 
-<PageTitle>Digital / VOD · MyNewsFeed</PageTitle>
-<PageHeading Title="Digital / VOD" Eyebrow="COMING HOME" Description="Confirmed digital releases from today onward." />
-<p><a href="movies">All movie releases</a></p>
+<PageTitle>Digital rental / purchase · MyNewsFeed</PageTitle>
+<PageHeading Title="Digital rental / purchase" Eyebrow="COMING HOME" Description="Confirmed rent-or-buy release dates from the selected provider." />
+<nav class="release-tabs" aria-label="Movie release views"><a href="movies">All releases</a><a href="movies?type=theatrical">In theaters</a><a href="movies?type=subscription">Subscription streaming</a><a href="movies/digital" aria-current="page">Digital rental / purchase</a></nav>
 @if (data is null)
 {
     <p class="empty">Digital releases are temporarily unavailable. <a href="movies/digital">Try again</a></p>
@@ -40,9 +40,7 @@ else
                 @foreach (var movie in day)
                 {
                     <li class="movie-card" data-release-id="@movie.Id">
-                        <div class="movie-poster" aria-hidden="true">
-                            @if (EventsText.LogoUrl(movie.Poster) is { } poster) { <img src="@poster" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()" /> }
-                        </div>
+                        <MoviePoster Url="@movie.Poster" Title="@movie.Title" Class="movie-poster" />
                         <div class="movie-body">
                             <p class="movie-kind">VOD / Digital</p><h3>@movie.Title</h3>
                             @if (movie.Year is { } year) { <p class="movie-meta">@year</p> }

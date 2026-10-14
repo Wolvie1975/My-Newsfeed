@@ -1,224 +1,191 @@
-# Deploying the Results page
+# Deployment and operations
 
-Instructions for the agent deploying MyNewsFeed on a server. This release adds the public `/results` page (final scores
-from ESPN) and the `/admin/results` follows page. The server has **its own SQL Server database**, separate from the
-development one, so the database has to be prepared here before the site will work.
+Maintained runbook consolidated October 13, 2026 (Central). This replaces the
+commit-specific Results rollout and separate movie/PWA instructions. Historical
+image tags and validation belong in [Release history](docs/release-history.md).
+Sports and entertainment contracts are in [Sports](docs/sports.md) and
+[Entertainment](docs/entertainment.md).
 
-Work through the steps in order. Each step has a check; do not go on to the next step until its check passes. When this
-document says **stop**, stop and report to the user what you found. Do not improvise around it.
+## Scope and runtime configuration
 
-## Ground rules
+The web app runs as `mynewsfeed-web`, listens on container port 8080 and normally
+publishes host port 8085 on the shared `dev-bridge` network. SQL Server is maintained
+separately. The reviewed shared environment uses sql2025 / WebScraper; another server
+may use a different database. Always use that deployment's actual runtime connection,
+not an assumed development database or copied numeric source IDs.
 
-- Do not change any code, scripts or `docker-compose.yml`. If something here does not match what you find, stop and ask.
-- Never print, log or paste the database password or the admin password. Show server and database names only.
-- Run SQL only against the database named in this server's `.env` (`SQL_CONNECTION`). If you are unsure which
-  database that is, stop and ask.
-- Ask the user before step 4 whether the database has a recent backup. If the answer is no or unknown, do not continue
-  until the user explicitly says to go ahead.
-- Run each SQL script once, as written. Do not edit a script to work around an error.
+Compose reads private `.env` settings: SQL_CONNECTION, ADMIN_PASSWORD, optional
+WEB_PORT, REVERSE_PROXY_IP and DISPLAY_TIMEZONE. Direct container deployments may
+have runtime overrides absent from `.env`; inspect and preserve them privately.
+Keep the persistent `/keys` data-protection volume, network, ports, restart policy,
+health check and any existing operational settings. Never print passwords or a full
+connection string. Display:TimeZone defaults to America/Chicago. Scraper:StaleAfterHours
+controls admin freshness; Results:SyncIntervalHours defaults to a ten-minute interval.
 
-## What this release contains
+The web app requires outbound HTTPS to ESPN and its image CDN for result synchronization.
+Rust scraping jobs run separately. A web deployment does not automatically rebuild
+or configure the scraper, register new providers or enable feeds.
 
-| Commit | Change |
-|---|---|
-| `5d03d69` | Results page, ESPN sync, admin follows page, `db/011` |
-| `fddb456` | Layout fixes from review |
-| `833e4f9` | Polish from review notes |
-| `f923198` | `db/012`, the seed of the seven follows |
+## Prepare source and database
 
-Database changes, both in `db/`:
+Inspect `git status --short`; preserve local changes and use the intended release
+source. Fetch/fast-forward only a clean, appropriate branch when needed. Do not reset
+server changes or blindly reuse the original Results release's fixed commit IDs.
 
-| Script | What it does | Safe to run twice? |
-|---|---|---|
-| `011_add_result_follows_and_games.sql` | Creates tables `dbo.ResultFollows` and `dbo.ResultGames` | **No.** It fails if the tables already exist. Run it only when step 3 says they are missing. |
-| `012_seed_result_follows.sql` | Adds 7 follows: NFL, MLB, MLS, NWSL, and Kansas football, men's basketball and volleyball | Yes. It skips follows that already exist. |
+Confirm a recent backup before schema changes. If backup status is unknown, stop
+and obtain approval before changing schema. Run the existing scripts as written,
+in dependency order, with error-on-failure mode. Do not edit migrations to work
+around failures or re-run a partially completed nonrepeatable migration.
 
-New runtime requirement: the site needs outbound HTTPS to `site.api.espn.com` and `a.espncdn.com`. There are **no new
-environment variables** and no API key.
-
-## Step 1: Get the code
-
-From the repository folder on the server:
-
-```bash
-git fetch origin
-git checkout develop
-git pull --ff-only origin develop
-git log --oneline -5
-```
-
-**Check:** the log includes `f923198 Seed the Results page's follows for new databases`, and both `db/011_add_result_follows_and_games.sql`
-and `db/012_seed_result_follows.sql` exist. If `git pull --ff-only` refuses because the server's copy has local commits
-or changes, **stop**.
-
-## Step 2: Find the database and a way to run SQL
-
-1. Read `SQL_CONNECTION` from `.env`. It has the form
-   `Server=<host>,<port>;Database=<name>;User Id=<user>;Password=<password>;...`. Note the host, port, database and user.
-   Report the host and database name to the user; never the password.
-2. Choose a way to run `sqlcmd`, in this order:
-   - **`sqlcmd` installed on the server** (`which sqlcmd`).
-   - **The SQL Server container's own tools**, when SQL Server runs in Docker on this server (`docker ps` shows it,
-     for example `sql2025`): `docker exec -i <container> /opt/mssql-tools18/bin/sqlcmd ...`. With this option, use
-     `-S localhost` instead of the host name, because the command runs inside the SQL container.
-   - If neither is available, **stop** and ask the user how SQL scripts are normally run on this server.
-3. Pass the password through the `SQLCMDPASSWORD` environment variable, never on the command line. Use these flags on
-   every call: `-S <host>,<port> -d <database> -U <user> -C -b`. `-C` trusts the server certificate, matching
-   `TrustServerCertificate=True`. `-b` stops at the first error.
-
-Example, with `sqlcmd` installed (substitute the values from `.env`):
-
-```bash
-export SQLCMDPASSWORD='<password from .env>'   # do not echo this
-sqlcmd -S <host>,<port> -d <database> -U <user> -C -b -Q "SELECT DB_NAME() AS db, @@SERVERNAME AS server"
-```
-
-**Check:** the query returns the database name from `.env`. If it connects to a different database, **stop**.
-
-## Step 3: Check what the database already has
-
-Run this read-only query. It changes nothing.
+Use installed sqlcmd, or SQL Server container tooling
+`/opt/mssql-tools18/bin/sqlcmd`. Supply SQLCMDPASSWORD privately through the environment,
+not in command arguments/output. Every invocation uses `-S`, `-d`, `-U`, `-C`, `-b`.
+Inside the SQL container use localhost. First run a read-only identity check:
 
 ```sql
-SELECT 'base tables (scraper)' AS item,
-       CASE WHEN OBJECT_ID('dbo.Pages') IS NOT NULL AND OBJECT_ID('dbo.Sources') IS NOT NULL
-             AND OBJECT_ID('dbo.SportsEvents') IS NOT NULL AND OBJECT_ID('dbo.YouTubeVideos') IS NOT NULL
-            THEN 'ok' ELSE 'MISSING' END AS state
-UNION ALL SELECT '001 Pages.SourceId',            CASE WHEN COL_LENGTH('dbo.Pages', 'SourceId') IS NOT NULL THEN 'ok' ELSE 'MISSING' END
-UNION ALL SELECT '002 SourceCategories',          CASE WHEN OBJECT_ID('dbo.SourceCategories') IS NOT NULL THEN 'ok' ELSE 'MISSING' END
-UNION ALL SELECT '003+004 Pages.SourceCategoryId dropped', CASE WHEN COL_LENGTH('dbo.Pages', 'SourceCategoryId') IS NULL THEN 'ok' ELSE 'MISSING' END
-UNION ALL SELECT '006 YoutubeVideoFeed',          CASE WHEN OBJECT_ID('dbo.YoutubeVideoFeed') IS NOT NULL THEN 'ok' ELSE 'MISSING' END
-UNION ALL SELECT '007 YoutubeVideoFeed.Url',      CASE WHEN COL_LENGTH('dbo.YoutubeVideoFeed', 'Url') IS NOT NULL AND COL_LENGTH('dbo.YoutubeVideoFeed', 'FeedUrl') IS NULL THEN 'ok' ELSE 'MISSING' END
-UNION ALL SELECT '008 YoutubeVideoFeed rebuilt',  CASE WHEN OBJECT_ID('dbo.PK_YoutubeVideoFeed_old') IS NULL AND OBJECT_ID('dbo.PK_YoutubeVideoFeed') IS NOT NULL THEN 'ok' ELSE 'MISSING' END
-UNION ALL SELECT '009 SportsEventsType',          CASE WHEN OBJECT_ID('dbo.SportsEventsType') IS NOT NULL THEN 'ok' ELSE 'MISSING' END
-UNION ALL SELECT '010 SportsEventsType.SchoolName', CASE WHEN COL_LENGTH('dbo.SportsEventsType', 'SchoolName') IS NOT NULL THEN 'ok' ELSE 'MISSING' END
-UNION ALL SELECT '011 ResultFollows + ResultGames',
-       CASE WHEN OBJECT_ID('dbo.ResultFollows') IS NOT NULL AND OBJECT_ID('dbo.ResultGames') IS NOT NULL THEN 'present'
-            WHEN OBJECT_ID('dbo.ResultFollows') IS NULL AND OBJECT_ID('dbo.ResultGames') IS NULL THEN 'not yet'
-            ELSE 'PARTIAL' END
-UNION ALL SELECT '012 follows seeded',
-       CASE WHEN OBJECT_ID('dbo.ResultFollows') IS NULL THEN 'not yet'
-            ELSE CAST((SELECT COUNT(*) FROM dbo.ResultFollows) AS varchar(10)) + ' follows' END;
+SELECT DB_NAME() AS db, @@SERVERNAME AS server;
 ```
 
-`005` only fills in display labels and cannot be checked by structure. It is not needed for this release.
+Verify the database matches runtime configuration. Stop if it does not, required base
+scraper tables are missing, or a schema is partially initialized. Original application
+migrations 001–010 prepare Pages/source categories/YouTube/sports configuration;
+inspect existing columns and objects before applying earlier data-moving migrations.
+Keep scraper-owned `sql/` migrations in their separate repository.
 
-How to read the result:
+| Application script | Purpose / application rule |
+| --- | --- |
+| [011](db/011_add_result_follows_and_games.sql) | ResultFollows and ResultGames; run once only when both absent; partial presence requires investigation |
+| [012](db/012_seed_result_follows.sql) | NFL/MLB/MLS/NWSL and Kansas follows; repeatable, preserves existing choices |
+| [013](db/013_add_result_conference_follows.sql) | Conference follows / ResultFollowTeams; run once after 011 |
+| [014](db/014_seed_big12_follows.sql) | Big 12 football/basketball/volleyball follows; after 013, preserves existing choices |
+| [015](db/015_seed_big12_womens_soccer.sql) | Big 12 women's soccer; after 013, repeatable |
+| [016](db/016_add_schedule_status.sql) | Nullable ScheduleStatus; apply before web deployment if scraper has not added it; repeatable |
+| [017](db/017_seed_schedule_result_coverage.sql) | WNBA and Big 12 women's basketball coverage; requires conference schema, preserves existing choices |
 
-| Result | What to do |
-|---|---|
-| Base tables `MISSING` | **Stop.** The scraper has not created its tables on this database, so this is not a working MyNewsFeed database. |
-| Any of 001–010 `MISSING` | **Stop.** Report which ones. Earlier scripts must be applied in order and some move data; that is the user's call, not part of this release. |
-| 011 `not yet` | Go on to step 4. |
-| 011 `present` | Skip step 4 and go to step 5. |
-| 011 `PARTIAL` | **Stop.** Only one of the two tables exists. Report it and do not run 011. |
+Feature prerequisites include SELECT access to scraper-owned standings, ranking,
+movie, TV, box-office and Championship result tables. Apply scraper schema/runtime
+grants and validated initial collection before deploying dependent views. Do not
+invent web migrations for missing scraper tables or give the web app an ingestion
+role solely to read snapshots. Successful empty enabled feeds are valid.
 
-## Step 4: Create the tables (`011`)
+Before deploying the MLS season-results model, run the scraper’s `--configure-mls`
+with migration credentials to provision nullable HomeShootoutScore/AwayShootoutScore
+on SportsMatchResults. Both columns must exist before the updated web app reads
+that shared table, including Championship queries. Setup registers MLS disabled
+and preserves existing settings; explicitly enable the intended MLS feed and
+verify `--events-from-db` collection. No additional hourly scheduler flag is needed.
 
-Only when step 3 showed 011 `not yet`, and after the user has confirmed a backup (see the ground rules):
+Before deploying movie-section posters, apply the scraper’s additive
+`--configure-boxoffice` migration so BoxOfficeWeekend and BoxOfficeForecasts
+both expose nullable PosterUrl and PosterLookupStatus. The web queries require
+these columns; movie releases continue reading Movies.PosterUrl. The scraper
+owns CinemaPosterCache and poster lookup/backfill, not the web app.
+
+For movie releases run [check-movie-schema.sql](deployment/check-movie-schema.sql)
+against the target database in read-only, error-on-failure mode. Stop on failed schema
+checks; provision missing scraper schema in the scraper project first.
+
+## Build and deploy
+
+Run relevant application checks; the full suite is:
 
 ```bash
-sqlcmd -S <host>,<port> -d <database> -U <user> -C -b -i db/011_add_result_follows_and_games.sql
+dotnet test MyNewsFeed.sln
 ```
 
-**Check:** run step 3's query again. 011 must now say `present`. If the script errored, **stop** and report the error
-and step 3's output. Do not run 011 again.
-
-## Step 5: Add the follows (`012`)
+Tests need configured SQL access; use development/staging for integration fixtures.
+Record the current image ID for rollback. For a Compose-managed deployment whose
+private settings reflect all current runtime overrides:
 
 ```bash
-sqlcmd -S <host>,<port> -d <database> -U <user> -C -b -i db/012_seed_result_follows.sql
-```
-
-**Check:**
-
-```sql
-SELECT Kind, Sport, League, TeamId, Name, Enabled FROM dbo.ResultFollows ORDER BY Kind DESC, League;
-```
-
-There should be at least these 7 rows, all `Enabled = 1` unless the user disabled some on purpose:
-
-| Kind | Sport | League | TeamId | Name |
-|---|---|---|---|---|
-| team | football | college-football | 2305 | Kansas Jayhawks |
-| team | basketball | mens-college-basketball | 2305 | Kansas Jayhawks |
-| team | volleyball | womens-college-volleyball | 2305 | Kansas Jayhawks |
-| league | baseball | mlb | | MLB |
-| league | football | nfl | | NFL |
-| league | soccer | usa.1 | | MLS |
-| league | soccer | usa.nwsl | | NWSL |
-
-## Step 6: Deploy the site
-
-From the repository folder:
-
-```bash
-docker compose up -d --build
+docker image tag "$(docker inspect mynewsfeed-web --format '{{.Image}}')" mynewsfeed-web:before-release
+docker compose up -d --build web
 docker compose ps
 ```
 
-The build runs `dotnet publish` and fails on purpose if the Blazor script is missing from the output. If the build fails,
-**stop** and report the last 40 lines of the build output.
+The Dockerfile publishes the app and verifies `_framework/blazor.web.js` is in the
+static-asset manifest. A failed build must not replace the running service. Preserve
+logs and report the build failure. If Compose settings do not match the live runtime,
+recreate from its preserved configuration through the established deployment process
+rather than discarding settings. Never include runtime secrets in a report.
 
-**Check:** the `web` service reaches `healthy` within about a minute. Its health check calls `/healthz`, which only passes
-when the database is reachable. Then:
+## Validate and troubleshoot
 
-```bash
-curl -s -o /dev/null -w "%{http_code}\n" "http://localhost:${WEB_PORT:-8085}/healthz"    # expect 200
-curl -s -o /dev/null -w "%{http_code}\n" "http://localhost:${WEB_PORT:-8085}/results"    # expect 200
-```
+The container should become healthy within about a minute; `/healthz` checks database
+reachability. Verify `/healthz`, `/news`, `/events`, `/results`, `/standings`, `/rankings`,
+`/movies`, `/movies/digital`, `/box-office` and affected admin views. Unauthenticated
+admin access should redirect to login. Inspect theme/responsive layout, selected-source
+URLs, paging and no-JavaScript controls relevant to the release. Inspect application
+logs without publishing credentials or connection strings.
 
-## Step 7: Confirm the results sync
+A missing required table, column or SELECT grant requires database preparation, not
+a fabricated empty success. Failed provider imports should keep last-good data with
+a generic public warning and diagnostic details restricted to logs/admin. Empty results
+can be normal outside game dates or before finals synchronize. Date-limited results
+and full-season Championship results are independent.
 
-The background sync starts about one minute after the site starts, then checks every 30 minutes and refreshes each follow
-every 3 hours. The first run makes about 38 requests to ESPN: two per Kansas follow, and one per day for a 7-day backfill
-for each league. Wait 3 minutes after step 6, then:
-
-```bash
-docker compose logs web --since 10m | grep -E "Results sync|ESPN"
-```
-
-Expect a line like `Results sync: 7 synced, 0 failed, 120 games changed, 38 ESPN requests.` The numbers vary with the
-schedule. Then check the database:
+For score sync, inspect recent `Results sync`/ESPN log entries after the service starts.
+A healthy run can skip follows not yet due; verify actual status before forcing refresh.
+Read-only checks:
 
 ```sql
-SELECT Name, League, LastSyncedAt, LastError FROM dbo.ResultFollows ORDER BY Kind DESC, League;
-SELECT League, COUNT(*) AS games, SUM(CASE WHEN Completed = 1 THEN 1 ELSE 0 END) AS finals
+SELECT Name,League,Enabled,LastSyncedAt,LastError
+FROM dbo.ResultFollows ORDER BY Kind DESC,League;
+SELECT League,COUNT(*) AS games,
+       SUM(CASE WHEN Completed=1 THEN 1 ELSE 0 END) AS finals
 FROM dbo.ResultGames GROUP BY League ORDER BY League;
 ```
 
-**Check:** every follow has a `LastSyncedAt` and no `LastError`. Most leagues have finals. Low or zero counts can be
-normal: a league in its off-season or an international break, or Kansas men's basketball before November.
+Reporting should identify the target database, scripts actually run, health and HTTP
+checks, relevant sync status, release/rollback image and material skipped steps.
+Historical row counts and timestamps are evidence for their original run only.
 
-## Troubleshooting
+## Rollback
 
-| Symptom | Likely cause | What to do |
-|---|---|---|
-| `/results` or `/admin/results` returns 500; logs mention `Invalid object name 'dbo.ResultFollows'` | 011 was not run on this database | Go back to step 3. |
-| Every follow has `LastError` like `Could not reach ESPN` | The server cannot make outbound HTTPS requests | Report to the user. From the host, `curl -sI https://site.api.espn.com` shows whether it is the network. |
-| A follow has `LastError` like `ESPN answered HTTP 4xx` or `Unexpected response from ESPN` | ESPN changed its unofficial API | Report the exact error to the user. The page keeps the scores it already has. |
-| No `Results sync` line after 5 minutes | Nothing was due (every follow synced in the last 3 hours), or the service hit an error | Check `docker compose logs web | grep -i "results sync run failed"`. If nothing shows and `LastSyncedAt` values are recent, the sync is working. |
-| `/results` says "No teams or leagues are followed yet" | 012 not run, or all follows disabled | Run step 5's check. |
-
-## Rolling back
-
-The tables added by 011 are only used by the new code, so rolling back the site does not require touching the database:
+For the Compose path, restore the recorded image without rebuilding:
 
 ```bash
-git checkout cc888ee          # the commit before this release
-docker compose up -d --build
+docker image tag mynewsfeed-web:before-release mynewsfeed-web:latest
+docker compose up -d --no-build --pull never --force-recreate web
 ```
 
-Leave `dbo.ResultFollows` and `dbo.ResultGames` in place; the previous version ignores them. Dropping them deletes the
-follows and stored scores, so only do that if the user asks for it explicitly.
+A preserved previous container can instead be restored using its matching runtime
+configuration. Verify health and affected routes after rollback. Leave additive
+schemas and stored data intact; dropping results/fixtures destroys data and is not
+part of an application image rollback. Check recorded rollback tags still exist
+before relying on them. `before-release` is a runbook example, not a guaranteed tag.
 
-## Report back
+## Private HTTPS and Android installation
 
-When finished, or when you stop, tell the user:
+Tailscale Serve proxies host HTTP port 8085 through the server's HTTPS `*.ts.net`
+name. It is tailnet-only; Funnel is not used. Serve configuration lives in the
+Tailscale container's persistent state volume. Review existing Serve configuration
+before replacing it:
 
-1. The database host and name you used. Not the password.
-2. Step 3's output, before and after.
-3. Which scripts you ran, and their output or errors.
-4. The `docker compose ps` state, and the `/healthz` and `/results` status codes.
-5. The `Results sync` log line, and each follow's `LastSyncedAt` and `LastError`.
-6. Anything you skipped or stopped on, and why.
+```bash
+docker exec tailscale tailscale serve status
+docker exec tailscale tailscale serve --bg http://127.0.0.1:8085
+```
+
+On Android, connect Tailscale, open the HTTPS address in Chrome, and use Install app /
+Add to Home screen. The manifest launches Home standalone. The service worker caches
+identity assets and a reconnect screen, not articles, schedules, logins or admin pages;
+current content still needs the server.
+
+Production REVERSE_PROXY_IP identifies the trusted host proxy's Docker gateway.
+Compose maps it to ReverseProxy:KnownProxies; forwarded scheme/client headers are
+accepted only from trusted proxies and framework loopback defaults. This supports
+secure authentication cookies through HTTPS while LAN HTTP remains available. Verify
+the gateway after recreating the network:
+
+```bash
+docker inspect mynewsfeed-web --format '{{range .NetworkSettings.Networks}}{{.Gateway}}{{end}}'
+```
+
+Check HTTPS certificate, manifest, icons, service worker/offline screen and admin
+login. Service-worker updates remove only prior `mynewsfeed-pwa-*` caches; change
+cache version when bundled offline assets change.
+
+The original movie deployment report targeted `jcarpio@mynewsfeed-prod` at
+`/home/jcarpio/Projects/My-Newsfeed`. Treat that as historical environment context;
+confirm the current target and runtime configuration before operating on another host.

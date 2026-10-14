@@ -5,7 +5,13 @@
 
 <PageTitle>Movies · MyNewsFeed</PageTitle>
 <PageHeading Title="Movies" Eyebrow="THE RELEASE CALENDAR" Description="Find your next movie night. US releases in theaters, on streaming, and at home." />
-<p><a class="nf-btn nf-btn--secondary" href="movies/digital">Upcoming Digital / VOD →</a></p>
+<nav class="release-tabs" aria-label="Movie release views">
+    <a href="movies" aria-current="@(Type is null ? "page" : null)">All releases</a>
+    <a href="movies?type=theatrical" aria-current="@(Type == "theatrical" ? "page" : null)">In theaters</a>
+    <a href="movies?type=subscription" aria-current="@(Type == "subscription" ? "page" : null)">Subscription streaming</a>
+    <a href="movies/digital">Digital rental / purchase</a>
+</nav>
+<p class="updated">All enabled providers · US release calendar, including dates awaiting confirmation.</p>
 <div class="movies-summary">
     <p class="count">@listing.Total @(listing.Total == 1 ? "release" : "releases")</p>
 </div>
@@ -17,8 +23,9 @@
 {
     <section class="movies-empty">
         <span class="movies-empty__icon" aria-hidden="true">▷</span>
-        <h2>Your next movie night is coming</h2>
-        <p>Movie releases will appear here as the calendar fills up. Check back soon for theater, streaming, and home releases.</p>
+        <h2>@(Type is null ? "Your next movie night is coming" : "No releases in this view")</h2>
+        <p>@(Type is null ? "Movie releases will appear here as the calendar fills up." : "Try another release view or browse all upcoming releases.")</p>
+        @if (Type is not null) { <a class="nf-btn nf-btn--secondary" href="movies">Browse all releases</a> }
     </section>
 }
 else
@@ -31,12 +38,7 @@ else
                 @foreach (var movie in group)
                 {
                     <li class="movie-card">
-                        <div class="movie-poster" aria-hidden="true">
-                            @if (EventsText.LogoUrl(movie.Poster) is { } poster)
-                            {
-                                <img src="@poster" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()" />
-                            }
-                        </div>
+                        <MoviePoster Url="@movie.Poster" Title="@movie.Title" Class="movie-poster" />
                         <div class="movie-body">
                             <p class="movie-kind">@(MoviesQuery.Types.GetValueOrDefault(movie.Type, movie.Type))</p>
                             <h3>@movie.Title</h3>
@@ -68,16 +70,18 @@ else
 
 @code {
     [SupplyParameterFromQuery(Name = "page")] private string? PageText { get; set; }
+    [SupplyParameterFromQuery(Name = "type")] private string? TypeText { get; set; }
+    private string? Type => TypeText is "theatrical" or "subscription" ? TypeText : null;
     private int page;
     private int offset;
-    private string PageHref(int target) => "movies?page=" + target;
+    private string PageHref(int target) => "movies?page=" + target + (Type is null ? "" : "&type=" + Uri.EscapeDataString(Type));
     private MoviesPage listing = new([], 0, [], null);
     protected override async Task OnParametersSetAsync()
     {
         await using var db = await Factory.CreateDbContextAsync();
         page = int.TryParse(PageText, out var requested) ? Math.Clamp(requested, 1, 1000000) : 1;
         offset = (page - 1) * 50;
-        listing = await MoviesQuery.GetAsync(db, Dates.Today, null, null, null, null, offset: offset, take: 50);
+        listing = await MoviesQuery.GetAsync(db, Dates.Today, null, Type, null, null, offset: offset, take: 50);
         if (offset >= listing.Total && page > 1)
         {
             page = Math.Max(1, (listing.Total + 49) / 50); offset = (page - 1) * 50;

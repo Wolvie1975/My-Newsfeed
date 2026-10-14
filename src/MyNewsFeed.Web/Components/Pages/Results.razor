@@ -12,6 +12,7 @@
 
 <PageHeading Title="Results" Eyebrow="THE FINAL SCORES" Description="Recent results from the leagues and teams we follow." />
 @if (hasChampionship) { <p><a href="championship/results">EFL Championship season results →</a></p> }
+@if (hasMls) { <p><a href="mls/results">MLS season results →</a></p> }
 <nav class="tv-week" aria-label="Result dates">
     @if (resultDay == Dates.Today)
     {
@@ -64,6 +65,7 @@
 {
     <p class="empty">
         <span>No finished games for @FeedDates.LongDate(resultDay). @if (Follow is not null) { <a href="results">Show all teams and leagues</a> }</span>
+        @if (resultDay == Dates.Today) { <a class="nf-btn nf-btn--secondary" href="@DayHref(Dates.Today.AddDays(-1))">View yesterday’s results</a> }
     </p>
 }
 else
@@ -114,6 +116,7 @@ else
     [SupplyParameterFromQuery(Name = "follow")] private int? Follow { get; set; }
 
     private bool hasChampionship;
+    private bool hasMls;
     private IReadOnlyList<FollowChip> follows = [];
     private ResultsPage? listing;
     private DateTime? lastSynced;
@@ -125,6 +128,7 @@ else
     {
         await using var db = await Factory.CreateDbContextAsync();
         hasChampionship = await db.SportsEventsTypes.AsNoTracking().AnyAsync(s => s.Enabled && s.ProviderKey == "espn-championship");
+        hasMls = await db.SportsEventsTypes.AsNoTracking().AnyAsync(s => s.Enabled && s.ProviderKey == "espn-mls");
         resultDay = DateOnly.TryParseExact(Day, "yyyy-MM-dd", out var parsed)
             && parsed >= Dates.Today.AddDays(-1) && parsed <= Dates.Today ? parsed : Dates.Today;
         var window = ResultsWindow.ForDay(resultDay, Dates.Zone);

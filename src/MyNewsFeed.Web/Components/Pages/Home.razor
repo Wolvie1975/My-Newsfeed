@@ -109,15 +109,9 @@
             <ul class="d-list" tabindex="0" aria-label="Upcoming Friday theater releases">
                 @foreach (var movie in movies)
                 {
-                    var poster = EventsText.LogoUrl(movie.Poster);
                     var href = FeedQuery.SafeHref(movie.SourceUrl);
                     <li class="d-movie">
-                        <div class="d-movie__poster" aria-hidden="true">
-                            @if (poster is not null)
-                            {
-                                <img src="@poster" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()" />
-                            }
-                        </div>
+                        <MoviePoster Url="@movie.Poster" Title="@movie.Title" Class="d-movie__poster" />
                         <div class="d-movie__body">
                             @if (movie.Date is { } date)
                             {
@@ -157,15 +151,9 @@
             <ul class="d-list" tabindex="0" aria-label="Upcoming Digital / VOD">
                 @foreach (var movie in digitalMovies)
                 {
-                    var poster = EventsText.LogoUrl(movie.Poster);
                     var href = FeedQuery.SafeHref(movie.SourceUrl);
                     <li class="d-movie">
-                        <div class="d-movie__poster" aria-hidden="true">
-                            @if (poster is not null)
-                            {
-                                <img src="@poster" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()" />
-                            }
-                        </div>
+                        <MoviePoster Url="@movie.Poster" Title="@movie.Title" Class="d-movie__poster" />
                         <div class="d-movie__body">
                             @if (movie.Date is { } date)
                             {

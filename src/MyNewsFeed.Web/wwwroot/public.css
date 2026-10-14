@@ -990,10 +990,85 @@
 .pub .src > .share-button { grid-area: share; align-self: center; }
 .pub .share-button[hidden] { display: none; }
 .pub .soccer-league-links { flex-wrap: wrap; justify-content: flex-start; gap: 8px; }
-.pub .championship-results th, .pub .championship-results td { text-align: center; white-space: normal; }
-.pub .championship-results .standing-team-name { justify-content: center; flex-wrap: wrap; }
+.pub :is(.championship-results, .mls-results) th, .pub :is(.championship-results, .mls-results) td { text-align: center; white-space: normal; }
+.pub :is(.championship-results, .mls-results) .standing-team-name { justify-content: center; flex-wrap: wrap; }
 @media (max-width: 767px) {
-    .pub .championship-results { font-size: 13px; }
-    .pub .championship-results th, .pub .championship-results td { padding: 10px 6px; }
-    .pub .championship-results .updated { font-size: 11px; }
+    .pub :is(.championship-results, .mls-results) { font-size: 13px; }
+    .pub :is(.championship-results, .mls-results) th, .pub :is(.championship-results, .mls-results) td { padding: 10px 6px; }
+    .pub :is(.championship-results, .mls-results) .updated { font-size: 11px; }
+}
+
+/* Consolidated public UI: grouped navigation, quieter headings and larger hit areas. */
+.pub .page-heading h1:focus { outline: none; }
+.pub .desktop-nav-group { position: relative; }
+.pub .desktop-nav-group > summary { display: flex; align-items: center; height: 44px; padding: 0 12px; list-style: none; cursor: pointer; border-radius: 10px; font-size: 14px; }
+.pub .desktop-nav-group > summary::-webkit-details-marker { display: none; }
+.pub .desktop-nav-group > summary.is-current { background: var(--selection-bg); color: var(--selection-fg); }
+.pub .desktop-nav-links { position: absolute; top: 48px; left: 0; min-width: 230px; padding: 8px; border: 1px solid var(--header-line); border-radius: 10px; background: var(--header-bg); box-shadow: 0 8px 24px #0004; }
+.pub .desktop-nav-links a { display: flex; }
+.pub .nav-group-label { padding: 12px 14px 4px; font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--header-fg); opacity: .8; }
+.pub .mobile-nav__links { max-height: 65dvh; overflow-y: auto; }
+.pub .share-button, .pub .save { width: 44px; height: 44px; }
+.pub .release-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0; }
+.pub .release-tabs a { display: inline-flex; align-items: center; min-height: 44px; padding: 8px 12px; border: 1px solid var(--field-border); border-radius: 8px; font-size: 14px; }
+.pub .release-tabs a[aria-current="page"] { background: var(--selection-bg); color: var(--selection-fg); border-color: var(--selection-bg); }
+.pub .saved-empty { padding: 24px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
+.pub .saved-empty h2 { font-size: 22px; color: var(--text); }
+.pub .saved-empty [hidden] { display: none; }
+.pub .empty > .nf-btn { margin: 12px 0; }
+@media (max-width: 767px) {
+    .pub .page { gap: 8px; padding-top: 12px; }
+    .pub .page-heading { margin: 0 0 4px; }
+    .pub .page-eyebrow { display: none; }
+    .pub .page-heading h1 { font-size: 28px; margin: 0 0 4px; }
+    .pub .page-heading > p:last-child { margin: 0; font-size: 14px; line-height: 1.4; }
+    .pub .updated, .pub .count { margin-top: 0; margin-bottom: 4px; }
+    .pub .ranking-info { margin: 0; }
+    .pub .ranking-legend { margin: 4px 0; }
+    .pub .ranking-detail-toggle { padding: 8px 0; }
+    .pub .count--toolbar { display: none; }
+    .pub .header-actions .admin-link { display: none; }
+}
+@media (min-width: 768px) { .pub .count--inline { display: none; } }
+@media (max-width: 767px) {
+    .pub .release-tabs { flex-wrap: nowrap; overflow-x: auto; min-width: 0; max-width: 100%; padding-bottom: 4px; }
+    .pub .release-tabs a { flex: none; white-space: nowrap; }
+}
+
+/* Weekend chart: keep the title and money readable without a wide mobile table. */
+.pub .boxoffice-chart { list-style:none; padding:0; margin:0; display:grid; gap:12px; }
+.pub .boxoffice-movie { display:flex; gap:16px; padding:20px; background:var(--surface); border:1px solid var(--border); border-radius:12px; }
+.pub .boxoffice-rank { font-size:24px; font-weight:700; width:32px; flex-shrink:0; color:var(--text-3); }
+.pub .boxoffice-movie-body { flex:1; min-width:0; }
+.pub .boxoffice-movie h3 { margin:0 0 12px; font-size:20px; overflow-wrap:anywhere; }
+.pub .boxoffice-stats { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; margin:0; }
+.pub .boxoffice-stats dt { font-size:12px; color:var(--text-3); margin-bottom:4px; }
+.pub .boxoffice-stats dd { margin:0; font-variant-numeric:tabular-nums; font-weight:600; }
+@media(max-width:767px) {
+ .pub .boxoffice-movie { padding:16px 12px; gap:10px; }
+ .pub .boxoffice-movie h3 { font-size:18px; }
+ .pub .boxoffice-stats { grid-template-columns:repeat(2,minmax(0,1fr)); font-size:14px; }
+ .pub .boxoffice-weekend { font-size:20px; }
+}
+.pub .boxoffice-forecasts { margin-top:40px; }
+.pub .boxoffice-forecast-date { font-size:18px; margin:24px 0 12px; }
+.pub .boxoffice-movie h4 { margin:0 0 12px; font-size:20px; overflow-wrap:anywhere; }
+.pub .boxoffice-forecasts .boxoffice-stats { grid-template-columns:repeat(2,minmax(0,1fr)); }
+@media (max-width:600px) {
+ .pub .boxoffice-movie h4 { font-size:18px; }
+ .pub .boxoffice-forecasts h2 { font-size:22px; }
+ .pub .boxoffice-forecasts .boxoffice-stats { grid-template-columns:1fr; }
+}
+
+/* Portrait posters share a neutral fallback across releases, charts and predictions. */
+.pub .boxoffice-poster {
+    position:relative; flex:0 0 88px; align-self:flex-start; aspect-ratio:2 / 3;
+    overflow:hidden; border-radius:6px;
+    background:var(--ph-bg) url("img/movie-placeholder.svg") center / cover no-repeat;
+}
+.pub .boxoffice-poster img { display:block; width:100%; height:100%; object-fit:contain; }
+@media (max-width:600px) {
+    .pub .boxoffice-poster { flex-basis:56px; }
+    .pub .boxoffice-movie .boxoffice-stats { grid-template-columns:1fr; }
+    .pub .boxoffice-rank { width:24px; font-size:20px; }
 }

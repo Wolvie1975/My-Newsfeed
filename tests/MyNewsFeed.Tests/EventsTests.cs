@@ -343,6 +343,33 @@ public class EventsTests
     }
 
     [Fact]
+    public async Task Mls_schedule_is_selectable_provider_scoped_and_home_perspective_including_today()
+    {
+        await using var db = Create();
+        await using var tx = await BeginScheduleTransactionAsync(db);
+        var token = Tag(); var day = new DateOnly(2031, 3, 4);
+        var feed = await db.SportsEventsTypes.SingleOrDefaultAsync(f => f.ProviderKey == "espn-mls" && f.ProviderSchoolId == 0)
+            ?? new SportsEventsType { EventsTypeName = token, RssUrl = $"https://test.invalid/{token}/mls", ProviderKey = "espn-mls", ProviderSchoolId = 0, Enabled = true };
+        feed.Enabled = true;
+        SportsEvent Match(string name, string? status = null) {
+            var game = Game(token, name, day, sport: "Soccer"); game.ProviderKey = "espn-mls"; game.SportsEventsType = feed;
+            game.ScheduleStatus = status; game.SchoolName = "MLS home"; game.Opponent = "MLS away"; game.IsAway = true; return game;
+        }
+        var future = Match("future"); future.EventDate = day.AddDays(1);
+        var today = Match("today"); today.TimeTbd = true;
+        var past = Match("past"); past.EventDate = day.AddDays(-1);
+        var mismatch = Match("wrong provider"); mismatch.ProviderKey = "espn-epl";
+        db.AddRange(today,future,past,mismatch,Match("final","STATUS_FINAL_PEN"),Match("canceled","STATUS_CANCELED")); await db.SaveChangesAsync();
+        Assert.Contains(await EventsQuery.GetSchoolsAsync(db),f=>f.Id==feed.Id && f.Name=="MLS");
+        var page=await EventsQuery.GetUpcomingAsync(db,day,null,token,school:feed.Id);
+        Assert.Equal(2,page.Total); Assert.All(page.Items,item=> { Assert.False(item.IsAway); Assert.Equal("MLS",GameGroups.ScheduleLeague(item)); });
+        var onDay=Assert.Single(await EventsQuery.GetOnDateAsync(db,day), e=>e.Title.Contains(token));
+        Assert.False(onDay.IsAway);Assert.Equal("espn-mls",onDay.ProviderKey);
+        feed.Enabled=false;await db.SaveChangesAsync();
+        Assert.Empty((await EventsQuery.GetUpcomingAsync(db,day,null,token,school:feed.Id)).Items);
+    }
+
+    [Fact]
     public async Task Professional_schedules_filter_status_dates_and_provider_identity()
     {
         await using var db = Create();
@@ -430,19 +457,31 @@ public class EventsTests
         Assert.Empty((await EventsQuery.GetUpcomingAsync(db, day, null, token, school: feed.Id)).Items);
     }
 
-    [Fact]
-    public async Task College_games_wait_for_the_current_seasons_opening_fixture()
+    [Theory]
+    [InlineData("Football")]
+    [InlineData("Soccer")]
+    [InlineData("Volleyball")]
+    [InlineData("Men's Basketball")]
+    [InlineData("Women's Basketball")]
+    public async Task Upcoming_college_games_and_sport_options_survive_past_fixture_retention(string sport)
     {
         await using var db = Create();
         await using var tx = await BeginScheduleTransactionAsync(db);
         var token = Tag(); var day = new DateOnly(2031, 10, 11);
-        var first = Game(token, "opening", day.AddDays(1), sport: "Football"); first.ProviderKey = "big12";
-        var later = Game(token, "later", day.AddDays(8), sport: "Football"); later.ProviderKey = "big12";
-        var old = Game(token, "last season", new DateOnly(2030, 11, 1), sport: "Football"); old.ProviderKey = "big12";
+        var feed = new SportsEventsType { EventsTypeName = token, RssUrl = $"https://{token}.test.invalid/rss", SchoolName = token, ProviderKey = "big12", Enabled = true };
+        var first = Game(token, "opening", day.AddDays(1), sport: sport);
+        var later = Game(token, "later", day.AddDays(8), sport: sport);
+        var old = Game(token, "past", day.AddDays(-1), sport: sport);
+        foreach (var game in new[] { first, later, old }) { game.ProviderKey = "big12"; game.SportsEventsType = feed; }
         db.AddRange(first, later, old); await db.SaveChangesAsync();
-        Assert.Empty((await EventsQuery.GetUpcomingAsync(db, day, null, token)).Items);
-        first.EventDate = day; await db.SaveChangesAsync();
-        Assert.Equal(2, (await EventsQuery.GetUpcomingAsync(db, day, null, token)).Items.Count);
+        Assert.Equal(2, (await EventsQuery.GetUpcomingAsync(db, day, null, token, school: feed.Id)).Total);
+        db.Remove(old); await db.SaveChangesAsync();
+        var page = await EventsQuery.GetUpcomingAsync(db, day, sport, token, school: feed.Id);
+        Assert.Equal(new[] { first.Id, later.Id }, page.Items.Select(i => i.Id));
+        Assert.Contains(sport, await EventsQuery.GetSportsAsync(db, day, feed.Id));
+        feed.Enabled = false; await db.SaveChangesAsync();
+        Assert.Empty((await EventsQuery.GetUpcomingAsync(db, day, sport, token, school: feed.Id)).Items);
+        Assert.Empty(await EventsQuery.GetSportsAsync(db, day, feed.Id));
     }
 
 }

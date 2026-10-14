@@ -1,69 +1,73 @@
 @page "/box-office"
 @layout PublicLayout
-@using MyNewsFeed.Web.Components.Feed
 @inject IDbContextFactory<WebScraperContext> Factory
 @inject FeedDates Dates
 @inject ILogger<BoxOffice> Log
 
 <PageTitle>Box Office · MyNewsFeed</PageTitle>
-<PageHeading Title="Box Office" Eyebrow="THE WEEKEND AND BEYOND" Description="Headlines, weekend reporting, and box-office analysis from the publishers we follow." />
-<p><a href="news">All news</a></p>
-@if (data is null)
+<PageHeading Title="Domestic box office" Eyebrow="RESULTS &amp; FORECASTS" Description="Reported weekend totals from The Numbers and upcoming predictions from Boxoffice Pro." />
+<h2>Weekend results — Top 10</h2>
+@if (failed)
 {
-    <p class="empty" role="status">Box-office stories are temporarily unavailable. <a href="box-office">Try again</a></p>
+    <p class="empty" role="status">Box-office totals are temporarily unavailable. <a href="box-office">Try again</a></p>
+}
+else if (movies.Count == 0)
+{
+    <p class="empty">No weekend box-office chart is available yet. <a href="box-office">Check again</a></p>
 }
 else
 {
-    @if (data.Publishers.Count > 0)
-    {
-        <form class="catselect" method="get" action="box-office">
-            <label class="sr-only" for="boxoffice-source">Publisher</label>
-            <select id="boxoffice-source" name="source" onchange="this.form.requestSubmit()">
-                <option value="">All publishers</option>
-                @foreach (var publisher in data.Publishers) { <option value="@publisher.Id" selected="@(data.SelectedSource == publisher.Id)">@publisher.Label</option> }
-            </select>
-            <noscript><button class="nf-btn nf-btn--secondary" type="submit">Apply</button></noscript>
-        </form>
-        @foreach (var publisher in data.Publishers.Where(p => data.SelectedSource == null || p.Id == data.SelectedSource))
+    var friday = movies[0].WeekendStart;
+    <h3 class="boxoffice-weekend">@BoxOfficeChartQuery.WeekendLabel(friday)</h3>
+    @if (BoxOfficeChartQuery.IsStale(friday, Dates.Today))
+    { <p class="standing-status" role="status">This chart may be out of date; showing the last available weekend.</p> }
+    <ol class="boxoffice-chart" aria-label="Domestic weekend box-office top ten">
+        @foreach (var movie in movies)
         {
-            <p class="updated">@publisher.Label @if (publisher.LastChecked is { } time) { <span>· Last checked @Dates.PublishedFull(time)</span> }</p>
-            @if (BoxOfficeQuery.Health(publisher, DateTime.UtcNow) is { } message) { <p class="standing-status" role="status">@publisher.Label: @message</p> }
+            <li class="boxoffice-movie" @key="movie.Rank">
+                <span class="boxoffice-rank" aria-label="@($"Rank {movie.Rank}")">@movie.Rank</span>
+                <MoviePoster Url="@movie.PosterUrl" Title="@movie.Title" Class="boxoffice-poster" />
+                <div class="boxoffice-movie-body">
+                    <h3>@if (movie.MovieUrl is { } url) { <a href="@url" target="_blank" rel="noopener noreferrer">@movie.Title</a> } else { @movie.Title }</h3>
+                    <dl class="boxoffice-stats">
+                        <div><dt>Weekend</dt><dd>@BoxOfficeChartQuery.Money(movie.WeekendGross)</dd></div>
+                        <div><dt>Total domestic</dt><dd>@BoxOfficeChartQuery.Money(movie.TotalDomesticGross)</dd></div>
+                        <div><dt>Weekly change</dt><dd>@BoxOfficeChartQuery.Change(movie.WeeklyChangePercent)</dd></div>
+                    </dl>
+                </div>
+            </li>
         }
-    }
-    @if (data.Publishers.Count == 0) { <p class="empty">No box-office news sources are enabled.</p> }
-    else if (data.Feed.Items.Count == 0) { <p class="empty">No box-office stories available yet. <a href="box-office">Show all publishers</a></p> }
-    else
-    {
-        @if (After is not null) { <p><a href="@Href(null)">← Newest stories</a></p> }
-        <section class="feed" aria-label="Box-office articles" data-last-day="@lastDay">
-            <FeedArticles Items="data.Feed.Items" LeadFirst="@(After is null)" Total="@(After is null ? data.Feed.Total : null)" />
-        </section>
-        <div class="loadmore">
-            @if (data.Feed.Next is { } next)
-            { <a class="nf-btn nf-btn--secondary" data-load-more data-feed-view="box-office" data-enhance-nav="false" href="@Href(next.ToToken())">Load more stories</a> }
-            <span class="count" data-shown-total>Showing @data.Feed.Shown of @data.Feed.Total</span>
-            <span class="sr-only" role="status" data-load-status></span>
-        </div>
-    }
+    </ol>
+    <p class="updated">Source: @if (movies[0].SourceUrl is { } source) { <a href="@source" target="_blank" rel="noopener noreferrer">The Numbers</a> } else { <span>The Numbers</span> } · Last checked @Dates.PublishedFull(movies.Min(m => m.FetchedAt))</p>
+    <p class="updated">Reported totals may be revised. — means weekly change is unavailable or the movie is new.</p>
+}
+
+@foreach (var kind in new[] { BoxOfficeForecastQuery.Preview, BoxOfficeForecastQuery.LongRange })
+{
+    <BoxOfficeForecastSection Kind="@kind" Rows="@(forecasts.Movies.Where(m => m.Kind == kind).ToList())"
+        Source="@(forecasts.Sources.SingleOrDefault(s => s.Kind == kind))" UtcNow="@utcNow" />
 }
 
 @code {
-    [SupplyParameterFromQuery(Name = "source")] private string? Source { get; set; }
-    [SupplyParameterFromQuery(Name = "after")] private string? Cursor { get; set; }
-    private FeedCursor? After => FeedCursor.Parse(Cursor);
-    private BoxOfficePage? data;
-    private string? lastDay;
-    private string Href(string? after) => "box-office" + FeedQuery.QueryString(data?.CategoryId, null, after, data?.SelectedSource);
-    protected override async Task OnParametersSetAsync()
+    private IReadOnlyList<BoxOfficeMovie> movies = [];
+    private bool failed;
+    private BoxOfficeForecastSnapshot forecasts = new([], []);
+    private readonly DateTime utcNow = DateTime.UtcNow;
+    protected override async Task OnInitializedAsync()
     {
         try
         {
             await using var db = await Factory.CreateDbContextAsync();
-            var sourceId = int.TryParse(Source, out var id) && id > 0 ? (int?)id : null;
-            data = await BoxOfficeQuery.GetAsync(db, sourceId, After);
-            lastDay = data.Feed.Items.Count > 0 ? Dates.DayKey(data.Feed.Items[^1]) : null;
+            movies = await BoxOfficeChartQuery.GetAsync(db);
         }
         catch (Exception ex) when (ex is System.Data.Common.DbException or InvalidOperationException)
-        { Log.LogError(ex, "Box-office feed read failed."); data = null; }
+        { Log.LogError(ex, "Box-office chart read failed."); failed = true; }
+        try
+        {
+            await using var db = await Factory.CreateDbContextAsync();
+            forecasts = await BoxOfficeForecastQuery.GetAsync(db, Dates.TodayAt(utcNow));
+        }
+        catch (Exception ex) when (ex is System.Data.Common.DbException or InvalidOperationException)
+        { Log.LogError(ex, "Box-office forecast read failed."); }
     }
 }

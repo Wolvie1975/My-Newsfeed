@@ -1,0 +1,14 @@
+<div class="@Class">
+    <span class="sr-only" data-poster-fallback hidden="@(safePoster is not null)">Poster unavailable for @Title</span>
+    @if (safePoster is not null)
+    {
+        <img src="@safePoster" alt="@Title" loading="lazy" decoding="async" referrerpolicy="no-referrer"
+             onerror="this.parentElement.querySelector('[data-poster-fallback]').hidden=false;this.remove()" />
+    }
+</div>
+@code {
+    [Parameter] public string? Url { get; set; }
+    [Parameter] public string Title { get; set; } = "";
+    [Parameter] public string Class { get; set; } = "movie-poster";
+    private string? safePoster => EventsText.LogoUrl(Url);
+}

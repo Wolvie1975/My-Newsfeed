@@ -1,0 +1,47 @@
+<section class="boxoffice-forecasts" aria-label="@Title">
+    <h2>@Title</h2>
+    @if (Source is { Failed: true } || (Rows.Count > 0 && !BoxOfficeForecastQuery.IsRecent(Source, UtcNow)))
+    {
+        <p class="standing-status" role="status">Forecast refresh is delayed; showing previously collected predictions.</p>
+    }
+    @if (Rows.Count == 0)
+    {
+        <p class="empty" role="status">@BoxOfficeForecastQuery.EmptyMessage(Kind, Source, UtcNow)</p>
+    }
+    else
+    {
+        @foreach (var group in Rows.GroupBy(row => (row.TargetDate, row.PeriodEnd)))
+        {
+            <h3 class="boxoffice-forecast-date">@(Kind == BoxOfficeForecastQuery.Preview
+                ? $"{BoxOfficeForecastQuery.DateLabel(group.Key.TargetDate)} – {BoxOfficeForecastQuery.DateLabel(group.Key.PeriodEnd)}"
+                : $"Release date: {BoxOfficeForecastQuery.DateLabel(group.Key.TargetDate)}")</h3>
+            <ul class="boxoffice-chart">
+                @foreach (var movie in group)
+                {
+                    <li class="boxoffice-movie">
+                        @if (Kind == BoxOfficeForecastQuery.Preview && movie.PredictedRank is { } rank)
+                        { <span class="boxoffice-rank" aria-label="@($"Predicted rank {rank}")">@rank</span> }
+                        <MoviePoster Url="@movie.PosterUrl" Title="@movie.Title" Class="boxoffice-poster" />
+                <div class="boxoffice-movie-body">
+                            <h4>@movie.Title</h4>
+                            @if (!string.IsNullOrWhiteSpace(movie.Distributor)) { <p class="updated">@movie.Distributor</p> }
+                            <dl class="boxoffice-stats">
+                                <div><dt>@(Kind == BoxOfficeForecastQuery.Preview ? "Predicted weekend gross" : "Predicted opening weekend")</dt><dd>@BoxOfficeForecastQuery.Range(movie.Low, movie.High)</dd></div>
+                                <div><dt>Forecast as of</dt><dd>@BoxOfficeForecastQuery.DateLabel(movie.AsOf)</dd></div>
+                            </dl>
+                            <p class="updated">Source: @if (movie.SourceUrl is { } url) { <a href="@url" target="_blank" rel="noopener noreferrer">Boxoffice Pro</a> } else { <span>Boxoffice Pro</span> } · Predictions, subject to change.</p>
+                        </div>
+                    </li>
+                }
+            </ul>
+        }
+    }
+</section>
+@code {
+    [Parameter] public string Kind { get; set; } = BoxOfficeForecastQuery.Preview;
+    [Parameter] public IReadOnlyList<BoxOfficeForecast> Rows { get; set; } = [];
+    [Parameter] public BoxOfficeForecastSource? Source { get; set; }
+    [Parameter] public DateTime UtcNow { get; set; }
+    private string Title => Kind == BoxOfficeForecastQuery.Preview
+        ? "Upcoming weekend preview — Predictions" : "Upcoming movie forecasts — Predictions";
+}
