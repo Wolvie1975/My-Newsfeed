@@ -1164,3 +1164,7 @@
 .pub .event-broadcast__label { font-size: 11px; font-weight: 600; color: var(--text-2); }
 .pub .event-link-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; }
 .pub .event-link-actions a { white-space: nowrap; }
+
+.pub .movie-commerce-action { margin-top: 10px; align-self: flex-start; white-space: normal; text-align: center; max-width: 100%; overflow-wrap: anywhere; }
+.pub .theater-site-link { display: inline-flex; align-items: center; gap: 12px; margin-bottom: 12px; max-width: 100%; }
+.pub .theater-site-link img { flex-shrink: 0; object-fit: contain; }

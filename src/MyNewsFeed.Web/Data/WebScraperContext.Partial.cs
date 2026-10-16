@@ -36,6 +36,7 @@ public partial class WebScraperContext
 
     partial void OnModelCreatingPartial(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<MovieCommerceRow>().HasNoKey().ToView("MovieCommerce", "dbo");
         modelBuilder.Entity<TvEpisode>().HasOne(e => e.Series).WithMany(s => s.Episodes)
             .HasForeignKey(e => e.SeriesId).OnDelete(DeleteBehavior.NoAction);
         modelBuilder.Entity<TvTrackedSeries>(entity =>

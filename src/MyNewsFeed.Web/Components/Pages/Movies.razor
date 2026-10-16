@@ -5,6 +5,13 @@
 
 <PageTitle>Movies · MyNewsFeed</PageTitle>
 <PageHeading Title="Movies" Eyebrow="THE RELEASE CALENDAR" Description="Find your next movie night. US releases in theaters, on streaming, and at home." />
+@if (Type == "theatrical")
+{
+    <a class="nf-btn nf-btn--secondary theater-site-link" href="https://www.amctheatres.com/" target="_blank" rel="noopener noreferrer">
+        <img src="images/brands/amc-theatres.svg" alt="" width="44" height="44" />
+        <span>Visit AMC Theatres <span aria-hidden="true">↗</span></span>
+    </a>
+}
 <p class="updated">Showing releases from today through the end of @Dates.Today.ToString("MMMM yyyy", System.Globalization.CultureInfo.InvariantCulture).</p>
 <nav class="release-tabs" aria-label="Movie release views">
     <a href="movies" aria-current="@(Type is null ? "page" : null)">All releases</a>
@@ -53,6 +60,7 @@ else
                             {
                                 <a class="movie-source" href="@href" target="_blank" rel="noopener noreferrer">Details at @movie.Source ↗</a>
                             }
+                            <MovieCommerceAction Item="movie" />
                         </div>
                     </li>
                 }

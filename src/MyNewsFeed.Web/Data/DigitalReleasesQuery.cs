@@ -36,6 +36,6 @@ public static class DigitalReleasesQuery
                 r.Platform, r.Format, r.IsReRelease, source.Name, r.SourceUrl));
         if (take is { } limit) query = query.Take(Math.Max(0, limit));
         var items = await query.ToListAsync();
-        return new(sources, selected, today, items);
+        return new(sources, selected, today, await MovieCommerceQuery.EnrichAsync(db, items));
     }
 }

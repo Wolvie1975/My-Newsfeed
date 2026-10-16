@@ -147,6 +147,7 @@
                                 }
                             </h3>
                             <p class="d-vid__meta">@string.Join(" · ", new[] { movie.Certification, movie.Runtime is { } runtime ? $"{runtime} min" : null, movie.ReRelease ? "Re-release" : null }.Where(x => !string.IsNullOrWhiteSpace(x)))</p>
+                            <MovieCommerceAction Item="movie" />
                         </div>
                     </li>
                 }
@@ -190,6 +191,7 @@
                             </h3>
                             <p class="d-vid__meta">VOD / Digital · @movie.Source</p>
                             <p class="d-vid__meta">@string.Join(" · ", new[] { movie.Certification, movie.Runtime is { } runtime ? $"{runtime} min" : null, movie.ReRelease ? "Re-release" : null }.Where(x => !string.IsNullOrWhiteSpace(x)))</p>
+                            <MovieCommerceAction Item="movie" />
                         </div>
                     </li>
                 }

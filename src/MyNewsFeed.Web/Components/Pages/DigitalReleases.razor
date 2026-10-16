@@ -47,6 +47,7 @@ else
                             <p class="movie-meta"><time datetime="@movie.Date!.Value.ToString("yyyy-MM-dd")">@FeedDates.LongDate(movie.Date.Value)</time></p>
                             <p class="movie-meta">@movie.Source</p>
                             @if (FeedQuery.SafeHref(movie.SourceUrl) is { } url) { <a class="movie-source" href="@url" target="_blank" rel="noopener noreferrer">Movie details ↗</a> }
+                            <MovieCommerceAction Item="movie" />
                         </div>
                     </li>
                 }

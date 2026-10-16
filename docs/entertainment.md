@@ -7,6 +7,23 @@ scraper repository; the web app reads its stored snapshots.
 
 ## Movie releases and Digital/VOD
 
+The In theaters view (`/movies?type=theatrical`) includes a general
+[Visit AMC Theatres](https://www.amctheatres.com/) link below the page heading,
+with a locally served AMC logo. It opens in a new tab with `noopener noreferrer`.
+This page-level link is separate from each film's Fandango action and does not
+change the release calendar or source links. The logo and its source attribution
+are in `src/MyNewsFeed.Web/wwwroot/images/brands/`.
+
+Movie cards on Movies, Digital and the homepage read retailer actions from
+`dbo.MovieCommerce` by MovieId and Provider through the release's source link.
+Theatrical releases use Fandango; digital, digital purchase and digital rental use
+Fandango at Home. Subscription and disc releases have no retailer action. Verified
+direct links retain the view's ticket/Buy/View label; missing or invalid actions
+use an encoded title search labeled Search. HTTPS retailer hosts, paths and labels
+are validated before rendering. View errors retain normal page error handling;
+expiry and stale identity are handled by the scraper's view. This enrichment does
+not change release selection, grouping, counts, dates, posters or source links.
+
 `/movies` supports all releases, theatrical and subscription selections. Movies and
 Videos page in deterministic 50-row batches; filters remain in paging URLs.
 `/movies/digital` is the provider-specific confirmed rental/purchase list, not a

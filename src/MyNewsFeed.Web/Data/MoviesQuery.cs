@@ -4,7 +4,8 @@ namespace MyNewsFeed.Web.Data;
 
 public sealed record MovieReleaseItem(int Id, string Title, short? Year, string? Description, string? Poster,
     string? Certification, short? Runtime, DateOnly? Date, string DateStatus, string Type, string? Platform,
-    string? Format, bool ReRelease, string Source, string SourceUrl);
+    string? Format, bool ReRelease, string Source, string SourceUrl,
+    string? MovieActionUrl = null, string? MovieActionLabel = null, string? MovieActionKind = null);
 public sealed record MoviesPage(IReadOnlyList<MovieReleaseItem> Items, int Total, IReadOnlyList<string> Platforms, DateTime? Updated);
 
 public static class MoviesQuery
@@ -82,7 +83,7 @@ public static class MoviesQuery
                 DateStatus = matches.Any(x => x.DateStatus == "announced") ? "announced" : row.Item.DateStatus
             };
         }).ToList();
-        return new(items, total, platforms, updated);
+        return new(await MovieCommerceQuery.EnrichAsync(db, items), total, platforms, updated);
     }
     private static string? CombineDetails(IEnumerable<string?> values)
     {
@@ -106,12 +107,13 @@ public static class MoviesQuery
                            && EF.Functions.DateDiffDay(friday, r.ReleaseDate) % 7 == 0
                        select new { r, link.MovieId, movie, source };
         var uniqueIds = eligible.GroupBy(x => new { x.MovieId, x.r.ReleaseDate }).Select(g => g.Min(x => x.r.ID));
-        return await eligible.Where(x => uniqueIds.Contains(x.r.ID))
+        var items = await eligible.Where(x => uniqueIds.Contains(x.r.ID))
             .OrderBy(x => x.r.ReleaseDate).ThenBy(x => x.movie.Title).ThenBy(x => x.r.ID).Take(take)
             .Select(x => new MovieReleaseItem(x.r.ID, x.movie.Title, x.movie.OriginalYear, x.movie.Description,
                 x.movie.PosterUrl, x.movie.Certification, x.movie.RuntimeMinutes, x.r.ReleaseDate, x.r.DateStatus,
                 x.r.ReleaseType, x.r.Platform, x.r.Format, x.r.IsReRelease, x.source.Name, x.r.SourceUrl))
             .ToListAsync();
+        return await MovieCommerceQuery.EnrichAsync(db, items);
     }
 
     /// <summary>Upcoming dated digital releases, one entry per movie and date across enabled sources.</summary>
@@ -127,12 +129,13 @@ public static class MoviesQuery
 
                        select new { r, link.MovieId, movie, source };
         var uniqueIds = eligible.GroupBy(x => new { x.MovieId, x.r.ReleaseDate }).Select(g => g.Min(x => x.r.ID));
-        return await eligible.Where(x => uniqueIds.Contains(x.r.ID))
+        var items = await eligible.Where(x => uniqueIds.Contains(x.r.ID))
             .OrderBy(x => x.r.ReleaseDate).ThenBy(x => x.movie.Title).ThenBy(x => x.r.ID).Take(take)
             .Select(x => new MovieReleaseItem(x.r.ID, x.movie.Title, x.movie.OriginalYear, x.movie.Description,
                 x.movie.PosterUrl, x.movie.Certification, x.movie.RuntimeMinutes, x.r.ReleaseDate, x.r.DateStatus,
                 x.r.ReleaseType, x.r.Platform, x.r.Format, x.r.IsReRelease, x.source.Name, x.r.SourceUrl))
             .ToListAsync();
+        return await MovieCommerceQuery.EnrichAsync(db, items);
     }
 
 }

@@ -6,11 +6,43 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The most recent verified web release is `mynewsfeed-web:movies-current-month-20261015`,
-with rollback recorded as `mynewsfeed-web:before-movies-current-month`. Its container
-was healthy on October 15, 2026 (Central). This is a dated observation, not live
+The most recent verified web release is `mynewsfeed-web:amc-theater-link-20261016`,
+with rollback recorded as `mynewsfeed-web:before-amc-theater-link`. Its container
+was healthy on October 16, 2026 (Central). This is a dated observation, not live
 hosting status. The earlier documentation consolidation did not deploy application
 code, alter the database or restart scraper collection.
+
+## AMC Theatres link — October 16, 2026
+
+Added a general AMC Theatres website link with a locally served logo below the
+heading on `/movies?type=theatrical`. It opens https://www.amctheatres.com/ in a new
+tab with noopener/noreferrer. Other release views keep their existing layout.
+Production browser checks at 390/1440 pixels confirmed the logo loads, the link
+has the correct destination, nine theatrical cards remain visible and no horizontal
+overflow occurs. Health and HTTPS theatrical releases returned 200. Deployment
+preserved runtime configuration and keys.
+
+The current page behavior is documented in
+[Entertainment data and public views](entertainment.md#movie-releases-and-digitalvod);
+logo provenance is recorded in the
+[brand asset notes](../src/MyNewsFeed.Web/wwwroot/images/brands/README.md).
+
+## Movie commerce links — October 16, 2026
+
+Added secondary Fandango ticket and Fandango at Home digital links on Movies,
+Digital and homepage movie previews, using the scraper's MovieCommerce view.
+Validated HTTPS destinations and exact labels; missing/invalid matches generate
+encoded title searches. Subscription/disc releases receive no action. No database
+writes, credential changes or scraper changes were needed.
+
+All 20 focused commerce/poster tests passed, including direct ticket/Buy/View
+fixtures, unsafe destination rejection and punctuation encoding. Production data
+currently supplies search actions only. Browser checks at 390/1440 pixels verified
+11 actions across 13 Movies cards, one action on the default Digital source and six
+homepage actions with no horizontal overflow. Every enabled digital source was
+checked; subscription cards had no retailer action. Release titles, source URLs,
+available date markup and card counts matched the predeployment snapshots.
+Health and HTTPS Movies returned 200; runtime configuration and keys were preserved.
 
 ## Sports releases
 

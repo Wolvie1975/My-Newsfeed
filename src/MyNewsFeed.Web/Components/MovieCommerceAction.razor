@@ -1,0 +1,10 @@
+@{
+    var action = MovieCommerceQuery.Resolve(Item.Title, Item.Type, Item.MovieActionUrl, Item.MovieActionLabel, Item.MovieActionKind);
+}
+@if (action is not null)
+{
+    <a class="nf-btn nf-btn--secondary movie-commerce-action" href="@action.Url" target="_blank" rel="noopener noreferrer" aria-label="@(action.Label + " · " + Item.Title)">@action.Label</a>
+}
+@code {
+    [Parameter, EditorRequired] public MovieReleaseItem Item { get; set; } = default!;
+}
