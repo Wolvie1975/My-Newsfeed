@@ -43,7 +43,12 @@ public static class MoviesQuery
         }
         if (!string.IsNullOrWhiteSpace(type)) releases = releases.Where(x => x.r.ReleaseType == type.Trim());
         if (!string.IsNullOrWhiteSpace(platform)) releases = releases.Where(x => x.r.Platform == platform.Trim());
-        if (period == "tbd") releases = releases.Where(x => x.r.ReleaseDate == null);
+        if (period == "month")
+        {
+            var monthEnd = new DateOnly(today.Year, today.Month, DateTime.DaysInMonth(today.Year, today.Month));
+            releases = releases.Where(x => x.r.ReleaseDate >= today && x.r.ReleaseDate <= monthEnd);
+        }
+        else if (period == "tbd") releases = releases.Where(x => x.r.ReleaseDate == null);
         else if (period == "recent")
         {
             var start = today.AddDays(-30);

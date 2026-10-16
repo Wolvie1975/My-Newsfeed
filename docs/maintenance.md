@@ -32,10 +32,9 @@ integration is also now deployed, including shootout handling; see [Sports](spor
   the save transaction so an intervening scraper insert cannot invalidate that state.
 - Some edit components retain `notFound` across parameter changes. Reset request-specific
   state when navigating from a missing ID to a valid ID of the same component.
-- Standings and basketball rankings still require a stored past opening fixture.
-  The schedule fix did not remove those gates; upcoming-only retention can make their
-  visibility fail for the same reason. Review season/publication visibility independently
-  rather than documenting the gates as reliable season evidence.
+- Basketball rankings still require a stored past opening fixture and deserve a
+  separate season/publication review. Standings now keep enabled college sources
+  selectable without schedule evidence and filter stale-season rows independently.
 - Interactive admin submission and overlapping sync scenarios deserve targeted
   browser/concurrency coverage in addition to helper and row-rendering tests.
 

@@ -6,9 +6,9 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The most recent verified web release is `mynewsfeed-web:movie-section-posters-20261013`,
-with rollback recorded as `mynewsfeed-web:before-movie-section-posters`. Its container
-was healthy on October 13, 2026 (Central). This is a dated observation, not live
+The most recent verified web release is `mynewsfeed-web:movies-current-month-20261015`,
+with rollback recorded as `mynewsfeed-web:before-movies-current-month`. Its container
+was healthy on October 15, 2026 (Central). This is a dated observation, not live
 hosting status. The earlier documentation consolidation did not deploy application
 code, alter the database or restart scraper collection.
 
@@ -94,6 +94,448 @@ keys were preserved, and no scraper settings, schema or content were changed by 
 web rollout. Rollback: `mynewsfeed-web:before-movie-section-posters`.
 
 ## Interface and audit releases
+
+Movies calendar month-end scope was deployed as
+`mynewsfeed-web:movies-current-month-20261015`. Per user clarification, the Movies
+schedule includes today through the final day of the current month, excluding prior
+dates and undated releases. All/theatrical/subscription views, counts and paging use
+the window. Clamping an oversized page retains its release-type filter. The page
+describes the month-end window and has matching empty-state text. Separate digital
+and homepage queries retain their prior behavior. Build passed. Live 390/1440-pixel
+checks exercised all three views, validated displayed dates, oversized-page type
+preservation and no horizontal overflow. Health passed; the container was healthy.
+Runtime settings and keys were preserved without scraper/schema changes.
+Rollback image/container: `mynewsfeed-web:before-movies-current-month` /
+`mynewsfeed-web-before-movies-current-month`.
+
+Sports Events Links-column formatting was deployed as
+`mynewsfeed-web:event-links-layout-20261015`. TV/Streaming and Radio details stack
+above a distinct wrapping row of Stats/Video/Audio/Details links. Long broadcast lists
+wrap independently instead of mixing with the action links. Build and 24 event tests
+passed. Live 390/1440-pixel NHL checks verified broadcast/action separation, all 58
+links retained in that snapshot and no page overflow. Desktop screenshot inspected.
+Health passed; container healthy. Runtime settings and keys were preserved.
+Rollback image/container: `mynewsfeed-web:before-event-links-layout` /
+`mynewsfeed-web-before-event-links-layout`.
+
+My Teams moved to the first Sports menu entry on desktop/mobile in
+`mynewsfeed-web:myteams-menu-first-20261015`. Production build passed and live
+browser checks verified both menu orders. Health passed; container healthy.
+Runtime settings and keys were preserved. Rollback image/container:
+`mynewsfeed-web:before-myteams-menu-first` / `mynewsfeed-web-before-myteams-menu-first`.
+
+Personal team highlight color changed to red in
+`mynewsfeed-web:red-team-highlights-20261015`. Selected rows use a red outline and
+left border, with lighter red in dark mode. Selection logic and bold team names
+remain. Production build passed. Live 390/1440-pixel light/dark checks verified
+computed outline and border colors, persisted selection and no overflow. Health
+passed; the container was healthy. Runtime settings and keys were preserved.
+Rollback image/container: `mynewsfeed-web:before-red-team-highlights` /
+`mynewsfeed-web-before-red-team-highlights`.
+
+My Teams eligibility was corrected per user clarification in
+`mynewsfeed-web:pro-and-big12-team-selection-20261015`. Only college choices are
+restricted to the 16 Big 12 schools; professional teams from enabled NFL, NHL,
+MLB, MLS, NWSL, WNBA, EPL and Championship data are available again. Existing saved
+professional selections are supported again. Build, JS syntax and 42 personal-feature
+tests passed. Live 390/1440-pixel checks verified exactly 16 college choices, no Alabama,
+professional selections, persistence, search, cross-page highlights, clearing and
+blocked-storage feedback. Health passed; the container was healthy. Runtime settings
+and keys were preserved without database or scraper changes. Rollback image/container:
+`mynewsfeed-web:before-pro-and-big12-team-selection` /
+`mynewsfeed-web-before-pro-and-big12-team-selection`.
+
+My Teams was limited to Big 12 schools in
+`mynewsfeed-web:big12-only-team-selection-20261015`. The catalog uses the existing
+16-school alias list instead of all standings/schedule participants. Existing Big 12
+selections remain; non-Big 12 saved keys are ignored for personal highlights and counts.
+The selection page no longer needs a database query. Build and 42 personal-feature
+tests passed. Live 390/1440-pixel checks verified exactly 16 choices, search, retained
+Kansas selection/highlighting, ignored non-Big 12 selections and no overflow.
+Health passed; the container was healthy. Runtime settings and keys were preserved.
+Rollback image/container: `mynewsfeed-web:before-big12-only-team-selection` /
+`mynewsfeed-web-before-big12-only-team-selection`.
+
+Personal sports highlights were deployed as
+`mynewsfeed-web:personal-sports-highlights-20261015`. Sports navigation includes
+My Teams (`/sports/teams`), with searchable team/school checkboxes grouped by league,
+automatic browser-local saving, selection count, clear action and storage-failure
+feedback. Choices are read from enabled standings and schedule sources. Canonical
+college aliases share one key across sports. Schedule, daily result, MLS/Championship
+season-result and standings rows expose encoded keys and highlight either selected
+participant without filtering other rows. Navigation and cross-tab storage changes
+resynchronize highlights. No account synchronization is provided.
+Build, JS syntax and 91 offline standings/event-rendering/personal-feature tests passed.
+Live 390/1440-pixel checks exercised search, saving/reload, highlights across pages,
+clear persistence, full-table retention and no overflow. A separate check verified
+daily-result highlights; blocked-storage feedback passed. The mobile selection-screen
+screenshot was inspected. Health and HTTPS My Teams returned 200; container healthy.
+Runtime settings and keys were preserved with no database or scraper changes.
+Rollback image/container: `mynewsfeed-web:before-personal-sports-highlights` /
+`mynewsfeed-web-before-personal-sports-highlights`.
+
+Big 12 basketball source-style formatting was deployed as
+`mynewsfeed-web:basketball-source-layout-20261015`. The table now has Big 12 Record,
+Pct., Home, Away, Overall Record, Pct., Home, Away, Neutral and Streak, in screenshot
+order. Compact left-aligned rows and an italic white-on-black header replace the
+five-column grouped format. All ten source columns map directly, preserving distinct
+conference and overall records. Current-season filtering and women's exclusion remain.
+Build and 25 offline standings tests passed, including ten values and rendered-table
+structure. Live 390/1440-pixel checks verified basketball's current-season waiting
+state, no overflow and unchanged soccer columns. The populated basketball table was
+verified with test fixtures because new-season data is not yet available. Health
+passed and the container was healthy. Runtime settings and keys were preserved;
+no scraper/schema changes were made. Rollback image/container:
+`mynewsfeed-web:before-basketball-source-layout` / `mynewsfeed-web-before-basketball-source-layout`.
+
+Big 12 soccer source-column alignment was deployed as
+`mynewsfeed-web:college-soccer-source-columns-20261015`, replacing the earlier EPL
+adaptation at the user's request. The linked Big 12 table was inspected directly.
+The table now shows Big 12 Record/Conf. Pct./Points/Home/Away/Streak followed by
+Overall Record/Pct./Home/Away/Neutral/Streak in source order. Values read the twelve
+stored source columns directly, retaining separate conference and overall records.
+Build and 25 offline standings tests passed. Live 390/1440-pixel checks verified
+16 teams, twelve populated statistics, no overflow and a reference row matching the
+linked source. The desktop screenshot was inspected. Health passed; the container
+was healthy. Runtime settings and keys were preserved without scraper/schema changes.
+Rollback image/container: `mynewsfeed-web:before-college-soccer-source-columns` /
+`mynewsfeed-web-before-college-soccer-source-columns`.
+
+Football AP poll reference formatting was deployed as
+`mynewsfeed-web:football-poll-layout-20261015`. Per user clarification, AP only was
+formatted; Coaches Poll collection was not added. Football uses compact
+RK/TEAM/REC/PTS/TREND columns, team logos, inline first-place votes, striped rows,
+colored movement arrows, NR indicators and a source rankings link. Big 12 highlighting
+remains. Other sports retain their prior tables. Others receiving votes and dropped
+teams are not stored and are omitted. Build and eight offline rankings tests passed.
+Live 390/1440-pixel checks verified 25 rows, five columns, votes/trends and no overflow.
+The mobile screenshot was inspected. Health passed; the container was healthy.
+Runtime settings and keys were preserved without database or scraper changes.
+Rollback image/container: `mynewsfeed-web:before-football-poll-layout` /
+`mynewsfeed-web-before-football-poll-layout`.
+
+NFL reference formatting was deployed as `mynewsfeed-web:nfl-division-layout-20261015`.
+AFC/NFC headings contain East/North/South/West division tables in that order. All
+W/L/T/PCT/HOME/AWAY/DIV/CONF/PF/PA/DIFF/STRK columns are visible by default, with
+logos, striped rows, shaded percentage and colored signed point differential.
+Home/road/division/conference records use stored provider statistics; row order stays
+as published. Build and 25 offline standings tests passed. Live 390/1440-pixel checks
+verified 32 teams, eight four-team divisions, all 12 columns and no page overflow.
+The desktop screenshot was inspected. Health passed; the container was healthy.
+Runtime settings and keys were preserved without schema or scraper changes.
+Rollback image/container: `mynewsfeed-web:before-nfl-division-layout` /
+`mynewsfeed-web-before-nfl-division-layout`.
+
+Big 12 Volleyball's final four columns were removed in
+`mynewsfeed-web:volleyball-trim-columns-20261015`: Conf. Home, Conf. Away,
+Conf. Neutral and Conf. Streak. Conf/CPct./Overall/Pct./Streak remain visible by
+default without the extra statistics toggle. Provider values and ordering remain.
+Build and 25 offline standings tests passed. Live 390/1440-pixel checks verified
+15 teams, the five requested statistics visible, no extra columns and no overflow.
+Health passed; the container was healthy. Runtime settings and keys were preserved
+without database or scraper changes. Rollback image/container:
+`mynewsfeed-web:before-volleyball-trim-columns` / `mynewsfeed-web-before-volleyball-trim-columns`.
+
+College soccer's unavailable F/A/GD columns were removed in
+`mynewsfeed-web:soccer-remove-empty-columns-20261015`. The conference table retains
+GP/W/D/L/P, logos, striped rows and shaded points; the unavailable-goals note was
+replaced with a simple Conference standings label. Professional soccer columns
+retain their existing behavior. Build and 25 offline standings tests passed.
+Live 390/1440-pixel checks verified all 16 teams, five populated columns, record
+arithmetic and no overflow. Health passed and the container was healthy.
+Runtime settings and keys were preserved without database or scraper changes.
+Rollback image/container: `mynewsfeed-web:before-soccer-remove-empty-columns` /
+`mynewsfeed-web-before-soccer-remove-empty-columns`.
+
+College basketball's compact grouped standings were deployed as
+`mynewsfeed-web:college-basketball-table-20261015`. When current-season rows become
+available, basketball uses Conference W-L/PCT and Overall W-L/PCT/STRK with the same
+layout as football. Duplicate provider percentage labels map to their respective
+conference/overall positions; no empty extra columns are added. Women's college
+basketball remains excluded and prior-season basketball rows remain hidden.
+Build and 25 offline standings tests passed, including separate percentage mapping.
+Live 390/1440-pixel checks verified the current-season basketball waiting message,
+continued women's exclusion, no overflow and the unchanged five-column football
+table. Health passed and the container was healthy. The live basketball table is
+pending new-season data; statistics mapping was tested with fixtures. Runtime settings
+and keys were preserved without database or scraper changes. Rollback image/container:
+`mynewsfeed-web:before-college-basketball-table` / `mynewsfeed-web-before-college-basketball-table`.
+
+College football's empty columns were removed in
+`mynewsfeed-web:football-remove-empty-columns-20261015`. Conference now contains
+W-L/PCT; Overall contains W-L/PCT/STRK. Unavailable PF/PA and overall HOME/AWAY
+columns and their explanatory note were removed; grouped header spans and divider
+were updated. Build and 24 offline standings tests passed. Live 390/1440-pixel checks
+verified all 16 teams, five populated statistics and no overflow. Health passed and
+the container was healthy. Runtime settings and keys were preserved with no schema
+or scraper changes. Rollback image/container:
+`mynewsfeed-web:before-football-remove-empty-columns` /
+`mynewsfeed-web-before-football-remove-empty-columns`.
+
+College football reference formatting was deployed as
+`mynewsfeed-web:college-football-table-20261015`. Big 12 tables use grouped Conference
+and Overall headers, compact striped rows, logos and shaded conference percentage.
+Columns match the reference: conference W-L/PCT/PF/PA, overall W-L/PCT/PF/PA/HOME/AWAY/STRK.
+The current source supplies records, percentages and overall streak; unavailable
+points and overall home/away records show em dashes with an explanatory note.
+Conference home/away data is not substituted for overall records. All columns are
+visible by default and provider order remains. Build and 24 offline standings tests
+passed. Live 390/1440-pixel checks verified 16 teams, grouped headers, populated records,
+no extra toggle and no page overflow. The desktop screenshot was inspected.
+Health passed; the container was healthy. Runtime settings and keys were preserved;
+no schema or scraper changes were made. Rollback image/container:
+`mynewsfeed-web:before-college-football-table` / `mynewsfeed-web-before-college-football-table`.
+
+Sports Events' three-day lookahead was deployed as
+`mynewsfeed-web:events-three-days-20261015`. Listings, counts and paging are bounded
+from today through today plus three days inclusive, using the configured display
+timezone. League choices remain available; out-of-window selections show an empty
+message. Production build passed. Live 390/1440-pixel checks exercised All schedules,
+all 11 league/sport choices and an oversized page parameter; every displayed fixture
+fell within October 15–18, 2026 and no horizontal overflow occurred. The all-schedules
+view contained 101 fixtures in that snapshot. Health passed; the container was healthy.
+Runtime settings and keys were preserved without database or scraper changes.
+Rollback image/container: `mynewsfeed-web:before-events-three-days` /
+`mynewsfeed-web-before-events-three-days`.
+
+Sports Events radio-label cleanup was deployed as
+`mynewsfeed-web:radio-label-cleanup-20261015`. Provider radio text is HTML-decoded,
+stripped of complete/truncated tags and whitespace-normalized before rendering.
+Image-only labels are omitted; separate audio links and real station text remain.
+Stored data is unchanged. Build and 24 event-rendering/helper tests passed, including
+the reported truncated Houston image tag, encoded markup, ordinary station text and
+audio-link retention. Live mobile/desktop college schedule checks found no raw radio
+markup or horizontal overflow. Health passed; the container was healthy. Existing
+runtime settings and keys were preserved. Rollback image/container:
+`mynewsfeed-web:before-radio-label-cleanup` / `mynewsfeed-web-before-radio-label-cleanup`.
+
+Sports Events' streamlined dropdown was deployed as
+`mynewsfeed-web:events-single-filter-20261015`. One Standings-style league/sport
+selector replaces the separate school and sport dropdowns. College schedules are
+grouped by Big 12 sport; professional schedules have one choice per league, plus
+All schedules. Choices come from enabled visible upcoming fixtures. Selection uses
+provider and sport together, persists through paging, and retains Wrexham filtering.
+Existing school/sport URLs remain supported. Build and 17 event-rendering tests passed.
+Live 390/1440-pixel checks exercised all 11 choices, paging URLs, Wrexham filtering,
+no horizontal overflow and no-JavaScript Apply. The mobile screenshot was inspected.
+Health and HTTPS Events passed; the container was healthy. Runtime settings and keys
+were preserved without database or scraper changes. Rollback image/container:
+`mynewsfeed-web:before-events-single-filter` / `mynewsfeed-web-before-events-single-filter`.
+
+Women's college basketball was removed from public schedule/standings/results queries
+in `mynewsfeed-web:hide-womens-college-basketball-20261015`. Schedule sport filtering,
+Big 12 standings choices and results follow selection exclude the sport, including
+direct URLs. Men's college basketball and other sports keep their existing behavior.
+No stored data, feed flags or scraper settings were changed. Build and 23 offline
+standings tests passed. Live 390/1440-pixel checks verified the four remaining college
+standings choices, men's basketball schedules, no women's basketball sport choice,
+empty direct women's schedule, excluded standings source and working Results.
+Health and tailnet HTTPS Home passed; the container was healthy. Runtime settings
+and keys were preserved. Rollback image/container:
+`mynewsfeed-web:before-hide-womens-college-basketball` /
+`mynewsfeed-web-before-hide-womens-college-basketball`.
+
+Big 12 soccer EPL-style standings were deployed as
+`mynewsfeed-web:college-soccer-table-20261014`. The conference table uses
+GP/W/D/L/F/A/GD/P, deriving GP/W/D/L from the provider's Big 12 W-L-T record and
+retaining published conference points. Goals statistics are unavailable in this
+source and show em dashes with an explanatory note. The table uses the same logos,
+striping, points shading and default-visible columns as professional soccer tables.
+Build and 23 offline standings tests passed. Live 390/1440-pixel checks verified
+all 16 teams, record arithmetic, eight columns and no page overflow. Health passed
+and the container was healthy. Runtime settings and keys were preserved; no schema
+or scraper changes were made. Rollback image/container:
+`mynewsfeed-web:before-college-soccer-table` / `mynewsfeed-web-before-college-soccer-table`.
+
+College standings visibility was repaired and deployed as
+`mynewsfeed-web:college-standings-visible-20261014`. Enabled Big 12 sources stay
+selectable without retained past opening fixtures; stale-season rows remain excluded.
+Basketball feeds show a current-season unavailable message while awaiting new tables.
+Read-only production checks found all five standings feeds, five college schedules
+and five conference result follows already enabled with no recorded follow errors.
+Live standings checks showed Football 16, Soccer 16, Volleyball 15 teams and both
+basketball choices pending new-season tables. All five schedule sport filters returned
+games; upcoming college data included 54 football, 94 volleyball and 40 soccer games,
+plus men's/women's basketball fixtures. Stored finals included football, soccer and
+volleyball; daily Results only shows today/yesterday and no college finals were present
+in the checked daily windows. Build and 22 offline standings tests passed; the updated
+SQL fixture test was not run against production. Health passed and the container was
+healthy. No feed flags, database schema, or scraper settings changed.
+Rollback image/container: `mynewsfeed-web:before-college-standings-visible` /
+`mynewsfeed-web-before-college-standings-visible`.
+
+Soccer standings reference formatting was deployed as
+`mynewsfeed-web:soccer-standings-layout-20261014`. EPL, Championship, MLS and NWSL
+show GP/W/D/L/F/A/GD/P in compact striped tables with logos, season in the first
+header, shaded points and colored signed goal differential. All statistics are
+visible by default; the extra rank column is removed. Existing team ordering,
+league groupings, Wrexham/Current highlighting and notes remain.
+Build, 22 offline standings tests and two English soccer column tests passed.
+Live 390/1440-pixel checks verified EPL's 20, Championship's 24, MLS's 30 and NWSL's
+16 teams, all eight columns visible and no page overflow. The desktop screenshot
+was inspected. Health and HTTPS standings passed; the container was healthy.
+Runtime settings and keys were preserved without scraper/schema changes.
+Rollback image/container: `mynewsfeed-web:before-soccer-standings-layout` /
+`mynewsfeed-web-before-soccer-standings-layout`.
+
+Homepage news published dates were deployed as
+`mynewsfeed-web:home-news-published-date-20261014`. Each dated story shows its
+published date/time beneath the headline in the configured display timezone;
+undated stories omit it. The production build passed. Live 390/1440-pixel browser
+checks verified ten timestamps, placement between headlines and summaries, and
+no horizontal overflow. Health and HTTPS Home passed; the container was healthy.
+Existing runtime settings and keys were preserved with no scraper/database changes.
+Rollback image/container: `mynewsfeed-web:before-home-news-published-date` /
+`mynewsfeed-web-before-home-news-published-date`.
+
+The YouTube mobile app-link release was reverted at the user's request after mobile
+breakage. Production was restored using the preserved pre-change container running
+`mynewsfeed-web:nhl-standings-layout-20261014`; latest was retagged to that release.
+Only the YouTube app-link source changes were removed. Earlier homepage and NHL
+standings updates remain. Video links again use standard web URLs and new-tab behavior.
+
+
+YouTube mobile video links were deployed as
+`mynewsfeed-web:youtube-mobile-app-links-20261014`. Android Chrome prepares a
+YouTube-package intent with HTTPS fallback during a video click; iOS and other
+mobile browsers keep HTTPS links in the same context for normal app-link handling.
+Desktop links retain new-tab behavior. Host and video ID validation prevents
+untrusted stored URLs from becoming app intents. Build and JS syntax checks passed.
+Browser checks verified Android/iPhone/desktop behavior, fallback encoding and
+untrusted-host rejection. Live Home/Videos checks passed in Android/iPhone profiles.
+Health and HTTPS passed and the container was healthy. Physical phone app launch
+was not tested. Runtime settings and keys were preserved without scraper/database
+changes. Rollback image/container: `mynewsfeed-web:before-youtube-mobile-app-links` /
+`mynewsfeed-web-before-youtube-mobile-app-links`.
+
+NHL standings reference layout was deployed as
+`mynewsfeed-web:nhl-standings-layout-20261014`. Eastern/Western conference headings
+contain Atlantic/Metropolitan and Central/Pacific division tables respectively.
+All 16 reference statistics are visible by default in compact striped tables with
+logos, shaded points and signed/color-coded goal differential. Last-10 records omit
+the provider's unrelated points suffix. Provider row order and stored values remain.
+Build passed; all 22 offline standings tests passed, including NHL columns, conference
+mapping, missing values and overtime-loss aliases. The existing 18-test standings
+suite also passed before the added tests. Live checks verified 32 teams across four
+divisions and all columns at 390/1440 pixels with/without JavaScript, no page overflow,
+dark theme, and successful health/HTTPS. The desktop screenshot was inspected.
+Runtime settings and keys were preserved. No schema or scraper changes were made.
+Rollback image/container: `mynewsfeed-web:before-nhl-standings-layout` /
+`mynewsfeed-web-before-nhl-standings-layout`.
+
+Today & Tonight NHL filtering was deployed as `mynewsfeed-web:home-nhl-filter-20261014`.
+The box includes NHL fixtures only when St. Louis Blues or Montreal Canadiens
+participate, home or away. Full Events schedules retain their existing behavior.
+Build and 130 relevant tests passed, including both clubs on either side and
+unrelated-team exclusion. Live checks at 390/1440 pixels retained Capitals–Canadiens
+and excluded Avalanche–Stars, with no overflow. Blues inclusion was verified in tests.
+Home, health, Events and tailnet HTTPS returned 200; the container was healthy.
+Runtime settings and keys were preserved with no database or scraper changes.
+Rollback image/container: `mynewsfeed-web:before-home-nhl-filter` /
+`mynewsfeed-web-before-home-nhl-filter`.
+
+Today & Tonight Home/Away columns were deployed as
+`mynewsfeed-web:home-away-columns-20261014`. Home appears on the left and Away on the
+right, with names/logos ordered by schedule designation. Neutral/unknown games use
+Team/Opponent labels. Time now joins location and TV/streaming beneath the teams.
+Build and 123 relevant tests passed. Live browser checks at 320/390/768/1440 pixels
+with light/dark color preferences verified column labels, horizontal alignment,
+details underneath, all current logos loaded, no overflow and image failure initials.
+The mobile screenshot was inspected. Health and HTTPS Home passed; the container
+was healthy. Runtime settings and keys were preserved without database or scraper
+changes. Rollback image/container: `mynewsfeed-web:before-home-away-columns` /
+`mynewsfeed-web-before-home-away-columns`.
+
+October 14 horizontal Today & Tonight matchups were deployed as
+`mynewsfeed-web:home-horizontal-matchups-20261014`. Both teams share a horizontal
+row with their logos beside their names; time appears above and location plus
+TV/streaming details below. This CSS layout change preserves schedule filtering
+and links. The production build passed. Browser checks at 320/390/768/1440 pixels
+with light/dark color preferences verified horizontal team alignment, details below,
+all six logos loaded, no overflow and initials after image failure. The mobile
+screenshot was inspected. Health and HTTPS Home passed; the container was healthy.
+Runtime settings and keys were preserved with no database or scraper changes.
+Rollback image/container: `mynewsfeed-web:before-home-horizontal-matchups` /
+`mynewsfeed-web-before-home-horizontal-matchups`.
+
+October 14 Today & Tonight location/broadcast details were deployed as
+`mynewsfeed-web:home-game-details-20261014`. Schedule location and TV/streaming text
+appear beside teams on wider screens, below them on phones; valid stream URLs get
+a Watch stream link. Missing details are omitted. Build and 123 relevant tests passed.
+Live browser checks at 390/1440 pixels with light/dark color preferences verified
+Dodger Stadium/FS1, GEODIS Park/Apple TV and Energizer Park/Apple TV, six loaded logos,
+no overflow and image failure fallback. The desktop screenshot was inspected.
+Health and HTTPS Home passed and the container was healthy. Runtime settings and keys
+were preserved; no database or scraper changes were made. Rollback image/container:
+`mynewsfeed-web:before-home-game-details` / `mynewsfeed-web-before-home-game-details`.
+Publish reported existing System.Security.Cryptography.Pkcs 9.0.11 vulnerability
+warnings; dependency changes were outside this layout release.
+
+October 14 Today & Tonight team rows were deployed as
+`mynewsfeed-web:home-team-rows-20261014`. Each team now has a logo beside its name
+on a separate row using the schedule's badge styling, with initials for missing or
+failed images. Matchup links and vs/@ relationships remain available.
+Build and 123 personal-feature/feed helper tests passed. Live browser checks at
+390/1440 pixels with light/dark color preferences verified six loaded logos, no
+horizontal overflow and initials after forced image failures. The mobile screenshot
+was inspected. Health returned ok, HTTPS Home returned 200 and the container was
+healthy. Runtime settings and keys were preserved; no database or scraper changes
+were made. Rollback image/container: `mynewsfeed-web:before-home-team-rows` /
+`mynewsfeed-web-before-home-team-rows`.
+
+October 14 Today & Tonight team logos were deployed as
+`mynewsfeed-web:home-team-logos-20261014`. Each matchup displays available schedule
+logos for both teams above its title, using safe image URLs, fixed 28-pixel sizes,
+decorative alt text and image-error removal. Missing or failed images leave the
+matchup readable. Build and 123 personal-feature/feed helper tests passed.
+Live browser checks at 390/1440 pixels with light/dark color preferences verified
+all six logos loaded for today's three fixtures, no horizontal overflow, and readable
+titles after forced image failures. The mobile screenshot was visually inspected.
+Health returned ok, tailnet HTTPS Home returned 200 and the container was healthy.
+Runtime settings and keys were preserved; no database or scraper changes were made.
+Rollback image/container: `mynewsfeed-web:before-home-team-logos` /
+`mynewsfeed-web-before-home-team-logos`.
+
+October 14 sports-only Today & Tonight was deployed as
+`mynewsfeed-web:home-sports-only-20261014`. The box now builds exclusively from today's
+sports fixtures, retaining the Wrexham/Sporting Kansas City/St. Louis City filters.
+Movie and TV entries no longer enter this box; dedicated homepage sections remain.
+The unused today-movie query was removed and the empty message now describes games.
+Build and 123 personal-feature/feed helper tests passed. Live no-JavaScript browser
+checks at 390/1440 pixels showed only Dodgers–Brewers, Nashville–Sporting Kansas City
+and St. Louis City–Vancouver, preserved the separate TV section and found no overflow.
+Health, Events, Movies, TV and Home returned 200, including tailnet HTTPS Home.
+The container was healthy; runtime settings and keys were preserved with no database
+or scraper configuration changes. Rollback image/container are retained as
+`mynewsfeed-web:before-home-sports-only` / `mynewsfeed-web-before-home-sports-only`.
+
+October 14 Today & Tonight soccer filtering was deployed as
+`mynewsfeed-web:home-soccer-filter-20261014`. Home excludes EPL fixtures, keeps only
+Wrexham Championship fixtures, and keeps MLS fixtures involving Sporting Kansas City
+or St. Louis City on either side. Other timeline content and full Events schedules
+retain their existing behavior. Build and 123 personal-feature/feed helper tests
+passed, including home/away inclusion, exclusion and other-provider preservation.
+Live no-JavaScript browser checks at 390/1440 pixels verified today's two selected
+MLS fixtures, preserved baseball/movie/TV entries and no horizontal overflow.
+Home, health, Events, Results and News returned 200, as did tailnet HTTPS Home.
+The healthy container retains runtime configuration and persistent keys; no database
+or scraper settings changed. Previous container and image are retained for rollback
+as `mynewsfeed-web-before-home-soccer-filter` and
+`mynewsfeed-web:before-home-soccer-filter`. Wrexham inclusion was covered by tests;
+no Wrexham fixture was present in today's live homepage check.
+
+October 14 homepage source rotation was deployed as
+`mynewsfeed-web:home-source-rotation-20261014`. Home now selects up to ten enabled
+sources with articles, using the latest successful news scrape's UTC hour for stable
+random selection, and shows each selected source's newest story. Build and all 89
+feed helper tests passed, including same-hour stability and next-hour rotation.
+Live checks verified ten distinct sources and an unchanged selection on a repeated
+request. Health and all ten checked public routes returned HTTP 200; tailnet HTTPS
+Home also returned 200. The container was healthy. Existing runtime settings,
+network, ports and persistent keys were preserved; no database or scraper settings
+were changed. The previous container and rollback image were retained as
+`mynewsfeed-web-before-home-source-rotation` and
+`mynewsfeed-web:before-home-source-rotation` respectively.
 
 The original codebase audit had 362 passing tests. Protected sports/video ownership
 repairs raised coverage to 364. The personal-features/audit release passed 376 tests;

@@ -23,6 +23,7 @@ public sealed record EventItem(
 
 /// <param name="Total">Every upcoming event matching the filters (the list itself is capped).</param>
 public sealed record EventSchool(int Id, string Name);
+public sealed record ScheduleChoice(string Value, string Name, string Provider, string? Sport);
 
 public sealed record EventsPage(IReadOnlyList<EventItem> Items, int Total);
 
@@ -30,6 +31,7 @@ public sealed record EventsPage(IReadOnlyList<EventItem> Items, int Total);
 public static class EventsQuery
 {
     private static IQueryable<Models.SportsEvent> Visible(WebScraperContext db) => db.SportsEvents.AsNoTracking()
+        .Where(e => e.Sport != "Women's Basketball")
         .Where(e => e.ScheduleStatus == null ||
             (e.ScheduleStatus != "STATUS_CANCELED" && e.ScheduleStatus != "STATUS_CANCELLED"
              && e.ScheduleStatus != "STATUS_UNNECESSARY" && e.ScheduleStatus != "STATUS_FULL_TIME" && !e.ScheduleStatus.StartsWith("STATUS_FINAL")))
@@ -44,6 +46,23 @@ public static class EventsQuery
     public static async Task<IReadOnlyList<EventSchool>> GetSchoolsAsync(WebScraperContext db) =>
         await db.SportsEventsTypes.AsNoTracking().Where(t => t.Enabled && (t.SchoolName != null || t.ProviderKey == "espn-nwsl" || t.ProviderKey == "espn-wnba" || t.ProviderKey == "espn-mlb" || t.ProviderKey == "espn-championship" || t.ProviderKey == "espn-epl" || t.ProviderKey == "espn-mls"))
             .OrderBy(t => t.SchoolName).Select(t => new EventSchool(t.Id, t.ProviderKey == "espn-championship" ? "EFL Championship" : t.ProviderKey == "espn-epl" ? "Premier League" : t.ProviderKey == "espn-mls" ? "MLS" : t.ProviderKey == "espn-mlb" ? "MLB" : t.ProviderKey == "espn-wnba" ? "WNBA" : t.ProviderKey == "espn-nwsl" ? "Kansas City Current" : t.SchoolName!)).ToListAsync();
+
+    public static async Task<IReadOnlyList<ScheduleChoice>> GetScheduleChoicesAsync(WebScraperContext db, DateOnly today)
+    {
+        var rows = await Visible(db).Where(e => e.EventDate >= today)
+            .Select(e => new { Provider = e.ProviderKey ?? (e.SportsEventsType != null ? e.SportsEventsType.ProviderKey : null), e.Sport })
+            .Distinct().ToListAsync();
+        return rows.Select(r => new ScheduleChoice((r.Provider ?? "") + "|" + r.Sport,
+            r.Provider switch
+            {
+                "espn-epl" => "Premier League", "espn-championship" => "EFL Championship",
+                "espn-mls" => "MLS", "espn-nwsl" => "NWSL", "espn-mlb" => "MLB",
+                "espn-wnba" => "WNBA", "espn-nhl" => "NHL",
+                "big12" => "Big 12 " + r.Sport,
+                _ => r.Sport ?? "Other events"
+            }, r.Provider ?? "", r.Sport))
+            .OrderBy(c => c.Name, StringComparer.OrdinalIgnoreCase).ThenBy(c => c.Value, StringComparer.Ordinal).ToList();
+    }
 
     /// <summary>A safety cap on one page; a season is far smaller than this.</summary>
     public const int Limit = 200;
@@ -72,9 +91,11 @@ public static class EventsQuery
     /// with a known start time come before games whose time is still to be announced.
     /// </summary>
     public static async Task<EventsPage> GetUpcomingAsync(
-        WebScraperContext db, DateOnly today, string? sport, string? search, int limit = Limit, int? school = null, DateOnly? from = null, DateOnly? to = null, string? team = null, int? providerTeamId = null, int offset = 0)
+        WebScraperContext db, DateOnly today, string? sport, string? search, int limit = Limit, int? school = null, DateOnly? from = null, DateOnly? to = null, string? team = null, int? providerTeamId = null, int offset = 0, string? provider = null)
     {
         var query = Visible(db).Where(e => e.EventDate >= today && (from == null || e.EventDate >= from) && (to == null || e.EventDate <= to));
+        if (provider is not null)
+            query = query.Where(e => (e.ProviderKey ?? (e.SportsEventsType != null ? e.SportsEventsType.ProviderKey : null) ?? "") == provider);
         if (school is { } schoolId)
             query = query.Where(e => e.EventSources.Any(s => s.SportsEventsTypeId == schoolId && s.Feed.Enabled)
                 || (!e.EventSources.Any() && e.SportsEventsTypeId == schoolId));
@@ -166,6 +187,33 @@ public static class EventsQuery
 /// <summary>Display-time text helpers for the events page. The stored data is never changed.</summary>
 public static class EventsText
 {
+    /// <summary>Provider radio labels can contain HTML, including truncated image tags.</summary>
+    public static string? RadioLabel(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return null;
+        var decoded = System.Net.WebUtility.HtmlDecode(value);
+        var text = new System.Text.StringBuilder();
+        var inTag = false;
+        char quote = '\0';
+        for (var i = 0; i < decoded.Length; i++)
+        {
+            var ch = decoded[i];
+            if (!inTag && ch == '<' && i + 1 < decoded.Length
+                && (char.IsLetter(decoded[i + 1]) || decoded[i + 1] is '/' or '!' or '?'))
+            { inTag = true; text.Append(' '); continue; }
+            if (inTag)
+            {
+                if (quote != '\0') { if (ch == quote) quote = '\0'; }
+                else if (ch is '\'' or '"') quote = ch;
+                else if (ch == '>') inTag = false;
+                continue;
+            }
+            text.Append(ch);
+        }
+        var label = string.Join(" ", text.ToString().Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
+        return label.Length == 0 ? null : label;
+    }
+
     public static string? StatusLabel(string? status) => status switch
     {
         "STATUS_POSTPONED" => "Postponed",

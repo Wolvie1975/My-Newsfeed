@@ -1,24 +1,30 @@
 @using MyNewsFeed.Web.Data
 
-@{
-    var showRank = (Provider is "espn-nwsl" or "espn-mls" or "espn-championship" or "espn-epl") && Group.Teams.Any(t => t.Row.Rank != null);
-}
-<section class="standings-group" aria-labelledby="@HeadingId">
-    <h3 id="@HeadingId">@Group.Name</h3>
+<section class="standings-group @(Provider is "espn-nhl" or "espn-nfl" ? "nhl-division" : IsBasketball ? "basketball-standings" : IsSoccer ? "soccer-standings" : IsCollegeRecordTable ? "football-standings" : null)" aria-labelledby="@HeadingId">
+    @if (Provider is not ("espn-nhl" or "espn-nfl")) { <h3 id="@HeadingId">@Group.Name</h3> }
     <div class="standings-scroll" role="region" aria-labelledby="@HeadingId" tabindex="0">
         <table class="standings-table league-standings-table">
             <caption>@(Group.Teams.FirstOrDefault()?.Row.Title ?? SourceName) · @Group.Name</caption>
+            @if (IsCollegeRecordTable || IsCollegeSoccer)
+            {
+                <thead>
+                    <tr><th scope="col" rowspan="2" class="standing-team">Team</th><th scope="colgroup" colspan="@(IsCollegeSoccer ? 6 : 2)">@(IsCollegeSoccer ? "Big 12" : "Conference")</th><th scope="colgroup" colspan="@(IsCollegeSoccer ? 6 : 3)">Overall</th></tr>
+                    <tr>@foreach (var column in Group.Columns) { <th scope="col" class="@ColumnClass(column)">@column.Label</th> }</tr>
+                </thead>
+            }
+            else
+            {
             <thead><tr>
-                <th scope="col" class="standing-team">Team</th>
-                @if (showRank) { <th scope="col" class="standing-extra">Rank</th> }
-                @foreach (var column in Group.Columns) { <th scope="col" class="@(IsCompactColumn(column) ? null : "standing-extra")">@column.Label</th> }
+                <th scope="col" class="standing-team" id="@(Provider is "espn-nhl" or "espn-nfl" ? HeadingId : null)">@(Provider is "espn-nhl" or "espn-nfl" ? Group.Name.Replace(" Division", "").ToUpperInvariant() : IsSoccer ? Group.Teams.FirstOrDefault()?.Row.Season ?? "Team" : "Team")</th>
+                @foreach (var column in Group.Columns) { <th scope="col" class="@(ColumnClass(column))">@column.Label</th> }
             </tr></thead>
+            }
             <tbody>
             @foreach (var team in Group.Teams)
             {
                 var row = team.Row;
                 var highlight = (Provider == "espn-nwsl" && row.TeamId == "20907") || (Provider == "espn-championship" && row.TeamId == "352");
-                <tr class="@(highlight ? "standing-highlight" : null)">
+                <tr class="@(highlight ? "standing-highlight" : null)" data-sports-teams="@SportsTeamPreferences.Keys(row.TeamName)">
                     <th scope="row" class="standing-team">
                         <span class="standing-team-name">
                             @if (EventsText.LogoUrl(row.LogoUrl) is { } logo)
@@ -28,8 +34,7 @@
                             else { <span>@row.TeamName</span> }
                         </span>
                     </th>
-                    @if (showRank) { <td class="standing-extra">@(row.Rank?.ToString() ?? "—")</td> }
-                    @foreach (var column in Group.Columns) { <td class="@(IsCompactColumn(column) ? null : "standing-extra")">@StandingsQuery.StatisticValue(team, column.Name)</td> }
+                    @foreach (var column in Group.Columns) { <td class="@(ColumnClass(column))" data-sign="@((Provider is "espn-nhl" or "espn-nfl" || IsSoccer) && column.Name == "pointDifferential" ? team.Statistics.FirstOrDefault(s => s.Name == column.Name)?.Value is > 0 ? "positive" : team.Statistics.FirstOrDefault(s => s.Name == column.Name)?.Value is < 0 ? "negative" : null : null)">@StandingsQuery.StatisticValue(team, column.Name)</td> }
                 </tr>
             }
             </tbody>
@@ -47,6 +52,14 @@
 </section>
 
 @code {
+    private bool IsBasketball => Provider == "big12" && Sport?.Contains("Basketball", StringComparison.OrdinalIgnoreCase) == true;
+    private bool IsCollegeRecordTable => Group.Columns.Any(c => c.Name.StartsWith("collegeFootball:", StringComparison.Ordinal) || c.Name.StartsWith("collegeBasketball:", StringComparison.Ordinal));
+    private bool IsCollegeSoccer => Provider == "big12" && Sport == "Soccer";
+    private bool IsSoccer => Provider is "espn-nwsl" or "espn-mls" or "espn-championship" or "espn-epl" || IsCollegeSoccer;
+    private string? ColumnClass(StandingColumn column) => IsBasketball ? null : IsCollegeSoccer ? column.Name == "column3" ? "nhl-points" : null : Provider == "big12" && Sport == "Volleyball" ? null : IsCollegeRecordTable ? column.Name is "collegeFootball:CPct." or "collegeBasketball:CPct" ? "nhl-points" : null : (Provider is "espn-nhl" or "espn-nfl" || IsSoccer)
+        ? column.Name is "points" or "collegeSoccerPoints" or "winPercent" ? "nhl-points" : column.Name == "pointDifferential" ? "nhl-diff" : null
+        : IsCompactColumn(column) ? null : "standing-extra";
+
     private bool IsCompactColumn(StandingColumn column) => Provider switch
     {
         "espn-nfl" => column.Name is "wins" or "losses" or "ties" or "winPercent",
@@ -55,6 +68,7 @@
         _ => Group.Columns.Take(3).Contains(column)
     };
 
+    [Parameter] public string? Sport { get; set; }
     [Parameter, EditorRequired] public StandingGroup Group { get; set; } = default!;
     [Parameter, EditorRequired] public string Provider { get; set; } = "";
     [Parameter, EditorRequired] public string SourceName { get; set; } = "";

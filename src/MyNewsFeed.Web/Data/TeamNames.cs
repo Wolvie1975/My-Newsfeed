@@ -12,6 +12,8 @@ public static class TeamNames
         ("Texas Tech", "Texas Tech Red Raiders"), ("UCF", "UCF Knights"),
         ("Utah", "Utah Utes"), ("West Virginia", "West Virginia Mountaineers")
     ];
+    public static IReadOnlyList<string> Big12Schools => Schools.Select(s => s.School).ToArray();
+
     public static string Key(string? name)
     {
         var trimmed = name?.Trim() ?? "";

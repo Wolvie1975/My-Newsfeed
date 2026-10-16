@@ -29,7 +29,7 @@ else
                 <thead><tr><th scope="col">Home</th><th scope="col">Score</th><th scope="col">Away</th></tr></thead>
                 <tbody>@foreach (var game in day)
                 {
-                    <tr>
+                    <tr data-sports-teams="@SportsTeamPreferences.Keys(game.HomeTeamName, game.AwayTeamName)">
                         <th scope="row"><span class="standing-team-name">
                             @if (EventsText.LogoUrl(game.HomeLogoUrl) is { } logo) { <img src="@logo" alt="" width="24" height="24" loading="lazy" onerror="this.remove()" /> }
                             @game.HomeTeamName</span></th>

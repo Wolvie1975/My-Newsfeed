@@ -178,9 +178,9 @@ Provision the scraper-owned table and SELECT permission before deploying its web
 fall back to the first visible source in display-name order; visible empty sources
 remain selectable. Source visibility additionally respects
 `Standings:HiddenProviders`: MLB/WNBA were temporarily hidden during playoffs without
-disabling collection. Big 12 tables still require current-season labels and a stored
-non-canceled opening fixture. That separate gate was not changed by the schedule fix;
-see [Maintenance](maintenance.md) for the retention risk.
+disabling collection. Enabled Big 12 standings remain selectable independently of
+retained schedule fixtures. Only current-season rows render; preseason or stale-season
+feeds show a current-season unavailable message until the provider publishes new data.
 
 Read source status separately from rows:
 

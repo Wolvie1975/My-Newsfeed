@@ -5,6 +5,25 @@ namespace MyNewsFeed.Tests;
 // Pure logic: no database needed.
 public class FeedHelpersTests
 {
+    [Fact]
+    public void Home_selection_is_stable_within_a_scrape_hour_and_rotates_across_hours()
+    {
+        var candidates = Enumerable.Range(1, 40).Select(i => new FeedItem(
+            i, $"Story {i}", $"https://example.com/story/{i}", null, null,
+            $"Source {i}", $"https://example.com/source/{i}", null, null,
+            new DateTime(2026, 10, 14).AddMinutes(i))).ToList();
+        var scraped = new DateTime(2026, 10, 14, 10, 5, 0);
+        var first = FeedQuery.SelectHomeNews(candidates, scraped);
+        Assert.Equal(10, first.Count);
+        Assert.Equal(10, first.Select(x => x.SourceUrl).Distinct().Count());
+        Assert.Equal(first, FeedQuery.SelectHomeNews(candidates.AsEnumerable().Reverse(), scraped.AddMinutes(40)));
+        Assert.False(first.Select(x => x.Id).SequenceEqual(
+            FeedQuery.SelectHomeNews(candidates, scraped.AddHours(1)).Select(x => x.Id)));
+        Assert.Equal(first.OrderByDescending(x => x.Date), first);
+        Assert.Equal(3, FeedQuery.SelectHomeNews(candidates.Take(3), scraped).Count);
+        Assert.Empty(FeedQuery.SelectHomeNews([], scraped));
+    }
+
     // ---- SafeHref -----------------------------------------------------------------------------------------------
 
     [Theory]

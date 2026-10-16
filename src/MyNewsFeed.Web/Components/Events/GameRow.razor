@@ -20,11 +20,12 @@
     var stats = FeedQuery.SafeHref(Item.LiveStatsUrl);
     var video = FeedQuery.SafeHref(Item.StreamUrl);
     var audio = FeedQuery.SafeHref(Item.AudioUrl);
+    var radio = EventsText.RadioLabel(Item.Radio);
     var details = FeedQuery.SafeHref(Item.Url);
-    var hasLinks = !string.IsNullOrWhiteSpace(Item.Tv) || stats is not null || video is not null || details is not null || audio is not null || !string.IsNullOrWhiteSpace(Item.Radio);
+    var hasLinks = !string.IsNullOrWhiteSpace(Item.Tv) || stats is not null || video is not null || details is not null || audio is not null || radio is not null;
 }
 
-<tr class="game" role="row">
+<tr class="game" role="row" data-sports-teams="@SportsTeamPreferences.Keys(Item.SchoolName, Item.Opponent)">
     <td class="td-sport @(string.IsNullOrWhiteSpace(Item.Sport) ? "td-sport--none" : "")" role="cell">@Item.Sport @if (Item.IsNeutral == true) { <span class="neutral-label">Neutral site</span> }</td>
     <td class="td-away" role="cell"><TeamCell Name="@awayName" LogoUrl="@awayLogo" Label="@(Item.IsNeutral == true ? "Team" : known ? "Away" : null)" /></td>
     <td class="td-home" role="cell"><TeamCell Name="@homeName" LogoUrl="@homeLogo" Label="@(Item.IsNeutral == true ? "Team" : known ? "Home" : null)" /></td>
@@ -44,24 +45,21 @@
     <td class="td-links @(hasLinks ? "" : "td-links--none")" role="cell">
         @if (hasLinks)
         {
-            <div class="links">
+            <div class="links event-links">
                 @if (!string.IsNullOrWhiteSpace(Item.Tv))
                 {
-                    <span class="tv">TV <span class="tv__net">@Item.Tv.Trim()</span></span>
+                    <div class="event-broadcast"><span class="event-broadcast__label">TV / Streaming</span><span class="tv__net">@Item.Tv.Trim()</span></div>
                 }
-                @if (stats is not null)
+                @if (radio is not null)
+                { <div class="event-broadcast"><span class="event-broadcast__label">Radio</span><span>@radio</span></div> }
+                @if (stats is not null || video is not null || audio is not null || details is not null)
                 {
-                    <a href="@stats" target="_blank" rel="noopener noreferrer">Stats</a>
-                }
-                @if (video is not null)
-                {
-                    <a href="@video" target="_blank" rel="noopener noreferrer">Video</a>
-                }
-                @if (!string.IsNullOrWhiteSpace(Item.Radio)) { <span class="tv">Radio @Item.Radio</span> }
-                @if (audio is not null) { <a href="@audio" target="_blank" rel="noopener noreferrer">Audio</a> }
-                @if (details is not null)
-                {
-                    <a href="@details" target="_blank" rel="noopener noreferrer">Details</a>
+                    <div class="event-link-actions">
+                        @if (stats is not null) { <a href="@stats" target="_blank" rel="noopener noreferrer">Stats</a> }
+                        @if (video is not null) { <a href="@video" target="_blank" rel="noopener noreferrer">Video</a> }
+                        @if (audio is not null) { <a href="@audio" target="_blank" rel="noopener noreferrer">Audio</a> }
+                        @if (details is not null) { <a href="@details" target="_blank" rel="noopener noreferrer">Details</a> }
+                    </div>
                 }
             </div>
         }

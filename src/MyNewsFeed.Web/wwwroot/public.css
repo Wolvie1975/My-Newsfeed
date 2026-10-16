@@ -541,7 +541,7 @@
 @media (min-width: 768px) {
     /* Tablet: away, score and home on one line, between the competition and the venue. */
     .pub .result {
-        grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
         grid-template-areas: "comp comp comp" "away score home" "loc loc loc";
         gap: 12px 24px;
         padding: 18px 20px;
@@ -703,7 +703,7 @@
 /* News rows. Phones: source and category on top, the picture beside the headline, the summary full width below. */
 .pub .d-story {
     display: grid; grid-template-columns: clamp(88px, 28vw, 120px) minmax(0, 1fr);
-    grid-template-areas: "top top" "thumb title" "sum sum";
+    grid-template-areas: "top top" "thumb title" "date date" "sum sum";
     gap: 8px 12px; align-items: start; padding: 16px;
 }
 .pub .d-story > .d-thumb { grid-area: thumb; }
@@ -711,6 +711,7 @@
 .pub .d-story__top { grid-area: top; }
 .pub .d-story__title { grid-area: title; }
 .pub .d-story__sum { grid-area: sum; }
+.pub .d-story__date { grid-area: date; margin: 0; font-size: 12px; line-height: 1.5; color: var(--text-2); }
 .pub .d-story__top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 12px; }
 .pub .d-src {
     display: inline-block; min-width: 0; padding: 3px 8px; border-radius: 6px;
@@ -727,10 +728,18 @@
 }
 
 /* Today's events rows. The time reads "6:00 P.M. CT", so the column is wider than the plain-clock design and never wraps. */
-.pub .d-game { display: grid; grid-template-columns: 104px minmax(0, 1fr); gap: 12px; align-items: start; padding: 14px 16px; }
+.pub .d-game { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; align-items: start; padding: 14px 16px; }
+.pub .d-game__details { min-width: 0; display: flex; flex-wrap: wrap; gap: 12px 24px; font-size: 13px; line-height: 1.5; overflow-wrap: anywhere; padding-top: 8px; border-top: 1px solid var(--border); }
+.pub .d-game__details > div { display: flex; flex-direction: column; flex: 1 1 120px; min-width: 0; }
+.pub .d-game__label { color: var(--text-2); font-size: 12px; font-weight: 600; }
 .pub .d-game__time { white-space: nowrap; font-size: 14px; line-height: 1.5; font-weight: 700; font-variant-numeric: tabular-nums; }
 .pub .d-game__time.is-tbd { font-weight: 500; color: var(--text-2); }
 .pub .d-game__body { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.pub .d-game__teams { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: center; gap: 10px; }
+.pub .d-game__column-label { color: var(--text-2); font-size: 12px; font-weight: 600; }
+.pub .d-game__team { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.pub .d-game__team .team-badge { flex: 0 0 32px; }
+.pub .d-game__versus { color: var(--text-2); font-size: 12px; font-weight: 500; }
 .pub .d-game__match { margin: 0; font-size: 16px; line-height: 1.3; font-weight: 650; letter-spacing: -0.01em; overflow-wrap: anywhere; }
 .pub .d-game__meta {
     margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 2px 8px;
@@ -1072,3 +1081,86 @@
     .pub .boxoffice-movie .boxoffice-stats { grid-template-columns:1fr; }
     .pub .boxoffice-rank { width:24px; font-size:20px; }
 }
+
+/* NHL conference tables: complete statistics with division headers. */
+.pub .nhl-conference { margin-top: 24px; }
+.pub .standings-view .nhl-division { margin-top: 0; }
+.pub .nhl-division .standings-table { font-size: 13px; }
+.pub .nhl-division .standings-table th, .pub .nhl-division .standings-table td { padding: 9px 7px; }
+.pub .nhl-division tbody tr:nth-child(even) > * { background: var(--ph-bg); }
+.pub .nhl-division .standing-team { min-width: 200px; }
+.pub .nhl-division .standing-team-name img { width: 20px; height: 20px; }
+.pub .nhl-division .nhl-points, .pub .nhl-division tbody tr:nth-child(even) .nhl-points { background: var(--pill-bg); font-weight: 700; }
+.pub .nhl-diff[data-sign="positive"] { color: #15803d; }
+.pub .nhl-diff[data-sign="negative"] { color: #dc2626; }
+:root[data-theme="dark"] .pub .nhl-diff[data-sign="positive"] { color: #4ade80; }
+:root[data-theme="dark"] .pub .nhl-diff[data-sign="negative"] { color: #f87171; }
+
+/* Soccer reference tables keep every statistic visible. */
+.pub .soccer-standings .standings-table { font-size: 13px; }
+.pub .soccer-standings .standings-table th, .pub .soccer-standings .standings-table td { padding: 10px 8px; }
+.pub .soccer-standings tbody tr:nth-child(even) > * { background: var(--ph-bg); }
+.pub .soccer-standings .nhl-points, .pub .soccer-standings tbody tr:nth-child(even) .nhl-points { background: var(--pill-bg); font-weight: 700; }
+.pub .soccer-standings .standing-team { min-width: 200px; }
+.pub .soccer-standings .standing-team-name img { width: 20px; height: 20px; }
+
+/* College football conference/overall grouped standings. */
+.pub .football-standings .standings-table { font-size: 13px; }
+.pub .football-standings .standings-table th, .pub .football-standings .standings-table td { padding: 10px 8px; }
+.pub .football-standings thead th[scope="colgroup"] { text-align: center; text-transform: uppercase; }
+.pub .football-standings tbody tr:nth-child(even) > * { background: var(--ph-bg); }
+.pub .football-standings .nhl-points, .pub .football-standings tbody tr:nth-child(even) .nhl-points { background: var(--pill-bg); }
+.pub .football-standings .standing-team { min-width: 200px; }
+.pub .football-standings .standing-team-name img { width: 20px; height: 20px; }
+.pub .football-standings tbody td:nth-child(4), .pub .football-standings thead th[scope="colgroup"] { border-left: 1px solid var(--field-border); }
+
+/* Compact college football poll cards. */
+.pub .football-polls { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 24px; }
+.pub .football-poll { min-width: 0; }
+.pub .football-poll h3 { margin: 0 0 10px; font-size: 18px; }
+.pub .football-poll table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.pub .football-poll th, .pub .football-poll td { padding: 7px 6px; border-bottom: 1px solid var(--field-border); text-align: right; }
+.pub .football-poll thead th { color: var(--text-2); font-size: 11px; }
+.pub .football-poll th:nth-child(2) { text-align: left; }
+.pub .football-poll tbody th { font-weight: 500; }
+.pub .football-poll tbody tr:nth-child(even) { background: var(--ph-bg); }
+.pub .football-poll .standing-team-name { gap: 8px; }
+.pub .football-poll .standing-team-name img { width: 22px; height: 22px; object-fit: contain; flex: none; }
+.pub .football-poll .poll-votes { color: var(--text-2); }
+.pub .football-poll .poll-source { text-align: center; margin: 14px 0; font-size: 13px; }
+.pub .poll-trend { white-space: nowrap; }
+.pub .poll-trend.up { color: #15803d; }
+.pub .poll-trend.down { color: #dc2626; }
+:root[data-theme="dark"] .pub .poll-trend.up { color: #4ade80; }
+:root[data-theme="dark"] .pub .poll-trend.down { color: #f87171; }
+
+/* Big 12 basketball source-style compact standings. */
+.pub .basketball-standings .standings-table { font-size: 14px; }
+.pub .basketball-standings .standings-table th, .pub .basketball-standings .standings-table td { padding: 6px 9px; text-align: left; }
+.pub .basketball-standings .standings-table thead th { background: #000; color: #fff; font-style: italic; text-transform: uppercase; }
+.pub .basketball-standings .standing-team { min-width: 180px; }
+.pub .basketball-standings tbody th { font-weight: 400; }
+.pub .basketball-standings tbody a { text-decoration: underline; }
+.pub .basketball-standings .standing-team-name img { width: 20px; height: 20px; }
+.pub .basketball-standings .standings-table td { border-left: 1px solid var(--field-border); }
+
+/* Personal team selections. */
+.pub .sports-team-group { border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin: 20px 0; }
+.pub .sports-team-group legend { padding: 0 8px; font-weight: 700; }
+.pub .sports-team-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 6px 16px; }
+.pub .sports-team-option { display: flex; align-items: center; gap: 10px; min-height: 44px; cursor: pointer; }
+.pub .sports-team-option[hidden], .pub .sports-team-group[hidden] { display: none; }
+.pub [data-sports-search] { display: block; width: 100%; max-width: 480px; min-height: 44px; margin: 8px 0 16px; padding: 8px 12px; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 6px; }
+.pub tr.sports-selected { outline: 2px solid #dc2626; outline-offset: -2px; }
+.pub tr.sports-selected > :first-child { border-left: 4px solid #dc2626; }
+.pub tr.sports-selected .team__name, .pub tr.sports-selected .standing-team-name { font-weight: 750; }
+
+:root[data-theme="dark"] .pub tr.sports-selected { outline-color: #f87171; }
+:root[data-theme="dark"] .pub tr.sports-selected > :first-child { border-left-color: #f87171; }
+
+/* Keep schedule broadcasts separate from link actions. */
+.pub .links.event-links { display: flex; flex-direction: column; align-items: stretch; gap: 6px; min-width: 0; }
+.pub .event-broadcast { display: flex; flex-direction: column; gap: 2px; font-size: 13px; line-height: 1.5; overflow-wrap: anywhere; }
+.pub .event-broadcast__label { font-size: 11px; font-weight: 600; color: var(--text-2); }
+.pub .event-link-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; }
+.pub .event-link-actions a { white-space: nowrap; }

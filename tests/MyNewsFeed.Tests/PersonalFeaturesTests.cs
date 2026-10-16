@@ -5,6 +5,47 @@ namespace MyNewsFeed.Tests;
 
 public class PersonalFeaturesTests
 {
+    [Fact]
+    public void Personal_highlight_keys_share_college_aliases_and_keep_professional_teams_distinct()
+    {
+        var keys = System.Text.Json.JsonSerializer.Deserialize<string[]>(
+            SportsTeamPreferences.Keys("Kansas", "Kansas Jayhawks", "Kansas State Wildcats", "Kansas City Current", null));
+        Assert.Equal(new[] { "kansas", "kansas state", "kansas city current" }, keys);
+        Assert.Equal("[]", SportsTeamPreferences.Keys(null, " "));
+    }
+
+    [Theory]
+    [InlineData("espn-epl", "Arsenal", "Chelsea", false)]
+    [InlineData("espn-nhl", "St. Louis Blues", "Dallas Stars", true)]
+    [InlineData("espn-nhl", "Dallas Stars", "St. Louis Blues", true)]
+    [InlineData("espn-nhl", "Montreal Canadiens", "Washington Capitals", true)]
+    [InlineData("espn-nhl", "Washington Capitals", "Montreal Canadiens", true)]
+    [InlineData("espn-nhl", "St. Louis Blues", "Montreal Canadiens", true)]
+    [InlineData("espn-nhl", "Colorado Avalanche", "Dallas Stars", false)]
+    [InlineData("espn-nhl", "St. Louis CITY SC", "Dallas Stars", false)]
+    [InlineData("espn-championship", "Wrexham", "Bristol City", true)]
+    [InlineData("espn-championship", "Bristol City", "Wrexham", true)]
+    [InlineData("espn-championship", "Wrexham AFC", "Bristol City", true)]
+    [InlineData("espn-championship", "Coventry City", "Bristol City", false)]
+    [InlineData("espn-mls", "Sporting Kansas City", "Inter Miami CF", true)]
+    [InlineData("espn-mls", "Inter Miami CF", "Sporting KC", true)]
+    [InlineData("espn-mls", "St. Louis CITY SC", "Seattle Sounders FC", true)]
+    [InlineData("espn-mls", "Seattle Sounders FC", "St Louis City", true)]
+    [InlineData("espn-mls", "Seattle Sounders FC", "Inter Miami CF", false)]
+    [InlineData("espn-mls", "Kansas City Current", "Inter Miami CF", false)]
+    [InlineData("espn-nwsl", "Kansas City Current", "Orlando Pride", true)]
+    [InlineData("big12", "Kansas", "Iowa State", true)]
+    [InlineData(null, "Kansas", "Iowa State", true)]
+    public void Timeline_limits_english_and_mls_soccer_to_requested_clubs(
+        string? provider, string home, string away, bool included)
+    {
+        var game = new EventItem(1, "https://test.invalid/game", "Game", "Soccer", away, false, null,
+            new DateOnly(2026, 10, 14), null, true, null, null, null, null, null, home,
+            ProviderKey: provider);
+        var rows = TodayTonight.Build([game], FeedDates.Create("America/Chicago"));
+        Assert.Equal(included ? 1 : 0, rows.Count);
+    }
+
     [Theory]
     [InlineData("Kansas", "Kansas Jayhawks", true)]
     [InlineData("Kansas", "Kansas State Wildcats", false)]
@@ -20,26 +61,18 @@ public class PersonalFeaturesTests
         var game = new EventItem(1, "https://test.invalid/game", "Game", "Soccer", "Away", false, null,
             new DateOnly(2026, 10, 10), new DateTime(2026, 10, 10, 23, 0, 0), false,
             null, null, null, null, null, "Home");
-        var episode = new TvEpisodeItem(1, "Series", null, null, "Episode", 1, 1, false,
-            game.EventDate, game.StartsAtUtc!.Value.AddHours(-1), "https://test.invalid/tv");
         var postponed = game with { Id = 2, SchoolName = "Postponed team", ScheduleStatus = "STATUS_POSTPONED" };
-        var rows = TodayTonight.Build([postponed, game], [episode], [], FeedDates.Create("America/Chicago"));
-        Assert.Equal("TV & Streaming", rows[0].Kind);
-        Assert.Equal("6:00 P.M. CT", rows[1].TimeLabel);
-        Assert.Null(rows[2].StartsUtc);
-        Assert.Equal("Postponed · Time TBD", rows[2].TimeLabel);
+        var rows = TodayTonight.Build([postponed, game], FeedDates.Create("America/Chicago"));
+        Assert.Equal(2, rows.Count);
+        Assert.All(rows, row => Assert.Equal("Soccer", row.Kind));
+        Assert.Equal("6:00 P.M. CT", rows[0].TimeLabel);
+        Assert.Null(rows[1].StartsUtc);
+        Assert.Equal("Postponed · Time TBD", rows[1].TimeLabel);
     }
 
     [Fact]
-    public void Timeline_excludes_vod_releases_but_keeps_other_movie_releases()
-    {
-        var types = new[] { "digital", "digital_rental", "digital_purchase", "theatrical", "subscription", "disc" };
-        var movies = types.Select((type, id) => new MovieReleaseItem(id, type, null, null, null,
-            null, null, new DateOnly(2026, 10, 13), "confirmed", type, null, null, false,
-            "Provider", "https://test.invalid/movie")).ToList();
-        var rows = TodayTonight.Build([], [], movies, FeedDates.Create("America/Chicago"));
-        Assert.Equal(new[] { "disc", "subscription", "theatrical" }, rows.Select(r => r.Title));
-    }
+    public void Timeline_is_empty_without_games() =>
+        Assert.Empty(TodayTonight.Build([], FeedDates.Create("America/Chicago")));
 
     [Theory]
     [InlineData("espn-wnba", "Basketball", "basketball", "wnba", null)]

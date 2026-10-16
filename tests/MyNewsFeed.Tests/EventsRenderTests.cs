@@ -178,6 +178,25 @@ public class EventsRenderTests
         Assert.Contains("https://test.invalid/audio", html);
     }
     [Theory]
+    [InlineData("<IMG SRC=\"https://uhcougars.com/images/2020/9/2/KPRC_logo_2", null)]
+    [InlineData("KPRC <img src=\"logo.png\"> 950 AM", "KPRC 950 AM")]
+    [InlineData("&lt;IMG SRC=&quot;logo.png&quot;&gt;", null)]
+    [InlineData("Sports &amp; News", "Sports & News")]
+    [InlineData("  Test radio  ", "Test radio")]
+    [InlineData(null, null)]
+    public void Radio_labels_remove_complete_and_truncated_markup(string? raw, string? expected) =>
+        Assert.Equal(expected, EventsText.RadioLabel(raw));
+
+    [Fact]
+    public async Task Broken_radio_markup_is_omitted_while_audio_link_remains()
+    {
+        var html = await RenderAsync(Game() with { Radio = "<IMG SRC=\"https://uhcougars.com/logo",
+            AudioUrl = "https://test.invalid/audio" });
+        Assert.DoesNotContain("Radio &lt;", html);
+        Assert.DoesNotContain("uhcougars.com/logo", html);
+        Assert.Contains("https://test.invalid/audio", html);
+    }
+    [Theory]
     [InlineData("STATUS_POSTPONED", "Postponed")]
     [InlineData("STATUS_DELAYED", "Delayed")]
     [InlineData("STATUS_SUSPENDED", "Suspended")]

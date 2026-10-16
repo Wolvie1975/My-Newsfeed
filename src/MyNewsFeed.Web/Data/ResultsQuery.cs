@@ -47,7 +47,7 @@ public static class ResultsQuery
     public static async Task<IReadOnlyList<FollowChip>> GetFollowsAsync(WebScraperContext db, int? selected = null, ResultsWindow? window = null)
     {
         var follows = await db.ResultFollows.AsNoTracking()
-            .Where(f => f.Enabled)
+            .Where(f => f.Enabled && f.League != "womens-college-basketball")
             .Select(f => new { f.Id, f.Kind, f.Name, f.Sport, f.League, f.TeamId })
             .ToListAsync();
 
@@ -82,7 +82,7 @@ public static class ResultsQuery
 
     /// <summary>When results were last refreshed, or null when never.</summary>
     public static async Task<DateTime?> GetLastSyncedAsync(WebScraperContext db) =>
-        await db.ResultFollows.AsNoTracking().Where(f => f.Enabled).MaxAsync(f => f.LastSyncedAt);
+        await db.ResultFollows.AsNoTracking().Where(f => f.Enabled && f.League != "womens-college-basketball").MaxAsync(f => f.LastSyncedAt);
 
     /// <summary>
     /// Finished games, newest first, of every enabled follow or only <paramref name="followId"/>. A followed league
@@ -92,7 +92,7 @@ public static class ResultsQuery
     public static async Task<ResultsPage> GetResultsAsync(WebScraperContext db, int? followId, int limit = Limit, ResultsWindow? window = null, string? team = null)
     {
         var follows = await db.ResultFollows.AsNoTracking()
-            .Where(f => f.Enabled && (followId == null || f.Id == followId))
+            .Where(f => f.Enabled && f.League != "womens-college-basketball" && (followId == null || f.Id == followId))
             .Select(f => new { f.Id, f.Kind, f.Sport, f.League, f.TeamId })
             .ToListAsync();
 

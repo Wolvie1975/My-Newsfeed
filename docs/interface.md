@@ -73,10 +73,59 @@ Results supports today/yesterday; its earlier today-only revision is superseded.
 Subnavigation distinguishes all releases, theaters, subscription streaming and digital
 rental/purchase. Movie type selections survive paging. Digital has its own mobile
 section label and current-page marker; selected-provider scope remains explicit.
-Home's Today & Tonight omits digital rental/purchase entries but keeps its separate
-upcoming digital section. Empty Results offers a direct yesterday link.
+Home's Latest news shows the newest story from up to ten randomly selected enabled
+sources with articles. Selection stays stable within the latest successful news scrape's
+UTC hour and rotates when that timestamp advances to another hour. Selected stories
+remain ordered newest first; failed sources do not advance the rotation timestamp.
+Homepage stories show their published date and time beneath the headline in the
+configured display timezone. Undated stories omit the timestamp.
+
+Home's Today & Tonight excludes Premier League matches, shows Championship matches
+only when Wrexham participates, and shows MLS matches only when Sporting Kansas City
+or St. Louis City participates (home or away). Full schedules remain available on Events.
+NHL games appear only when St. Louis Blues or Montreal Canadiens participate, home or away.
+
+Home's Today & Tonight contains only sports fixtures for today. Movies and television
+episodes remain in their dedicated homepage sections. Confirmed starts precede
+time-TBD fixtures; an empty sports day shows a games-specific empty message.
+Each matchup shows Home and Away columns side by side with a logo beside each name,
+using the schedule page's badge style. Teams and logos follow the schedule's home/away
+designation; neutral or unknown designations use Team/Opponent labels instead.
+Missing or failed logos show team initials. Matchup links remain available.
+Time, location and TV/streaming details appear beneath the teams.
+Safe stream URLs get a Watch stream link.
 
 ## Administration and health
+
+Big 12 football standings use Conference and Overall column groups matching the
+reference layout, with compact stripes and shaded conference percentage. The source's
+records/percentages/streak are mapped by statistic label. Unavailable PF/PA and overall
+home/away columns are omitted. Conference home/away records are not substituted.
+
+Events uses a single league/sport dropdown styled like Standings. It offers All
+schedules, one choice per professional league and one per Big 12 sport with upcoming
+visible fixtures. Changing selection submits automatically; a no-JavaScript Apply
+button remains. Paging preserves selection, Wrexham filtering remains available,
+and existing school/sport query links continue to work.
+The Events listing covers today through three days from today in the configured
+display timezone, inclusive. Counts and pagination use this window for every filter.
+League choices remain available even when their next game falls outside the window.
+
+Women's college basketball is excluded from public schedules, standings and result
+queries, including direct filter URLs. Men's college basketball and WNBA are unaffected.
+Stored data and feed collection settings are retained.
+
+EPL, Championship, MLS and NWSL standings show all GP/W/D/L/F/A/GD/P columns by
+default, with compact striped rows, team logos, shaded points and colored signed
+goal differences. The first header shows the stored season; tables scroll on phones.
+Big 12 soccer mirrors the source's twelve statistics: Big 12 Record, Conf. Pct.,
+Points, Home, Away, Streak, Overall Record, Pct., Home, Away, Neutral and Streak.
+Conference and overall values are kept distinct and displayed in source order.
+
+NHL standings use conference headings with division tables and all 16 statistics
+visible by default: GP, W, L, OTL, PTS, RW, ROW, SOW, SOL, HOME, AWAY, GF, GA,
+DIFF, L10 and STRK. Points are shaded and goal differential keeps its signed value
+and color. Tables scroll horizontally on phones, with team names retained on the left.
 
 Sources, YouTube feeds, sports event feeds and tracked television series use SQL
 count/Skip/Take paging, 25 rows per page with stable ID tie breakers. Changing source
@@ -106,3 +155,48 @@ Remaining review suggestions: use clearer Time not announced wording for date-on
 items, clarify entry points between daily and Championship season results, refine
 missing-artwork placeholders, and standardize secondary metadata across views.
 The seven higher-priority October 13 UI review recommendations were implemented.
+
+College basketball matches the Big 12 source screenshot: Big 12 Record, Pct., Home,
+Away, Overall Record, Pct., Home, Away, Neutral and Streak, with a compact black
+header and left-aligned values. Repeated labels retain separate conference/overall
+values. Current-season filtering remains; women's college basketball stays excluded.
+
+Big 12 Volleyball standings retain Conf, CPct., Overall, Pct. and Streak. Conference
+Home/Away/Neutral/Streak columns are omitted, and all remaining statistics are visible
+without the Show all statistics toggle.
+
+NFL standings use AFC/NFC headings with East/North/South/West division tables.
+All W/L/T/PCT/HOME/AWAY/DIV/CONF/PF/PA/DIFF/STRK columns are visible by default,
+with shaded winning percentage, striped rows and signed/colored point differential.
+
+Football AP rankings use compact RK/TEAM/REC/PTS/TREND columns, with first-place
+votes beside the team name, colored trend arrows and NR for previously unranked
+teams. Only the configured AP poll is shown; unavailable other-vote/dropped-team
+summaries are omitted. Other sports keep their existing rankings layouts.
+
+Sports → My Teams (`/sports/teams`) lets visitors search and select teams/schools
+from enabled standings and schedule data. Selections save automatically in
+`mynewsfeed-sports-teams-v1` localStorage on the current browser/device. College
+aliases share a key across sports. Matching schedule, daily results, MLS/Championship
+season results and standings rows gain a personal outline and bold team names;
+full listings and existing provider highlights remain visible. Clear selections
+removes personal highlights. Navigation and cross-tab changes resynchronize state;
+blocked storage reports an error. JavaScript is required for this personal feature.
+
+My Teams includes professional teams from enabled league standings/schedules, while
+college choices are limited to the 16 Big 12 schools in the shared alias list.
+Saved professional and Big 12 selections remain supported.
+
+Personal team highlights use a red row outline and red left border, with a lighter
+red in dark mode. Selected team names retain their bold weight.
+
+My Teams is the first entry in the Sports menu on both desktop and mobile.
+
+Schedule Links cells stack labeled TV/Streaming and Radio information above a
+separate wrapping row of Stats/Video/Audio/Details actions. Long broadcast lists
+wrap independently so action links remain grouped.
+
+The Movies calendar lists releases from today through the current month's final day,
+using the display timezone. All/In theaters/Subscription streaming filters and paging
+share that window; undated releases are omitted. Separate digital and homepage queries
+retain their existing scope.

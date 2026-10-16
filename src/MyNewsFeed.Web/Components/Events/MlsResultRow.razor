@@ -1,5 +1,5 @@
 @using MyNewsFeed.Web.Data.Models
-<tr>
+<tr data-sports-teams="@SportsTeamPreferences.Keys(Game.HomeTeamName, Game.AwayTeamName)">
     <th scope="row"><span class="standing-team-name">
         @if (EventsText.LogoUrl(Game.HomeLogoUrl) is { } logo) { <img src="@logo" alt="" width="24" height="24" loading="lazy" onerror="this.remove()" /> }
         @Game.HomeTeamName</span></th>

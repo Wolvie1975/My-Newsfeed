@@ -13,7 +13,7 @@
     var (city, venue) = EventsText.SplitLocation(Item.Venue);
 }
 
-<tr class="result" role="row">
+<tr class="result" role="row" data-sports-teams="@SportsTeamPreferences.Keys(Item.HomeName, Item.AwayName)">
     <td class="td-comp" role="cell"><abbr title="@Item.LeagueName">@Item.LeagueTag</abbr></td>
     <td class="td-raway @(Item.WinnerSide == "away" ? "is-winner" : "")" role="cell"><TeamCell Name="@Item.AwayName" LogoUrl="@EspnClient.SmallLogo(Item.AwayLogoUrl)" Label="Away" /></td>
     <td class="td-score" role="cell">

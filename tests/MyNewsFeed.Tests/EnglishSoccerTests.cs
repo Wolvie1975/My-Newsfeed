@@ -28,7 +28,7 @@ public class EnglishSoccerTests
             new SportsStanding { Id = 2, IsCurrent = true, GroupId = "league", Position = 1, TeamName = "B", StatsJson = "[]" } };
         var group = Assert.Single(StandingsQuery.BuildGroups(rows, provider, NullLogger.Instance));
         Assert.Equal(new long[] { 2, 1 }, group.Teams.Select(t => t.Row.Id));
-        Assert.Equal(new[] { "P", "W", "D", "L", "GF", "GA", "GD", "Pts" }, group.Columns.Select(c => c.Label));
+        Assert.Equal(new[] { "GP", "W", "D", "L", "F", "A", "GD", "P" }, group.Columns.Select(c => c.Label));
         Assert.Equal("—", StandingsQuery.StatisticValue(group.Teams[0], "points"));
     }
 

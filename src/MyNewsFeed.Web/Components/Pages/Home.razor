@@ -19,16 +19,31 @@
 
     <section class="d-card d-today" aria-labelledby="h-tonight">
         <div class="d-card__head"><h2 class="d-card__title" id="h-tonight">Today &amp; Tonight</h2><a href="events">All games</a></div>
-        @if (tonight.Count == 0) { <p class="d-empty">Nothing scheduled today. Explore the calendars for what’s next.</p> }
+        @if (tonight.Count == 0) { <p class="d-empty">No games scheduled today. View All games for upcoming fixtures.</p> }
         <ul class="d-list">
             @foreach (var item in tonight)
             {
                 <li class="d-game">
-                    <div class="d-game__time">@item.TimeLabel</div>
-                    <div class="d-game__body"><h3 class="d-game__match">
-                        @if (item.Url is not null) { <a href="@item.Url" target="_blank" rel="noopener noreferrer">@item.Title</a> }
-                        else { @item.Title }
+                    <div class="d-game__body">
+                        <h3 class="d-game__match">
+                        @if (item.Url is not null)
+                        { <a href="@item.Url" target="_blank" rel="noopener noreferrer"><TonightMatchup Item="item" /></a> }
+                        else { <TonightMatchup Item="item" /> }
                     </h3><p class="d-game__meta">@item.Kind</p></div>
+                        <div class="d-game__details">
+                            <div><span class="d-game__label">Time</span><span class="d-game__time">@item.TimeLabel</span></div>
+                            @if (item.Location is not null)
+                            {
+                                var (city, venue) = EventsText.SplitLocation(item.Location);
+                                <div><span class="d-game__label">Location</span><span>@city</span>
+                                    @if (venue is not null) { <span>@venue</span> }
+                                </div>
+                            }
+                            @if (item.Tv is not null)
+                            { <div><span class="d-game__label">TV / Streaming</span><span>@item.Tv</span></div> }
+                            @if (item.StreamUrl is not null)
+                            { <a href="@item.StreamUrl" target="_blank" rel="noopener noreferrer">Watch stream</a> }
+                        </div>
                 </li>
             }
         </ul>
@@ -36,7 +51,7 @@
 
     <section class="d-card d-news" aria-labelledby="h-news">
         <div class="d-card__head">
-            <h2 class="d-card__title" id="h-news">Latest news <span class="d-card__count">1 per source</span></h2>
+            <h2 class="d-card__title" id="h-news">Latest news <span class="d-card__count">Up to 10 sources · rotates hourly</span></h2>
             <a class="d-more" href="news">View all <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="m13 6 6 6-6 6"></path></svg></a>
         </div>
         @if (news.Count == 0)
@@ -84,6 +99,10 @@
                                     @(title.Length > 0 ? title : item.Title)
                                 }
                             </h3>
+                            @if (!item.Undated)
+                            {
+                                <p class="d-story__date"><time datetime="@item.Date.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'")" title="@Dates.PublishedFull(item.Date)">Published @Dates.Published(item.Date) · @Dates.Time(item.Date)</time></p>
+                            }
                             @if (!string.IsNullOrEmpty(summary))
                             {
                                 <p class="d-story__sum">@summary</p>
@@ -305,15 +324,14 @@
 
         // The queries run one after another: one DbContext cannot run two at once.
         todays = await EventsQuery.GetOnDateAsync(db, Dates.TodayAt(nowUtc));
-        news = await FeedQuery.GetLatestPerSourceAsync(db, HomeNewsCount);
+        news = await FeedQuery.GetHomeNewsAsync(db, HomeNewsCount);
         videos = await VideosQuery.GetLatestPerChannelAsync(db);
         movies = await MoviesQuery.GetFridayTheatricalAsync(db, Dates.TodayAt(nowUtc));
         digitalData = await DigitalReleasesQuery.GetAsync(db, Dates.TodayAt(nowUtc), null, take: 5);
         digitalMovies = digitalData.Items;
         episodes = await TvQuery.GetOnDateAsync(db, Dates, Dates.TodayAt(nowUtc));
-        var releasedToday = await MoviesQuery.GetTodayTimelineAsync(db, Dates.TodayAt(nowUtc));
-        tonight = TodayTonight.Build(todays, episodes, releasedToday, Dates);
+        tonight = TodayTonight.Build(todays, Dates);
     }
 
-    private const int HomeNewsCount = 5;
+    private const int HomeNewsCount = 10;
 }

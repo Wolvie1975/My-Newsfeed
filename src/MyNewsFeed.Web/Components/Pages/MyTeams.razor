@@ -1,0 +1,41 @@
+@page "/sports/teams"
+@layout PublicLayout
+@inject IDbContextFactory<WebScraperContext> Factory
+
+<PageTitle>My Teams · MyNewsFeed</PageTitle>
+<PageHeading Title="My Teams" Eyebrow="YOUR SPORTS" Description="Choose professional teams and Big 12 schools to highlight in schedules, results and standings. Full tables remain visible." />
+<p class="updated">Selections save automatically in this browser on this device. Selecting a Big 12 school highlights it across sports.</p>
+@if (error is not null) { <p role="status" class="empty">@error</p> }
+<noscript><p class="empty">Enable JavaScript to save team selections and display highlights.</p></noscript>
+    <div data-sports-preferences>
+        <label for="team-search">Find a team or school</label>
+        <input id="team-search" type="search" placeholder="Search teams and schools" data-sports-search />
+        <button type="button" class="nf-btn nf-btn--secondary" data-sports-clear>Clear selections</button>
+        <p class="updated" role="status" data-sports-status>Loading selections…</p>
+        @foreach (var group in choices.GroupBy(c => c.Group))
+        {
+            <fieldset class="sports-team-group">
+                <legend>@group.Key</legend>
+                <div class="sports-team-options">
+                @foreach (var team in group)
+                {
+                    <label class="sports-team-option" data-sports-option data-search-name="@team.Name.ToLowerInvariant()">
+                        <input type="checkbox" value="@team.Key" data-sports-choice /> <span>@team.Name</span>
+                    </label>
+                }
+                </div>
+            </fieldset>
+        }
+        <p class="updated" data-sports-no-matches hidden>No teams match your search.</p>
+    </div>
+
+@code {
+    private IReadOnlyList<SportsTeamChoice> choices = SportsTeamPreferences.GetChoices();
+    private string? error;
+    protected override async Task OnInitializedAsync()
+    {
+        try { await using var db = await Factory.CreateDbContextAsync(); choices = await SportsTeamPreferences.GetChoicesAsync(db); }
+        catch (Exception ex) when (ex is System.Data.Common.DbException or InvalidOperationException)
+        { error = "Professional teams are temporarily unavailable. Reload to try again."; }
+    }
+}

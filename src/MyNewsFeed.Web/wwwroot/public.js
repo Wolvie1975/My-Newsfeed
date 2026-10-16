@@ -507,3 +507,69 @@
         }
     }, true);
 })();
+
+// Personal sports highlights are stored only in this browser.
+(function () {
+    var key = 'mynewsfeed-sports-teams-v1';
+    var selected = new Set();
+    function read() {
+        try {
+            var values = JSON.parse(localStorage.getItem(key) || '[]');
+            selected = new Set(Array.isArray(values) ? values.filter(function (v) { return typeof v === 'string' && v.length <= 200; }).slice(0, 1000) : []);
+        } catch (_) { selected = new Set(); }
+    }
+    function status(message) {
+        document.querySelectorAll('[data-sports-status]').forEach(function (el) {
+            var value = message || selected.size + ' teams/schools selected. Changes save automatically.';
+            if (el.textContent !== value) el.textContent = value;
+        });
+    }
+    function sync() {
+        document.querySelectorAll('[data-sports-choice]').forEach(function (box) { box.checked = selected.has(box.value); });
+        document.querySelectorAll('[data-sports-teams]').forEach(function (row) {
+            var names = [];
+            try { names = JSON.parse(row.dataset.sportsTeams); } catch (_) { }
+            row.classList.toggle('sports-selected', Array.isArray(names) && names.some(function (name) { return selected.has(name); }));
+        });
+        status();
+    }
+    function save() {
+        try { localStorage.setItem(key, JSON.stringify(Array.from(selected))); sync(); }
+        catch (_) { read(); sync(); status('Selections could not be saved. Allow browser storage and try again.'); }
+    }
+    document.addEventListener('change', function (e) {
+        if (!e.target.matches('[data-sports-choice]')) return;
+        if (e.target.checked) selected.add(e.target.value); else selected.delete(e.target.value);
+        save();
+    });
+    document.addEventListener('click', function (e) {
+        if (!e.target.closest('[data-sports-clear]')) return;
+        selected.clear(); save();
+    });
+    document.addEventListener('input', function (e) {
+        if (!e.target.matches('[data-sports-search]')) return;
+        var term = e.target.value.trim().toLowerCase();
+        var total = 0;
+        document.querySelectorAll('.sports-team-group').forEach(function (group) {
+            var count = 0;
+            group.querySelectorAll('[data-sports-option]').forEach(function (label) {
+                label.hidden = !label.dataset.searchName.includes(term);
+                if (!label.hidden) count++;
+            });
+            group.hidden = count === 0; total += count;
+        });
+        var empty = document.querySelector('[data-sports-no-matches]');
+        if (empty) empty.hidden = total > 0;
+    });
+    window.addEventListener('storage', function (e) { if (e.key === key || e.key === null) { read(); sync(); } });
+    var pending = false;
+    new MutationObserver(function (records) {
+        var relevant = records.some(function (record) { return Array.from(record.addedNodes).some(function (node) {
+            return node.nodeType === 1 && (node.matches('[data-sports-teams], [data-sports-preferences]') || node.querySelector('[data-sports-teams], [data-sports-preferences]'));
+        }); });
+        if (!relevant || pending) return;
+        pending = true;
+        requestAnimationFrame(function () { pending = false; sync(); });
+    }).observe(document.body, { childList: true, subtree: true });
+    read(); sync();
+})();

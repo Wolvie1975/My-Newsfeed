@@ -9,46 +9,29 @@
 @* Static (non-interactive) page. Filters are plain links and a GET form, so every view has a shareable URL and works
    without JavaScript. Games are grouped by EventDate, the stored calendar date (Central for ESPN fixtures), which is never converted. *@
 
-<PageHeading Title="Sports Events" Eyebrow="YOUR SPORTS CALENDAR" Description="Upcoming games, start times, venues, and broadcasts." />
+<PageHeading Title="Sports Events" Eyebrow="YOUR SPORTS CALENDAR" Description="Games from today through the next three days, with start times, venues, and broadcasts." />
 
-<form class="event-school-filter" method="get" action="events">
-    @if (selectedProvider == "espn-championship" && Team == 352) { <input type="hidden" name="team" value="352" /> }
-    @if (!string.IsNullOrWhiteSpace(Sport)) { <input type="hidden" name="sport" value="@Sport" /> }
-    <label for="school">Schedule</label>
-    <select id="school" name="school">
+<form class="catselect" method="get" action="events">
+    <label class="sr-only" for="schedule">League or sport</label>
+    <select id="schedule" name="schedule" onchange="this.form.requestSubmit()">
         <option value="">All schedules</option>
-        @foreach (var school in schools) { <option value="@school.Id" selected="@(School == school.Id)">@school.Name</option> }
+        @foreach (var choice in choices)
+        { <option value="@choice.Value" selected="@(selectedChoice?.Value == choice.Value)">@choice.Name</option> }
     </select>
-    <button class="nf-btn nf-btn--secondary" type="submit">Apply</button>
+    <noscript><button class="nf-btn nf-btn--secondary" type="submit">Apply</button></noscript>
 </form>
 <SoccerLeagueLinks Provider="@selectedProvider" />
 @if (selectedProvider == "espn-championship")
 {
     <form class="ranking-detail-toggle" method="get" action="events">
-        <input type="hidden" name="school" value="@School" />
-        @if (!string.IsNullOrWhiteSpace(Sport)) { <input type="hidden" name="sport" value="@Sport" /> }
+        @if (selectedChoice is not null) { <input type="hidden" name="schedule" value="@selectedChoice.Value" /> }
+        else { <input type="hidden" name="school" value="@School" />
+            @if (!string.IsNullOrWhiteSpace(Sport)) { <input type="hidden" name="sport" value="@Sport" /> } }
         <label><input type="checkbox" name="team" value="352" checked="@(Team == 352)" onchange="this.form.requestSubmit()" /> Wrexham AFC only</label>
         <noscript><button class="nf-btn nf-btn--secondary" type="submit">Apply</button></noscript>
     </form>
 }
 <div class="filters">
-    @if (sports.Count > 0)
-    {
-        @* Selecting a filter submits the form; Apply remains available without JavaScript. *@
-        <form class="catselect" method="get" action="events">
-            @if (School is not null) { <input type="hidden" name="school" value="@School" /> }
-            @if (selectedProvider == "espn-championship" && Team == 352) { <input type="hidden" name="team" value="352" /> }
-            <label class="sr-only" for="sport">Sport</label>
-            <select id="sport" name="sport" onchange="this.form.requestSubmit()">
-                <option value="">All sports</option>
-                @foreach (var sport in sports)
-                {
-                    <option value="@sport" selected="@(IsSelected(sport))">@sport</option>
-                }
-            </select>
-            <noscript><button class="nf-btn nf-btn--secondary" type="submit">Apply</button></noscript>
-        </form>
-    }
     @if (listing is not null)
     {
         <p class="count count--toolbar" aria-live="polite">@listing.Total @(listing.Total == 1 ? "event" : "events")</p>
@@ -71,13 +54,13 @@
 @if (listing is null || listing.Items.Count == 0)
 {
     <p class="empty">
-        @if (!string.IsNullOrWhiteSpace(Sport) || School is not null)
+        @if (!string.IsNullOrWhiteSpace(Sport) || School is not null || selectedChoice is not null)
         {
-            <span>No upcoming events match. <a href="events">Clear filters</a></span>
+            <span>No events match in the next three days. <a href="events">Clear filters</a></span>
         }
         else
         {
-            <span>No upcoming events. Check back soon.</span>
+            <span>No games scheduled from today through the next three days. Check back soon.</span>
         }
     </p>
 }
@@ -139,25 +122,27 @@ else
     [SupplyParameterFromQuery(Name = "school")] private int? School { get; set; }
     [SupplyParameterFromQuery(Name = "team")] private int? Team { get; set; }
     [SupplyParameterFromQuery(Name = "page")] private string? Page { get; set; }
+    [SupplyParameterFromQuery(Name = "schedule")] private string? Schedule { get; set; }
+    private IReadOnlyList<ScheduleChoice> choices = [];
+    private ScheduleChoice? selectedChoice;
     private int pageIndex;
-    private string PageHref(int page) => "events?page=" + page + (School is { } school ? "&school=" + school : "") + (!string.IsNullOrWhiteSpace(Sport) ? "&sport=" + Uri.EscapeDataString(Sport) : "") + (selectedProvider == "espn-championship" && Team == 352 ? "&team=352" : "");
+    private string PageHref(int page) => "events?page=" + page + (selectedChoice is not null ? "&schedule=" + Uri.EscapeDataString(selectedChoice.Value) : "") + (selectedChoice is null && School is { } school ? "&school=" + school : "") + (selectedChoice is null && !string.IsNullOrWhiteSpace(Sport) ? "&sport=" + Uri.EscapeDataString(Sport) : "") + (selectedProvider == "espn-championship" && Team == 352 ? "&team=352" : "");
     private string? selectedProvider;
-    private IReadOnlyList<EventSchool> schools = [];
 
-    private IReadOnlyList<string> sports = [];
     private EventsPage? listing;
     private DateTime? lastUpdated;
 
     protected override async Task OnParametersSetAsync()
     {
         // "Today" is the calendar date in the display zone (Central); events are compared by their own local date.
-        var today = FeedDates.Create("America/Chicago").Today;
+        var today = Dates.Today;
         await using var db = await Factory.CreateDbContextAsync();
-        schools = await EventsQuery.GetSchoolsAsync(db);
+        choices = await EventsQuery.GetScheduleChoicesAsync(db, today);
+        selectedChoice = choices.FirstOrDefault(c => c.Value == Schedule);
         selectedProvider = await db.SportsEventsTypes.AsNoTracking().Where(s => s.Enabled && s.Id == School).Select(s => s.ProviderKey).FirstOrDefaultAsync();
-        sports = await EventsQuery.GetSportsAsync(db, today, School);
+        if (selectedChoice is not null) selectedProvider = selectedChoice.Provider;
         pageIndex = int.TryParse(Page, out var page) ? Math.Clamp(page, 0, 10000) : 0;
-        listing = await EventsQuery.GetUpcomingAsync(db, today, Sport, null, school: School, providerTeamId: selectedProvider == "espn-championship" && Team == 352 ? 352 : null, offset: pageIndex * EventsQuery.Limit);
+        listing = await EventsQuery.GetUpcomingAsync(db, today, selectedChoice?.Sport ?? Sport, null, school: selectedChoice is null ? School : null, providerTeamId: selectedProvider == "espn-championship" && Team == 352 ? 352 : null, offset: pageIndex * EventsQuery.Limit, provider: selectedChoice?.Provider, to: today.AddDays(3));
         pageIndex = Math.Min(pageIndex, Math.Max(0, (listing.Total - 1) / EventsQuery.Limit));
         lastUpdated = await EventsQuery.GetLastUpdatedAsync(db);
     }

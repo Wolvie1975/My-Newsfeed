@@ -35,6 +35,8 @@ else
     if (seasons.Count == 0 && selected.LatestSeason is { Length: > 0 } season) seasons.Add(season);
     <h2>@selected.DisplayName</h2>
     <SoccerLeagueLinks Provider="@selected.ProviderKey" />
+    @if (selected.ProviderKey == "big12" && selected.Sport == "Soccer")
+    { <p class="updated">Conference and overall standings.</p> }
     @if (selected.ProviderKey == "espn-championship") { <p class="updated">Wrexham AFC is highlighted; the full league table remains visible.</p> }
     @if (seasons.Count > 0) { <p class="updated">Published season: @string.Join(" · ", seasons)</p> }
     <details class="ranking-info"><summary>About these standings</summary>
@@ -45,16 +47,31 @@ else
     <p class="updated">Tables retain the published season and provider order. Refresh times describe collection by MyNewsFeed.</p>
     </details>
     @if (page.Groups.Count == 0)
-    { <p class="empty">Standings not available yet.</p> }
+    { <p class="empty">@(selected.ProviderKey == "big12" ? "Current-season standings are not available yet. This college feed is enabled." : "Standings not available yet.")</p> }
     else
     {
         @if (StandingsQuery.Freshness(selected, DateTime.UtcNow) is { } message)
         { <p class="standing-status" role="status">@message</p> }
         <div class="standings-view">
-        <label class="ranking-detail-toggle"><input type="checkbox" /> Show all statistics</label>
         @{ var index = 0; }
-        @foreach (var group in page.Groups)
-        { <StandingsTable Group="group" Provider="@selected.ProviderKey" SourceName="@selected.DisplayName" HeadingId="@($"standings-group-{index++}")" /> }
+        @if (selected.ProviderKey is "espn-nhl" or "espn-nfl")
+        {
+            @foreach (var conference in page.Groups.GroupBy(g => selected.ProviderKey == "espn-nfl" ? StandingsQuery.NflConference(g) : StandingsQuery.NhlConference(g)).OrderBy(g => g.Key is "Eastern Conference" or "American Football Conference" ? 0 : g.Key is "Western Conference" or "National Football Conference" ? 1 : 2))
+            {
+                <section class="nhl-conference" aria-labelledby="@($"nhl-conference-{index}")">
+                    <h3 id="@($"nhl-conference-{index}")">@conference.Key</h3>
+                    @foreach (var group in conference.OrderBy(g => g.Name, StringComparer.Ordinal))
+                    { <StandingsTable Sport="@selected.Sport" Group="group" Provider="@selected.ProviderKey" SourceName="@selected.DisplayName" HeadingId="@($"standings-group-{index++}")" /> }
+                </section>
+            }
+        }
+        else
+        {
+            @if (selected.ProviderKey is not ("espn-nwsl" or "espn-mls" or "espn-championship" or "espn-epl") && !(selected.ProviderKey == "big12" && (selected.Sport is "Soccer" or "Football" or "Volleyball" || selected.Sport.Contains("Basketball", StringComparison.OrdinalIgnoreCase))))
+            { <label class="ranking-detail-toggle"><input type="checkbox" /> Show all statistics</label> }
+            @foreach (var group in page.Groups)
+            { <StandingsTable Sport="@selected.Sport" Group="group" Provider="@selected.ProviderKey" SourceName="@selected.DisplayName" HeadingId="@($"standings-group-{index++}")" /> }
+        }
         </div>
     }
 }

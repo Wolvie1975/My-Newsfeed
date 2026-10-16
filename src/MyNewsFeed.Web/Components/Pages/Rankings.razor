@@ -35,6 +35,14 @@ else
         </p>
     </details>
     <p class="updated ranking-legend"><span class="big12-badge">Big 12</span> Conference members highlighted</p>
+    @if (data.Selected.Sport == "Football")
+    {
+        <div class="football-polls">
+            <FootballPoll Poll="poll" Teams="data.Teams" />
+        </div>
+    }
+    else
+    {
     var points = data.Teams.Any(t => t.Points != null);
     var votes = data.Teams.Any(t => t.FirstPlaceVotes != null);
     <div class="ranking-view">
@@ -64,6 +72,8 @@ else
         </table>
     </div>
     </div>
+    }
+
 }
 
 @code {

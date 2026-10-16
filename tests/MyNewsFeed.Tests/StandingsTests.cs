@@ -14,6 +14,81 @@ namespace MyNewsFeed.Tests;
 public class StandingsTests
 {
     private static readonly ILogger Logger = NullLogger.Instance;
+    [Fact]
+    public async Task College_basketball_matches_source_columns_and_keeps_records_separate()
+    {
+        var team = new StandingTeam(new SportsStanding(), [new("column1", "Big 12 Record", "16-2"),
+            new("column2", "Pct.", ".889"), new("column5", "Overall Record", "36-3"),
+            new("column6", "Pct.", ".923"), new("column10", "Streak", "L1"),
+            new("column3", "Home", "8-1"), new("column4", "Away", "8-1"),
+            new("column7", "Home", "16-1"), new("column8", "Away", "9-1"), new("column9", "Neutral", "11-1")]);
+        var columns = StandingsQuery.Columns("big12", [team], "Men's Basketball");
+        Assert.Equal(new[] { "BIG 12 RECORD", "PCT.", "HOME", "AWAY", "OVERALL RECORD", "PCT.", "HOME", "AWAY", "NEUTRAL", "STREAK" }, columns.Select(c => c.Label));
+        Assert.Equal(new[] { "16-2", ".889", "8-1", "8-1", "36-3", ".923", "16-1", "9-1", "11-1", "L1" },
+            columns.Select(c => StandingsQuery.StatisticValue(team, c.Name)));
+        using var services = new ServiceCollection().AddLogging().BuildServiceProvider();
+        await using var renderer = new HtmlRenderer(services, services.GetRequiredService<ILoggerFactory>());
+        var html = await renderer.Dispatcher.InvokeAsync(async () =>
+            (await renderer.RenderComponentAsync<StandingsTable>(ParameterView.FromDictionary(new Dictionary<string, object?>
+            { ["Group"] = new StandingGroup("big12", "Big 12", [team], columns), ["Provider"] = "big12",
+                ["Sport"] = "Men's Basketball", ["SourceName"] = "Big 12 Men's Basketball", ["HeadingId"] = "basketball" }))).ToHtmlString());
+        Assert.Contains("basketball-standings", html);
+        Assert.DoesNotContain("standing-extra", html);
+        Assert.DoesNotContain("colspan=", html);
+
+    }
+
+    [Fact]
+    public void College_football_uses_conference_and_overall_groups_without_mixing_home_records()
+    {
+        var team = new StandingTeam(new SportsStanding(), [new("column1", "Conf", "3-0"),
+            new("column2", "CPct.", "1.000"), new("column3", "Overall", "5-0"),
+            new("column4", "Pct.", "1.000"), new("column5", "Streak", "W5"),
+            new("column6", "Conf. Home", "2-0")]);
+        var columns = StandingsQuery.Columns("big12", [team], "Football");
+        Assert.Equal(new[] { "W-L", "PCT", "W-L", "PCT", "STRK" }, columns.Select(c => c.Label));
+        Assert.Equal(new[] { "3-0", "1.000", "5-0", "1.000", "W5" },
+            columns.Select(c => StandingsQuery.StatisticValue(team, c.Name)));
+    }
+
+    [Fact]
+    public void College_soccer_maps_conference_record_without_inventing_goals()
+    {
+        var team = new StandingTeam(new SportsStanding(), [new("column1", "Big 12 Record", "5-0-1"),
+            new("column3", "Points", "16"), new("column7", "Overall Record", "9-0-4")]);
+        var columns = StandingsQuery.Columns("big12", [team], "Soccer");
+        Assert.Equal(new[] { "Big 12 Record", "Conf. Pct.", "Points", "Home", "Away", "Streak", "Overall Record", "Pct.", "Home", "Away", "Neutral", "Streak" }, columns.Select(c => c.Label));
+        Assert.Equal(new[] { "5-0-1", "—", "16", "—", "—", "—", "9-0-4", "—", "—", "—", "—", "—" },
+            columns.Select(c => StandingsQuery.StatisticValue(team, c.Name)));
+        var noDraws = new StandingTeam(new SportsStanding(), [new("column1", "Big 12 Record", "4-2")]);
+        Assert.Equal("6", StandingsQuery.StatisticValue(noDraws, "collegeSoccerGamesPlayed"));
+        Assert.Equal("0", StandingsQuery.StatisticValue(noDraws, "collegeSoccerDraws"));
+        Assert.Equal("—", StandingsQuery.StatisticValue(new(new SportsStanding(), []), "collegeSoccerGamesPlayed"));
+        Assert.DoesNotContain(StandingsQuery.Columns("big12", [team], "Football"), c => c.Name.StartsWith("collegeSoccer"));
+    }
+
+    [Fact]
+    public void Nhl_columns_match_reference_and_use_record_values()
+    {
+        Assert.Equal(new[] { "GP", "W", "L", "OTL", "PTS", "RW", "ROW", "SOW", "SOL",
+            "HOME", "AWAY", "GF", "GA", "DIFF", "L10", "STRK" },
+            StandingsQuery.Columns("espn-nhl", []).Select(c => c.Label));
+        var team = new StandingTeam(new SportsStanding(), [new("Last Ten Games", "", "5-2-1, 0 PTS"),
+            new("overtimeLosses", "", "1"), new("Home", "", "3-1-0")]);
+        Assert.Equal("5-2-1", StandingsQuery.StatisticValue(team, "Last Ten Games"));
+        Assert.Equal("1", StandingsQuery.StatisticValue(team, "otLosses"));
+        Assert.Equal("3-1-0", StandingsQuery.StatisticValue(team, "Home"));
+        Assert.Equal("—", StandingsQuery.StatisticValue(team, "shootoutWins"));
+    }
+
+    [Theory]
+    [InlineData("Atlantic Division", "Eastern Conference")]
+    [InlineData("Metropolitan Division", "Eastern Conference")]
+    [InlineData("Central Division", "Western Conference")]
+    [InlineData("Pacific Division", "Western Conference")]
+    public void Nhl_divisions_use_their_conference(string division, string conference) =>
+        Assert.Equal(conference, StandingsQuery.NhlConference(new("id", division, [], [])));
+
     private static SportsStanding Row(long id, string group = "east", int position = 1, string? stats = null) => new()
     {
         Id = id, SourceId = 1, IsCurrent = true, GroupId = group, GroupName = group,
@@ -85,7 +160,7 @@ public class StandingsTests
         {
             Assert.Equal(16, group.Teams.Count);
             Assert.Equal(Enumerable.Range(1, 16), group.Teams.Select(t => t.Row.Position));
-            Assert.Equal(new[] { "W", "L", "T", "Pct", "PF", "PA", "Diff", "Streak" }, group.Columns.Select(c => c.Label));
+            Assert.Equal(new[] { "W", "L", "T", "PCT", "HOME", "AWAY", "DIV", "CONF", "PF", "PA", "DIFF", "STRK" }, group.Columns.Select(c => c.Label));
         });
         Assert.Equal("—", StandingsQuery.StatisticValue(groups[0].Teams[0], "ties"));
         using var services = new ServiceCollection().AddLogging().BuildServiceProvider();
@@ -94,7 +169,7 @@ public class StandingsTests
             (await renderer.RenderComponentAsync<StandingsTable>(ParameterView.FromDictionary(new Dictionary<string, object?>
             { ["Group"] = groups[0], ["Provider"] = "espn-nfl", ["SourceName"] = "NFL", ["HeadingId"] = "afc" }))).ToHtmlString()));
         Assert.Contains("2026 NFL · American Football Conference", html);
-        Assert.Contains("<td>.667</td>", html); Assert.Contains(">+12</td>", html);
+        Assert.Contains(">.667</td>", html); Assert.Contains(">+12</td>", html);
         Assert.Contains(">W3</td>", html); Assert.Contains("<td>—</td>", html);
         Assert.DoesNotContain(">Rank</th>", html); Assert.DoesNotContain(">Home</th>", html);
         Assert.DoesNotContain("99</td>", html);
@@ -141,7 +216,7 @@ public class StandingsTests
         Assert.Contains("Other club", html); Assert.Contains("standing-highlight", html);
         Assert.DoesNotContain("javascript:", html); Assert.DoesNotContain("<script>", html);
         Assert.Contains("&lt;script&gt;", html); Assert.Contains("scope=\"row\"", html); Assert.Contains("<caption>", html);
-        Assert.Contains("Rank", html);
+        Assert.DoesNotContain(">Rank</th>", html);
     }
 
     // Unique, rollback-only fixture tables: no writes to the scraper-owned standings tables.
@@ -156,7 +231,7 @@ public class StandingsTests
     }
 
     [Fact]
-    public async Task Query_filters_disabled_historical_and_unstarted_college_sources_but_retains_empty_professional_choices()
+    public async Task Query_retains_enabled_college_choices_without_opening_fixtures_and_filters_stale_rows()
     {
         var config = new ConfigurationBuilder().AddJsonFile(Path.GetFullPath("../../../../../src/MyNewsFeed.Web/appsettings.json", AppContext.BaseDirectory))
             .AddUserSecrets("c579816a-020e-445a-92f6-efdd7002106c").AddEnvironmentVariables().Build();
@@ -182,17 +257,19 @@ public class StandingsTests
              (3000000003,1,'2025','AL','a','Old season',1,0,'[]'),(3000000004,9,'2026','AL','c','Hidden',1,1,'[]');
             """);
         var page = await StandingsQuery.GetAsync(db, 1, Logger, new DateOnly(2026, 10, 11));
-        Assert.Equal(3, page.Sources.Count); Assert.Equal(2, page.Groups.Count);
+        Assert.Equal(8, page.Sources.Count); Assert.Equal(2, page.Groups.Count);
         Assert.Equal(2, page.Groups.Sum(g => g.Teams.Count));
         Assert.DoesNotContain(page.Groups.SelectMany(g => g.Teams), t => t.Row.TeamName is "Hidden" or "Old season");
+        var college = await StandingsQuery.GetAsync(db, 5, Logger, new DateOnly(2026, 10, 11));
+        Assert.Equal(5, college.Selected!.Id); Assert.Empty(college.Groups);
         var empty = await StandingsQuery.GetAsync(db, 2, Logger);
         Assert.Equal(2, empty.Selected!.Id); Assert.Empty(empty.Groups);
         var disabled = await StandingsQuery.GetAsync(db, 9, Logger);
-        Assert.Equal(1, disabled.Selected!.Id); Assert.Equal(2, disabled.Groups.Count);
+        Assert.Equal(4, disabled.Selected!.Id); Assert.Empty(disabled.Groups);
         foreach (var hiddenId in new[] { 1, 2 })
         {
             var playoffs = await StandingsQuery.GetAsync(db, hiddenId, Logger, new DateOnly(2026, 10, 11), ["espn-mlb", "espn-wnba"]);
-            Assert.Equal(3, playoffs.Selected!.Id);
+            Assert.Equal(4, playoffs.Selected!.Id);
             Assert.DoesNotContain(playoffs.Sources, source => source.Id is 1 or 2);
             Assert.Empty(playoffs.Groups);
         }

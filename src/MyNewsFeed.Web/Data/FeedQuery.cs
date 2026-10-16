@@ -162,7 +162,7 @@ public static class FeedQuery
         return new FeedPage(items, total, remaining, next);
     }
 
-    /// <summary>The newest article per enabled source, then the newest five source winners for Home.</summary>
+    /// <summary>The newest article per enabled source, ordered by story date.</summary>
     public static async Task<IReadOnlyList<FeedItem>> GetLatestPerSourceAsync(WebScraperContext db, int take = 5) =>
         await Visible(db)
             .Where(p => p.Id == db.Pages.Where(other => other.SourceId == p.SourceId)
@@ -182,6 +182,31 @@ public static class FeedQuery
                 p.Source.SourceCategory != null ? p.Source.SourceCategory.CategoryName : null,
                 p.Published ?? p.ScrapedAt, p.Published == null))
             .ToListAsync();
+
+    /// <summary>Rotate Home sources when successful news collection advances to another UTC hour.</summary>
+    public static async Task<IReadOnlyList<FeedItem>> GetHomeNewsAsync(WebScraperContext db, int take = 10)
+    {
+        var updated = await GetLastUpdatedAsync(db);
+        var candidates = await GetLatestPerSourceAsync(db, int.MaxValue);
+        return SelectHomeNews(candidates, updated ?? DateTime.UnixEpoch, take);
+    }
+
+    public static IReadOnlyList<FeedItem> SelectHomeNews(
+        IEnumerable<FeedItem> candidates, DateTime lastScrapedAt, int take = 10)
+    {
+        var hour = lastScrapedAt.Ticks / TimeSpan.TicksPerHour;
+        // A stable hash gives each source a new random priority per scrape hour, across restarts.
+        return candidates
+            .OrderBy(item => Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(
+                System.Text.Encoding.UTF8.GetBytes(FormattableString.Invariant($"{hour}:{item.SourceUrl}")))),
+                StringComparer.Ordinal)
+            .ThenBy(item => item.SourceUrl, StringComparer.Ordinal)
+            .Take(Math.Max(0, take))
+            .OrderBy(item => item.Undated)
+            .ThenByDescending(item => item.Date)
+            .ThenByDescending(item => item.Id)
+            .ToList();
+    }
 
     /// <summary>
     /// Scraped URLs are untrusted: only http(s) may be used as a link target or image source, so a stored
