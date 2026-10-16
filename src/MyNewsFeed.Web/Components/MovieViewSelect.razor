@@ -1,0 +1,14 @@
+<form class="catselect" method="get" action="movies">
+    <label class="sr-only" for="movie-view">Movie release view</label>
+    <select id="movie-view" name="type" onchange="this.form.requestSubmit()">
+        <option value="" selected="@(Selected is null)">All releases</option>
+        <option value="theatrical" selected="@(Selected == "theatrical")">In theaters</option>
+        <option value="subscription" selected="@(Selected == "subscription")">Subscription streaming</option>
+        <option value="digital" selected="@(Selected == "digital")">Digital rental / purchase</option>
+    </select>
+    <noscript><button class="nf-btn nf-btn--secondary" type="submit">Apply</button></noscript>
+</form>
+
+@code {
+    [Parameter] public string? Selected { get; set; }
+}

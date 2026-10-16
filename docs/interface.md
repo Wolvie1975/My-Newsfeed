@@ -174,7 +174,7 @@ votes beside the team name, colored trend arrows and NR for previously unranked
 teams. Only the configured AP poll is shown; unavailable other-vote/dropped-team
 summaries are omitted. Other sports keep their existing rankings layouts.
 
-Sports → My Teams (`/sports/teams`) lets visitors search and select teams/schools
+Settings → My Teams (`/settings`) lets visitors search and select teams/schools
 from enabled standings and schedule data. Selections save automatically in
 `mynewsfeed-sports-teams-v1` localStorage on the current browser/device. College
 aliases share a key across sports. Matching schedule, daily results, MLS/Championship
@@ -190,7 +190,9 @@ Saved professional and Big 12 selections remain supported.
 Personal team highlights use a red row outline and red left border, with a lighter
 red in dark mode. Selected team names retain their bold weight.
 
-My Teams is the first entry in the Sports menu on both desktop and mobile.
+My Teams now lives in Settings, reached through the gear link beside Saved articles
+on desktop and mobile. The previous `/sports/teams` URL opens the same Settings
+page for existing bookmarks; it is no longer listed in the Sports menu.
 
 Schedule Links cells stack labeled TV/Streaming and Radio information above a
 separate wrapping row of Stats/Video/Audio/Details actions. Long broadcast lists
@@ -200,3 +202,20 @@ The Movies calendar lists releases from today through the current month's final 
 using the display timezone. All/In theaters/Subscription streaming filters and paging
 share that window; undated releases are omitted. Separate digital and homepage queries
 retain their existing scope.
+
+
+## Personal color schemes
+
+Settings (`/settings`) offers Monochromatic, Kansas Jayhawks (the existing default),
+BYU Cougars, St. Louis Cardinals and St. Louis CITY SC (Tina Turner kit, gold and
+black). The CITY palette is inspired by the [club’s kit announcement](https://www.stlcitysc.com/news/st-louis-city-sc-unveils-the-tina-turner-kit); UI shades are adapted for readability. Changes apply immediately
+and save in this browser under `mynewsfeed-color-scheme`. The existing light/dark
+preference remains independent and works with all five schemes. The initialization
+script applies stored preferences before first paint; choices persist through
+navigation, refresh and cross-tab updates. Invalid or absent scheme values fall
+back to Kansas. Storage failures apply the scheme for the page and show a message.
+
+Team choices continue using `mynewsfeed-sports-teams-v1`; existing selections are
+preserved. Preferences require JavaScript and remain local to the browser/device.
+The Settings page keeps all eligible professional teams and limits college choices
+to Big 12 schools. Selected-team red highlights remain independent of color scheme.

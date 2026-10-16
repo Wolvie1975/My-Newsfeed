@@ -1,9 +1,30 @@
+@page "/settings"
 @page "/sports/teams"
 @layout PublicLayout
 @inject IDbContextFactory<WebScraperContext> Factory
 
-<PageTitle>My Teams · MyNewsFeed</PageTitle>
-<PageHeading Title="My Teams" Eyebrow="YOUR SPORTS" Description="Choose professional teams and Big 12 schools to highlight in schedules, results and standings. Full tables remain visible." />
+<PageTitle>Settings · MyNewsFeed</PageTitle>
+<PageHeading Title="Settings" Eyebrow="MAKE IT YOURS" Description="Customize your color scheme and choose the teams you follow." />
+<section aria-labelledby="color-scheme-heading">
+    <h2 id="color-scheme-heading">Color scheme</h2>
+    <p class="updated">Changes save automatically in this browser on this device. Light and dark mode work with every scheme.</p>
+    <fieldset class="settings-schemes">
+        <legend class="sr-only">Choose a color scheme</legend>
+        @foreach (var scheme in schemes)
+        {
+            <label class="settings-scheme">
+                <input type="radio" name="color-scheme" value="@scheme.Key" data-color-scheme />
+                <span class="scheme-swatch" style="@($"--swatch-primary:{scheme.Primary};--swatch-secondary:{scheme.Secondary}")" aria-hidden="true"></span>
+                <span>@scheme.Name</span>
+            </label>
+        }
+    </fieldset>
+    <p class="updated" role="status" data-scheme-status></p>
+    <noscript><p class="empty">Enable JavaScript to change and save your color scheme.</p></noscript>
+</section>
+<section aria-labelledby="my-teams-heading">
+<h2 id="my-teams-heading">My Teams</h2>
+<p>Choose professional teams and Big 12 schools to highlight in schedules, results and standings. Full tables remain visible.</p>
 <p class="updated">Selections save automatically in this browser on this device. Selecting a Big 12 school highlights it across sports.</p>
 @if (error is not null) { <p role="status" class="empty">@error</p> }
 <noscript><p class="empty">Enable JavaScript to save team selections and display highlights.</p></noscript>
@@ -29,7 +50,16 @@
         <p class="updated" data-sports-no-matches hidden>No teams match your search.</p>
     </div>
 
+</section>
+
 @code {
+    private readonly (string Key, string Name, string Primary, string Secondary)[] schemes = [
+        ("monochrome", "Monochromatic", "#262626", "#737373"),
+        ("kansas", "Kansas Jayhawks", "#0051BA", "#E8000D"),
+        ("byu", "BYU Cougars", "#002E5D", "#FFFFFF"),
+        ("cardinals", "St. Louis Cardinals", "#C41E3A", "#0C2340"),
+        ("city", "St. Louis CITY SC · Tina Turner", "#D6B56A", "#171717")
+    ];
     private IReadOnlyList<SportsTeamChoice> choices = SportsTeamPreferences.GetChoices();
     private string? error;
     protected override async Task OnInitializedAsync()

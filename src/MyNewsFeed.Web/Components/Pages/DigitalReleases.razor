@@ -6,7 +6,7 @@
 
 <PageTitle>Digital rental / purchase · MyNewsFeed</PageTitle>
 <PageHeading Title="Digital rental / purchase" Eyebrow="COMING HOME" Description="Confirmed rent-or-buy release dates from the selected provider." />
-<nav class="release-tabs" aria-label="Movie release views"><a href="movies">All releases</a><a href="movies?type=theatrical">In theaters</a><a href="movies?type=subscription">Subscription streaming</a><a href="movies/digital" aria-current="page">Digital rental / purchase</a></nav>
+<MovieViewSelect Selected="digital" />
 @if (data is null)
 {
     <p class="empty">Digital releases are temporarily unavailable. <a href="movies/digital">Try again</a></p>
@@ -32,6 +32,10 @@ else
         @if (!string.IsNullOrWhiteSpace(data.Selected.LastError))
         { <p class="standing-status" role="status">Latest collection failed; showing previously collected releases when available.</p> }
         <p class="count">@data.Items.Count @(data.Items.Count == 1 ? "release" : "releases") from @data.Selected.Name</p>
+        <a class="nf-btn nf-btn--secondary theater-site-link digital-site-link" href="https://athome.fandango.com/" target="_blank" rel="noopener noreferrer">
+            <img src="images/brands/fandango-at-home.svg" alt="" width="180" height="24" />
+            <span>Visit Fandango at Home <span aria-hidden="true">↗</span></span>
+        </a>
         @if (data.Items.Count == 0) { <p class="empty">No confirmed digital releases from @data.Selected.Name from today onward. You can choose another source above.</p> }
         @foreach (var day in data.Items.GroupBy(m => m.Date))
         {

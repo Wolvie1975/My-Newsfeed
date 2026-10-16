@@ -3,7 +3,7 @@
 
 @{
     var path = Nav.ToBaseRelativePath(Nav.Uri);
-    var onTeams = path.StartsWith("sports/teams", StringComparison.OrdinalIgnoreCase);
+    var onTeams = path.StartsWith("settings", StringComparison.OrdinalIgnoreCase) || path.StartsWith("sports/teams", StringComparison.OrdinalIgnoreCase);
     var onEvents = path.StartsWith("events", StringComparison.OrdinalIgnoreCase);
     var onDigital = path.StartsWith("movies/digital", StringComparison.OrdinalIgnoreCase);
     var onMovies = path.StartsWith("movies", StringComparison.OrdinalIgnoreCase);
@@ -18,7 +18,7 @@
     var onNews = path.StartsWith("news", StringComparison.OrdinalIgnoreCase);
     var onSaved = path.StartsWith("saved", StringComparison.OrdinalIgnoreCase);
     var onHome = path.Length == 0 || path[0] is '?' or '#';
-    var section = onTeams ? "My Teams" : onTv ? "TV & Streaming" : onEvents ? "Sports Events" : onDigital ? "Digital rental / purchase" : onMovies ? "Movies" : onVideos ? "Videos"
+    var section = onTeams ? "Settings" : onTv ? "TV & Streaming" : onEvents ? "Sports Events" : onDigital ? "Digital rental / purchase" : onMovies ? "Movies" : onVideos ? "Videos"
         : onRankings ? "Top 25" : onStandings ? "Standings" : onResults ? "Results" : onBoxOffice ? "Box Office" : onNews ? "News" : onSaved ? "Saved articles" : onHome ? "Home" : "Browse";
 }
 
@@ -31,7 +31,7 @@
             <a href="" aria-current="@(onHome ? "page" : null)">Home</a>
             <a href="news" aria-current="@(onNews ? "page" : null)">News</a>
             <a href="box-office" aria-current="@(onBoxOffice ? "page" : null)">Box Office</a>
-            <details class="desktop-nav-group" data-mobile-nav><summary class="@((onTeams || onEvents || onResults || onStandings || onRankings) ? "is-current" : null)">Sports ▾</summary><div class="desktop-nav-links"><a href="sports/teams" aria-current="@(onTeams ? "page" : null)">My Teams</a>
+            <details class="desktop-nav-group" data-mobile-nav><summary class="@((onEvents || onResults || onStandings || onRankings) ? "is-current" : null)">Sports ▾</summary><div class="desktop-nav-links">
             <a href="events" aria-current="@(onEvents ? "page" : null)">Sports Events</a>
             <a href="results" aria-current="@(onResults ? "page" : null)">Results</a>
             <a href="standings" aria-current="@(onStandings ? "page" : null)">Standings</a>
@@ -47,6 +47,10 @@
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4.5L5 21V4a1 1 0 0 1 1-1z"></path></svg>
                 <span class="sr-only">Saved articles</span>
                 <span class="saved-link__count" data-saved-count hidden></span>
+            </a>
+            <a class="saved-link settings-link" href="settings" aria-current="@(onTeams ? "page" : null)" title="Settings">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 3-1 3-3 1-2 3 2 2-1 3 3 2 3-1 2 2 3-2 1-3 3-1 1-3-3-2-1-3-3 1-2-2z"/><circle cx="12" cy="11" r="3"/></svg>
+                <span class="settings-link__label">Settings</span>
             </a>
             @* Label and pressed state are kept in sync by public.js. *@
             <button class="theme-toggle" type="button" aria-label="Switch to dark mode" aria-pressed="false" data-theme-toggle>
@@ -76,7 +80,7 @@
             <a href="news" aria-current="@(onNews ? "page" : null)">News</a>
             <a href="box-office" aria-current="@(onBoxOffice ? "page" : null)">Box Office</a>
             <span class="nav-group-label">Sports</span>
-            <a href="sports/teams" aria-current="@(onTeams ? "page" : null)">My Teams</a>
+
             <a href="events" aria-current="@(onEvents ? "page" : null)">Sports Events</a>
             <a href="results" aria-current="@(onResults ? "page" : null)">Results</a>
             <a href="standings" aria-current="@(onStandings ? "page" : null)">Standings</a>
@@ -88,6 +92,7 @@
             <a href="movies/digital">Digital rental / purchase</a>
             <span class="nav-group-label">Your links</span>
             <a href="saved" aria-current="@(onSaved ? "page" : null)">Saved articles</a>
+            <a href="settings" aria-current="@(onTeams ? "page" : null)">Settings</a>
             <AuthorizeView><Authorized><a href="admin">Administration</a></Authorized><NotAuthorized><a href="login">Admin sign in</a></NotAuthorized></AuthorizeView>
         </nav>
     </details>

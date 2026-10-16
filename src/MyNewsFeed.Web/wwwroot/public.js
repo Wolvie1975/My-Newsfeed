@@ -573,3 +573,39 @@
     }).observe(document.body, { childList: true, subtree: true });
     read(); sync();
 })();
+
+// Color schemes share the existing light/dark setting and survive enhanced navigation.
+(function () {
+    var root = document.documentElement;
+    var key = 'mynewsfeed-color-scheme';
+    var choices = ['monochrome', 'kansas', 'byu', 'cardinals', 'city'];
+    function read() {
+        var value;
+        try { value = localStorage.getItem(key); } catch (e) { }
+        return choices.includes(value) ? value : 'kansas';
+    }
+    var applied = read();
+    function sync() {
+        if (root.getAttribute('data-color-scheme') !== applied) root.setAttribute('data-color-scheme', applied);
+        document.querySelectorAll('[data-color-scheme]').forEach(function (input) {
+            if (input.tagName === 'INPUT') input.checked = input.value === applied;
+        });
+    }
+    document.addEventListener('change', function (e) {
+        if (!e.target.matches('input[data-color-scheme]') || !choices.includes(e.target.value)) return;
+        applied = e.target.value;
+        var saved = true;
+        try { localStorage.setItem(key, applied); } catch (err) { saved = false; }
+        sync();
+        var status = document.querySelector('[data-scheme-status]');
+        if (status) status.textContent = saved ? 'Color scheme saved.' : 'Color scheme applied. This browser could not save it.';
+    });
+    window.addEventListener('storage', function (e) { if (e.key === key || e.key === null) { applied = read(); sync(); } });
+    new MutationObserver(sync).observe(root, { attributes: true, attributeFilter: ['data-color-scheme'] });
+    new MutationObserver(function (records) {
+        if (records.some(function (r) { return Array.from(r.addedNodes).some(function (n) {
+            return n.nodeType === 1 && (n.matches('input[data-color-scheme]') || n.querySelector('input[data-color-scheme]'));
+        }); })) sync();
+    }).observe(document.body, { childList: true, subtree: true });
+    sync();
+})();

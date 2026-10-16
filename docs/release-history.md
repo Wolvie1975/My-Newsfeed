@@ -6,11 +6,98 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The most recent verified web release is `mynewsfeed-web:amc-theater-link-20261016`,
-with rollback recorded as `mynewsfeed-web:before-amc-theater-link`. Its container
+The most recent verified web release is `mynewsfeed-web:city-tina-colors-20261016`,
+with rollback recorded as `mynewsfeed-web:before-city-tina-colors`. Its container
 was healthy on October 16, 2026 (Central). This is a dated observation, not live
 hosting status. The earlier documentation consolidation did not deploy application
 code, alter the database or restart scraper collection.
+
+## CITY SC Tina Turner palette — October 16, 2026
+
+Updated the existing CITY SC scheme to gold and black inspired by the Tina Turner
+kit. Settings labels this choice St. Louis CITY SC · Tina Turner; its existing
+`city` preference key remains compatible. UI gold shades are adapted for readable
+links, buttons and header text in light and dark mode. The other schemes and team
+selections remain intact. See the [club announcement](https://www.stlcitysc.com/news/st-louis-city-sc-unveils-the-tina-turner-kit).
+
+Production build and browser checks passed at 390/768/1024/1440 pixels for all
+schemes, both modes, persistence, navigation and team retention. Header, button,
+light-link and dark-link text/background pairs exceeded 4.5:1 contrast. Health
+and HTTPS Settings returned 200; the container was healthy. Runtime configuration
+and keys were preserved.
+
+## Personal settings — October 16, 2026
+
+Added Settings (`/settings`) with a gear link beside Saved articles and a link in
+the mobile menu. Moved My Teams selection from the Sports menu into Settings;
+`/sports/teams` remains an alias for existing bookmarks. Existing team preferences
+continue using the same browser storage key, professional choices and Big 12-only
+college choices; selected-team highlights remain red.
+
+Added five instant color schemes: Monochromatic, Kansas Jayhawks (the existing
+default), BYU Cougars, St. Louis Cardinals and St. Louis CITY SC. Each supports the
+existing light/dark toggle. Preferences save locally to this browser/device;
+initialization applies the scheme before paint and restores it across navigation.
+Invalid scheme values default to Kansas, and storage failures report an unsaved
+choice. No account, database or scraper changes were required.
+
+Production build and JavaScript syntax checks passed. Browser checks at
+390/768/1024/1440 pixels covered all five schemes in light/dark mode, refresh,
+navigation, team retention and no horizontal overflow. Additional checks covered
+team updates, cross-tab synchronization, the legacy URL, default/invalid schemes
+and no-JavaScript notices. Settings HTTPS and health returned 200. Runtime
+configuration and keys were preserved; the original rollback image is retained.
+
+## Box-office section pages — October 16, 2026
+
+Separated the combined Box Office view into weekend Top 10 results at `/box-office`,
+weekend predictions at `/box-office/weekend-preview` and future-movie predictions
+at `/box-office/movie-forecasts`. A shared News-style dropdown selects the page,
+with automatic GET submission and a no-JavaScript Apply button. Each page retains
+its section's posters, dates, source attribution, warnings and empty states; the
+results page no longer queries forecasts.
+
+Production build and three focused forecast tests passed. Browser checks at
+390/1440 pixels with and without JavaScript verified all three pages, selected
+options, section isolation and no horizontal overflow. All 27 card contents matched
+the predeployment snapshot after whitespace normalization. Health and HTTPS preview
+returned 200; runtime configuration and keys were preserved.
+
+## Movie view dropdown — October 16, 2026
+
+Replaced the release-view buttons on Movies and Digital with a shared News-style
+GET dropdown offering All releases, In theaters, Subscription streaming and Digital
+rental / purchase. Selection submits automatically with JavaScript; Apply works
+without it. The digital choice redirects to the existing Digital page.
+
+Production build and all four selection checks passed at 390/1440 pixels with
+and without JavaScript. Verified the selected option, navigation, unchanged card
+counts (13 all, nine theatrical, one subscription, one default-source digital) and
+no horizontal overflow. HTTPS Movies and health returned 200; the container was
+healthy. Runtime configuration and keys were preserved.
+
+## Desktop movie action layout — October 16, 2026
+
+Placed movie-card retailer buttons on their own line below the details/source
+link at desktop widths (768 pixels and wider). This prevents Search Fandango at
+Home from sitting beside Movie details. Mobile styles remain unchanged.
+Production build and browser checks at 390/1440/1874 pixels passed: the action
+remains inside its card, below details, without horizontal overflow and retains
+its destination. Health and HTTPS Digital returned 200. Runtime configuration
+and keys were preserved.
+
+## Movie retailer link placement — October 16, 2026
+
+Moved the general AMC logo link below the theatrical release summary and update
+stamp, immediately above the first release-date heading. Added a matching general
+Fandango at Home link and locally served logo on Digital rental / purchase, below
+the selected-source summary and above its release-date list. Both links open the
+retailer homepage in a new tab with noopener/noreferrer; per-film actions remain.
+
+The production image built successfully. Browser checks at 390/1440 pixels verified
+both destinations, loaded logos, placement and no horizontal overflow. The nine
+theatrical cards and one default-source digital card remained visible. Health and
+HTTPS Digital returned 200. Runtime configuration and keys were preserved.
 
 ## AMC Theatres link — October 16, 2026
 

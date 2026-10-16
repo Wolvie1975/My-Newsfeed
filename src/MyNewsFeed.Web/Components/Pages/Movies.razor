@@ -2,23 +2,12 @@
 @layout PublicLayout
 @inject IDbContextFactory<WebScraperContext> Factory
 @inject FeedDates Dates
+@inject NavigationManager Navigation
 
 <PageTitle>Movies · MyNewsFeed</PageTitle>
 <PageHeading Title="Movies" Eyebrow="THE RELEASE CALENDAR" Description="Find your next movie night. US releases in theaters, on streaming, and at home." />
-@if (Type == "theatrical")
-{
-    <a class="nf-btn nf-btn--secondary theater-site-link" href="https://www.amctheatres.com/" target="_blank" rel="noopener noreferrer">
-        <img src="images/brands/amc-theatres.svg" alt="" width="44" height="44" />
-        <span>Visit AMC Theatres <span aria-hidden="true">↗</span></span>
-    </a>
-}
 <p class="updated">Showing releases from today through the end of @Dates.Today.ToString("MMMM yyyy", System.Globalization.CultureInfo.InvariantCulture).</p>
-<nav class="release-tabs" aria-label="Movie release views">
-    <a href="movies" aria-current="@(Type is null ? "page" : null)">All releases</a>
-    <a href="movies?type=theatrical" aria-current="@(Type == "theatrical" ? "page" : null)">In theaters</a>
-    <a href="movies?type=subscription" aria-current="@(Type == "subscription" ? "page" : null)">Subscription streaming</a>
-    <a href="movies/digital">Digital rental / purchase</a>
-</nav>
+<MovieViewSelect Selected="@Type" />
 <p class="updated">All enabled providers · US release calendar, including dates awaiting confirmation.</p>
 <div class="movies-summary">
     <p class="count">@listing.Total @(listing.Total == 1 ? "release" : "releases")</p>
@@ -26,6 +15,13 @@
 @if (listing.Updated is { } updated)
 {
     <p class="updated">Releases last updated @Dates.PublishedFull(updated)</p>
+}
+@if (Type == "theatrical")
+{
+    <a class="nf-btn nf-btn--secondary theater-site-link" href="https://www.amctheatres.com/" target="_blank" rel="noopener noreferrer">
+        <img src="images/brands/amc-theatres.svg" alt="" width="44" height="44" />
+        <span>Visit AMC Theatres <span aria-hidden="true">↗</span></span>
+    </a>
 }
 @if (listing.Items.Count == 0)
 {
@@ -87,6 +83,11 @@ else
     private MoviesPage listing = new([], 0, [], null);
     protected override async Task OnParametersSetAsync()
     {
+        if (TypeText == "digital")
+        {
+            Navigation.NavigateTo("movies/digital", forceLoad: true);
+            return;
+        }
         await using var db = await Factory.CreateDbContextAsync();
         page = int.TryParse(PageText, out var requested) ? Math.Clamp(requested, 1, 1000000) : 1;
         offset = (page - 1) * 50;

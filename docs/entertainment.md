@@ -8,11 +8,14 @@ scraper repository; the web app reads its stored snapshots.
 ## Movie releases and Digital/VOD
 
 The In theaters view (`/movies?type=theatrical`) includes a general
-[Visit AMC Theatres](https://www.amctheatres.com/) link below the page heading,
+[Visit AMC Theatres](https://www.amctheatres.com/) link immediately above the first release-date heading,
 with a locally served AMC logo. It opens in a new tab with `noopener noreferrer`.
-This page-level link is separate from each film's Fandango action and does not
-change the release calendar or source links. The logo and its source attribution
-are in `src/MyNewsFeed.Web/wwwroot/images/brands/`.
+The Digital rental / purchase page similarly links to
+[Fandango at Home](https://athome.fandango.com/) with its locally served logo,
+below the source summary and above the first release-date heading. Both links
+open in a new tab with `noopener noreferrer`. These page-level links are separate
+from each film's Fandango action and do not change the release calendar or source
+links. The logos and their source attribution are in `src/MyNewsFeed.Web/wwwroot/images/brands/`.
 
 Movie cards on Movies, Digital and the homepage read retailer actions from
 `dbo.MovieCommerce` by MovieId and Provider through the release's source link.
@@ -23,9 +26,15 @@ use an encoded title search labeled Search. HTTPS retailer hosts, paths and labe
 are validated before rendering. View errors retain normal page error handling;
 expiry and stale identity are handled by the scraper's view. This enrichment does
 not change release selection, grouping, counts, dates, posters or source links.
+On desktop (768 pixels and wider), each movie-card retailer action occupies its
+own line below the source/details link. Mobile retains its existing layout.
 
 `/movies` supports all releases, theatrical and subscription selections. Movies and
 Videos page in deterministic 50-row batches; filters remain in paging URLs.
+Movies and Digital share a News-style dropdown for All releases, In theaters,
+Subscription streaming and Digital rental / purchase. Selection submits a GET
+form; an Apply button remains available without JavaScript. The digital choice
+routes to `/movies/digital`; switching views starts at the first page.
 `/movies/digital` is the provider-specific confirmed rental/purchase list, not a
 subscription catalog. It includes today and all known future release dates, ordered
 soonest first. The old current Monday–Sunday restriction is superseded.
@@ -86,8 +95,12 @@ The full digital page retains the complete selected-provider list.
 
 ## Box-office weekend results
 
-`/box-office` keeps Weekend results — Top 10 from The Numbers and adds prediction
-sections below it. Actual results are separate from forecasts, news Pages and RSS.
+`/box-office` shows Weekend results — Top 10 from The Numbers. The News-style
+section dropdown links to `/box-office/weekend-preview` for Upcoming weekend
+preview — Predictions and `/box-office/movie-forecasts` for Upcoming movie
+forecasts — Predictions. Each URL shows only its section. The shared GET selector
+submits automatically, with an Apply button available without JavaScript.
+Actual results are separate from forecasts, news Pages and RSS.
 The source is [The Numbers weekend chart](https://www.the-numbers.com/weekend-box-office-chart).
 
 ```sql
@@ -157,7 +170,8 @@ LastSuccessAt is within 24 hours (inclusive), not future-dated, and LastError is
 Otherwise it says Preview data is temporarily unavailable. Use equivalent future-film
 empty states. Existing predictions remain visible with a refresh warning after failures
 or stale source metadata. Raw errors stay in logs/admin. Actuals and forecasts load
-independently so a forecast failure does not hide the reported chart.
+on separate pages so a forecast failure does not hide the reported chart. The
+results page only reads chart data; forecast pages only read the forecast snapshot.
 
 `--configure-boxoffice` initializes actuals and forecast schemas. Hourly collection
 adds `--boxoffice-forecasts`; its `--dry-run` validates without writes. The collector
