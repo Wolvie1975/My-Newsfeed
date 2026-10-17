@@ -206,11 +206,11 @@ retain their existing scope.
 
 ## Personal color schemes
 
-Settings (`/settings`) offers Monochromatic, Kansas Jayhawks (the existing default),
-BYU Cougars, St. Louis Cardinals and St. Louis CITY SC (Tina Turner kit, gold and
+Settings (`/settings`) offers Monochromatic, Christmas, Halloween, St. Patrick’s Day, Kansas Jayhawks (the existing default),
+St. Louis Cardinals and St. Louis CITY SC (Tina Turner kit, gold and
 black). The CITY palette is inspired by the [club’s kit announcement](https://www.stlcitysc.com/news/st-louis-city-sc-unveils-the-tina-turner-kit); UI shades are adapted for readability. Changes apply immediately
 and save in this browser under `mynewsfeed-color-scheme`. The existing light/dark
-preference remains independent and works with all five schemes. The initialization
+preference remains independent and works with all twelve schemes. The initialization
 script applies stored preferences before first paint; choices persist through
 navigation, refresh and cross-tab updates. Invalid or absent scheme values fall
 back to Kansas. Storage failures apply the scheme for the page and show a message.
@@ -219,3 +219,23 @@ Team choices continue using `mynewsfeed-sports-teams-v1`; existing selections ar
 preserved. Preferences require JavaScript and remain local to the browser/device.
 The Settings page keeps all eligible professional teams and limits college choices
 to Big 12 schools. Selected-team red highlights remain independent of color scheme.
+
+Christmas uses evergreen, cranberry red and warm white, with a matching dark
+palette. It is an optional year-round selection and saves under `christmas` using
+the same browser preference key as the other schemes.
+
+Halloween adds pumpkin orange, purple and black with a matching dark palette.
+It saves as `halloween` and is available year-round alongside Christmas.
+
+St. Patrick’s Day uses emerald green and gold with a matching dark palette.
+It saves as `st-patricks` and is available year-round.
+
+Decade-inspired options add ’80s Neon (pink, electric blue and purple), ’90s Retro
+(teal, purple and cream) and 2000s Y2K (silver, blue and lime). Their preference
+values are `eighties`, `nineties` and `y2k`; each supports light/dark mode and the
+same automatic browser persistence.
+
+Desert Sunset (terracotta, peach and sand) and Coffee (espresso, caramel and ivory)
+use `desert` and `coffee` preference values. BYU is no longer a color scheme;
+browsers with a saved `byu` scheme fall back to Kansas. BYU remains an eligible
+Big 12 school in My Teams.

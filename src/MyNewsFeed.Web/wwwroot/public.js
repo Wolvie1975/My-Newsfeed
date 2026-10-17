@@ -578,7 +578,7 @@
 (function () {
     var root = document.documentElement;
     var key = 'mynewsfeed-color-scheme';
-    var choices = ['monochrome', 'kansas', 'byu', 'cardinals', 'city'];
+    var choices = ['monochrome', 'kansas', 'cardinals', 'city', 'christmas', 'halloween', 'st-patricks', 'eighties', 'nineties', 'y2k', 'desert', 'coffee'];
     function read() {
         var value;
         try { value = localStorage.getItem(key); } catch (e) { }

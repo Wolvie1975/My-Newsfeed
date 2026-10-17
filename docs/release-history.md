@@ -6,11 +6,79 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The most recent verified web release is `mynewsfeed-web:city-tina-colors-20261016`,
-with rollback recorded as `mynewsfeed-web:before-city-tina-colors`. Its container
+The most recent verified web release is `mynewsfeed-web:warm-themes-20261016`,
+with rollback recorded as `mynewsfeed-web:before-warm-themes`. Its container
 was healthy on October 16, 2026 (Central). This is a dated observation, not live
 hosting status. The earlier documentation consolidation did not deploy application
 code, alter the database or restart scraper collection.
+
+## Warm color schemes and BYU retirement — October 16, 2026
+
+Added Desert Sunset (terracotta, peach and sand) and Coffee (espresso, caramel
+and ivory), each with light/dark palettes and browser persistence. Removed BYU
+from theme choices and palette definitions. A saved `byu` color preference now
+falls back to Kansas; BYU remains eligible in My Teams and saved team choices
+are preserved. Settings now offers twelve schemes.
+
+Production build, JavaScript syntax and whitespace checks passed. Browser checks
+at 390/768/1024/1440 pixels covered all twelve schemes in both modes, refresh,
+navigation, team retention and no horizontal overflow. A separate legacy BYU
+check verified Kansas fallback and retained BYU team selection. Eight primary
+warm-palette text/background pairs exceeded 4.5:1 contrast. Health and HTTPS
+Settings returned 200. Runtime configuration and keys were preserved.
+
+## Decade color schemes — October 16, 2026
+
+Added ’80s Neon (pink, blue and purple), ’90s Retro (teal, purple and cream),
+and 2000s Y2K (silver, blue and lime) to Settings. All eleven choices support
+light/dark mode and automatic browser persistence. The `eighties`, `nineties`
+and `y2k` values are recognized before paint and throughout navigation.
+
+Production build, JavaScript syntax and whitespace checks passed. Browser checks
+at 390/768/1024/1440 pixels covered all eleven schemes in both modes, refresh,
+navigation, team retention and no horizontal overflow. Thirteen primary decade
+palette text/background pairs exceeded 4.5:1 contrast. Health and HTTPS Settings
+returned 200. Runtime configuration and keys were preserved.
+
+## St. Patrick’s Day color scheme — October 16, 2026
+
+Added St. Patrick’s Day as an eighth optional Settings scheme: emerald green and
+gold with a matching dark palette. Dark text on gold selections and darker gold
+text on light surfaces preserve readability. The `st-patricks` preference is
+supported by prepaint initialization and browser persistence. Existing schemes
+and team selections remain supported.
+
+Production build, JavaScript syntax and whitespace checks passed. Browser checks
+at 390/768/1024/1440 pixels covered all eight schemes in light/dark mode, refresh,
+navigation, team retention and no horizontal overflow. Main text and button pairs
+exceeded 4.5:1 contrast. Health and HTTPS Settings returned 200. Runtime
+configuration and keys were preserved.
+
+## Halloween color scheme — October 16, 2026
+
+Added Halloween as a seventh optional Settings scheme with pumpkin orange, purple
+and black, plus a matching dark palette. The `halloween` preference is supported
+by prepaint initialization and browser persistence. Existing schemes and saved
+team selections remain supported.
+
+Production build, JavaScript syntax and whitespace checks passed. Browser checks
+at 390/768/1024/1440 pixels covered all seven schemes in light/dark mode, refresh,
+navigation, team retention and no horizontal overflow. Main Halloween text and
+button pairs exceeded 4.5:1 contrast. Health and HTTPS Settings returned 200.
+Runtime configuration and keys were preserved.
+
+## Christmas color scheme — October 16, 2026
+
+Added Christmas as a sixth optional Settings color scheme: evergreen, cranberry
+red and warm white, with a matching dark palette. The `christmas` value is accepted
+by both prepaint initialization and preference handling, preserving refresh and
+navigation behavior. Existing schemes and team preferences remain supported.
+
+Production build, JavaScript syntax and whitespace checks passed. Browser checks
+at 390/768/1024/1440 pixels covered all six schemes in light/dark mode, refresh,
+navigation, team retention and no horizontal overflow. Primary Christmas text and
+button color pairs exceeded 4.5:1 contrast. Health and HTTPS Settings returned 200.
+Runtime configuration and keys were preserved.
 
 ## CITY SC Tina Turner palette — October 16, 2026
 
