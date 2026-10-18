@@ -264,6 +264,42 @@ public class EventsTests
     }
 
     [Fact]
+    public async Task Homepage_hides_a_college_final_while_preserving_schedule_and_in_progress_games()
+    {
+        await using var db = Create();
+        await using var tx = await BeginScheduleTransactionAsync(db);
+        var token = Tag();
+        var day = new DateOnly(2031, 3, 4);
+        var start = new DateTime(2031, 3, 4, 19, 0, 0);
+        var final = Game(token, "final", day, start, sport: "Football", opponent: "Houston");
+        final.SchoolName = "Kansas";
+        final.ProviderKey = "big12";
+        var live = Game(token, "live", day, start.AddHours(3), sport: "Football", opponent: "Houston");
+        live.SchoolName = "Kansas";
+        live.ProviderKey = "big12";
+        var espn = Game(token, "espn final", day, start.AddHours(6), sport: "Hockey");
+        espn.ProviderKey = "espn-nhl";
+        espn.GameId = 987654;
+        espn.CanonicalKey = "espn:nhl:987654";
+        db.SportsEvents.AddRange(final, live, espn);
+        db.ResultGames.Add(new ResultGame { Sport = "hockey", League = "nhl", EventId = "987654",
+            StartsAtUtc = start.AddHours(6), State = "post", Completed = true, HomeTeamId = "1", AwayTeamId = "2",
+            HomeName = "Home", AwayName = "Away", HomeScore = 1, AwayScore = 0,
+            FirstSeenAt = start, LastSeenAt = start });
+        db.ResultGames.Add(new ResultGame { Sport = "football", League = "college-football", EventId = token,
+            StartsAtUtc = start, State = "post", Completed = true, HomeTeamId = "2305", AwayTeamId = "248",
+            HomeName = "Kansas Jayhawks", AwayName = "Houston Cougars", HomeScore = 21, AwayScore = 7,
+            FirstSeenAt = start, LastSeenAt = start });
+        await db.SaveChangesAsync();
+        var scheduled = await EventsQuery.GetOnDateAsync(db, day);
+        var homepage = await HomeEventResults.WithoutFinalResultsAsync(db, scheduled);
+        Assert.DoesNotContain(homepage, g => g.Id == final.Id);
+        Assert.DoesNotContain(homepage, g => g.Id == espn.Id);
+        Assert.Contains(homepage, g => g.Id == live.Id);
+        Assert.Contains(scheduled, g => g.Id == final.Id);
+    }
+
+    [Fact]
     public async Task Expanded_calendars_match_both_schools_without_duplicate_events_and_respect_disabled_feeds()
     {
         await using var db = Create();

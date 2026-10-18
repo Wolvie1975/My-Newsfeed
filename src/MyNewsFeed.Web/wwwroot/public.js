@@ -25,11 +25,30 @@
         return root.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
     }
 
+    var themeMode = window.MyNewsFeedTheme.readMode();
+
+    var themeSaveFailed = false;
+
     function syncToggles() {
         var dark = currentTheme() === 'dark';
         document.querySelectorAll('[data-theme-toggle]').forEach(function (button) {
             button.setAttribute('aria-label', dark ? 'Switch to light mode' : 'Switch to dark mode');
             button.setAttribute('aria-pressed', String(dark));
+        });
+        document.querySelectorAll('[data-theme-mode]').forEach(function (input) {
+            input.checked = input.value === themeMode;
+        });
+        document.querySelectorAll('[data-theme-status]').forEach(function (status) {
+            try {
+                var solar = window.MyNewsFeedSolar;
+                var day = solar.times(new Date(), solar.location);
+                var format = new Intl.DateTimeFormat('en-US', { timeZone: solar.location.timeZone, hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
+                var message = 'Kansas City today: sunrise ' + format.format(day.sunrise) +
+                    ' · sunset ' + format.format(day.sunset) + '. ' +
+                    (themeMode === 'sun' ? 'Automatic mode is on; currently ' + currentTheme() + '.' : 'Currently ' + currentTheme() + '.');
+            } catch (e) { message = 'Currently ' + currentTheme() + '.'; }
+            if (themeSaveFailed) message += ' This browser could not save your choice; it applies until you reload.';
+            if (status.textContent !== message) status.textContent = message;
         });
     }
 
@@ -42,7 +61,8 @@
         applied = theme;
         root.setAttribute('data-theme', theme);
         if (persist) {
-            try { localStorage.setItem('theme', theme); } catch (e) { }
+            themeMode = theme;
+            try { localStorage.setItem('theme', theme); themeSaveFailed = false; } catch (e) { themeSaveFailed = true; }
         }
         syncToggles();
     }
@@ -54,17 +74,32 @@
         }
     }).observe(root, { attributes: true, attributeFilter: ['data-theme'] });
 
-    // Follow the operating system until the visitor makes their own choice.
+    function refreshTheme() {
+        setTheme(window.MyNewsFeedTheme.resolve(themeMode), false);
+    }
+    document.addEventListener('change', function (event) {
+        if (!event.target.matches('input[data-theme-mode]')) return;
+        var choice = event.target.value;
+        if (!['system', 'sun', 'light', 'dark'].includes(choice)) return;
+        themeMode = choice;
+        try { localStorage.setItem('theme', choice); themeSaveFailed = false; } catch (e) { themeSaveFailed = true; }
+        refreshTheme();
+    });
     if (window.matchMedia) {
         var query = matchMedia('(prefers-color-scheme: dark)');
-        if (query.addEventListener) {
-            query.addEventListener('change', function (e) {
-                var saved = null;
-                try { saved = localStorage.getItem('theme'); } catch (err) { }
-                if (!saved) setTheme(e.matches ? 'dark' : 'light', false);
-            });
-        }
+        if (query.addEventListener) query.addEventListener('change', refreshTheme);
     }
+    // Recheck across sunrise, sunset, midnight, suspended tabs and browser navigation.
+    setInterval(refreshTheme, 30000);
+    window.addEventListener('focus', refreshTheme);
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) refreshTheme(); });
+    document.addEventListener('enhancedload', refreshTheme);
+    window.addEventListener('storage', function (event) {
+        if (event.key === 'theme' || event.key === null) {
+            themeMode = window.MyNewsFeedTheme.readMode();
+            refreshTheme();
+        }
+    });
 
     // ---- saved articles -------------------------------------------------------------------------------------
     // Kept only in this browser. Each entry is a copy of what the card showed (from the button's data-* attributes),
@@ -382,7 +417,7 @@
         records.forEach(function (record) {
             record.addedNodes.forEach(function (node) {
                 if (node.nodeType !== 1) return;
-                var selector = '[data-share-open], [data-save], [data-saved-list], [data-saved-count], [data-theme-toggle]';
+                var selector = '[data-share-open], [data-save], [data-saved-list], [data-saved-count], [data-theme-toggle], [data-theme-mode]';
                 if (node.matches(selector) || node.querySelector(selector)) addedScopes.add(node);
             });
         });

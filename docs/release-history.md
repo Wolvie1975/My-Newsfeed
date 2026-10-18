@@ -6,11 +6,84 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The most recent verified web release is `mynewsfeed-web:warm-themes-20261016`,
-with rollback recorded as `mynewsfeed-web:before-warm-themes`. Its container
-was healthy on October 16, 2026 (Central). This is a dated observation, not live
-hosting status. The earlier documentation consolidation did not deploy application
-code, alter the database or restart scraper collection.
+The most recent verified web release is `mynewsfeed-web:solar-theme-20261017`,
+with rollback recorded as `mynewsfeed-web:before-solar-theme-20261017`.
+Its container was healthy on October 17, 2026 (Central). This is a dated
+observation, not live hosting status.
+
+## October 17, 2026 changes at a glance
+
+Both updates below were deployed to production. The automatic-theme release
+includes the earlier home-page completed-game filter.
+
+| Change | Current behavior and usage | Deployment evidence |
+| --- | --- | --- |
+| Completed home-page sports events | Hide on the next page load after a matching final is stored; [matching rules](sports.md#home-page-completed-events) | [Home-page release](#hide-completed-home-page-games--october-17-2026) |
+| Kansas City automatic appearance | Select Automatic in Settings; [setup and manual override](interface.md#automatic-light-and-dark-mode) | [Automatic-theme release](#kansas-city-automatic-lightdark-mode--october-17-2026) |
+
+## Kansas City automatic light/dark mode — October 17, 2026
+
+Settings now offers Automatic · Kansas City sunrise/sunset alongside Follow device,
+Light and Dark. Automatic calculates approximate sunrise and sunset locally for
+Kansas City, Missouri and displays today's Central times. It switches to dark at
+sunset and light at sunrise, checks every 30 seconds, and refreshes after tab
+resume and navigation. Existing preferences remain in effect until Automatic is
+selected. The header toggle selects a manual choice; selecting Automatic resumes
+the daily schedule. No geolocation permission or external API is needed.
+
+The production Docker build and Blazor static-asset guard passed. Five calculation
+regressions passed, including sunrise/sunset boundaries, city date near UTC
+midnight, seasons, DST and polar handling. Browser regression checks against the
+live release passed automatic mode, persistence, manual override, enhanced
+navigation, tab focus, device mode, cross-tab changes, mobile overflow and blocked
+storage, using a device timezone outside Central. HTTPS Settings and health
+returned 200 through the existing Tailscale Serve endpoint with explicit DNS
+resolution from the workspace. Home, Settings, News, Events, Results, Standings,
+Rankings, Movies, Digital and Box Office returned 200; unauthenticated Admin
+returned 302. Container health was healthy, with no error-level application log
+entries during verification. A fresh score-sync cycle was not forced or verified.
+The Docker build reported existing Pkcs dependency vulnerability warnings;
+dependency upgrades were outside this release.
+
+The runtime database identity check confirmed WebScraper on sql2025. No database
+scripts ran. Runtime environment, host configuration, network and persistent keys
+were preserved; scraper collection was not restarted.
+
+Release image: `mynewsfeed-web:solar-theme-20261017` (`804e53a096c9`).
+Rollback image: `mynewsfeed-web:before-solar-theme-20261017`
+(`f6d490188f1a`). The previous stopped container is retained as
+`mynewsfeed-web-before-solar-theme-20261017` with its matching configuration.
+
+## Hide completed home-page games — October 17, 2026
+
+Today & Tonight now excludes fixtures with stored completed results, including
+when schedule status has not yet refreshed. ESPN fixtures match league/event
+identity; Big 12 fixtures require competition, exact confirmed start and both
+participants, with known team-name aliases. Scheduled and in-progress games
+remain visible. The empty panel says “No remaining games today.” Filtering runs
+on page load and preserves stored fixtures and results.
+
+The release Docker build and its Blazor static-asset guard passed. Eleven targeted
+unit/database regression checks passed, including college and ESPN home filtering.
+Earlier broader checks passed 113 tests after excluding an existing women's
+basketball retention test group; its women's basketball case conflicts with the
+current schedule exclusion. Build output also reported existing Pkcs dependency
+vulnerability warnings; dependency upgrades were outside this release.
+
+Deployed to the existing `mynewsfeed-web` container target using sql2025 /
+WebScraper. Preserved runtime environment, host configuration, network, health
+check and persistent keys. No schema scripts ran and scraper collection was not
+restarted. Container health and HTTP checks for Home, News, Events, Results,
+Standings, Rankings, Movies, Digital and Box Office passed; unauthenticated Admin
+returned 302. HTTPS Home and health returned 200 through the existing Tailscale
+Serve endpoint, using explicit DNS resolution from the workspace. No error-level
+application logs were observed during verification; a fresh score-sync cycle was
+not forced or verified.
+
+Release image: `mynewsfeed-web:home-final-results-20261017` (`f6d490188f1a`).
+Rollback image: `mynewsfeed-web:before-home-final-results-20261017`
+(`fcc190e3e1cd`). The previous stopped container is retained as
+`mynewsfeed-web-before-home-final-results-20261017` with its matching configuration.
 
 ## Warm color schemes and BYU retirement — October 16, 2026
 

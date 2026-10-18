@@ -1,0 +1,74 @@
+// Run against a local app: NODE_PATH=<playwright node_modules> node tests/browser/theme-mode.browser.cjs
+// Optional NEWSFEED_TEST_URL overrides the local preview URL.
+const { chromium } = require('playwright');
+const assert = require('node:assert/strict');
+(async () => {
+    const browser = await chromium.launch({ headless: true });
+    try {
+        const context = await browser.newContext({ timezoneId: 'Asia/Tokyo', colorScheme: 'dark' });
+        const page = await context.newPage();
+        const errors = [];
+        page.on('pageerror', error => errors.push(error.message));
+        await page.clock.install({ time: new Date('2026-06-21T17:00:00Z') });
+        const base = process.env.NEWSFEED_TEST_URL || 'http://127.0.0.1:5091';
+        await page.goto(base + '/settings');
+        const mode = value => page.locator('input[data-theme-mode][value="' + value + '"]');
+        const theme = () => page.locator('html').getAttribute('data-theme');
+        assert.equal(await theme(), 'dark');
+        assert.equal(await mode('system').isChecked(), true);
+        await mode('sun').check();
+        assert.equal(await theme(), 'light');
+        assert.match(await page.locator('[data-theme-status]').textContent(), /Kansas City today: sunrise .*CDT · sunset .*CDT/);
+        assert.equal(await page.evaluate(() => localStorage.getItem('theme')), 'sun');
+        await page.reload();
+        assert.equal(await theme(), 'light');
+        assert.equal(await mode('sun').isChecked(), true);
+        const sunset = await page.evaluate(() => MyNewsFeedSolar.times(new Date(), MyNewsFeedSolar.location).sunset.toISOString());
+        await page.clock.setSystemTime(new Date(new Date(sunset).getTime() + 1000));
+        await page.clock.runFor(30000);
+        assert.equal(await theme(), 'dark');
+        await page.locator('[data-theme-toggle]').click();
+        assert.equal(await theme(), 'light');
+        assert.equal(await mode('light').isChecked(), true);
+        await page.clock.runFor(60000);
+        assert.equal(await theme(), 'light');
+        await mode('sun').check();
+        assert.equal(await theme(), 'dark');
+        await page.locator('.site-nav--inline a[href="news"]').click();
+        await page.waitForURL('**/news');
+        assert.equal(await theme(), 'dark');
+        await page.locator('.settings-link').click();
+        await page.waitForURL('**/settings');
+        assert.equal(await mode('sun').isChecked(), true);
+        await page.clock.setSystemTime(new Date('2026-06-22T17:00:00Z'));
+        await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+        assert.equal(await theme(), 'light');
+        await page.emulateMedia({ colorScheme: 'light' });
+        await mode('system').check();
+        assert.equal(await theme(), 'light');
+        await page.emulateMedia({ colorScheme: 'dark' });
+        await page.waitForFunction(() => document.documentElement.dataset.theme === 'dark');
+        await mode('sun').check();
+        const other = await context.newPage();
+        await other.clock.install({ time: new Date('2026-06-22T17:00:00Z') });
+        await other.goto(base + '/settings');
+        await other.locator('input[data-theme-mode][value="dark"]').check();
+        await page.waitForFunction(() => document.querySelector('input[data-theme-mode][value="dark"]').checked);
+        assert.equal(await theme(), 'dark');
+        await page.setViewportSize({ width: 390, height: 844 });
+        assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
+        assert.deepEqual(errors, []);
+        const blocked = await browser.newContext();
+        await blocked.addInitScript(() => {
+            Storage.prototype.getItem = Storage.prototype.setItem = () => { throw new Error('Blocked storage'); };
+        });
+        const blockedPage = await blocked.newPage();
+        await blockedPage.clock.install({ time: new Date('2026-06-22T17:00:00Z') });
+        await blockedPage.goto(base + '/settings');
+        await blockedPage.locator('input[data-theme-mode][value="sun"]').check();
+        assert.equal(await blockedPage.locator('html').getAttribute('data-theme'), 'light');
+        await blocked.close();
+        await context.close();
+        console.log('PASS: automatic boundaries, persistence, manual override, navigation, focus, device mode, cross-tab, mobile and blocked storage');
+    } finally { await browser.close(); }
+})().catch(error => { console.error(error); process.exitCode = 1; });

@@ -19,7 +19,7 @@
 
     <section class="d-card d-today" aria-labelledby="h-tonight">
         <div class="d-card__head"><h2 class="d-card__title" id="h-tonight">Today &amp; Tonight</h2><a href="events">All games</a></div>
-        @if (tonight.Count == 0) { <p class="d-empty">No games scheduled today. View All games for upcoming fixtures.</p> }
+        @if (tonight.Count == 0) { <p class="d-empty">No remaining games today. View All games for upcoming fixtures.</p> }
         <ul class="d-list">
             @foreach (var item in tonight)
             {
@@ -332,6 +332,7 @@
         digitalData = await DigitalReleasesQuery.GetAsync(db, Dates.TodayAt(nowUtc), null, take: 5);
         digitalMovies = digitalData.Items;
         episodes = await TvQuery.GetOnDateAsync(db, Dates, Dates.TodayAt(nowUtc));
+        todays = await HomeEventResults.WithoutFinalResultsAsync(db, todays);
         tonight = TodayTonight.Build(todays, Dates);
     }
 

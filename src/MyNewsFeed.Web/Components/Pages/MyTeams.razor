@@ -5,6 +5,20 @@
 
 <PageTitle>Settings · MyNewsFeed</PageTitle>
 <PageHeading Title="Settings" Eyebrow="MAKE IT YOURS" Description="Customize your color scheme and choose the teams you follow." />
+<section aria-labelledby="appearance-heading">
+    <h2 id="appearance-heading">Light and dark mode</h2>
+    <p class="updated">Automatic mode follows sunrise and sunset in Kansas City, Missouri. Changes save in this browser.</p>
+    <fieldset class="settings-schemes">
+        <legend class="sr-only">Choose when to use light and dark mode</legend>
+        <label class="settings-scheme"><input type="radio" name="theme-mode" value="system" data-theme-mode /> <span>Follow device</span></label>
+        <label class="settings-scheme"><input type="radio" name="theme-mode" value="sun" data-theme-mode /> <span>Automatic · Kansas City sunrise/sunset</span></label>
+        <label class="settings-scheme"><input type="radio" name="theme-mode" value="light" data-theme-mode /> <span>Light</span></label>
+        <label class="settings-scheme"><input type="radio" name="theme-mode" value="dark" data-theme-mode /> <span>Dark</span></label>
+    </fieldset>
+    <p class="updated" role="status" data-theme-status></p>
+    <p class="updated">The header toggle selects Light or Dark. Select Automatic here to resume sunrise/sunset switching.</p>
+    <noscript><p class="empty">Enable JavaScript to change and save your light and dark mode.</p></noscript>
+</section>
 <section aria-labelledby="color-scheme-heading">
     <h2 id="color-scheme-heading">Color scheme</h2>
     <p class="updated">Changes save automatically in this browser on this device. Light and dark mode work with every scheme.</p>

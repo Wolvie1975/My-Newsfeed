@@ -86,6 +86,36 @@ ORDER BY e.EventDate,e.StartsAtUtc,e.ID;
 For Championship, `team=352` matches SchoolId OR OpponentSchoolId. Resolve enabled
 feed IDs by ProviderKey; production IDs recorded in old reports are not portable.
 
+## Home-page completed events
+
+Added October 17, 2026 (Central).
+
+The home page's Today & Tonight panel also hides games with a stored completed
+result, even while schedule status awaits its next refresh. ESPN fixtures match
+by league/event identity; Big 12 fixtures match the college competition, exact
+confirmed start and both team names (including known ESPN aliases). A date or
+team name alone is insufficient. The panel checks both recent results and season
+results when loading the page; it does not delete fixtures or scores. When none
+remain, it says “No remaining games today.”
+
+Recent results require `ResultGames.Completed`; season results require a matching
+ESPN provider/game ID, nonnegative scores and `STATUS_FULL_TIME` or `STATUS_FINAL*`.
+A live score alone does not hide a game. This result-based filter runs only for
+Home; Events continues using its existing schedule-status rules. Home does not
+poll for results, so an already open page needs a reload after collection. If
+collection has not stored a matching final, the fixture can remain visible until
+either a final result or finished schedule status arrives.
+
+The targeted regression checks cover both college and ESPN fixtures:
+
+```bash
+dotnet test MyNewsFeed.sln --filter 'FullyQualifiedName~HomeEventResultsTests|FullyQualifiedName~Homepage_hides_a_college_final'
+```
+
+These include a transactional SQL integration fixture; use a development/test
+database. Deployment verification is recorded in
+[release history](release-history.md#hide-completed-home-page-games--october-17-2026).
+
 ## Provider collection and prerequisites
 
 Apply scraper schema and runtime grants before enabling collectors. The web principal

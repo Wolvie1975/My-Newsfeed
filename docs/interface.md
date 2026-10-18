@@ -2,7 +2,8 @@
 
 Current interface notes consolidated October 13, 2026 (Central). Data contracts
 are in [Sports](sports.md) and [Entertainment](entertainment.md); historical releases
-are in [Release history](release-history.md).
+are in [Release history](release-history.md). Home-page completion filtering and
+automatic appearance notes were updated October 17, 2026 (Central).
 
 ## Navigation and layout
 
@@ -87,7 +88,10 @@ NHL games appear only when St. Louis Blues or Montreal Canadiens participate, ho
 
 Home's Today & Tonight contains only sports fixtures for today. Movies and television
 episodes remain in their dedicated homepage sections. Confirmed starts precede
-time-TBD fixtures; an empty sports day shows a games-specific empty message.
+time-TBD fixtures. Stored final results hide completed games on the next page
+load, even if the schedule status is still pending its next refresh. In-progress
+games remain visible. With no eligible games remaining, the panel says
+“No remaining games today.” See [matching rules](sports.md#home-page-completed-events).
 Each matchup shows Home and Away columns side by side with a logo beside each name,
 using the schedule page's badge style. Teams and logos follow the schedule's home/away
 designation; neutral or unknown designations use Team/Opponent labels instead.
@@ -239,3 +243,34 @@ Desert Sunset (terracotta, peach and sand) and Coffee (espresso, caramel and ivo
 use `desert` and `coffee` preference values. BYU is no longer a color scheme;
 browsers with a saved `byu` scheme fall back to Kansas. BYU remains an eligible
 Big 12 school in My Teams.
+
+## Automatic light and dark mode
+
+To enable, open **Settings → Light and dark mode → Automatic · Kansas City
+sunrise/sunset**. This choice is saved separately in each browser and device.
+
+Settings offers Follow device, Automatic · Kansas City sunrise/sunset, Light and
+Dark. Automatic uses Kansas City, Missouri (39.0997° N, 94.5786° W), with
+America/Chicago dates and daylight-saving-aware labels. The panel shows today's
+approximate sunrise and sunset. Calculations use NOAA's fractional-year solar
+equations locally; no location permission or external API is required.
+
+The `theme` browser preference accepts `sun` for automatic and `system` for device
+mode alongside existing `light`/`dark` values. Existing choices remain in effect;
+visitors opt into automatic mode in Settings. Initialization applies the resolved
+appearance before page content renders. An open page rechecks every 30 seconds,
+and on focus, visibility changes, navigation and cross-tab preference changes.
+Switching can occur up to 30 seconds after the calculated time on an active page;
+returning to a suspended tab recalculates the appearance. The city stays Kansas
+City even when the device is in another timezone.
+The header toggle selects a persistent manual Light or Dark choice; choosing
+Automatic in Settings resumes sunrise/sunset switching. Blocked storage applies
+the choice for the current document and shows a save warning.
+
+Calculation regressions run with `node --test tests/browser/solar-times.test.cjs`.
+The browser regression script `tests/browser/theme-mode.browser.cjs` requires
+Playwright and a running local app. Set `NEWSFEED_TEST_URL` for the preview URL
+(default `http://127.0.0.1:5091`) and expose an existing Playwright installation
+through `NODE_PATH` when it is not installed locally. It checks automatic and
+manual modes, persistence, navigation, cross-tab updates, blocked storage and a
+mobile viewport, with the device timezone deliberately set outside Central time.
