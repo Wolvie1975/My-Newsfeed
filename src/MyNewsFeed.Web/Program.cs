@@ -58,6 +58,8 @@ builder.Services.AddHttpClient<EspnClient>(http =>
         http.DefaultRequestHeaders.UserAgent.ParseAdd("MyNewsFeed/1.0 (personal results page)");
     })
     .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AutomaticDecompression = System.Net.DecompressionMethods.All });
+builder.Services.AddSingleton<LeaguePhases>();
+builder.Services.AddHostedService<LeaguePhaseService>();
 builder.Services.AddTransient<ScoresSync>();
 builder.Services.AddHostedService<ScoresSyncService>();
 
@@ -135,6 +137,12 @@ app.MapGet("/feed/more", async (HttpContext http, IDbContextFactory<WebScraperCo
     int? categoryId = int.TryParse(category, out var parsedCategory) ? parsedCategory : null;
     await using var db = await factory.CreateDbContextAsync();
     var boxOffice = view == "box-office";
+    var f1News = view == "f1-news";
+    if (f1News)
+    {
+        categoryId = await F1NewsQuery.CategoryIdAsync(db);
+        if (categoryId is null) return Results.NotFound();
+    }
     if (boxOffice)
     {
         categoryId = await BoxOfficeQuery.CategoryIdAsync(db);
@@ -163,7 +171,7 @@ app.MapGet("/feed/more", async (HttpContext http, IDbContextFactory<WebScraperCo
     return Results.Json(new
     {
         html,
-        nextHref = page.Next is { } next ? (boxOffice ? "box-office" : "news") + FeedQuery.QueryString(categoryId, q, next.ToToken(), sourceId) : null,
+        nextHref = page.Next is { } next ? (boxOffice ? "box-office" : f1News ? "f1/news" : "news") + FeedQuery.QueryString(f1News ? null : categoryId, q, next.ToToken(), sourceId, allCategories: !boxOffice && !f1News && categoryId is null) : null,
         shown = page.Shown,
         total = page.Total,
         added = page.Items.Count,

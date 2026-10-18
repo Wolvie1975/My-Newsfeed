@@ -673,10 +673,11 @@
 /* Phones: events, news, the movie strip, then videos. */
 .pub .d-grid { display: flex; flex-direction: column; gap: 12px; }
 .pub .d-today { order: 1; }
-.pub .d-news { order: 2; }
-.pub .d-movies { order: 3; }
-.pub .d-episodes { order: 4; }
-.pub .d-vids { order: 5; }
+.pub .d-f1 { order: 2; }
+.pub .d-news { order: 3; }
+.pub .d-movies { order: 4; }
+.pub .d-episodes { order: 5; }
+.pub .d-vids { order: 6; }
 
 .pub .d-card {
     margin: 0; background: var(--surface);
@@ -792,10 +793,11 @@
 @media (min-width: 1024px) {
     .pub .d-grid {
         display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
-        grid-template-rows: auto auto auto auto; grid-template-areas: "news today" "movies movies" "tv tv" "vids vids"; align-items: start;
+        grid-template-rows: auto auto auto auto auto; grid-template-areas: "news today" "f1 f1" "movies movies" "tv tv" "vids vids"; align-items: start;
     }
     .pub .d-news { grid-area: news; }
     .pub .d-today { grid-area: today; }
+    .pub .d-f1 { grid-area: f1; }
     .pub .d-movies { grid-area: movies; }
     .pub .d-episodes { grid-area: tv; }
     .pub .d-vids { grid-area: vids; }
@@ -1973,3 +1975,37 @@
     --bar-fg: #FFFFFF;
     --bar-fg-2: #FFFFFF;
 }
+
+/* Season records stay with their team when game cards stack on small screens. */
+.pub .team-record { display: block; margin-top: 3px; font-size: 12px; line-height: 1.45; font-weight: 400; color: var(--text-2); overflow-wrap: anywhere; }
+
+/* F1 is a dedicated sports section, with native disclosures and accessible scrolling tables. */
+.pub .f1-tabs { flex-wrap: wrap; }
+.pub .f1-tabs [aria-current="page"], .pub .f1-tabs ~ .tv-week [aria-current="page"] { font-weight: 700; text-decoration: underline; text-underline-offset: 4px; }
+.pub .f1-weekend { margin: 20px 0; padding: 20px; border: 1px solid var(--field-border); border-radius: 12px; background: var(--surface); }
+.pub .f1-weekend h3 { font-size: 21px; overflow-wrap: anywhere; }
+.pub .f1-weekend p { margin: 8px 0; }
+.pub .f1-sessions summary, .pub .f1-detail summary { cursor: pointer; padding: 8px 0; }
+.pub .f1-sessions ul { list-style: none; padding: 0; margin: 8px 0 0; }
+.pub .f1-sessions li { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4px 20px; padding: 9px 0; border-top: 1px solid var(--field-border); }
+.pub .f1-selector { max-width: 650px; margin: 20px 0; }
+.pub .f1-table-scroll { max-width: 100%; overflow-x: auto; margin: 20px 0; border: 1px solid var(--field-border); border-radius: 12px; }
+.pub .f1-table-scroll:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.pub .f1-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.pub .f1-table th, .pub .f1-table td { text-align: left; padding: 12px; border-bottom: 1px solid var(--field-border); vertical-align: top; }
+.pub .f1-table thead th { background: var(--surface); white-space: nowrap; }
+.pub .f1-table tbody tr:nth-child(even) { background: var(--surface); }
+.pub .f1-table th[scope="row"] { min-width: 160px; }
+.pub .f1-detail { font-size: 12px; font-weight: 400; min-width: 150px; }
+.pub .f1-credit { margin-top: 28px; }
+
+.pub .f1-driver-code { display: inline-block; margin-left: 6px; font-size: 12px; font-weight: 400; color: var(--text-2); }
+.pub .f1-scroll-hint { display: none; }
+@media (max-width: 767px) { .pub .f1-scroll-hint { display: block; } }
+
+.pub .d-f1__body { display: grid; gap: 16px; padding: 16px; }
+.pub .d-f1__body h3 { font-size: 19px; margin: 8px 0; overflow-wrap: anywhere; }
+.pub .d-f1__body p { margin: 6px 0; }
+.pub .d-f1__body .d-empty { padding: 0; }
+.pub .d-f1__freshness { grid-column: 1 / -1; }
+@media (min-width: 768px) { .pub .d-f1__body { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); padding: 20px 24px; } }

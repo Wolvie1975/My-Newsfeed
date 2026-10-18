@@ -7,6 +7,7 @@
    The winner is ESPN's own call, so a shoot-out or a forfeit is shown the way ESPN reports it. *@
 
 @{
+    var competition = TeamRecords.Competition(Item.Sport, Item.League);
     var score = Item.AwayScore is { } a && Item.HomeScore is { } h ? $"{a} – {h}" : "–";
     var shootout = Item.AwayShootout is { } sa && Item.HomeShootout is { } sh ? $"Shootout {sa} – {sh}" : null;
     var status = string.Join(" · ", new[] { Item.StatusText, shootout }.Where(s => !string.IsNullOrWhiteSpace(s)));
@@ -15,7 +16,7 @@
 
 <tr class="result" role="row" data-sports-teams="@SportsTeamPreferences.Keys(Item.HomeName, Item.AwayName)">
     <td class="td-comp" role="cell"><abbr title="@Item.LeagueName">@Item.LeagueTag</abbr></td>
-    <td class="td-raway @(Item.WinnerSide == "away" ? "is-winner" : "")" role="cell"><TeamCell Name="@Item.AwayName" LogoUrl="@EspnClient.SmallLogo(Item.AwayLogoUrl)" Label="Away" /></td>
+    <td class="td-raway @(Item.WinnerSide == "away" ? "is-winner" : "")" role="cell"><TeamCell Record="@Records.Find(competition.Provider, competition.Sport, Item.AwayName, Item.AwayTeamId)" Name="@Item.AwayName" LogoUrl="@EspnClient.SmallLogo(Item.AwayLogoUrl)" Label="Away" /></td>
     <td class="td-score" role="cell">
         <span class="score__time">@Dates.EventTime(Item.StartsAtUtc)</span>
         <span class="score">@score</span>
@@ -24,7 +25,7 @@
             <span class="score__status">@status</span>
         }
     </td>
-    <td class="td-rhome @(Item.WinnerSide == "home" ? "is-winner" : "")" role="cell"><TeamCell Name="@Item.HomeName" LogoUrl="@EspnClient.SmallLogo(Item.HomeLogoUrl)" Label="Home" /></td>
+    <td class="td-rhome @(Item.WinnerSide == "home" ? "is-winner" : "")" role="cell"><TeamCell Record="@Records.Find(competition.Provider, competition.Sport, Item.HomeName, Item.HomeTeamId)" Name="@Item.HomeName" LogoUrl="@EspnClient.SmallLogo(Item.HomeLogoUrl)" Label="Home" /></td>
     <td class="td-rloc @(city is null ? "td-rloc--none" : "")" role="cell">
         @if (city is not null)
         {
@@ -40,5 +41,6 @@
 </tr>
 
 @code {
+    [Parameter] public TeamRecords Records { get; set; } = TeamRecords.Empty;
     [Parameter, EditorRequired] public ResultItem Item { get; set; } = default!;
 }

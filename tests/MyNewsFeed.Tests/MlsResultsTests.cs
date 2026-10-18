@@ -25,7 +25,7 @@ public class MlsResultsTests
     [Fact]
     public async Task Penalty_row_renders_tallies_winner_safe_links_and_encoded_names()
     {
-        using var services = new ServiceCollection().AddLogging().BuildServiceProvider();
+        using var services = new ServiceCollection().AddLogging().AddSingleton(FeedDates.Create("America/Chicago")).BuildServiceProvider();
         await using var renderer = new HtmlRenderer(services, services.GetRequiredService<ILoggerFactory>());
         var game = new SportsMatchResult { HomeTeamName = "Home <club>", AwayTeamName = "Away", HomeScore = 1, AwayScore = 1,
             HomeShootoutScore = 2, AwayShootoutScore = 4, ScheduleStatus = "STATUS_FINAL_PEN", SourceUrl = "javascript:alert(1)",

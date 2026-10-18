@@ -183,6 +183,10 @@ public sealed partial class EspnClient
     public Task<EspnResult<int>> GetCurrentSeasonAsync(string sport, string league, CancellationToken ct = default) =>
         GetAsync($"{coreBase}{sport}/leagues/{league}", ParseSeasonYear, ct);
 
+    /// <summary>Current league-wide phase from scoreboard metadata, independent of any event date.</summary>
+    public Task<EspnResult<LeaguePhase>> GetLeaguePhaseAsync(string sport, string league, CancellationToken ct = default) =>
+        GetAsync($"{sport}/{league}/scoreboard?limit=1", root => LeaguePhases.Parse(root, sport, league), ct);
+
     /// <summary>The ESPN team ids of a conference's members in one season's regular season.</summary>
     public Task<EspnResult<IReadOnlyList<string>>> GetConferenceTeamIdsAsync(
         string sport, string league, int season, string groupId, CancellationToken ct = default) =>

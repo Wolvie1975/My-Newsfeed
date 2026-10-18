@@ -36,6 +36,11 @@ public partial class WebScraperContext
 
     partial void OnModelCreatingPartial(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<F1Source>().HasNoKey().ToView("F1Source", "dbo");
+        modelBuilder.Entity<F1Race>().HasNoKey().ToView("F1Schedule", "dbo");
+        modelBuilder.Entity<F1Classification>().HasNoKey().ToView("F1Results", "dbo");
+        modelBuilder.Entity<F1DriverStanding>().HasNoKey().ToView("F1DriverStandings", "dbo");
+        modelBuilder.Entity<F1ConstructorStanding>().HasNoKey().ToView("F1ConstructorStandings", "dbo");
         modelBuilder.Entity<MovieCommerceRow>().HasNoKey().ToView("MovieCommerce", "dbo");
         modelBuilder.Entity<TvEpisode>().HasOne(e => e.Series).WithMany(s => s.Episodes)
             .HasForeignKey(e => e.SeriesId).OnDelete(DeleteBehavior.NoAction);

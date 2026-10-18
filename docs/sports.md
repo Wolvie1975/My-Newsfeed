@@ -428,3 +428,123 @@ phone/desktop layouts, themes, keyboard scrolling and no-JavaScript selectors.
 Rust provider fixtures and isolated tests live in the scraper repository. For SQL
 validation use explicitly named staging databases, never production; configure
 NWSL_TEST_DATABASE, WNBA_TEST_DATABASE or RANKINGS_TEST_DATABASE as appropriate.
+
+## Team records beside matchups
+
+Added October 18, 2026 (Central). Home, Events and Results show current season
+records beside teams when the enabled standings feeds provide them. MLS and
+Championship season-results pages use the same records. These are the latest
+standings records, including on past results; they are not reconstructed records
+as of each game's final whistle. The normal standings collector supplies updates.
+
+Professional labels use W–L for baseball/basketball, W–L–D for soccer, W–L–OT for
+hockey and W–L–T for NFL. College labels show overall and conference records,
+including draws for soccer. College shorthand is overall (conference), such as
+`12-4 (5-2)` or `8-2-3 (3-1-1)` for soccer. Missing portions are omitted rather
+than replaced with zeroes. College coverage is limited to the Big 12 standings;
+uncovered opponents and unavailable records remain blank rather than showing
+zeroes. Previous-season college basketball records are excluded until current
+academic-season standings are collected.
+
+Each page loads one shared snapshot from enabled SportsStandingsSources and
+current SportsStandings rows. Professional records match within provider/sport
+using ESPN team IDs where supplied, otherwise the scoped team name. Professional
+rows must match the source's LatestSeason. College records use sport and known
+team-name aliases, never ESPN IDs as Big 12 IDs, and pass CollegeSeasons validation.
+Conflicting duplicate records and missing/malformed statistics are omitted.
+
+Record tooltips include the standings update time in the configured display
+timezone. Records older than two hours, without an update time or from a source
+with a refresh error carry a visible “last available” label. No tables, seeds,
+scraper settings or browser provider calls were added.
+
+Targeted validation includes TeamRecordsTests plus the existing standings, result,
+matchup rendering, home-event and personal-feature checks.
+
+### League-wide postseason exclusion
+
+Records are displayed only while the league is confirmed in regular season. Once
+a league enters playoffs/postseason, records are hidden for every team in that
+league on Home, Events, Results and the season-results pages, including past
+results. Games, scores, standings tables and schedules themselves remain visible.
+
+A web background service checks current ESPN scoreboard league metadata on
+startup and every ten minutes. It does not infer phase from the standings
+SeasonType (which can remain regular season during playoffs), a historical event,
+a game title or calendar dates. Soccer stage IDs are interpreted separately from
+other sports; explicit playoff/postseason stage names override regular-stage IDs.
+Big 12 sports are checked independently using their corresponding NCAA league.
+No provider requests run in page rendering or browser code.
+
+The in-memory phase snapshot must confirm regular season within the last twenty
+minutes. Startup, unsupported/unknown phases, failed checks and expired snapshots
+hide records until a successful regular-season check. No database migration is
+required. LeaguePhasesTests covers classification, soccer stage IDs, independent
+league/sport gates, postseason transitions and expiry.
+
+## F1 section
+
+F1 is a separate entry under Sports on desktop and mobile. It has its own pages,
+including a separate RSS News tab:
+
+| Route | View |
+| --- | --- |
+| `/f1` | Upcoming/current-weekend calendar |
+| `/f1?calendar=all` | Full collected season calendar |
+| `/f1/results` | Latest published Grand Prix classification |
+| `/f1/news` | F1 publisher articles, source filtering and cursor pagination |
+| `/f1/results?race=<round>:Sprint` | A published sprint classification |
+| `/f1/standings` | Drivers' championship |
+| `/f1/standings?table=constructors` | Constructors' championship |
+
+The existing reader accesses dbo.F1Schedule, F1Results, F1DriverStandings,
+F1ConstructorStandings and F1Source through read-only, keyless EF mappings. F1
+remains separate from home/away match events and team W/L records. No browser or
+web-request provider fetches, ingestion writes or frontend schema migrations are
+needed. A repeatable-read transaction keeps each page's reads on one coherent
+backend snapshot while the collector can replace the snapshot atomically.
+
+Schedule cards show the round, Grand Prix, circuit, location and race date/time,
+with a native expandable timetable for supplied practice/qualifying/sprint
+sessions. Equivalent SprintQualifying/SprintShootout entries are deduplicated.
+Confirmed UTC clocks convert through the configured display timezone; date-only
+sessions keep their original date with Time TBD. RaceUrl is labelled Race
+reference and validated as an outbound link, never treated as a stream. Past
+starts without Race classifications show Results pending/unavailable; scheduled
+start alone does not establish a final or cancellation.
+
+The result selector lists only collected Race/Sprint classifications, defaults
+to the latest round with Grand Prix preferred, and preserves explicit session
+selection through reload. Numeric Position determines order; PositionText,
+provider points (including fractions), time/gap strings and status are preserved.
+Grid zero is shown as Pit lane / unavailable. Optional timing details do not
+award or recalculate points. Standings preserve provider ranks and as-of round,
+show all supplied entries, and list every supplied constructor for a driver.
+
+Disabling Jolpica F1Source hides the structured sports datasets; preseason
+results/standings can validly be empty. Failed refreshes retain the backend's last-good snapshot and display a
+generic notice with its original fetched time. Database failures show an error.
+The source attribution is Data: Jolpica F1, with an explicit periodic/non-live
+notice. Only the latest collected season is available; no historical selector,
+live timing, driver portraits or constructor logos are supplied.
+
+F1Tests covers parsing, timezone/date-only behavior, sprint weekend sessions,
+classification choice, decimals, multiple constructors, health and read queries.
+SQL fixtures use connection-local temporary tables and leave production F1 data
+untouched. Run `dotnet test MyNewsFeed.sln --filter FullyQualifiedName~F1Tests`
+with the existing development/test connection configuration.
+
+The dedicated F1 home summary reuses the same read contract in its own card,
+separate from Today & Tonight. The next Grand Prix excludes rounds with published
+Race classifications; the latest published result may be Race or Sprint. It uses
+the same timezone/TBD, last-good freshness and error handling as the F1 section.
+
+F1 News uses Pages, Sources and SourceCategories through the standard feed
+repository. It does not read Jolpica classifications or depend on F1Source.
+Only enabled F1 News sources are included, with no numeric ID list. No source
+registration scripts or scraper deployment are needed for frontend rollout. See
+[F1 News behavior](interface.md#f1-news).
+
+F1NewsTests covers category isolation, source filtering, cursor pagination and
+article rendering. Run `dotnet test MyNewsFeed.sln --filter FullyQualifiedName~F1NewsTests`
+with the same development/test connection configuration.

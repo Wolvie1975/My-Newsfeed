@@ -1,0 +1,12 @@
+@inject FeedDates Dates
+@if (Session.StartsUtc is { } utc)
+{
+    <time datetime="@utc.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'")">@Dates.Published(utc) · @Dates.TimeWithOffset(utc)</time>
+}
+else
+{
+    <time datetime="@Session.Date.ToString("yyyy-MM-dd")">@FeedDates.LongDate(Session.Date)</time><span> · Time TBD</span>
+}
+@code {
+    [Parameter, EditorRequired] public F1Session Session { get; set; } = default!;
+}

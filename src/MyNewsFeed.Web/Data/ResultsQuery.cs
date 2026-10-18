@@ -18,7 +18,7 @@ public sealed record ResultItem(
     int? AwayScore,
     int? AwayShootout,
     string? WinnerSide,
-    string? Venue);
+    string? Venue, string? Sport = null, string? League = null, string? HomeTeamId = null, string? AwayTeamId = null);
 
 public sealed record ResultsWindow(DateTime StartUtc, DateTime EndUtc)
 {
@@ -135,7 +135,7 @@ public static class ResultsQuery
 
         var items = rows.Select(g => new ResultItem(g.EventId, EspnLeagues.NameOf(g.Sport, g.League), EspnLeagues.TagOf(g.Sport, g.League), g.StartsAtUtc, g.StatusText,
                 g.HomeName, g.HomeLogoUrl, g.HomeScore, g.HomeShootout,
-                g.AwayName, g.AwayLogoUrl, g.AwayScore, g.AwayShootout, g.WinnerSide, g.Venue))
+                g.AwayName, g.AwayLogoUrl, g.AwayScore, g.AwayShootout, g.WinnerSide, g.Venue, g.Sport, g.League, g.HomeTeamId, g.AwayTeamId))
             .ToList();
 
         return new ResultsPage(items, total);

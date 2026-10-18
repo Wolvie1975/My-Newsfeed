@@ -15,6 +15,8 @@
     var (awayName, awayLogo) = schoolAway ? (school, Item.TeamLogoUrl) : (opponent, Item.OpponentLogoUrl);
     var (homeName, homeLogo) = schoolAway ? (opponent, Item.OpponentLogoUrl) : (school, Item.TeamLogoUrl);
 
+    var schoolRecord = Records.Find(Item.ProviderKey, Item.Sport, school, Item.SchoolId?.ToString());
+    var opponentRecord = Records.Find(Item.ProviderKey, Item.Sport, opponent, Item.OpponentSchoolId?.ToString());
     var time = EventsText.TimeLabel(Item, Dates);
     var (city, venue) = EventsText.SplitLocation(Item.Location);
     var stats = FeedQuery.SafeHref(Item.LiveStatsUrl);
@@ -27,8 +29,8 @@
 
 <tr class="game" role="row" data-sports-teams="@SportsTeamPreferences.Keys(Item.SchoolName, Item.Opponent)">
     <td class="td-sport @(string.IsNullOrWhiteSpace(Item.Sport) ? "td-sport--none" : "")" role="cell">@Item.Sport @if (Item.IsNeutral == true) { <span class="neutral-label">Neutral site</span> }</td>
-    <td class="td-away" role="cell"><TeamCell Name="@awayName" LogoUrl="@awayLogo" Label="@(Item.IsNeutral == true ? "Team" : known ? "Away" : null)" /></td>
-    <td class="td-home" role="cell"><TeamCell Name="@homeName" LogoUrl="@homeLogo" Label="@(Item.IsNeutral == true ? "Team" : known ? "Home" : null)" /></td>
+    <td class="td-away" role="cell"><TeamCell Record="@(schoolAway ? schoolRecord : opponentRecord)" Name="@awayName" LogoUrl="@awayLogo" Label="@(Item.IsNeutral == true ? "Team" : known ? "Away" : null)" /></td>
+    <td class="td-home" role="cell"><TeamCell Record="@(schoolAway ? opponentRecord : schoolRecord)" Name="@homeName" LogoUrl="@homeLogo" Label="@(Item.IsNeutral == true ? "Team" : known ? "Home" : null)" /></td>
     <td class="td-time @(time.Contains("Time TBD") ? "is-tbd" : "")" role="cell">@time</td>
     <td class="td-loc" role="cell">
         @if (city is not null)
@@ -67,5 +69,6 @@
 </tr>
 
 @code {
+    [Parameter] public TeamRecords Records { get; set; } = TeamRecords.Empty;
     [Parameter, EditorRequired] public EventItem Item { get; set; } = default!;
 }

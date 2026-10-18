@@ -1,0 +1,12 @@
+@inject FeedDates Dates
+@if (Value is { } record)
+{
+    <span class="team-record" title="@Description(record)">@record.Text@(record.Stale ? " · last available" : "")</span>
+}
+@code {
+    [Parameter] public TeamRecordValue? Value { get; set; }
+    private string Description(TeamRecordValue record) => "Current season record from standings" +
+        (record.IsCollege ? "; overall record, with conference record in parentheses when available" : "") +
+        (record.UpdatedAt is { } updated ? "; updated " + Dates.PublishedFull(updated) : "; update time unavailable") +
+        (record.Stale ? "; standings may be out of date." : ".");
+}

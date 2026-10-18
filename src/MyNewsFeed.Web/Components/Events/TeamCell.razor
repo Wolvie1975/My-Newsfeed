@@ -16,7 +16,7 @@
                  onerror="this.parentNode.classList.add('is-broken');this.remove()" />
         }
     </span>
-    <span class="team__name">@Name</span>
+    <span class="team__name">@Name<TeamRecord Value="Record" /></span>
     @if (!string.IsNullOrEmpty(Label))
     {
         <span class="team__label">@Label</span>
@@ -25,6 +25,8 @@
 
 @code {
     [Parameter, EditorRequired] public string Name { get; set; } = "";
+
+    [Parameter] public TeamRecordValue? Record { get; set; }
 
     [Parameter] public string? LogoUrl { get; set; }
 

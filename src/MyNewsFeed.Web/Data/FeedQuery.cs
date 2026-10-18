@@ -229,12 +229,16 @@ public static class FeedQuery
             : null;
 
     /// <summary>Builds the query string that keeps the current filters. Empty when nothing is set.</summary>
-    public static string QueryString(int? categoryId, string? search, string? after, int? sourceId = null)
+    public static string QueryString(int? categoryId, string? search, string? after, int? sourceId = null, bool allCategories = false)
     {
         var parts = new List<string>();
         if (categoryId is int id)
         {
             parts.Add($"category={id}");
+        }
+        else if (allCategories)
+        {
+            parts.Add("category=all");
         }
 
         if (!string.IsNullOrWhiteSpace(search))

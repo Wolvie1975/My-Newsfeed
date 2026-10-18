@@ -1,5 +1,6 @@
 @page "/results"
 @layout PublicLayout
+@inject MyNewsFeed.Web.Scores.LeaguePhases RecordPhases
 @using MyNewsFeed.Web.Components.Events
 @inject IDbContextFactory<WebScraperContext> Factory
 @inject FeedDates Dates
@@ -11,6 +12,7 @@
    day in the display zone. The filter is a dropdown at every width, not chips: the follow labels are long. *@
 
 <PageHeading Title="Results" Eyebrow="THE FINAL SCORES" Description="Recent results from the leagues and teams we follow." />
+<MyNewsFeed.Web.Components.Events.TeamRecordsNote />
 @if (hasChampionship) { <p><a href="championship/results">EFL Championship season results →</a></p> }
 @if (hasMls) { <p><a href="mls/results">MLS season results →</a></p> }
 <nav class="tv-week" aria-label="Result dates">
@@ -97,7 +99,7 @@ else
                     <tbody role="rowgroup">
                         @foreach (var item in league.Games)
                         {
-                            <ResultRow Item="item" />
+                            <ResultRow Item="item" Records="records" />
                         }
                     </tbody>
                 </table>
@@ -113,6 +115,7 @@ else
 }
 
 @code {
+    private TeamRecords records = TeamRecords.Empty;
     [SupplyParameterFromQuery(Name = "follow")] private int? Follow { get; set; }
 
     private bool hasChampionship;
@@ -127,6 +130,7 @@ else
     protected override async Task OnParametersSetAsync()
     {
         await using var db = await Factory.CreateDbContextAsync();
+        records = await TeamRecords.LoadAsync(db, Dates.Today, RecordPhases);
         hasChampionship = await db.SportsEventsTypes.AsNoTracking().AnyAsync(s => s.Enabled && s.ProviderKey == "espn-championship");
         hasMls = await db.SportsEventsTypes.AsNoTracking().AnyAsync(s => s.Enabled && s.ProviderKey == "espn-mls");
         resultDay = DateOnly.TryParseExact(Day, "yyyy-MM-dd", out var parsed)

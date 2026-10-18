@@ -19,7 +19,7 @@ public sealed record EventItem(
     string? TeamLogoUrl,
     string? OpponentLogoUrl,
     string? SchoolName,
-    bool? IsNeutral = null, string? Radio = null, string? AudioUrl = null, string? ScheduleStatus = null, string? ProviderKey = null, string? CanonicalKey = null, int? GameId = null);
+    bool? IsNeutral = null, string? Radio = null, string? AudioUrl = null, string? ScheduleStatus = null, string? ProviderKey = null, string? CanonicalKey = null, int? GameId = null, int? SchoolId = null, int? OpponentSchoolId = null);
 
 /// <param name="Total">Every upcoming event matching the filters (the list itself is capped).</param>
 public sealed record EventSchool(int Id, string Name);
@@ -138,7 +138,7 @@ public static class EventsQuery
             .Select(e => new EventItem(
                 e.Id, e.Url, e.Title, e.Sport, e.Opponent, e.ProviderKey == "espn-championship" || e.ProviderKey == "espn-epl" || e.ProviderKey == "espn-mls" ? false : e.IsAway, e.Location, e.EventDate, e.StartsAtUtc, e.TimeTbd,
                 e.Tv, e.StreamUrl, e.LiveStatsUrl, e.TeamLogoUrl, e.OpponentLogoUrl,
-                e.SchoolName ?? (e.SportsEventsType != null ? e.SportsEventsType.SchoolName : null), e.IsNeutral, e.Radio, e.AudioUrl, e.ScheduleStatus, e.ProviderKey ?? (e.SportsEventsType != null ? e.SportsEventsType.ProviderKey : null), e.CanonicalKey, e.GameId))
+                e.SchoolName ?? (e.SportsEventsType != null ? e.SportsEventsType.SchoolName : null), e.IsNeutral, e.Radio, e.AudioUrl, e.ScheduleStatus, e.ProviderKey ?? (e.SportsEventsType != null ? e.SportsEventsType.ProviderKey : null), e.CanonicalKey, e.GameId, e.SchoolId, e.OpponentSchoolId))
             .ToListAsync();
 
         return new EventsPage(items, total);
@@ -159,7 +159,7 @@ public static class EventsQuery
             .Select(e => new EventItem(
                 e.Id, e.Url, e.Title, e.Sport, e.Opponent, e.ProviderKey == "espn-mls" ? false : e.IsAway, e.Location, e.EventDate, e.StartsAtUtc, e.TimeTbd,
                 e.Tv, e.StreamUrl, e.LiveStatsUrl, e.TeamLogoUrl, e.OpponentLogoUrl,
-                e.SchoolName ?? (e.SportsEventsType != null ? e.SportsEventsType.SchoolName : null), e.IsNeutral, e.Radio, e.AudioUrl, e.ScheduleStatus, e.ProviderKey ?? (e.SportsEventsType != null ? e.SportsEventsType.ProviderKey : null), e.CanonicalKey, e.GameId))
+                e.SchoolName ?? (e.SportsEventsType != null ? e.SportsEventsType.SchoolName : null), e.IsNeutral, e.Radio, e.AudioUrl, e.ScheduleStatus, e.ProviderKey ?? (e.SportsEventsType != null ? e.SportsEventsType.ProviderKey : null), e.CanonicalKey, e.GameId, e.SchoolId, e.OpponentSchoolId))
             .ToListAsync();
 
     /// <summary>Builds the query string that keeps the current filters. Empty when nothing is set.</summary>

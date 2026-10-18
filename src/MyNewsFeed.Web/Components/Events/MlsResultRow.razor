@@ -2,7 +2,7 @@
 <tr data-sports-teams="@SportsTeamPreferences.Keys(Game.HomeTeamName, Game.AwayTeamName)">
     <th scope="row"><span class="standing-team-name">
         @if (EventsText.LogoUrl(Game.HomeLogoUrl) is { } logo) { <img src="@logo" alt="" width="24" height="24" loading="lazy" onerror="this.remove()" /> }
-        @Game.HomeTeamName</span></th>
+        @Game.HomeTeamName</span><TeamRecord Value="@Records.Find(Game.ProviderKey, "Soccer", Game.HomeTeamName, Game.HomeTeamId.ToString())" /></th>
     <td>
         @if (FeedQuery.SafeHref(Game.SourceUrl) is { } url) { <a href="@url" target="_blank" rel="noopener noreferrer">@MlsResultsQuery.Score(Game)</a> }
         else { <span>@MlsResultsQuery.Score(Game)</span> }
@@ -12,9 +12,10 @@
     </td>
     <td><span class="standing-team-name">
         @if (EventsText.LogoUrl(Game.AwayLogoUrl) is { } awayLogo) { <img src="@awayLogo" alt="" width="24" height="24" loading="lazy" onerror="this.remove()" /> }
-        @Game.AwayTeamName</span></td>
+        @Game.AwayTeamName</span><TeamRecord Value="@Records.Find(Game.ProviderKey, "Soccer", Game.AwayTeamName, Game.AwayTeamId.ToString())" /></td>
 </tr>
 @code {
+    [Parameter] public TeamRecords Records { get; set; } = TeamRecords.Empty;
     [Parameter, EditorRequired] public SportsMatchResult Game { get; set; } = default!;
     [Parameter, EditorRequired] public FeedDates Dates { get; set; } = default!;
 }

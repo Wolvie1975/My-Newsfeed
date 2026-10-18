@@ -1,10 +1,12 @@
 @page "/championship/results"
 @layout PublicLayout
+@inject MyNewsFeed.Web.Scores.LeaguePhases RecordPhases
 @inject IDbContextFactory<WebScraperContext> Factory
 @inject FeedDates Dates
 @inject ILogger<ChampionshipResults> Log
 <PageTitle>EFL Championship results · MyNewsFeed</PageTitle>
 <PageHeading Title="EFL Championship results" Eyebrow="THE FINAL SCORES" Description="Completed matches from the latest available season." />
+<MyNewsFeed.Web.Components.Events.TeamRecordsNote />
 <SoccerLeagueLinks Provider="espn-championship" />
 @if (error is not null) { <p class="empty" role="status">@error</p> }
 else if (data.Source is null) { <p class="empty">Championship results are not enabled.</p> }
@@ -32,7 +34,7 @@ else
                     <tr data-sports-teams="@SportsTeamPreferences.Keys(game.HomeTeamName, game.AwayTeamName)">
                         <th scope="row"><span class="standing-team-name">
                             @if (EventsText.LogoUrl(game.HomeLogoUrl) is { } logo) { <img src="@logo" alt="" width="24" height="24" loading="lazy" onerror="this.remove()" /> }
-                            @game.HomeTeamName</span></th>
+                            @game.HomeTeamName</span><MyNewsFeed.Web.Components.Events.TeamRecord Value="@records.Find(game.ProviderKey, "Soccer", game.HomeTeamName, game.HomeTeamId.ToString())" /></th>
                         <td>
                             @if (FeedQuery.SafeHref(game.SourceUrl) is { } url) { <a href="@url" target="_blank" rel="noopener noreferrer">@game.HomeScore – @game.AwayScore</a> }
                             else { <span>@game.HomeScore – @game.AwayScore</span> }
@@ -42,7 +44,7 @@ else
                         </td>
                         <td><span class="standing-team-name">
                             @if (EventsText.LogoUrl(game.AwayLogoUrl) is { } awayLogo) { <img src="@awayLogo" alt="" width="24" height="24" loading="lazy" onerror="this.remove()" /> }
-                            @game.AwayTeamName</span></td>
+                            @game.AwayTeamName</span><MyNewsFeed.Web.Components.Events.TeamRecord Value="@records.Find(game.ProviderKey, "Soccer", game.AwayTeamName, game.AwayTeamId.ToString())" /></td>
                     </tr>
                 }</tbody>
             </table>
@@ -58,6 +60,7 @@ else
     }
 }
 @code {
+    private TeamRecords records = TeamRecords.Empty;
     [SupplyParameterFromQuery(Name = "team")] private int? Team { get; set; }
     [SupplyParameterFromQuery(Name = "page")] private string? Page { get; set; }
     private ChampionshipResultsPage data = new(null, null, [], 0, 0);
@@ -66,7 +69,8 @@ else
     protected override async Task OnParametersSetAsync()
     {
         error = null;
-        try { await using var db = await Factory.CreateDbContextAsync(); data = await ChampionshipResultsQuery.GetAsync(db, Team == 352, int.TryParse(Page, out var page) ? Math.Clamp(page, 0, 10000) : 0); }
+        try { await using var db = await Factory.CreateDbContextAsync();
+        records = await TeamRecords.LoadAsync(db, Dates.Today, RecordPhases); data = await ChampionshipResultsQuery.GetAsync(db, Team == 352, int.TryParse(Page, out var page) ? Math.Clamp(page, 0, 10000) : 0); }
         catch (Exception ex) when (ex is System.Data.Common.DbException or InvalidOperationException)
         { Log.LogError(ex, "Could not read Championship results."); error = "Results are temporarily unavailable. Please try again."; }
     }

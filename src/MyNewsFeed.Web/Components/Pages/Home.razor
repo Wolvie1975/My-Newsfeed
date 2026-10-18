@@ -1,5 +1,6 @@
 @page "/"
 @layout PublicLayout
+@inject MyNewsFeed.Web.Scores.LeaguePhases RecordPhases
 @inject IDbContextFactory<WebScraperContext> Factory
 @inject FeedDates Dates
 @inject NavigationManager Nav
@@ -27,8 +28,8 @@
                     <div class="d-game__body">
                         <h3 class="d-game__match">
                         @if (item.Url is not null)
-                        { <a href="@item.Url" target="_blank" rel="noopener noreferrer"><TonightMatchup Item="item" /></a> }
-                        else { <TonightMatchup Item="item" /> }
+                        { <a href="@item.Url" target="_blank" rel="noopener noreferrer"><TonightMatchup Item="item" Records="records" /></a> }
+                        else { <TonightMatchup Item="item" Records="records" /> }
                     </h3><p class="d-game__meta">@item.Kind</p></div>
                         <div class="d-game__details">
                             <div><span class="d-game__label">Time</span><span class="d-game__time">@item.TimeLabel</span></div>
@@ -48,6 +49,8 @@
             }
         </ul>
     </section>
+
+    <MyNewsFeed.Web.Components.F1.F1Home />
 
     <section class="d-card d-news" aria-labelledby="h-news">
         <div class="d-card__head">
@@ -298,6 +301,7 @@
 </div>
 
 @code {
+    private TeamRecords records = TeamRecords.Empty;
     // News used to live at "/", so an old bookmark like "/?category=3" is sent on to "/news" with its query intact.
     [SupplyParameterFromQuery(Name = "category")] private string? Category { get; set; }
     [SupplyParameterFromQuery(Name = "q")] private string? Q { get; set; }
@@ -323,6 +327,7 @@
 
         nowUtc = DateTime.UtcNow;
         await using var db = await Factory.CreateDbContextAsync();
+        records = await TeamRecords.LoadAsync(db, Dates.Today, RecordPhases);
 
         // The queries run one after another: one DbContext cannot run two at once.
         todays = await EventsQuery.GetOnDateAsync(db, Dates.TodayAt(nowUtc));

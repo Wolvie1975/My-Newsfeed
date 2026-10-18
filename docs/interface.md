@@ -277,7 +277,12 @@ mobile viewport, with the device timezone deliberately set outside Central time.
 
 ## Top Headlines and news source filtering
 
-Added October 17, 2026 (Central). Choose News → Category → Top Headlines. Categories
+Added October 17, 2026 (Central). Opening News without a category defaults to
+Top Headlines, resolved by name from the enabled category list. Choose All
+categories to browse every enabled source; this uses `news?category=all` and stays
+selected through reload, source filtering and pagination. Explicit category links
+retain their selected category. If Top Headlines is unavailable, the default
+falls back to All categories. Categories
 are discovered from enabled database sources, including categories without article
 rows. Top Headlines is the first named category below All categories; remaining
 categories retain alphabetical order. The Source selector lists enabled sources
@@ -316,3 +321,68 @@ selection and reload, invalid cross-category source handling, enhanced paginatio
 existing-category article cards and saving, no-JavaScript forms and 1440px/390px
 layouts. See [release history](release-history.md#top-headlines-and-news-source-selector--october-17-2026)
 for the dated ingestion limitation and deployment evidence.
+
+## Team records on sports views
+
+Home's Today & Tonight, Events, Results, MLS results and Championship results now
+show current season records beside each covered team. College teams include
+overall and conference totals in compact form, for example `12-4 (5-2)`; the
+parentheses contain the conference record. The tooltip explains the notation.
+Professional labels identify W–L, W–L–D, W–L–OT or W–L–T as appropriate.
+Records wrap below the team name on narrow cards; logos, score emphasis and
+home/away or neutral-team placement are retained.
+
+Records use the latest collected standings even when viewing an older result.
+A tooltip supplies the update time; stale or failed-refresh snapshots display
+“last available.” Missing records are omitted. See
+[coverage and season rules](sports.md#team-records-beside-matchups).
+
+Records are suppressed league-wide during playoffs/postseason, including on past
+results. Only leagues confirmed to be in regular season show records. Status
+refreshes in the background every ten minutes; unknown or expired status hides
+records until regular season can be confirmed. Games and scores remain visible.
+
+The explanatory team-record paragraph is omitted from Home; record labels and
+their tooltips remain available. Other sports pages retain the explanation.
+
+## Dedicated F1 sports section
+
+Open Sports → F1 for Schedule, Results, Standings and News tabs. Schedule offers upcoming
+weekends and a full calendar with expandable session timetables. Results has a
+Grand Prix/Sprint selector; Standings switches between Drivers and Constructors.
+The mobile Browse label identifies F1, and all navigation, disclosures and Apply
+forms work without JavaScript. Wide classification tables scroll inside a labelled,
+keyboard-focusable region; phones show a scrolling hint.
+
+Season, snapshot update time and the championship as-of round are shown separately.
+Confirmed session times use the site display timezone, while date-only sessions
+retain their date and say Time TBD. Source attribution and periodic-data limitations
+are visible. See [F1 data and behavior](sports.md#f1-section).
+
+Home also includes a dedicated F1 card outside Today & Tonight. It shows the next
+unclassified Grand Prix, the next available weekend session, and the latest
+published Race/Sprint result, with links to all F1 views. The card spans its
+own desktop row and appears after Today & Tonight on mobile. Snapshot freshness,
+provider attribution and empty/error states are confined to the card; an F1 read
+failure does not take down the rest of Home.
+
+## F1 News
+
+Sports → F1 → News opens `/f1/news`, using the existing article cards, publisher
+labels, safe article/image URLs, publication times, image/summary fallbacks and
+browser-local saving behavior. The four publishers are BBC Sport — F1, Autosport —
+F1, Motorsport.com — F1 and The Guardian — F1. Membership is resolved dynamically
+from the enabled F1 News category; no production category/source IDs are hardcoded.
+This RSS news feed is independent of Jolpica's F1Source enablement and snapshots.
+
+The source selector includes enabled publishers before their first articles
+arrive. Source selection, optional search and cursor pagination retain the F1
+route on reload and no-JavaScript navigation. Enhanced Load more uses the normal
+feed endpoint with `view=f1-news`, which resolves the category server-side and
+keeps subsequent links under `f1/news`. Invalid or out-of-category sources reset
+to All sources within F1 News. A missing/disabled category remains empty rather
+than falling back to the general news feed. Query failures show a generic error.
+
+F1 news freshness uses successful scrapes in this category/source scope. Existing
+publication ordering, saved-article identity and redirect recovery remain
+unchanged. The F1 home card includes a News link alongside its sports-data links.

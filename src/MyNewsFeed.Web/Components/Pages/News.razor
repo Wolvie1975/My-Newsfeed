@@ -24,7 +24,7 @@
             }
             <label class="sr-only" for="category">Category</label>
             <select id="category" name="category" onchange="this.form.requestSubmit()">
-                <option value="">All categories</option>
+                <option value="all" selected="@(Category is null)">All categories</option>
                 @foreach (var category in categories)
                 {
                     <option value="@category.Id" selected="@(Category == category.Id)">@category.Name</option>
@@ -36,8 +36,7 @@
     @if (sources.Count > 0)
     {
         <form class="catselect" method="get" action="news">
-            @if (Category is { } categoryId)
-            { <input type="hidden" name="category" value="@categoryId" /> }
+            <input type="hidden" name="category" value="@(Category?.ToString() ?? "all")" />
             @if (!string.IsNullOrWhiteSpace(Q))
             { <input type="hidden" name="q" value="@Q" /> }
             <label class="sr-only" for="source">Source</label>
@@ -112,7 +111,7 @@ else
 
     private int? Source { get; set; }
     private IReadOnlyList<FeedSource> sources = [];
-    private int? Category => int.TryParse(CategoryQuery, out var id) ? id : null;
+    private int? Category { get; set; }
     private FeedCursor? After => FeedCursor.Parse(AfterQuery);
 
     private IReadOnlyList<FeedCategory> categories = [];
@@ -124,6 +123,9 @@ else
     {
         await using var db = await Factory.CreateDbContextAsync();
         categories = await FeedQuery.GetCategoriesAsync(db);
+        Category = CategoryQuery is null
+            ? categories.FirstOrDefault(c => c.Name == "Top Headlines")?.Id
+            : int.TryParse(CategoryQuery, out var categoryId) ? categoryId : null;
         sources = await FeedQuery.GetSourcesAsync(db, Category);
         Source = int.TryParse(SourceQuery, out var sourceId) && sources.Any(s => s.Id == sourceId) ? sourceId : null;
         feed = await FeedQuery.GetFeedAsync(
@@ -133,5 +135,5 @@ else
     }
 
     /// <summary>A link that keeps the current search and switches category and position.</summary>
-    private string Href(int? category, string? after) => "news" + FeedQuery.QueryString(category, Q, after, Source);
+    private string Href(int? category, string? after) => "news" + FeedQuery.QueryString(category, Q, after, Source, allCategories: category is null);
 }

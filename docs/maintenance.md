@@ -5,6 +5,22 @@ public/admin pages, routing/authentication, EF/query helpers, score sync, browse
 scripts, PWA and Docker configuration. The earlier audit excluded Rust scraper
 implementation and vendored Bootstrap; it was not a penetration or load test.
 
+## October 18 feature status
+
+The deployed updates include current team records with league-wide playoff
+suppression, compact college overall (conference) labels such as `12-4 (5-2)`,
+and removal of the explanatory paragraph from Home. See
+[record coverage and freshness](sports.md#team-records-beside-matchups).
+
+F1 now has its own Sports section, a separate Home card outside Today & Tonight,
+and a publisher News tab. Structured F1 data is periodic and limited to the latest
+collected season; its source enablement does not control the RSS news feed. See
+[F1 coverage](sports.md#f1-section) and [F1 News behavior](interface.md#f1-news).
+
+Verification results, release images and rollback references are recorded in
+[release history](release-history.md). The earlier Top Headlines collection
+follow-up below remains a dated observation pending a new collection check.
+
 ## Completed audit repairs
 
 | Original finding | Current repair |

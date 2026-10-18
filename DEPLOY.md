@@ -23,6 +23,11 @@ connection string. Display:TimeZone defaults to America/Chicago. Scraper:StaleAf
 controls admin freshness; Results:SyncIntervalHours defaults to a ten-minute interval.
 
 The web app requires outbound HTTPS to ESPN and its image CDN for result synchronization.
+Team-record eligibility also uses a background ESPN league-phase check at startup
+and every ten minutes. Records remain hidden until regular season is confirmed;
+unknown or failed checks hide them, and confirmations expire after twenty minutes.
+Check `League phase` log entries after deployment. This needs no database migration
+and runs independently of the results sync interval.
 Rust scraping jobs run separately. A web deployment does not automatically rebuild
 or configure the scraper, register new providers or enable feeds.
 
@@ -84,6 +89,16 @@ owns CinemaPosterCache and poster lookup/backfill, not the web app.
 For movie releases run [check-movie-schema.sql](deployment/check-movie-schema.sql)
 against the target database in read-only, error-on-failure mode. Stop on failed schema
 checks; provision missing scraper schema in the scraper project first.
+
+## F1 read prerequisites
+
+Before deploying F1, the scraper owner must provision and populate F1Source and
+the F1Schedule, F1Results, F1DriverStandings and F1ConstructorStandings views. Verify
+the existing frontend runtime identity can SELECT all five. No new credentials,
+write grants or runtime DDL are needed by the web app. The collector owns
+enablement, schema and atomic snapshot refreshes. Verify `/f1`, `/f1/results`,
+`/f1/standings` and the Constructors view after rollout, including timestamps,
+Grand Prix/Sprint selection and mobile table scrolling.
 
 ## Build and deploy
 

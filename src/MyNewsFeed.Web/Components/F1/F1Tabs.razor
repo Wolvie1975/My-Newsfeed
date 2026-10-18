@@ -1,0 +1,9 @@
+<nav class="tv-week f1-tabs" aria-label="F1 views">
+    <a class="nf-btn nf-btn--secondary" href="f1" aria-current="@(Current == "schedule" ? "page" : null)">Schedule</a>
+    <a class="nf-btn nf-btn--secondary" href="f1/results" aria-current="@(Current == "results" ? "page" : null)">Results</a>
+    <a class="nf-btn nf-btn--secondary" href="f1/standings" aria-current="@(Current == "standings" ? "page" : null)">Standings</a>
+    <a class="nf-btn nf-btn--secondary" href="f1/news" aria-current="@(Current == "news" ? "page" : null)">News</a>
+</nav>
+@code {
+    [Parameter] public string Current { get; set; } = "";
+}

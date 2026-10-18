@@ -6,15 +6,226 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The most recent verified web release is `mynewsfeed-web:headlines-first-20261017`,
-with rollback recorded as `mynewsfeed-web:before-headlines-first-20261017`.
-Its container was healthy on October 17, 2026 (Central). This is a dated
+The most recent verified web release is `mynewsfeed-web:compact-records-20261018`,
+with rollback recorded as `mynewsfeed-web:before-compact-records-20261018`.
+Its container was healthy on October 18, 2026 (Central). This is a dated
 observation, not live hosting status.
+
+## Compact college records and Home text cleanup — October 18, 2026
+
+College records now use overall (conference) shorthand, for example 12-4 (5-2).
+Soccer retains draws in both portions. Missing portions remain omitted, and
+record tooltips explain the parentheses along with freshness. Professional record
+formats and league-wide playoff suppression remain unchanged. Removed the long
+team-record explanation from Home's Today & Tonight panel; records and their
+tooltips remain visible when eligible. Other sports pages retain their note.
+
+All twelve team-record checks passed. Production publish and Blazor static-asset
+guard passed, with the existing Pkcs dependency warnings. Live browser checks
+verified Home text removal, compact college labels and tooltip meanings on
+Results, the separate F1 card, and no mobile/desktop overflow. HTTPS Home, Results
+and health returned 200. Container health was healthy, with no error-level entries
+observed. Runtime settings, host configuration, network and keys were preserved.
+No database scripts or scraper changes were required.
+
+Release: `mynewsfeed-web:compact-records-20261018` (`cb4466d3c168`).
+Rollback: `mynewsfeed-web:before-compact-records-20261018` (`a04785efff8f`).
+Previous stopped container: `mynewsfeed-web-before-compact-records-20261018`.
+
+## F1 News tab — October 18, 2026
+
+Added Sports → F1 → News at `/f1/news`, sharing the existing article cards,
+publication ordering, safe destinations, publisher attribution, source selector,
+cursor pagination and browser-local save behavior. A shared F1 tab bar exposes
+Schedule, Results, Standings and News; the dedicated home F1 card also links to
+News. Category membership is resolved by F1 News name and enabled sources, without
+hardcoded IDs. News remains independent of Jolpica F1Source enablement.
+
+Enhanced Load more enforces the fixed category server-side and returns F1-route
+paging links. Source filters persist through reload/pagination, invalid sources
+reset within F1 scope, and a missing/disabled category cannot expose general
+articles. Empty data and query errors use distinct states. Freshness is scoped to
+successful category/source scrapes. No source registration scripts, schema changes,
+new credentials or scraper rebuild/restart were required.
+
+All 134 targeted F1/news query, rendering and helper checks passed. New SQL fixtures
+used connection-local temporary tables to verify source/cursor scoping, disabled
+sources and missing-category isolation. Application build, production publish and
+Blazor static-asset guard passed. Existing Pkcs dependency warnings remain.
+
+Read-only production checks found four enabled publishers with ten retained
+articles each. Preview and live browser checks verified all 40 articles through
+complete enhanced pagination without duplicate IDs, publisher selection/reload,
+article destinations and saving, fixed-category isolation even with conflicting
+request parameters, empty search, original News default, home link, 390/768/1440px
+layouts and no-JavaScript GET forms/paging. The mobile News view was visually
+reviewed. These counts are dated observations, not permanent acceptance totals.
+
+HTTPS F1 News and health returned 200. Existing F1 Schedule/Results/both standings,
+News and Home returned 200. Container health was healthy with no error-level
+application entries observed. Runtime settings, host configuration, network and
+persistent keys were preserved. Database remains sql2025 / WebScraper. The temporary
+preview container was removed after checks.
+
+Release: `mynewsfeed-web:f1-news-20261018` (`a04785efff8f`).
+Rollback: `mynewsfeed-web:before-f1-news-20261018` (`f87b88d2d853`).
+Previous stopped container: `mynewsfeed-web-before-f1-news-20261018`.
+
+## Separate F1 home-page card — October 18, 2026
+
+Added a dedicated F1 card outside Today & Tonight. It shows the next unclassified
+Grand Prix with circuit/location and display-zone start time, the next available
+weekend session, the latest published Race/Sprint result, and links to Schedule,
+Results and Standings. It occupies its own full-width desktop row and appears
+after Today & Tonight on mobile. It reuses the F1 read contract and preserves
+snapshot freshness, source attribution and date-only/TBD behavior. F1 failures
+are handled inside the card so other Home sections remain available.
+
+Application build, production Docker publish and Blazor static-asset guard passed.
+Preview and live browser checks confirmed the F1 card is a sibling outside Today &
+Tonight, its next race and latest result render, links open the F1 views, and
+390/768/1440px layouts have no horizontal overflow or overlap. No-JavaScript
+rendering passed; the mobile card was visually reviewed. HTTPS Home, F1 and
+health returned 200. Container health was healthy and no error-level application
+entries were observed. Existing Pkcs build warnings remain.
+
+Runtime settings, host configuration, network and persistent keys were preserved.
+No database scripts or scraper changes were made. The temporary preview container
+was removed after checks.
+
+Release: `mynewsfeed-web:f1-home-20261018` (`f87b88d2d853`).
+Rollback: `mynewsfeed-web:before-f1-home-20261018` (`285e5173584c`).
+Previous stopped container: `mynewsfeed-web-before-f1-home-20261018`.
+
+## Dedicated F1 section under Sports — October 18, 2026
+
+Added a separate Sports → F1 entry on desktop and mobile, with Schedule, Results
+and Standings tabs. Schedule offers upcoming/current weekends and the full season,
+with expandable practice, qualifying, sprint and race timetables. Confirmed times
+convert from UTC to the display zone; date-only sessions retain their date and
+Time TBD. Equivalent sprint qualifying fields are deduplicated. Past races with
+no Race classifications show Results pending/unavailable. Race reference links
+are validated and are not labelled as streams.
+
+Results separates Grand Prix and Sprint classifications, preserves provider
+position text/status/time gaps/decimal points and offers optional timing details.
+Grid zero is labelled Pit lane / unavailable. Drivers and Constructors standings
+use provider rankings and show the published championship as-of round, independently
+of the next scheduled race. Multiple constructors per driver are retained.
+Mobile tables scroll within labelled keyboard-focusable regions and include a
+scrolling hint. Native navigation, disclosures and GET-form Apply controls work
+without JavaScript. Jolpica attribution and periodic-data limitations are visible.
+
+The existing runtime reader successfully accessed F1Source and all four deployed
+views. Read-only keyless mappings and repeatable-read page queries consume the
+collector's complete latest-season snapshot; no schema migrations, seeds, new
+credentials, ingestion changes or Rust scraper deployment were needed. Failed
+refreshes preserve last-good freshness; disabled feeds and valid empty preseason
+data are distinct from database errors. Historical season selection and live
+timing remain outside this feature.
+
+All 197 targeted tests passed, including 11 new F1 cases for timezone/date-only
+handling, sprint sessions, session selection, fractional points, multiple teams,
+health and SQL queries. SQL fixtures used only connection-local temporary tables.
+Production image publish and Blazor static-asset guard passed. Build output
+reported the existing Pkcs dependency vulnerability warnings.
+
+Preview and production browser checks verified 23 full-calendar races, 23 available
+race/sprint options, 23 driver standings rows and 11 constructor standings rows,
+with championship as-of round 17. These are dated observations, not fixed grid
+sizes. Navigation, direct links/reload, Grand Prix/Sprint changes, both championship
+views, attribution, no-JavaScript controls and 390/768/1440px layouts passed.
+Mobile Results and desktop Standings were visually reviewed; driver-code spacing
+and a mobile scrolling hint were refined before the final build.
+
+HTTPS F1 Schedule, Results, Standings and health returned 200. HTTP Home, News,
+Events, Results, Standings and all F1 views returned 200; unauthenticated Admin
+returned 302. Container health was healthy and no error-level application entries
+were observed during verification. Runtime environment, host configuration,
+network and persistent keys were preserved. The database remains sql2025 /
+WebScraper. The temporary preview container was removed after checks.
+
+Release: `mynewsfeed-web:f1-section-20261018` (`285e5173584c`).
+Rollback: `mynewsfeed-web:before-f1-section-20261018` (`93554cf9532b`).
+Previous stopped container: `mynewsfeed-web-before-f1-section-20261018`.
+See [F1 data and routes](sports.md#f1-section).
+
+## Hide records league-wide during playoffs — October 18, 2026
+
+Records now appear only for leagues confirmed in regular season. Playoffs hide
+records for the entire league across Home, Events, Results, MLS results and
+Championship results, including older results. Games and scores remain visible.
+A background service reads current ESPN scoreboard league metadata on startup
+and every ten minutes. Page rendering makes no provider requests. Soccer stage
+IDs are handled separately; explicit postseason/playoff names take precedence.
+Unknown, failed or expired phase checks suppress records. Regular-season
+confirmation expires after twenty minutes. No calendar cutoff or historical game
+status is used, and standings SeasonType is not used to infer the current phase.
+
+All 186 targeted regression checks passed. Production Docker build and Blazor
+static-asset guard passed, with the existing Pkcs dependency warnings. Preview
+and production phase checks identified MLB and WNBA as Postseason and all eleven
+other enabled standings source/sport pairs as RegularSeason. Live browser checks
+verified MLB/WNBA records absent on Home, Events and October 17 results while
+regular-season and college conference records remained. All five views passed
+390px/1440px overflow checks. HTTPS Home, Events, Results and health returned 200;
+container health was healthy and no error-level application entries were observed.
+
+Runtime configuration, network, host configuration and persistent keys were
+preserved. No schema/seed scripts ran, and Rust scraping was not restarted. The
+runtime database remains sql2025 / WebScraper. The temporary preview container
+was removed after checks. Score synchronization was not forced.
+
+Release: `mynewsfeed-web:playoff-records-20261018` (`93554cf9532b`).
+Rollback: `mynewsfeed-web:before-playoff-records-20261018` (`2637a1f75888`).
+Previous stopped container: `mynewsfeed-web-before-playoff-records-20261018`.
+See [league-phase rules](sports.md#league-wide-postseason-exclusion).
+
+## Current team records beside sports matchups — October 18, 2026
+
+Home, Events, Results, MLS results and Championship results now show the latest
+available season records beside covered teams. College teams show overall and
+conference totals, including soccer draws. Professional records identify W–L,
+W–L–D, W–L–OT or W–L–T as appropriate. Records on past results are current season
+standings, not historical records as of the game. A per-record tooltip supplies
+the update time; failed, unknown-age or more-than-two-hour-old snapshots show
+“last available.” Missing/invalid or conflicting records are omitted.
+
+Uses one shared standings snapshot per page. Provider/sport-scoped ESPN IDs are
+used for professional teams; Big 12 records use sport and known team-name aliases
+without crossing provider IDs. WNBA's schedule Basketball label is reconciled
+with Women's Basketball standings. Old college seasons are excluded. College
+coverage remains limited to the Big 12 standings; uncovered opponents may have
+no record. Previous-season basketball totals are not carried into a new season.
+
+All 172 targeted tests passed, including new format, identity, alias, season,
+freshness, missing-data and away-team rendering checks, plus existing standings,
+result, matchup and home-event regressions. Production Docker publish and the
+Blazor static-asset guard passed. Preview and live browser checks passed all five
+views at 390/768/1440px with no horizontal overflow, including college conference
+records, soccer draws and update-time titles. Observed record-label counts were
+16 on Home, 78 on Events, 55 on October 17 Results, and 50 each on MLS and
+Championship results; these are dated observations, not acceptance totals.
+Mobile Home and college-result cards were visually reviewed.
+
+HTTPS Home, Events, Results and health returned 200. Container health was healthy;
+no error-level application entries were observed during verification. The runtime
+database remains sql2025 / WebScraper; standings coverage was checked read-only.
+Runtime environment, host configuration, network and persistent keys were
+preserved. No schema/seed scripts ran and the Rust scraper was not restarted.
+No forced score refresh was requested. The build reported existing Pkcs dependency
+vulnerability warnings. The temporary preview container was removed after checks.
+
+Release image: `mynewsfeed-web:team-records-20261018` (`2637a1f75888`).
+Rollback image: `mynewsfeed-web:before-team-records-20261018`
+(`84aea0cd6733`). Previous stopped container:
+`mynewsfeed-web-before-team-records-20261018`.
+See [record coverage and matching](sports.md#team-records-beside-matchups).
 
 ## October 17, 2026 changes at a glance
 
-All four feature updates and the dropdown-order follow-up were deployed to
-production. The latest headlines-first release includes all changes listed below.
+All four feature updates and the dropdown-order/default follow-ups were deployed
+to production. The latest headlines-default release includes all changes below.
 
 | Change | Current behavior and usage | Deployment evidence |
 | --- | --- | --- |
@@ -22,6 +233,27 @@ production. The latest headlines-first release includes all changes listed below
 | Top Headlines | First named category, with enabled-source filtering; [news behavior](interface.md#top-headlines-and-news-source-filtering) | [Integration release](#top-headlines-and-news-source-selector--october-17-2026), [dropdown-order follow-up](#top-headlines-first-in-category-dropdown--october-17-2026) |
 | Clearer Settings gear | Symmetrical outline gear in the header on desktop and mobile | [Gear release](#clearer-settings-gear--october-17-2026) |
 | Kansas City automatic appearance | Select Automatic in Settings; [setup and manual override](interface.md#automatic-light-and-dark-mode) | [Automatic-theme release](#kansas-city-automatic-lightdark-mode--october-17-2026) |
+
+## News defaults to Top Headlines — October 17, 2026
+
+Opening News without a category now selects Top Headlines by its database name.
+Explicit category choices remain supported. All categories uses `category=all`
+so source filtering, reload, cursor links and enhanced Load more preserve that
+choice. If no enabled Top Headlines category exists, News falls back to All
+categories. Clear filters returns to the default News view.
+
+All 102 targeted feed query/helper tests passed, as did the production image
+build and Blazor static-asset guard. Live browser checks verified default and
+reload behavior, explicit All categories, source scoping, enhanced pagination
+and no-JavaScript views. HTTPS News and health returned 200; container health
+was healthy with no error-level entries observed. Runtime configuration and
+persistent mounts were preserved. No database scripts ran. The existing Pkcs
+build warnings remain. Actual Top Headlines cards still await collected articles
+as recorded for the integration release.
+
+Release: `mynewsfeed-web:headlines-default-20261017` (`84aea0cd6733`).
+Rollback: `mynewsfeed-web:before-headlines-default-20261017` (`98666225a77a`).
+Previous stopped container: `mynewsfeed-web-before-headlines-default-20261017`.
 
 ## Top Headlines first in category dropdown — October 17, 2026
 

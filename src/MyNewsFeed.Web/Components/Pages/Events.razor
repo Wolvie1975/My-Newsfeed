@@ -1,5 +1,6 @@
 @page "/events"
 @layout PublicLayout
+@inject MyNewsFeed.Web.Scores.LeaguePhases RecordPhases
 @using MyNewsFeed.Web.Components.Events
 @inject IDbContextFactory<WebScraperContext> Factory
 @inject FeedDates Dates
@@ -10,6 +11,7 @@
    without JavaScript. Games are grouped by EventDate, the stored calendar date (Central for ESPN fixtures), which is never converted. *@
 
 <PageHeading Title="Sports Events" Eyebrow="YOUR SPORTS CALENDAR" Description="Games from today through the next three days, with start times, venues, and broadcasts." />
+<MyNewsFeed.Web.Components.Events.TeamRecordsNote />
 
 <form class="catselect" method="get" action="events">
     <label class="sr-only" for="schedule">League or sport</label>
@@ -97,7 +99,7 @@ else
                     <tbody role="rowgroup">
                         @foreach (var item in league.Games)
                         {
-                            <GameRow Item="item" />
+                            <GameRow Item="item" Records="records" />
                         }
                     </tbody>
                 </table>
@@ -117,6 +119,7 @@ else
 }
 
 @code {
+    private TeamRecords records = TeamRecords.Empty;
     [SupplyParameterFromQuery(Name = "sport")] private string? Sport { get; set; }
 
     [SupplyParameterFromQuery(Name = "school")] private int? School { get; set; }
@@ -137,6 +140,7 @@ else
         // "Today" is the calendar date in the display zone (Central); events are compared by their own local date.
         var today = Dates.Today;
         await using var db = await Factory.CreateDbContextAsync();
+        records = await TeamRecords.LoadAsync(db, Dates.Today, RecordPhases);
         choices = await EventsQuery.GetScheduleChoicesAsync(db, today);
         selectedChoice = choices.FirstOrDefault(c => c.Value == Schedule);
         selectedProvider = await db.SportsEventsTypes.AsNoTracking().Where(s => s.Enabled && s.Id == School).Select(s => s.ProviderKey).FirstOrDefaultAsync();

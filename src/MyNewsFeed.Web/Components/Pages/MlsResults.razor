@@ -1,11 +1,13 @@
 @page "/mls/results"
 @layout PublicLayout
+@inject MyNewsFeed.Web.Scores.LeaguePhases RecordPhases
 @using MyNewsFeed.Web.Components.Events
 @inject IDbContextFactory<WebScraperContext> Factory
 @inject FeedDates Dates
 @inject ILogger<MlsResults> Log
 <PageTitle>MLS results · MyNewsFeed</PageTitle>
 <PageHeading Title="MLS results" Eyebrow="THE FINAL SCORES" Description="Completed matches from the latest available season." />
+<MyNewsFeed.Web.Components.Events.TeamRecordsNote />
 <SoccerLeagueLinks Provider="espn-mls" />
 @if (error is not null) { <p class="empty" role="status">@error</p> }
 else if (data.Source is null) { <p class="empty">MLS results are not enabled.</p> }
@@ -26,7 +28,7 @@ else
                 <thead><tr><th scope="col">Home</th><th scope="col">Score</th><th scope="col">Away</th></tr></thead>
                 <tbody>@foreach (var game in day)
                 {
-                    <MlsResultRow Game="@game" Dates="@Dates" />
+                    <MlsResultRow Game="@game" Dates="@Dates" Records="records" />
                 }</tbody>
             </table>
         </div>
@@ -41,6 +43,7 @@ else
     }
 }
 @code {
+    private TeamRecords records = TeamRecords.Empty;
     [SupplyParameterFromQuery(Name = "page")] private string? Page { get; set; }
     private MlsResultsPage data = new(null, null, [], 0, 0);
     private string? error;
@@ -48,7 +51,8 @@ else
     protected override async Task OnParametersSetAsync()
     {
         error = null;
-        try { await using var db = await Factory.CreateDbContextAsync(); data = await MlsResultsQuery.GetAsync(db, int.TryParse(Page, out var page) ? Math.Clamp(page, 0, 10000) : 0); }
+        try { await using var db = await Factory.CreateDbContextAsync();
+        records = await TeamRecords.LoadAsync(db, Dates.Today, RecordPhases); data = await MlsResultsQuery.GetAsync(db, int.TryParse(Page, out var page) ? Math.Clamp(page, 0, 10000) : 0); }
         catch (Exception ex) when (ex is System.Data.Common.DbException or InvalidOperationException)
         { Log.LogError(ex, "Could not read MLS results."); error = "Results are temporarily unavailable. Please try again."; }
     }

@@ -4,7 +4,7 @@ public sealed record TonightItem(string Kind, string Title, DateTime? StartsUtc,
     string? HomeTeam = null, string? AwayTeam = null,
     string? TeamLogoUrl = null, string? OpponentLogoUrl = null,
     string SchoolName = "Our team", string OpponentName = "Opponent to be announced", string Separator = "vs",
-    string? Location = null, string? Tv = null, string? StreamUrl = null, bool? IsAway = null, bool IsNeutral = false);
+    string? Location = null, string? Tv = null, string? StreamUrl = null, bool? IsAway = null, bool IsNeutral = false, string? ProviderKey = null, int? SchoolId = null, int? OpponentSchoolId = null);
 
 public static class TodayTonight
 {
@@ -18,7 +18,7 @@ public static class TodayTonight
             string.IsNullOrWhiteSpace(g.Opponent) ? "Opponent to be announced" : g.Opponent.Trim(),
             g.IsNeutral != true && g.IsAway == true ? "@" : "vs",
             string.IsNullOrWhiteSpace(g.Location) ? null : g.Location.Trim(),
-            string.IsNullOrWhiteSpace(g.Tv) ? null : g.Tv.Trim(), FeedQuery.SafeHref(g.StreamUrl), g.IsAway, g.IsNeutral == true))
+            string.IsNullOrWhiteSpace(g.Tv) ? null : g.Tv.Trim(), FeedQuery.SafeHref(g.StreamUrl), g.IsAway, g.IsNeutral == true, g.ProviderKey, g.SchoolId, g.OpponentSchoolId))
         .OrderBy(i => i.StartsUtc == null).ThenBy(i => i.StartsUtc).ThenBy(i => i.Title).ToList();
 
     private static bool IncludeGame(EventItem game) => game.ProviderKey switch
