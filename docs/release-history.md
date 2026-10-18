@@ -6,20 +6,40 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The most recent verified web release is `mynewsfeed-web:solar-theme-20261017`,
-with rollback recorded as `mynewsfeed-web:before-solar-theme-20261017`.
+The most recent verified web release is `mynewsfeed-web:settings-gear-20261017`,
+with rollback recorded as `mynewsfeed-web:before-settings-gear-20261017`.
 Its container was healthy on October 17, 2026 (Central). This is a dated
 observation, not live hosting status.
 
 ## October 17, 2026 changes at a glance
 
-Both updates below were deployed to production. The automatic-theme release
-includes the earlier home-page completed-game filter.
+All three updates below were deployed to production. The Settings gear release
+includes automatic appearance and the earlier home-page completed-game filter.
 
 | Change | Current behavior and usage | Deployment evidence |
 | --- | --- | --- |
 | Completed home-page sports events | Hide on the next page load after a matching final is stored; [matching rules](sports.md#home-page-completed-events) | [Home-page release](#hide-completed-home-page-games--october-17-2026) |
+| Clearer Settings gear | Symmetrical outline gear in the header on desktop and mobile | [Gear release](#clearer-settings-gear--october-17-2026) |
 | Kansas City automatic appearance | Select Automatic in Settings; [setup and manual override](interface.md#automatic-light-and-dark-mode) | [Automatic-theme release](#kansas-city-automatic-lightdark-mode--october-17-2026) |
+
+## Clearer Settings gear — October 17, 2026
+
+Replaced the irregular Settings icon with a symmetrical eight-tooth gear and
+centered hub, keeping the header's existing outline style, link and accessible
+label. Production build and Blazor static-asset guard passed. Live browser checks
+verified the SVG matches the source, is visible at desktop (1440px) and mobile
+(390px) widths, has no horizontal overflow, and opens Settings. Home, Settings,
+Events, Results and health returned 200; unauthenticated Admin returned 302.
+HTTPS Settings and health returned 200. Container health was healthy and no
+error-level application log entries were observed during verification.
+
+Runtime environment, host configuration, network and persistent keys were
+preserved. No database scripts ran and scraper collection was not restarted.
+The build reported the existing Pkcs dependency vulnerability warnings.
+Release image: `mynewsfeed-web:settings-gear-20261017` (`69920ea4f758`).
+Rollback image: `mynewsfeed-web:before-settings-gear-20261017`
+(`804e53a096c9`). The previous stopped container is retained as
+`mynewsfeed-web-before-settings-gear-20261017` with its matching configuration.
 
 ## Kansas City automatic light/dark mode — October 17, 2026
 
