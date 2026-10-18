@@ -14,6 +14,10 @@ and deployment responsibilities.
 | [Maintenance](docs/maintenance.md) | Review findings, completed repairs, remaining work and documentation provenance |
 | [Release history](docs/release-history.md) | Historical verification, release tags and recorded rollback images |
 
+College Sports has a shared sport selector across Schedule, Results, Standings
+and Rankings. Football, men’s basketball, women’s volleyball and women’s soccer
+reuse existing coverage; see [the college hub](docs/sports.md#college-sports-hub).
+
 F1 has its own Sports section with Schedule, Results, Drivers/Constructors
 standings and publisher News, plus a separate home-page F1 card outside Today & Tonight.
 See [F1 coverage and routes](docs/sports.md#f1-section).

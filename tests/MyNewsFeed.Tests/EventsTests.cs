@@ -510,6 +510,13 @@ public class EventsTests
         var old = Game(token, "past", day.AddDays(-1), sport: sport);
         foreach (var game in new[] { first, later, old }) { game.ProviderKey = "big12"; game.SportsEventsType = feed; }
         db.AddRange(first, later, old); await db.SaveChangesAsync();
+        // Women's basketball is intentionally hidden across public schedules.
+        if (sport == "Women's Basketball")
+        {
+            Assert.Empty((await EventsQuery.GetUpcomingAsync(db, day, sport, token, school: feed.Id)).Items);
+            Assert.DoesNotContain(sport, await EventsQuery.GetSportsAsync(db, day, feed.Id));
+            return;
+        }
         Assert.Equal(2, (await EventsQuery.GetUpcomingAsync(db, day, null, token, school: feed.Id)).Total);
         db.Remove(old); await db.SaveChangesAsync();
         var page = await EventsQuery.GetUpcomingAsync(db, day, sport, token, school: feed.Id);

@@ -257,6 +257,9 @@ public class StandingsTests
              (3000000003,1,'2025','AL','a','Old season',1,0,'[]'),(3000000004,9,'2026','AL','c','Hidden',1,1,'[]');
             """);
         var page = await StandingsQuery.GetAsync(db, 1, Logger, new DateOnly(2026, 10, 11));
+        var scoped = await StandingsQuery.GetAsync(db, 1, Logger, new DateOnly(2026, 10, 18), collegeSport: "Football");
+        Assert.Single(scoped.Sources); Assert.Equal(4, scoped.Selected!.Id);
+        Assert.Empty((await StandingsQuery.GetAsync(db, 1, Logger, collegeSport: "Unavailable sport")).Sources);
         Assert.Equal(8, page.Sources.Count); Assert.Equal(2, page.Groups.Count);
         Assert.Equal(2, page.Groups.Sum(g => g.Teams.Count));
         Assert.DoesNotContain(page.Groups.SelectMany(g => g.Teams), t => t.Row.TeamName is "Hidden" or "Old season");

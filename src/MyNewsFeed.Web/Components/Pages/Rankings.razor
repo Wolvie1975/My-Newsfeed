@@ -4,11 +4,15 @@
 @inject FeedDates Dates
 @inject ILogger<Rankings> Log
 
+@if (CollegeSport is null)
+{
 <PageTitle>Top 25 · MyNewsFeed</PageTitle>
 <PageHeading Title="Top 25" Eyebrow="THE NATIONAL POLLS" Description="Full national rankings with current Big 12 members highlighted." />
+}
 @if (data.Sources.Count > 0)
 {
-    <form class="catselect" method="get" action="rankings">
+    <form class="catselect" method="get" action="@BasePath">
+        @if (CollegeSport is not null) { <input type="hidden" name="sport" value="@CollegeHub.Resolve(CollegeSport).Key" /> }
         <label class="sr-only" for="ranking-source">Sport and poll</label>
         <select id="ranking-source" name="sourceId" onchange="this.form.requestSubmit()">
             @foreach (var source in data.Sources) { <option value="@source.Id" selected="@(data.Selected?.Id == source.Id)">@source.DisplayName</option> }
@@ -18,7 +22,7 @@
 }
 @if (data.AvailabilityError is { } unavailable)
 { <p class="empty" role="status">@unavailable <a href="@RetryHref">Try again</a></p> }
-else if (data.Selected is null) { <p class="empty">No ranking sources are enabled.</p> }
+else if (data.Selected is null) { <p class="empty">No ranking sources are enabled for this selection.</p> }
 else if (data.Poll is not { } poll || data.Teams.Count == 0) { <p class="empty">Rankings not available yet.</p> }
 else
 {
@@ -77,12 +81,14 @@ else
 }
 
 @code {
+    [Parameter] public string? CollegeSport { get; set; }
+    private string BasePath => CollegeSport is null ? "rankings" : "college/rankings";
     [SupplyParameterFromQuery(Name = "sourceId")] private string? SourceId { get; set; }
     private RankingsPage data = new([], null, null, []);
-    private string RetryHref => "rankings" + (data.Selected is { } selected ? $"?sourceId={selected.Id}" : "");
+    private string RetryHref => BasePath + (CollegeSport is not null ? "?sport=" + CollegeHub.Resolve(CollegeSport).Key + "&" : "?") + (data.Selected is { } selected ? $"sourceId={selected.Id}" : "");
     protected override async Task OnParametersSetAsync()
     {
-        try { await using var db = await Factory.CreateDbContextAsync(); data = await RankingsQuery.GetAsync(db, StandingsQuery.ParseSourceId(SourceId), Log, Dates.Today); }
+        try { await using var db = await Factory.CreateDbContextAsync(); data = await RankingsQuery.GetAsync(db, StandingsQuery.ParseSourceId(SourceId), Log, Dates.Today, CollegeSport); }
         catch (Exception ex) when (ex is System.Data.Common.DbException or InvalidOperationException)
         { Log.LogError(ex, "Rankings source read failed."); data = new([], null, null, [], "Rankings are temporarily unavailable."); }
     }

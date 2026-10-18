@@ -6,11 +6,15 @@
 @inject IConfiguration Config
 @inject ILogger<Standings> Log
 
+@if (CollegeSport is null)
+{
 <PageTitle>Standings · MyNewsFeed</PageTitle>
 <PageHeading Title="Standings" Eyebrow="THE LEAGUE PICTURE" Description="Full league and conference standings, in the provider’s published order." />
+}
 @if (page.Sources.Count > 0)
 {
-    <form class="catselect" method="get" action="standings">
+    <form class="catselect" method="get" action="@BasePath">
+        @if (CollegeSport is not null) { <input type="hidden" name="sport" value="@CollegeHub.Resolve(CollegeSport).Key" /> }
         <label class="sr-only" for="standings-source">League or sport</label>
         <select id="standings-source" name="sourceId" onchange="this.form.requestSubmit()">
             @foreach (var source in page.Sources)
@@ -25,7 +29,7 @@
 }
 else if (page.Selected is null)
 {
-    <p class="empty">No standings sources are enabled.</p>
+    <p class="empty">No standings sources are enabled for this selection.</p>
 }
 else
 {
@@ -77,15 +81,17 @@ else
 }
 
 @code {
+    [Parameter] public string? CollegeSport { get; set; }
+    private string BasePath => CollegeSport is null ? "standings" : "college/standings";
     [SupplyParameterFromQuery(Name = "sourceId")] private string? SourceId { get; set; }
     private StandingsPage page = new([], null, []);
-    private string RetryHref => "standings" + (page.Selected is { } source ? $"?sourceId={source.Id}" : "");
+    private string RetryHref => BasePath + (CollegeSport is not null ? "?sport=" + CollegeHub.Resolve(CollegeSport).Key + "&" : "?") + (page.Selected is { } source ? $"sourceId={source.Id}" : "");
     protected override async Task OnParametersSetAsync()
     {
         try
         {
             await using var db = await Factory.CreateDbContextAsync();
-            page = await StandingsQuery.GetAsync(db, StandingsQuery.ParseSourceId(SourceId), Log, Dates.Today, Config.GetSection("Standings:HiddenProviders").Get<string[]>());
+            page = await StandingsQuery.GetAsync(db, StandingsQuery.ParseSourceId(SourceId), Log, Dates.Today, Config.GetSection("Standings:HiddenProviders").Get<string[]>(), CollegeSport);
         }
         catch (Exception ex) when (ex is System.Data.Common.DbException or InvalidOperationException)
         {

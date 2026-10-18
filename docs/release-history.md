@@ -6,10 +6,79 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The most recent verified web release is `mynewsfeed-web:compact-records-20261018`,
-with rollback recorded as `mynewsfeed-web:before-compact-records-20261018`.
+The most recent verified web release is `mynewsfeed-web:highlight-alignment-20261018`,
+with rollback recorded as `mynewsfeed-web:before-highlight-alignment-20261018`.
 Its container was healthy on October 18, 2026 (Central). This is a dated
 observation, not live hosting status.
+
+## Uniform table team highlights — October 18, 2026
+
+Personal team highlights in standings/rankings now draw inset strokes on each
+cell, including the sticky team column. This prevents the pinned column from
+covering the row outline. Adjacent selected rows share one horizontal edge;
+selection no longer adds a layout-changing left border. Existing light/dark red
+colors and schedule/result card highlights are retained.
+
+Production publish and the static-asset guard passed. Preview and live browser
+checks verified light/dark themes, adjacent selections, sticky cells while
+scrolling, unchanged column widths and no overflow at 390/1440/1815px. Desktop
+standings were visually reviewed. Container health was healthy and HTTPS health
+returned 200.
+
+Release: `mynewsfeed-web:highlight-alignment-20261018` (`0ef5235fa2db`).
+Rollback: `mynewsfeed-web:before-highlight-alignment-20261018` (`77cb2aef74cd`).
+Previous stopped container: `mynewsfeed-web-before-highlight-alignment-20261018`.
+
+## College schedule column alignment — October 18, 2026
+
+Restored the shared schedule layout wrapper on the College Sports hub. Desktop
+rows now inherit the same fixed column widths as the headings instead of sizing
+independently around each game's content. Mobile/tablet game cards retain their
+existing layout.
+
+Production publish and the static-asset guard passed. Preview and live browser
+checks verified matching row/header column positions at 1440/1815px and no page
+overflow at 390/768/1440/1815px. The desktop schedule was visually reviewed.
+Production container health was healthy and HTTPS health returned 200.
+
+Release: `mynewsfeed-web:college-alignment-20261018` (`77cb2aef74cd`).
+Rollback: `mynewsfeed-web:before-college-alignment-20261018` (`047abc5d402f`).
+Previous stopped container: `mynewsfeed-web-before-college-alignment-20261018`.
+
+## College Sports hub — October 18, 2026
+
+Added Sports → College Sports on desktop and mobile, with Schedule, Results,
+Standings and Rankings tabs and a shared sport selector. Football, men's
+basketball, women's volleyball and women's soccer use existing feeds. URLs retain
+the sport across tabs, pagination, result dates and standings/poll forms. Missing
+or invalid sport values default to football. Existing public sports routes remain
+available.
+
+Schedules cover the next seven days and paginate; results use today/yesterday's
+site-timezone windows and enabled college follows. Big 12 standings and national
+polls remain scoped to the selected sport even with an unrelated source ID.
+Existing current-season/preseason gates, compact records, freshness tooltips,
+league-wide playoff suppression and intentional women's basketball exclusion
+remain in effect. Empty coverage does not fall back to another sport. No schema,
+collector, source registration or credential changes were required.
+
+All 182 targeted schedule/result/standings/rankings/team-record checks passed,
+including new query isolation assertions. Corrected an older schedule test to
+expect the application's existing women's basketball exclusion. Production
+publish and the Blazor static-asset guard passed; existing Pkcs dependency and
+xUnit analyzer warnings remain.
+
+Preview and production browser checks passed all sixteen sport/tab combinations,
+390/768/1440px overflow checks, sport/tab/date persistence, source isolation,
+unknown-sport fallback, no-JavaScript forms and existing-page smoke checks.
+Mobile standings were visually reviewed. Production HTTPS College Sports and
+health returned 200; the container was healthy with no error-level log entries
+observed. Runtime configuration, identity, ports, restart policy, mounts and
+networks were verified preserved.
+
+Release: `mynewsfeed-web:college-hub-20261018` (`047abc5d402f`).
+Rollback: `mynewsfeed-web:before-college-hub-20261018` (`cb4466d3c168`).
+Previous stopped container: `mynewsfeed-web-before-college-hub-20261018`.
 
 ## Compact college records and Home text cleanup — October 18, 2026
 

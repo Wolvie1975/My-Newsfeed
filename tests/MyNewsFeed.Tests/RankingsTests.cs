@@ -70,6 +70,9 @@ public class RankingsTests
         (4000000100,3000000001,'removed','Correction removed',1,0,0,0),(4000000101,3000000002,'old','Old poll team',1,0,0,1);
         """);
         var page = await RankingsQuery.GetAsync(db, 1, NullLogger.Instance);
+        var scoped = await RankingsQuery.GetAsync(db, 1, NullLogger.Instance, collegeSport: "Soccer");
+        Assert.Single(scoped.Sources); Assert.Equal(2, scoped.Selected!.Id); Assert.Empty(scoped.Teams);
+        Assert.Empty((await RankingsQuery.GetAsync(db, 1, NullLogger.Instance, collegeSport: "Volleyball")).Sources);
         Assert.Equal(2, page.Sources.Count); Assert.Equal(26, page.Teams.Count);
         Assert.Equal(2, page.Teams.Count(t => t.Rank == 25));
         Assert.DoesNotContain(page.Teams, t => t.TeamName.Contains("removed") || t.TeamName.Contains("Old poll"));

@@ -548,3 +548,36 @@ registration scripts or scraper deployment are needed for frontend rollout. See
 F1NewsTests covers category isolation, source filtering, cursor pagination and
 article rendering. Run `dotnet test MyNewsFeed.sln --filter FullyQualifiedName~F1NewsTests`
 with the same development/test connection configuration.
+
+## College Sports hub
+
+Sports → College Sports opens a dedicated hub with a shared sport selector:
+Football, Men's Basketball, Women's Volleyball and Women's Soccer. The existing
+intentional exclusion of women's basketball is retained.
+
+| Route | View |
+| --- | --- |
+| `/college` | Big 12 schedule from today through the next seven days |
+| `/college/results` | Finished games from enabled college follows, today or yesterday |
+| `/college/standings` | Big 12 standings for the selected sport |
+| `/college/rankings` | Available national polls for the selected sport |
+
+All views accept `sport=football|mens-basketball|volleyball|soccer`. An absent or
+unrecognized sport defaults to football. Tabs, schedule pagination, result-date
+links and standings/poll forms preserve the selected sport. Choosing a different
+sport resets view-specific source, date and page filters. GET forms include
+no-JavaScript Apply controls. The existing standalone sports routes remain available.
+
+Schedules use the existing enabled-feed, final/cancellation and timezone rules;
+seven-day listings paginate at the shared schedule limit. Results use the existing
+follow membership and site-timezone day windows, scoped to the selected NCAA
+league before counting or limiting. Standings scope sources to Big 12 and the
+selected sport; rankings scope sources to the sport. An unrelated source ID cannot
+switch the hub into another sport or professional league. Current-season and
+preseason gates remain in effect. Missing sources and empty listings are shown
+explicitly, with no fallback to a different sport.
+
+Game rows reuse the existing team records, conference shorthand, freshness
+tooltips and league-wide playoff suppression. Schedule/result update times are
+scoped to the sport. No new scraper, source registrations, credentials or database
+schema changes are required. A college News tab is not included in this release.

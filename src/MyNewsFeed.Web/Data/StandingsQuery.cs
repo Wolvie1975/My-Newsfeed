@@ -163,11 +163,12 @@ public static class StandingsQuery
             System.Globalization.CultureInfo.InvariantCulture, out var display) && double.IsFinite(display) ? display : null;
     }
 
-    public static async Task<StandingsPage> GetAsync(WebScraperContext db, int? sourceId, ILogger logger, DateOnly? today = null, IEnumerable<string>? hiddenProviders = null)
+    public static async Task<StandingsPage> GetAsync(WebScraperContext db, int? sourceId, ILogger logger, DateOnly? today = null, IEnumerable<string>? hiddenProviders = null, string? collegeSport = null)
     {
         var hidden = hiddenProviders?.ToArray() ?? [];
         var sources = await db.SportsStandingsSources.AsNoTracking().Where(s => s.Enabled && !hidden.Contains(s.ProviderKey)
-                && !(s.ProviderKey == "big12" && s.Sport == "Women's Basketball"))
+                && !(s.ProviderKey == "big12" && s.Sport == "Women's Basketball")
+                && (collegeSport == null || (s.ProviderKey == "big12" && s.Sport == collegeSport)))
             .OrderBy(s => s.DisplayName).ThenBy(s => s.Id).ToListAsync();
         var day = today ?? FeedDates.Create("America/Chicago").Today;
         var selected = SelectSource(sources, sourceId);

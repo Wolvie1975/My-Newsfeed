@@ -89,10 +89,11 @@ public static class ResultsQuery
     /// matches every game in it; a followed team matches its games in that league; a followed conference matches the
     /// games of its member schools in that league, non-conference games included.
     /// </summary>
-    public static async Task<ResultsPage> GetResultsAsync(WebScraperContext db, int? followId, int limit = Limit, ResultsWindow? window = null, string? team = null)
+    public static async Task<ResultsPage> GetResultsAsync(WebScraperContext db, int? followId, int limit = Limit, ResultsWindow? window = null, string? team = null, string? collegeLeague = null)
     {
         var follows = await db.ResultFollows.AsNoTracking()
-            .Where(f => f.Enabled && f.League != "womens-college-basketball" && (followId == null || f.Id == followId))
+            .Where(f => f.Enabled && f.League != "womens-college-basketball" && (followId == null || f.Id == followId)
+                && (collegeLeague == null || f.League == collegeLeague))
             .Select(f => new { f.Id, f.Kind, f.Sport, f.League, f.TeamId })
             .ToListAsync();
 

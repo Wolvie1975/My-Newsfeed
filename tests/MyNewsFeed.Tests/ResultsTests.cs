@@ -394,6 +394,10 @@ public class ResultsTests
         var all = await ResultsQuery.GetResultsAsync(db, followId: null);
         Assert.Equal(["c1", "c2", "p1"], all.Items.Select(r => r.EventId).Order());
         Assert.Equal(3, all.Total);
+        var scoped = await ResultsQuery.GetResultsAsync(db, null, collegeLeague: college);
+        Assert.Equal(new[] { "c1", "c2" }, scoped.Items.Select(r => r.EventId).Order());
+        Assert.Empty((await ResultsQuery.GetResultsAsync(db, leagueFollow.Id, collegeLeague: college)).Items);
+        Assert.Empty((await ResultsQuery.GetResultsAsync(db, null, collegeLeague: otherCollege)).Items);
 
         var teamOnly = await ResultsQuery.GetResultsAsync(db, teamFollow.Id);
         Assert.Equal(["c1", "c2"], teamOnly.Items.Select(r => r.EventId).Order());

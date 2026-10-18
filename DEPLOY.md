@@ -100,6 +100,10 @@ enablement, schema and atomic snapshot refreshes. Verify `/f1`, `/f1/results`,
 `/f1/standings` and the Constructors view after rollout, including timestamps,
 Grand Prix/Sprint selection and mobile table scrolling.
 
+For the College Sports hub, no additional database objects or collector rollout
+are required. Verify `/college` and its Results, Standings and Rankings tabs for
+all four sports, sport persistence, empty/preseason states and mobile navigation.
+
 ## Build and deploy
 
 Run relevant application checks; the full suite is:

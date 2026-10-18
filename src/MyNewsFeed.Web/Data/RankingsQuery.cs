@@ -27,9 +27,9 @@ public static class RankingsQuery
         ? "Latest refresh failed; showing last available rankings."
         : source.LastSuccessAt is not { } last || DateTime.SpecifyKind(now, DateTimeKind.Utc) - DateTime.SpecifyKind(last, DateTimeKind.Utc) > TimeSpan.FromHours(2)
             ? "Rankings may be out of date." : null;
-    public static async Task<RankingsPage> GetAsync(WebScraperContext db, int? sourceId, ILogger log, DateOnly? today = null)
+    public static async Task<RankingsPage> GetAsync(WebScraperContext db, int? sourceId, ILogger log, DateOnly? today = null, string? collegeSport = null)
     {
-        var sources = await db.SportsRankingSources.AsNoTracking().Where(s => s.Enabled).OrderBy(s => s.DisplayName).ThenBy(s => s.Id).ToListAsync();
+        var sources = await db.SportsRankingSources.AsNoTracking().Where(s => s.Enabled && (collegeSport == null || s.Sport == collegeSport)).OrderBy(s => s.DisplayName).ThenBy(s => s.Id).ToListAsync();
         var day = today ?? FeedDates.Create("America/Chicago").Today;
         if (sources.Any(s => s.Sport.Contains("Basketball", StringComparison.OrdinalIgnoreCase)))
         {

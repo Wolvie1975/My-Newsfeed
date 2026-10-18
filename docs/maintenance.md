@@ -17,6 +17,10 @@ and a publisher News tab. Structured F1 data is periodic and limited to the late
 collected season; its source enablement does not control the RSS news feed. See
 [F1 coverage](sports.md#f1-section) and [F1 News behavior](interface.md#f1-news).
 
+College Sports now groups the existing four covered sports under a shared
+selector, with Schedule, Results, Standings and Rankings tabs. See
+[college hub coverage](sports.md#college-sports-hub).
+
 Verification results, release images and rollback references are recorded in
 [release history](release-history.md). The earlier Top Headlines collection
 follow-up below remains a dated observation pending a new collection check.

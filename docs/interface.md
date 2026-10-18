@@ -386,3 +386,22 @@ than falling back to the general news feed. Query failures show a generic error.
 F1 news freshness uses successful scrapes in this category/source scope. Existing
 publication ordering, saved-article identity and redirect recovery remain
 unchanged. The F1 home card includes a News link alongside its sports-data links.
+
+## College Sports navigation
+
+College Sports appears under Sports in both desktop and mobile navigation.
+Its Schedule, Results, Standings and Rankings tabs share one labelled sport
+selector, retained in shareable URLs and across tab changes. Mobile Browse
+identifies College Sports as the current section. Existing game cards and
+scrollable standings/poll tables retain their responsive layouts. See
+[college coverage and routes](sports.md#college-sports-hub).
+
+College schedule rows share the same fixed desktop column widths as the Sports
+Events page, so team names, times, venues and links align with their headings
+regardless of text length or available broadcast details. Mobile and tablet views
+retain the existing stacked game cards.
+
+Personal team highlights in standings and rankings use inset cell borders,
+including the pinned team-name column. Adjacent selected rows share one horizontal
+edge, and selection does not change column widths. Light and dark themes retain
+their existing red highlight colors.
