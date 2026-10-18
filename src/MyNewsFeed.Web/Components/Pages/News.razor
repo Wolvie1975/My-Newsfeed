@@ -33,6 +33,24 @@
             <noscript><button class="nf-btn nf-btn--secondary" type="submit">Apply</button></noscript>
         </form>
     }
+    @if (sources.Count > 0)
+    {
+        <form class="catselect" method="get" action="news">
+            @if (Category is { } categoryId)
+            { <input type="hidden" name="category" value="@categoryId" /> }
+            @if (!string.IsNullOrWhiteSpace(Q))
+            { <input type="hidden" name="q" value="@Q" /> }
+            <label class="sr-only" for="source">Source</label>
+            <select id="source" name="source" onchange="this.form.requestSubmit()">
+                <option value="">All sources</option>
+                @foreach (var source in sources)
+                {
+                    <option value="@source.Id" selected="@(Source == source.Id)">@source.Name</option>
+                }
+            </select>
+            <noscript><button class="nf-btn nf-btn--secondary" type="submit">Apply</button></noscript>
+        </form>
+    }
     @if (feed is not null)
     {
         <span class="count count--toolbar">@feed.Total @(feed.Total == 1 ? "article" : "articles")</span>
@@ -50,7 +68,11 @@
 @if (feed is null || feed.Items.Count == 0)
 {
     <p class="empty">
-        @if (!string.IsNullOrWhiteSpace(Q) || Category is not null || After is not null)
+        @if (Category is not null && Source is null && string.IsNullOrWhiteSpace(Q) && After is null)
+        {
+            <span>No articles available yet. Please check back soon.</span>
+        }
+        else if (!string.IsNullOrWhiteSpace(Q) || Category is not null || Source is not null || After is not null)
         {
             <span>No articles match. <a href="news">Clear filters</a></span>
         }
@@ -86,7 +108,10 @@ else
     [SupplyParameterFromQuery(Name = "category")] private string? CategoryQuery { get; set; }
     [SupplyParameterFromQuery(Name = "q")] private string? Q { get; set; }
     [SupplyParameterFromQuery(Name = "after")] private string? AfterQuery { get; set; }
+    [SupplyParameterFromQuery(Name = "source")] private string? SourceQuery { get; set; }
 
+    private int? Source { get; set; }
+    private IReadOnlyList<FeedSource> sources = [];
     private int? Category => int.TryParse(CategoryQuery, out var id) ? id : null;
     private FeedCursor? After => FeedCursor.Parse(AfterQuery);
 
@@ -99,12 +124,14 @@ else
     {
         await using var db = await Factory.CreateDbContextAsync();
         categories = await FeedQuery.GetCategoriesAsync(db);
+        sources = await FeedQuery.GetSourcesAsync(db, Category);
+        Source = int.TryParse(SourceQuery, out var sourceId) && sources.Any(s => s.Id == sourceId) ? sourceId : null;
         feed = await FeedQuery.GetFeedAsync(
-            db, Category, Q, After, After is null ? FeedQuery.FirstBatch : FeedQuery.MoreBatch);
+            db, Category, Q, After, After is null ? FeedQuery.FirstBatch : FeedQuery.MoreBatch, Source);
         lastDay = feed.Items.Count > 0 ? Dates.DayKey(feed.Items[^1]) : null;
         lastUpdated = await FeedQuery.GetLastUpdatedAsync(db);
     }
 
     /// <summary>A link that keeps the current search and switches category and position.</summary>
-    private string Href(int? category, string? after) => "news" + FeedQuery.QueryString(category, Q, after);
+    private string Href(int? category, string? after) => "news" + FeedQuery.QueryString(category, Q, after, Source);
 }

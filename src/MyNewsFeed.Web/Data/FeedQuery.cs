@@ -16,6 +16,7 @@ public sealed record FeedItem(
     bool Undated = false);   // Date is the sort date (the publish date, or the scrape date when there is none)
 
 public sealed record FeedCategory(int Id, string Name, int Count);
+public sealed record FeedSource(int Id, string Name);
 
 /// <summary>
 /// A position in the feed: the sort date and id of the last article already shown. Paging by position (not by page
@@ -80,8 +81,17 @@ public static class FeedQuery
                 Count = db.Pages.Count(p => p.Source.Enabled && p.Source.SourceCategoryId == c.Id),
             })
             .Where(c => db.Sources.Any(s => s.Enabled && s.SourceCategoryId == c.Id))
-            .OrderBy(c => c.CategoryName)
+            .OrderBy(c => c.CategoryName == "Top Headlines" ? 0 : 1)
+            .ThenBy(c => c.CategoryName)
             .Select(c => new FeedCategory(c.Id, c.CategoryName, c.Count))
+            .ToListAsync();
+
+    /// <summary>Enabled sources remain selectable before their first articles arrive.</summary>
+    public static async Task<IReadOnlyList<FeedSource>> GetSourcesAsync(WebScraperContext db, int? categoryId) =>
+        await db.Sources.AsNoTracking()
+            .Where(s => s.Enabled && (categoryId == null || s.SourceCategoryId == categoryId))
+            .OrderBy(s => s.Label ?? s.Url).ThenBy(s => s.Id)
+            .Select(s => new FeedSource(s.Id, s.Label ?? s.Url))
             .ToListAsync();
 
     /// <summary>

@@ -24,6 +24,19 @@ The college schedule's past-fixture season gate was subsequently removed and
 regression-tested for all five supported sports. MLS schedule and season-results
 integration is also now deployed, including shootout handling; see [Sports](sports.md).
 
+## Top Headlines collection follow-up — October 17, 2026
+
+The frontend integration and category-order follow-up are deployed. At release
+verification, all six new sources were enabled under Top Headlines but had zero
+article rows and no recorded LastError. Registration does not establish successful
+collection. After the scheduled collector runs, verify per-source article availability
+and actual Top Headlines cards on desktop and mobile, including publisher labels,
+article links, source filtering and pagination. Keep any ingestion failures separate
+from frontend rendering results. BBC News and NPR remain in General. No seed
+script rerun or scraper deployment was part of the frontend rollout. See
+[interface behavior](interface.md#top-headlines-and-news-source-filtering) and
+[deployment evidence](release-history.md#top-headlines-and-news-source-selector--october-17-2026).
+
 ## Remaining engineering follow-ups
 
 - Result synchronization's gate is process-local. Multiple web instances need

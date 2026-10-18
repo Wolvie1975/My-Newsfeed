@@ -274,3 +274,45 @@ Playwright and a running local app. Set `NEWSFEED_TEST_URL` for the preview URL
 through `NODE_PATH` when it is not installed locally. It checks automatic and
 manual modes, persistence, navigation, cross-tab updates, blocked storage and a
 mobile viewport, with the device timezone deliberately set outside Central time.
+
+## Top Headlines and news source filtering
+
+Added October 17, 2026 (Central). Choose News → Category → Top Headlines. Categories
+are discovered from enabled database sources, including categories without article
+rows. Top Headlines is the first named category below All categories; remaining
+categories retain alphabetical order. The Source selector lists enabled sources
+within the selected category, even before first collection. Membership is dynamic; category/source IDs are not
+hardcoded. BBC News and NPR remain in General.
+
+The source choice uses the existing `news?category=<id>&source=<id>` routing and
+survives cursor paging, Load more and Back to newest. Category changes reset the
+source and cursor; source changes retain the category/search and reset the cursor.
+An invalid, disabled or out-of-category source resets to All sources, consistently
+with the Load more endpoint. Both selectors have GET-form Apply buttons without
+JavaScript. An empty category retains its selectors and says “No articles available
+yet. Please check back soon.” Database failures use the normal error path.
+
+Top Headlines uses the existing article cards, outbound URL validation, publisher
+labels, saved-item identity and cursor ordering: dated articles newest first, then
+undated articles by scrape time, with descending article ID as the tiebreaker.
+These are publisher feeds, with no editorial ranking or separate page. The normal
+missing-image, summary and publication-date handling is unchanged.
+
+Production verification on October 17, 2026 (Central) found all six sources enabled (NBC News, CBS News, The New
+York Times, The Guardian, Al Jazeera and Sky News), but zero collected articles.
+The category/empty-state and existing-category cards were verified on desktop and
+mobile; actual Top Headlines cards still require a check after scheduled ingestion.
+No source seed or scraper deployment was performed.
+
+Targeted query/card/helper validation passed 121 tests. To repeat these checks
+against an appropriate development/test database:
+
+```bash
+dotnet test MyNewsFeed.sln --filter 'FullyQualifiedName~FeedQueryTests|FullyQualifiedName~FeedArticlesRenderTests|FullyQualifiedName~FeedHelpersTests'
+```
+
+Production browser checks covered category ordering, six source options, source
+selection and reload, invalid cross-category source handling, enhanced pagination,
+existing-category article cards and saving, no-JavaScript forms and 1440px/390px
+layouts. See [release history](release-history.md#top-headlines-and-news-source-selector--october-17-2026)
+for the dated ingestion limitation and deployment evidence.

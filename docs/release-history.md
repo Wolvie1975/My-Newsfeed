@@ -6,21 +6,69 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The most recent verified web release is `mynewsfeed-web:settings-gear-20261017`,
-with rollback recorded as `mynewsfeed-web:before-settings-gear-20261017`.
+The most recent verified web release is `mynewsfeed-web:headlines-first-20261017`,
+with rollback recorded as `mynewsfeed-web:before-headlines-first-20261017`.
 Its container was healthy on October 17, 2026 (Central). This is a dated
 observation, not live hosting status.
 
 ## October 17, 2026 changes at a glance
 
-All three updates below were deployed to production. The Settings gear release
-includes automatic appearance and the earlier home-page completed-game filter.
+All four feature updates and the dropdown-order follow-up were deployed to
+production. The latest headlines-first release includes all changes listed below.
 
 | Change | Current behavior and usage | Deployment evidence |
 | --- | --- | --- |
 | Completed home-page sports events | Hide on the next page load after a matching final is stored; [matching rules](sports.md#home-page-completed-events) | [Home-page release](#hide-completed-home-page-games--october-17-2026) |
+| Top Headlines | First named category, with enabled-source filtering; [news behavior](interface.md#top-headlines-and-news-source-filtering) | [Integration release](#top-headlines-and-news-source-selector--october-17-2026), [dropdown-order follow-up](#top-headlines-first-in-category-dropdown--october-17-2026) |
 | Clearer Settings gear | Symmetrical outline gear in the header on desktop and mobile | [Gear release](#clearer-settings-gear--october-17-2026) |
 | Kansas City automatic appearance | Select Automatic in Settings; [setup and manual override](interface.md#automatic-light-and-dark-mode) | [Automatic-theme release](#kansas-city-automatic-lightdark-mode--october-17-2026) |
+
+## Top Headlines first in category dropdown — October 17, 2026
+
+Placed Top Headlines immediately below All categories in News; the remaining
+categories stay alphabetical. Membership and category IDs still come from the
+database. Production image build and Blazor static-asset guard passed. A live
+browser check verified dropdown order, selection and the six enabled source
+options. HTTPS News and health returned 200; container health was healthy.
+Runtime settings and persistent mounts were preserved; no database scripts ran.
+
+Release: `mynewsfeed-web:headlines-first-20261017` (`98666225a77a`).
+Rollback: `mynewsfeed-web:before-headlines-first-20261017` (`9368fbec816b`).
+Previous stopped container: `mynewsfeed-web-before-headlines-first-20261017`.
+
+## Top Headlines and news source selector — October 17, 2026
+
+Top Headlines already appeared through database-driven category discovery. Added
+an enabled-source selector to News, scoped to the selected category and available
+before articles arrive. Source selection now applies on initial/direct requests,
+persists through cursor pagination and enhanced Load more, and resets when the
+category changes. Empty categories keep both selectors and show a normal empty
+message. Existing dated-first ordering, cards, URL validation and saved-item
+identity remain unchanged. No source/category IDs were hardcoded.
+
+All 121 targeted feed query, rendering and helper checks passed. A new transactional
+SQL regression covered empty enabled-source discovery, disabled-source exclusion,
+source/category scoping, cursor counts and undated ordering. Production image build
+and Blazor static-asset guard passed. Live browser checks covered the dynamic
+category, six source options, direct navigation/reload, filter scope, empty state,
+1440px/390px layouts without overflow, existing BBC cards and save behavior,
+enhanced Load more without duplicate IDs, and no-JavaScript GET forms. HTTPS News
+and health returned 200; container health was healthy, with no error-level
+application entries observed. Runtime settings, network, host configuration and
+persistent keys were preserved. Existing Pkcs dependency warnings remain.
+
+Read-only production checks of sql2025 / WebScraper confirmed NBC News, CBS News,
+The New York Times, The Guardian, Al Jazeera and Sky News enabled under Top
+Headlines, with BBC News and NPR still under General. All six new feeds had zero
+article rows and no recorded LastError at verification. Successful ingestion and
+actual Top Headlines desktop/mobile cards remain unverified; source registration
+alone is not collection evidence. No source registration scripts, schema scripts
+or scraper deployments ran. Score synchronization was not forced.
+
+Release image: `mynewsfeed-web:top-headlines-20261017` (`9368fbec816b`).
+Rollback image: `mynewsfeed-web:before-top-headlines-20261017`
+(`69920ea4f758`). Previous stopped container:
+`mynewsfeed-web-before-top-headlines-20261017`.
 
 ## Clearer Settings gear — October 17, 2026
 

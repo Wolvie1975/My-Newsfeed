@@ -23,7 +23,14 @@ Recent production changes (October 17, 2026, Central):
   Existing browser preferences are preserved; automatic mode is optional. See
   [automatic appearance](docs/interface.md#automatic-light-and-dark-mode).
 
-Both changes are deployed. Verification and rollback details are in
+- Settings uses a clearer, symmetrical gear icon in the desktop and mobile header.
+- News lists **Top Headlines** first below All categories and offers an enabled-source
+  selector scoped to the chosen category. Filtering survives reload and pagination.
+  See [Top Headlines and source filtering](docs/interface.md#top-headlines-and-news-source-filtering).
+
+All four features are deployed. At release verification, the six Top Headlines
+sources were enabled but had no collected articles; their first collected cards
+still need verification. Details and rollback images are in
 [release history](docs/release-history.md).
 
 These guides consolidate the former individual handoffs and deployment reports.

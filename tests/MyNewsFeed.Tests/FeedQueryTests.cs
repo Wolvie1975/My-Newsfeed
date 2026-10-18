@@ -25,6 +25,42 @@ public class FeedQueryTests
     };
 
     [Fact]
+    public async Task Category_sources_include_empty_enabled_feeds_and_source_paging_keeps_counts_scoped()
+    {
+        await using var db = Create();
+        await using var tx = await db.Database.BeginTransactionAsync();
+        var token = Guid.NewGuid().ToString("N");
+        var category = new SourceCategory { CategoryName = token, DateAdded = DateTime.UtcNow };
+        var source = new Source { Url = $"https://test.invalid/{token}/one", Label = "One", Enabled = true, SourceCategory = category };
+        var empty = new Source { Url = $"https://test.invalid/{token}/empty", Label = "Empty", Enabled = true, SourceCategory = category };
+        var disabled = new Source { Url = $"https://test.invalid/{token}/off", Enabled = false, SourceCategory = category };
+        var other = new Source { Url = $"https://test.invalid/{token}/other", Enabled = true };
+        db.Sources.AddRange(source, empty, disabled, other);
+        await db.SaveChangesAsync();
+        Assert.Contains(await FeedQuery.GetCategoriesAsync(db), c => c.Id == category.Id && c.Count == 0);
+        Assert.Equal(new[] { empty.Id, source.Id }, (await FeedQuery.GetSourcesAsync(db, category.Id)).Select(s => s.Id));
+        var date = new DateTime(2026, 10, 18);
+        source.Pages.Add(NewPage(token, "Newest", date, date));
+        source.Pages.Add(NewPage(token, "Older", date, date.AddHours(-1)));
+        source.Pages.Add(NewPage(token, "Undated", date.AddDays(1)));
+        disabled.Pages.Add(NewPage(token, "Hidden", date, date));
+        other.Pages.Add(NewPage(token, "Other", date, date));
+        await db.SaveChangesAsync();
+        var first = await FeedQuery.GetFeedAsync(db, category.Id, null, null, 1, source.Id);
+        Assert.Equal(3, first.Total);
+        Assert.Equal(2, first.Remaining);
+        Assert.StartsWith("Newest", Assert.Single(first.Items).Title);
+        var rest = await FeedQuery.GetFeedAsync(db, category.Id, null, first.Next, 12, source.Id);
+        Assert.Equal(3, rest.Total);
+        Assert.Equal(0, rest.Remaining);
+        Assert.Equal(2, rest.Items.Count);
+        Assert.True(rest.Items[^1].Undated);
+        Assert.All(rest.Items, item => Assert.Equal(source.Url, item.SourceUrl));
+        Assert.Equal(3, (await FeedQuery.GetFeedAsync(db, category.Id, null, null)).Total);
+        Assert.Empty((await FeedQuery.GetFeedAsync(db, category.Id, null, null, sourceId: other.Id)).Items);
+    }
+
+    [Fact]
     public async Task Home_takes_the_latest_story_from_five_distinct_enabled_sources()
     {
         await using var db = Create();
