@@ -6,10 +6,111 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The most recent verified web release is `mynewsfeed-web:boxscores-20261019`,
-with rollback recorded as `mynewsfeed-web:before-boxscores-20261019`.
+The most recent verified web release is `mynewsfeed-web:nhl-periods-20261019`,
+with rollback recorded as `mynewsfeed-web:before-nhl-periods-20261019`.
 Its container was healthy on October 19, 2026 (Central). This is a dated
 observation, not live hosting status.
+
+## NHL detail visibility and repaired period labels — October 19, 2026
+
+Deployed `mynewsfeed-web:nhl-periods-20261019` (`03359e7c594c`). NHL cached detail
+now permits valid final games from the enabled NHL source's latest validated
+stored season, respecting a configured source team restriction. No source IDs or
+season numbers are hardcoded. This checkout has no dedicated NHL season-results
+query, so the new bounded visibility helper follows the existing MLS/Championship
+stored-season approach. Ordinary followed results and soccer paths are preserved;
+cache existence alone does not grant access.
+
+The repaired version-1 string labels render without a contract change. Baseball
+now falls back to labeled per-team inning tables when sequences differ, preserving
+sparse or unknown entries without shifting values beneath shared column labels.
+No final scores are calculated from periods; NHL SO values remain provider values.
+
+Verification: 16 focused box-score/visibility tests passed, including disabled
+sources, stale seasons, source team scope, invalid/non-final games, OT/SO finals,
+and sparse innings with zero/unplayed values. Seven repaired production detail
+routes passed browser checks, including NHL `401892525`; four NHL width/theme
+layouts, eight baseball layouts and the general modal regression suite passed.
+Private HTTPS health and NHL detail returned 200. Runtime environment, user,
+command, mounts, ports, restart policy and networks were preserved. Existing PKCS
+build warnings remain. No collector/schema change or Git commit/push was made.
+
+Rollback image: `mynewsfeed-web:before-nhl-periods-20261019` (`3570ee3785ab`);
+retained container: `mynewsfeed-web-before-nhl-periods-20261019`.
+Private deployment files: `/tmp/mynewsfeed-nhl-periods-deploy/`.
+
+## Scraper period-label handoff — October 19, 2026 (documentation only)
+
+Added [period-label repair instructions](../new%20development/sports-period-labels-scraper-handoff.md)
+covering MLB, NFL/college football, NHL, men's college basketball and existing
+soccer leagues. Defines the compatible JSON field, source investigation, safe
+period mapping, overtime/shootout distinctions, historical backfill and return
+verification requirements. No application, scraper or deployment change was made.
+
+## Sports template deployment — October 19, 2026
+
+Deployed the baseball, soccer and football templates together as
+`mynewsfeed-web:sports-templates-20261019` (`3570ee3785ab`). Container health and
+private HTTPS home/health checks passed. Existing environment, user, command,
+health check, mounts, network, ports and restart policy were preserved.
+
+Live verification passed eight baseball layouts, six soccer modal layouts, six
+football modal layouts, and the general Results/MLS/Championship modal regression
+suite (six width/theme layouts, keyboard/focus, error/invalid identity and
+no-JavaScript fallback). Fourteen focused .NET box-score tests passed before
+release. The build retains the existing PKCS dependency warnings.
+
+Rollback image: `mynewsfeed-web:before-sports-templates-20261019`
+(`40defb4164bd`); retained container:
+`mynewsfeed-web-before-sports-templates-20261019`.
+Private deployment snapshot/scripts: `/tmp/mynewsfeed-sports-templates-deploy/`.
+This deployment supersedes the local-only status in the three template entries
+below. No Git commit or push was performed.
+
+## Football category template — October 19, 2026 (local update)
+
+Added category-first football player statistics: passing, rushing, receiving,
+fumbles, defense, interceptions, returns, kicking and punting when collected.
+Teams appear side by side on wide screens and stack on phones. Additional cached
+categories, source column order, supplied totals, positions and starter metadata
+remain intact. Existing team-stat comparisons and period sections are retained.
+The supplied NFL ESPN URL returned a verification screen, so this adapts the
+requested category structure without claiming an exact visual replica. The layout
+also supports cached college-football groups without NFL-specific assumptions.
+
+Verification: 14 focused box-score tests passed, including category ordering,
+paired teams, extra groups, source values and encoded provider text. Six NFL modal
+width/theme checks passed for desktop pairing, mobile stacking, overflow and
+Escape/focus return. This update has not been deployed or committed.
+
+## Soccer team-comparison template — October 19, 2026 (local update)
+
+Added a soccer-specific team comparison to the existing modal and fallback page:
+club values flank shared statistic labels, with all available statistic groups
+visible immediately. Values align by group/key, preserving zeroes and precision;
+missing values remain em dashes. Existing period and player detail is retained.
+The supplied ESPN reference URL returned a verification screen during inspection;
+this is a comparison layout inspired by the request, not a verified exact replica.
+
+Verification: 13 focused box-score tests passed, including reordered statistics,
+group-key collisions, missing values and encoded club names. Six soccer modal
+width/theme checks passed, covering visible comparisons, row alignment, overflow,
+Escape dismissal and focus return. This update has not been deployed or committed.
+
+## Baseball box-score reference template — October 19, 2026 (local update)
+
+Adapted the supplied baseball reference for the existing statistics modal and its
+standalone fallback page. An R/H/E scoreboard leads paired hitting and pitching
+tables on desktop, stacked on mobile. Primary columns follow the reference;
+additional collected columns and team details expand on tap. Other sports retain
+their existing layouts. All values and supplied totals retain their source indices.
+Unknown inning labels remain explicit; decisions, headshots and scoring summaries
+are omitted because the normalized cache does not supply them.
+
+Verification: 12 focused box-score tests passed, eight baseball width/theme layouts
+passed, and the existing modal regression checks passed across Results, MLS and
+Championship, including keyboard/focus, six width/theme layouts, error handling and
+no-JavaScript fallback. This update has not been deployed or committed.
 
 ## Product interaction direction — October 19, 2026 (documentation only)
 

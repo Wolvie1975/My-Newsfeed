@@ -2098,3 +2098,52 @@
 .pub .box-table-scroll th:first-child { text-align:left; min-width:9rem; }
 .pub .box-table-scroll caption { caption-side:top; }
 .pub .box-score-dialog .box-score-matchup:focus { outline:none; }
+/* Baseball reference layout: compact scoreboard, paired hitting/pitching panels. */
+.baseball-box { display:grid; gap:1rem; margin:1rem 0; }
+.baseball-panel { min-width:0; padding:.85rem; border:1px solid var(--border); border-radius:.65rem; background:var(--surface); }
+.baseball-team-grid { display:grid; grid-template-columns:minmax(0,1fr); gap:1rem; align-items:start; }
+.pub .baseball-panel h3 { font-size:.95rem; margin:0 0 .65rem; }
+.baseball-table { width:100%; border-collapse:collapse; font-size:.75rem; line-height:1.45; font-variant-numeric:tabular-nums; }
+.baseball-table caption { caption-side:top; padding:.25rem 0 .5rem; color:var(--text-2); font-size:.75rem; }
+.baseball-table th, .baseball-table td { padding:.35rem .28rem; border-bottom:1px solid var(--border); text-align:right; white-space:nowrap; }
+.baseball-table thead th { font-size:.7rem; font-weight:700; }
+.baseball-table th:first-child { text-align:left; }
+.pub .baseball-table th:first-child { min-width:8rem; }
+.baseball-table tbody tr:nth-child(even) { background:color-mix(in srgb,var(--text) 4%,var(--surface)); }
+.baseball-table tbody th { font-weight:400; }
+.baseball-table tfoot th, .baseball-table tfoot td, .baseball-total { font-weight:700; }
+.baseball-table tfoot { border-top:2px solid var(--border); }
+.baseball-lines td, .baseball-lines thead th { text-align:center; min-width:2rem; }
+.baseball-lines .baseball-total { background:color-mix(in srgb,var(--text) 4%,var(--surface)); }
+.baseball-lines tbody th { font-weight:700; }
+.baseball-position { display:inline-block; margin-left:.3rem; font-size:.68rem; color:var(--text-2); font-weight:400; }
+.baseball-extra { margin:.6rem 0 0; font-size:.8rem; }
+.baseball-extra summary { cursor:pointer; padding:.4rem 0; font-weight:600; }
+.baseball-stat-list { margin:.5rem 0; font-size:.75rem; }
+.baseball-stat-list > div { display:flex; gap:.4rem; justify-content:space-between; border-bottom:1px solid var(--border); padding:.25rem 0; }
+.baseball-stat-list dt { font-weight:600; }
+.baseball-stat-list dd { margin:0; text-align:right; }
+.baseball-note { margin:.4rem 0 0; font-size:.75rem; }
+.baseball-panel .box-table-scroll { margin:0; }
+@media(min-width:1000px) { .baseball-team-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+
+/* Soccer comparisons keep both clubs aligned around a shared statistic label. */
+.soccer-stats { display:grid; gap:.85rem; margin:1rem 0; }
+.soccer-stats-panel { border:1px solid var(--border); border-radius:12px; padding:.75rem; background:var(--surface); min-width:0; }
+.soccer-comparison { width:100%; border-collapse:collapse; table-layout:fixed; font-size:.9rem; }
+.soccer-comparison caption { color:var(--text); text-align:left; padding:0 0 .75rem; font-weight:600; }
+.soccer-comparison th,.soccer-comparison td { padding:.75rem .4rem; text-align:center; border-bottom:1px solid var(--border); overflow-wrap:anywhere; }
+.soccer-comparison thead th { font-size:.85rem; }
+.soccer-comparison tbody th { font-weight:500; }
+.soccer-comparison td { font-weight:700; font-variant-numeric:tabular-nums; }
+.soccer-comparison tbody tr:nth-child(odd) { background:color-mix(in srgb,var(--text) 4%,transparent); }
+@media(max-width:480px) { .soccer-stats-panel { padding:.5rem; } .soccer-comparison { font-size:.8rem; } .soccer-comparison th,.soccer-comparison td { padding:.65rem .25rem; } }
+
+.football-box { display:grid; gap:1.25rem; margin:1rem 0; }
+.football-team-grid { display:grid; grid-template-columns:minmax(0,1fr); gap:1rem; }
+.football-team-panel { min-width:0; border:1px solid var(--border); border-radius:12px; background:var(--surface); padding:.85rem; }
+.football-team-panel h4 { margin:0 0 .6rem; }
+.football-team-panel caption { color:var(--text); }
+.football-team-panel .standings-table { font-size:.8rem; font-variant-numeric:tabular-nums; }
+.football-team-panel .standings-table th,.football-team-panel .standings-table td { padding:.45rem .4rem; white-space:nowrap; }
+@media(min-width:1000px) { .football-team-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }

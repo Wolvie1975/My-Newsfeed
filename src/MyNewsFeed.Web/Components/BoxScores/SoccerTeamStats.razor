@@ -1,0 +1,19 @@
+<section class="soccer-stats" aria-label="Soccer team comparison">
+<h3>Team statistics</h3>
+@foreach(var group in Data.Teams.SelectMany(t=>t.Statistics).Where(s=>s.Value!=null).GroupBy(s=>s.Group)) {
+    <div class="soccer-stats-panel">
+    <div class="box-table-scroll" tabindex="0" role="region" aria-label="@(group.Key ?? "Team statistics")">
+    <table class="soccer-comparison">
+        <caption>@(group.Key ?? "Match statistics")</caption>
+        <thead><tr><th scope="col">@Data.Teams[0].Name</th><th scope="col">Statistic</th>@foreach(var team in Data.Teams.Skip(1)){<th scope="col">@team.Name</th>}</tr></thead>
+        <tbody>@foreach(var stat in group.DistinctBy(s=>s.Key)) {
+            <tr><td>@Value(Data.Teams[0],stat)</td><th scope="row">@stat.Label</th>@foreach(var team in Data.Teams.Skip(1)){<td>@Value(team,stat)</td>}</tr>
+        }</tbody>
+    </table>
+    </div></div>
+}
+</section>
+@code {
+    [Parameter,EditorRequired] public BoxData Data {get;set;}=default!;
+    private static string Value(BoxTeam team,BoxStat stat)=>team.Statistics.FirstOrDefault(s=>s.Group==stat.Group && s.Key==stat.Key)?.Value ?? "—";
+}

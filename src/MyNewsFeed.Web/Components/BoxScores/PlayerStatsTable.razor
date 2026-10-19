@@ -1,0 +1,11 @@
+<div class="box-table-scroll" tabindex="0" role="region" aria-label="@Title">
+<table class="baseball-table"><caption>@Title</caption>
+<thead><tr><th scope="col">@(Group.Name.Equals("pitching",StringComparison.OrdinalIgnoreCase) ? "Pitchers" : "Hitters")</th>@foreach(var index in Indices){<th scope="col" title="@Group.Columns[index].Description">@Group.Columns[index].Label</th>}</tr></thead>
+<tbody>@foreach(var player in Group.Athletes){<tr><th scope="row"><span>@player.Name</span>@if(!string.IsNullOrWhiteSpace(player.Position)){<span class="baseball-position"> @player.Position</span>}</th>@foreach(var index in Indices){<td>@(player.Stats.ElementAtOrDefault(index) ?? "—")</td>}</tr>}</tbody>
+@if(Group.Totals.Any(v=>v!=null)){<tfoot><tr><th scope="row">Team</th>@foreach(var index in Indices){<td>@(Group.Totals.ElementAtOrDefault(index) ?? "—")</td>}</tr></tfoot>}
+</table></div>
+@code {
+    [Parameter,EditorRequired] public BoxPlayers Group {get;set;} = default!;
+    [Parameter,EditorRequired] public IReadOnlyList<int> Indices {get;set;} = [];
+    [Parameter,EditorRequired] public string Title {get;set;} = "";
+}

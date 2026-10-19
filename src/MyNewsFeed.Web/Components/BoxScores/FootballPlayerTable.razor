@@ -1,0 +1,10 @@
+<div class="box-table-scroll" tabindex="0" role="region" aria-label="@($"{TeamName} {Group.Name} player statistics")">
+            <table class="standings-table"><caption>@TeamName · @Group.Name</caption><thead><tr><th scope="col">Player</th>@foreach(var col in Group.Columns){<th scope="col" title="@col.Description">@col.Label</th>}</tr></thead>
+            <tbody>@foreach(var athlete in Group.Athletes){<tr><th scope="row">@athlete.Name @if(athlete.Position is {} position){<span class="updated"> · @position</span>} @if(athlete.Starter==true){<span class="updated"> · Starter</span>}</th>@foreach(var value in athlete.Stats){<td>@(value ?? "—")</td>}</tr>}</tbody>
+            @if(Group.Totals.Any(v=>v!=null)){<tfoot><tr><th scope="row">Totals</th>@foreach(var value in Group.Totals){<td>@(value ?? "—")</td>}</tr></tfoot>}
+            </table>
+        </div>
+@code {
+    [Parameter,EditorRequired] public BoxPlayers Group {get;set;}=default!;
+    [Parameter,EditorRequired] public string TeamName {get;set;}="";
+}

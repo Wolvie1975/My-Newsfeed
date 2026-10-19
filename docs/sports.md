@@ -632,3 +632,43 @@ text is Razor-encoded; optional provider URLs require HTTPS, an ESPN host and a 
 segment matching the event ID. Timestamps use the configured display timezone.
 No cache writes, schema migration, collector restart or new provider credentials
 are required. The frontend runtime must retain SELECT access to SportsBoxScores.
+
+Baseball uses a reference-style R/H/E scoreboard followed by paired hitting and
+pitching panels (two columns on wide screens, stacked on mobile). Primary columns
+follow conventional box-score ordering while additional cached columns remain in
+expandable tables. R/H/E comes from batting runs/hits and fielding errors, never
+pitching totals. Missing inning labels remain unspecified rather than guessed.
+The current cache does not contain pitcher decisions, headshots or scoring plays;
+those reference elements require a collector contract update before rendering.
+
+Soccer team statistics render as immediately visible comparison tables, with club
+values flanking a shared statistic label. Each available group remains separate;
+values align by group/key rather than source array order. Period sections and
+available player tables remain accessible. The user's ESPN reference is
+https://www.espn.com/soccer/team-stats/_/gameId/761864/league/usa.1 (verification
+screen prevented exact visual inspection). No new provider data is fetched.
+
+Football player statistics use category-first sections with paired team panels on
+wide screens and stacked panels on phones. Conventional passing/rushing/receiving,
+defense and special-teams ordering applies to available groups; unknown categories
+are retained afterward. Source columns, totals, positions and starter flags are
+preserved. This applies to NFL and college football. Existing period sections and
+team-stat comparisons remain available. Reference supplied by the user:
+https://www.espn.com/nfl/boxscore/_/gameId/401872995 (verification screen prevented
+exact visual inspection). No additional provider data is requested at runtime.
+
+### Repaired scoring-period labels and NHL detail visibility
+
+The period-label collector repair retains payload version 1 and emits descriptive
+strings in `lineScores[].period`. Numeric/null values remain compatible. Render
+source labels and values without deduplicating unknown entries or calculating
+final results. NHL SO may be a deciding 0/1 indicator, not shootout attempts/goals.
+Baseball shows labeled per-team inning tables when the teams' period sequences
+differ, avoiding positional misalignment in sparse data.
+
+NHL detail has an additional `SportsMatchResults` visibility path: resolve the
+first enabled `espn-nhl` source, respect any configured team scope, and require a
+valid final in its latest validated stored season. It does not hardcode a season
+or allow arbitrary cache identities. Existing ordinary followed-result visibility
+continues independently. No dedicated NHL season-results page/query is added.
+See [backend frontend handoff](../new%20development/sports-period-labels-frontend-handoff.md).

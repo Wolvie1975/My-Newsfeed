@@ -3,6 +3,74 @@
 Read this file when continuing work from the previous chat. These are dated
 observations; check current repository and hosting state before acting.
 
+## Latest deployment — NHL period detail, October 19, 2026
+
+User authorized implementation and deployment of the frontend period-label
+handoff. Live: `mynewsfeed-web:nhl-periods-20261019` (`03359e7c594c`), healthy.
+Rollback: `mynewsfeed-web:before-nhl-periods-20261019` (`3570ee3785ab`), retained
+container `mynewsfeed-web-before-nhl-periods-20261019`. Private deployment files:
+`/tmp/mynewsfeed-nhl-periods-deploy/`. Runtime settings preserved; no commit/push.
+
+`NhlBoxScoreVisibility` gates fallback NHL cache reads by enabled source, latest
+valid stored season, valid final scores and source team restriction. There is no
+dedicated NHL season-results query in this checkout despite the backend handoff's
+reference to one; the helper uses the MLS/Championship stored-season convention.
+Ordinary followed results remain an independent existing visibility path.
+Baseball differing/sparse period sequences use per-team labeled tables instead of
+positional shared columns. Repaired strings and older numeric/null labels remain
+supported, and no result totals are recomputed.
+
+16 focused tests passed. Live seven-sport/league example routes, four NHL theme/
+width layouts, eight baseball layouts and modal regression checks passed. Private
+HTTPS `/healthz` and NHL `401892525` returned 200. Men's college basketball has no
+production cached acceptance example in the backend handoff; do not claim one.
+This release supersedes the earlier deployment records below.
+
+## Scraper period-label handoff — October 19, 2026
+
+Created [sports period-label scraper handoff](../new%20development/sports-period-labels-scraper-handoff.md)
+for MLB, NFL/college football, NHL, men's college basketball and existing soccer
+leagues. It specifies compatible `lineScores[].period` display strings, evidence-
+based mappings, overtime/shootout handling, historical backfill and acceptance
+checks. This is documentation only; no collector repair or deployment is implied.
+
+## Latest deployment — October 19, 2026
+
+The user authorized deployment of all three sports templates. Live release:
+`mynewsfeed-web:sports-templates-20261019` (`3570ee3785ab`), healthy with private
+HTTPS checks passing. Runtime settings were preserved. Rollback image:
+`mynewsfeed-web:before-sports-templates-20261019` (`40defb4164bd`), retained
+container `mynewsfeed-web-before-sports-templates-20261019`. Private files:
+`/tmp/mynewsfeed-sports-templates-deploy/`. Live baseball (8 layouts), soccer (6),
+football (6) and general modal regression checks passed. Fourteen focused .NET
+tests passed before release. No commit/push was performed. This supersedes the
+local-only status below; baseball, soccer and football templates are now live.
+
+## Latest local update
+
+Football now uses `FootballBoxScore.razor` and `FootballPlayerTable.razor` for
+category-first paired team tables, stacked on mobile. NFL and college football
+share it; all cached categories/columns/totals remain intact. Fourteen focused
+tests and six NFL modal width/theme checks passed. The ESPN URL was verification-
+blocked, so do not claim an exact replica. This update is local, uncommitted and
+undeployed, alongside the baseball and soccer template changes below.
+
+
+Soccer now has a dedicated `SoccerTeamStats.razor` comparison component: visible
+team values flank shared labels, grouped by source category. Existing period and
+player detail is retained. The ESPN example was verification-blocked; do not claim
+an exact replica. Thirteen focused tests and six soccer modal width/theme checks
+passed. This soccer update is local, uncommitted and undeployed.
+
+
+Baseball statistics now follow the user's screenshot reference: R/H/E summary,
+paired hitting/pitching panels, mobile stacking and expandable extra statistics.
+See `Components/BoxScores/BaseballBoxScore.razor` and `PlayerStatsTable.razor`.
+Twelve focused tests, eight baseball layouts and existing modal regression checks
+passed. No deployment or commit was made for this update. The live release remains
+`mynewsfeed-web:boxscores-20261019`. Missing inning labels are not inferred; the
+cache needs new fields for decisions, photos or scoring summaries.
+
 ## Project and preferences
 
 - **Standing product direction:** “This is a tap to link site and not a typing one.”

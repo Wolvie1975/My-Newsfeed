@@ -106,6 +106,9 @@ public sealed class BoxScoresRepository(IDbContextFactory<WebScraperContext> fac
                 if(id.League=="usa.1") { var page=await MlsResultsQuery.GetAsync(db); seasonVisible=page.Source!=null && await MlsResultsQuery.Visible(db,page.Source.Id).AnyAsync(g=>g.Season==page.Season && g.GameId==gameId); }
                 if(id.League=="eng.2") { var page=await ChampionshipResultsQuery.GetAsync(db,false); seasonVisible=page.Source!=null && await ChampionshipResultsQuery.Visible(db,page.Source.Id).AnyAsync(g=>g.Season==page.Season && g.GameId==gameId); }
             }
+            if(!ordinary && !seasonVisible && id.Sport=="hockey" && id.League=="nhl"
+                && int.TryParse(id.EventId,out var nhlGameId))
+                seasonVisible=await NhlBoxScoreVisibility.ContainsAsync(db,nhlGameId);
             if(!ordinary && !seasonVisible)return null;
             var row=await db.Database.SqlQuery<BoxSnapshot>($"SELECT Sport,League,EventId,HasBoxScore,Availability,Payload,FetchedAt,SummaryUrl,BoxScoreUrl FROM dbo.SportsBoxScores WHERE Sport={id.Sport} AND League={id.League} AND EventId={id.EventId}").SingleOrDefaultAsync();
             if(row?.HasBoxScore!=true || row.Availability=="unavailable" || BoxData.Parse(row.Payload,id) is not {} data)return null;

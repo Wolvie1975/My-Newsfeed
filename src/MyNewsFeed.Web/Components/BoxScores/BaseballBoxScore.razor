@@ -1,0 +1,66 @@
+<section class="baseball-box" aria-label="Baseball box score">
+<div class="baseball-panel baseball-scoreboard">
+    <h3>Game summary</h3>
+    <div class="box-table-scroll" tabindex="0" role="region" aria-label="Collected period scores and runs, hits, errors">
+    <table class="baseball-table baseball-lines"><caption>Collected scoring · Runs, hits and errors</caption>
+    <thead><tr><th scope="col">Team</th>@for(var i=0;i<Periods;i++){var position=i;<th scope="col" title="@(PeriodLabel(position) ?? "Inning label not supplied")">@(PeriodLabel(position) ?? "—")</th>}<th scope="col" title="Runs">R</th><th scope="col" title="Hits">H</th><th scope="col" title="Errors">E</th></tr></thead>
+    <tbody>@foreach(var team in Data.Teams){<tr><th scope="row">@team.Name</th>@for(var i=0;i<Periods;i++){<td>@(team.Lines.ElementAtOrDefault(i)?.DisplayValue ?? "—")</td>}<td class="baseball-total">@Stat(team,"batting","runs")</td><td class="baseball-total">@Stat(team,"batting","hits")</td><td class="baseball-total">@Stat(team,"fielding","errors")</td></tr>}</tbody></table>
+    </div>
+    @if(!AlignedPeriods){
+        @foreach(var team in Data.Teams.Where(t=>t.Lines.Count>0)){
+            <div class="box-table-scroll" tabindex="0" role="region" aria-label="@(team.Name + " inning scores")">
+            <table class="baseball-table"><caption>@team.Name · Available inning scores</caption>
+            <thead><tr><th scope="col">Inning</th><th scope="col">Score</th></tr></thead>
+            <tbody>@foreach(var line in team.Lines){<tr><th scope="row">@(line.Period ?? "Inning not specified")</th><td>@line.DisplayValue</td></tr>}</tbody>
+            </table></div>
+        }
+    }
+    @if(Data.Teams.SelectMany(t=>t.Lines).Any(l=>l.Period==null)){<p class="updated baseball-note">Inning labels were not supplied. Period scores appear in collected order.</p>}
+</div>
+@foreach(var kind in new[]{"batting","pitching"}) {
+    var teams=Data.Teams.Where(t=>Data.Players.Any(g=>g.TeamId==t.Id && g.Name.Equals(kind,StringComparison.OrdinalIgnoreCase)) || t.Statistics.Any(s=>s.Group==kind && s.Value!=null)).ToList();
+    @if(teams.Count>0){
+        <div class="baseball-team-grid" aria-label="@(kind=="batting" ? "Team hitting tables" : "Team pitching tables")">
+        @foreach(var team in teams){
+            var title=team.Name + (kind=="batting" ? " · Hitting" : " · Pitching");
+            var groups=Data.Players.Where(g=>g.TeamId==team.Id && g.Name.Equals(kind,StringComparison.OrdinalIgnoreCase)).ToList();
+            <section class="baseball-panel"><h3>@title</h3>
+                @foreach(var group in groups){
+                    var primary=Columns(group,kind);
+                    var extras=Enumerable.Range(0,group.Columns.Count).Except(primary).ToList();
+                    <PlayerStatsTable Group="group" Indices="primary" Title="@title" />
+                    @if(extras.Count>0){<details class="baseball-extra"><summary>Additional @(kind=="batting" ? "hitting" : "pitching") statistics</summary><PlayerStatsTable Group="group" Indices="extras" Title="@(title + " · Additional statistics")" /></details>}
+                }
+                @if(team.Statistics.Any(s=>s.Group==kind && s.Value!=null)){
+                    <details class="baseball-extra" open="@(groups.Count==0)"><summary>Team @(kind=="batting" ? "batting" : "pitching") details</summary>
+                    <dl class="baseball-stat-list">@foreach(var stat in team.Statistics.Where(s=>s.Group==kind && s.Value!=null)){<div><dt>@stat.Label</dt><dd>@stat.Value</dd></div>}</dl>
+                    </details>
+                }
+            </section>
+        }
+        </div>
+    }
+}
+@foreach(var group in Data.Players.Where(g=>!new[]{"batting","pitching"}.Contains(g.Name,StringComparer.OrdinalIgnoreCase))){
+    var title=Data.Teams.First(t=>t.Id==group.TeamId).Name + " · " + group.Name;
+    <section class="baseball-panel"><h3>@title</h3><PlayerStatsTable Group="group" Indices="Enumerable.Range(0,group.Columns.Count).ToList()" Title="@title" /></section>
+}
+@if(Data.Teams.Any(t=>t.Statistics.Any(s=>s.Group!="batting" && s.Group!="pitching" && s.Value!=null))){
+    <details class="baseball-panel baseball-extra"><summary>Fielding and other team statistics</summary><div class="baseball-team-grid">
+    @foreach(var team in Data.Teams){<section><h3>@team.Name</h3><dl class="baseball-stat-list">@foreach(var stat in team.Statistics.Where(s=>s.Group!="batting" && s.Group!="pitching" && s.Value!=null)){<div><dt>@stat.Label</dt><dd>@stat.Value</dd></div>}</dl></section>}
+    </div></details>
+}
+</section>
+@code {
+    [Parameter,EditorRequired] public BoxData Data {get;set;}=default!;
+    // Differing/sparse period sequences are shown per team instead of shifting values under a shared label.
+    private bool AlignedPeriods=>Data.Teams.Skip(1).All(t=>t.Lines.Select(l=>l.Period).SequenceEqual(Data.Teams[0].Lines.Select(l=>l.Period)));
+    private int Periods=>AlignedPeriods ? Data.Teams.Select(t=>t.Lines.Count).DefaultIfEmpty().Max() : 0;
+    private string? PeriodLabel(int index){var labels=Data.Teams.Select(t=>t.Lines.ElementAtOrDefault(index)?.Period).Distinct().ToList();return labels.Count==1 ? labels[0] : null;}
+    private static string Stat(BoxTeam team,string group,string key)=>team.Statistics.FirstOrDefault(s=>s.Group==group && s.Key.Equals(key,StringComparison.OrdinalIgnoreCase))?.Value ?? "—";
+    public static IReadOnlyList<int> Columns(BoxPlayers group,string kind){
+        var wanted=kind=="batting" ? new[]{"atBats","runs","hits","RBIs","homeRuns","walks","strikeouts","avg","onBasePct","slugAvg"} : new[]{"fullInnings.partInnings","hits","runs","earnedRuns","walks","strikeouts","homeRuns","pitches-strikes","ERA"};
+        var indices=wanted.Select(key=>Enumerable.Range(0,group.Columns.Count).FirstOrDefault(i=>string.Equals(group.Columns[i].Key,key,StringComparison.OrdinalIgnoreCase),-1)).Where(i=>i>=0).Distinct().ToList();
+        return indices.Count>0 ? indices : Enumerable.Range(0,group.Columns.Count).ToList();
+    }
+}

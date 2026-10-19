@@ -539,3 +539,22 @@ sections keep wide statistics in internal scrolling regions at phone widths.
 Modified clicks and no-JavaScript browsing open the same statistics as a normal
 page. Existing external game links and original result scores are retained. See
 [box-score behavior and read contract](sports.md#cached-box-scores-and-game-stat-modals).
+
+Baseball detail follows the supplied box-score reference: R/H/E summary, paired
+hitting tables, then paired pitching tables, with mobile stacking and internal
+horizontal scrolling. Extra collected statistics expand on tap. Missing inning
+labels remain explicit; unavailable decisions, photos and scoring plays are omitted.
+
+Soccer detail opens with visible team comparisons: club values on either side of
+the statistic label, grouped by available categories. The same layout works in
+the modal and standalone page, including narrow screens and both themes.
+
+Football detail groups players by category, pairing both teams under Passing,
+Rushing, Receiving and other collected categories. Desktop uses two panels;
+mobile stacks them with internal scrolling for wide tables. The modal and regular
+fallback page share this presentation.
+
+Repaired period labels display directly from the cache (innings, quarters, halves,
+overtime and shootout labels). Baseball uses per-team labeled inning tables when
+period sequences differ, preserving sparse/unplayed values. NHL cached detail is
+now available through its enabled-source/current stored-season visibility check.
