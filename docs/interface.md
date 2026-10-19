@@ -558,3 +558,8 @@ Repaired period labels display directly from the cache (innings, quarters, halve
 overtime and shootout labels). Baseball uses per-team labeled inning tables when
 period sequences differ, preserving sparse/unplayed values. NHL cached detail is
 now available through its enabled-source/current stored-season visibility check.
+
+Basketball detail pairs the teams' player tables on desktop and stacks them on
+mobile. Dynamic columns retain collected statistics; wide tables scroll within
+the panel while player names remain visible. Existing half/quarter/overtime labels
+remain under Scoring by period.

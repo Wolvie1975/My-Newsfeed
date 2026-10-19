@@ -2147,3 +2147,18 @@
 .football-team-panel .standings-table { font-size:.8rem; font-variant-numeric:tabular-nums; }
 .football-team-panel .standings-table th,.football-team-panel .standings-table td { padding:.45rem .4rem; white-space:nowrap; }
 @media(min-width:1000px) { .football-team-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+
+.basketball-box { margin:1rem 0; }
+.basketball-team-grid { display:grid; grid-template-columns:minmax(0,1fr); gap:1rem; }
+.basketball-team-panel { min-width:0; padding:.85rem; border:1px solid var(--border); border-radius:12px; background:var(--surface); }
+.basketball-team-panel h4 { margin:0 0 .6rem; }
+.basketball-table { width:100%; border-collapse:collapse; font-size:.78rem; font-variant-numeric:tabular-nums; }
+.basketball-table caption { color:var(--text); text-align:left; padding:.5rem 0; }
+.basketball-table th,.basketball-table td { padding:.45rem .4rem; text-align:right; white-space:nowrap; border-bottom:1px solid var(--border); }
+.basketball-table th:first-child { text-align:left; }
+.basketball-table tbody tr:nth-child(odd) { background:color-mix(in srgb,var(--text) 4%,transparent); }
+.basketball-player-meta { font-size:.7rem; font-weight:400; }
+.basketball-table tfoot { font-weight:700; }
+@media(min-width:1000px) { .basketball-team-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+
+.basketball-table th:first-child { position:sticky; left:0; z-index:1; min-width:9rem; background:var(--surface); }

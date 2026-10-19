@@ -6,10 +6,45 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The most recent verified web release is `mynewsfeed-web:nhl-periods-20261019`,
-with rollback recorded as `mynewsfeed-web:before-nhl-periods-20261019`.
+The most recent verified web release is `mynewsfeed-web:basketball-20261019`,
+with rollback recorded as `mynewsfeed-web:before-basketball-20261019`.
 Its container was healthy on October 19, 2026 (Central). This is a dated
 observation, not live hosting status.
+
+## Basketball template deployment — October 19, 2026
+
+Deployed as mynewsfeed-web:basketball-20261019 (7099cb8225a4). Container health
+and private HTTPS /healthz passed. Environment, user, commands, health check,
+mounts, ports, restart policy and networks match the prior release.
+
+Verification: 17 focused tests and six championship fixture width/theme layouts
+passed before release. Four live WNBA width/theme layouts passed using an eligible
+cached result, plus the general Results/MLS/Championship modal regression suite
+covering keyboard/focus, six layouts, error handling and no-JavaScript fallback.
+The development championship route remains HTTP 404; no historical game/cache row
+or visibility exception was created. Existing PKCS build warnings remain.
+
+Rollback image: mynewsfeed-web:before-basketball-20261019 (03359e7c594c).
+Retained container: mynewsfeed-web-before-basketball-20261019.
+Private snapshot/scripts: /tmp/mynewsfeed-basketball-deploy/.
+This supersedes the local-only status below. User requested Git check-in after
+release; see Git history for the resulting commit.
+
+## Basketball player template — October 19, 2026 (local update)
+
+Added paired basketball team player tables on desktop, stacked on mobile, using
+source columns and team identities. All player groups, positions, starter/bench
+flags and supplied totals are retained. Missing totals show an em dash; shooting
+strings and real zeroes remain unchanged. Wide tables scroll internally, with
+player names held in view. Existing period and team-stat sections remain intact;
+team-only snapshots do not show an empty player panel.
+
+The supplied championship JSON is a development fixture only. No production row,
+detail visibility exception, provider request or cache write was added. Tests
+parse the actual sample, reverse player-group order to verify team association,
+and validate 17 players, 13 columns, half labels and complete supplied totals.
+Verification: 17 focused box-score tests and six fixture width/theme layouts passed.
+No deployment or Git commit/push was performed for this update.
 
 ## NHL detail visibility and repaired period labels — October 19, 2026
 

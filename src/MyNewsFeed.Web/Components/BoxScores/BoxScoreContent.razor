@@ -35,6 +35,8 @@
     }
     @if(data.Identity.Sport=="football") {
         <FootballBoxScore Data="data" />
+    } else if(data.Identity.Sport=="basketball" && data.Players.Count>0) {
+        <BasketballBoxScore Data="data" />
     } else {
     @foreach(var group in data.Players) {
         var name=data.Teams.First(t=>t.Id==group.TeamId).Name;

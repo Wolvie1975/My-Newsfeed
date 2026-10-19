@@ -3,6 +3,34 @@
 Read this file when continuing work from the previous chat. These are dated
 observations; check current repository and hosting state before acting.
 
+## Latest deployment — basketball, October 19, 2026
+
+User authorized deployment and Git check-in. Live release:
+mynewsfeed-web:basketball-20261019 (7099cb8225a4), healthy; private HTTPS health
+passed and runtime settings were preserved. Rollback image:
+mynewsfeed-web:before-basketball-20261019 (03359e7c594c); retained container:
+mynewsfeed-web-before-basketball-20261019. Private files:
+/tmp/mynewsfeed-basketball-deploy/. Tests: 17 focused checks, six championship
+fixture layouts, four live WNBA layouts and the general modal regression suite
+passed. The championship fixture route stays unavailable in production. This
+supersedes the local-only status and earlier deployment records below. Git check-in
+was requested after release; inspect Git history/remote for current push status.
+
+## Latest local update — basketball template
+
+Added BasketballBoxScore.razor for basketball player tables, paired on desktop,
+stacked on mobile, with dynamic columns and sticky player names inside scrolling
+regions. Source team identity, player groups, starter/bench flags and supplied
+totals are retained. Actual championship sample was added by the user; it remains
+only in development/test tooling. No historical production game or route bypass
+was inserted. 17 focused tests and six fixture width/theme checks passed. Local
+only; not deployed or committed. Live release remains nhl-periods-20261019.
+
+To regenerate the standalone fixture preview, set BASKETBALL_PREVIEW_FILE to an
+absolute temporary HTML path when running the BoxScore test filter. Run
+ tests/browser/basketball-boxscore.browser.cjs with the same path and available
+PLAYWRIGHT_MODULE. The preview is generated test output, not an application route.
+
 ## Latest deployment — NHL period detail, October 19, 2026
 
 User authorized implementation and deployment of the frontend period-label

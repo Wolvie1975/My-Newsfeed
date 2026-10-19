@@ -1,0 +1,23 @@
+<section class="basketball-box" aria-label="Basketball player statistics">
+<h3>Player statistics</h3>
+<div class="basketball-team-grid">
+@foreach(var team in Data.Teams.Where(t=>Data.Players.Any(g=>g.TeamId==t.Id))) {
+    <section class="basketball-team-panel"><h4>@team.Name</h4>
+    @foreach(var group in Data.Players.Where(g=>g.TeamId==team.Id)) {
+        <div class="box-table-scroll" tabindex="0" role="region" aria-label="@(team.Name + " · " + group.Name + " player statistics")">
+        <table class="basketball-table"><caption>@team.Name · @group.Name</caption>
+        <thead><tr><th scope="col">Player</th>@foreach(var col in group.Columns){<th scope="col" title="@col.Description">@col.Label</th>}</tr></thead>
+        <tbody>@foreach(var athlete in group.Athletes){
+            <tr><th scope="row">@athlete.Name
+                @if(athlete.Position is {} position){<span class="basketball-player-meta"> · @position</span>}
+                @if(athlete.Starter is {} starter){<span class="basketball-player-meta"> · @(starter ? "Starter" : "Bench")</span>}
+            </th>@foreach(var value in athlete.Stats){<td>@(value ?? "—")</td>}</tr>
+        }</tbody>
+        @if(group.Totals.Any(v=>v!=null)){<tfoot><tr><th scope="row">Team totals</th>@foreach(var value in group.Totals){<td>@(value ?? "—")</td>}</tr></tfoot>}
+        </table></div>
+    }
+    </section>
+}
+</div>
+</section>
+@code { [Parameter,EditorRequired] public BoxData Data {get;set;}=default!; }

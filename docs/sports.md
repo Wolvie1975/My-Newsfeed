@@ -672,3 +672,17 @@ valid final in its latest validated stored season. It does not hardcode a season
 or allow arbitrary cache identities. Existing ordinary followed-result visibility
 continues independently. No dedicated NHL season-results page/query is added.
 See [backend frontend handoff](../new%20development/sports-period-labels-frontend-handoff.md).
+
+### Basketball player template
+
+Basketball player tables use paired team panels on desktop and stacked panels on
+mobile, with dynamic provider columns and internally scrolling tables. Player
+names remain visible during horizontal scrolling. Positions and known starter/
+bench flags are shown; missing flags remain unspecified. Supplied totals, zeroes,
+shooting strings and missing values retain their meaning. Existing period/team
+sections and production visibility rules remain unchanged.
+
+The championship sample in new development/mens-college-basketball-boxscore-example.json
+is used only for offline parsing/rendering and browser fixture checks. It does not
+create a production result or cached detail route. The component also supports
+other basketball leagues through the same dynamic contract.
