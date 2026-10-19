@@ -561,10 +561,12 @@ intentional exclusion of women's basketball is retained.
 | `/college/results` | Finished games from enabled college follows, today or yesterday |
 | `/college/standings` | Big 12 standings for the selected sport |
 | `/college/rankings` | Available national polls for the selected sport |
+| `/college/news` | Conference-wide Big 12 publisher articles |
 
 All views accept `sport=football|mens-basketball|volleyball|soccer`. An absent or
-unrecognized sport defaults to football. Tabs, schedule pagination, result-date
-links and standings/poll forms preserve the selected sport. Choosing a different
+unrecognized sport defaults to football. Tabs, schedule pagination and result-date
+links preserve the selected sport. The hub uses one sport selector; embedded
+standings and rankings omit the redundant source dropdown. Choosing a different
 sport resets view-specific source, date and page filters. GET forms include
 no-JavaScript Apply controls. The existing standalone sports routes remain available.
 
@@ -580,4 +582,6 @@ explicitly, with no fallback to a different sport.
 Game rows reuse the existing team records, conference shorthand, freshness
 tooltips and league-wide playoff suppression. Schedule/result update times are
 scoped to the sport. No new scraper, source registrations, credentials or database
-schema changes are required. A college News tab is not included in this release.
+schema changes are required. The News tab is conference-wide rather than filtered by the selected sport;
+it retains the sport for navigation back to structured coverage. See
+[Big 12 News behavior](interface.md#big-12-news).

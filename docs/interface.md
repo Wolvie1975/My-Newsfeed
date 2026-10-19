@@ -390,7 +390,7 @@ unchanged. The F1 home card includes a News link alongside its sports-data links
 ## College Sports navigation
 
 College Sports appears under Sports in both desktop and mobile navigation.
-Its Schedule, Results, Standings and Rankings tabs share one labelled sport
+Its Schedule, Results, Standings, Rankings and News tabs share one labelled sport
 selector, retained in shareable URLs and across tab changes. Mobile Browse
 identifies College Sports as the current section. Existing game cards and
 scrollable standings/poll tables retain their responsive layouts. See
@@ -405,3 +405,41 @@ Personal team highlights in standings and rankings use inset cell borders,
 including the pinned team-name column. Adjacent selected rows share one horizontal
 edge, and selection does not change column widths. Light and dark themes retain
 their existing red highlight colors.
+
+The college hub shows one sport selector with its label vertically centered.
+Embedded standings and rankings omit their redundant source dropdowns; standalone
+Standings and Top 25 pages keep their source selectors.
+
+## Big 12 News
+
+College Sports → News opens `/college/news`. It reuses the standard article
+cards, publisher labels, safe article/image destinations, date formatting,
+summary/image fallbacks, browser-local saving and retired-article recovery.
+Articles cover the conference across all sports; the selected sport is preserved
+in tabs, publisher forms and cursor pagination as navigation context.
+
+The publisher selector is independent of the sport selector. Enabled sources
+are discovered from the Big 12 News category by name, including publishers with
+no retained articles. Current publishers are Big 12 Conference — All Sports,
+Heartland College Sports, Big 12 Conference — Football, Big 12 Conference — Men's
+Basketball and Big 12 Conference — Baseball. No dedicated women's basketball
+feed is registered; conference-wide feeds can still include women's sports.
+
+Source filtering, optional query-string search and ordinary/enhanced Load more
+remain within Big 12 News. The `view=big12-news` feed endpoint enforces the fixed
+category server-side, overriding unrelated category parameters; invalid or
+out-of-category source IDs reset to All sources in this category. Missing or
+disabled coverage stays empty; query failures display a generic error.
+
+Overlapping official feeds retain the existing global URL ownership rules; the
+frontend does not duplicate or move articles to fill publisher counts. Freshness
+uses successful scrapes in the selected category/source scope. News is independent
+of structured schedule, result, standings and poll enablement. No collector
+restart, source registration, schema change or new credentials are required.
+
+## YouTube navigation
+
+YouTube is a separate main navigation link on desktop and a dedicated section
+in mobile Browse. Videos no longer appears under Entertainment. The existing
+`/videos` page, channel filters and playback links remain unchanged. Mobile
+Browse identifies the current section as YouTube.

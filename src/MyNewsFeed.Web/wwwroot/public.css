@@ -2024,3 +2024,7 @@
 .pub .d-f1__body .d-empty { padding: 0; }
 .pub .d-f1__freshness { grid-column: 1 / -1; }
 @media (min-width: 768px) { .pub .d-f1__body { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); padding: 20px 24px; } }
+
+/* Keep the college sport label centered alongside its control. */
+.pub .college-sport-select { align-items: center; }
+.pub .college-sport-select label { margin: 0; flex: none; }

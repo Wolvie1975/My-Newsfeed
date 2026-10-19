@@ -1,7 +1,8 @@
 # MyNewsFeed
 
 ASP.NET Core / Blazor newsfeed with sports schedules, results, standings and polls;
-movie releases, television episodes, videos, saved articles and administration.
+movie releases, television episodes, a separate YouTube section, saved articles
+and administration.
 The web app and Rust scraper share SQL Server data but have separate collection
 and deployment responsibilities.
 
@@ -14,8 +15,8 @@ and deployment responsibilities.
 | [Maintenance](docs/maintenance.md) | Review findings, completed repairs, remaining work and documentation provenance |
 | [Release history](docs/release-history.md) | Historical verification, release tags and recorded rollback images |
 
-College Sports has a shared sport selector across Schedule, Results, Standings
-and Rankings. Football, men’s basketball, women’s volleyball and women’s soccer
+College Sports has a shared sport selector across Schedule, Results, Standings,
+Rankings and conference-wide News. Football, men’s basketball, women’s volleyball and women’s soccer
 reuse existing coverage; see [the college hub](docs/sports.md#college-sports-hub).
 
 F1 has its own Sports section with Schedule, Results, Drivers/Constructors

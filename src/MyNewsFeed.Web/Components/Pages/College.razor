@@ -2,6 +2,7 @@
 @page "/college/results"
 @page "/college/standings"
 @page "/college/rankings"
+@page "/college/news"
 @layout PublicLayout
 @using MyNewsFeed.Web.Components.Events
 @inject NavigationManager Nav
@@ -11,8 +12,8 @@
 @inject ILogger<College> Log
 
 <PageTitle>College Sports · @selected.Name · MyNewsFeed</PageTitle>
-<PageHeading Title="College Sports" Eyebrow="CAMPUS SCOREBOARD" Description="Schedules, final scores, conference standings and national polls in one place." />
-<form class="catselect" method="get" action="@BasePath">
+<PageHeading Title="College Sports" Eyebrow="CAMPUS SCOREBOARD" Description="Schedules, final scores, conference standings, national polls and conference news in one place." />
+<form class="catselect college-sport-select" method="get" action="@BasePath">
     <label for="college-sport">Sport</label>
     <select id="college-sport" name="sport" onchange="this.form.requestSubmit()">
         @foreach (var sport in CollegeHub.Sports)
@@ -25,7 +26,11 @@
     { <a class="nf-btn nf-btn--secondary" href="@CollegeHub.Href(tab.Key, selected)" aria-current="@(view == tab.Key ? "page" : null)">@tab.Label</a> }
 </nav>
 <p class="updated">@selected.Name · Big 12 schedule and standings coverage. Results include the college teams and conferences followed by this site; rankings are national polls when available.</p>
-@if (view == "standings")
+@if (view == "news")
+{
+    <Big12News Sport="@selected.Key" />
+}
+else if (view == "standings")
 {
     <Standings CollegeSport="@selected.StandingsSport" @key="selected.Key" />
 }
@@ -93,7 +98,7 @@ else
     [SupplyParameterFromQuery(Name = "sport")] private string? Sport { get; set; }
     [SupplyParameterFromQuery(Name = "day")] private string? Day { get; set; }
     [SupplyParameterFromQuery(Name = "page")] private string? Page { get; set; }
-    private static readonly (string Key, string Label)[] Tabs = [("schedule", "Schedule"), ("results", "Results"), ("standings", "Standings"), ("rankings", "Rankings")];
+    private static readonly (string Key, string Label)[] Tabs = [("schedule", "Schedule"), ("results", "Results"), ("standings", "Standings"), ("rankings", "Rankings"), ("news", "News")];
     private CollegeSport selected = CollegeHub.Sports[0];
     private string view = "schedule";
     private string BasePath => view == "schedule" ? "college" : "college/" + view;
@@ -111,10 +116,10 @@ else
     {
         selected = CollegeHub.Resolve(Sport);
         var path = Nav.ToBaseRelativePath(Nav.Uri).Split('?')[0].TrimEnd('/');
-        view = path.Split('/').Last() is "results" or "standings" or "rankings" ? path.Split('/').Last() : "schedule";
+        view = path.Split('/').Last() is "results" or "standings" or "rankings" or "news" ? path.Split('/').Last() : "schedule";
         error = false;
         updatedAt = null;
-        if (view is "standings" or "rankings") return;
+        if (view is "standings" or "rankings" or "news") return;
         try
         {
             await using var db = await Factory.CreateDbContextAsync();

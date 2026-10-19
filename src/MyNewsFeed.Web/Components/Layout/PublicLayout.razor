@@ -20,7 +20,7 @@
     var onNews = path.StartsWith("news", StringComparison.OrdinalIgnoreCase);
     var onSaved = path.StartsWith("saved", StringComparison.OrdinalIgnoreCase);
     var onHome = path.Length == 0 || path[0] is '?' or '#';
-    var section = onCollege ? "College Sports" : onF1 ? "F1" : onTeams ? "Settings" : onTv ? "TV & Streaming" : onEvents ? "Sports Events" : onDigital ? "Digital rental / purchase" : onMovies ? "Movies" : onVideos ? "Videos"
+    var section = onCollege ? "College Sports" : onF1 ? "F1" : onTeams ? "Settings" : onTv ? "TV & Streaming" : onEvents ? "Sports Events" : onDigital ? "Digital rental / purchase" : onMovies ? "Movies" : onVideos ? "YouTube"
         : onRankings ? "Top 25" : onStandings ? "Standings" : onResults ? "Results" : onBoxOffice ? "Box Office" : onNews ? "News" : onSaved ? "Saved articles" : onHome ? "Home" : "Browse";
 }
 
@@ -40,9 +40,10 @@
             <a href="college" aria-current="@(onCollege ? "page" : null)">College Sports</a>
             <a href="f1" aria-current="@(onF1 ? "page" : null)">F1</a>
             <a href="rankings" aria-current="@(onRankings ? "page" : null)">Top 25</a></div></details>
-            <details class="desktop-nav-group" data-mobile-nav><summary class="@((onMovies || onTv || onVideos) ? "is-current" : null)">Entertainment ▾</summary><div class="desktop-nav-links">            <a href="movies" aria-current="@(onMovies && !onDigital ? "page" : null)">Movies</a>
+            <details class="desktop-nav-group" data-mobile-nav><summary class="@((onMovies || onTv) ? "is-current" : null)">Entertainment ▾</summary><div class="desktop-nav-links">            <a href="movies" aria-current="@(onMovies && !onDigital ? "page" : null)">Movies</a>
             <a href="tv" aria-current="@(onTv ? "page" : null)">TV &amp; Streaming</a>
-            <a href="videos" aria-current="@(onVideos ? "page" : null)">Videos</a><a href="movies/digital" aria-current="@(onDigital ? "page" : null)">Digital rental / purchase</a></div></details>
+            <a href="movies/digital" aria-current="@(onDigital ? "page" : null)">Digital rental / purchase</a></div></details>
+            <a href="videos" aria-current="@(onVideos ? "page" : null)">YouTube</a>
         </nav>
 
         <div class="header-actions">
@@ -94,8 +95,9 @@
             <span class="nav-group-label">Entertainment</span>
             <a href="movies" aria-current="@(onMovies ? "page" : null)">Movies</a>
             <a href="tv" aria-current="@(onTv ? "page" : null)">TV &amp; Streaming</a>
-            <a href="videos" aria-current="@(onVideos ? "page" : null)">Videos</a>
             <a href="movies/digital">Digital rental / purchase</a>
+            <span class="nav-group-label">YouTube</span>
+            <a href="videos" aria-current="@(onVideos ? "page" : null)">Videos</a>
             <span class="nav-group-label">Your links</span>
             <a href="saved" aria-current="@(onSaved ? "page" : null)">Saved articles</a>
             <a href="settings" aria-current="@(onTeams ? "page" : null)">Settings</a>

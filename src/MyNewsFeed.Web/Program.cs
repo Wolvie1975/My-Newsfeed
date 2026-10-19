@@ -127,7 +127,7 @@ app.MapGet("/healthz", async (IDbContextFactory<WebScraperContext> factory) =>
 
 // "Load more" on the public feed: the next batch of article cards, rendered by the same component as the page.
 app.MapGet("/feed/more", async (HttpContext http, IDbContextFactory<WebScraperContext> factory, ILoggerFactory loggers,
-    string? after, string? category, string? q, string? day, string? source, string? view) =>
+    string? after, string? category, string? q, string? day, string? source, string? view, string? sport) =>
 {
     if (FeedCursor.Parse(after) is not { } cursor)
     {
@@ -138,6 +138,12 @@ app.MapGet("/feed/more", async (HttpContext http, IDbContextFactory<WebScraperCo
     await using var db = await factory.CreateDbContextAsync();
     var boxOffice = view == "box-office";
     var f1News = view == "f1-news";
+    var big12News = view == "big12-news";
+    if (big12News)
+    {
+        categoryId = await Big12NewsQuery.CategoryIdAsync(db);
+        if (categoryId is null) return Results.NotFound();
+    }
     if (f1News)
     {
         categoryId = await F1NewsQuery.CategoryIdAsync(db);
@@ -171,7 +177,7 @@ app.MapGet("/feed/more", async (HttpContext http, IDbContextFactory<WebScraperCo
     return Results.Json(new
     {
         html,
-        nextHref = page.Next is { } next ? (boxOffice ? "box-office" : f1News ? "f1/news" : "news") + FeedQuery.QueryString(f1News ? null : categoryId, q, next.ToToken(), sourceId, allCategories: !boxOffice && !f1News && categoryId is null) : null,
+        nextHref = page.Next is { } next ? big12News ? CollegeHub.Href("news", CollegeHub.Resolve(sport)) + "&" + FeedQuery.QueryString(null, q, next.ToToken(), sourceId).TrimStart('?') : (boxOffice ? "box-office" : f1News ? "f1/news" : "news") + FeedQuery.QueryString(f1News ? null : categoryId, q, next.ToToken(), sourceId, allCategories: !boxOffice && !f1News && categoryId is null) : null,
         shown = page.Shown,
         total = page.Total,
         added = page.Items.Count,

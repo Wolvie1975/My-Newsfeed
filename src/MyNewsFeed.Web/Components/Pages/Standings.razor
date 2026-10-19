@@ -11,7 +11,7 @@
 <PageTitle>Standings · MyNewsFeed</PageTitle>
 <PageHeading Title="Standings" Eyebrow="THE LEAGUE PICTURE" Description="Full league and conference standings, in the provider’s published order." />
 }
-@if (page.Sources.Count > 0)
+@if (CollegeSport is null && page.Sources.Count > 0)
 {
     <form class="catselect" method="get" action="@BasePath">
         @if (CollegeSport is not null) { <input type="hidden" name="sport" value="@CollegeHub.Resolve(CollegeSport).Key" /> }

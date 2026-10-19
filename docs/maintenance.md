@@ -18,7 +18,7 @@ collected season; its source enablement does not control the RSS news feed. See
 [F1 coverage](sports.md#f1-section) and [F1 News behavior](interface.md#f1-news).
 
 College Sports now groups the existing four covered sports under a shared
-selector, with Schedule, Results, Standings and Rankings tabs. See
+selector, with Schedule, Results, Standings, Rankings and conference-wide News tabs. See
 [college hub coverage](sports.md#college-sports-hub).
 
 Verification results, release images and rollback references are recorded in

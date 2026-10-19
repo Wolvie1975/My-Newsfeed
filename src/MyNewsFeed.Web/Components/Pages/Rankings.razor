@@ -9,7 +9,7 @@
 <PageTitle>Top 25 · MyNewsFeed</PageTitle>
 <PageHeading Title="Top 25" Eyebrow="THE NATIONAL POLLS" Description="Full national rankings with current Big 12 members highlighted." />
 }
-@if (data.Sources.Count > 0)
+@if (CollegeSport is null && data.Sources.Count > 0)
 {
     <form class="catselect" method="get" action="@BasePath">
         @if (CollegeSport is not null) { <input type="hidden" name="sport" value="@CollegeHub.Resolve(CollegeSport).Key" /> }

@@ -103,6 +103,9 @@ Grand Prix/Sprint selection and mobile table scrolling.
 For the College Sports hub, no additional database objects or collector rollout
 are required. Verify `/college` and its Results, Standings and Rankings tabs for
 all four sports, sport persistence, empty/preseason states and mobile navigation.
+Also verify `/college/news`, its publisher filter, article saving and complete
+pagination. It reads the existing Big 12 News category; no collector restart or
+registration scripts are needed for the frontend rollout.
 
 ## Build and deploy
 

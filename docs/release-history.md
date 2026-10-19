@@ -6,10 +6,73 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The most recent verified web release is `mynewsfeed-web:highlight-alignment-20261018`,
-with rollback recorded as `mynewsfeed-web:before-highlight-alignment-20261018`.
-Its container was healthy on October 18, 2026 (Central). This is a dated
+The most recent verified web release is `mynewsfeed-web:youtube-section-20261019`,
+with rollback recorded as `mynewsfeed-web:before-youtube-section-20261019`.
+Its container was healthy on October 19, 2026 (Central). This is a dated
 observation, not live hosting status.
+
+## Separate YouTube navigation — October 19, 2026
+
+Moved Videos out of Entertainment into its own desktop YouTube navigation link
+and dedicated YouTube section in mobile Browse. The current-section label reads
+YouTube on video pages; Entertainment is no longer marked active there. Existing
+video routes, channel filters, paging and playback destinations are unchanged.
+
+Production publish and Blazor static-asset guard passed. Preview and live browser
+checks verified desktop/mobile placement and active states, no overflow at
+390/768/1180/1440px and existing entertainment/sports/health routes.
+
+Release: `mynewsfeed-web:youtube-section-20261019` (`a80561dc6724`).
+Rollback: `mynewsfeed-web:before-youtube-section-20261019` (`fd3d399c44d7`).
+Previous stopped container: `mynewsfeed-web-before-youtube-section-20261019`.
+
+## Big 12 News in College Sports — October 18, 2026
+
+Added the College Sports News tab at `/college/news`, using the existing article
+cards, source selector, safe article/image links, date formatting, cursor paging,
+saving and retired-ID recovery. Coverage is conference-wide; the selected sport
+is retained for hub navigation, source forms and pagination. Five enabled
+publishers are discovered dynamically from the Big 12 News category by name.
+Existing URL ownership is preserved across overlapping official feeds.
+
+Enhanced Load more uses `view=big12-news` and enforces the category server-side,
+including when a request supplies an unrelated category or source. Missing or
+disabled coverage remains empty, query errors remain distinct from empty data,
+and source options include enabled feeds with no articles. Dedicated women's
+basketball remains unregistered; conference-wide feeds can include women's sports.
+No schema, source registration, collector restart or new credentials were needed.
+
+All 170 targeted feed/query/helper/rendering/personal-feature/Box Office checks
+passed, including temporary-table Big 12 category/source isolation and pagination
+fixtures. Production publish and Blazor static-asset guard passed with existing
+Pkcs dependency warnings. Preview and production browser verification covered all
+46 retained articles without duplicate IDs, all five publisher filters/reload,
+article destinations and saving, forged-category isolation, empty search, sport
+persistence, 390/768/1440px layouts, no-JavaScript forms/paging and existing routes.
+Article counts are dated observations. Production HTTPS News and health returned
+200; the container was healthy. Runtime settings, identity, mounts, ports,
+restart policy and network were verified preserved.
+
+Release: `mynewsfeed-web:big12-news-20261018` (`fd3d399c44d7`).
+Rollback: `mynewsfeed-web:before-big12-news-20261018` (`d61f9d5de5d4`).
+Previous stopped container: `mynewsfeed-web-before-big12-news-20261018`.
+
+## Single college sport selector — October 18, 2026
+
+Removed redundant source dropdowns from the college hub's embedded Standings and
+Rankings views. The shared Sport selector remains and its label is now vertically
+centered alongside the control. Standalone Standings and Top 25 retain their
+source selectors.
+
+Production publish and the static-asset guard passed. Preview and production
+browser checks verified exactly one college selector, centered label/control
+alignment and no overflow across all four sports at 390/768/1440px. Standalone
+source selectors were also checked. Production health was healthy and HTTPS
+health returned 200.
+
+Release: `mynewsfeed-web:college-selector-20261018` (`d61f9d5de5d4`).
+Rollback: `mynewsfeed-web:before-college-selector-20261018` (`0ef5235fa2db`).
+Previous stopped container: `mynewsfeed-web-before-college-selector-20261018`.
 
 ## Uniform table team highlights — October 18, 2026
 
