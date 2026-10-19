@@ -1,0 +1,39 @@
+@page "/local"
+@layout PublicLayout
+@using MyNewsFeed.Web.Components.Feed
+@inject IDbContextFactory<WebScraperContext> Factory
+@inject ILogger<Local> Logger
+<PageTitle>Kansas City · MyNewsFeed</PageTitle>
+<PageHeading Title="Kansas City" Eyebrow="CLOSER TO HOME" Description="Local reading, the forecast and places to find your next outing." />
+<nav class="personal-links" aria-label="Kansas City sections"><a href="local#local-news">News</a><a href="local#local-weather">Weather</a><a href="local#local-events">Community events</a></nav>
+<section class="local-panel" id="local-weather" data-local-weather>
+    <div class="d-card__head"><h2>Kansas City forecast</h2><a href="https://forecast.weather.gov/MapClick.php?lat=39.0997&amp;lon=-94.5786" target="_blank" rel="noopener noreferrer">National Weather Service ↗</a></div>
+    <p class="updated" data-weather-status>Open the official forecast for current weather.</p>
+    <div class="weather-grid" data-weather-periods></div>
+    <noscript><p>Use the National Weather Service link to view the forecast.</p></noscript>
+</section>
+<section class="local-panel" id="local-events"><h2>Find something to do</h2>
+    <p>Browse these calendars for community events and current details.</p>
+    <div class="personal-links"><a class="nf-btn nf-btn--secondary" href="https://www.visitkc.com/visitors/events" target="_blank" rel="noopener noreferrer">Visit KC events ↗</a><a class="nf-btn nf-btn--secondary" href="https://www.kcmo.gov/i-want-to/city-calendar" target="_blank" rel="noopener noreferrer">City of Kansas City calendar ↗</a></div>
+</section>
+<section id="local-news"><h2>Kansas City news</h2>
+    <p class="updated">@(dedicated ? "From enabled Kansas City News publishers." : "Stories mentioning Kansas City in the collected news feed. These are keyword matches, including sports; this is not a complete local news service.")</p>
+    <ReadingPreferences />
+    @if (error is not null) { <p class="empty" role="status">@error</p> }
+    else if (feed.Items.Count == 0) { <p class="empty">No matching stories available. Check back after the next collection.</p> }
+    else { <section class="feed" aria-label="Kansas City stories"><FeedArticles Items="feed.Items" /></section> }
+    <nav class="personal-links" aria-label="Local news pages">@if (After is not null) { <a href="local#local-news">Newest stories</a> } @if (feed.Next is {} next) { <a href="@($"local?after={Uri.EscapeDataString(next.ToToken())}#local-news")">Older stories →</a> }</nav>
+</section>
+@code {
+    [SupplyParameterFromQuery(Name="after")] private string? After {get;set;}
+    private FeedPage feed = new([],0,0,null);
+    private bool dedicated;
+    private string? error;
+    protected override async Task OnParametersSetAsync() {
+        error = null;
+        try { await using var db = await Factory.CreateDbContextAsync(); (feed, dedicated) = await LocalNewsQuery.GetAsync(db, FeedCursor.Parse(After)); }
+        catch (Exception ex) when (ex is System.Data.Common.DbException or InvalidOperationException) {
+            Logger.LogWarning(ex,"Local news unavailable"); error = "Local news is temporarily unavailable. Weather and event links remain available.";
+        }
+    }
+}

@@ -107,6 +107,7 @@ else
                                         @video.Title
                                     }
                                 </h3>
+
                                 <p class="vmeta">
                                     <time datetime="@video.PublishedAt.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'")" title="@Dates.PublishedFull(video.PublishedAt)">@Dates.Published(video.PublishedAt)</time>
                                     @if (views is not null)
@@ -137,7 +138,7 @@ else
     [SupplyParameterFromQuery(Name = "page")] private string? PageText { get; set; }
     private int page;
     private int offset;
-    private string PageHref(int target) => "videos?page=" + target + (string.IsNullOrWhiteSpace(Channel) ? "" : "&channel=" + Uri.EscapeDataString(Channel));
+    private string PageHref(int target) => "videos?page=" + target + (string.IsNullOrWhiteSpace(Q) ? "" : "&q=" + Uri.EscapeDataString(Q)) + (string.IsNullOrWhiteSpace(Channel) ? "" : "&channel=" + Uri.EscapeDataString(Channel));
     [SupplyParameterFromQuery(Name = "channel")] private string? Channel { get; set; }
     [SupplyParameterFromQuery(Name = "q")] private string? Q { get; set; }
 

@@ -1,0 +1,10 @@
+@if (FeedQuery.SafeHref(Url) is {} href) {
+    <div class="reading-actions" hidden data-personal-control>
+        <button type="button" class="nf-btn nf-btn--secondary" data-news-read="@href" aria-pressed="false">Mark read</button>
+        <button type="button" class="nf-btn nf-btn--secondary" data-news-mute="@Source">Mute publisher</button>
+    </div>
+}
+@code {
+    [Parameter] public string? Url {get;set;}
+    [Parameter] public string Source {get;set;} = "";
+}

@@ -409,3 +409,11 @@ BEGIN CATCH
 END CATCH;
 ```
 
+
+## Entertainment browsing
+
+Movies and TV retain their individual release/episode schedules, and TV retains
+tracked-series browsing. The combined My Week agenda has been removed. Watchlist, Watch Later and
+episode-progress controls were removed at the user's request; normal source,
+retailer and video playback links remain. See
+[personal planning](interface.md#personal-planning-and-discovery--october-19-2026).

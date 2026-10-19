@@ -1,4 +1,5 @@
 <form class="catselect" method="get" action="movies">
+    @if (!string.IsNullOrWhiteSpace(Search)) { <input type="hidden" name="q" value="@Search" /> }
     <label class="sr-only" for="movie-view">Movie release view</label>
     <select id="movie-view" name="type" onchange="this.form.requestSubmit()">
         <option value="" selected="@(Selected is null)">All releases</option>
@@ -10,5 +11,6 @@
 </form>
 
 @code {
+    [Parameter] public string? Search { get; set; }
     [Parameter] public string? Selected { get; set; }
 }

@@ -137,7 +137,7 @@
     }
 
     function writeSaved(list) {
-        try { var trimmed = list.slice(0, SAVED_MAX); localStorage.setItem(SAVED_KEY, JSON.stringify(trimmed)); savedCache = trimmed; return true; }
+        try { var trimmed = list.slice(0, SAVED_MAX); localStorage.setItem(SAVED_KEY, JSON.stringify(trimmed)); savedCache = trimmed; document.dispatchEvent(new CustomEvent('mynewsfeed-saved-changed', { detail: trimmed })); return true; }
         catch (e) { return false; }
     }
 
@@ -151,6 +151,7 @@
             date: button.getAttribute('data-date') || null,
             dateLabel: button.getAttribute('data-date-label') || null,
             savedAt: new Date().toISOString(),
+            read: (function () { try { var p = JSON.parse(localStorage.getItem('mynewsfeed-personal-v1') || '{}'); return Array.isArray(p.read) && p.read.includes(button.getAttribute('data-url')); } catch (_) { return false; } })(),
         };
     }
 
@@ -285,6 +286,13 @@
         if (toolbar) toolbar.hidden = !storageOk || list.length === 0;
         if (scope === document || matchesWithin(scope, '[data-saved-list]').length) renderSavedPage(list);
     }
+
+    document.addEventListener('mynewsfeed-reading-change', function (event) {
+        var detail = event.detail || {};
+        var list = readSaved().map(function (article) { return Object.assign({}, article); });
+        list.forEach(function (article) { if (detail.reset || article.url === detail.url) article.read = detail.reset ? false : detail.read === true; });
+        if (writeSaved(list)) syncSaves();
+    });
 
     function toggleSave(button) {
         var url = button.getAttribute('data-url');

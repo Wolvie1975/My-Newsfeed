@@ -5,6 +5,25 @@ are in [Sports](sports.md) and [Entertainment](entertainment.md); historical rel
 are in [Release history](release-history.md). Home-page completion filtering and
 automatic appearance notes were updated October 17, 2026 (Central).
 
+## Standing product guideline: tap to link
+
+User direction recorded October 19, 2026: **“This is a tap to link site and not a
+typing one.”** Treat this as an ongoing requirement for future public features and
+interface changes.
+
+- Make content discoverable through tappable links, cards, tabs, dropdowns and
+  preset choices. Normal browsing should not require typing.
+- Prefer selecting a category, publisher, channel, sport, team or date over entering
+  a search query. Provide direct destinations and clear labels.
+- Do not reintroduce site-wide Search or add text-entry-driven public features
+  unless the user explicitly requests them.
+- Preserve keyboard accessibility: tap-oriented browsing must still work with
+  keyboard focus and activation.
+
+This records future design direction; it does not itself request removal of every
+existing text field. Administration and sign-in may retain necessary text entry.
+Existing public text inputs should not become a prerequisite for reaching content.
+
 ## Navigation and layout
 
 Desktop navigation groups Sports and Entertainment with native disclosures. The
@@ -443,3 +462,80 @@ YouTube is a separate main navigation link on desktop and a dedicated section
 in mobile Browse. Videos no longer appears under Entertainment. The existing
 `/videos` page, channel filters and playback links remain unchanged. Mobile
 Browse identifies the current section as YouTube.
+
+## Personal planning and discovery — October 19, 2026
+
+My Week (including the Home “Plan My Week” action) and its calendar downloads
+were removed at the user's request. `/week` and `/calendar/week.ics` return the
+standard 404 page. Individual sports, F1, TV and movie schedules remain available
+from their existing sections. Home customization and news reading preferences
+remain supported.
+
+Watchlist, YouTube Watch Later and episode watched-status controls were removed
+at the user's request. Tracked series remain browsable through TV;
+normal movie details, retailer actions and YouTube playback links remain available.
+Old browser-local watchlist data is unused; existing Saved articles, teams and
+other preferences are preserved.
+
+Site-wide Search and its desktop/mobile entry points were removed at the user's
+request. `/search` returns the standard 404 page. Existing News/category/publisher,
+YouTube/channel, movie and tracked-series filters remain available within their
+sections; movie query filtering retains its all-collected-dates scope.
+
+Settings adds home-section visibility, ordering, selected-team-only games,
+preferred news category, Hide read stories and muted-publisher management. Custom
+home ordering uses full-width sections on desktop to honor the chosen sequence;
+the default retains the established two-column news/sports layout. Customize Home
+uses fixed button columns on larger screens; at phone widths each section label
+sits above equal-width Move up/Move down buttons. Buttons align across rows, retain
+at least 44px touch targets and visibly disable at the ordering endpoints. Explicit news
+URLs override preferred-category navigation. Read/unread changes synchronize with
+Saved articles. Mutes match displayed publisher names. Filtering applies to loaded
+cards; source totals and server pagination describe the unfiltered query, and a
+status explains hidden loaded items. Existing saved articles and team preferences
+retain their original storage keys.
+
+Personal preferences use `mynewsfeed-personal-v1`; reading history holds up to
+2,000 entries. Personal data stays on this browser/device and synchronizes
+between tabs; clearing storage removes it. Storage failures report a status and
+preserve the previously saved value. Personal actions require JavaScript, while
+server-rendered browsing and source links remain usable without it.
+
+## Kansas City Local
+
+Local (`/local`) is Kansas City only. Its news uses the enabled category named
+`Kansas City News` when registered through existing source administration.
+Until then it explicitly labels keyword matches for “Kansas City” from enabled
+collected news; it never substitutes an unfiltered general feed. Ordinary cursor
+paging, article saving and reading controls remain available. No collector schema
+or source registrations are changed by this implementation.
+
+Weather uses the [National Weather Service API](https://www.weather.gov/documentation/services-web-api)
+for a fixed Kansas City coordinate, with no geolocation permission or API key.
+The browser requests `/local/weather`; the server resolves and validates the NWS
+forecast address, caches successful responses for fifteen minutes and retries
+failures after two minutes. A last successful snapshot may be retained for up to
+six hours and is labelled stale on refresh failure. NWS failures leave an official
+forecast link. Forecast updates show Central time.
+
+Forecast cards include locally authored SVG condition icons beside the temperature.
+The NWS `isDaytime` flag distinguishes sun/moon and day/night partly cloudy artwork.
+Condition summaries select clouds, rain, thunderstorms, snow, freezing conditions,
+wintry mixes, fog or wind; unrecognized text uses a neutral thermometer. Icons are
+decorative (`aria-hidden`) because the written condition remains visible. SVG paths
+are constant local artwork; provider text is never inserted as SVG markup and no
+external icon requests are made. Icons adapt to light/dark mode.
+
+Community events link to [Visit KC](https://www.visitkc.com/visitors/events) and the
+[City calendar](https://www.kcmo.gov/i-want-to/city-calendar); these are external
+calendars, not an imported event database.
+
+## Sports statistics modal
+
+Result rows offer a tappable Box score or Game stats link only when usable cached
+statistics are available. It opens a native dialog with a persistent Close button,
+Escape dismissal and focus restoration. Player tables and expandable team/period
+sections keep wide statistics in internal scrolling regions at phone widths.
+Modified clicks and no-JavaScript browsing open the same statistics as a normal
+page. Existing external game links and original result scores are retained. See
+[box-score behavior and read contract](sports.md#cached-box-scores-and-game-stat-modals).

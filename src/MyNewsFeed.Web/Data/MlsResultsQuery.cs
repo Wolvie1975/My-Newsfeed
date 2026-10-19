@@ -26,17 +26,19 @@ public static class MlsResultsQuery
         if (home == away) return game.ScheduleStatus == "STATUS_FINAL_PEN" ? null : "Draw";
         return (home > away ? game.HomeTeamName : game.AwayTeamName) + " win";
     }
-    public static async Task<MlsResultsPage> GetAsync(WebScraperContext db, int pageIndex = 0)
-    {
-        var source = await db.SportsEventsTypes.AsNoTracking().Where(s => s.Enabled && s.ProviderKey == "espn-mls")
-            .OrderBy(s => s.Id).FirstOrDefaultAsync();
-        if (source is null) return new(null, null, [], 0, 0);
-        var query = db.SportsMatchResults.AsNoTracking().Where(r => r.SourceId == source.Id && r.ProviderKey == "espn-mls"
+    public static IQueryable<SportsMatchResult> Visible(WebScraperContext db, int sourceId) => db.SportsMatchResults.AsNoTracking().Where(r => r.SourceId == sourceId && r.ProviderKey == "espn-mls"
             && r.HomeTeamId != r.AwayTeamId && r.HomeScore != null && r.AwayScore != null && r.HomeScore >= 0 && r.AwayScore >= 0
             && (r.ScheduleStatus == "STATUS_FULL_TIME" || r.ScheduleStatus.StartsWith("STATUS_FINAL"))
             && (r.ScheduleStatus != "STATUS_FINAL_PEN" ||
                 (r.HomeShootoutScore != null && r.AwayShootoutScore != null && r.HomeShootoutScore >= 0 && r.AwayShootoutScore >= 0
                  && r.HomeShootoutScore != r.AwayShootoutScore)));
+
+    public static async Task<MlsResultsPage> GetAsync(WebScraperContext db, int pageIndex = 0)
+    {
+        var source = await db.SportsEventsTypes.AsNoTracking().Where(s => s.Enabled && s.ProviderKey == "espn-mls")
+            .OrderBy(s => s.Id).FirstOrDefaultAsync();
+        if (source is null) return new(null, null, [], 0, 0);
+        var query = Visible(db, source.Id);
         // Keep the latest validated stored season during off-season or failed replacement imports.
         var season = await query.MaxAsync(r => (int?)r.Season);
         if (season is null) return new(source, null, [], 0, 0);

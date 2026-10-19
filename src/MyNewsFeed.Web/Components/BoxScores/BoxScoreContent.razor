@@ -1,0 +1,41 @@
+@inject FeedDates Dates
+<div class="box-score-content" data-box-content>
+@if (Detail is null) {
+    <h2>Statistics unavailable</h2><p>Stored statistics are not available for this game. The original result and provider links remain available.</p>
+} else {
+    var data=Detail.Data;
+    <h2>@data.Label</h2>
+    <p class="box-score-matchup">@string.Join(" · ", data.Teams.Select(t=>t.Name))</p>
+    @if (Detail.Updated is {} stamp) { <p class="updated">Stats updated @Dates.PublishedFull(stamp)</p> }
+    <p class="updated">ESPN · Collected statistics; availability varies by game. Scores on the results page remain the recorded result.</p>
+    @if (data.Teams.Any(t=>t.Lines.Count>0)) {
+        <details class="box-score-section"><summary>Scoring by period</summary>
+        @foreach (var team in data.Teams.Where(t=>t.Lines.Count>0)) {
+            <div class="box-table-scroll" tabindex="0" role="region" aria-label="@($"{team.Name} period scores")">
+                <table class="standings-table"><caption>@team.Name · Available period scores</caption><thead><tr><th scope="col">Period</th><th scope="col">Score</th></tr></thead>
+                <tbody>@foreach(var line in team.Lines){<tr><th scope="row">@(line.Period ?? "Period not specified")</th><td>@(line.DisplayValue ?? "—")</td></tr>}</tbody></table>
+            </div>
+        }
+        </details>
+    }
+    var firstTeamGroup = true;
+    @foreach(var group in data.Teams.SelectMany(t=>t.Statistics).Where(s=>s.Value!=null).GroupBy(s=>s.Group)) {
+        <details class="box-score-section" open="@(data.Players.Count==0 && firstTeamGroup)"><summary>@(group.Key is null ? "Team statistics" : "Team statistics · " + group.Key)</summary><div class="box-table-scroll" tabindex="0" role="region" aria-label="Team statistics">
+            <table class="standings-table"><caption>@(group.Key ?? "Team statistics")</caption><thead><tr><th scope="col">Statistic</th>@foreach(var team in data.Teams){<th scope="col">@team.Name</th>}</tr></thead>
+            <tbody>@foreach(var stat in group.DistinctBy(s=>s.Key)){<tr><th scope="row">@stat.Label</th>@foreach(var team in data.Teams){<td>@(team.Statistics.FirstOrDefault(s=>s.Group==group.Key && s.Key==stat.Key)?.Value ?? "—")</td>}</tr>}</tbody></table>
+        </div></details>
+        firstTeamGroup = false;
+    }
+    @foreach(var group in data.Players) {
+        var name=data.Teams.First(t=>t.Id==group.TeamId).Name;
+        <section><h3>@name · @group.Name</h3><div class="box-table-scroll" tabindex="0" role="region" aria-label="@($"{name} {group.Name} player statistics")">
+            <table class="standings-table"><caption>@name · @group.Name</caption><thead><tr><th scope="col">Player</th>@foreach(var col in group.Columns){<th scope="col" title="@col.Description">@col.Label</th>}</tr></thead>
+            <tbody>@foreach(var athlete in group.Athletes){<tr><th scope="row">@athlete.Name @if(athlete.Position is {} position){<span class="updated"> · @position</span>} @if(athlete.Starter==true){<span class="updated"> · Starter</span>}</th>@foreach(var value in athlete.Stats){<td>@(value ?? "—")</td>}</tr>}</tbody>
+            @if(group.Totals.Any(v=>v!=null)){<tfoot><tr><th scope="row">Totals</th>@foreach(var value in group.Totals){<td>@(value ?? "—")</td>}</tr></tfoot>}
+            </table>
+        </div></section>
+    }
+    @if(Detail.ProviderUrl is {} href){<p><a href="@href" target="_blank" rel="noopener noreferrer">View game on ESPN ↗</a></p>}
+}
+</div>
+@code { [Parameter] public BoxDetail? Detail {get;set;} }

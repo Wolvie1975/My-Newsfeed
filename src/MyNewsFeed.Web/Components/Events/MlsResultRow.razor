@@ -7,6 +7,7 @@
         @if (FeedQuery.SafeHref(Game.SourceUrl) is { } url) { <a href="@url" target="_blank" rel="noopener noreferrer">@MlsResultsQuery.Score(Game)</a> }
         else { <span>@MlsResultsQuery.Score(Game)</span> }
         <div class="updated">@Dates.EventTime(Game.StartsAtUtc)</div>
+        <MyNewsFeed.Web.Components.BoxScores.BoxScoreLink Identity="@BoxIdentity.Match(Game.ProviderKey,Game.GameId)" Labels="BoxLabels" Context="@($"{Game.AwayTeamName} at {Game.HomeTeamName}")" />
         <div class="updated">@MlsResultsQuery.Status(Game)</div>
         @if (MlsResultsQuery.Winner(Game) is { } winner) { <div class="updated">@winner</div> }
     </td>
@@ -15,6 +16,7 @@
         @Game.AwayTeamName</span><TeamRecord Value="@Records.Find(Game.ProviderKey, "Soccer", Game.AwayTeamName, Game.AwayTeamId.ToString())" /></td>
 </tr>
 @code {
+    [Parameter] public IReadOnlyDictionary<string,string> BoxLabels {get;set;} = new Dictionary<string,string>();
     [Parameter] public TeamRecords Records { get; set; } = TeamRecords.Empty;
     [Parameter, EditorRequired] public SportsMatchResult Game { get; set; } = default!;
     [Parameter, EditorRequired] public FeedDates Dates { get; set; } = default!;

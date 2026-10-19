@@ -211,3 +211,27 @@ cache version when bundled offline assets change.
 The original movie deployment report targeted `jcarpio@mynewsfeed-prod` at
 `/home/jcarpio/Projects/My-Newsfeed`. Treat that as historical environment context;
 confirm the current target and runtime configuration before operating on another host.
+
+### Personal planning preview
+
+`Results:BackgroundSyncEnabled=false` (environment variable
+`Results__BackgroundSyncEnabled=false`) disables the results-writing background
+worker for a read-only development preview. The default remains `true` for normal
+production collection. League phase checks still run and only update memory.
+Kansas City weather needs outbound HTTPS access to `api.weather.gov`; no new
+credential, database schema or collector configuration is required.
+
+
+## Optional sports box-score cache
+
+The scraper owns `dbo.SportsBoxScores`. The web runtime needs SELECT access only;
+no frontend schema migration, write grant or provider secret is required. Verify
+that the target runtime identity can read the existing view before expecting
+Box score/Game stats actions. Missing/unreadable optional cache data leaves original
+results usable. Do not alter ResultGames or SportsMatchResults to integrate it.
+
+Verify `/results`, College Results, `/mls/results`, `/championship/results` and a
+supported `/box-score/{sport}/{league}/{eventId}` route. Check modal opening,
+Close/Escape/focus return, internal table scrolling, no-JavaScript direct links,
+and missing/unsupported detail fallback. F1 and existing schedule links are separate.
+See [cached statistics](docs/sports.md#cached-box-scores-and-game-stat-modals).

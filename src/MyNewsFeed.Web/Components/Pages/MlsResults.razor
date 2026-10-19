@@ -1,3 +1,4 @@
+@inject BoxScoresRepository BoxScores
 @page "/mls/results"
 @layout PublicLayout
 @inject MyNewsFeed.Web.Scores.LeaguePhases RecordPhases
@@ -28,7 +29,7 @@ else
                 <thead><tr><th scope="col">Home</th><th scope="col">Score</th><th scope="col">Away</th></tr></thead>
                 <tbody>@foreach (var game in day)
                 {
-                    <MlsResultRow Game="@game" Dates="@Dates" Records="records" />
+                    <MlsResultRow Game="@game" Dates="@Dates" Records="records" BoxLabels="boxLabels" />
                 }</tbody>
             </table>
         </div>
@@ -43,6 +44,7 @@ else
     }
 }
 @code {
+    private IReadOnlyDictionary<string,string> boxLabels = new Dictionary<string,string>();
     private TeamRecords records = TeamRecords.Empty;
     [SupplyParameterFromQuery(Name = "page")] private string? Page { get; set; }
     private MlsResultsPage data = new(null, null, [], 0, 0);
@@ -52,7 +54,8 @@ else
     {
         error = null;
         try { await using var db = await Factory.CreateDbContextAsync();
-        records = await TeamRecords.LoadAsync(db, Dates.Today, RecordPhases); data = await MlsResultsQuery.GetAsync(db, int.TryParse(Page, out var page) ? Math.Clamp(page, 0, 10000) : 0); }
+        records = await TeamRecords.LoadAsync(db, Dates.Today, RecordPhases); data = await MlsResultsQuery.GetAsync(db, int.TryParse(Page, out var page) ? Math.Clamp(page, 0, 10000) : 0);
+        boxLabels = await BoxScores.AvailableAsync(data.Items.Select(g=>BoxIdentity.Match(g.ProviderKey,g.GameId)).OfType<BoxIdentity>()); }
         catch (Exception ex) when (ex is System.Data.Common.DbException or InvalidOperationException)
         { Log.LogError(ex, "Could not read MLS results."); error = "Results are temporarily unavailable. Please try again."; }
     }

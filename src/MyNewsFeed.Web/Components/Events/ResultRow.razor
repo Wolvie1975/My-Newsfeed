@@ -20,6 +20,7 @@
     <td class="td-score" role="cell">
         <span class="score__time">@Dates.EventTime(Item.StartsAtUtc)</span>
         <span class="score">@score</span>
+        <MyNewsFeed.Web.Components.BoxScores.BoxScoreLink Identity="@(new BoxIdentity(Item.Sport ?? "",Item.League ?? "",Item.EventId))" Labels="BoxLabels" Context="@($"{Item.AwayName} at {Item.HomeName}")" />
         @if (status.Length > 0)
         {
             <span class="score__status">@status</span>
@@ -41,6 +42,7 @@
 </tr>
 
 @code {
+    [Parameter] public IReadOnlyDictionary<string,string> BoxLabels {get;set;} = new Dictionary<string,string>();
     [Parameter] public TeamRecords Records { get; set; } = TeamRecords.Empty;
     [Parameter, EditorRequired] public ResultItem Item { get; set; } = default!;
 }

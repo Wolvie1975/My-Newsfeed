@@ -7,7 +7,7 @@ namespace MyNewsFeed.Tests;
 
 public class Big12NewsTests
 {
-    private sealed class FixtureContext(DbContextOptions<WebScraperContext> options) : WebScraperContext(options)
+    internal sealed class FixtureContext(DbContextOptions<WebScraperContext> options) : WebScraperContext(options)
     {
         protected override void OnModelCreating(ModelBuilder model)
         {
@@ -17,7 +17,7 @@ public class Big12NewsTests
             model.Entity<Page>().ToTable("#Big12NewsPages");
         }
     }
-    private static async Task<FixtureContext> Fixture()
+    internal static async Task<FixtureContext> Fixture()
     {
         var config = new ConfigurationBuilder().AddJsonFile(Path.GetFullPath("../../../../../src/MyNewsFeed.Web/appsettings.json", AppContext.BaseDirectory))
             .AddUserSecrets("c579816a-020e-445a-92f6-efdd7002106c").AddEnvironmentVariables().Build();

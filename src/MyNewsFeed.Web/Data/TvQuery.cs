@@ -11,11 +11,15 @@ public sealed record TvSchedule(IReadOnlyList<TvEpisodeItem> Items, int Total, I
 
 public static class TvQuery
 {
-    public static async Task<TvSchedule> GetAsync(WebScraperContext db, FeedDates dates, DateOnly start, int? show, int days = 7)
+    public static async Task<TvSchedule> GetAsync(WebScraperContext db, FeedDates dates, DateOnly start, int? show, int days = 7, string? search = null)
     {
         var end = start.AddDays(days);
         var window = new ResultsWindow(ResultsWindow.ForDay(start, dates.Zone).StartUtc, ResultsWindow.ForDay(end, dates.Zone).StartUtc);
         var enabled = db.TvTrackedSeries.AsNoTracking().Where(t => t.Enabled);
+        if (!string.IsNullOrWhiteSpace(search)) {
+            var term = QueryText.Term(search);
+            enabled = enabled.Where(t => (t.Series != null ? t.Series.Title : t.ExpectedTitle).Contains(term));
+        }
         var shows = await enabled.OrderBy(t => t.Series != null ? t.Series.Title : t.ExpectedTitle)
             .Select(t => new TvShowChoice(t.TvmazeShowId, t.Series != null ? t.Series.Title : t.ExpectedTitle)).ToListAsync();
         var episodes = db.TvEpisodes.AsNoTracking().Where(e => enabled.Any(t => t.SeriesId == e.SeriesId));

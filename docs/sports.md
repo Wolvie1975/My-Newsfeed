@@ -585,3 +585,50 @@ scoped to the sport. No new scraper, source registrations, credentials or databa
 schema changes are required. The News tab is conference-wide rather than filtered by the selected sport;
 it retains the sport for navigation back to structured coverage. See
 [Big 12 News behavior](interface.md#big-12-news).
+
+## Individual schedules
+
+The combined My Week agenda and its calendar downloads were removed at the user's
+request. Sports Events, Results, College Sports and F1 retain their existing
+schedules, filters and navigation. Personal team highlights and Home's optional
+selected-team filter remain available through Settings.
+
+## Cached box scores and game-stat modals
+
+Results (including College Results), MLS season results and Championship season
+results offer Box score when cached player statistics exist, or Game stats when
+only team statistics exist. Actions appear only for supported, valid normalized
+snapshots in `dbo.SportsBoxScores`, keyed by `(Sport, League, EventId)`.
+Existing score sources, team records, filters, pagination, shootouts and provider
+score links remain unchanged. Schedules retain their original Stats/Details links;
+F1 classifications are independent.
+
+A native dialog opens on tap, with Close/Escape, focus containment and focus return
+to the originating link. The Results auto-refresh pauses while a dialog is open.
+A normal `/box-score/{sport}/{league}/{eventId}` page is the no-JavaScript and
+modified-click fallback. Invalid, missing, hidden or unavailable identities return
+404 with generic unavailable text. A failed modal load leaves a normal detail link.
+No typed input or embedded external website is required.
+
+Statistics come from the existing optional read-only cache, with no request-time
+provider scraping. One bounded batch per visible listing validates availability,
+composite identity, supported version and usable JSON before rendering actions.
+This validation deliberately reads cached payloads in the batch to avoid offering
+buttons for malformed/empty snapshots; payloads are not embedded in list HTML.
+Detail HTML is fetched only when requested. Failed availability reads leave existing
+results usable. A valid retained last-good snapshot remains available after a
+refresh error; raw diagnostics and retry times are never displayed.
+
+Team values align by `(group,key)`, not array position. Player values and provided
+totals retain the original column indices, including when an unusable column is
+skipped. Missing values show an em dash; zeroes, percentages and precision remain
+unchanged. Team-stat sections expand on tap; team-only games initially open their
+first section. Available player tables are visible directly. Period scores retain
+every supplied entry per team, including repeated unknown periods, without inferred
+inning/quarter/set numbering. Provider team scores do not replace result-card scores.
+
+Tables scroll within labelled keyboard-focusable regions on narrow screens. Provider
+text is Razor-encoded; optional provider URLs require HTTPS, an ESPN host and a path
+segment matching the event ID. Timestamps use the configured display timezone.
+No cache writes, schema migration, collector restart or new provider credentials
+are required. The frontend runtime must retain SELECT access to SportsBoxScores.

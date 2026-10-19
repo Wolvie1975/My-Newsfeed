@@ -2028,3 +2028,73 @@
 /* Keep the college sport label centered alongside its control. */
 .pub .college-sport-select { align-items: center; }
 .pub .college-sport-select label { margin: 0; flex: none; }
+
+/* Personal planning, reading and local discovery. */
+.pub [hidden] { display: none !important; }
+.personal-links, .personal-toolbar { display:flex; flex-wrap:wrap; align-items:center; gap:.75rem 1rem; margin:1rem 0 1.5rem; }
+.personal-toolbar label { display:flex; align-items:center; gap:.5rem; flex-wrap:wrap; }
+.personal-toolbar input[type=search] { flex:1; min-width:10rem; max-width:36rem; }
+.personal-toolbar input, .personal-toolbar select { max-width:100%; padding:.55rem; border:1px solid var(--border, #888); border-radius:.4rem; background:var(--surface, Canvas); color:inherit; }
+.agenda-list { list-style:none; padding:0; margin:0; display:grid; gap:.75rem; }
+.local-panel { margin:1.5rem 0 2rem; }
+.agenda-item, .weather-period { padding:1rem; border:1px solid var(--border, #8886); border-radius:.65rem; min-width:0; overflow-wrap:anywhere; }
+.agenda-item h3, .agenda-item h2 { margin:.35rem 0 .5rem; font-size:1.15rem; }
+.agenda-item p { margin:.35rem 0; }
+.weather-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr)); gap:1rem; }
+.reading-actions { display:flex; flex-wrap:wrap; gap:.5rem; margin:.5rem 0; }
+.reading-actions .nf-btn { font-size:.8rem; min-height:44px; }
+.reading-preferences { margin:1rem 0; padding:.75rem 0; display:flex; flex-wrap:wrap; align-items:center; gap:.75rem; }
+.reading-preferences p { flex-basis:100%; margin:0; }
+.home-choice { display:grid; grid-template-columns:minmax(0,1fr) repeat(2,7.5rem); align-items:center; gap:.5rem; padding:.6rem 0; }
+.home-choice label { min-width:0; margin:0; }
+.pub .home-choice .nf-btn { width:100%; min-width:0; min-height:44px; height:auto; padding:.6rem .75rem; }
+.pub .home-choice .nf-btn:disabled { opacity:.5; cursor:default; }
+#home-preferences, #reading-preferences { margin:2rem 0; scroll-margin-top:2rem; }
+#reading-preferences > label { display:flex; flex-wrap:wrap; align-items:center; gap:.5rem; margin:.75rem 0; }
+#reading-preferences select { max-width:100%; }
+.weather-temperature { font-size:1.8rem; font-weight:700; }
+@media (max-width:600px) {
+    .home-choice { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .home-choice label { grid-column:1 / -1; }
+    .pub .home-choice .nf-btn { font-size:.8rem; }
+}
+@media (min-width:1024px) {
+    .pub .d-grid.is-customized { grid-template-columns:minmax(0,1fr); grid-template-rows:none; grid-template-areas:none; }
+    .pub .d-grid.is-customized > [data-home-section] { grid-area:auto; }
+}
+.pub .reading-actions { grid-column:1 / -1; }
+.pub .reading-actions .nf-btn { height:auto; padding:.35rem .7rem; white-space:normal; }
+.tracked-series > .agenda-list { margin-top:1rem; }
+.tracked-series { margin:1rem 0; }
+[data-personal-status]:empty { display:none; }
+.weather-reading { display:flex; align-items:center; gap:.85rem; margin:.75rem 0; }
+.weather-reading .weather-temperature { margin:0; }
+.weather-icon { width:56px; height:56px; flex:none; color:var(--accent); }
+.weather-icon--sun, .weather-icon--partly-day { color:#966400; }
+.weather-icon--storm { color:#7c3aed; }
+.weather-icon--snow, .weather-icon--ice, .weather-icon--mixed { color:#167096; }
+[data-theme="dark"] .weather-icon--sun, [data-theme="dark"] .weather-icon--partly-day { color:#facc15; }
+[data-theme="dark"] .weather-icon--storm { color:#c4b5fd; }
+[data-theme="dark"] .weather-icon--snow, [data-theme="dark"] .weather-icon--ice, [data-theme="dark"] .weather-icon--mixed { color:#7dd3fc; }
+/* Cached sports detail: progressive links become a native, keyboard-accessible modal. */
+.box-score-link { display:inline-block; margin:.3rem 0; padding:.4rem .6rem; min-height:44px; font-size:.85rem; font-weight:600; }
+.pub .box-score-dialog { width:min(1100px,calc(100vw - 24px)); max-width:calc(100vw - 24px); max-height:90dvh; padding:0; border:1px solid var(--border); border-radius:14px; background:var(--surface); color:var(--text); }
+.box-score-dialog::backdrop { background:rgb(0 0 0 / .65); }
+.box-score-dialog__head { display:flex; align-items:center; justify-content:space-between; gap:1rem; padding:1rem; border-bottom:1px solid var(--border); }
+.box-score-dialog__head h2 { margin:0; font-size:1.2rem; }
+.pub .box-score-dialog__head .nf-btn { min-height:44px; flex:none; }
+.box-score-dialog__body { padding:1rem; overflow-wrap:anywhere; }
+.box-score-content { min-width:0; }
+.box-score-content h2 { font-size:1.4rem; }
+.box-score-content h3 { font-size:1.1rem; margin:1.5rem 0 .5rem; }
+.box-score-matchup { font-weight:600; }
+.box-table-scroll { max-width:100%; overflow-x:auto; margin:.5rem 0 1rem; }
+.box-table-scroll .standings-table { min-width:100%; width:max-content; max-width:none; }
+.box-table-scroll th, .box-table-scroll td { max-width:22rem; overflow-wrap:anywhere; }
+.box-table-scroll th:first-child { position:static; }
+.box-score-dialog__head { position:sticky; top:0; z-index:2; background:var(--surface); }
+.box-score-section { margin:1rem 0; }
+.box-score-section summary { cursor:pointer; font-weight:600; padding:.65rem 0; }
+.pub .box-table-scroll th:first-child { text-align:left; min-width:9rem; }
+.pub .box-table-scroll caption { caption-side:top; }
+.pub .box-score-dialog .box-score-matchup:focus { outline:none; }

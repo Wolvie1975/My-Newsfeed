@@ -17,14 +17,14 @@ public static class MoviesQuery
     };
 
     public static Task<MoviesPage> GetAsync(WebScraperContext db, DateOnly today, string? search,
-        string? type, string? platform, string? period, int offset = 0, int take = 50, DateOnly? onDate = null) =>
-        GetCoreAsync(db, today, search, type, platform, period, offset, take, onDate, false);
+        string? type, string? platform, string? period, int offset = 0, int take = 50, DateOnly? onDate = null, DateOnly? through = null) =>
+        GetCoreAsync(db, today, search, type, platform, period, offset, take, onDate, false, through);
 
     public static async Task<IReadOnlyList<MovieReleaseItem>> GetTodayTimelineAsync(WebScraperContext db, DateOnly today) =>
         (await GetCoreAsync(db, today, null, null, null, null, 0, 200, today, true)).Items;
 
     private static async Task<MoviesPage> GetCoreAsync(WebScraperContext db, DateOnly today, string? search,
-        string? type, string? platform, string? period, int offset, int take, DateOnly? onDate, bool timelineOnly)
+        string? type, string? platform, string? period, int offset, int take, DateOnly? onDate, bool timelineOnly, DateOnly? through = null)
     {
         var releases = from r in db.MovieReleases.AsNoTracking()
                        join link in db.MovieSourceLinks on r.MovieSourceLinkId equals link.ID
@@ -56,6 +56,7 @@ public static class MoviesQuery
             releases = releases.Where(x => x.r.ReleaseDate >= start && x.r.ReleaseDate < today);
         }
         else if (period != "all") releases = releases.Where(x => x.r.ReleaseDate >= today || x.r.ReleaseDate == null);
+        if (through is { } last) releases = releases.Where(x => x.r.ReleaseDate <= last);
         if (onDate is { } date) releases = releases.Where(x => x.r.ReleaseDate == date);
         // Combine format/source observations before counting and paging, rather than hiding
         // duplicate cards after Take(), which would leave incomplete pages and inflated totals.

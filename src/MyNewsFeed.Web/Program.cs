@@ -16,6 +16,15 @@ using MyNewsFeed.Web.Scores;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddScoped<BoxScoresRepository>();
+builder.Services.AddMemoryCache();
+builder.Services.AddSingleton<LocalWeather>();
+builder.Services.AddHttpClient("local-weather", client => {
+    client.Timeout = TimeSpan.FromSeconds(8);
+    client.DefaultRequestHeaders.UserAgent.ParseAdd("MyNewsFeed/1.0 (+https://www.weather.gov/documentation/services-web-api)");
+    client.DefaultRequestHeaders.Accept.ParseAdd("application/geo+json");
+});
+
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
@@ -61,7 +70,8 @@ builder.Services.AddHttpClient<EspnClient>(http =>
 builder.Services.AddSingleton<LeaguePhases>();
 builder.Services.AddHostedService<LeaguePhaseService>();
 builder.Services.AddTransient<ScoresSync>();
-builder.Services.AddHostedService<ScoresSyncService>();
+if (builder.Configuration.GetValue("Results:BackgroundSyncEnabled", true))
+    builder.Services.AddHostedService<ScoresSyncService>();
 
 builder.Services.AddHttpClient<MyNewsFeed.Web.Tv.TvmazeClient>(http =>
 {
@@ -183,6 +193,12 @@ app.MapGet("/feed/more", async (HttpContext http, IDbContextFactory<WebScraperCo
         added = page.Items.Count,
         lastDay = page.Items.Count > 0 ? dates.DayKey(page.Items[^1]) : day,
     });
+});
+
+app.MapGet("/local/weather", async (LocalWeather weather, HttpContext context) =>
+{
+    context.Response.Headers.CacheControl = "public,max-age=120";
+    return Results.Json(await weather.GetAsync(context.RequestAborted));
 });
 
 app.MapRazorComponents<App>()

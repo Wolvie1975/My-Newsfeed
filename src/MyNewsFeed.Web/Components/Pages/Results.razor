@@ -1,3 +1,4 @@
+@inject BoxScoresRepository BoxScores
 @page "/results"
 @layout PublicLayout
 @inject MyNewsFeed.Web.Scores.LeaguePhases RecordPhases
@@ -99,7 +100,7 @@ else
                     <tbody role="rowgroup">
                         @foreach (var item in league.Games)
                         {
-                            <ResultRow Item="item" Records="records" />
+                            <ResultRow Item="item" Records="records" BoxLabels="boxLabels" />
                         }
                     </tbody>
                 </table>
@@ -115,6 +116,7 @@ else
 }
 
 @code {
+    private IReadOnlyDictionary<string,string> boxLabels = new Dictionary<string,string>();
     private TeamRecords records = TeamRecords.Empty;
     [SupplyParameterFromQuery(Name = "follow")] private int? Follow { get; set; }
 
@@ -139,6 +141,7 @@ else
         follows = await ResultsQuery.GetFollowsAsync(db, Follow, window);
         listing = await ResultsQuery.GetResultsAsync(db, Follow, window: window);
         lastSynced = await ResultsQuery.GetLastSyncedAsync(db);
+        boxLabels = await BoxScores.AvailableAsync(listing.Items.Select(i=>new BoxIdentity(i.Sport ?? "",i.League ?? "",i.EventId)));
     }
 
     private static string LongDate(string dayKey) =>

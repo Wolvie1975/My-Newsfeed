@@ -1,3 +1,4 @@
+@inject BoxScoresRepository BoxScores
 @page "/championship/results"
 @layout PublicLayout
 @inject MyNewsFeed.Web.Scores.LeaguePhases RecordPhases
@@ -39,6 +40,7 @@ else
                             @if (FeedQuery.SafeHref(game.SourceUrl) is { } url) { <a href="@url" target="_blank" rel="noopener noreferrer">@game.HomeScore – @game.AwayScore</a> }
                             else { <span>@game.HomeScore – @game.AwayScore</span> }
                             <div class="updated">@Dates.EventTime(game.StartsAtUtc)</div>
+                            <MyNewsFeed.Web.Components.BoxScores.BoxScoreLink Identity="@BoxIdentity.Match(game.ProviderKey,game.GameId)" Labels="boxLabels" Context="@($"{game.AwayTeamName} at {game.HomeTeamName}")" />
                             @if (ChampionshipResultsQuery.WrexhamOutcome(game) is { } outcome) { <div class="updated">@outcome</div> }
                             else if (game.ScheduleStatus.Contains("PEN", StringComparison.OrdinalIgnoreCase)) { <div class="updated">Final · Penalties</div> }
                         </td>
@@ -60,6 +62,7 @@ else
     }
 }
 @code {
+    private IReadOnlyDictionary<string,string> boxLabels = new Dictionary<string,string>();
     private TeamRecords records = TeamRecords.Empty;
     [SupplyParameterFromQuery(Name = "team")] private int? Team { get; set; }
     [SupplyParameterFromQuery(Name = "page")] private string? Page { get; set; }
@@ -70,7 +73,8 @@ else
     {
         error = null;
         try { await using var db = await Factory.CreateDbContextAsync();
-        records = await TeamRecords.LoadAsync(db, Dates.Today, RecordPhases); data = await ChampionshipResultsQuery.GetAsync(db, Team == 352, int.TryParse(Page, out var page) ? Math.Clamp(page, 0, 10000) : 0); }
+        records = await TeamRecords.LoadAsync(db, Dates.Today, RecordPhases); data = await ChampionshipResultsQuery.GetAsync(db, Team == 352, int.TryParse(Page, out var page) ? Math.Clamp(page, 0, 10000) : 0);
+        boxLabels = await BoxScores.AvailableAsync(data.Items.Select(g=>BoxIdentity.Match(g.ProviderKey,g.GameId)).OfType<BoxIdentity>()); }
         catch (Exception ex) when (ex is System.Data.Common.DbException or InvalidOperationException)
         { Log.LogError(ex, "Could not read Championship results."); error = "Results are temporarily unavailable. Please try again."; }
     }

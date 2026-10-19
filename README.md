@@ -6,6 +6,11 @@ and administration.
 The web app and Rust scraper share SQL Server data but have separate collection
 and deployment responsibilities.
 
+**Product direction:** “This is a tap to link site and not a typing one.”
+Build public browsing around links, cards, tabs, dropdowns and simple selections;
+avoid features that require typed input. See the
+[standing interaction guideline](docs/interface.md#standing-product-guideline-tap-to-link).
+
 | Guide | Contents |
 | --- | --- |
 | [Deployment](DEPLOY.md) | Database prerequisites, Docker rollout, rollback, runtime settings and private HTTPS/PWA |
@@ -74,3 +79,11 @@ fixtures use rollback transactions or connection-local temporary tables. Use an
 appropriate development/test database.
 Production configuration is supplied privately through runtime settings; see the
 deployment guide before rebuilding a running container.
+
+Deployed October 19, 2026: homepage and news reading preferences, and a Kansas
+City Local section with weather forecasts and icons. See
+[personal planning and discovery](docs/interface.md#personal-planning-and-discovery--october-19-2026)
+for routes, data scope and browser-local storage behavior.
+
+Sports results also support [cached box scores and game-stat modals](docs/sports.md#cached-box-scores-and-game-stat-modals)
+when collected detail is available, with ordinary detail-page links as a fallback.

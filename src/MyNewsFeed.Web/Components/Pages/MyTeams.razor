@@ -36,6 +36,23 @@
     <p class="updated" role="status" data-scheme-status></p>
     <noscript><p class="empty">Enable JavaScript to change and save your color scheme.</p></noscript>
 </section>
+<section id="home-preferences" aria-labelledby="home-preferences-heading">
+    <h2 id="home-preferences-heading">Your homepage</h2>
+    <p class="updated">Choose sections and their order. Saved in this browser. The default shows every section.</p>
+    <div data-home-preferences></div>
+    <label hidden data-personal-control><input type="checkbox" data-home-teams-only /> Show only my selected teams in Today &amp; Tonight</label>
+    <p><button type="button" hidden data-personal-control data-home-reset class="nf-btn nf-btn--secondary">Restore default homepage</button></p>
+</section>
+<section id="reading-preferences" aria-labelledby="reading-preferences-heading">
+    <h2 id="reading-preferences-heading">Reading preferences</h2>
+    <p class="updated">Mark stories read or mute a publisher on an article card. Filters apply to collected news in this browser.</p>
+    <label hidden data-personal-control><input type="checkbox" data-news-hide-read /> Hide read stories</label>
+    <label hidden data-personal-control>Preferred news category <select data-news-category><option value="">Site default · Top Headlines</option><option value="all">All categories</option>@foreach (var category in categories) { <option value="@category.Id">@category.Name</option> }</select></label>
+    <h3>Muted publishers</h3><div data-news-muted></div>
+    <button type="button" hidden data-personal-control data-news-reset class="nf-btn nf-btn--secondary">Reset reading preferences</button>
+</section>
+<p class="updated" data-personal-status role="status"></p>
+<noscript><p class="empty">Enable JavaScript to customize Home and reading preferences.</p></noscript>
 <section aria-labelledby="my-teams-heading">
 <h2 id="my-teams-heading">My Teams</h2>
 <p>Choose professional teams and Big 12 schools to highlight in schedules, results and standings. Full tables remain visible.</p>
@@ -83,9 +100,10 @@
     ];
     private IReadOnlyList<SportsTeamChoice> choices = SportsTeamPreferences.GetChoices();
     private string? error;
+    private IReadOnlyList<FeedCategory> categories = [];
     protected override async Task OnInitializedAsync()
     {
-        try { await using var db = await Factory.CreateDbContextAsync(); choices = await SportsTeamPreferences.GetChoicesAsync(db); }
+        try { await using var db = await Factory.CreateDbContextAsync(); choices = await SportsTeamPreferences.GetChoicesAsync(db); categories = await FeedQuery.GetCategoriesAsync(db); }
         catch (Exception ex) when (ex is System.Data.Common.DbException or InvalidOperationException)
         { error = "Professional teams are temporarily unavailable. Reload to try again."; }
     }

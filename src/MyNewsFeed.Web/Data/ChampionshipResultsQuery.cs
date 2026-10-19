@@ -17,14 +17,16 @@ public static class ChampionshipResultsQuery
         var difference = game.HomeTeamId == 352 ? home - away : away - home;
         return difference > 0 ? "Wrexham win" : difference < 0 ? "Wrexham loss" : "Draw";
     }
+    public static IQueryable<SportsMatchResult> Visible(WebScraperContext db, int sourceId) => db.SportsMatchResults.AsNoTracking().Where(r => r.SourceId == sourceId && r.ProviderKey == "espn-championship"
+            && r.HomeScore != null && r.AwayScore != null && r.HomeScore >= 0 && r.AwayScore >= 0
+            && (r.ScheduleStatus == "STATUS_FULL_TIME" || r.ScheduleStatus.StartsWith("STATUS_FINAL")));
+
     public static async Task<ChampionshipResultsPage> GetAsync(WebScraperContext db, bool wrexhamOnly, int pageIndex = 0)
     {
         var source = await db.SportsEventsTypes.AsNoTracking().Where(s => s.Enabled && s.ProviderKey == "espn-championship")
             .OrderBy(s => s.Id).FirstOrDefaultAsync();
         if (source is null) return new(null, null, [], 0, 0);
-        var query = db.SportsMatchResults.AsNoTracking().Where(r => r.SourceId == source.Id && r.ProviderKey == "espn-championship"
-            && r.HomeScore != null && r.AwayScore != null && r.HomeScore >= 0 && r.AwayScore >= 0
-            && (r.ScheduleStatus == "STATUS_FULL_TIME" || r.ScheduleStatus.StartsWith("STATUS_FINAL")));
+        var query = Visible(db, source.Id);
         // The scraper retains its last successful season until a validated new-season import replaces it.
         var season = await query.MaxAsync(r => (int?)r.Season);
         if (season is null) return new(source, null, [], 0, 0);

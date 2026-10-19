@@ -6,10 +6,240 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The most recent verified web release is `mynewsfeed-web:youtube-section-20261019`,
-with rollback recorded as `mynewsfeed-web:before-youtube-section-20261019`.
+The most recent verified web release is `mynewsfeed-web:boxscores-20261019`,
+with rollback recorded as `mynewsfeed-web:before-boxscores-20261019`.
 Its container was healthy on October 19, 2026 (Central). This is a dated
 observation, not live hosting status.
+
+## Product interaction direction — October 19, 2026 (documentation only)
+
+Recorded the user's standing direction: **“This is a tap to link site and not a
+typing one.”** Public browsing should use direct links, cards, tabs, dropdowns and
+preset selections, without requiring typed queries. Future work must not reintroduce
+global Search or text-entry-driven public features unless explicitly requested.
+The guideline is recorded in README, the interface guide and the chat handoff.
+Keyboard accessibility and necessary administration/sign-in input remain supported.
+No application change or deployment was required for this documentation update.
+
+## Cached sports box-score modals — October 19, 2026
+
+Implemented the sports box-score frontend handoff using the read-only
+`dbo.SportsBoxScores` view. Daily Results, College Results, MLS and Championship
+season results now offer Box score for usable cached player detail and Game stats
+for team-only detail. Validated composite identities use Sport/League/EventId;
+missing, corrupt, unsupported or empty snapshots retain the existing result.
+Availability is read in one bounded batch per listing, never per rendered row.
+
+Tapping opens a native modal with persistent Close, Escape, focus containment and
+restoration, expandable team/period sections and internally scrolling player
+tables. A regular detail route supports modified clicks and no JavaScript.
+Repeated unspecified periods remain separate; no inning/quarter/set numbers or
+missing statistics are inferred. Provider text is encoded; optional ESPN links
+require a matching event identity. Existing score/record sources, shootouts,
+provider destinations, filters and pagination are preserved. Results auto-refresh
+waits while a dialog is open. No new request-time provider scraping is performed.
+
+Verification: all 575 .NET tests passed, followed by 11 focused parser/identity/
+URL/render checks after final layout refinements. Read-only runtime-identity
+probes confirmed SELECT access in WebScraper and rendered cached NFL, MLB, WNBA,
+college-football, MLS and NWSL samples. Predeployment comparison preserved 21 daily
+scores and 25 each MLS/Championship scores/provider destinations (dated samples).
+Local and production browser checks passed the three result entry points, modal
+open/close, keyboard/focus restoration, six light/dark layouts at 390/768/1440px,
+internal table scrolling, error handling, invalid/missing IDs and no-JavaScript
+navigation. Private HTTPS phone checks passed Results, MLS and Championship modals
+and health HTTP 200. Docker is healthy; no runtime errors or optional box-score
+read failures were observed. Publish/static-asset guard passed; existing package
+and analyzer warnings remain.
+
+Live runtime environment, identity, mounts/keys, ports, networks and restart
+settings were preserved. No SQL writes/migrations, scraper changes, new credentials
+or Git commit/push were performed. Existing cache coverage varies by game; backend
+handoff counts are historical observations, not hardcoded UI coverage.
+
+Release: `mynewsfeed-web:boxscores-20261019` (`40defb4164bd`).
+Rollback: `mynewsfeed-web:before-boxscores-20261019` (`beae679b6be7`).
+Previous stopped container: `mynewsfeed-web-before-boxscores-20261019`.
+Private snapshots/scripts/screenshots: `/tmp/mynewsfeed-boxscores-deploy/` and
+`/tmp/mynewsfeed-boxscores-review/`.
+
+## Customize Home mobile button alignment — October 19, 2026
+
+Fixed independent flex wrapping that placed Move up beside a section label while
+Move down fell onto the next line. Customize Home now uses consistent grid columns:
+phone labels span the full row, with equal-width Move up/Move down buttons beneath;
+larger screens keep labels and two fixed button columns together. Touch targets
+remain at least 44px; disabled first/last movement buttons have a clear dimmed state.
+
+Local and production browser checks passed 14 viewport/theme combinations at
+320/375/390/430/600/768/1440px in light/dark mode. Checks verified paired buttons,
+matching widths and column positions across all six rows, touch-target size, no
+overflow, reorder persistence and disabled ordering endpoints. Private HTTPS
+mobile alignment and health HTTP 200 passed. Docker is healthy; release publish
+and static-asset guard passed. This was a CSS-only implementation change; no new
+unit tests were added. Live runtime settings were preserved, and the prior
+container/image remains available for rollback. No database, collector or Git
+commit/push changes.
+
+Release: `mynewsfeed-web:home-controls-20261019` (`beae679b6be7`).
+Rollback: `mynewsfeed-web:before-home-controls-20261019` (`d6789294eec0`).
+Previous stopped container: `mynewsfeed-web-before-home-controls-20261019`.
+Private scripts/screenshots/snapshots: `/tmp/mynewsfeed-home-controls-deploy/`.
+
+## Remove Plan My Week — October 19, 2026
+
+Removed the combined My Week agenda at the user's request, including Home's
+“Plan My Week” action, desktop/mobile My Week navigation, Local's weekly sports
+link, agenda-only browser preferences/styles and calendar downloads. `/week` and
+`/calendar/week.ics` now return the standard 404 page. Individual sports, F1,
+college, TV and movie schedules remain available in their existing sections.
+Home customization, personal team highlights/filtering, news reading controls,
+Kansas City Local and weather icons remain available.
+
+Verification: solution build and all 564 remaining .NET tests passed; obsolete
+agenda/calendar tests were removed while bounded listing-filter checks remain.
+Local browser interaction and 60 light/dark route/viewport checks passed at
+390/768/1180/1280/1440px. Production interaction checks passed retired routes,
+removed navigation, Home preferences, reading/Saved state, cross-tab updates,
+blocked storage and no-JavaScript browsing. Private HTTPS checks passed retained
+routes, weather icons, retired route 404s and health HTTP 200. Docker is healthy;
+release publish/static-asset guard passed. Live runtime environment, identity,
+mounts/keys, ports, networks and restart settings were preserved. No schema,
+collector or Git commit/push changes.
+
+Release: `mynewsfeed-web:without-week-20261019` (`d6789294eec0`).
+Rollback: `mynewsfeed-web:before-without-week-20261019` (`e6c63fbe9b35`).
+Previous stopped container: `mynewsfeed-web-before-without-week-20261019`.
+Private snapshots/scripts: `/tmp/mynewsfeed-no-week-deploy/`.
+
+## Remove site-wide Search — October 19, 2026
+
+Removed the global Search page, header magnifying-glass link, mobile Search link
+and cross-content query implementation at the user's request. `/search`, including
+bookmarked query URLs, now returns the standard 404 page. Existing section-level
+News, YouTube, movie and tracked-series filtering remains available; its bounded
+text helper now lives in `QueryText`. My Week, calendar downloads, personal Home,
+reading controls and Kansas City Local/weather icons remain available.
+
+Verification: solution build and all 571 remaining .NET tests passed (the obsolete
+global-search integration test was removed). Local browser interaction and 60
+light/dark responsive route checks passed at 390/768/1180/1280/1440px. Production
+interaction checks passed removed Search/Watchlist entry points, retired-route
+404s, team-filtered agenda, calendars, Home preferences, reading/Saved consistency,
+cross-tab state, blocked storage and no-JavaScript browsing. Private HTTPS checks
+passed six existing routes without Search links, real weather icons, Search 404
+and health HTTP 200. Docker reports healthy. Release publish/static-asset guard
+passed; runtime environment, identity, keys/mounts, ports, networks and restart
+settings were preserved. No schema, scraper or Git commit/push changes.
+
+Release: `mynewsfeed-web:without-search-20261019` (`e6c63fbe9b35`).
+Rollback: `mynewsfeed-web:before-without-search-20261019` (`a16338cf3354`).
+Previous stopped container: `mynewsfeed-web-before-without-search-20261019`.
+Private runtime snapshots/scripts: `/tmp/mynewsfeed-no-search-deploy/`.
+
+## Kansas City weather icons — October 19, 2026
+
+Forecast cards now show local SVG condition artwork beside the temperature,
+including day/night clear and partly cloudy icons, clouds, rain, thunderstorms,
+snow, freezing conditions, mixed precipitation, fog and wind. The NWS day/night
+flag is retained in the cached API response. Unknown conditions use a thermometer;
+written forecasts remain visible and decorative icons are hidden from assistive
+technology. Constant local SVG paths avoid external icon downloads and provider
+text is never interpreted as SVG markup. Light/dark palettes are supported.
+
+Verification: solution build and three weather API/cache/fallback tests passed.
+Local and production browser checks passed day/night mapping, storm priority,
+unknown-condition text safety, light/dark layouts at 390/768/1440px and unavailable
+weather fallback. Private HTTPS checks confirmed four icons with the real NWS
+forecast and health HTTP 200. Docker is healthy with no runtime error entries
+observed. Publish/static-asset guard passed; runtime environment, identity, keys,
+mounts, ports, networks and restart settings were preserved. Existing publish
+package warnings remain. No schema, scraper or Git commit/push changes.
+
+Release: `mynewsfeed-web:weather-icons-20261019` (`a16338cf3354`).
+Rollback: `mynewsfeed-web:before-weather-icons-20261019` (`6908e06c9777`).
+Previous stopped container: `mynewsfeed-web-before-weather-icons-20261019`.
+Private snapshots/scripts: `/tmp/mynewsfeed-weather-icons-deploy/`.
+
+## Remove Watchlist — October 19, 2026
+
+Removed the Watchlist page, desktop/mobile/Home navigation links, movie/TV/video
+save buttons, YouTube Watch Later and episode watched/progress controls at the
+user's request. Existing browser-local watchlist data is unused; no saved articles
+or team selections are cleared.
+
+My Week's optional filter is now **Only my teams in Sports**. It filters sports
+fixtures by existing team aliases while keeping TV, Movies and F1 available.
+Calendar downloads, Search, homepage preferences, news reading controls, Kansas
+City Local, tracked-series browsing and normal movie/video destinations remain.
+Removed watchlist-only browser handlers, styles and agenda metadata; ordinary
+`/watchlist` requests now return the standard 404 page.
+
+Verification: all 572 .NET tests passed. Browser checks passed removal from all
+entry points, the retired route, team filtering with other content retained,
+calendar downloads, homepage settings, read/Saved consistency, cross-tab changes,
+blocked storage and no-JavaScript browsing.
+
+Docker publish/static-asset guard passed; production is healthy and private HTTPS
+`/healthz` returned 200. Production browser checks passed removed entry points,
+retired-route 404, sports-only team filtering, calendars, Home preferences,
+reading/Saved consistency, cross-tab updates, blocked storage and no-JavaScript.
+All 60 production responsive/theme route checks passed at
+390/768/1180/1280/1440px in light/dark mode. No runtime error entries were
+observed. Private HTTPS checks passed Home, My Week, YouTube and TV without removed controls.
+Live environment, identity, mounts/keys, ports, networks and restart settings were
+preserved. No schema, collector or Git commit/push changes were made.
+
+Release: `mynewsfeed-web:without-watchlist-20261019` (`6908e06c9777`).
+Rollback: `mynewsfeed-web:before-without-watchlist-20261019` (`74b9a7422350`).
+Previous stopped container: `mynewsfeed-web-before-without-watchlist-20261019`.
+Private runtime snapshots/scripts: `/tmp/mynewsfeed-no-watchlist-deploy/`.
+
+## Personal planning and discovery — October 19, 2026
+
+Implemented a connected first pass of all seven requested additions:
+
+- My Week (`/week`): seven-day sports/F1/TV/movie agenda, native expandable days,
+  content filters and optional selected-teams/watchlist scope.
+- Movie/TV watchlists, individual episode watched status and YouTube Watch Later
+  (`/watchlist`), with browser-local saved copies and progress controls.
+- Search (`/search`) across collected news, videos, movie catalogs and tracked TV.
+- Homepage section visibility/order and optional selected-team-only games.
+- Single-item and full-week `.ics` calendar downloads, retaining date-only entries
+  and excluding estimated releases.
+- News read/unread controls shared with Saved, Hide read, publisher muting and a
+  remembered preferred category, managed in Settings.
+- Kansas City Local (`/local`): labelled city keyword matches until an enabled
+  `Kansas City News` category exists, cached NWS forecasts and external Visit KC /
+  city event calendars. No source registrations or scraper schema changes.
+
+Verification: solution build passed; all **572 .NET tests** and **5 solar tests**
+passed. Browser interaction checks passed watchlist saving/progress/removal, episode
+status, personal agenda filtering, calendar download, homepage order/visibility,
+reading/muting/preferred category, Saved status consistency, cross-tab updates,
+unsafe stored-content handling, blocked storage and no-JavaScript browsing.
+**60 route/theme/viewport checks** passed across six routes, light/dark and
+390/768/1180/1280/1440px without horizontal overflow or JavaScript errors.
+Existing xUnit analyzer warnings remain. A transient preview read deadlock occurred
+while rollback-based SQL integration fixtures ran concurrently; all tests passed,
+and a subsequent Settings read succeeded after the fixtures completed.
+
+Deployed with a successful Docker release publish and static-asset guard.
+Production checks passed thirteen routes, 25 viewport checks across
+390/768/1180/1280/1440px, Watch Later, `.ics` downloads and the weather endpoint
+(returning four forecast periods). Private HTTPS browser checks passed My Week,
+Local and Search; HTTPS `/healthz` returned 200. Docker reports healthy; no runtime
+error entries were observed. League-phase checks ran. Live environment, runtime
+identity, mounts/keys, ports, network and restart settings were preserved; production
+background result synchronization remains enabled. No schema/collector changes or
+Git commit/push were performed.
+
+Release: `mynewsfeed-web:personal-planning-20261019` (`74b9a7422350`).
+Rollback: `mynewsfeed-web:before-personal-planning-20261019` (`a80561dc6724`).
+Previous stopped container: `mynewsfeed-web-before-personal-planning-20261019`.
+Private runtime snapshots and scripts: `/tmp/mynewsfeed-personal-deploy/`.
+The local read-only preview uses `Results__BackgroundSyncEnabled=false`.
+See [personal planning behavior](interface.md#personal-planning-and-discovery--october-19-2026).
 
 ## Separate YouTube navigation — October 19, 2026
 

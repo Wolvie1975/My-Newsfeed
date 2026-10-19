@@ -31,7 +31,7 @@
         </p>
     }
 
-    <article @key="item.Id" data-article-id="@item.Id" class="article @(isLead ? "article--lead" : "")">
+    <article @key="item.Id" data-article-id="@item.Id" data-news-url="@href" data-news-source="@sourceName" class="article @(isLead ? "article--lead" : "")">
         @* Default image: the placeholder background shows through when there is no image or it fails to load. *@
         <div class="thumb" aria-hidden="true">
             @if (image is not null)
@@ -74,6 +74,7 @@
                 <ShareButton Url="@item.Url" Title="@(title.Length > 0 ? title : item.Title)" />
                 <SaveButton Item="item" Title="@(title.Length > 0 ? title : item.Title)" Source="@sourceName" Summary="@summary" />
             </p>
+            <ReadingControls Url="@href" Source="@sourceName" />
             @if (isLead && href is not null)
             {
                 <a class="more" href="@href" target="_blank" rel="noopener noreferrer">

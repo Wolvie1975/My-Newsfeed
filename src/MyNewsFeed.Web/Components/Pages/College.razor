@@ -1,3 +1,4 @@
+@inject BoxScoresRepository BoxScores
 @page "/college"
 @page "/college/results"
 @page "/college/standings"
@@ -87,7 +88,7 @@ else
         <div class="results standings-scroll" role="region" aria-label="College results" tabindex="0">
             <table class="games"><caption class="sr-only">@selected.Name results</caption>
                 <thead><tr><th scope="col">Competition</th><th scope="col">Away</th><th scope="col">Score</th><th scope="col">Home</th><th scope="col">Venue</th></tr></thead>
-                <tbody>@foreach (var item in results.Items) { <ResultRow Item="item" Records="records" /> }</tbody>
+                <tbody>@foreach (var item in results.Items) { <ResultRow Item="item" Records="records" BoxLabels="boxLabels" /> }</tbody>
             </table>
         </div>
         @if (results.Total > results.Items.Count) { <p class="count">Showing the latest @results.Items.Count of @results.Total results.</p> }
@@ -104,6 +105,7 @@ else
     private string BasePath => view == "schedule" ? "college" : "college/" + view;
     private EventsPage events = new([], 0);
     private ResultsPage results = new([], 0);
+    private IReadOnlyDictionary<string,string> boxLabels = new Dictionary<string,string>();
     private TeamRecords records = TeamRecords.Empty;
     private bool error;
     private DateTime? updatedAt;
@@ -137,6 +139,7 @@ else
                 resultDay = DateOnly.TryParseExact(Day, "yyyy-MM-dd", out var day) && day >= Dates.Today.AddDays(-1) && day <= Dates.Today ? day : Dates.Today;
                 updatedAt = await db.ResultFollows.AsNoTracking().Where(f => f.Enabled && f.League == selected.League).MaxAsync(f => f.LastSyncedAt);
                 results = await ResultsQuery.GetResultsAsync(db, null, window: ResultsWindow.ForDay(resultDay, Dates.Zone), collegeLeague: selected.League);
+                boxLabels = await BoxScores.AvailableAsync(results.Items.Select(i=>new BoxIdentity(i.Sport ?? "",i.League ?? "",i.EventId)));
             }
         }
         catch (Exception ex) when (ex is System.Data.Common.DbException or InvalidOperationException)

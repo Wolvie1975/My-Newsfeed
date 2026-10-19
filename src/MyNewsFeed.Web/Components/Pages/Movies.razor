@@ -6,8 +6,8 @@
 
 <PageTitle>Movies · MyNewsFeed</PageTitle>
 <PageHeading Title="Movies" Eyebrow="THE RELEASE CALENDAR" Description="Find your next movie night. US releases in theaters, on streaming, and at home." />
-<p class="updated">Showing releases from today through the end of @Dates.Today.ToString("MMMM yyyy", System.Globalization.CultureInfo.InvariantCulture).</p>
-<MovieViewSelect Selected="@Type" />
+<p class="updated">@(string.IsNullOrWhiteSpace(Q) ? $"Showing releases from today through the end of {Dates.Today:MMMM yyyy}." : $"Searching all collected release dates for “{QueryText.Term(Q)}”.")</p>
+<MovieViewSelect Selected="@Type" Search="@Q" />
 <p class="updated">All enabled providers · US release calendar, including dates awaiting confirmation.</p>
 <div class="movies-summary">
     <p class="count">@listing.Total @(listing.Total == 1 ? "release" : "releases")</p>
@@ -77,9 +77,10 @@ else
     [SupplyParameterFromQuery(Name = "page")] private string? PageText { get; set; }
     [SupplyParameterFromQuery(Name = "type")] private string? TypeText { get; set; }
     private string? Type => TypeText is "theatrical" or "subscription" ? TypeText : null;
+    [SupplyParameterFromQuery(Name = "q")] private string? Q { get; set; }
     private int page;
     private int offset;
-    private string PageHref(int target) => "movies?page=" + target + (Type is null ? "" : "&type=" + Uri.EscapeDataString(Type));
+    private string PageHref(int target) => "movies?page=" + target + (string.IsNullOrWhiteSpace(Q) ? "" : "&q=" + Uri.EscapeDataString(Q)) + (Type is null ? "" : "&type=" + Uri.EscapeDataString(Type));
     private MoviesPage listing = new([], 0, [], null);
     protected override async Task OnParametersSetAsync()
     {
@@ -91,11 +92,11 @@ else
         await using var db = await Factory.CreateDbContextAsync();
         page = int.TryParse(PageText, out var requested) ? Math.Clamp(requested, 1, 1000000) : 1;
         offset = (page - 1) * 50;
-        listing = await MoviesQuery.GetAsync(db, Dates.Today, null, Type, null, "month", offset: offset, take: 50);
+        listing = await MoviesQuery.GetAsync(db, Dates.Today, QueryText.Term(Q), Type, null, string.IsNullOrWhiteSpace(Q) ? "month" : "all", offset: offset, take: 50);
         if (offset >= listing.Total && page > 1)
         {
             page = Math.Max(1, (listing.Total + 49) / 50); offset = (page - 1) * 50;
-            listing = await MoviesQuery.GetAsync(db, Dates.Today, null, Type, null, "month", offset: offset, take: 50);
+            listing = await MoviesQuery.GetAsync(db, Dates.Today, QueryText.Term(Q), Type, null, string.IsNullOrWhiteSpace(Q) ? "month" : "all", offset: offset, take: 50);
         }
     }
 }
