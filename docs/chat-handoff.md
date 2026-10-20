@@ -3,6 +3,28 @@
 Read this file when continuing work from the previous chat. These are dated
 observations; check current repository and hosting state before acting.
 
+## Latest deployment — filled viewing pages, October 20, 2026
+
+Live mydailyfeed-web:fill-pages-20261020 (57976dba3956), healthy. Rollback image:
+mynewsfeed-web:before-fill-pages-20261020 (18cf4b587629), retained container
+mynewsfeed-web-before-fill-pages-20261020. Private files:
+/tmp/mydailyfeed-fill-pages-deploy/. Runtime preserved; private HTTPS health 200.
+
+WatchCatalog.FilledPage builds stable logical pages of up to 20 eligible titles
+from a 15-minute query window (32-window cache). It deduplicates provider IDs and
+retains surplus entries for Next/Previous. Sorting and selected-service badges
+are applied after membership selection; do not re-filter cached membership for
+each user, which would shift boundaries. List remains a raw-batch compatibility
+wrapper; FilledPage uses ListBatch for up to 50 upstream pages, ten new batches
+per request and ten visible pages. Incomplete scans/source failures show a same-
+page Continue action. Unknown availability retains the existing failure behavior.
+
+25 focused tests plus live paging/watch/sort/US-options checks passed: full TV/
+movie pages, 40 unique TV titles across first two pages, stable back navigation,
+ended-title search and 60 actual viewing-option details. No commit/push was made;
+user manually handles pushes when asked. Session deployment permission remains
+active. This supersedes earlier release records and the no-refill limitation.
+
 ## Latest deployment — US availability filtering, October 20, 2026
 
 Live mydailyfeed-web:us-options-20261020 (18cf4b587629), healthy. Rollback image:

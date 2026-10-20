@@ -6,11 +6,45 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The most recent verified web release is `mydailyfeed-web:us-options-20261020`,
-with rollback recorded as `mynewsfeed-web:before-us-options-20261020`.
+The most recent verified web release is `mydailyfeed-web:fill-pages-20261020`,
+with rollback recorded as `mynewsfeed-web:before-fill-pages-20261020`.
 Its container was healthy on October 20, 2026 (Central). This is a dated
 observation, not live hosting status.
 
+
+## Refill filtered viewing pages — October 20, 2026
+
+Where to watch now fills logical pages with up to 20 eligible titles from
+successive provider batches instead of leaving holes after US availability
+filtering. A bounded 15-minute query window retains eligible membership and
+provider order, deduplicates IDs and carries surplus titles into subsequent
+pages. Next/Previous slice this shared sequence; sorts and service preferences
+apply afterward without changing page membership or mutating the shared window.
+Short final pages remain valid. Active-TV browse filtering and all-status title
+search remain unchanged.
+
+The cache holds up to 32 query windows. Collection scans at most ten new provider
+batches per request, 50 per window, and retains the existing ten display-page cap
+and four-request upstream concurrency limit. Large/sparse searches or source
+failures expose Continue loading this page rather than skipping unseen titles.
+Next is offered only when another eligible title is known; provider failures
+remain distinct from empty results. Direct links and expired/evicted windows may
+rebuild against current provider data. Service badges are re-evaluated separately
+without silently dropping cached page members mid-window.
+
+Verification: 25 focused tests passed, covering refill, no repeats/skips,
+concurrent readers, stable previous pages, short final pages, source failure and
+bounded continuation. Live TV/movie pages contained 20 titles; two TV pages had
+40 distinct titles with identical contents on back navigation. Ended-title search,
+mobile layout, full watch/sort suites and US-options checks passed; all 60 checked
+result cards had US offers. Runtime settings preserved; container/private HTTPS
+health passed. Existing PKCS warnings remain. No database/collector change or Git
+commit/push was performed.
+
+Release: mydailyfeed-web:fill-pages-20261020 (57976dba3956).
+Rollback: mynewsfeed-web:before-fill-pages-20261020 (18cf4b587629).
+Retained container: mynewsfeed-web-before-fill-pages-20261020.
+Private deployment files: /tmp/mydailyfeed-fill-pages-deploy/.
 
 ## Hide titles without US viewing options — October 20, 2026
 

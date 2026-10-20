@@ -512,7 +512,18 @@ including theater-only records. Any valid subscription/free/ads/rent/buy option
 keeps a title visible; rental/purchase-only access never counts as an included
 service match. Checks also run without selected services and share the bounded
 six-hour provider cache. Failed/malformed reads are unknown and remain visible
-with a note (30-second failure cache). Filtering is per provider results page;
-empty filtered pages retain paging and are not silently refilled from later pages.
+with a note (30-second failure cache). Filtered logical pages refill from successive provider batches;
+Next/Previous use stable eligible-title boundaries.
 Sorting runs after filtering. Direct detail URLs retain their no-options message
 for old saved links or catalog changes.
+
+### Filled viewing pages
+
+Logical pages contain up to 20 eligible titles, pulling replacements from later
+provider batches and deduplicating IDs. Surplus titles are retained for the next
+page, so Next/Previous do not overlap within the cached query window. Sorting is
+still per logical page. Short final pages are expected when matches run out.
+A bounded 15-minute, 32-query window cache scans at most ten new provider batches
+per request and 50 per query, with ten display pages maximum. Sparse searches or
+source failures can expose Continue loading this page without skipping results.
+A new/expired/evicted query window may reflect updated provider data.

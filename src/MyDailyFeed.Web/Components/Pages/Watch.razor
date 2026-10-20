@@ -23,7 +23,7 @@ else {<p>Results for “@WatchCatalog.Term(Q)” · <a href="@($"watch?kind={Med
 <input type="hidden" name="q" value="@WatchCatalog.Term(Q)" /><input type="hidden" name="kind" value="@Media" /><input type="hidden" name="genre" value="@Genre" /><input type="hidden" name="page" value="@Page" /><input type="hidden" name="services" value="@Selection" />
 <label for="watch-sort">Sort this page</label><select id="watch-sort" name="sort"><option value="services" selected="@(SortMode=="services")">Your services first</option><option value="title" selected="@(SortMode=="title")">Title A–Z</option><option value="newest" selected="@(SortMode=="newest")">Newest first</option><option value="popular" selected="@(SortMode=="popular")">Most popular</option></select><button class="nf-btn nf-btn--secondary" type="submit">Apply sort</button>
 </form>
-<p class="updated">Showing titles with listed US viewing options. Pages may contain fewer titles after filtering.</p>
+<p class="updated">Showing up to 20 titles with listed US viewing options per page.</p>
 @if(listing.Failed){<p role="status">Title search is temporarily unavailable. Please try again shortly.</p>}
 else if(listing.Items.Count==0){<p role="status">No matching titles with listed US viewing options on this page. Try another title or page.</p>}
 else{
@@ -37,6 +37,7 @@ else{
 @if(!listing.Failed&&listing.Pages>0){
 <nav class="watch-tabs" aria-label="Result pages">@if(Page>1){<a href="@Url(Media,Page-1,Genre)">← Previous</a>}<span>Page @Math.Clamp(Page,1,10)</span>@if(Page<listing.Pages){<a href="@Url(Media,Page+1,Genre)">Next →</a>}</nav>
 }
+@if(listing.CanContinue){<p role="status">More titles need to be checked to finish this page. <a href="@Url(Media,Page,Genre)" data-enhance-nav="false">Continue loading this page</a></p>}
 <WatchCredits />
 @code {
     [SupplyParameterFromQuery(Name="q")]public string? Q {get;set;}
@@ -51,6 +52,6 @@ else{
     private string SortMode=>WatchCatalog.SortKey(SortBy);
     private string Media=>Type=="tv"?"tv":"movie";
     private WatchListing listing=new([],0);
-    protected override async Task OnParametersSetAsync(){Page=Math.Clamp(Page,1,10);listing=WatchCatalog.Sort(await Catalog.Prioritize(await Catalog.List(Media,Q,Genre,Page),Selection),SortMode);}
+    protected override async Task OnParametersSetAsync(){Page=Math.Clamp(Page,1,10);listing=WatchCatalog.Sort(await Catalog.FilledPage(Media,Q,Genre,Page,Selection),SortMode);}
     private string Url(string kind,int page=1,int genre=0)=>$"watch?kind={kind}&q={Uri.EscapeDataString(WatchCatalog.Term(Q))}&page={page}&genre={genre}&services={Selection}&sort={SortMode}";
 }
