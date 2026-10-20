@@ -6,11 +6,31 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The most recent verified web release is `mydailyfeed-web:fill-pages-20261020`,
-with rollback recorded as `mynewsfeed-web:before-fill-pages-20261020`.
+The most recent verified web release is `mydailyfeed-web:icon-20261020`,
+with rollback recorded as `mynewsfeed-web:before-icon-20261020`.
 Its container was healthy on October 20, 2026 (Central). This is a dated
 observation, not live hosting status.
 
+
+## MyDailyFeed ribbon app icon — October 20, 2026
+
+Deployed user-selected concept 4: white ribbon d, feed cards and sunrise on blue.
+Source preserved in docs/assets/mydailyfeed-icon-source.png (built-in imagegen);
+192/512px exports and an inset maskable 512px export use daily-ribbon filenames.
+Manifest, favicon and offline screen updated; service worker cache advanced to v3.
+App identity/scope and legacy files retained. Installed icon refresh is controlled
+by the browser/OS; reinstall if necessary. No application data/schema changes.
+
+Live image mydailyfeed-web:icon-20261020 (114e537b3da9), healthy; rollback image
+mynewsfeed-web:before-icon-20261020 (57976dba3956), retained container
+mynewsfeed-web-before-icon-20261020. Private deployment snapshots/scripts:
+/tmp/mydailyfeed-icon-deploy/. Runtime settings, mounts, ports and networks
+compared and preserved. Docker publish/static-asset guard passed, with existing
+PKCS dependency warnings. Live HTTPS health returned 200. Browser checks passed
+icon dimensions, maskable entry, stable manifest identity, Chromium installability,
+v3 worker/cache and offline navigation. Device installation was confirmed by the
+user before this icon change; on-device icon refresh still needs user observation.
+No commit or push made for this release.
 
 ## Refill filtered viewing pages — October 20, 2026
 

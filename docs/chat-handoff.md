@@ -3,6 +3,26 @@
 Read this file when continuing work from the previous chat. These are dated
 observations; check current repository and hosting state before acting.
 
+## MyDailyFeed ribbon app icon — October 20, 2026
+
+Deployed user-selected concept 4: white ribbon d, feed cards and sunrise on blue.
+Source preserved in docs/assets/mydailyfeed-icon-source.png (built-in imagegen);
+192/512px exports and an inset maskable 512px export use daily-ribbon filenames.
+Manifest, favicon and offline screen updated; service worker cache advanced to v3.
+App identity/scope and legacy files retained. Installed icon refresh is controlled
+by the browser/OS; reinstall if necessary. No application data/schema changes.
+
+Live image mydailyfeed-web:icon-20261020 (114e537b3da9), healthy; rollback image
+mynewsfeed-web:before-icon-20261020 (57976dba3956), retained container
+mynewsfeed-web-before-icon-20261020. Private deployment snapshots/scripts:
+/tmp/mydailyfeed-icon-deploy/. Runtime settings, mounts, ports and networks
+compared and preserved. Docker publish/static-asset guard passed, with existing
+PKCS dependency warnings. Live HTTPS health returned 200. Browser checks passed
+icon dimensions, maskable entry, stable manifest identity, Chromium installability,
+v3 worker/cache and offline navigation. Device installation was confirmed by the
+user before this icon change; on-device icon refresh still needs user observation.
+No commit or push made for this release.
+
 ## Latest deployment — filled viewing pages, October 20, 2026
 
 Live mydailyfeed-web:fill-pages-20261020 (57976dba3956), healthy. Rollback image:

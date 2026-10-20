@@ -598,3 +598,27 @@ October 20 navigation repair: Arrange Settings controls now initialize on both
 direct loads and in-site navigation. A full refresh loads the corrected script in
 existing tabs. Prior direct-load-only browser coverage missed this lifecycle case;
 regressions now enter Settings through actual navigation links.
+
+### Installed app icon — October 20, 2026
+
+User selected concept 4: a white ribbon “d”, layered feed cards and a golden
+sunrise on blue. The original built-in imagegen output is preserved at
+`docs/assets/mydailyfeed-icon-source.png`. Prompt direction: combine the ribbon
+“d” with layered daily-feed cards and a sunrise, retaining a simple blue/white/
+gold app mark readable at small sizes. Browser canvas exports provide 192px and
+512px PNGs plus an inset maskable 512px variant under `wwwroot/icons/daily-ribbon-*`.
+Manifest, favicon and offline screen reference the versioned filenames; app id,
+start URL and scope stay `/`. Service worker cache is `mynewsfeed-pwa-v3` and
+activation removes older app caches. Legacy icon files remain for older installs.
+
+Open the private HTTPS site with Tailscale connected and Tailscale DNS/MagicDNS
+working. Android Brave can install from its browser menu. An HTTP LAN address is
+not sufficient for a secure PWA context. Installed icon updates are browser/OS
+controlled; if the old icon persists, remove and reinstall the installed app.
+Removing an app can also remove its local preferences depending on the browser.
+
+`tests/browser/pwa.browser.cjs` checks actual icon dimensions, manifest identity,
+Chromium installability, worker cache version and offline navigation. Set
+`PLAYWRIGHT_MODULE`, `BASE_URL`, and optionally `PWA_HOST_IP` when the test runner
+requires an explicit Tailscale hostname mapping. This mapping bypasses DNS only
+for the test runner; it does not repair client-device MagicDNS.

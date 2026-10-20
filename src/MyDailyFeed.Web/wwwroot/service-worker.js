@@ -1,7 +1,7 @@
 // Keep only the offline screen and app identity assets; schedules and admin responses are never cached here.
-const CACHE = 'mynewsfeed-pwa-v2';
+const CACHE = 'mynewsfeed-pwa-v3';
 const OFFLINE = '/offline.html';
-const ASSETS = [OFFLINE, '/manifest.webmanifest', '/icons/daily-192.png', '/icons/daily-512.png', '/icons/daily-maskable-512.png'];
+const ASSETS = [OFFLINE, '/manifest.webmanifest', '/icons/daily-ribbon-192.png', '/icons/daily-ribbon-512.png', '/icons/daily-ribbon-maskable-512.png'];
 const PUBLIC_PAGES = new Set(['/', '/news', '/box-office', '/events', '/results', '/standings', '/rankings', '/movies', '/movies/digital', '/tv', '/videos', '/saved']);
 self.addEventListener('install', event => {
     event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(ASSETS)).then(() => self.skipWaiting()));
