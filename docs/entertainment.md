@@ -504,3 +504,15 @@ alphabetical. Newest uses movie release dates/TV premiere dates, and popular use
 TMDB popularity; missing metadata sorts last. Service badges remain informational
 in other modes. The GET sort query survives search, tabs, genres and paging.
 This does not reorder the entire provider catalog across pages.
+
+### Hide unavailable US titles in results
+
+Browsing and title search hide titles with confirmed empty US viewing options,
+including theater-only records. Any valid subscription/free/ads/rent/buy option
+keeps a title visible; rental/purchase-only access never counts as an included
+service match. Checks also run without selected services and share the bounded
+six-hour provider cache. Failed/malformed reads are unknown and remain visible
+with a note (30-second failure cache). Filtering is per provider results page;
+empty filtered pages retain paging and are not silently refilled from later pages.
+Sorting runs after filtering. Direct detail URLs retain their no-options message
+for old saved links or catalog changes.

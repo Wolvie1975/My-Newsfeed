@@ -6,11 +6,38 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The most recent verified web release is `mydailyfeed-web:watch-sort-20261020`,
-with rollback recorded as `mynewsfeed-web:before-watch-sort-20261020`.
+The most recent verified web release is `mydailyfeed-web:us-options-20261020`,
+with rollback recorded as `mynewsfeed-web:before-us-options-20261020`.
 Its container was healthy on October 20, 2026 (Central). This is a dated
 observation, not live hosting status.
 
+
+## Hide titles without US viewing options — October 20, 2026
+
+Where to watch browsing and search now omit titles whose successful provider
+response confirms no usable US subscription/free/ads/rental/purchase offers.
+Filtering runs even without service preferences, reusing bounded cached provider
+checks. Rentals/purchases qualify for visibility but still do not count as included
+access on selected services. Theater-only entries do not qualify. Failed or
+malformed availability checks remain visible as unknown, with a retry-oriented
+availability note, rather than being treated as no options. Shared cached listing
+order remains unchanged. Empty filtered pages retain pagination; pages explain
+that fewer titles may remain. Direct detail routes keep their honest no-options
+fallback for saved links or changed catalogs.
+
+Verification: 21 focused service/sort tests passed, including missing US regions,
+empty lists, theater-only results, rental-only access, malformed/provider failure,
+cache reuse and untouched shared listings. Local and live checks verified US
+options in 36 retained movie/TV/search cards. Full watch and sort browser suites
+passed six modal layouts, error/fallback, keyboard/focus, state preservation and
+no-JavaScript forms/detail. Container/private HTTPS health passed; runtime settings
+preserved. Existing PKCS build warnings remain. No schema/collector change or Git
+commit/push was performed.
+
+Release: mydailyfeed-web:us-options-20261020 (18cf4b587629).
+Rollback: mynewsfeed-web:before-us-options-20261020 (ef6f7f3e7cdb).
+Retained container: mynewsfeed-web-before-us-options-20261020.
+Private deployment files: /tmp/mydailyfeed-us-options-deploy/.
 
 ## Where to watch sorting — October 20, 2026
 

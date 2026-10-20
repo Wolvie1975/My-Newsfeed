@@ -3,6 +3,23 @@
 Read this file when continuing work from the previous chat. These are dated
 observations; check current repository and hosting state before acting.
 
+## Latest deployment — US availability filtering, October 20, 2026
+
+Live mydailyfeed-web:us-options-20261020 (18cf4b587629), healthy. Rollback image:
+mynewsfeed-web:before-us-options-20261020 (ef6f7f3e7cdb), retained container
+mynewsfeed-web-before-us-options-20261020. Private files:
+/tmp/mydailyfeed-us-options-deploy/. Runtime preserved, HTTPS health 200.
+
+WatchCatalog.Prioritize now also filters confirmed no-US-option titles from every
+listing, including title searches and sessions with no selected services. Access
+metadata checks all five offer categories; selected-service matches still use
+only subscription/free/ads. Malformed/failing checks remain unknown and visible.
+Pages can shrink; pagination remains available on empty filtered pages. Detail
+fallback is preserved for saved links or availability changes. No base cached
+listing mutation. 21 focused tests and live US-options/watch/sort suites passed;
+36 retained cards checked for actual US offers. No commit/push was made. Session
+deployment permission remains active. This supersedes earlier release records.
+
 ## Latest deployment — watch sorting, October 20, 2026
 
 Live mydailyfeed-web:watch-sort-20261020 (ef6f7f3e7cdb), healthy. Rollback image:

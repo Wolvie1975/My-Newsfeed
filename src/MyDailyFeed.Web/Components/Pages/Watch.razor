@@ -23,15 +23,18 @@ else {<p>Results for “@WatchCatalog.Term(Q)” · <a href="@($"watch?kind={Med
 <input type="hidden" name="q" value="@WatchCatalog.Term(Q)" /><input type="hidden" name="kind" value="@Media" /><input type="hidden" name="genre" value="@Genre" /><input type="hidden" name="page" value="@Page" /><input type="hidden" name="services" value="@Selection" />
 <label for="watch-sort">Sort this page</label><select id="watch-sort" name="sort"><option value="services" selected="@(SortMode=="services")">Your services first</option><option value="title" selected="@(SortMode=="title")">Title A–Z</option><option value="newest" selected="@(SortMode=="newest")">Newest first</option><option value="popular" selected="@(SortMode=="popular")">Most popular</option></select><button class="nf-btn nf-btn--secondary" type="submit">Apply sort</button>
 </form>
+<p class="updated">Showing titles with listed US viewing options. Pages may contain fewer titles after filtering.</p>
 @if(listing.Failed){<p role="status">Title search is temporarily unavailable. Please try again shortly.</p>}
-else if(listing.Items.Count==0){<p role="status">No matching titles found. Try another title or switch Movies / TV shows.</p>}
+else if(listing.Items.Count==0){<p role="status">No matching titles with listed US viewing options on this page. Try another title or page.</p>}
 else{
 <ul class="watch-grid">@foreach(var title in listing.Items){<li class="watch-card">
 <a data-watch-title href="@($"watch/{title.Kind}/{title.Id}")" aria-label="@($"Where to watch {title.Name}")">
 @if(title.Poster is {} poster){<img src="@poster" alt="" loading="lazy" width="200" height="300" />}else{<span class="watch-no-poster" aria-hidden="true">▷</span>}
-<div><h2>@title.Name</h2><p class="updated">@(title.Kind=="movie"?"Movie":"TV show") · @(title.Year??"Year unavailable")</p>@if(title.MatchingServices?.Count>0){<p class="watch-match">On your services: @string.Join(", ",title.MatchingServices)</p>}else if(Selected.Length>0&&title.MatchingServices is null){<p class="updated">Service availability could not be checked.</p>}
+<div><h2>@title.Name</h2><p class="updated">@(title.Kind=="movie"?"Movie":"TV show") · @(title.Year??"Year unavailable")</p>@if(title.MatchingServices?.Count>0){<p class="watch-match">On your services: @string.Join(", ",title.MatchingServices)</p>}else if(title.MatchingServices is null){<p class="updated">Service availability could not be checked.</p>}
 <span>Where to watch →</span></div></a>
 </li>}</ul>
+}
+@if(!listing.Failed&&listing.Pages>0){
 <nav class="watch-tabs" aria-label="Result pages">@if(Page>1){<a href="@Url(Media,Page-1,Genre)">← Previous</a>}<span>Page @Math.Clamp(Page,1,10)</span>@if(Page<listing.Pages){<a href="@Url(Media,Page+1,Genre)">Next →</a>}</nav>
 }
 <WatchCredits />

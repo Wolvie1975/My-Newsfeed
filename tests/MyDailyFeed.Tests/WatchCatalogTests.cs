@@ -14,7 +14,11 @@ public class WatchCatalogTests
             var json=LastPath.Contains("providers") ? """{"results":{"US":{"link":"https://www.themoviedb.org/movie/1/watch?locale=US","flatrate":[{"provider_id":8,"provider_name":"Service <one>"}],"rent":[{"provider_name":"Rental"}]},"CA":{"buy":[{"provider_name":"Canada only"}]}}}""" : LastPath.Contains("search/") ? """{"total_pages":99,"results":[{"id":1,"title":"Example","release_date":"2020-01-01","popularity":13.5,"poster_path":"/poster.jpg"},{"id":2,"title":"Hidden","adult":true}]}""" : """{"id":1,"title":"Example","name":"Example TV","release_date":"2020-01-01","first_air_date":"2021-01-01","poster_path":"https://evil.invalid/a.jpg"}""";
             if(LastPath.Contains("/discover/"))json="""{"total_pages":2,"results":[{"id":3,"title":"Example movie","name":"Ongoing series","first_air_date":"2020-01-01"}]}""";
             if(LastPath.Contains("/2/watch/providers"))json="""{"results":{"US":{"rent":[{"provider_id":8,"provider_name":"Rental only"}]}}}""";
-            return Task.FromResult(new HttpResponseMessage(Broken?HttpStatusCode.ServiceUnavailable:HttpStatusCode.OK){Content=new StringContent(json)});
+            if(LastPath.Contains("/3/watch/providers"))json="""{"results":{"CA":{"flatrate":[{"provider_id":8,"provider_name":"Canada only"}]}}}""";
+            if(LastPath.Contains("/4/watch/providers"))json="""{"results":{"US":{"flatrate":[],"rent":[],"link":"https://www.themoviedb.org/movie/4/watch"}}}""";
+            if(LastPath.Contains("/5/watch/providers"))json="""{"results":{"US":{"buy":[{"provider_id":60,"provider_name":"Fandango"}]}}}""";
+            if(LastPath.Contains("/7/watch/providers"))json="""{"results":null}""";
+            return Task.FromResult(new HttpResponseMessage(Broken||LastPath.Contains("/6/watch/providers")?HttpStatusCode.ServiceUnavailable:HttpStatusCode.OK){Content=new StringContent(json)});
         }
     }
     private static WatchCatalog Catalog(Provider provider)=>new(provider,new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string,string?>{{"Movies:AccessToken","test-token"}}).Build());
@@ -66,6 +70,16 @@ public class WatchCatalogTests
         if(filtered){Assert.Contains("with_status=0%7C1%7C2%7C5",provider.LastPath);Assert.Contains("with_genres=18",provider.LastPath);}
         else Assert.DoesNotContain("with_status",provider.LastPath);
         if(!string.IsNullOrWhiteSpace(query))Assert.Contains("/search/tv",provider.LastPath);
+    }
+    [Fact]public async Task Filters_confirmed_missing_US_options_even_without_service_preferences_but_retains_rentals_and_unknowns(){
+        var provider=new Provider();var catalog=Catalog(provider);
+        var original=new WatchListing(Enumerable.Range(1,7).Select(id=>new WatchTitle(id,"movie","Title "+id,null,null,"")).ToList(),3);
+        var result=await catalog.Prioritize(original,null);
+        Assert.Equal(new[]{1,2,6,7},result.Items.Select(t=>t.Id));
+        Assert.Equal(3,result.Pages);Assert.Equal(7,original.Items.Count);
+        Assert.NotNull(result.Items[0].MatchingServices);Assert.NotNull(result.Items[1].MatchingServices);
+        Assert.Null(result.Items[2].MatchingServices);Assert.Null(result.Items[3].MatchingServices);
+        await catalog.Prioritize(original,null);Assert.Equal(7,provider.Calls);
     }
     [Fact]public async Task Provider_failure_is_distinct_from_empty_results(){var provider=new Provider{Broken=true};var catalog=Catalog(provider);Assert.True((await catalog.List("tv","title")).Failed);Assert.Null(await catalog.Detail("tv",1));}
 }
