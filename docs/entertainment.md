@@ -527,3 +527,15 @@ A bounded 15-minute, 32-query window cache scans at most ten new provider batche
 per request and 50 per query, with ten display pages maximum. Sparse searches or
 source failures can expose Continue loading this page without skipping results.
 A new/expired/evicted query window may reflect updated provider data.
+
+### Combined title search — October 20, 2026
+
+Where to watch now searches movies and TV together for any nonblank title query,
+using TMDB [multi search](https://developer.themoviedb.org/reference/search-multi).
+Person results and adult entries are excluded. Browse without a query retains the
+Movies/TV tabs and existing active-series/genre behavior. Search hides those tabs
+and labels the results as movies and TV; each card still identifies its media type
+and opens the correct movie/TV detail and provider route. Clear search returns to
+the originating browse type. Sorting, selected services, US availability filtering
+and filled logical pages remain. Cache-window deduplication uses (kind, ID) so a
+movie and series sharing the same numeric provider ID both survive.

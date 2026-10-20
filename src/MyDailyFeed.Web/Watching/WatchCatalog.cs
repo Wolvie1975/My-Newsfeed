@@ -36,7 +36,7 @@ public sealed class WatchCatalog(IHttpClientFactory factory,IConfiguration confi
     }
     private async Task<WatchListing> ListBatch(string kind,string? query,int genre,int page)
     {
-        if(!Kind(kind))return new([],0,true);
+        if(!Kind(kind)&&!(kind=="multi"&&Term(query).Length>0))return new([],0,true);
         var term=Term(query);page=Math.Clamp(page,1,50);genre=Genres.ContainsKey(genre)?genre:0;
         var key=$"watch:list:{kind}:{term}:{genre}:{page}";
         if(cache.TryGetValue<WatchListing>(key,out var saved))return saved!;
@@ -47,7 +47,7 @@ public sealed class WatchCatalog(IHttpClientFactory factory,IConfiguration confi
         if(doc==null)return Save(key,new WatchListing([],0,true),TimeSpan.FromSeconds(30));
         try {
             var root=doc.RootElement;
-            var items=root.GetProperty("results").EnumerateArray().Where(x=>!x.TryGetProperty("adult",out var a)||a.ValueKind!=JsonValueKind.True).Select(x=>Title(x,kind)).Where(x=>x.Id>0&&!string.IsNullOrWhiteSpace(x.Name)).ToList();
+            var items=root.GetProperty("results").EnumerateArray().Where(x=>!x.TryGetProperty("adult",out var a)||a.ValueKind!=JsonValueKind.True).Where(x=>kind!="multi"||Kind(Text(x,"media_type")??"")).Select(x=>Title(x,kind=="multi"?Text(x,"media_type")!:kind)).Where(x=>x.Id>0&&!string.IsNullOrWhiteSpace(x.Name)).ToList();
             return Save(key,new WatchListing(items,Math.Min(50,root.GetProperty("total_pages").GetInt32())),TimeSpan.FromMinutes(15));
         }catch(Exception e) when(e is InvalidOperationException or KeyNotFoundException or FormatException){return new([],0,true);}
     }
@@ -55,7 +55,7 @@ public sealed class WatchCatalog(IHttpClientFactory factory,IConfiguration confi
     {
         public readonly SemaphoreSlim Gate=new(1);
         public readonly List<WatchTitle> Titles=[];
-        public readonly HashSet<int> Seen=[];
+        public readonly HashSet<(string Kind,int Id)> Seen=[];
         public int NextBatch=1;
         public bool Exhausted;
     }
@@ -63,7 +63,7 @@ public sealed class WatchCatalog(IHttpClientFactory factory,IConfiguration confi
     private readonly object windowLock=new();
     public async Task<WatchListing> FilledPage(string kind,string? query,int genre=0,int page=1,string? selected=null)
     {
-        if(!Kind(kind))return new([],0,true);
+        if(!Kind(kind)&&!(kind=="multi"&&Term(query).Length>0))return new([],0,true);
         page=Math.Clamp(page,1,10);genre=Genres.ContainsKey(genre)?genre:0;
         var key=$"{kind}:{Term(query)}:{genre}";
         ResultWindow window;
@@ -80,7 +80,7 @@ public sealed class WatchCatalog(IHttpClientFactory factory,IConfiguration confi
             while(window.Titles.Count<needed&&!window.Exhausted&&scanned++<10){
                 var batch=await ListBatch(kind,query,genre,window.NextBatch);
                 if(batch.Failed){batchFailed=true;break;}
-                var unique=batch with {Items=batch.Items.Where(t=>window.Seen.Add(t.Id)).ToList()};
+                var unique=batch with {Items=batch.Items.Where(t=>window.Seen.Add((t.Kind,t.Id))).ToList()};
                 var eligible=await Prioritize(unique,null);
                 window.Titles.AddRange(eligible.Items);
                 window.Exhausted=window.NextBatch>=batch.Pages||window.NextBatch>=50;

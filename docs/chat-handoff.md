@@ -3,6 +3,90 @@
 Read this file when continuing work from the previous chat. These are dated
 observations; check current repository and hosting state before acting.
 
+## Home source note and video rotation — October 20, 2026
+
+Moved the digital-release source/date note beside its heading using the Latest News
+note style; heading text wraps on narrow screens. Home Latest Videos selects up to
+10 channels, one newest video per channel, with a stable random selection that
+rotates when successful video collection advances to another UTC hour. Selected
+videos display newest first; the full Videos page is unchanged.
+
+Deployed `mydailyfeed-web:home-rotation-20261020` (5209576be142), healthy.
+Rollback image `mynewsfeed-web:before-home-rotation-20261020` (52c918dae944),
+retained container `mynewsfeed-web-before-home-rotation-20261020`. Runtime
+settings, mounts, ports and persistent keys preserved. No schema changes.
+Docker publish/static-asset guard and focused rotation test passed (existing PKCS
+warnings). Live browser checks passed the inline source note, exactly 10 distinct
+video channels, rotation label and no horizontal overflow at 390/768/1440/1920px;
+health and public route checks passed. Private HTTPS health returned 200 using
+an explicit hostname resolution override from the workspace. Private deployment
+files: `/tmp/mydailyfeed-home-rotation-deploy/`. Source and release documentation
+committed for push to `origin/develop` after deployment.
+
+## Cascading desktop homepage — October 20, 2026
+
+Home now uses two cascading desktop columns rather than fixed rows with large
+empty areas beside taller tiles. home-layout.js measures natural heights and sets
+grid spans; observers handle image/content resizing, hidden cards, reordering and
+enhanced navigation. Settings DOM order is retained, including customized layouts.
+Card internals fit the narrower columns. Below 1024px existing stacked layout is
+retained; without JavaScript desktop falls back to a normal two-column grid.
+Different final column heights can still leave bottom whitespace.
+
+Deployed mydailyfeed-web:cascade-20261020 (52c918dae944), healthy. Rollback image
+mynewsfeed-web:before-cascade-20261020 (46dd954c61ef), retained container
+mynewsfeed-web-before-cascade-20261020. Private deployment files/screenshots:
+/tmp/mydailyfeed-cascade-deploy/. Runtime settings/mounts/ports preserved; private
+HTTPS health returned 200. Local build and Docker publish/static-asset guard passed
+with existing PKCS warnings. Preview checks passed two-column packing, no overlap,
+small inter-card gaps, dynamic height, hidden/reordered sections, enhanced Home
+navigation, desktop/mobile resizing and no-JavaScript fallback. Desktop screenshot
+reviewed. Live browser verification also passed the full layout matrix and no-JavaScript
+fallback (external images blocked in that fallback check to avoid image-load delays).
+No schema changes, commit or push.
+
+## Direct YouTube and Saved mobile links — October 20, 2026
+
+Mobile Browse now has a direct YouTube link to /videos and a direct Saved articles
+link to /saved. Removed the YouTube and Your links headings so neither destination
+appears as a child navigation item. Sports and Entertainment retain their grouped
+subnavigation. Settings/admin remain direct links.
+
+Deployed mydailyfeed-web:mobile-links-20261020 (46dd954c61ef), healthy. Rollback
+image mynewsfeed-web:before-mobile-links-20261020 (1687dfffcfb2), retained container
+mynewsfeed-web-before-mobile-links-20261020. Private deployment snapshots/scripts:
+/tmp/mydailyfeed-mobile-links-deploy/. Runtime settings/mounts/ports preserved;
+private HTTPS health returned 200. Docker publish/static-asset guard passed with
+existing PKCS warnings. Live browser checks passed direct-link structure/destinations, no redundant headings,
+Sports/Entertainment grouping, theme/phone/tablet layouts, menu closing and mixed
+search/sort/detail/clear flows without JavaScript errors. No schema changes,
+commit or push for this release.
+
+## Combined title search and clearer mobile subnavigation — October 20, 2026
+
+Where to watch title queries now use TMDB search/multi, showing movies and TV
+together and excluding people/adult results. Cards retain media labels and the
+correct detail/provider routes. Search hides type tabs; clearing returns to the
+originating movie/TV browse mode. Browse tabs, genres, active-TV filtering, services,
+sorting and filled logical pages remain. Deduplication uses (kind, ID), preserving
+a movie and TV title that share the same numeric provider ID.
+
+Mobile Browse gives Sports and Entertainment named groups, stronger parent labels,
+borders and indented sublinks with a vertical guide. Existing destinations, touch
+targets, current-page indicators, menu scrolling and closing behavior remain;
+desktop dropdowns are unchanged.
+
+Deployed mydailyfeed-web:mixed-nav-20261020 (1687dfffcfb2), healthy. Rollback image
+mynewsfeed-web:before-mixed-nav-20261020 (85cb568ecbfd), retained container
+mynewsfeed-web-before-mixed-nav-20261020. Private snapshots/scripts/screenshots:
+/tmp/mydailyfeed-mixed-nav-deploy/. Runtime settings/mounts/ports preserved;
+private HTTPS health returned 200. Docker publish/static-asset guard passed with
+existing PKCS warnings. All 26 focused catalog/sort/paging/mixed-search tests passed.
+Preview mixed-search/navigation, existing watch and sort browser suites passed
+(including no-JavaScript). Mobile screenshot reviewed. Live browser verification
+also passed mixed search, sort/detail/clear flows and grouped navigation at phone
+and tablet widths in light/dark themes, without overflow or JavaScript errors. No schema changes, commit or push for this release.
+
 ## Simplify Saved page — October 20, 2026
 
 Removed the Reading list / All saved selector and saved-article total shown in the

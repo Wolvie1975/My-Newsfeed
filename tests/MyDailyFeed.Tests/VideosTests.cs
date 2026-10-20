@@ -51,6 +51,28 @@ public class VideosTests
     public void Query_strings_keep_only_the_filters_that_are_set(string? channel, string? search, string expected) =>
         Assert.Equal(expected, VideosQuery.QueryString(channel, search));
 
+    [Fact]
+    public void Home_rotation_limits_channels_is_stable_within_hour_and_changes_next_hour()
+    {
+        var collected = new DateTime(2026, 10, 20, 12, 0, 0, DateTimeKind.Utc);
+        var candidates = Enumerable.Range(1, 40).Select(i => new VideoItem(
+            i, $"video{i}", $"channel{i}", $"Channel {i}", $"Video {i}",
+            $"https://example.com/{i}", collected.AddMinutes(-i), null, null)).ToList();
+        candidates.Add(candidates[0] with { Id = 100, PublishedAt = collected.AddDays(-1) });
+
+        var selected = VideosQuery.SelectHomeVideos(candidates, collected);
+        Assert.Equal(10, selected.Count);
+        Assert.Equal(10, selected.Select(v => v.ChannelId).Distinct().Count());
+        Assert.DoesNotContain(selected, v => v.Id == 100);
+        Assert.Equal(selected, VideosQuery.SelectHomeVideos(candidates.AsEnumerable().Reverse(), collected.AddMinutes(59)));
+        Assert.False(selected.Select(v => v.Id).SequenceEqual(
+            VideosQuery.SelectHomeVideos(candidates, collected.AddHours(1)).Select(v => v.Id)));
+        Assert.Equal(selected.OrderByDescending(v => v.PublishedAt), selected);
+        Assert.Equal(40, VideosQuery.SelectHomeVideos(candidates, collected, 100).Count);
+        Assert.Empty(VideosQuery.SelectHomeVideos(candidates, collected, 0));
+        Assert.Empty(VideosQuery.SelectHomeVideos([], collected));
+    }
+
     private static WebScraperContext Create() => new(
         new DbContextOptionsBuilder<WebScraperContext>()
             .UseSqlServer("Server=sql2025,1433;Database=WebScraper;User Id=sa;Password=Fedora_Dev_2025!;Encrypt=False;TrustServerCertificate=True;")

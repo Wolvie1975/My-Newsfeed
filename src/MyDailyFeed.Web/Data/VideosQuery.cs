@@ -92,6 +92,31 @@ public static class VideosQuery
         return new VideosPage(items, total);
     }
 
+    /// <summary>Rotate up to ten channels when video collection advances to another UTC hour.</summary>
+    public static async Task<IReadOnlyList<VideoItem>> GetHomeVideosAsync(WebScraperContext db, int take = 10)
+    {
+        var updated = await GetLastUpdatedAsync(db);
+        var candidates = await GetLatestPerChannelAsync(db);
+        return SelectHomeVideos(candidates, updated ?? DateTime.UnixEpoch, take);
+    }
+
+    public static IReadOnlyList<VideoItem> SelectHomeVideos(
+        IEnumerable<VideoItem> candidates, DateTime lastCollectedAt, int take = 10)
+    {
+        var hour = lastCollectedAt.Ticks / TimeSpan.TicksPerHour;
+        return candidates
+            .GroupBy(item => item.ChannelId)
+            .Select(group => group.OrderByDescending(item => item.PublishedAt).ThenByDescending(item => item.Id).First())
+            .OrderBy(item => Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(
+                System.Text.Encoding.UTF8.GetBytes(FormattableString.Invariant($"{hour}:{item.ChannelId}")))),
+                StringComparer.Ordinal)
+            .ThenBy(item => item.ChannelId, StringComparer.Ordinal)
+            .Take(Math.Max(0, take))
+            .OrderByDescending(item => item.PublishedAt)
+            .ThenByDescending(item => item.Id)
+            .ToList();
+    }
+
     /// <summary>Each channel's newest video, newest first: one row per channel, for the home page.</summary>
     public static async Task<IReadOnlyList<VideoItem>> GetLatestPerChannelAsync(WebScraperContext db)
     {

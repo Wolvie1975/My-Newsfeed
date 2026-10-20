@@ -690,3 +690,37 @@ with legacy read metadata. Removed obsolete filtering, count and Show all saved
 handlers/styles. The header bookmark badge and sync/error status remain. Rendering
 signatures include sync readiness so an initially empty list shows its guidance
 when the first response completes.
+
+### Mobile grouped navigation — October 20, 2026
+
+Sports and Entertainment inside the mobile Browse menu each have an accessible
+named group, larger parent heading, containing border and indented child links
+with a vertical guide. Existing destinations, current-page marking, touch targets,
+menu scrolling and close-on-selection remain. Desktop dropdowns are unchanged.
+Where to watch combines movie/TV title searches but preserves separate browse tabs.
+
+### Direct mobile links — October 20, 2026
+
+YouTube and Saved articles are direct links in the mobile Browse menu, outside
+Sports/Entertainment groups. Removed the separate YouTube / Your links labels
+and renamed the Videos destination label to YouTube. Settings/admin links remain
+direct as well. Sports and Entertainment retain their grouped subnavigation.
+
+### Cascading desktop Home — October 20, 2026
+
+At widths >=1024px, Home uses two equal columns with independent card row spans
+instead of fixed full-width section rows. `home-layout.js` measures natural card
+heights and rounds spans to 1px rows plus the current row gap; dense auto-placement
+fills available column space. The DOM remains in Settings order. Hidden sections
+stay hidden and customized layouts keep both columns. ResizeObserver remeasures
+card/image/filter changes; MutationObserver handles visibility/order updates;
+Blazor enhancedload rebinds after navigation. Desktop card internals use two movie
+columns and single-column TV, F1 and video content to fit the narrower tiles.
+
+Below 1024px the script clears desktop spans and the existing stacked layout is
+used. Without JavaScript the desktop layout is a normal two-column grid. This
+reduces gaps between sections; different column totals can still leave space at
+the bottom. No data, settings keys, card content limits or destinations changed.
+`tests/browser/home-cascade.browser.cjs` checks gaps/overlap at 1024/1440/1920px,
+dynamic height, hide/reorder preferences, enhanced Home navigation, resizing back
+to mobile/tablet, and the no-JavaScript fallback.

@@ -161,12 +161,16 @@
             </ul>
         }
         <div class="d-card__head">
-            <h2 class="d-card__title" id="h-digital">Upcoming Digital / VOD</h2>
+            <h2 class="d-card__title" id="h-digital">Upcoming Digital / VOD
+                @if (digitalData?.Selected is { } source)
+                {
+                    <span class="d-card__count">@source.Name · From today onward</span>
+                }
+            </h2>
             <a class="d-more" href="movies/digital">View all <span aria-hidden="true">→</span></a>
         </div>
         @if (digitalData?.Selected is { } digitalSource)
         {
-            <p class="updated">@digitalSource.Name · From today onward</p>
             @if (!string.IsNullOrWhiteSpace(digitalSource.LastError)) { <p class="updated">Latest collection failed; showing previously collected releases when available.</p> }
         }
         @if (digitalMovies.Count == 0)
@@ -251,7 +255,7 @@
 
     <section data-home-section="videos" class="d-card d-vids" aria-labelledby="h-vids">
         <div class="d-card__head">
-            <h2 class="d-card__title" id="h-vids">Latest videos <span class="d-card__count">1 per channel</span></h2>
+            <h2 class="d-card__title" id="h-vids">Latest videos <span class="d-card__count">Up to 10 channels · rotates hourly</span></h2>
             <a class="d-more" href="videos">View all <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="m13 6 6 6-6 6"></path></svg></a>
         </div>
         @if (videos.Count == 0)
@@ -337,7 +341,7 @@
         // The queries run one after another: one DbContext cannot run two at once.
         todays = await EventsQuery.GetOnDateAsync(db, Dates.TodayAt(nowUtc));
         news = await FeedQuery.GetHomeNewsAsync(db, HomeNewsCount);
-        videos = await VideosQuery.GetLatestPerChannelAsync(db);
+        videos = await VideosQuery.GetHomeVideosAsync(db);
         movies = await MoviesQuery.GetFridayTheatricalAsync(db, Dates.TodayAt(nowUtc));
         digitalData = await DigitalReleasesQuery.GetAsync(db, Dates.TodayAt(nowUtc), null, take: 5);
         digitalMovies = digitalData.Items;
