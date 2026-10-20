@@ -18,7 +18,6 @@
 </section>
 <section id="local-news"><h2>Kansas City news</h2>
     <p class="updated">@(dedicated ? "From enabled Kansas City News publishers." : "Stories mentioning Kansas City in the collected news feed. These are keyword matches, including sports; this is not a complete local news service.")</p>
-    <ReadingPreferences />
     @if (error is not null) { <p class="empty" role="status">@error</p> }
     else if (feed.Items.Count == 0) { <p class="empty">No matching stories available. Check back after the next collection.</p> }
     else { <section class="feed" aria-label="Kansas City stories"><FeedArticles Items="feed.Items" /></section> }

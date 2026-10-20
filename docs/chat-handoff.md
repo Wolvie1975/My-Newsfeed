@@ -3,6 +3,44 @@
 Read this file when continuing work from the previous chat. These are dated
 observations; check current repository and hosting state before acting.
 
+## Remove article read and mute actions — October 20, 2026
+
+Removed Mark read/Mark unread and Mute publisher from Home and shared article
+cards, and removed Mark read/Mark unread from Saved. Deleted ReadingControls,
+its styles and the corresponding click handlers. Bookmark and Share remain.
+Settings copy now describes preferred category and previously stored preferences;
+legacy muted publishers/read filters can still be reset there. This supersedes
+the previous toolbar release's statement that article read/mute actions remain.
+
+Deployed mydailyfeed-web:reading-actions-20261020 (2db42b038e39), healthy. Rollback
+image mynewsfeed-web:before-reading-actions-20261020 (3242ba1a923b), retained
+container mynewsfeed-web-before-reading-actions-20261020. Private deployment
+snapshots/scripts: /tmp/mydailyfeed-reading-actions-deploy/. Docker publish and
+static-asset guard passed, with existing PKCS dependency warnings. JavaScript
+syntax and diff whitespace checks passed. Live personal-features browser suite
+passed saving, homepage/customization, category, cross-tab, blocked-storage and
+no-JavaScript checks. Additional checks confirmed removed actions absent on Home,
+News, Local, F1 News, college news and Saved at 390px/1440px without overflow.
+Private HTTPS health returned 200; runtime settings/mounts/ports preserved.
+No commit or push made for this release.
+
+## Remove inline reading toolbar — October 20, 2026
+
+Removed the screenshot's Hide read stories checkbox, reading-preferences shortcut
+and loaded-story status hint from News, Local, F1 News and college news. Deleted
+the unused shared component, toolbar CSS and counter rendering. Settings reading
+controls and article actions remain available. Updated the existing personal
+features browser check to adjust Hide read stories in Settings.
+
+Deployed mydailyfeed-web:reading-bar-20261020 (3242ba1a923b), healthy. Rollback:
+mynewsfeed-web:before-reading-bar-20261020 (114e537b3da9), retained container
+mynewsfeed-web-before-reading-bar-20261020; private snapshots/scripts under
+/tmp/mydailyfeed-reading-bar-deploy/. Docker publish/static-asset guard passed
+with existing PKCS warnings. Live browser checks passed all four feeds at 390px
+and 1440px, no toolbar/overflow, Settings hide-read behavior and no JS errors.
+Private HTTPS health returned 200; runtime settings/mounts/ports preserved.
+No commit or push made for this release.
+
 ## MyDailyFeed ribbon app icon — October 20, 2026
 
 Deployed user-selected concept 4: white ribbon d, feed cards and sunrise on blue.

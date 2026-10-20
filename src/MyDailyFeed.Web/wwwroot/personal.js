@@ -63,11 +63,8 @@
     function renderReading(p) {
         document.querySelectorAll('[data-news-hide-read]').forEach(n => n.checked = p.hideRead);
         document.querySelectorAll('[data-news-category]').forEach(n => n.value = p.category);
-        document.querySelectorAll('[data-news-read]').forEach(n => { const read = p.read.includes(n.dataset.newsRead); n.textContent = read ? 'Mark unread' : 'Mark read'; n.setAttribute('aria-pressed', String(read)); });
-        let hidden = 0, count = 0;
         document.querySelectorAll('[data-news-url]').forEach(n => {
             n.hidden = p.muted.includes(n.dataset.newsSource) || p.hideRead && p.read.includes(n.dataset.newsUrl);
-            count++; if (n.hidden) hidden++;
         });
         // Feed headings must not be left standing above a fully hidden group.
         document.querySelectorAll('.feed > .daylabel').forEach(heading => {
@@ -75,7 +72,6 @@
             while (sibling && !sibling.matches('.daylabel')) { if (sibling.matches('[data-news-url]') && !sibling.hidden) visible = true; sibling = sibling.nextElementSibling; }
             heading.hidden = !visible;
         });
-        document.querySelectorAll('[data-news-filter-count]').forEach(n => n.textContent = hidden ? `${hidden} of ${count} loaded stories hidden by your reading preferences. Load more or adjust preferences to see others.` : 'Reading preferences apply to loaded stories.');
         const muted = document.querySelector('[data-news-muted]');
         if (muted && muted.dataset.signature !== JSON.stringify(p.muted)) {
             muted.dataset.signature = JSON.stringify(p.muted); muted.replaceChildren();
@@ -97,9 +93,7 @@
         renderHome(p, selected); renderReading(p);
     }
     document.addEventListener('click', e => {
-        const p = prefs(), read = e.target.closest('[data-news-read]'), mute = e.target.closest('[data-news-mute]'), unmute = e.target.closest('[data-news-unmute]');
-        if (read) { const url = read.dataset.newsRead; p.read = p.read.includes(url) ? p.read.filter(i => i !== url) : [url, ...p.read].slice(0, 2000); if (save(PREFS, p, 'Reading status saved.')) document.dispatchEvent(new CustomEvent('mynewsfeed-reading-change', {detail:{url, read:p.read.includes(url)}})); return; }
-        if (mute) { p.muted = [...new Set([...p.muted, mute.dataset.newsMute])].slice(0, 500); save(PREFS, p, 'Publisher muted. Manage muted publishers in Settings.'); return; }
+        const p = prefs(), unmute = e.target.closest('[data-news-unmute]');
         if (unmute) { p.muted = p.muted.filter(i => i !== unmute.dataset.newsUnmute); save(PREFS, p, 'Publisher unmuted.'); return; }
         const move = e.target.closest('[data-home-move]');
         if (move) { const [key, delta] = move.dataset.homeMove.split(':'), index = p.order.indexOf(key), target = index + Number(delta);

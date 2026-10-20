@@ -622,3 +622,20 @@ Chromium installability, worker cache version and offline navigation. Set
 `PLAYWRIGHT_MODULE`, `BASE_URL`, and optionally `PWA_HOST_IP` when the test runner
 requires an explicit Tailscale hostname mapping. This mapping bypasses DNS only
 for the test runner; it does not repair client-device MagicDNS.
+
+### Feed reading toolbar removal — October 20, 2026
+
+Removed the inline Hide read stories / Manage muted publishers & preferred category
+bar and its loaded-story hint from News, Local, F1 News and college news. Settings
+still provides reading controls; article read/mute/save actions and existing browser
+preferences continue to work. Removed the unused component, styling and toolbar
+counter rendering. Reading browser checks now change Hide read stories in Settings.
+
+### Remove article read/mute buttons — October 20, 2026
+
+Removed Mark read/Mark unread and Mute publisher from Home and the shared article
+feed cards, including dynamically appended cards. Saved cards no longer render
+Mark read/Mark unread. Deleted the unused ReadingControls component, its styles
+and click handlers. Save/bookmark and Share remain. Settings copy no longer
+instructs readers to use removed actions. Existing browser read/mute preferences
+can still be cleared or publishers unmuted in Settings.

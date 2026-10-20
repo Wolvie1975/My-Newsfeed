@@ -2041,10 +2041,6 @@
 .agenda-item h3, .agenda-item h2 { margin:.35rem 0 .5rem; font-size:1.15rem; }
 .agenda-item p { margin:.35rem 0; }
 .weather-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr)); gap:1rem; }
-.reading-actions { display:flex; flex-wrap:wrap; gap:.5rem; margin:.5rem 0; }
-.reading-actions .nf-btn { font-size:.8rem; min-height:44px; }
-.reading-preferences { margin:1rem 0; padding:.75rem 0; display:flex; flex-wrap:wrap; align-items:center; gap:.75rem; }
-.reading-preferences p { flex-basis:100%; margin:0; }
 .home-choice { display:grid; grid-template-columns:minmax(0,1fr) repeat(2,7.5rem); align-items:center; gap:.5rem; padding:.6rem 0; }
 .home-choice label { min-width:0; margin:0; }
 .pub .home-choice .nf-btn { width:100%; min-width:0; min-height:44px; height:auto; padding:.6rem .75rem; }
@@ -2062,8 +2058,6 @@
     .pub .d-grid.is-customized { grid-template-columns:minmax(0,1fr); grid-template-rows:none; grid-template-areas:none; }
     .pub .d-grid.is-customized > [data-home-section] { grid-area:auto; }
 }
-.pub .reading-actions { grid-column:1 / -1; }
-.pub .reading-actions .nf-btn { height:auto; padding:.35rem .7rem; white-space:normal; }
 .tracked-series > .agenda-list { margin-top:1rem; }
 .tracked-series { margin:1rem 0; }
 [data-personal-status]:empty { display:none; }

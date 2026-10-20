@@ -222,10 +222,6 @@
         src.appendChild(button);
         body.appendChild(src);
 
-        var read = el('button', 'nf-btn nf-btn--secondary', a.read === true ? 'Mark unread' : 'Mark read');
-        read.type = 'button'; read.setAttribute('data-mark-read', href);
-        read.setAttribute('aria-pressed', String(a.read === true));
-        body.appendChild(read);
         card.appendChild(body);
         return card;
     }
@@ -522,17 +518,6 @@
 
         if (e.target.closest('[data-show-all-saved]')) { var filter = document.querySelector('[data-reading-filter]'); if (filter) filter.value = 'all'; syncSaves(); return; }
 
-        var read = e.target.closest('[data-mark-read]');
-        if (read) {
-            var list = readSaved().map(function (article) { return Object.assign({}, article); });
-            var article = list.find(function (a) { return a.url === read.getAttribute('data-mark-read'); });
-            if (article) {
-                article.read = article.read !== true;
-                if (!writeSaved(list)) announce('Could not update reading status. Browser storage is full or blocked.');
-                syncSaves();
-            }
-            return;
-        }
         var save = e.target.closest('[data-save]');
         if (save) {
             toggleSave(save);

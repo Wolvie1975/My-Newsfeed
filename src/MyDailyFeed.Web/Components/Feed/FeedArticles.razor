@@ -74,7 +74,6 @@
                 <ShareButton Url="@item.Url" Title="@(title.Length > 0 ? title : item.Title)" />
                 <SaveButton Item="item" Title="@(title.Length > 0 ? title : item.Title)" Source="@sourceName" Summary="@summary" />
             </p>
-            <ReadingControls Url="@href" Source="@sourceName" />
             @if (isLead && href is not null)
             {
                 <a class="more" href="@href" target="_blank" rel="noopener noreferrer">

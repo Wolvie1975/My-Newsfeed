@@ -47,7 +47,7 @@
 </section>
 <section data-settings-section="reading" id="reading-preferences" aria-labelledby="reading-preferences-heading">
     <h2 id="reading-preferences-heading">Reading preferences</h2>
-    <p class="updated">Mark stories read or mute a publisher on an article card. Filters apply to collected news in this browser.</p>
+    <p class="updated">Choose a preferred news category or manage previously saved reading preferences in this browser.</p>
     <label hidden data-personal-control><input type="checkbox" data-news-hide-read /> Hide read stories</label>
     <label hidden data-personal-control>Preferred news category <select data-news-category><option value="">Site default · Top Headlines</option><option value="all">All categories</option>@foreach (var category in categories) { <option value="@category.Id">@category.Name</option> }</select></label>
     <h3>Muted publishers</h3><div data-news-muted></div>
