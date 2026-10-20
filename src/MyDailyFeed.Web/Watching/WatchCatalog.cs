@@ -36,6 +36,8 @@ public sealed class WatchCatalog(IHttpClientFactory factory,IConfiguration confi
         var key=$"watch:list:{kind}:{term}:{genre}:{page}";
         if(cache.TryGetValue<WatchListing>(key,out var saved))return saved!;
         var path=term.Length>0 ? $"search/{kind}?query={Uri.EscapeDataString(term)}&include_adult=false&page={page}" : $"discover/{kind}?include_adult=false&sort_by=popularity.desc&page={page}&watch_region=US"+(genre>0?$"&with_genres={genre}":"");
+        // TMDB: returning, planned, in production or pilot; exclude ended/canceled only in TV browsing.
+        if(kind=="tv" && term.Length==0)path+="&with_status=0%7C1%7C2%7C5";
         using var doc=await Fetch(path);
         if(doc==null)return Save(key,new WatchListing([],0,true),TimeSpan.FromSeconds(30));
         try {

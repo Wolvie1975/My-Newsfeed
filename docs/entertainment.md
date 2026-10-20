@@ -473,3 +473,24 @@ reordered independently of homepage sections. This update is not deployed yet.
 Deployment status (October 20, 2026): Settings services, section ordering and the
 theater-only provider exclusion are now live. Earlier pending/local-only notes
 are superseded. See release history for verification and rollback details.
+
+### Add a Where to watch TV title to tracked series
+
+Open a TV title and select Add to tracked series. The public /tv/track page needs
+no sign-in: confirm the matching title/premiere year/network in search results,
+then select Follow. This adds to the site's shared tracked-series list. Already
+tracked results show Following; disabled tracking can be re-enabled through this
+flow. Movies have no tracking button. Existing admin management/removal stays
+protected. A TVmaze ID is verified before writing; a TMDB ID is never substituted.
+Opening/searching does not add a show. Following requires JavaScript. Episodes
+appear after the separate scraper's next normal update, not immediately.
+
+### Active series in TV browsing
+
+Where to watch TV browse/genre pages exclude ended/canceled shows through TMDB's
+upstream status filter (returning, planned, in production or pilot). The filter
+applies across pages before service prioritization. Title search includes all
+statuses, so ended shows remain findable. This uses provider classification rather
+than show age and retains the normal 15-minute listing cache. Movies, direct title
+details, episode schedules and existing tracked-series records are unaffected.
+Reference: [TMDB TV discovery](https://developer.themoviedb.org/reference/discover-tv).

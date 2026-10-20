@@ -1,66 +1,8 @@
 @page "/admin/tv-series/new"
 @rendermode InteractiveServer
-@using MyDailyFeed.Web.Tv
-@inject IDbContextFactory<WebScraperContext> Factory
-@inject TvmazeClient Tvmaze
-@inject NavigationManager Nav
-
 <PageTitle>Follow a TV series</PageTitle>
-<h1>Follow a TV series</h1>
-<p>Search TVmaze and choose the correct series by its premiere year and network. Episode collection starts on the scraper’s next run.</p>
-<form @onsubmit="SearchAsync" @onsubmit:preventDefault class="d-flex gap-2 mb-3" style="max-width: 44rem;">
-    <label for="tv-query" class="visually-hidden">Series title</label>
-    <input id="tv-query" class="form-control" type="search" @bind="query" maxlength="200" placeholder="Search series, for example: Slow Horses" required />
-    <button class="btn btn-primary" type="submit" disabled="@busy">Search</button>
-</form>
-@if (error is not null) { <div class="alert alert-danger" role="alert">@error</div> }
-@if (searched && results.Count == 0 && error is null) { <p>No matching series. Try another title.</p> }
-@if (results.Count > 0)
-{
-    <div class="table-responsive"><table class="table align-middle">
-        <thead><tr><th>Series</th><th>Premiere</th><th>Network / platform</th><th></th></tr></thead><tbody>
-        @foreach (var show in results)
-        {
-            <tr><td><a href="https://www.tvmaze.com/shows/@show.Id" target="_blank" rel="noopener noreferrer">@show.Name</a><div class="small text-muted">TVmaze @show.Id</div></td>
-                <td>@(show.Premiere ?? "Not announced")</td><td>@(show.Platform ?? "Not announced")</td>
-                <td><button class="btn btn-outline-primary btn-sm" disabled="@(busy || followed.Contains(show.Id))" @onclick="() => FollowAsync(show.Id)">@(followed.Contains(show.Id) ? "Following" : "Follow")</button></td></tr>
-        }
-        </tbody></table></div>
-}
-<p class="small text-muted">Search and metadata provided by <a href="https://www.tvmaze.com/api" target="_blank" rel="noopener noreferrer">TVmaze</a>.</p>
-<a href="admin/tv-series" class="btn btn-secondary">Back to tracked series</a>
+<SeriesFollowForm InitialQuery="@InitialQuery" InitialYear="@InitialYear" />
 @code {
-    private string query = "";
-    private bool busy, searched;
-    private string? error;
-    private IReadOnlyList<TvmazeShow> results = [];
-    private HashSet<int> followed = [];
-    private async Task SearchAsync()
-    {
-        if (busy || string.IsNullOrWhiteSpace(query)) return;
-        busy = true; error = null;
-        try
-        {
-            var response = await Tvmaze.SearchAsync(query);
-            results = response.Shows; error = response.Error; searched = true;
-            await using var db = await Factory.CreateDbContextAsync();
-            followed = (await db.TvTrackedSeries.Where(t => t.Enabled).Select(t => t.TvmazeShowId).ToListAsync()).ToHashSet();
-        }
-        finally { busy = false; }
-    }
-    private async Task FollowAsync(int id)
-    {
-        if (busy) return;
-        busy = true; error = null;
-        try
-        {
-            var response = await Tvmaze.GetShowAsync(id);
-            if (response.Error is not null || response.Shows.Count != 1) { error = response.Error ?? "Series could not be verified."; return; }
-            await using var db = await Factory.CreateDbContextAsync();
-            await TvQuery.FollowAsync(db, id, response.Shows[0].Name);
-            Nav.NavigateTo("admin/tv-series");
-        }
-        catch (DbUpdateException) { error = "Could not follow this series. Please try again."; }
-        finally { busy = false; }
-    }
+    [SupplyParameterFromQuery(Name="q")]public string? InitialQuery {get;set;}
+    [SupplyParameterFromQuery(Name="year")]public string? InitialYear {get;set;}
 }

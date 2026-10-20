@@ -14,6 +14,7 @@
 @if(Selected.Length>0){<p class="updated">Matching services first on this page. Other titles remain available; availability can change.</p>}
 <nav class="watch-tabs" aria-label="Content type"><a class="nf-btn nf-btn--secondary" aria-current="@(Media=="movie"?"page":null)" href="@Url("movie")">Movies</a><a class="nf-btn nf-btn--secondary" aria-current="@(Media=="tv"?"page":null)" href="@Url("tv")">TV shows</a></nav>
 @if(string.IsNullOrWhiteSpace(Q)){
+@if(Media=="tv"){<p class="updated">Browsing active and upcoming series. Ended or canceled shows are still available through title search.</p>}
 <nav class="watch-tabs" aria-label="Browse genres"><a href="@Url(Media)">Popular</a>@foreach(var genre in WatchCatalog.Genres){<a href="@Url(Media,1,genre.Key)" aria-current="@(Genre==genre.Key?"page":null)">@genre.Value</a>}</nav>
 }
 else {<p>Results for “@WatchCatalog.Term(Q)” · <a href="@($"watch?kind={Media}&services={Selection}")">Clear search</a></p>}

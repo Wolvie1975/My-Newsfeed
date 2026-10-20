@@ -6,11 +6,83 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The most recent verified web release is `mydailyfeed-web:rename-20261020`,
-with rollback recorded as `mynewsfeed-web:before-rename-20261020`.
+The most recent verified web release is `mydailyfeed-web:active-tv-20261020`,
+with rollback recorded as `mynewsfeed-web:before-active-tv-20261020`.
 Its container was healthy on October 20, 2026 (Central). This is a dated
 observation, not live hosting status.
 
+
+## Active TV browsing — October 20, 2026
+
+Where to watch TV popular/genre browsing now requests TMDB statuses returning,
+planned, in production and pilot (with_status=0|1|2|5). Ended/canceled series are
+excluded upstream before pagination and service prioritization. No date-based
+heuristic is used; older ongoing shows remain eligible. Nonblank title search
+retains ended/canceled shows. Movie browsing, direct details and tracked-series
+records are unchanged. The TV browse page explains the distinction.
+
+Verification: 15 focused provider tests passed, including filter application to
+TV browse/genres/pages and exclusion from title search/movie requests. Local and
+live browser checks validated 40 displayed TV statuses against TMDB across two
+browse/genre pages, confirmed The Mentalist remains searchable and movie browsing
+is unaffected. The full live watch suite passed search/error/fallback states,
+six modal layouts, keyboard/focus and no-JavaScript detail. Runtime settings were
+preserved; container/private HTTPS health passed. Existing PKCS warnings remain.
+No database/collector changes or Git commit/push were performed.
+
+Release: mydailyfeed-web:active-tv-20261020 (d04df3e91825).
+Rollback: mynewsfeed-web:before-active-tv-20261020 (f138f628aeac).
+Retained container: mynewsfeed-web-before-active-tv-20261020.
+Private deployment files: /tmp/mydailyfeed-active-tv-deploy/.
+
+## Public tracked-series additions — October 20, 2026
+
+At the user's explicit request, adding a TV title no longer requires admin sign-in.
+Where to watch links to /tv/track with title/year context. This public interactive
+page confirms the TVmaze match and adds it to the shared site-wide tracked list.
+The shared SeriesFollowForm preserves provider verification, membership in the
+search results, existing duplicate/re-enable handling and an explicit Follow click.
+Success stays on the public page with a confirmation. GET/search alone does not
+write tracking data. Movies remain excluded. Existing /admin routes, including
+tracking removal/management, retain their authorization.
+
+Five focused link/TV tests passed. Local and live browser checks verified anonymous
+modal-to-track navigation, prefilled TVmaze results, movie exclusion and mobile
+layout; the admin list still requires authentication. Browser checks did not add
+any production series. The full live watch suite passed six layouts and existing
+search/error/keyboard/no-JS detail behavior. Actual following remains an interactive
+server action. Container/private HTTPS health passed; runtime settings preserved.
+Existing PKCS build warnings remain. No Git commit/push was made.
+
+Release: mydailyfeed-web:public-track-20261020 (f138f628aeac).
+Rollback: mynewsfeed-web:before-public-track-20261020 (31b922fe465b).
+Retained container: mynewsfeed-web-before-public-track-20261020.
+Private deployment files: /tmp/mydailyfeed-public-track-deploy/.
+This supersedes the prior sign-in requirement for adding series, not admin access.
+
+## Track TV titles from Where to watch — October 20, 2026
+
+TV title detail/modal now offers Add to tracked series. It opens the existing
+protected tracking page with a URL-encoded title and premiere-year context. The
+admin page automatically searches TVmaze; the reader confirms the correct series
+and taps Follow. Existing Following/duplicate/re-enable behavior is retained.
+Movies do not offer tracking. A TMDB ID is never used as a TVmaze identity, and
+opening the link does not write a tracking row. Existing admin sign-in and return
+URLs remain required; episode collection starts on the scraper's usual next run.
+
+Verification: five focused link/TV tests passed, including title encoding,
+movie exclusion and existing tracking behavior. Local and live browser checks
+passed TV modal navigation, protected sign-in return, prefilled query/year and
+automatic TVmaze result rendering. The browser checks did not follow a production
+series. The full live watch suite also passed six layouts, search, error/fallback,
+keyboard/focus and no-JavaScript detail. Container/private HTTPS health passed;
+runtime settings were preserved. Existing PKCS build warnings remain.
+
+Release: mydailyfeed-web:track-series-20261020 (31b922fe465b).
+Rollback image: mynewsfeed-web:before-track-series-20261020 (7f5ed6f6fc38).
+Retained container: mynewsfeed-web-before-track-series-20261020.
+Private deployment files: /tmp/mydailyfeed-track-series-deploy/.
+No schema/collector change or Git commit/push was performed.
 
 ## MyDailyFeed project rename — October 20, 2026
 

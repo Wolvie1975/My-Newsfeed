@@ -12,6 +12,7 @@ public class WatchCatalogTests
             Calls++;LastPath=r.RequestUri!.PathAndQuery;
             Assert.Equal("Bearer",r.Headers.Authorization?.Scheme);
             var json=LastPath.Contains("providers") ? """{"results":{"US":{"link":"https://www.themoviedb.org/movie/1/watch?locale=US","flatrate":[{"provider_id":8,"provider_name":"Service <one>"}],"rent":[{"provider_name":"Rental"}]},"CA":{"buy":[{"provider_name":"Canada only"}]}}}""" : LastPath.Contains("search/") ? """{"total_pages":99,"results":[{"id":1,"title":"Example","release_date":"2020-01-01","poster_path":"/poster.jpg"},{"id":2,"title":"Hidden","adult":true}]}""" : """{"id":1,"title":"Example","name":"Example TV","release_date":"2020-01-01","first_air_date":"2021-01-01","poster_path":"https://evil.invalid/a.jpg"}""";
+            if(LastPath.Contains("/discover/"))json="""{"total_pages":2,"results":[{"id":3,"title":"Example movie","name":"Ongoing series","first_air_date":"2020-01-01"}]}""";
             if(LastPath.Contains("/2/watch/providers"))json="""{"results":{"US":{"rent":[{"provider_id":8,"provider_name":"Rental only"}]}}}""";
             return Task.FromResult(new HttpResponseMessage(Broken?HttpStatusCode.ServiceUnavailable:HttpStatusCode.OK){Content=new StringContent(json)});
         }
@@ -55,5 +56,16 @@ public class WatchCatalogTests
     [InlineData(289,"Cinemax Amazon Channel",true)]
     public void Ticketing_is_excluded_without_removing_home_services(int id,string name,bool allowed)=>Assert.Equal(allowed,WatchCatalog.HomeViewingService(id,name));
     [Fact]public void Old_ticketing_selections_are_ignored()=>Assert.Equal(new[]{7,526},WatchCatalog.ServiceIds("60,7,526"));
+    [Theory]
+    [InlineData("tv",null,true)]
+    [InlineData("tv","Breaking Bad",false)]
+    [InlineData("movie",null,false)]
+    public async Task Active_status_filter_applies_only_to_tv_browsing(string kind,string? query,bool filtered){
+        var provider=new Provider();var result=await Catalog(provider).List(kind,query,18,2);
+        Assert.False(result.Failed);Assert.Contains("page=2",provider.LastPath);
+        if(filtered){Assert.Contains("with_status=0%7C1%7C2%7C5",provider.LastPath);Assert.Contains("with_genres=18",provider.LastPath);}
+        else Assert.DoesNotContain("with_status",provider.LastPath);
+        if(!string.IsNullOrWhiteSpace(query))Assert.Contains("/search/tv",provider.LastPath);
+    }
     [Fact]public async Task Provider_failure_is_distinct_from_empty_results(){var provider=new Provider{Broken=true};var catalog=Catalog(provider);Assert.True((await catalog.List("tv","title")).Failed);Assert.Null(await catalog.Detail("tv",1));}
 }

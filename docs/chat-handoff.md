@@ -3,6 +3,57 @@
 Read this file when continuing work from the previous chat. These are dated
 observations; check current repository and hosting state before acting.
 
+## Latest deployment — active TV browse, October 20, 2026
+
+Live mydailyfeed-web:active-tv-20261020 (d04df3e91825), healthy. Rollback:
+mynewsfeed-web:before-active-tv-20261020 (f138f628aeac), retained container
+mynewsfeed-web-before-active-tv-20261020. Private files:
+/tmp/mydailyfeed-active-tv-deploy/. Runtime preserved, HTTPS health 200.
+
+TV non-search discovery adds with_status=0|1|2|5 so ended/canceled shows stay out
+of popular/genre browsing before pagination/service ordering. Search still finds
+them. No first-air-year cutoff, detail blocking or tracking-record changes.
+15 focused tests and live active-TV/watch browser suites passed. 40 displayed
+statuses checked against TMDB, ended-series search retained. No commit/push was
+made. Session deployment permission remains active. This supersedes earlier
+release records below.
+
+## Latest deployment — public series additions, October 20, 2026
+
+User explicitly prefers no password wall for adding tracked series. TV links now
+use /tv/track, which hosts the shared SeriesFollowForm with Public=true. It searches
+TVmaze, requires the reader's Follow confirmation, re-verifies provider identity
+and adds/re-enables through existing TvQuery. Success stays public. Admin wrapper
+still exists and all /admin authorization is retained. This is a shared site list,
+not browser-local tracking; that is stated on the public page. No mutations on GET.
+
+Live: mydailyfeed-web:public-track-20261020 (f138f628aeac), healthy. Rollback image:
+mynewsfeed-web:before-public-track-20261020 (31b922fe465b), retained container
+mynewsfeed-web-before-public-track-20261020. Private files:
+/tmp/mydailyfeed-public-track-deploy/. Runtime preserved, HTTPS health 200.
+Five focused tests and live public-tracking/watch browser suites passed, including
+anonymous navigation, prefilled results, mobile and protected admin management.
+Browser verification did not add a production series. No commit/push was made.
+This supersedes the prior password-wall behavior; session deployment permission
+remains active.
+
+## Latest deployment — track TV series, October 20, 2026
+
+Live mydailyfeed-web:track-series-20261020 (31b922fe465b), healthy. Rollback:
+mynewsfeed-web:before-track-series-20261020 (7f5ed6f6fc38), retained container
+mynewsfeed-web-before-track-series-20261020. Private files:
+/tmp/mydailyfeed-track-series-deploy/. Runtime preserved; HTTPS health 200.
+
+Watch TV detail/modal has TrackSeriesLink → admin/tv-series/new?q=title&year=year.
+The protected page auto-searches TVmaze and asks the reader to confirm a matching
+result before Follow. Movie links are absent. Never pass a TMDB ID to TvQuery as
+if it were a TVmaze ID. No mutation on GET; existing admin protection and
+idempotent Follow/re-enable behavior remain. Five focused tests plus local/live
+sign-in/prefilled TVmaze result and full watch browser suites passed. No production
+series was followed by browser verification. No Git commit/push was made.
+This supersedes earlier release records below; session deployment permission
+remains active.
+
 ## MyDailyFeed rename / latest deployment — October 20, 2026
 
 Project is now MyDailyFeed. Solution: MyDailyFeed.sln. Web and test projects,

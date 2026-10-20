@@ -15,6 +15,7 @@ else{
 @if(detail.Offers.Count==0){<p>No US viewing options are currently listed in this data. This does not confirm the title is unavailable everywhere.</p>}
 @foreach(var offer in detail.Offers){<section class="watch-offer"><h3>@offer.Category</h3><ul>@foreach(var provider in offer.Providers){<li>@provider</li>}</ul></section>}
 @if(detail.Link is {} link){<p><a class="nf-btn nf-btn--primary" href="@link" target="_blank" rel="noopener noreferrer">Open viewing options ↗</a></p>}
+<TrackSeriesLink Title="detail.Title" />
 <p class="updated">Availability checked @Dates.PublishedFull(detail.Checked). @if(Kind=="tv"){<span>TV listings are for the series; season availability can vary.</span>}</p>
 </div></div>
 <WatchCredits />
