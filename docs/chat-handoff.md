@@ -3,6 +3,22 @@
 Read this file when continuing work from the previous chat. These are dated
 observations; check current repository and hosting state before acting.
 
+## Latest deployment — watch sorting, October 20, 2026
+
+Live mydailyfeed-web:watch-sort-20261020 (ef6f7f3e7cdb), healthy. Rollback image:
+mynewsfeed-web:before-watch-sort-20261020 (d04df3e91825), retained container
+mynewsfeed-web-before-watch-sort-20261020. Private deployment files:
+/tmp/mydailyfeed-watch-sort-deploy/. Runtime preserved, HTTPS health 200.
+
+Sort this page offers services/title/newest/popular. Default services groups
+alphabetize titles; no selected services means alphabetical loaded titles.
+Sorting is per page and copies the cached listing; full dates/popularity are
+parsed from TMDB list responses. Unknown metadata sorts last. Sort query state
+survives tabs, genre/page links, search and clearing. No-JS forms work. Active-TV
+browse filtering and title search behavior remain intact. 20 focused tests plus
+live sorting and full watch browser suites passed. No commit/push was made;
+session deployment permission remains active. This supersedes earlier releases.
+
 ## Latest deployment — active TV browse, October 20, 2026
 
 Live mydailyfeed-web:active-tv-20261020 (d04df3e91825), healthy. Rollback:

@@ -494,3 +494,13 @@ statuses, so ended shows remain findable. This uses provider classification rath
 than show age and retains the normal 15-minute listing cache. Movies, direct title
 details, episode schedules and existing tracked-series records are unaffected.
 Reference: [TMDB TV discovery](https://developer.themoviedb.org/reference/discover-tv).
+
+### Sort this page
+
+The Where to watch selector orders the current loaded results page: Your services
+first (default), Title A–Z, Newest first or Most popular. The default alphabetizes
+within matched and remaining groups; with no selections all loaded titles are
+alphabetical. Newest uses movie release dates/TV premiere dates, and popular uses
+TMDB popularity; missing metadata sorts last. Service badges remain informational
+in other modes. The GET sort query survives search, tabs, genres and paging.
+This does not reorder the entire provider catalog across pages.

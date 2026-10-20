@@ -2200,3 +2200,6 @@
 .settings-order-row { display:grid; grid-template-columns:minmax(0,1fr) auto auto; gap:.5rem; align-items:center; padding:.6rem 0; }
 [data-settings-sections] { display:flex; flex-direction:column; gap:1.5rem; }
 @media(max-width:550px) { .settings-order-row { grid-template-columns:1fr 1fr; } .settings-order-row>span { grid-column:1/-1; } }
+
+.watch-sort { display:flex; flex-wrap:wrap; gap:.65rem; align-items:center; margin:1rem 0; }
+.watch-sort select { min-height:44px; border:1px solid var(--border); border-radius:8px; padding:.5rem; background:var(--surface); color:var(--text); font:inherit; }

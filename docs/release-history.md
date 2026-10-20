@@ -6,11 +6,36 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The most recent verified web release is `mydailyfeed-web:active-tv-20261020`,
-with rollback recorded as `mynewsfeed-web:before-active-tv-20261020`.
+The most recent verified web release is `mydailyfeed-web:watch-sort-20261020`,
+with rollback recorded as `mynewsfeed-web:before-watch-sort-20261020`.
 Its container was healthy on October 20, 2026 (Central). This is a dated
 observation, not live hosting status.
 
+
+## Where to watch sorting — October 20, 2026
+
+Added a Sort this page selector: Your services first (default), Title A–Z,
+Newest first and Most popular. Default service groups are alphabetized internally;
+without service selections the default is alphabetical for the loaded page.
+Other modes sort all loaded titles independently of service badges. Newest uses
+full movie release/TV premiere dates, popularity uses TMDB's numeric value, and
+unknown metadata sorts last. Ties are deterministic. Shared cached listings are
+not mutated. Tabs, genre/page links, search and Clear search preserve the sort;
+plain GET forms support sorting without JavaScript. This is per-page sorting,
+not a global catalog-wide ordering or a new filter.
+
+Verification: 20 focused provider/sort tests passed, covering date/popularity
+parsing, all sort modes, service-group alphabetization, unknown metadata and
+unchanged cached order. Local and live sorting checks passed A–Z/group order,
+state preservation, mobile and no-JavaScript forms. Full live watch regression
+checks passed six modal layouts, search, empty/error/fallback and keyboard/focus.
+Container/private HTTPS health passed; runtime settings preserved. Existing PKCS
+build warnings remain. No schema/collector change or Git commit/push was made.
+
+Release: mydailyfeed-web:watch-sort-20261020 (ef6f7f3e7cdb).
+Rollback: mynewsfeed-web:before-watch-sort-20261020 (d04df3e91825).
+Retained container: mynewsfeed-web-before-watch-sort-20261020.
+Private deployment files: /tmp/mydailyfeed-watch-sort-deploy/.
 
 ## Active TV browsing — October 20, 2026
 

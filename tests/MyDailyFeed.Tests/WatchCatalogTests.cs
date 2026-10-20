@@ -11,7 +11,7 @@ public class WatchCatalogTests
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage r,CancellationToken token){
             Calls++;LastPath=r.RequestUri!.PathAndQuery;
             Assert.Equal("Bearer",r.Headers.Authorization?.Scheme);
-            var json=LastPath.Contains("providers") ? """{"results":{"US":{"link":"https://www.themoviedb.org/movie/1/watch?locale=US","flatrate":[{"provider_id":8,"provider_name":"Service <one>"}],"rent":[{"provider_name":"Rental"}]},"CA":{"buy":[{"provider_name":"Canada only"}]}}}""" : LastPath.Contains("search/") ? """{"total_pages":99,"results":[{"id":1,"title":"Example","release_date":"2020-01-01","poster_path":"/poster.jpg"},{"id":2,"title":"Hidden","adult":true}]}""" : """{"id":1,"title":"Example","name":"Example TV","release_date":"2020-01-01","first_air_date":"2021-01-01","poster_path":"https://evil.invalid/a.jpg"}""";
+            var json=LastPath.Contains("providers") ? """{"results":{"US":{"link":"https://www.themoviedb.org/movie/1/watch?locale=US","flatrate":[{"provider_id":8,"provider_name":"Service <one>"}],"rent":[{"provider_name":"Rental"}]},"CA":{"buy":[{"provider_name":"Canada only"}]}}}""" : LastPath.Contains("search/") ? """{"total_pages":99,"results":[{"id":1,"title":"Example","release_date":"2020-01-01","popularity":13.5,"poster_path":"/poster.jpg"},{"id":2,"title":"Hidden","adult":true}]}""" : """{"id":1,"title":"Example","name":"Example TV","release_date":"2020-01-01","first_air_date":"2021-01-01","poster_path":"https://evil.invalid/a.jpg"}""";
             if(LastPath.Contains("/discover/"))json="""{"total_pages":2,"results":[{"id":3,"title":"Example movie","name":"Ongoing series","first_air_date":"2020-01-01"}]}""";
             if(LastPath.Contains("/2/watch/providers"))json="""{"results":{"US":{"rent":[{"provider_id":8,"provider_name":"Rental only"}]}}}""";
             return Task.FromResult(new HttpResponseMessage(Broken?HttpStatusCode.ServiceUnavailable:HttpStatusCode.OK){Content=new StringContent(json)});
@@ -21,7 +21,7 @@ public class WatchCatalogTests
     [Fact]public async Task Search_encodes_query_bounds_pages_filters_adults_and_caches(){
         var provider=new Provider();var catalog=Catalog(provider);
         var result=await catalog.List("movie","  A & B  ",0,999);
-        Assert.Single(result.Items);Assert.Equal(10,result.Pages);Assert.Contains("query=A%20%26%20B",provider.LastPath);Assert.Contains("page=10",provider.LastPath);
+        Assert.Single(result.Items);Assert.Equal(new DateOnly(2020,1,1),result.Items[0].ReleaseDate);Assert.Equal(13.5,result.Items[0].Popularity);Assert.Equal(10,result.Pages);Assert.Contains("query=A%20%26%20B",provider.LastPath);Assert.Contains("page=10",provider.LastPath);
         Assert.Equal("https://image.tmdb.org/t/p/w342/poster.jpg",result.Items[0].Poster);
         await catalog.List("movie","A & B",0,10);Assert.Equal(1,provider.Calls);
         Assert.True((await catalog.List("person","test")).Failed);Assert.Equal(1,provider.Calls);

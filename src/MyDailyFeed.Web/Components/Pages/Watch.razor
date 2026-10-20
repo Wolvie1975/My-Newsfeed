@@ -9,15 +9,20 @@
 <div class="watch-search-row"><input id="watch-query" name="q" value="@WatchCatalog.Term(Q)" maxlength="120" placeholder="Search a title…" type="search" /><button class="nf-btn nf-btn--primary" type="submit">Search</button></div>
 <input type="hidden" name="kind" value="@Media" />
 <input type="hidden" name="services" value="@Selection" />
+<input type="hidden" name="sort" value="@SortMode" />
 </form>
 <p><a href="settings#my-services">My services (@Selected.Length selected) · Manage in Settings →</a></p>
-@if(Selected.Length>0){<p class="updated">Matching services first on this page. Other titles remain available; availability can change.</p>}
+@if(Selected.Length>0&&SortMode=="services"){<p class="updated">Matching services first on this page. Other titles remain available; availability can change.</p>}
 <nav class="watch-tabs" aria-label="Content type"><a class="nf-btn nf-btn--secondary" aria-current="@(Media=="movie"?"page":null)" href="@Url("movie")">Movies</a><a class="nf-btn nf-btn--secondary" aria-current="@(Media=="tv"?"page":null)" href="@Url("tv")">TV shows</a></nav>
 @if(string.IsNullOrWhiteSpace(Q)){
 @if(Media=="tv"){<p class="updated">Browsing active and upcoming series. Ended or canceled shows are still available through title search.</p>}
 <nav class="watch-tabs" aria-label="Browse genres"><a href="@Url(Media)">Popular</a>@foreach(var genre in WatchCatalog.Genres){<a href="@Url(Media,1,genre.Key)" aria-current="@(Genre==genre.Key?"page":null)">@genre.Value</a>}</nav>
 }
-else {<p>Results for “@WatchCatalog.Term(Q)” · <a href="@($"watch?kind={Media}&services={Selection}")">Clear search</a></p>}
+else {<p>Results for “@WatchCatalog.Term(Q)” · <a href="@($"watch?kind={Media}&services={Selection}&sort={SortMode}")">Clear search</a></p>}
+<form method="get" action="watch" class="watch-sort">
+<input type="hidden" name="q" value="@WatchCatalog.Term(Q)" /><input type="hidden" name="kind" value="@Media" /><input type="hidden" name="genre" value="@Genre" /><input type="hidden" name="page" value="@Page" /><input type="hidden" name="services" value="@Selection" />
+<label for="watch-sort">Sort this page</label><select id="watch-sort" name="sort"><option value="services" selected="@(SortMode=="services")">Your services first</option><option value="title" selected="@(SortMode=="title")">Title A–Z</option><option value="newest" selected="@(SortMode=="newest")">Newest first</option><option value="popular" selected="@(SortMode=="popular")">Most popular</option></select><button class="nf-btn nf-btn--secondary" type="submit">Apply sort</button>
+</form>
 @if(listing.Failed){<p role="status">Title search is temporarily unavailable. Please try again shortly.</p>}
 else if(listing.Items.Count==0){<p role="status">No matching titles found. Try another title or switch Movies / TV shows.</p>}
 else{
@@ -39,8 +44,10 @@ else{
     [SupplyParameterFromQuery(Name="service")]public int[]? Chosen {get;set;}
     private int[] Selected=>WatchCatalog.ServiceIds(string.Join(",",new[]{Services??"",string.Join(",",Chosen??[])}));
     private string Selection=>string.Join(",",Selected);
+    [SupplyParameterFromQuery(Name="sort")]public string? SortBy {get;set;}
+    private string SortMode=>WatchCatalog.SortKey(SortBy);
     private string Media=>Type=="tv"?"tv":"movie";
     private WatchListing listing=new([],0);
-    protected override async Task OnParametersSetAsync(){Page=Math.Clamp(Page,1,10);listing=await Catalog.Prioritize(await Catalog.List(Media,Q,Genre,Page),Selection);}
-    private string Url(string kind,int page=1,int genre=0)=>$"watch?kind={kind}&q={Uri.EscapeDataString(WatchCatalog.Term(Q))}&page={page}&genre={genre}&services={Selection}";
+    protected override async Task OnParametersSetAsync(){Page=Math.Clamp(Page,1,10);listing=WatchCatalog.Sort(await Catalog.Prioritize(await Catalog.List(Media,Q,Genre,Page),Selection),SortMode);}
+    private string Url(string kind,int page=1,int genre=0)=>$"watch?kind={kind}&q={Uri.EscapeDataString(WatchCatalog.Term(Q))}&page={page}&genre={genre}&services={Selection}&sort={SortMode}";
 }

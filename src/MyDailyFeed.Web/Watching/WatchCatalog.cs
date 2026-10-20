@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 using Microsoft.Extensions.Caching.Memory;
 namespace MyDailyFeed.Web.Watching;
 
-public sealed record WatchTitle(int Id,string Kind,string Name,string? Year,string? Poster,string Overview,IReadOnlyList<string>? MatchingServices=null);
+public sealed record WatchTitle(int Id,string Kind,string Name,string? Year,string? Poster,string Overview,IReadOnlyList<string>? MatchingServices=null,DateOnly? ReleaseDate=null,double? Popularity=null);
 public sealed record WatchListing(IReadOnlyList<WatchTitle> Items,int Pages,bool Failed=false);
 public sealed record WatchOffer(string Category,IReadOnlyList<string> Providers);
 public sealed record WatchAvailability(WatchTitle Title,IReadOnlyList<WatchOffer> Offers,string? Link,DateTime Checked);
@@ -110,10 +110,22 @@ public sealed class WatchCatalog(IHttpClientFactory factory,IConfiguration confi
         }));
         return listing with {Items=titles.OrderByDescending(t=>t.MatchingServices?.Count>0).ToList()};
     }
+    public static string SortKey(string? sort)=>sort is "title" or "newest" or "popular" ? sort : "services";
+    public static WatchListing Sort(WatchListing listing,string? sort)
+    {
+        var titles=listing.Items;
+        IOrderedEnumerable<WatchTitle> sorted=SortKey(sort) switch {
+            "title"=>titles.OrderBy(t=>t.Name,StringComparer.InvariantCultureIgnoreCase),
+            "newest"=>titles.OrderByDescending(t=>t.ReleaseDate??DateOnly.MinValue).ThenBy(t=>t.Name,StringComparer.InvariantCultureIgnoreCase),
+            "popular"=>titles.OrderByDescending(t=>t.Popularity??double.NegativeInfinity).ThenBy(t=>t.Name,StringComparer.InvariantCultureIgnoreCase),
+            _=>titles.OrderByDescending(t=>t.MatchingServices?.Count>0).ThenBy(t=>t.Name,StringComparer.InvariantCultureIgnoreCase)
+        };
+        return listing with {Items=sorted.ThenBy(t=>t.Id).ToList()};
+    }
     private static string? Text(JsonElement e,string key)=>e.TryGetProperty(key,out var v)&&v.ValueKind==JsonValueKind.String?v.GetString():null;
     private static WatchTitle Title(JsonElement e,string kind){
         var date=Text(e,kind=="movie"?"release_date":"first_air_date");var poster=Text(e,"poster_path");
         var image=poster!=null&&Regex.IsMatch(poster,@"^/[A-Za-z0-9_.-]+$")?"https://image.tmdb.org/t/p/w342"+poster:null;
-        return new(e.GetProperty("id").GetInt32(),kind,Text(e,kind=="movie"?"title":"name")??"",date?.Length>=4?date[..4]:null,image,Text(e,"overview")??"");
+        return new(e.GetProperty("id").GetInt32(),kind,Text(e,kind=="movie"?"title":"name")??"",date?.Length>=4?date[..4]:null,image,Text(e,"overview")??"",ReleaseDate:DateOnly.TryParseExact(date,"yyyy-MM-dd",System.Globalization.CultureInfo.InvariantCulture,System.Globalization.DateTimeStyles.None,out var released)?released:null,Popularity:e.TryGetProperty("popularity",out var pop)&&pop.TryGetDouble(out var value)?value:null);
     }
 }
