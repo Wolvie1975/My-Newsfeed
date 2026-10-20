@@ -5,6 +5,10 @@ are in [Sports](sports.md) and [Entertainment](entertainment.md); historical rel
 are in [Release history](release-history.md). Home-page completion filtering and
 automatic appearance notes were updated October 17, 2026 (Central).
 
+## Where to watch: approved typed-search exception
+
+On October 20, 2026 the user explicitly approved typed title search for movie/TV streaming lookup and authorized implementation and deployment. This is a scoped exception to the tap-to-link guideline below. It does not authorize a global search field. Entertainment → Where to watch offers movie/TV tabs, popular titles, genres, title search and a viewing-options modal with a regular-page fallback.
+
 ## Standing product guideline: tap to link
 
 User direction recorded October 19, 2026: **“This is a tap to link site and not a
@@ -332,7 +336,7 @@ Targeted query/card/helper validation passed 121 tests. To repeat these checks
 against an appropriate development/test database:
 
 ```bash
-dotnet test MyNewsFeed.sln --filter 'FullyQualifiedName~FeedQueryTests|FullyQualifiedName~FeedArticlesRenderTests|FullyQualifiedName~FeedHelpersTests'
+dotnet test MyDailyFeed.sln --filter 'FullyQualifiedName~FeedQueryTests|FullyQualifiedName~FeedArticlesRenderTests|FullyQualifiedName~FeedHelpersTests'
 ```
 
 Production browser checks covered category ordering, six source options, source
@@ -563,3 +567,34 @@ Basketball detail pairs the teams' player tables on desktop and stacks them on
 mobile. Dynamic columns retain collected statistics; wide tables scroll within
 the panel while player names remain visible. Existing half/quarter/overtime labels
 remain under Scoring by period.
+
+Pending local navigation update (October 20, 2026): Where to watch is a direct
+main-navigation link, separate from Entertainment. Deployment is on hold while
+the user supplies additional feedback.
+
+Deployed October 20, 2026: main-navigation placement and My services selectors are
+now live. The user lifted the feedback deployment hold. Service selections are
+remembered in this browser and prioritize included/free matches per results page.
+
+## Settings organization — pending local update, October 20, 2026
+
+User clarified that section arrangement applies to Settings. My services now
+lives in Settings with a shortcut from Where to watch; existing browser choices
+continue to apply. The six Settings sections have Move up/Move down controls,
+browser-local ordering and Restore default Settings order. Homepage ordering
+remains independent. Services can be saved without leaving Settings; the GET
+fallback and Where to watch link work without JavaScript.
+
+Twelve focused provider tests and local browser checks passed for service
+persistence/ranking/navigation, clearing, no-JavaScript selection, Settings order
+persistence/reset, malformed storage and mobile overflow. Changes remain local,
+including the prior theater-option removal. No deployment or commit was made.
+
+Deployment status (October 20, 2026): Settings services, section ordering and the
+theater-only provider exclusion are now live. Earlier pending/local-only notes
+are superseded. See release history for verification and rollback details.
+
+October 20 navigation repair: Arrange Settings controls now initialize on both
+direct loads and in-site navigation. A full refresh loads the corrected script in
+existing tabs. Prior direct-load-only browser coverage missed this lifecycle case;
+regressions now enter Settings through actual navigation links.

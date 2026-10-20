@@ -1,0 +1,127 @@
+@inherits LayoutComponentBase
+@inject NavigationManager Nav
+
+@{
+    var path = Nav.ToBaseRelativePath(Nav.Uri);
+    var onLocal = path.Split('?')[0].Equals("local", StringComparison.OrdinalIgnoreCase);
+    var onCollege = path.Equals("college", StringComparison.OrdinalIgnoreCase) || path.StartsWith("college/", StringComparison.OrdinalIgnoreCase) || path.StartsWith("college?", StringComparison.OrdinalIgnoreCase);
+    var onF1 = path.Equals("f1", StringComparison.OrdinalIgnoreCase) || path.StartsWith("f1/", StringComparison.OrdinalIgnoreCase) || path.StartsWith("f1?", StringComparison.OrdinalIgnoreCase);
+    var onTeams = path.StartsWith("settings", StringComparison.OrdinalIgnoreCase) || path.StartsWith("sports/teams", StringComparison.OrdinalIgnoreCase);
+    var onEvents = path.StartsWith("events", StringComparison.OrdinalIgnoreCase);
+    var onDigital = path.StartsWith("movies/digital", StringComparison.OrdinalIgnoreCase);
+    var onWatch = path.StartsWith("watch",StringComparison.OrdinalIgnoreCase);
+    var onMovies = path.StartsWith("movies", StringComparison.OrdinalIgnoreCase);
+    var onTv = path.StartsWith("tv", StringComparison.OrdinalIgnoreCase);
+    var onVideos = path.StartsWith("videos", StringComparison.OrdinalIgnoreCase);
+    var onRankings = path.StartsWith("rankings", StringComparison.OrdinalIgnoreCase);
+    var onStandings = path.StartsWith("standings", StringComparison.OrdinalIgnoreCase);
+    var onResults = path.StartsWith("box-score/", StringComparison.OrdinalIgnoreCase) || path.StartsWith("results", StringComparison.OrdinalIgnoreCase)
+        || path.StartsWith("championship/results", StringComparison.OrdinalIgnoreCase)
+        || path.StartsWith("mls/results", StringComparison.OrdinalIgnoreCase);
+    var onBoxOffice = path.StartsWith("box-office", StringComparison.OrdinalIgnoreCase);
+    var onNews = path.StartsWith("news", StringComparison.OrdinalIgnoreCase);
+    var onSaved = path.StartsWith("saved", StringComparison.OrdinalIgnoreCase);
+    var onHome = path.Length == 0 || path[0] is '?' or '#';
+    var section = onWatch ? "Where to watch" : onLocal ? "Kansas City" : onCollege ? "College Sports" : onF1 ? "F1" : onTeams ? "Settings" : onTv ? "TV & Streaming" : onEvents ? "Sports Events" : onDigital ? "Digital rental / purchase" : onMovies ? "Movies" : onVideos ? "YouTube"
+        : onRankings ? "Top 25" : onStandings ? "Standings" : onResults ? "Results" : onBoxOffice ? "Box Office" : onNews ? "News" : onSaved ? "Saved articles" : onHome ? "Home" : "Browse";
+}
+
+<div class="pub">
+    <header class="site-header">
+        <a class="brand" href="">MyDailyFeed</a>
+
+        @* Wide screens: the navigation sits in the header. Smaller screens get a dropdown below it. *@
+        <nav class="site-nav site-nav--inline" aria-label="Main">
+            <a href="" aria-current="@(onHome ? "page" : null)">Home</a>
+            <a href="news" aria-current="@(onNews ? "page" : null)">News</a>
+
+            <a href="local" aria-current="@(onLocal ? "page" : null)">Local</a>
+            <a href="box-office" aria-current="@(onBoxOffice ? "page" : null)">Box Office</a>
+            <a href="watch" aria-current="@(onWatch ? "page" : null)">Where to watch</a>
+            <details class="desktop-nav-group" data-mobile-nav><summary class="@((onEvents || onResults || onStandings || onRankings || onF1 || onCollege) ? "is-current" : null)">Sports ▾</summary><div class="desktop-nav-links">
+            <a href="events" aria-current="@(onEvents ? "page" : null)">Sports Events</a>
+            <a href="results" aria-current="@(onResults ? "page" : null)">Results</a>
+            <a href="standings" aria-current="@(onStandings ? "page" : null)">Standings</a>
+            <a href="college" aria-current="@(onCollege ? "page" : null)">College Sports</a>
+            <a href="f1" aria-current="@(onF1 ? "page" : null)">F1</a>
+            <a href="rankings" aria-current="@(onRankings ? "page" : null)">Top 25</a></div></details>
+            <details class="desktop-nav-group" data-mobile-nav><summary class="@((onMovies || onTv) ? "is-current" : null)">Entertainment ▾</summary><div class="desktop-nav-links">            <a href="movies" aria-current="@(onMovies && !onDigital ? "page" : null)">Movies</a>
+            <a href="tv" aria-current="@(onTv ? "page" : null)">TV &amp; Streaming</a>
+            <a href="movies/digital" aria-current="@(onDigital ? "page" : null)">Digital rental / purchase</a></div></details>
+            <a href="videos" aria-current="@(onVideos ? "page" : null)">YouTube</a>
+        </nav>
+
+        <div class="header-actions">
+
+            @* Saved articles stay in the header; public.js fills in the count. *@
+            <a class="saved-link" href="saved" aria-current="@(onSaved ? "page" : null)" title="Saved articles">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4.5L5 21V4a1 1 0 0 1 1-1z"></path></svg>
+                <span class="sr-only">Saved articles</span>
+                <span class="saved-link__count" data-saved-count hidden></span>
+            </a>
+            <a class="saved-link settings-link" href="settings" aria-current="@(onTeams ? "page" : null)" title="Settings">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.21 4.82 L10.26 2.15 L13.74 2.15 L13.79 4.82 L15.81 5.66 L17.74 3.81 L20.19 6.26 L18.34 8.19 L19.18 10.21 L21.85 10.26 L21.85 13.74 L19.18 13.79 L18.34 15.81 L20.19 17.74 L17.74 20.19 L15.81 18.34 L13.79 19.18 L13.74 21.85 L10.26 21.85 L10.21 19.18 L8.19 18.34 L6.26 20.19 L3.81 17.74 L5.66 15.81 L4.82 13.79 L2.15 13.74 L2.15 10.26 L4.82 10.21 L5.66 8.19 L3.81 6.26 L6.26 3.81 L8.19 5.66Z"/><circle cx="12" cy="12" r="3"/></svg>
+                <span class="settings-link__label">Settings</span>
+            </a>
+            @* Label and pressed state are kept in sync by public.js. *@
+            <button class="theme-toggle" type="button" aria-label="Switch to dark mode" aria-pressed="false" data-theme-toggle>
+                <svg class="icon-moon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"></path></svg>
+                <svg class="icon-sun" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg>
+            </button>
+            <AuthorizeView>
+                <Authorized>
+                    <a class="admin-link" href="admin">Admin</a>
+                </Authorized>
+                <NotAuthorized>
+                    <a class="admin-link" href="login">Admin sign in</a>
+                </NotAuthorized>
+            </AuthorizeView>
+        </div>
+    </header>
+
+    <details class="mobile-nav" data-mobile-nav>
+        <summary>
+            <span class="mobile-nav__context">Browse</span>
+            <span class="mobile-nav__section">@section</span>
+            <svg class="mobile-nav__chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg>
+        </summary>
+        <nav aria-label="Main" class="mobile-nav__links">
+            <span class="nav-group-label">News</span>
+            <a href="" aria-current="@(onHome ? "page" : null)">Home</a>
+            <a href="news" aria-current="@(onNews ? "page" : null)">News</a>
+
+            <a href="local" aria-current="@(onLocal ? "page" : null)">Local</a>
+            <a href="box-office" aria-current="@(onBoxOffice ? "page" : null)">Box Office</a>
+            <a href="watch" aria-current="@(onWatch ? "page" : null)">Where to watch</a>
+            <span class="nav-group-label">Sports</span>
+
+            <a href="events" aria-current="@(onEvents ? "page" : null)">Sports Events</a>
+            <a href="results" aria-current="@(onResults ? "page" : null)">Results</a>
+            <a href="standings" aria-current="@(onStandings ? "page" : null)">Standings</a>
+            <a href="college" aria-current="@(onCollege ? "page" : null)">College Sports</a>
+            <a href="f1" aria-current="@(onF1 ? "page" : null)">F1</a>
+            <a href="rankings" aria-current="@(onRankings ? "page" : null)">Top 25</a>
+            <span class="nav-group-label">Entertainment</span>
+            <a href="movies" aria-current="@(onMovies ? "page" : null)">Movies</a>
+            <a href="tv" aria-current="@(onTv ? "page" : null)">TV &amp; Streaming</a>
+            <a href="movies/digital">Digital rental / purchase</a>
+            <span class="nav-group-label">YouTube</span>
+            <a href="videos" aria-current="@(onVideos ? "page" : null)">Videos</a>
+            <span class="nav-group-label">Your links</span>
+
+            <a href="saved" aria-current="@(onSaved ? "page" : null)">Saved articles</a>
+            <a href="settings" aria-current="@(onTeams ? "page" : null)">Settings</a>
+            <AuthorizeView><Authorized><a href="admin">Administration</a></Authorized><NotAuthorized><a href="login">Admin sign in</a></NotAuthorized></AuthorizeView>
+        </nav>
+    </details>
+
+    <main class="page">
+        @Body
+    </main>
+</div>
+
+<div id="blazor-error-ui" data-nosnippet>
+    An unhandled error has occurred.
+    <a href="." class="reload">Reload</a>
+    <span class="dismiss">🗙</span>
+</div>

@@ -112,7 +112,7 @@ registration scripts are needed for the frontend rollout.
 Run relevant application checks; the full suite is:
 
 ```bash
-dotnet test MyNewsFeed.sln
+dotnet test MyDailyFeed.sln
 ```
 
 Tests need configured SQL access; use development/staging for integration fixtures.
@@ -235,3 +235,23 @@ supported `/box-score/{sport}/{league}/{eventId}` route. Check modal opening,
 Close/Escape/focus return, internal table scrolling, no-JavaScript direct links,
 and missing/unsupported detail fallback. F1 and existing schedule links are separate.
 See [cached statistics](docs/sports.md#cached-box-scores-and-game-stat-modals).
+
+### Where to watch credentials
+
+The /watch feature uses the existing Movies__AccessToken environment setting
+(Movies:AccessToken configuration). Keep it server-side and preserve it during
+container replacement. Missing/invalid credentials leave the page with a retry
+message rather than exposing diagnostics. No new database permission or migration
+is needed. See docs/entertainment.md for provider attribution and cache behavior.
+
+### MyDailyFeed rename compatibility
+
+Build MyDailyFeed.sln or src/MyDailyFeed.Web/MyDailyFeed.Web.csproj. The published
+entrypoint is dotnet MyDailyFeed.Web.dll. The existing production container remains
+mynewsfeed-web at the same hostname/port; new release images use mydailyfeed-web.
+When cloning runtime config from an older container, explicitly update Entrypoint
+to the renamed DLL. Preserve the existing environment, mounts and key volume.
+The legacy admin cookie name and data-protection discriminator intentionally stay
+MyNewsFeed.Admin and MyNewsFeed to preserve sign-in compatibility. Browser storage
+keys and PWA id/scope remain unchanged. GitHub repository renaming was not part of
+this deployment.

@@ -23,7 +23,7 @@ const assert = require('node:assert/strict');
         await page.reload();
         assert.equal(await theme(), 'light');
         assert.equal(await mode('sun').isChecked(), true);
-        const sunset = await page.evaluate(() => MyNewsFeedSolar.times(new Date(), MyNewsFeedSolar.location).sunset.toISOString());
+        const sunset = await page.evaluate(() => MyDailyFeedSolar.times(new Date(), MyDailyFeedSolar.location).sunset.toISOString());
         await page.clock.setSystemTime(new Date(new Date(sunset).getTime() + 1000));
         await page.clock.runFor(30000);
         assert.equal(await theme(), 'dark');

@@ -1,6 +1,6 @@
-# MyNewsFeed
+# MyDailyFeed
 
-ASP.NET Core / Blazor newsfeed with sports schedules, results, standings and polls;
+MyDailyFeed (formerly MyNewsFeed) is an ASP.NET Core / Blazor daily dashboard with sports schedules, results, standings and polls;
 movie releases, television episodes, a separate YouTube section, saved articles
 and administration.
 The web app and Rust scraper share SQL Server data but have separate collection
@@ -10,6 +10,8 @@ and deployment responsibilities.
 Build public browsing around links, cards, tabs, dropdowns and simple selections;
 avoid features that require typed input. See the
 [standing interaction guideline](docs/interface.md#standing-product-guideline-tap-to-link).
+
+**Approved exception (October 20, 2026):** Where to watch supports typed movie/TV title search, alongside tap-to-browse genres and popular titles. This does not restore site-wide Search.
 
 | Guide | Contents |
 | --- | --- |
@@ -61,8 +63,8 @@ this repository's application migrations are in `db/`.
 Build and run the existing checks from the repository root:
 
 ```bash
-dotnet build MyNewsFeed.sln
-dotnet test MyNewsFeed.sln
+dotnet build MyDailyFeed.sln
+dotnet test MyDailyFeed.sln
 ```
 
 The solar calculation checks run independently of SQL Server:
@@ -87,3 +89,11 @@ for routes, data scope and browser-local storage behavior.
 
 Sports results also support [cached box scores and game-stat modals](docs/sports.md#cached-box-scores-and-game-stat-modals)
 when collected detail is available, with ordinary detail-page links as a fallback.
+
+## Project identity
+
+The solution is MyDailyFeed.sln; the application and test projects are
+src/MyDailyFeed.Web/MyDailyFeed.Web.csproj and
+tests/MyDailyFeed.Tests/MyDailyFeed.Tests.csproj. The existing My-Newsfeed checkout
+and GitHub repository name are retained for link compatibility. See release
+history for the October 20 rebrand and preserved storage/authentication identities.

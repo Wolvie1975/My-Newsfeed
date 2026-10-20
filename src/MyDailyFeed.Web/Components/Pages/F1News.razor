@@ -1,0 +1,79 @@
+@page "/f1/news"
+@layout PublicLayout
+@using MyDailyFeed.Web.Components.Feed
+@using MyDailyFeed.Web.Components.F1
+@inject IDbContextFactory<WebScraperContext> Factory
+@inject FeedDates Dates
+@inject ILogger<F1News> Log
+
+<PageTitle>F1 · News · MyDailyFeed</PageTitle>
+<PageHeading Title="F1 News" Eyebrow="FORMULA 1" Description="Latest articles from the F1 publishers we follow." />
+<ReadingPreferences />
+<F1Tabs Current="news" />
+@if (error is not null)
+{ <p class="empty" role="status">@error</p> }
+else
+{
+    <div class="filters">
+        @if (data.Sources.Count > 0)
+        {
+            <form class="catselect" method="get" action="f1/news">
+                @if (!string.IsNullOrWhiteSpace(Q)) { <input type="hidden" name="q" value="@Q" /> }
+                <label class="sr-only" for="f1-news-source">F1 news source</label>
+                <select id="f1-news-source" name="source" onchange="this.form.requestSubmit()">
+                    <option value="">All sources</option>
+                    @foreach (var source in data.Sources)
+                    { <option value="@source.Id" selected="@(data.SourceId == source.Id)">@source.Name</option> }
+                </select>
+                <noscript><button type="submit" class="nf-btn nf-btn--secondary">Apply</button></noscript>
+            </form>
+        }
+        <span class="count count--toolbar">@data.Feed.Total @(data.Feed.Total == 1 ? "article" : "articles")</span>
+    </div>
+    @if (data.Updated is { } updated)
+    { <p class="updated">F1 news last updated <time datetime="@updated.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'")">@Dates.PublishedFull(updated)</time></p> }
+    @if (data.Feed.Items.Count == 0)
+    {
+        <p class="empty">
+            @if (data.SourceId != null || !string.IsNullOrWhiteSpace(Q) || After != null)
+            { <span>No articles match. <a href="f1/news">Clear filters</a></span> }
+            else
+            { <span>No F1 articles available yet. Please check back soon.</span> }
+        </p>
+    }
+    else
+    {
+        @if (After != null) { <p><a href="@Href(null)">← Back to the newest articles</a></p> }
+        <section class="feed" aria-label="F1 articles" data-last-day="@lastDay">
+            <FeedArticles Items="data.Feed.Items" LeadFirst="@(After is null)" Total="@(After is null ? data.Feed.Total : null)" />
+        </section>
+        <div class="loadmore">
+            @if (data.Feed.Next is { } next)
+            { <a class="nf-btn nf-btn--secondary" data-load-more data-feed-view="f1-news" data-enhance-nav="false" href="@Href(next.ToToken())">Load more articles</a> }
+            <span class="count" data-shown-total>Showing @data.Feed.Shown of @data.Feed.Total</span>
+            <span class="sr-only" role="status" data-load-status></span>
+        </div>
+    }
+}
+@code {
+    [SupplyParameterFromQuery(Name = "source")] private string? SourceQuery { get; set; }
+    [SupplyParameterFromQuery(Name = "after")] private string? AfterQuery { get; set; }
+    [SupplyParameterFromQuery(Name = "q")] private string? Q { get; set; }
+    private FeedCursor? After => FeedCursor.Parse(AfterQuery);
+    private F1NewsPage data = new(null, [], null, new([], 0, 0, null), null);
+    private string? error;
+    private string? lastDay;
+    private string Href(string? after) => "f1/news" + FeedQuery.QueryString(null, Q, after, data.SourceId);
+    protected override async Task OnParametersSetAsync()
+    {
+        error = null;
+        try
+        {
+            await using var db = await Factory.CreateDbContextAsync();
+            data = await F1NewsQuery.GetAsync(db, int.TryParse(SourceQuery, out var source) && source > 0 ? source : null, Q, After);
+            lastDay = data.Feed.Items.Count > 0 ? Dates.DayKey(data.Feed.Items[^1]) : null;
+        }
+        catch (Exception ex) when (ex is System.Data.Common.DbException or InvalidOperationException)
+        { Log.LogError(ex, "Could not read F1 news."); error = "F1 news is temporarily unavailable. Please try again."; }
+    }
+}

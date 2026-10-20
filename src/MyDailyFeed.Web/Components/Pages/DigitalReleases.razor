@@ -1,0 +1,74 @@
+@page "/movies/digital"
+@layout PublicLayout
+@inject IDbContextFactory<WebScraperContext> Factory
+@inject FeedDates Dates
+@inject ILogger<DigitalReleases> Log
+
+<PageTitle>Digital rental / purchase · MyDailyFeed</PageTitle>
+<PageHeading Title="Digital rental / purchase" Eyebrow="COMING HOME" Description="Confirmed rent-or-buy release dates from the selected provider." />
+<MovieViewSelect Selected="digital" />
+@if (data is null)
+{
+    <p class="empty">Digital releases are temporarily unavailable. <a href="movies/digital">Try again</a></p>
+}
+else
+{
+    <p class="updated">From @FeedDates.LongDate(data.StartDate)</p>
+    @if (data.Sources.Count > 0)
+    {
+        <form class="catselect" action="movies/digital" method="get">
+            <label class="sr-only" for="digital-source">Digital release source</label>
+            <select id="digital-source" name="source" onchange="this.form.requestSubmit()">
+                @foreach (var source in data.Sources) { <option value="@source.SourceKey" selected="@(data.Selected?.ID == source.ID)">@source.Name</option> }
+            </select>
+            <noscript><button class="nf-btn nf-btn--secondary" type="submit">Apply</button></noscript>
+        </form>
+    }
+    @if (data.Selected is null) { <p class="empty">No digital release sources are enabled.</p> }
+    else
+    {
+        <h2>@data.Selected.Name</h2>
+        @if (data.Selected.LastScrapedAt is { } checkedAt) { <p class="updated">Last checked @Dates.PublishedFull(checkedAt)</p> }
+        @if (!string.IsNullOrWhiteSpace(data.Selected.LastError))
+        { <p class="standing-status" role="status">Latest collection failed; showing previously collected releases when available.</p> }
+        <p class="count">@data.Items.Count @(data.Items.Count == 1 ? "release" : "releases") from @data.Selected.Name</p>
+        <a class="nf-btn nf-btn--secondary theater-site-link digital-site-link" href="https://athome.fandango.com/" target="_blank" rel="noopener noreferrer">
+            <img src="images/brands/fandango-at-home.svg" alt="" width="180" height="24" />
+            <span>Visit Fandango at Home <span aria-hidden="true">↗</span></span>
+        </a>
+        @if (data.Items.Count == 0) { <p class="empty">No confirmed digital releases from @data.Selected.Name from today onward. You can choose another source above.</p> }
+        @foreach (var day in data.Items.GroupBy(m => m.Date))
+        {
+            <section class="movies-day"><h2>@FeedDates.LongDate(day.Key!.Value)</h2>
+                <ul class="movie-grid">
+                @foreach (var movie in day)
+                {
+                    <li class="movie-card" data-release-id="@movie.Id">
+                        <MoviePoster Url="@movie.Poster" Title="@movie.Title" Class="movie-poster" />
+                        <div class="movie-body">
+                            <p class="movie-kind">VOD / Digital</p><h3>@movie.Title</h3>
+                            @if (movie.Year is { } year) { <p class="movie-meta">@year</p> }
+                            <p class="movie-meta"><time datetime="@movie.Date!.Value.ToString("yyyy-MM-dd")">@FeedDates.LongDate(movie.Date.Value)</time></p>
+                            <p class="movie-meta">@movie.Source</p>
+                            @if (FeedQuery.SafeHref(movie.SourceUrl) is { } url) { <a class="movie-source" href="@url" target="_blank" rel="noopener noreferrer">Movie details ↗</a> }
+                            <MovieCommerceAction Item="movie" />
+                        </div>
+                    </li>
+                }
+                </ul>
+            </section>
+        }
+        <p class="updated">Digital availability is separate from subscription streaming. Listings reflect the selected source’s published dates.</p>
+    }
+}
+
+@code {
+    [SupplyParameterFromQuery(Name = "source")] private string? SourceKey { get; set; }
+    private DigitalReleasePage? data;
+    protected override async Task OnParametersSetAsync()
+    {
+        try { await using var db = await Factory.CreateDbContextAsync(); data = await DigitalReleasesQuery.GetAsync(db, Dates.Today, SourceKey); }
+        catch (Exception ex) when (ex is System.Data.Common.DbException or InvalidOperationException)
+        { Log.LogError(ex, "Digital releases read failed."); data = null; }
+    }
+}

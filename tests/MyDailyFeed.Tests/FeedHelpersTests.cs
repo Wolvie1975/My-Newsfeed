@@ -1,0 +1,313 @@
+using MyDailyFeed.Web.Data;
+
+namespace MyDailyFeed.Tests;
+
+// Pure logic: no database needed.
+public class FeedHelpersTests
+{
+    [Fact]
+    public void Home_selection_is_stable_within_a_scrape_hour_and_rotates_across_hours()
+    {
+        var candidates = Enumerable.Range(1, 40).Select(i => new FeedItem(
+            i, $"Story {i}", $"https://example.com/story/{i}", null, null,
+            $"Source {i}", $"https://example.com/source/{i}", null, null,
+            new DateTime(2026, 10, 14).AddMinutes(i))).ToList();
+        var scraped = new DateTime(2026, 10, 14, 10, 5, 0);
+        var first = FeedQuery.SelectHomeNews(candidates, scraped);
+        Assert.Equal(10, first.Count);
+        Assert.Equal(10, first.Select(x => x.SourceUrl).Distinct().Count());
+        Assert.Equal(first, FeedQuery.SelectHomeNews(candidates.AsEnumerable().Reverse(), scraped.AddMinutes(40)));
+        Assert.False(first.Select(x => x.Id).SequenceEqual(
+            FeedQuery.SelectHomeNews(candidates, scraped.AddHours(1)).Select(x => x.Id)));
+        Assert.Equal(first.OrderByDescending(x => x.Date), first);
+        Assert.Equal(3, FeedQuery.SelectHomeNews(candidates.Take(3), scraped).Count);
+        Assert.Empty(FeedQuery.SelectHomeNews([], scraped));
+    }
+
+    // ---- SafeHref -----------------------------------------------------------------------------------------------
+
+    [Theory]
+    [InlineData("https://example.com/a", "https://example.com/a")]
+    [InlineData("http://example.com/", "http://example.com/")]
+    [InlineData("javascript:alert(1)", null)]
+    [InlineData("JaVaScRiPt:alert(1)", null)]
+    [InlineData("data:text/html,<script>alert(1)</script>", null)]
+    [InlineData("ftp://example.com/file", null)]
+    [InlineData("/relative/path", null)]
+    [InlineData("", null)]
+    [InlineData(null, null)]
+    public void SafeHref_only_allows_http_and_https(string? url, string? expected) =>
+        Assert.Equal(expected, FeedQuery.SafeHref(url));
+
+    // ---- Excerpt ------------------------------------------------------------------------------------------------
+
+    [Fact]
+    public void Excerpt_returns_short_text_unchanged_and_null_for_blank()
+    {
+        Assert.Equal("Short text", FeedQuery.Excerpt("  Short text  "));
+        Assert.Null(FeedQuery.Excerpt(null));
+        Assert.Null(FeedQuery.Excerpt("   "));
+    }
+
+    [Fact]
+    public void Excerpt_cuts_long_text_at_a_word_boundary()
+    {
+        var text = string.Join(' ', Enumerable.Repeat("word", 100));
+        var excerpt = FeedQuery.Excerpt(text, 50)!;
+
+        Assert.EndsWith("…", excerpt);
+        Assert.True(excerpt.Length <= 51);
+        Assert.DoesNotContain("wor…", excerpt);
+    }
+
+    [Fact]
+    public void Excerpt_hard_cuts_text_without_spaces() =>
+        Assert.Equal(101, FeedQuery.Excerpt(new string('x', 500), 100)!.Length);
+
+    // ---- Query string -------------------------------------------------------------------------------------------
+
+    [Theory]
+    [InlineData(null, null, null, "")]
+    [InlineData(8, null, null, "?category=8")]
+    [InlineData(null, "rust lang", null, "?q=rust%20lang")]
+    [InlineData(8, "a&b", "123.4", "?category=8&q=a%26b&after=123.4")]
+    [InlineData(null, "   ", null, "")]
+    public void QueryString_keeps_only_the_filters_that_are_set(int? category, string? search, string? after, string expected) =>
+        Assert.Equal(expected, FeedQuery.QueryString(category, search, after));
+
+    // ---- Cursor -------------------------------------------------------------------------------------------------
+
+    [Fact]
+    public void An_undated_cursor_round_trips_and_the_older_two_part_token_still_reads_as_dated()
+    {
+        var undated = new FeedCursor(new DateTime(2026, 9, 20, 11, 39, 27), 7, Undated: true);
+        Assert.Equal(undated, FeedCursor.Parse(undated.ToToken()));
+        Assert.StartsWith("1.", undated.ToToken());
+
+        var legacy = FeedCursor.Parse("639255090370000000.628");
+        Assert.NotNull(legacy);
+        Assert.False(legacy!.Undated);
+        Assert.Equal(628, legacy.Id);
+    }
+
+    [Fact]
+    public void Cursor_round_trips_through_its_token()
+    {
+        var cursor = new FeedCursor(new DateTime(2026, 9, 20, 11, 39, 27, 123).AddTicks(4567), 542);
+        Assert.Equal(cursor, FeedCursor.Parse(cursor.ToToken()));
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("abc")]
+    [InlineData("1.2.3.4")]
+    [InlineData("2.5.6")]
+    [InlineData("x.5.6")]
+    [InlineData("1.-5.6")]
+    [InlineData("12345")]
+    [InlineData("-5.1")]
+    [InlineData("99999999999999999999.1")]
+    [InlineData("3155378975999999999.99999999999")]
+    [InlineData("3155378976000000000.1")]
+    [InlineData("1.x")]
+    public void Cursor_rejects_malformed_tokens(string? token) => Assert.Null(FeedCursor.Parse(token));
+
+    // ---- Emoji --------------------------------------------------------------------------------------------------
+
+    [Theory]
+    [InlineData("😈 Kentucky's jab after TAMU upset", "Kentucky's jab after TAMU upset")]
+    [InlineData("Big news 🔥🔥 today", "Big news today")]
+    [InlineData("Family 👨‍👩‍👧 photo", "Family photo")]
+    [InlineData("Flag 🇺🇸 day", "Flag day")]
+    [InlineData("Thumbs 👍🏽 up", "Thumbs up")]
+    [InlineData("✅ Done ⭐", "Done")]
+    [InlineData("Heart ❤️ works", "Heart works")]
+    [InlineData("Time ⏰ check", "Time check")]
+    public void StripEmoji_removes_emoji_and_tidies_spaces(string input, string expected) =>
+        Assert.Equal(expected, FeedText.StripEmoji(input));
+
+    [Theory]
+    [InlineData("No emoji here")]
+    [InlineData("Pokémon Champions — ‘quoted’ “text” … é ü ñ")]
+    [InlineData("Rust™ 1.0 © 2026 ®")]
+    [InlineData("Paramount+ and 100% of $5 & more")]
+    [InlineData("Arrows → and ← stay, as do ± and ×")]
+    [InlineData("日本語のタイトル")]
+    public void StripEmoji_leaves_ordinary_text_alone(string input) => Assert.Equal(input, FeedText.StripEmoji(input));
+
+    [Fact]
+    public void StripEmoji_handles_null_and_empty()
+    {
+        Assert.Equal("", FeedText.StripEmoji(null));
+        Assert.Equal("", FeedText.StripEmoji(""));
+        Assert.Equal("", FeedText.StripEmoji("🔥🔥"));
+    }
+
+    // ---- Source names -------------------------------------------------------------------------------------------
+
+    [Theory]
+    [InlineData("ESPN", "https://www.espn.com/espn/rss/news", "ESPN")]
+    [InlineData("  It's FOSS  ", "https://itsfoss.com/", "It's FOSS")]
+    [InlineData(null, "https://www.espn.com/espn/rss/news", "espn.com")]
+    [InlineData("", "https://9to5linux.com/", "9to5linux.com")]
+    [InlineData("   ", "https://WWW.Example.COM/x", "example.com")]
+    [InlineData(null, "not a url", "not a url")]
+    [InlineData(null, null, "")]
+    public void SourceName_prefers_the_label_then_the_host(string? label, string? url, string expected) =>
+        Assert.Equal(expected, FeedText.SourceName(label, url));
+
+    [Theory]
+    [InlineData("ESPN", "E")]
+    [InlineData("9to5Linux", "9")]
+    [InlineData("/Film", "F")]
+    [InlineData("it's FOSS", "I")]
+    [InlineData("", "•")]
+    [InlineData("---", "•")]
+    public void SourceMark_is_the_first_letter_or_digit(string name, string expected) =>
+        Assert.Equal(expected, FeedText.SourceMark(name));
+
+    // ---- Dates --------------------------------------------------------------------------------------------------
+
+    [Theory]
+    [InlineData("2026-09-20 01:00", "Sep 20, 2026")]
+    [InlineData("2026-09-20 23:59", "Sep 20, 2026")]
+    [InlineData("2026-09-19 00:00", "Sep 19, 2026")]
+    [InlineData("2026-01-02 12:00", "Jan 2, 2026")]
+    [InlineData("2025-12-31 12:00", "Dec 31, 2025")]
+    public void Published_shows_the_actual_date(string when, string expected) =>
+        Assert.Equal(expected, FeedDates.Create("UTC").Published(DateTime.Parse(when)));
+
+    [Fact]
+    public void Published_never_uses_relative_words_even_for_today()
+    {
+        var dates = FeedDates.Create("UTC");
+        foreach (var moment in new[] { DateTime.UtcNow, DateTime.UtcNow.AddDays(-1) })
+        {
+            var text = dates.Published(moment);
+            Assert.DoesNotContain("Today", text);
+            Assert.DoesNotContain("Yesterday", text);
+            Assert.Matches(@"^[A-Z][a-z]{2} \d{1,2}, \d{4}$", text);
+        }
+    }
+
+    [Fact]
+    public void Group_labels_are_real_dates()
+    {
+        var dates = FeedDates.Create("UTC");
+        Assert.Equal("Sun Sep 20, 2026", dates.GroupLabel("2026-09-20"));
+        Assert.Equal("Sat Sep 19, 2026", dates.GroupLabel("2026-09-19"));
+        Assert.Equal("Wed Dec 31, 2025", dates.GroupLabel("2025-12-31"));
+        Assert.Equal("garbage", dates.GroupLabel("garbage"));
+    }
+
+    [Fact]
+    public void The_date_follows_the_display_zone()
+    {
+        // 02:00 UTC on 20 Sep is 21:00 on 19 Sep in Chicago (UTC-5 in September).
+        var utc = new DateTime(2026, 9, 20, 2, 0, 0);
+        var chicago = FeedDates.Create("America/Chicago");
+
+        Assert.Equal("Sep 20, 2026", FeedDates.Create("UTC").Published(utc));
+        Assert.Equal("Sep 19, 2026", chicago.Published(utc));
+        Assert.Equal("2026-09-20", FeedDates.Create("UTC").DayKey(utc));
+        Assert.Equal("2026-09-19", chicago.DayKey(utc));
+    }
+
+    [Fact]
+    public void Admin_stamps_are_in_the_display_zone_with_their_offset()
+    {
+        var utc = new DateTime(2026, 9, 20, 9, 52, 0);
+        Assert.Equal("2026-09-20 09:52 (UTC+0)", FeedDates.Create("UTC").Stamp(utc));
+        Assert.Equal("2026-09-20 04:52 (UTC-5)", FeedDates.Create("America/Chicago").Stamp(utc));
+        Assert.Equal("2026-01-20 03:52 (UTC-6)", FeedDates.Create("America/Chicago").Stamp(new DateTime(2026, 1, 20, 9, 52, 0)));
+        Assert.Equal("—", FeedDates.Create("America/Chicago").Stamp(null));
+    }
+
+    [Fact]
+    public void Times_with_an_offset_are_labelled_so_they_are_not_mistaken_for_the_venues_clock()
+    {
+        Assert.Equal("2:00 PM (UTC-5)", FeedDates.Create("America/Chicago").TimeWithOffset(new DateTime(2026, 9, 20, 19, 0, 0)));
+    }
+
+    [Fact]
+    public void A_time_read_from_sql_is_always_treated_as_utc_whatever_its_kind()
+    {
+        // SQL Server returns DateTimeKind.Unspecified; a Local kind must not shift the result either.
+        var chicago = FeedDates.Create("America/Chicago");
+        var unspecified = new DateTime(2026, 9, 20, 2, 0, 0, DateTimeKind.Unspecified);
+        var local = new DateTime(2026, 9, 20, 2, 0, 0, DateTimeKind.Local);
+
+        Assert.Equal(chicago.Stamp(unspecified), chicago.Stamp(local));
+        Assert.Equal(chicago.DayKey(unspecified), chicago.DayKey(local));
+        Assert.Equal("2026-09-19 21:00 (UTC-5)", chicago.Stamp(unspecified));
+    }
+
+    [Fact]
+    public void Today_is_the_date_in_the_display_zone_not_in_utc()
+    {
+        var justAfterUtcMidnight = new DateTime(2026, 9, 21, 1, 0, 0);   // still the evening of the 20th in Chicago
+        Assert.Equal(new DateOnly(2026, 9, 21), FeedDates.Create("UTC").TodayAt(justAfterUtcMidnight));
+        Assert.Equal(new DateOnly(2026, 9, 20), FeedDates.Create("America/Chicago").TodayAt(justAfterUtcMidnight));
+    }
+
+    [Fact]
+    public void Undated_stories_share_one_group_labelled_date_unknown()
+    {
+        var dates = FeedDates.Create("UTC");
+        var dated = new FeedItem(1, "t", "https://x.test/1", null, null, null, "https://x.test/", null, null, new DateTime(2026, 9, 20, 9, 0, 0));
+
+        Assert.Equal("2026-09-20", dates.DayKey(dated));
+        Assert.Equal(FeedDates.UndatedKey, dates.DayKey(dated with { Undated = true }));
+        Assert.Equal("Date unknown", dates.GroupLabel(FeedDates.UndatedKey));
+    }
+
+    [Fact]
+    public void The_tooltip_gives_the_full_date_time_and_offset()
+    {
+        var utc = new DateTime(2026, 9, 20, 9, 52, 0);
+
+        Assert.Equal("Sep 20, 2026, 9:52 AM (UTC+0)", FeedDates.Create("UTC").PublishedFull(utc));
+        Assert.Equal("Sep 20, 2026, 4:52 AM (UTC-5)", FeedDates.Create("America/Chicago").PublishedFull(utc));
+        Assert.Equal("Jan 15, 2026, 9:00 AM (UTC-6)", FeedDates.Create("America/Chicago").PublishedFull(new DateTime(2026, 1, 15, 15, 0, 0)));
+        Assert.Equal("Sep 20, 2026, 3:22 PM (UTC+5:30)", FeedDates.Create("Asia/Kolkata").PublishedFull(utc));
+    }
+
+    [Theory]
+    [InlineData("2026-09-20 09:52", "9:52 AM")]
+    [InlineData("2026-09-20 00:05", "12:05 AM")]
+    [InlineData("2026-09-20 12:30", "12:30 PM")]
+    [InlineData("2026-09-20 13:07", "1:07 PM")]
+    [InlineData("2026-09-20 23:59", "11:59 PM")]
+    public void Time_is_a_12_hour_clock_time(string when, string expected) =>
+        Assert.Equal(expected, FeedDates.Create("UTC").Time(DateTime.Parse(when)));
+
+    [Fact]
+    public void Time_follows_the_display_zone_including_daylight_saving()
+    {
+        var chicago = FeedDates.Create("America/Chicago");
+        Assert.Equal("4:52 AM", chicago.Time(new DateTime(2026, 9, 20, 9, 52, 0)));   // CDT, UTC-5
+        Assert.Equal("3:52 AM", chicago.Time(new DateTime(2026, 1, 20, 9, 52, 0)));   // CST, UTC-6
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("Not/AZone")]
+    public void An_unknown_time_zone_falls_back_to_utc(string? id) =>
+        Assert.Equal(TimeZoneInfo.Utc, FeedDates.Create(id).Zone);
+
+    [Theory]
+    [InlineData("2026-09-21T09:30:00", "Good morning", "Monday, September 21")]     // 4:30 AM in Chicago
+    [InlineData("2026-09-21T16:59:00", "Good morning", "Monday, September 21")]     // 11:59 AM
+    [InlineData("2026-09-21T17:00:00", "Good afternoon", "Monday, September 21")]   // 12:00 PM
+    [InlineData("2026-09-21T23:00:00", "Good evening", "Monday, September 21")]     // 6:00 PM
+    [InlineData("2026-09-22T03:00:00", "Good evening", "Monday, September 21")]     // 10:00 PM, still the 21st
+    public void The_greeting_and_date_follow_the_display_zone(string utc, string greeting, string date)
+    {
+        var chicago = FeedDates.Create("America/Chicago");
+        var now = DateTime.Parse(utc, System.Globalization.CultureInfo.InvariantCulture);
+        Assert.Equal(date, chicago.TodayLabel(now));
+        Assert.Equal(greeting, chicago.Greeting(now));
+    }
+}

@@ -1,0 +1,45 @@
+@page "/watch"
+@layout PublicLayout
+@using MyDailyFeed.Web.Watching
+@inject WatchCatalog Catalog
+<PageTitle>Where to watch · MyDailyFeed</PageTitle>
+<PageHeading Title="Where to watch" Eyebrow="MOVIES & TV" Description="Find US streaming, rental and purchase options for your next watch." />
+<form method="get" action="watch" class="watch-search" role="search">
+<label for="watch-query">Movie or TV title</label>
+<div class="watch-search-row"><input id="watch-query" name="q" value="@WatchCatalog.Term(Q)" maxlength="120" placeholder="Search a title…" type="search" /><button class="nf-btn nf-btn--primary" type="submit">Search</button></div>
+<input type="hidden" name="kind" value="@Media" />
+<input type="hidden" name="services" value="@Selection" />
+</form>
+<p><a href="settings#my-services">My services (@Selected.Length selected) · Manage in Settings →</a></p>
+@if(Selected.Length>0){<p class="updated">Matching services first on this page. Other titles remain available; availability can change.</p>}
+<nav class="watch-tabs" aria-label="Content type"><a class="nf-btn nf-btn--secondary" aria-current="@(Media=="movie"?"page":null)" href="@Url("movie")">Movies</a><a class="nf-btn nf-btn--secondary" aria-current="@(Media=="tv"?"page":null)" href="@Url("tv")">TV shows</a></nav>
+@if(string.IsNullOrWhiteSpace(Q)){
+<nav class="watch-tabs" aria-label="Browse genres"><a href="@Url(Media)">Popular</a>@foreach(var genre in WatchCatalog.Genres){<a href="@Url(Media,1,genre.Key)" aria-current="@(Genre==genre.Key?"page":null)">@genre.Value</a>}</nav>
+}
+else {<p>Results for “@WatchCatalog.Term(Q)” · <a href="@($"watch?kind={Media}&services={Selection}")">Clear search</a></p>}
+@if(listing.Failed){<p role="status">Title search is temporarily unavailable. Please try again shortly.</p>}
+else if(listing.Items.Count==0){<p role="status">No matching titles found. Try another title or switch Movies / TV shows.</p>}
+else{
+<ul class="watch-grid">@foreach(var title in listing.Items){<li class="watch-card">
+<a data-watch-title href="@($"watch/{title.Kind}/{title.Id}")" aria-label="@($"Where to watch {title.Name}")">
+@if(title.Poster is {} poster){<img src="@poster" alt="" loading="lazy" width="200" height="300" />}else{<span class="watch-no-poster" aria-hidden="true">▷</span>}
+<div><h2>@title.Name</h2><p class="updated">@(title.Kind=="movie"?"Movie":"TV show") · @(title.Year??"Year unavailable")</p>@if(title.MatchingServices?.Count>0){<p class="watch-match">On your services: @string.Join(", ",title.MatchingServices)</p>}else if(Selected.Length>0&&title.MatchingServices is null){<p class="updated">Service availability could not be checked.</p>}
+<span>Where to watch →</span></div></a>
+</li>}</ul>
+<nav class="watch-tabs" aria-label="Result pages">@if(Page>1){<a href="@Url(Media,Page-1,Genre)">← Previous</a>}<span>Page @Math.Clamp(Page,1,10)</span>@if(Page<listing.Pages){<a href="@Url(Media,Page+1,Genre)">Next →</a>}</nav>
+}
+<WatchCredits />
+@code {
+    [SupplyParameterFromQuery(Name="q")]public string? Q {get;set;}
+    [SupplyParameterFromQuery(Name="kind")]public string? Type {get;set;}
+    [SupplyParameterFromQuery(Name="genre")]public int Genre {get;set;}
+    [SupplyParameterFromQuery(Name="page")]public int Page {get;set;}=1;
+    [SupplyParameterFromQuery(Name="services")]public string? Services {get;set;}
+    [SupplyParameterFromQuery(Name="service")]public int[]? Chosen {get;set;}
+    private int[] Selected=>WatchCatalog.ServiceIds(string.Join(",",new[]{Services??"",string.Join(",",Chosen??[])}));
+    private string Selection=>string.Join(",",Selected);
+    private string Media=>Type=="tv"?"tv":"movie";
+    private WatchListing listing=new([],0);
+    protected override async Task OnParametersSetAsync(){Page=Math.Clamp(Page,1,10);listing=await Catalog.Prioritize(await Catalog.List(Media,Q,Genre,Page),Selection);}
+    private string Url(string kind,int page=1,int genre=0)=>$"watch?kind={kind}&q={Uri.EscapeDataString(WatchCatalog.Term(Q))}&page={page}&genre={genre}&services={Selection}";
+}

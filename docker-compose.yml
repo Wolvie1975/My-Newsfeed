@@ -1,11 +1,11 @@
-# Runs MyNewsFeed as its own container, independent of the dev container, next to the sql2025 container
+# Runs MyDailyFeed as its own container, independent of the dev container, next to the sql2025 container
 # on the shared dev-bridge network. Start it with:   docker compose up -d --build
 name: mynewsfeed
 
 services:
   web:
     build: .
-    image: mynewsfeed-web:latest
+    image: mydailyfeed-web:latest
     container_name: mynewsfeed-web
     restart: unless-stopped
     ports:

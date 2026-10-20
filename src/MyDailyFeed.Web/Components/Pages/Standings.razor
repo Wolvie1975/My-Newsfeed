@@ -1,0 +1,102 @@
+@page "/standings"
+@layout PublicLayout
+@using MyDailyFeed.Web.Components.Standings
+@inject IDbContextFactory<WebScraperContext> Factory
+@inject FeedDates Dates
+@inject IConfiguration Config
+@inject ILogger<Standings> Log
+
+@if (CollegeSport is null)
+{
+<PageTitle>Standings · MyDailyFeed</PageTitle>
+<PageHeading Title="Standings" Eyebrow="THE LEAGUE PICTURE" Description="Full league and conference standings, in the provider’s published order." />
+}
+@if (CollegeSport is null && page.Sources.Count > 0)
+{
+    <form class="catselect" method="get" action="@BasePath">
+        @if (CollegeSport is not null) { <input type="hidden" name="sport" value="@CollegeHub.Resolve(CollegeSport).Key" /> }
+        <label class="sr-only" for="standings-source">League or sport</label>
+        <select id="standings-source" name="sourceId" onchange="this.form.requestSubmit()">
+            @foreach (var source in page.Sources)
+            { <option value="@source.Id" selected="@(page.Selected?.Id == source.Id)">@source.DisplayName</option> }
+        </select>
+        <noscript><button class="nf-btn nf-btn--secondary" type="submit">Apply</button></noscript>
+    </form>
+}
+@if (page.AvailabilityError is { } unavailable)
+{
+    <p class="empty" role="status">@unavailable <a href="@RetryHref">Try again</a></p>
+}
+else if (page.Selected is null)
+{
+    <p class="empty">No standings sources are enabled for this selection.</p>
+}
+else
+{
+    var selected = page.Selected;
+    var rows = page.Groups.SelectMany(g => g.Teams).Select(t => t.Row).ToList();
+    var seasons = rows.Select(r => r.Season).Where(s => !string.IsNullOrWhiteSpace(s)).Distinct().ToList();
+    if (seasons.Count == 0 && selected.LatestSeason is { Length: > 0 } season) seasons.Add(season);
+    <h2>@selected.DisplayName</h2>
+    <SoccerLeagueLinks Provider="@selected.ProviderKey" />
+    @if (selected.ProviderKey == "big12" && selected.Sport == "Soccer")
+    { <p class="updated">Conference and overall standings.</p> }
+    @if (selected.ProviderKey == "espn-championship") { <p class="updated">Wrexham AFC is highlighted; the full league table remains visible.</p> }
+    @if (seasons.Count > 0) { <p class="updated">Published season: @string.Join(" · ", seasons)</p> }
+    <details class="ranking-info"><summary>About these standings</summary>
+    @if (selected.LastSuccessAt is { } refreshed)
+    { <p class="updated">Last refreshed <time datetime="@refreshed.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'")">@Dates.PublishedFull(refreshed)</time></p> }
+    @if (rows.Select(r => FeedQuery.SafeHref(r.SourceUrl)).FirstOrDefault(u => u != null) is { } sourceUrl)
+    { <p><a href="@sourceUrl" target="_blank" rel="noopener noreferrer">View source table ↗</a></p> }
+    <p class="updated">Tables retain the published season and provider order. Refresh times describe collection by MyDailyFeed.</p>
+    </details>
+    @if (page.Groups.Count == 0)
+    { <p class="empty">@(selected.ProviderKey == "big12" ? "Current-season standings are not available yet. This college feed is enabled." : "Standings not available yet.")</p> }
+    else
+    {
+        @if (StandingsQuery.Freshness(selected, DateTime.UtcNow) is { } message)
+        { <p class="standing-status" role="status">@message</p> }
+        <div class="standings-view">
+        @{ var index = 0; }
+        @if (selected.ProviderKey is "espn-nhl" or "espn-nfl")
+        {
+            @foreach (var conference in page.Groups.GroupBy(g => selected.ProviderKey == "espn-nfl" ? StandingsQuery.NflConference(g) : StandingsQuery.NhlConference(g)).OrderBy(g => g.Key is "Eastern Conference" or "American Football Conference" ? 0 : g.Key is "Western Conference" or "National Football Conference" ? 1 : 2))
+            {
+                <section class="nhl-conference" aria-labelledby="@($"nhl-conference-{index}")">
+                    <h3 id="@($"nhl-conference-{index}")">@conference.Key</h3>
+                    @foreach (var group in conference.OrderBy(g => g.Name, StringComparer.Ordinal))
+                    { <StandingsTable Sport="@selected.Sport" Group="group" Provider="@selected.ProviderKey" SourceName="@selected.DisplayName" HeadingId="@($"standings-group-{index++}")" /> }
+                </section>
+            }
+        }
+        else
+        {
+            @if (selected.ProviderKey is not ("espn-nwsl" or "espn-mls" or "espn-championship" or "espn-epl") && !(selected.ProviderKey == "big12" && (selected.Sport is "Soccer" or "Football" or "Volleyball" || selected.Sport.Contains("Basketball", StringComparison.OrdinalIgnoreCase))))
+            { <label class="ranking-detail-toggle"><input type="checkbox" /> Show all statistics</label> }
+            @foreach (var group in page.Groups)
+            { <StandingsTable Sport="@selected.Sport" Group="group" Provider="@selected.ProviderKey" SourceName="@selected.DisplayName" HeadingId="@($"standings-group-{index++}")" /> }
+        }
+        </div>
+    }
+}
+
+@code {
+    [Parameter] public string? CollegeSport { get; set; }
+    private string BasePath => CollegeSport is null ? "standings" : "college/standings";
+    [SupplyParameterFromQuery(Name = "sourceId")] private string? SourceId { get; set; }
+    private StandingsPage page = new([], null, []);
+    private string RetryHref => BasePath + (CollegeSport is not null ? "?sport=" + CollegeHub.Resolve(CollegeSport).Key + "&" : "?") + (page.Selected is { } source ? $"sourceId={source.Id}" : "");
+    protected override async Task OnParametersSetAsync()
+    {
+        try
+        {
+            await using var db = await Factory.CreateDbContextAsync();
+            page = await StandingsQuery.GetAsync(db, StandingsQuery.ParseSourceId(SourceId), Log, Dates.Today, Config.GetSection("Standings:HiddenProviders").Get<string[]>(), CollegeSport);
+        }
+        catch (Exception ex) when (ex is System.Data.Common.DbException or InvalidOperationException)
+        {
+            Log.LogError(ex, "Standings database read failed.");
+            page = new([], null, [], "Standings are temporarily unavailable. Please try again.");
+        }
+    }
+}

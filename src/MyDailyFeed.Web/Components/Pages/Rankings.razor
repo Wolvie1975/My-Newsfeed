@@ -1,0 +1,95 @@
+@page "/rankings"
+@layout PublicLayout
+@inject IDbContextFactory<WebScraperContext> Factory
+@inject FeedDates Dates
+@inject ILogger<Rankings> Log
+
+@if (CollegeSport is null)
+{
+<PageTitle>Top 25 · MyDailyFeed</PageTitle>
+<PageHeading Title="Top 25" Eyebrow="THE NATIONAL POLLS" Description="Full national rankings with current Big 12 members highlighted." />
+}
+@if (CollegeSport is null && data.Sources.Count > 0)
+{
+    <form class="catselect" method="get" action="@BasePath">
+        @if (CollegeSport is not null) { <input type="hidden" name="sport" value="@CollegeHub.Resolve(CollegeSport).Key" /> }
+        <label class="sr-only" for="ranking-source">Sport and poll</label>
+        <select id="ranking-source" name="sourceId" onchange="this.form.requestSubmit()">
+            @foreach (var source in data.Sources) { <option value="@source.Id" selected="@(data.Selected?.Id == source.Id)">@source.DisplayName</option> }
+        </select>
+        <noscript><button class="nf-btn nf-btn--secondary" type="submit">Apply</button></noscript>
+    </form>
+}
+@if (data.AvailabilityError is { } unavailable)
+{ <p class="empty" role="status">@unavailable <a href="@RetryHref">Try again</a></p> }
+else if (data.Selected is null) { <p class="empty">No ranking sources are enabled for this selection.</p> }
+else if (data.Poll is not { } poll || data.Teams.Count == 0) { <p class="empty">Rankings not available yet.</p> }
+else
+{
+    <h2>@data.Selected.Sport · @poll.PollName</h2>
+    <p class="updated ranking-date">@poll.SeasonLabel · @(RankingsQuery.OldPoll(poll, DateTime.UtcNow) ? "Latest available poll dated" : "Poll dated") @Dates.Published(poll.PublishedAtUtc)</p>
+    @if (RankingsQuery.Freshness(data.Selected, DateTime.UtcNow) is { } warning) { <p class="standing-status" role="status">@warning</p> }
+    <details class="ranking-info">
+        <summary>About this poll</summary>
+        @if (!string.IsNullOrWhiteSpace(poll.Period)) { <p class="updated">@poll.Period</p> }
+        @if (!string.IsNullOrWhiteSpace(poll.SeasonPhase)) { <p class="updated">@poll.SeasonPhase</p> }
+        @if (data.Selected.LastSuccessAt is { } refreshed) { <p class="updated">Last refreshed @Dates.PublishedFull(refreshed)</p> }
+        <p class="updated">Data via ESPN
+            @if (FeedQuery.SafeHref(poll.SourceUrl) is { } url) { <a href="@url" target="_blank" rel="noopener noreferrer">View source ↗</a> }
+        </p>
+    </details>
+    <p class="updated ranking-legend"><span class="big12-badge">Big 12</span> Conference members highlighted</p>
+    @if (data.Selected.Sport == "Football")
+    {
+        <div class="football-polls">
+            <FootballPoll Poll="poll" Teams="data.Teams" />
+        </div>
+    }
+    else
+    {
+    var points = data.Teams.Any(t => t.Points != null);
+    var votes = data.Teams.Any(t => t.FirstPlaceVotes != null);
+    <div class="ranking-view">
+    <label class="ranking-detail-toggle"><input type="checkbox" /> Show full poll details</label>
+    <div class="standings-scroll" role="region" aria-label="National rankings table" tabindex="0">
+        <table class="standings-table rankings-table">
+            <caption>@poll.PollName · @poll.SeasonLabel</caption>
+            <thead><tr><th scope="col">Rank</th><th scope="col" class="standing-team">Team</th><th scope="col">Record</th><th scope="col" class="ranking-extra">Previous</th><th scope="col">Change</th>
+                @if (points) { <th scope="col" class="ranking-extra">Points</th> } @if (votes) { <th scope="col" class="ranking-extra">First-place votes</th> }
+            </tr></thead><tbody>
+            @foreach (var team in data.Teams)
+            {
+                <tr class="@(team.IsBig12 == true ? "ranking-big12" : null)">
+                    <td>@(team.Rank?.ToString() ?? "—")</td>
+                    <th scope="row" class="standing-team"><span class="standing-team-name">
+                        @if (EventsText.LogoUrl(team.LogoUrl) is { } logo) { <img src="@logo" alt="" width="28" height="28" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()" /> }
+                        @if (FeedQuery.SafeHref(team.TeamUrl) is { } teamUrl) { <a href="@teamUrl" target="_blank" rel="noopener noreferrer">@team.TeamName</a> }
+                        else { <span>@team.TeamName</span> }
+                        @if (team.IsBig12 == true) { <span class="big12-badge">Big 12</span> }
+                    </span></th>
+                    <td>@(team.Record ?? "—")</td><td class="ranking-extra">@RankingsQuery.Previous(team)</td><td>@RankingsQuery.Movement(team)</td>
+                    @if (points) { <td class="ranking-extra">@(team.Points?.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) ?? "—")</td> }
+                    @if (votes) { <td class="ranking-extra">@(team.FirstPlaceVotes?.ToString() ?? "—")</td> }
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+    </div>
+    }
+
+}
+
+@code {
+    [Parameter] public string? CollegeSport { get; set; }
+    private string BasePath => CollegeSport is null ? "rankings" : "college/rankings";
+    [SupplyParameterFromQuery(Name = "sourceId")] private string? SourceId { get; set; }
+    private RankingsPage data = new([], null, null, []);
+    private string RetryHref => BasePath + (CollegeSport is not null ? "?sport=" + CollegeHub.Resolve(CollegeSport).Key + "&" : "?") + (data.Selected is { } selected ? $"sourceId={selected.Id}" : "");
+    protected override async Task OnParametersSetAsync()
+    {
+        try { await using var db = await Factory.CreateDbContextAsync(); data = await RankingsQuery.GetAsync(db, StandingsQuery.ParseSourceId(SourceId), Log, Dates.Today, CollegeSport); }
+        catch (Exception ex) when (ex is System.Data.Common.DbException or InvalidOperationException)
+        { Log.LogError(ex, "Rankings source read failed."); data = new([], null, null, [], "Rankings are temporarily unavailable."); }
+    }
+}

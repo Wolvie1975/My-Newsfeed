@@ -1,0 +1,602 @@
+using System.Net;
+using System.Text;
+using System.Text.Json;
+using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using MyDailyFeed.Web.Components.Events;
+using MyDailyFeed.Web.Data;
+using MyDailyFeed.Web.Data.Models;
+using MyDailyFeed.Web.Scores;
+
+namespace MyDailyFeed.Tests;
+
+public class ResultsTests
+{
+    // ---- ESPN responses: no network, no database ----------------------------------------------------------------------
+
+    // Trimmed from a real team schedule (Kansas volleyball): scores are {"value","displayValue"}, logos a list, and the
+    // venue address has a city and a state.
+    private const string ScheduleJson = """
+        { "team": { "id": "2305" }, "events": [
+          { "id": "401884318", "date": "2026-08-28T22:30Z", "name": "Kansas Jayhawks at Pittsburgh Panthers",
+            "competitions": [ { "id": "401884318", "date": "2026-08-28T22:30Z",
+              "venue": { "fullName": "Petersen Events Center", "address": { "city": "Pittsburgh", "state": "Pennsylvania" } },
+              "competitors": [
+                { "id": "221", "homeAway": "home", "winner": true,
+                  "team": { "id": "221", "displayName": "Pittsburgh Panthers", "logos": [ { "href": "https://a.espncdn.com/i/teamlogos/ncaa/500/221.png" } ] },
+                  "score": { "value": 3.0, "displayValue": "3" } },
+                { "id": "2305", "homeAway": "away", "winner": false,
+                  "team": { "id": "2305", "displayName": "Kansas Jayhawks", "logos": [ { "href": "https://a.espncdn.com/i/teamlogos/ncaa/500/2305.png" } ] },
+                  "score": { "value": 1.0, "displayValue": "1" } } ],
+              "status": { "type": { "name": "STATUS_FINAL", "state": "post", "completed": true, "description": "Final", "shortDetail": "Final" } } } ] },
+          { "id": "401884400", "date": "2026-11-27T23:00Z",
+            "competitions": [ { "date": "2026-11-27T23:00Z",
+              "competitors": [
+                { "homeAway": "home", "team": { "id": "2305", "displayName": "Kansas Jayhawks" } },
+                { "homeAway": "away", "team": { "id": "2628", "displayName": "TCU Horned Frogs" } } ],
+              "status": { "type": { "state": "pre", "completed": false, "shortDetail": "11/27 - 5:00 PM EST" } } } ] }
+        ] }
+        """;
+
+    // Trimmed from a real NWSL scoreboard: scores are strings and a team has a single "logo".
+    private const string ScoreboardJson = """
+        { "leagues": [], "events": [
+          { "id": "401854019", "date": "2026-10-04T17:00Z", "name": "Angel City FC at Gotham FC",
+            "competitions": [ { "date": "2026-10-04T17:00Z",
+              "status": { "type": { "name": "STATUS_FULL_TIME", "state": "post", "completed": true, "description": "Full Time", "shortDetail": "FT" } },
+              "venue": { "fullName": "Sports Illustrated Stadium", "address": { "city": "Harrison, New Jersey", "country": "USA" } },
+              "competitors": [
+                { "id": "15364", "homeAway": "home", "winner": false, "score": "1",
+                  "team": { "id": "15364", "displayName": "Gotham FC", "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/15364.png" } },
+                { "id": "21422", "homeAway": "away", "winner": true, "score": "1", "shootoutScore": 4,
+                  "team": { "id": "21422", "displayName": "Angel City FC" } } ] } ] }
+        ] }
+        """;
+
+    private static JsonElement Json(string text) => JsonDocument.Parse(text).RootElement;
+
+    [Fact]
+    public void A_schedule_game_is_read_with_its_score_logos_winner_and_venue()
+    {
+        var game = EspnClient.ParseGames(Json(ScheduleJson))[0];
+
+        Assert.Equal("401884318", game.EventId);
+        Assert.Equal(new DateTime(2026, 8, 28, 22, 30, 0, DateTimeKind.Utc), game.StartsAtUtc);
+        Assert.Equal(("post", true, "Final"), (game.State, game.Completed, game.StatusText));
+        Assert.Equal(new EspnSide("221", "Pittsburgh Panthers", "https://a.espncdn.com/i/teamlogos/ncaa/500/221.png", 3, null), game.Home);
+        Assert.Equal(new EspnSide("2305", "Kansas Jayhawks", "https://a.espncdn.com/i/teamlogos/ncaa/500/2305.png", 1, null), game.Away);
+        Assert.Equal("home", game.WinnerSide);
+        Assert.Equal("Pittsburgh, Pennsylvania / Petersen Events Center", game.Venue);
+    }
+
+    [Fact]
+    public void An_upcoming_schedule_game_has_no_score_winner_or_venue()
+    {
+        var game = EspnClient.ParseGames(Json(ScheduleJson))[1];
+
+        Assert.Equal(("pre", false), (game.State, game.Completed));
+        Assert.Null(game.Home.Score);
+        Assert.Null(game.Away.LogoUrl);
+        Assert.Null(game.WinnerSide);
+        Assert.Null(game.Venue);
+    }
+
+    [Fact]
+    public void A_scoreboard_game_reads_string_scores_a_single_logo_and_a_shootout()
+    {
+        var game = Assert.Single(EspnClient.ParseGames(Json(ScoreboardJson)));
+
+        Assert.Equal(new EspnSide("15364", "Gotham FC", "https://a.espncdn.com/i/teamlogos/soccer/500/15364.png", 1, null), game.Home);
+        Assert.Equal(new EspnSide("21422", "Angel City FC", null, 1, 4), game.Away);
+        Assert.Equal("away", game.WinnerSide);   // level after full time, won on the shoot-out
+        Assert.Equal("FT", game.StatusText);
+        Assert.Equal("Harrison, New Jersey / Sports Illustrated Stadium", game.Venue);
+    }
+
+    [Fact]
+    public void An_event_without_both_a_home_and_an_away_side_is_skipped()
+    {
+        var games = EspnClient.ParseGames(Json("""
+            { "events": [ { "id": "1", "date": "2026-10-01T00:00Z", "competitions": [ { "competitors": [
+                { "homeAway": "home", "team": { "id": "1", "displayName": "TBD" } } ] } ] } ] }
+            """));
+
+        Assert.Empty(games);
+    }
+
+    [Fact]
+    public void A_response_without_events_has_no_games() =>
+        Assert.Empty(EspnClient.ParseGames(Json("""{ "leagues": [] }""")));
+
+    [Fact]
+    public void The_team_list_is_read_and_sorted_by_name()
+    {
+        var teams = EspnClient.ParseTeams(Json("""
+            { "sports": [ { "leagues": [ { "teams": [
+                { "team": { "id": "2305", "displayName": "Kansas Jayhawks", "logos": [ { "href": "https://x.test/2305.png" } ] } },
+                { "team": { "id": "2000", "displayName": "Abilene Christian Wildcats" } } ] } ] } ] }
+            """));
+
+        Assert.Equal([new EspnTeam("2000", "Abilene Christian Wildcats", null), new EspnTeam("2305", "Kansas Jayhawks", "https://x.test/2305.png")], teams);
+    }
+
+    // ---- the HTTP client, against a fake handler ------------------------------------------------------------------------
+
+    private sealed class FakeHandler(HttpStatusCode status, string body) : HttpMessageHandler
+    {
+        public List<Uri> Requests { get; } = [];
+
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
+        {
+            Requests.Add(request.RequestUri!);
+            return Task.FromResult(new HttpResponseMessage(status) { Content = new StringContent(body, Encoding.UTF8, "application/json") });
+        }
+    }
+
+    private static EspnClient Client(FakeHandler handler) =>
+        new(new HttpClient(handler), Options.Create(new ScoresOptions()));
+
+    [Fact]
+    public async Task A_team_schedule_and_a_scoreboard_day_are_requested_at_the_right_addresses()
+    {
+        var handler = new FakeHandler(HttpStatusCode.OK, ScheduleJson);
+        var client = Client(handler);
+
+        var schedule = await client.GetTeamScheduleAsync("volleyball", "womens-college-volleyball", "2305", seasonType: 2);
+        await client.GetScoreboardAsync("soccer", "usa.nwsl", new DateOnly(2026, 10, 4));
+
+        Assert.True(schedule.Ok);
+        Assert.Equal(2, schedule.Value!.Count);
+        Assert.Equal(
+            [
+                "https://site.api.espn.com/apis/site/v2/sports/volleyball/womens-college-volleyball/teams/2305/schedule?seasontype=2",
+                "https://site.api.espn.com/apis/site/v2/sports/soccer/usa.nwsl/scoreboard?dates=20261004&limit=500",
+            ],
+            handler.Requests.Select(u => u.ToString()));
+    }
+
+    [Fact]
+    public async Task An_http_error_is_reported_not_thrown()
+    {
+        // What ESPN answers for a date range, which it no longer accepts.
+        var handler = new FakeHandler(HttpStatusCode.BadRequest, """{"code":400,"message":"Failed to get events endpoint."}""");
+
+        var result = await Client(handler).GetScoreboardAsync("baseball", "mlb", new DateOnly(2026, 10, 4));
+
+        Assert.False(result.Ok);
+        Assert.Contains("HTTP 400", result.Error);
+    }
+
+    [Fact]
+    public async Task A_response_of_the_wrong_shape_is_an_error_not_a_crash()
+    {
+        var handler = new FakeHandler(HttpStatusCode.OK, """{ "events": [ { "id": "1" } ] }""");
+
+        var result = await Client(handler).GetTeamScheduleAsync("football", "nfl", "12", seasonType: 2);
+
+        Assert.False(result.Ok);
+        Assert.StartsWith("Unexpected response", result.Error);
+    }
+
+    [Fact]
+    public async Task A_conference_lineup_is_requested_from_the_core_api_for_the_current_season()
+    {
+        // Trimmed from ESPN's core API: the league names its current season by link, and the lineup is a list of links.
+        var league = new FakeHandler(HttpStatusCode.OK, """
+            { "id": "41", "season": { "$ref": "http://sports.core.api.espn.com/v2/sports/basketball/leagues/mens-college-basketball/seasons/2027?lang=en" } }
+            """);
+        var lineup = new FakeHandler(HttpStatusCode.OK, """
+            { "count": 3, "items": [
+              { "$ref": "http://sports.core.api.espn.com/v2/sports/basketball/leagues/mens-college-basketball/seasons/2027/teams/2305?lang=en&region=us" },
+              { "$ref": "http://sports.core.api.espn.com/v2/sports/basketball/leagues/mens-college-basketball/seasons/2027/teams/12?lang=en&region=us" },
+              { "$ref": "http://sports.core.api.espn.com/v2/sports/basketball/leagues/mens-college-basketball/seasons/2027/teams/2305?lang=en&region=us" } ] }
+            """);
+
+        var season = await Client(league).GetCurrentSeasonAsync("basketball", "mens-college-basketball");
+        var members = await Client(lineup).GetConferenceTeamIdsAsync("basketball", "mens-college-basketball", season.Value, "8");
+
+        Assert.Equal(2027, season.Value);
+        Assert.Equal(["2305", "12"], members.Value);
+        Assert.Equal("https://sports.core.api.espn.com/v2/sports/basketball/leagues/mens-college-basketball", league.Requests.Single().ToString());
+        Assert.Equal("https://sports.core.api.espn.com/v2/sports/basketball/leagues/mens-college-basketball/seasons/2027/types/2/groups/8/teams?limit=200",
+            lineup.Requests.Single().ToString());
+    }
+
+    [Fact]
+    public void A_season_given_as_a_year_is_read_too_and_a_league_without_one_is_an_error()
+    {
+        Assert.Equal(2026, EspnClient.ParseSeasonYear(Json("""{ "season": { "year": 2026 } }""")));
+        Assert.Throws<FormatException>(() => EspnClient.ParseSeasonYear(Json("""{ "season": { "$ref": "http://x.test/leagues/1" } }""")));
+    }
+
+    [Theory]
+    [InlineData("volleyball", "womens-college-volleyball", "basketball", "mens-college-basketball")] // ESPN's own is stale
+    [InlineData("football", "college-football", "football", "college-football")]
+    [InlineData("basketball", "mens-college-basketball", "basketball", "mens-college-basketball")]
+    public void College_leagues_name_where_their_conference_lineups_come_from(string sport, string league, string fromSport, string fromLeague) =>
+        Assert.Equal((fromSport, fromLeague), EspnLeagues.Find(sport, league)!.ConferencesFrom);
+
+    [Fact]
+    public void A_professional_league_has_no_conferences() =>
+        Assert.Null(EspnLeagues.Find("football", "nfl")!.ConferencesFrom);
+
+    // ---- sync planning ---------------------------------------------------------------------------------------------------
+
+    [Fact]
+    public void A_new_league_follow_backfills_the_configured_days_through_today()
+    {
+        var days = ScoresSync.DaysToFetch(null, new DateOnly(2026, 10, 5), backfillDays: 3);
+
+        Assert.Equal([new(2026, 10, 2), new(2026, 10, 3), new(2026, 10, 4), new DateOnly(2026, 10, 5)], days);
+    }
+
+    [Fact]
+    public void A_synced_league_refetches_from_the_day_before_its_last_sync()
+    {
+        // Last synced 2026-10-05 01:00 UTC, which is still Oct 4 in New York; late games of Oct 3 can finish after midnight.
+        var days = ScoresSync.DaysToFetch(new DateTime(2026, 10, 5, 1, 0, 0), new DateOnly(2026, 10, 5), backfillDays: 7);
+
+        Assert.Equal([new(2026, 10, 3), new(2026, 10, 4), new DateOnly(2026, 10, 5)], days);
+    }
+
+    [Fact]
+    public void A_league_switched_off_for_weeks_backfills_no_further_than_the_limit()
+    {
+        var days = ScoresSync.DaysToFetch(new DateTime(2026, 8, 1), new DateOnly(2026, 10, 5), backfillDays: 2);
+
+        Assert.Equal([new(2026, 10, 3), new(2026, 10, 4), new DateOnly(2026, 10, 5)], days);
+    }
+
+    [Theory]
+    [InlineData("team", "Kansas Jayhawks", "volleyball", "womens-college-volleyball", "Kansas Jayhawks · Volleyball")]
+    [InlineData("team", "Kansas Jayhawks", "basketball", "mens-college-basketball", "Kansas Jayhawks · Men's Basketball")]
+    [InlineData("league", "NFL", "football", "nfl", "NFL")]
+    [InlineData("conference", "Big 12", "football", "college-football", "Big 12 · Football")]
+    [InlineData("team", "Somebody", "cricket", "ipl", "Somebody · ipl")]
+    public void Follows_are_labelled_so_one_school_in_several_sports_reads_clearly(string kind, string name, string sport, string league, string expected) =>
+        Assert.Equal(expected, EspnLeagues.FollowLabel(kind, name, sport, league));
+
+    [Theory]
+    [InlineData("Kansas Jayhawks", "Kansas", true)]
+    [InlineData("Kansas State Wildcats", "kansas", true)]
+    [InlineData("Arkansas Razorbacks", "Kansas", false)]           // "Kansas" inside a word is not a match
+    [InlineData("Central Arkansas Bears", "Kansas", false)]
+    [InlineData("Kansas State Wildcats", "kan st", true)]          // every typed word starts a word of the name
+    [InlineData("Kansas Jayhawks", "kan st", false)]
+    [InlineData("Arkansas-Pine Bluff Golden Lions", "pine", true)] // hyphens split words
+    [InlineData("Anything", "  ", true)]
+    [InlineData("Anything", null, true)]
+    public void The_team_filter_matches_the_start_of_words(string name, string? filter, bool expected) =>
+        Assert.Equal(expected, EspnLeagues.TeamMatches(name, filter));
+
+    // ---- display ---------------------------------------------------------------------------------------------------------
+
+    [Theory]
+    [InlineData("https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/gb.png", "https://a.espncdn.com/combiner/i?img=/i/teamlogos/nfl/500/scoreboard/gb.png&w=64&h=64")]
+    [InlineData("https://a.espncdn.com/i/teamlogos/ncaa/500/2305.png", "https://a.espncdn.com/combiner/i?img=/i/teamlogos/ncaa/500/2305.png&w=64&h=64")]
+    [InlineData("https://a.espncdn.com/guid/335fd2d2/logos/default.png", "https://a.espncdn.com/guid/335fd2d2/logos/default.png")]   // not under /i/
+    [InlineData("https://a.espncdn.com/combiner/i?img=/i/x.png&w=64", "https://a.espncdn.com/combiner/i?img=/i/x.png&w=64")]       // already resized
+    [InlineData("https://example.test/logo.png", "https://example.test/logo.png")]
+    [InlineData(null, null)]
+    public void Espn_logos_are_served_small_through_its_resizer(string? url, string? expected) =>
+        Assert.Equal(expected, EspnClient.SmallLogo(url));
+
+    private static ResultItem Result(int? away = 1, int? home = 3, string? winner = "home", int? awayShootout = null, int? homeShootout = null,
+        string? venue = "Pittsburgh, Pennsylvania / Petersen Events Center") =>
+        new("1", "Women's College Volleyball", "NCAA VB", new DateTime(2026, 8, 28, 22, 30, 0), "Final",
+            "Pittsburgh Panthers", null, home, homeShootout, "Kansas Jayhawks", null, away, awayShootout, winner, venue);
+
+    private static async Task<string> RenderAsync(ResultItem item)
+    {
+        var services = new ServiceCollection().AddLogging().AddSingleton(FeedDates.Create("America/Chicago")).BuildServiceProvider();
+        await using var renderer = new HtmlRenderer(services, services.GetRequiredService<ILoggerFactory>());
+        return await renderer.Dispatcher.InvokeAsync(async () =>
+        {
+            var output = await renderer.RenderComponentAsync<ResultRow>(ParameterView.FromDictionary(
+                new Dictionary<string, object?> { [nameof(ResultRow.Item)] = item }));
+            return WebUtility.HtmlDecode(output.ToHtmlString());
+        });
+    }
+
+    [Fact]
+    public async Task A_result_lists_the_away_team_first_with_the_score_in_the_same_order()
+    {
+        var html = await RenderAsync(Result());
+
+        Assert.True(html.IndexOf("Kansas Jayhawks", StringComparison.Ordinal) < html.IndexOf("Pittsburgh Panthers", StringComparison.Ordinal));
+        Assert.Contains(">1 – 3<", html);
+        Assert.Contains(">Final<", html);
+        Assert.Contains("<abbr title=\"Women's College Volleyball\">NCAA VB</abbr>", html);
+        Assert.Contains("td-rhome is-winner", html);
+        Assert.DoesNotContain("td-raway is-winner", html);
+        Assert.Contains("Petersen Events Center", html);
+    }
+
+    [Fact]
+    public async Task A_shootout_is_shown_and_its_winner_bolded()
+    {
+        var html = await RenderAsync(Result(away: 1, home: 1, winner: "away", awayShootout: 4, homeShootout: 3));
+
+        Assert.Contains("Final · Shootout 4 – 3", html);
+        Assert.Contains("td-raway is-winner", html);
+    }
+
+    [Fact]
+    public async Task A_draw_bolds_neither_team_and_a_missing_venue_hides_its_cell()
+    {
+        var html = await RenderAsync(Result(away: 0, home: 0, winner: null, venue: null));
+
+        Assert.DoesNotContain("is-winner", html);
+        Assert.Contains("td-rloc--none", html);
+    }
+
+    // ---- against the database (each test rolls back) -------------------------------------------------------------------
+
+    private static WebScraperContext Create() => new(
+        new DbContextOptionsBuilder<WebScraperContext>()
+            .UseSqlServer("Server=sql2025,1433;Database=WebScraper;User Id=sa;Password=Fedora_Dev_2025!;Encrypt=False;TrustServerCertificate=True;")
+            .Options);
+
+    // Made-up leagues and ids so the tests never meet real rows.
+    private static string Tag() => "t" + Guid.NewGuid().ToString("N")[..8];
+
+    private static EspnGame Game(string id, string home, string away, bool completed = true, int? hs = 2, int? @as = 1) =>
+        new(id, new DateTime(2026, 9, 20, 18, 0, 0, DateTimeKind.Utc), completed ? "post" : "pre", completed, completed ? "Final" : null,
+            new EspnSide(home, $"Team {home}", null, hs, null), new EspnSide(away, $"Team {away}", null, @as, null),
+            completed ? "home" : null, null);
+
+    [Fact]
+    public async Task Upserting_adds_new_games_then_updates_only_what_changed()
+    {
+        await using var db = Create();
+        await using var tx = await db.Database.BeginTransactionAsync();
+        var league = Tag();
+        var now = new DateTime(2026, 10, 1, 12, 0, 0);
+
+        Assert.Equal(2, await ScoresSync.UpsertGamesAsync(db, "sport", league,
+            [Game("1", "a", "b", completed: false, hs: null, @as: null), Game("2", "c", "d")], now));
+        await db.SaveChangesAsync();
+
+        // Next sync: game 1 has been played, game 2 is unchanged.
+        var changed = await ScoresSync.UpsertGamesAsync(db, "sport", league, [Game("1", "a", "b"), Game("2", "c", "d")], now.AddHours(3));
+        await db.SaveChangesAsync();
+
+        Assert.Equal(1, changed);
+        var row = await db.ResultGames.AsNoTracking().SingleAsync(g => g.League == league && g.EventId == "1");
+        Assert.Equal(("post", true, 2, 1, "home"), (row.State, row.Completed, row.HomeScore, row.AwayScore, row.WinnerSide));
+        Assert.Equal(now, row.FirstSeenAt);
+        Assert.Equal(now.AddHours(3), row.LastSeenAt);
+    }
+
+    [Fact]
+    public async Task Results_show_finished_games_of_followed_leagues_and_of_followed_teams_in_their_own_league()
+    {
+        await using var db = Create();
+        await using var tx = await db.Database.BeginTransactionAsync();
+        // Start from no follows inside this transaction, so only the ones below count.
+        await db.ResultFollows.ExecuteDeleteAsync();
+
+        string pro = Tag(), college = Tag(), otherCollege = Tag();
+        var leagueFollow = new ResultFollow { Kind = FollowKinds.League, Sport = "s", League = pro, Name = "Pro league", Enabled = true };
+        var teamFollow = new ResultFollow { Kind = FollowKinds.Team, Sport = "s", League = college, TeamId = "2305", Name = "Kansas Jayhawks", Enabled = true };
+        db.ResultFollows.AddRange(leagueFollow, teamFollow);
+
+        await ScoresSync.UpsertGamesAsync(db, "s", pro, [Game("p1", "x", "y"), Game("p2", "x", "y", completed: false)], DateTime.UtcNow);
+        await ScoresSync.UpsertGamesAsync(db, "s", college, [Game("c1", "2305", "z"), Game("c2", "z", "2305"), Game("c3", "q", "r")], DateTime.UtcNow);
+        // The same team id in a different league is a different team (ESPN ids are per sport).
+        await ScoresSync.UpsertGamesAsync(db, "s", otherCollege, [Game("o1", "2305", "z")], DateTime.UtcNow);
+        await db.SaveChangesAsync();
+
+        var all = await ResultsQuery.GetResultsAsync(db, followId: null);
+        Assert.Equal(["c1", "c2", "p1"], all.Items.Select(r => r.EventId).Order());
+        Assert.Equal(3, all.Total);
+        var scoped = await ResultsQuery.GetResultsAsync(db, null, collegeLeague: college);
+        Assert.Equal(new[] { "c1", "c2" }, scoped.Items.Select(r => r.EventId).Order());
+        Assert.Empty((await ResultsQuery.GetResultsAsync(db, leagueFollow.Id, collegeLeague: college)).Items);
+        Assert.Empty((await ResultsQuery.GetResultsAsync(db, null, collegeLeague: otherCollege)).Items);
+
+        var teamOnly = await ResultsQuery.GetResultsAsync(db, teamFollow.Id);
+        Assert.Equal(["c1", "c2"], teamOnly.Items.Select(r => r.EventId).Order());
+
+        // A disabled follow's results leave the page, and its chip goes.
+        leagueFollow.Enabled = false;
+        await db.SaveChangesAsync();
+        Assert.Equal(["c1", "c2"], (await ResultsQuery.GetResultsAsync(db, null)).Items.Select(r => r.EventId).Order());
+        Assert.Equal([$"Kansas Jayhawks · {college}"], (await ResultsQuery.GetFollowsAsync(db)).Select(f => f.Label));
+    }
+
+    [Fact]
+    public async Task A_league_or_a_team_cannot_be_followed_twice()
+    {
+        await using var db = Create();
+        await using var tx = await db.Database.BeginTransactionAsync();
+        var league = Tag();
+        db.ResultFollows.Add(new ResultFollow { Kind = FollowKinds.League, Sport = "s", League = league, Name = "L" });
+        db.ResultFollows.Add(new ResultFollow { Kind = FollowKinds.Team, Sport = "s", League = league, TeamId = "1", Name = "T" });
+        await db.SaveChangesAsync();
+
+        db.ResultFollows.Add(new ResultFollow { Kind = FollowKinds.League, Sport = "s", League = league, Name = "L again" });
+        var ex = await Assert.ThrowsAsync<DbUpdateException>(() => db.SaveChangesAsync());
+        Assert.True(AdminData.IsUniqueViolation(ex));
+        db.ChangeTracker.Clear();
+
+        db.ResultFollows.Add(new ResultFollow { Kind = FollowKinds.Team, Sport = "s", League = league, TeamId = "1", Name = "T again" });
+        ex = await Assert.ThrowsAsync<DbUpdateException>(() => db.SaveChangesAsync());
+        Assert.True(AdminData.IsUniqueViolation(ex));
+    }
+
+    [Fact]
+    public async Task A_team_follow_needs_a_team_id_and_a_league_follow_cannot_have_one()
+    {
+        await using var db = Create();
+        await using var tx = await db.Database.BeginTransactionAsync();
+
+        db.ResultFollows.Add(new ResultFollow { Kind = FollowKinds.Team, Sport = "s", League = Tag(), Name = "No team id" });
+        await Assert.ThrowsAsync<DbUpdateException>(() => db.SaveChangesAsync());
+        db.ChangeTracker.Clear();
+
+        db.ResultFollows.Add(new ResultFollow { Kind = FollowKinds.League, Sport = "s", League = Tag(), TeamId = "1", Name = "League with a team" });
+        await Assert.ThrowsAsync<DbUpdateException>(() => db.SaveChangesAsync());
+    }
+
+    [Fact]
+    public async Task A_new_follow_is_enabled_unless_saved_disabled()
+    {
+        await using var db = Create();
+        await using var tx = await db.Database.BeginTransactionAsync();
+        var on = new ResultFollow { Kind = FollowKinds.League, Sport = "s", League = Tag(), Name = "On", Enabled = true };
+        var off = new ResultFollow { Kind = FollowKinds.League, Sport = "s", League = Tag(), Name = "Off", Enabled = false };
+        db.ResultFollows.AddRange(on, off);
+        await db.SaveChangesAsync();
+
+        Assert.True((await db.ResultFollows.AsNoTracking().SingleAsync(f => f.Id == on.Id)).Enabled);
+        Assert.False((await db.ResultFollows.AsNoTracking().SingleAsync(f => f.Id == off.Id)).Enabled);
+    }
+
+    [Fact]
+    public async Task A_conference_shows_its_members_games_in_its_own_league_including_non_conference_games()
+    {
+        await using var db = Create();
+        await using var tx = await db.Database.BeginTransactionAsync();
+        await db.ResultFollows.ExecuteDeleteAsync();
+
+        string college = Tag(), otherCollege = Tag();
+        var conference = new ResultFollow { Kind = FollowKinds.Conference, Sport = "s", League = college, GroupId = "8", Name = "Big 12", Enabled = true };
+        db.ResultFollows.Add(conference);
+        await db.SaveChangesAsync();
+        await ScoresSync.ReplaceMembersAsync(db, conference.Id, ["2305", "12"]);
+
+        await ScoresSync.UpsertGamesAsync(db, "s", college,
+            [Game("in", "2305", "12"), Game("non", "999", "12"), Game("out", "998", "999"), Game("later", "2305", "999", completed: false)], DateTime.UtcNow);
+        await ScoresSync.UpsertGamesAsync(db, "s", otherCollege, [Game("other", "2305", "12")], DateTime.UtcNow);
+        await db.SaveChangesAsync();
+
+        Assert.Equal(["in", "non"], (await ResultsQuery.GetResultsAsync(db, conference.Id)).Items.Select(r => r.EventId).Order());
+        Assert.Equal(["in", "non"], (await ResultsQuery.GetResultsAsync(db, null)).Items.Select(r => r.EventId).Order());
+        Assert.Equal(["Big 12 · " + college], (await ResultsQuery.GetFollowsAsync(db)).Select(f => f.Label));
+    }
+
+    [Fact]
+    public async Task Replacing_a_conference_lineup_drops_schools_that_left_and_adds_new_ones()
+    {
+        await using var db = Create();
+        await using var tx = await db.Database.BeginTransactionAsync();
+        var conference = new ResultFollow { Kind = FollowKinds.Conference, Sport = "s", League = Tag(), GroupId = "8", Name = "C" };
+        db.ResultFollows.Add(conference);
+        await db.SaveChangesAsync();
+
+        await ScoresSync.ReplaceMembersAsync(db, conference.Id, ["1", "2"]);
+        await db.SaveChangesAsync();
+        await ScoresSync.ReplaceMembersAsync(db, conference.Id, ["2", "3"]);
+        await db.SaveChangesAsync();
+
+        Assert.Equal(["2", "3"], await db.ResultFollowTeams.Where(m => m.FollowId == conference.Id).Select(m => m.TeamId).OrderBy(t => t).ToListAsync());
+
+        // Removing the follow removes its lineup.
+        await db.ResultFollows.Where(f => f.Id == conference.Id).ExecuteDeleteAsync();
+        Assert.False(await db.ResultFollowTeams.AnyAsync(m => m.FollowId == conference.Id));
+    }
+
+    [Fact]
+    public async Task A_conference_needs_a_group_id_and_is_followed_once_per_league_beside_the_whole_league()
+    {
+        await using var db = Create();
+        await using var tx = await db.Database.BeginTransactionAsync();
+        var league = Tag();
+
+        db.ResultFollows.Add(new ResultFollow { Kind = FollowKinds.Conference, Sport = "s", League = league, Name = "No group" });
+        await Assert.ThrowsAsync<DbUpdateException>(() => db.SaveChangesAsync());
+        db.ChangeTracker.Clear();
+
+        db.ResultFollows.Add(new ResultFollow { Kind = FollowKinds.League, Sport = "s", League = league, GroupId = "8", Name = "League with a group" });
+        await Assert.ThrowsAsync<DbUpdateException>(() => db.SaveChangesAsync());
+        db.ChangeTracker.Clear();
+
+        db.ResultFollows.AddRange(
+            new ResultFollow { Kind = FollowKinds.League, Sport = "s", League = league, Name = "Whole league" },
+            new ResultFollow { Kind = FollowKinds.Conference, Sport = "s", League = league, GroupId = "8", Name = "Big 12" },
+            new ResultFollow { Kind = FollowKinds.Conference, Sport = "s", League = league, GroupId = "2", Name = "ACC" });
+        await db.SaveChangesAsync();
+
+        db.ResultFollows.Add(new ResultFollow { Kind = FollowKinds.Conference, Sport = "s", League = league, GroupId = "8", Name = "Big 12 again" });
+        var ex = await Assert.ThrowsAsync<DbUpdateException>(() => db.SaveChangesAsync());
+        Assert.True(AdminData.IsUniqueViolation(ex));
+    }
+
+    [Fact]
+    public async Task A_follow_without_a_finished_game_is_left_out_of_the_filter_unless_it_is_the_one_selected()
+    {
+        await using var db = Create();
+        await using var tx = await db.Database.BeginTransactionAsync();
+        await db.ResultFollows.ExecuteDeleteAsync();
+
+        string played = Tag(), offSeason = Tag();
+        var league = new ResultFollow { Kind = FollowKinds.League, Sport = "s", League = played, Name = "Played", Enabled = true };
+        var waiting = new ResultFollow { Kind = FollowKinds.League, Sport = "s", League = offSeason, Name = "Waiting", Enabled = true };
+        var team = new ResultFollow { Kind = FollowKinds.Team, Sport = "s", League = offSeason, TeamId = "2305", Name = "Kansas", Enabled = true };
+        var conference = new ResultFollow { Kind = FollowKinds.Conference, Sport = "s", League = offSeason, GroupId = "8", Name = "Big 12", Enabled = true };
+        db.ResultFollows.AddRange(league, waiting, team, conference);
+        await db.SaveChangesAsync();
+        await ScoresSync.ReplaceMembersAsync(db, conference.Id, ["2305", "12"]);
+
+        // Off season: only scheduled games, which do not count.
+        await ScoresSync.UpsertGamesAsync(db, "s", played, [Game("p1", "a", "b")], DateTime.UtcNow);
+        await ScoresSync.UpsertGamesAsync(db, "s", offSeason, [Game("o1", "2305", "12", completed: false)], DateTime.UtcNow);
+        await db.SaveChangesAsync();
+
+        Assert.Equal(["Played"], (await ResultsQuery.GetFollowsAsync(db)).Select(f => f.Label));
+        Assert.Equal(["Played", $"Kansas · {offSeason}"], (await ResultsQuery.GetFollowsAsync(db, team.Id)).Select(f => f.Label));
+
+        // The first final brings back the league, the team and the conference.
+        await ScoresSync.UpsertGamesAsync(db, "s", offSeason, [Game("o1", "2305", "12")], DateTime.UtcNow);
+        await db.SaveChangesAsync();
+        Assert.Equal(["Played", "Waiting", $"Big 12 · {offSeason}", $"Kansas · {offSeason}"], (await ResultsQuery.GetFollowsAsync(db)).Select(f => f.Label));
+    }
+
+    [Fact]
+    public async Task Daily_results_use_local_midnight_boundaries_and_filter_counts()
+    {
+        await using var db = Create();
+        await using var tx = await db.Database.BeginTransactionAsync();
+        var league = Tag();
+        var follow = new ResultFollow { Kind = FollowKinds.League, Sport = "s", League = league, Name = "Daily", Enabled = true };
+        db.Add(follow);
+        await db.SaveChangesAsync();
+        var window = ResultsWindow.ForDay(new DateOnly(2026, 10, 8), TimeZoneInfo.FindSystemTimeZoneById("America/Chicago"));
+        Assert.Equal(new DateTime(2026, 10, 8, 5, 0, 0, DateTimeKind.Utc), window.StartUtc);
+        await ScoresSync.UpsertGamesAsync(db, "s", league,
+            [Game("before", "a", "b") with { StartsAtUtc = window.StartUtc.AddTicks(-1) },
+             Game("start", "a", "b") with { StartsAtUtc = window.StartUtc },
+             Game("late", "a", "b") with { StartsAtUtc = window.EndUtc.AddSeconds(-1) },
+             Game("today", "a", "b") with { StartsAtUtc = window.EndUtc }], DateTime.UtcNow);
+        await db.SaveChangesAsync();
+        var results = await ResultsQuery.GetResultsAsync(db, follow.Id, window: window);
+        Assert.Equal(2, results.Total);
+        Assert.Equal(["late", "start"], results.Items.Select(x => x.EventId));
+        Assert.Contains(await ResultsQuery.GetFollowsAsync(db, window: window), x => x.Id == follow.Id);
+        var nextDay = ResultsWindow.ForDay(new DateOnly(2026, 10, 10), TimeZoneInfo.FindSystemTimeZoneById("America/Chicago"));
+        Assert.DoesNotContain(await ResultsQuery.GetFollowsAsync(db, window: nextDay), x => x.Id == follow.Id);
+        Assert.Contains(await ResultsQuery.GetFollowsAsync(db, follow.Id, nextDay), x => x.Id == follow.Id);
+        var dst = ResultsWindow.ForDay(new DateOnly(2026, 11, 1), TimeZoneInfo.FindSystemTimeZoneById("America/Chicago"));
+        Assert.Equal(TimeSpan.FromHours(25), dst.EndUtc - dst.StartUtc);
+    }
+
+    [Fact]
+    public async Task Womens_soccer_uses_its_default_season_and_maps_sport_specific_team_ids()
+    {
+        var handler = new FakeHandler(HttpStatusCode.OK, "{\"events\": []}");
+        await Client(handler).GetTeamScheduleAsync("soccer", "usa.ncaa.w.1", "20494", null);
+        Assert.Equal("https://site.api.espn.com/apis/site/v2/sports/soccer/usa.ncaa.w.1/teams/20494/schedule", handler.Requests.Single().ToString());
+        var mapped = EspnLeagues.MapConferenceTeams(["2305"], [new("2305", "Kansas Jayhawks", null)], [new("20494", "Kansas Jayhawks", null)]);
+        Assert.True(mapped.Ok);
+        Assert.Equal(["20494"], mapped.Value);
+        Assert.False(EspnLeagues.MapConferenceTeams(["2305"], [new("2305", "Kansas Jayhawks", null)], []).Ok);
+        Assert.False(EspnLeagues.MapConferenceTeams(["2305"], [new("2305", "Kansas Jayhawks", null)],
+            [new("20494", "Kansas Jayhawks", null), new("999", "Kansas Jayhawks", null)]).Ok);
+        Assert.True(EspnLeagues.Find("soccer", "usa.ncaa.w.1")!.DefaultScheduleSeason);
+    }
+}

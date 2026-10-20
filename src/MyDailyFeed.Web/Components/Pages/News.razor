@@ -1,0 +1,141 @@
+@page "/news"
+@layout PublicLayout
+@using MyDailyFeed.Web.Components.Feed
+@inject IDbContextFactory<WebScraperContext> Factory
+@inject FeedDates Dates
+
+<div data-news-page data-category-explicit="@(CategoryQuery is not null || !string.IsNullOrWhiteSpace(Q) || SourceQuery is not null || AfterQuery is not null ? "true" : "false")" data-category-current="@Category" hidden></div>
+<PageTitle>News · MyDailyFeed</PageTitle>
+
+@* Static (non-interactive) page. Filters are plain links and a GET form, so every view has a shareable URL and works
+   without JavaScript; public.js only upgrades "Load more" to append in place. *@
+
+<PageHeading Title="News" Eyebrow="THE LATEST STORIES" Description="Latest articles from the sources we follow." />
+<ReadingPreferences />
+
+
+<p><a href="box-office">Weekend box office →</a></p>
+<div class="filters">
+    @if (categories.Count > 0)
+    {
+        @* Selecting a filter submits the form; Apply remains available without JavaScript. *@
+        <form class="catselect" method="get" action="news">
+            @if (!string.IsNullOrWhiteSpace(Q))
+            {
+                <input type="hidden" name="q" value="@Q" />
+            }
+            <label class="sr-only" for="category">Category</label>
+            <select id="category" name="category" onchange="this.form.requestSubmit()">
+                <option value="all" selected="@(Category is null)">All categories</option>
+                @foreach (var category in categories)
+                {
+                    <option value="@category.Id" selected="@(Category == category.Id)">@category.Name</option>
+                }
+            </select>
+            <noscript><button class="nf-btn nf-btn--secondary" type="submit">Apply</button></noscript>
+        </form>
+    }
+    @if (sources.Count > 0)
+    {
+        <form class="catselect" method="get" action="news">
+            <input type="hidden" name="category" value="@(Category?.ToString() ?? "all")" />
+            @if (!string.IsNullOrWhiteSpace(Q))
+            { <input type="hidden" name="q" value="@Q" /> }
+            <label class="sr-only" for="source">Source</label>
+            <select id="source" name="source" onchange="this.form.requestSubmit()">
+                <option value="">All sources</option>
+                @foreach (var source in sources)
+                {
+                    <option value="@source.Id" selected="@(Source == source.Id)">@source.Name</option>
+                }
+            </select>
+            <noscript><button class="nf-btn nf-btn--secondary" type="submit">Apply</button></noscript>
+        </form>
+    }
+    @if (feed is not null)
+    {
+        <span class="count count--toolbar">@feed.Total @(feed.Total == 1 ? "article" : "articles")</span>
+    }
+</div>
+
+@if (lastUpdated is { } updated)
+{
+    <p class="updated">
+        Feed last updated
+        <time datetime="@updated.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'")">@Dates.PublishedFull(updated)</time>
+    </p>
+}
+
+@if (feed is null || feed.Items.Count == 0)
+{
+    <p class="empty">
+        @if (Category is not null && Source is null && string.IsNullOrWhiteSpace(Q) && After is null)
+        {
+            <span>No articles available yet. Please check back soon.</span>
+        }
+        else if (!string.IsNullOrWhiteSpace(Q) || Category is not null || Source is not null || After is not null)
+        {
+            <span>No articles match. <a href="news">Clear filters</a></span>
+        }
+        else
+        {
+            <span>No articles yet. Check back soon.</span>
+        }
+    </p>
+}
+else
+{
+    @if (After is not null)
+    {
+        <p><a href="@Href(Category, null)">← Back to the newest articles</a></p>
+    }
+
+    <section class="feed" aria-label="Articles" data-last-day="@lastDay">
+        <FeedArticles Items="feed.Items" LeadFirst="@(After is null)" Total="@(After is null ? feed.Total : null)" />
+    </section>
+
+    <div class="loadmore">
+        @if (feed.Next is { } next)
+        {
+            <a class="nf-btn nf-btn--secondary" data-load-more data-enhance-nav="false" href="@Href(Category, next.ToToken())">Load more articles</a>
+        }
+        <span class="count" data-shown-total>Showing @feed.Shown of @feed.Total</span>
+        <span class="sr-only" role="status" data-load-status></span>
+    </div>
+}
+
+@code {
+    // Query values arrive as text and are parsed leniently: a hand-edited "?category=abc" must not throw.
+    [SupplyParameterFromQuery(Name = "category")] private string? CategoryQuery { get; set; }
+    [SupplyParameterFromQuery(Name = "q")] private string? Q { get; set; }
+    [SupplyParameterFromQuery(Name = "after")] private string? AfterQuery { get; set; }
+    [SupplyParameterFromQuery(Name = "source")] private string? SourceQuery { get; set; }
+
+    private int? Source { get; set; }
+    private IReadOnlyList<FeedSource> sources = [];
+    private int? Category { get; set; }
+    private FeedCursor? After => FeedCursor.Parse(AfterQuery);
+
+    private IReadOnlyList<FeedCategory> categories = [];
+    private FeedPage? feed;
+    private string? lastDay;
+    private DateTime? lastUpdated;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await using var db = await Factory.CreateDbContextAsync();
+        categories = await FeedQuery.GetCategoriesAsync(db);
+        Category = CategoryQuery is null
+            ? categories.FirstOrDefault(c => c.Name == "Top Headlines")?.Id
+            : int.TryParse(CategoryQuery, out var categoryId) ? categoryId : null;
+        sources = await FeedQuery.GetSourcesAsync(db, Category);
+        Source = int.TryParse(SourceQuery, out var sourceId) && sources.Any(s => s.Id == sourceId) ? sourceId : null;
+        feed = await FeedQuery.GetFeedAsync(
+            db, Category, Q, After, After is null ? FeedQuery.FirstBatch : FeedQuery.MoreBatch, Source);
+        lastDay = feed.Items.Count > 0 ? Dates.DayKey(feed.Items[^1]) : null;
+        lastUpdated = await FeedQuery.GetLastUpdatedAsync(db);
+    }
+
+    /// <summary>A link that keeps the current search and switches category and position.</summary>
+    private string Href(int? category, string? after) => "news" + FeedQuery.QueryString(category, Q, after, Source, allCategories: category is null);
+}

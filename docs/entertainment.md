@@ -15,7 +15,7 @@ The Digital rental / purchase page similarly links to
 below the source summary and above the first release-date heading. Both links
 open in a new tab with `noopener noreferrer`. These page-level links are separate
 from each film's Fandango action and do not change the release calendar or source
-links. The logos and their source attribution are in `src/MyNewsFeed.Web/wwwroot/images/brands/`.
+links. The logos and their source attribution are in `src/MyDailyFeed.Web/wwwroot/images/brands/`.
 
 Movie cards on Movies, Digital and the homepage read retailer actions from
 `dbo.MovieCommerce` by MovieId and Provider through the release's source link.
@@ -417,3 +417,59 @@ tracked-series browsing. The combined My Week agenda has been removed. Watchlist
 episode-progress controls were removed at the user's request; normal source,
 retailer and video playback links remain. See
 [personal planning](interface.md#personal-planning-and-discovery--october-19-2026).
+
+## Where to watch
+
+Entertainment → Where to watch (/watch) is the approved typed-search exception.
+Movie/TV tabs, popular titles and common genres also work without typing. Movie
+release cards link to title lookup; a search result is not a verified title match.
+Titles open in a native modal with Close/Escape/focus return or a normal detail
+page with JavaScript disabled. Search uses GET links/forms with at most 120 query
+characters and ten pages. No local database/schema or collector change is needed.
+
+TMDB API requests are server-side, using the existing Movies:AccessToken setting.
+Never expose that credential in HTML or JavaScript. A bounded 512-entry in-memory
+cache retains listing data for 15 minutes and availability for six hours; transient
+listing failures are cached for 30 seconds. Up to four upstream requests run at
+once. Availability checked time is the fetch time, not a promise of provider
+catalog freshness. Missing credentials/provider failures show a retry message.
+
+US offers are separated into Subscription, Free, Free with ads, Rent and Buy.
+TV availability is series-level and can vary by season. Empty offers are described
+as no options listed, not proof of unavailability everywhere. TMDB does not supply
+full streaming deep links; use the returned HTTPS TMDB viewing-options link.
+Provider names are plain text; no invented service title links or prices.
+
+TMDB logo/API notice and JustWatch attribution are included under Data credits.
+Sources: [TMDB watch providers](https://developer.themoviedb.org/reference/movie-watch-providers),
+[TV watch providers](https://developer.themoviedb.org/reference/tv-series-watch-providers),
+[TMDB attribution FAQ](https://developer.themoviedb.org/docs/faq).
+
+Pending local feedback update: My services offers current US provider checkboxes
+(maximum 20). Browser-local selections survive visits when storage is available;
+plain GET selection also works without JavaScript. Movie/TV tabs, search, genres
+and paging preserve selection. Verified subscription/free/ad-supported matches
+rise to the top of each page with service badges. Rental/purchase-only access
+never counts as included access. This does not filter or rerank the entire TMDB
+catalog; nonmatches stay visible. Service list cache: twelve hours; per-title US
+access cache: six hours (30 seconds for failures). Base cached listing order is
+not mutated. Deployment is on hold pending further user feedback.
+
+Deployment status: the service-preferences feedback update above was deployed
+on October 20, 2026 after the user lifted the hold. See release history for image
+and verification details.
+
+Pending local update: theater/ticketing-only providers are excluded from Where to
+watch service choices, matching and displayed offers. Fandango ticketing (provider
+60) is excluded; Fandango At Home, its free service, AMC/AMC+ television services
+and Cinemax remain eligible. Legacy ticketing selections are ignored. This does
+not change the separate movie-release calendar or its ticketing actions.
+
+Pending local Settings change: My services has moved from the lookup page to
+Settings → My services. Where to watch retains a management shortcut. Browser
+preferences and query-based matching are preserved. Settings sections can be
+reordered independently of homepage sections. This update is not deployed yet.
+
+Deployment status (October 20, 2026): Settings services, section ordering and the
+theater-only provider exclusion are now live. Earlier pending/local-only notes
+are superseded. See release history for verification and rollback details.

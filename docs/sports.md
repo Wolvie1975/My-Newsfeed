@@ -109,7 +109,7 @@ either a final result or finished schedule status arrives.
 The targeted regression checks cover both college and ESPN fixtures:
 
 ```bash
-dotnet test MyNewsFeed.sln --filter 'FullyQualifiedName~HomeEventResultsTests|FullyQualifiedName~Homepage_hides_a_college_final'
+dotnet test MyDailyFeed.sln --filter 'FullyQualifiedName~HomeEventResultsTests|FullyQualifiedName~Homepage_hides_a_college_final'
 ```
 
 These include a transactional SQL integration fixture; use a development/test
@@ -531,7 +531,7 @@ live timing, driver portraits or constructor logos are supplied.
 F1Tests covers parsing, timezone/date-only behavior, sprint weekend sessions,
 classification choice, decimals, multiple constructors, health and read queries.
 SQL fixtures use connection-local temporary tables and leave production F1 data
-untouched. Run `dotnet test MyNewsFeed.sln --filter FullyQualifiedName~F1Tests`
+untouched. Run `dotnet test MyDailyFeed.sln --filter FullyQualifiedName~F1Tests`
 with the existing development/test connection configuration.
 
 The dedicated F1 home summary reuses the same read contract in its own card,
@@ -546,7 +546,7 @@ registration scripts or scraper deployment are needed for frontend rollout. See
 [F1 News behavior](interface.md#f1-news).
 
 F1NewsTests covers category isolation, source filtering, cursor pagination and
-article rendering. Run `dotnet test MyNewsFeed.sln --filter FullyQualifiedName~F1NewsTests`
+article rendering. Run `dotnet test MyDailyFeed.sln --filter FullyQualifiedName~F1NewsTests`
 with the same development/test connection configuration.
 
 ## College Sports hub

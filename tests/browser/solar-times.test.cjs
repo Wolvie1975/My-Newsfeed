@@ -1,7 +1,7 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-require('../../src/MyNewsFeed.Web/wwwroot/solar-times.js');
-const solar = globalThis.MyNewsFeedSolar;
+require('../../src/MyDailyFeed.Web/wwwroot/solar-times.js');
+const solar = globalThis.MyDailyFeedSolar;
 const location = solar.location;
 
 test('switches at sunrise and sunset, with dark mode before dawn', () => {

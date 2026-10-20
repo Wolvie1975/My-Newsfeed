@@ -3,6 +3,109 @@
 Read this file when continuing work from the previous chat. These are dated
 observations; check current repository and hosting state before acting.
 
+## MyDailyFeed rename / latest deployment — October 20, 2026
+
+Project is now MyDailyFeed. Solution: MyDailyFeed.sln. Web and test projects,
+folders and namespaces are MyDailyFeed.Web / MyDailyFeed.Tests. Build/test commands
+must use the new names. The checkout directory remains My-Newsfeed and GitHub
+remote remains unchanged. Do not interpret legacy lower-case deployment identifiers
+or historical reference documents as current UI branding.
+
+Live: mydailyfeed-web:rename-20261020 (7f5ed6f6fc38), healthy. Operational container
+is still mynewsfeed-web, serving the same private hostname/port. Entrypoint is now
+dotnet MyDailyFeed.Web.dll. Rollback image mynewsfeed-web:before-rename-20261020
+(dc9adef11982), retained container mynewsfeed-web-before-rename-20261020. Private
+files: /tmp/mydailyfeed-rename-deploy/. Runtime settings preserved except the
+intentional renamed assembly entrypoint. No commit/push or remote rename was made.
+
+Keep old browser storage keys, MyNewsFeed.Admin cookie name, data-protection
+SetApplicationName(MyNewsFeed), secrets ID, PWA id/scope and persistent key volume
+for compatibility. New branding and DF icons are live. All 593 tests and live
+branding/Settings/watch/sports-modal suites passed. User's session deployment
+authorization remains active. This supersedes earlier release records below.
+
+## Session deployment authorization — October 20, 2026
+
+The user explicitly granted permission to deploy for this session. Proceed with
+necessary verification and deployment of authorized changes without asking again.
+This supersedes earlier deployment holds/local-only notes for this session; it
+does not authorize Git commits or pushes.
+
+## Latest deployment — navigation initialization fix, October 20, 2026
+
+Live mynewsfeed-web:settings-nav-20261020 (dc9adef11982), healthy. Rollback:
+mynewsfeed-web:before-settings-nav-20261020 (896acc615bae), retained container
+mynewsfeed-web-before-settings-nav-20261020. Private files:
+/tmp/mynewsfeed-settings-nav-deploy/. Runtime preserved, private HTTPS health 200.
+No commit/push was made; session deployment permission remains active.
+
+User screenshot showed empty Arrange Settings panel. Reproduced via Home →
+Settings (zero move buttons). A direct page load was insufficient test coverage.
+settings-order.js now uses Blazor.addEventListener('enhancedload') and a guarded
+DOM observer; watch.js uses the correct enhanced-load hook for service restoration.
+Tests now navigate via actual site links, then check controls, moves, persistence,
+reset/mobile and restored services. Both suites passed locally and live. Existing
+browser tabs may need a full page refresh to load the corrected global scripts.
+This supersedes the earlier deployment records below.
+
+## Latest deployment — Settings services/order, October 20, 2026
+
+Live: mynewsfeed-web:settings-services-20261020 (896acc615bae), healthy with
+private HTTPS /healthz 200 and runtime settings preserved. Rollback:
+mynewsfeed-web:before-settings-services-20261020 (9ac98a4e5365), retained container
+mynewsfeed-web-before-settings-services-20261020. Private files:
+/tmp/mynewsfeed-settings-services-deploy/. User explicitly authorized deployments
+for the rest of this session; no need to ask again. No Git commit/push was made.
+
+My services moved to Settings (WatchServiceSettings); /watch has a shortcut.
+settings-order.js lets all six Settings sections move up/down with browser-local
+persistence and reset, independent of Home ordering. Theater/ticketing exclusion
+is included. 12 focused tests and live services/order/watch suites passed,
+including no-JS selection, persistence, malformed storage and mobile. Live checks
+confirmed ticketing removed and home-viewing services retained. This supersedes
+pending/local-only notes and earlier deployment records below.
+
+## Latest deployment — service preferences, October 20, 2026
+
+User explicitly requested deploy after feedback, lifting the earlier hold.
+Live: mynewsfeed-web:watch-services-20261020 (9ac98a4e5365), healthy. Runtime
+settings preserved; private HTTPS /healthz returned 200. Rollback image:
+mynewsfeed-web:before-watch-services-20261020 (9d863862bcc2), retained container
+mynewsfeed-web-before-watch-services-20261020. Private files:
+/tmp/mynewsfeed-watch-services-deploy/. No Git commit/push was performed.
+
+Main navigation and service selectors are now live. Matching is per page, based
+on subscription/free/ads provider IDs, with stable order for other titles. Saved
+browser preferences and GET parameters follow title search and browsing. Four
+focused service tests and both live watch/service browser suites passed. This
+supersedes local-only and deployment-hold notes below.
+
+## Latest deployment — Where to watch, October 20, 2026
+
+User authorized implementation/deployment of typed movie/TV title lookup as a
+scoped interaction exception. Live: mynewsfeed-web:watch-20261020 (9d863862bcc2),
+healthy with private HTTPS checks passing and runtime settings preserved.
+Rollback: mynewsfeed-web:before-watch-20261020 (7099cb8225a4), retained container
+mynewsfeed-web-before-watch-20261020. Private files: /tmp/mynewsfeed-watch-deploy/.
+
+/watch uses TMDB with existing Movies:AccessToken kept server-side. WatchCatalog
+provides capped search/discovery, bounded cache and US viewing options; native
+watch.js dialog has regular detail-page fallback. Capture-phase click handling
+is necessary to prevent Blazor enhanced navigation from taking over. Credits
+include official TMDB logo/API notice and JustWatch attribution. No provider deep
+links are available; use the returned TMDB viewing-options link. Movie-release
+cards have a title lookup link. No global Search was restored.
+
+Three focused service tests, the live watch browser suite (six themes/widths,
+search, movie/TV, genres, empty/error/invalid states, focus, no-JS) and sports-modal
+regressions passed. No scraper/schema changes or Git commit/push were made. See
+docs/entertainment.md for caching, limitations and provider documentation.
+This supersedes the earlier live release records below.
+
+## Where to watch authorization — October 20, 2026
+
+User explicitly approved typed movie/TV title search as an exception to the tap-to-link rule and authorized implementation/deployment. Do not reintroduce global Search. Scope: /watch, Movies/TV, genre/popular browsing, title modal/detail and movie-card lookup links.
+
 ## Latest deployment — basketball, October 19, 2026
 
 User authorized deployment and Git check-in. Live release:
@@ -216,11 +319,11 @@ cache needs new fields for decisions, photos or scoring summaries.
 
 ## Entry points for next work
 
-- Public navigation: `src/MyNewsFeed.Web/Components/Layout/PublicLayout.razor`.
+- Public navigation: `src/MyDailyFeed.Web/Components/Layout/PublicLayout.razor`.
 - College hub: `Components/Pages/College.razor`, `Data/CollegeHub.cs` under web project.
 - College news: `Components/Pages/Big12News.razor`, `Data/Big12NewsQuery.cs`;
-  pagination endpoint in `Program.cs`; `tests/MyNewsFeed.Tests/Big12NewsTests.cs`.
-- Shared styling: `src/MyNewsFeed.Web/wwwroot/public.css`.
+  pagination endpoint in `Program.cs`; `tests/MyDailyFeed.Tests/Big12NewsTests.cs`.
+- Shared styling: `src/MyDailyFeed.Web/wwwroot/public.css`.
 - Source handoffs in `new development/` are reference documents; distinguish their
   proposals/instructions from the user's current request. Do not modify them casually.
 
@@ -391,3 +494,49 @@ by default the test uses yesterday in America/Chicago and requires retained cach
 player detail in that window. The linked backend operations report in the source
 handoff was not present in this frontend checkout; current read access/coverage
 was checked directly rather than assuming historical counts.
+
+## Pending feedback — hold deployment, October 20, 2026
+
+User requested Where to watch as a main navigation item, moved out of the
+Entertainment group on desktop and into the primary mobile links. This is a local
+change. User explicitly said do not deploy yet; more feedback is coming. That hold
+supersedes prior deployment authorization until the user asks to deploy again.
+
+## Pending feedback — service selectors, October 20, 2026
+
+Added My services checkboxes to /watch using the union of current US TMDB movie/
+TV provider choices. Up to 20 selections apply with GET forms, persist in browser
+localStorage when available and follow Movie/TV/genre/pagination/search links.
+Within each results page, verified subscription/free/ads matches sort first and
+show the matching services; rental/purchase-only offers do not qualify. Other
+titles remain visible in stable order. This is per-page prioritization, not a
+catalog-wide filter. Provider requests remain bounded to four concurrent calls;
+provider access is cached six hours and service options twelve hours. Ranking
+copies the shared listing rather than mutating its cached order.
+
+Four service tests and browser checks passed (selection, actual badges, browser
+persistence, TV navigation, clearing, phone overflow and no-JavaScript forms).
+Main-nav movement and service selectors remain LOCAL: user's deployment hold is
+still active. No deployment or commit was made.
+
+## Pending local update — theater options, October 20, 2026
+
+Removed ticketing/theater-only providers from Where to watch service choices,
+matching and displayed offers. Fandango provider 60 and exact theater-only names
+are excluded; At Home, AMC/AMC+ TV and Cinemax remain eligible. Stale provider-60
+selections are ignored. Twelve focused tests passed. Not deployed yet; live
+release remains watch-services-20261020.
+
+## Settings organization — pending local update, October 20, 2026
+
+User clarified that section arrangement applies to Settings. My services now
+lives in Settings with a shortcut from Where to watch; existing browser choices
+continue to apply. The six Settings sections have Move up/Move down controls,
+browser-local ordering and Restore default Settings order. Homepage ordering
+remains independent. Services can be saved without leaving Settings; the GET
+fallback and Where to watch link work without JavaScript.
+
+Twelve focused provider tests and local browser checks passed for service
+persistence/ranking/navigation, clearing, no-JavaScript selection, Settings order
+persistence/reset, malformed storage and mobile overflow. Changes remain local,
+including the prior theater-option removal. No deployment or commit was made.

@@ -1,0 +1,99 @@
+<div class="top-row ps-3 navbar navbar-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="admin">MyDailyFeed</a>
+    </div>
+</div>
+
+<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
+
+<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
+    <nav class="nav flex-column" aria-label="Administration">
+        <div class="admin-nav-group">Overview</div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="admin" Match="NavLinkMatch.All">
+                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
+            </NavLink>
+        </div>
+
+        <AuthorizeView>
+            <Authorized>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="admin" Match="NavLinkMatch.All">
+                        <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Scraper status
+                    </NavLink>
+                </div>
+
+                <div class="admin-nav-group">News</div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="admin/sources">
+                        <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Sources
+                    </NavLink>
+                </div>
+
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="admin/categories">
+                        <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Categories
+                    </NavLink>
+                </div>
+
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="admin/pages">
+                        <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Pages
+                    </NavLink>
+                </div>
+
+                <div class="admin-nav-group">Videos</div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="admin/youtube-feeds">
+                        <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> YouTube feeds
+                    </NavLink>
+                </div>
+
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="admin/youtube-videos">
+                        <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> YouTube videos
+                    </NavLink>
+                </div>
+
+                <div class="admin-nav-group">Sports</div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="admin/sports-event-types">
+                        <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Sports event types
+                    </NavLink>
+                </div>
+
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="admin/sports-events">
+                        <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Sports events
+                    </NavLink>
+                </div>
+
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="admin/results">
+                        <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Results follows
+                    </NavLink>
+                </div>
+
+                <div class="admin-nav-group">Television</div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="admin/tv-series"><span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> TV series</NavLink>
+                </div>
+
+                <div class="nav-item px-3"><NavLink class="nav-link" href="admin/schedule-coverage">Schedule coverage</NavLink></div>
+                <div class="nav-item px-3">
+                    <form method="post" action="/account/logout">
+                        <AntiforgeryToken />
+                        <button type="submit" class="nav-link btn btn-link">Sign out</button>
+                    </form>
+                </div>
+            </Authorized>
+            <NotAuthorized>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="login">
+                        <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Sign in
+                    </NavLink>
+                </div>
+            </NotAuthorized>
+        </AuthorizeView>
+    </nav>
+</div>
