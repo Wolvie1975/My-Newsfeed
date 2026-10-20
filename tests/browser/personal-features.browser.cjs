@@ -38,10 +38,18 @@ const base = process.env.BASE_URL || 'http://127.0.0.1:5296';
         // Saving still works without read/mute buttons.
         await page.goto(base + '/news?category=all');
         const first = page.locator('[data-news-url]').first(), save = first.locator('[data-save]');
-        if (await save.getAttribute('aria-pressed') !== 'true') await save.click();
+        await page.waitForFunction(() => !document.querySelector('[data-news-url] [data-save]').disabled);
+        const wasSaved = await save.getAttribute('aria-pressed') === 'true';
+        const savedUrl = await save.getAttribute('data-url');
+        if (!wasSaved) await save.click();
+        await page.waitForFunction(url => document.querySelector(`[data-save][data-url="${url}"]`).getAttribute('aria-pressed') === 'true', savedUrl);
         await page.goto(base + '/saved');
         assert(await page.locator('[data-saved-list] [data-save]').count() > 0);
         assert.equal(await page.locator('[data-mark-read], [data-news-read], [data-news-mute]').count(), 0);
+        if (!wasSaved) {
+            await page.locator('[data-saved-list] [data-save]').evaluateAll((buttons, url) => buttons.find(b => b.dataset.url === url).click(), savedUrl);
+            await page.waitForFunction(url => !document.querySelector(`[data-saved-list] [data-save][data-url="${url}"]`), savedUrl);
+        }
         const noJs = await browser.newContext({ javaScriptEnabled: false }), plain = await noJs.newPage();
         for (const path of ['/local', '/tv']) assert.equal((await plain.goto(base + path)).status(), 200);
         await noJs.close();

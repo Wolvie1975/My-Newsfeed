@@ -1,10 +1,9 @@
 @using MyDailyFeed.Web.Data
 @inject FeedDates Dates
 
-@* Save for later. Saved articles live only in this browser (localStorage), handled by public.js. The button carries a
-   copy of what the Saved page shows, because the scraper keeps only the latest articles per source and the database
-   row will be gone later. It starts hidden: public.js shows it only when storage works, so without JavaScript it never
-   appears as a dead control. *@
+@* Save for later uses the shared server list through public.js. The button carries
+   an article copy so bookmarks survive scraper retention. Hidden without JavaScript;
+   disabled until the shared list has loaded. *@
 @if (FeedQuery.SafeHref(Item.Url) is { } href)
 {
     <button class="save" type="button" hidden data-save

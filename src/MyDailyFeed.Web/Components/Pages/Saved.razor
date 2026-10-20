@@ -3,19 +3,14 @@
 
 <PageTitle>Saved · MyDailyFeed</PageTitle>
 
-@* Saved articles live only in this browser (localStorage), so the server sends an empty shell and public.js draws the
-   cards from each article's saved copy. They stay after the scraper drops the article from the database. *@
+@* public.js loads the shared server list and safely builds the saved article cards. *@
 
-<PageHeading Title="Saved articles" Eyebrow="YOUR READING LIST" Description="Saved in this browser only. They are not shared with your other devices." />
+<PageHeading Title="Saved articles" Eyebrow="YOUR READING LIST" Description="One shared reading list across your devices. Anyone with access to this site shares this list." />
 
-<div class="favorites-toolbar" hidden data-reading-toolbar>
-    <label>Reading list <select data-reading-filter><option value="all">All saved</option><option value="unread">Unread</option><option value="read">Read</option></select></label>
-</div>
-<p class="count" data-reading-count></p>
-<p class="count" data-saved-status aria-live="polite"></p>
+<p class="count" data-saved-status aria-live="polite">Connecting to your shared Saved list…</p>
 
 <section class="feed" aria-label="Saved articles" data-saved-list></section>
 
-<section class="empty saved-empty" data-saved-empty hidden><h2 data-saved-empty-title></h2><p data-saved-empty-description></p><a class="nf-btn nf-btn--primary" href="news" data-saved-empty-action>Browse news</a><button class="nf-btn nf-btn--secondary" type="button" data-show-all-saved hidden>Show all saved</button></section>
+<section class="empty saved-empty" data-saved-empty hidden><h2 data-saved-empty-title></h2><p data-saved-empty-description></p><a class="nf-btn nf-btn--primary" href="news" data-saved-empty-action>Browse news</a></section>
 
 <noscript><p class="empty">Saved articles need JavaScript turned on.</p></noscript>

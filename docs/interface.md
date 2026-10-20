@@ -64,17 +64,20 @@ cards use the same presentation. Publication time is not substituted with collec
 time. News keeps source/category selection, deterministic cursors, enhanced Load more
 and usable no-JavaScript paging.
 
-Saved articles and read/unread status use browser localStorage, shared across tabs
-but not synchronized across devices. Clearing site storage removes these preferences;
-blocked storage leaves server-rendered pages usable. Old saved records begin unread.
-An empty library explains bookmarking and offers Browse news. A nonempty library with
-no filter matches offers Show all saved. Hide the filter/count when the library is
-empty. Render signatures include library size so empty-state guidance updates correctly.
+Saved articles use one SQL Server list shared by everyone with access to the site.
+Article copies survive scraper retention and app replacement. The public script
+loads the list, applies explicit add/remove actions, and refreshes every 15 seconds
+while visible, on focus/reconnect and enhanced navigation. Browser storage is not
+required for new bookmarks. Failed writes leave the last confirmed list unchanged;
+unreachable reads disable mutations until a successful refresh. Saved text uses
+textContent rather than parsing arbitrary HTML.
 
-The public script initializes newly added controls, caches saved articles in memory,
-and invalidates on cross-tab changes/clearing. Mutations clone before writing so failed
-writes don't alter the cache; explicit Save/read actions update affected controls.
-Saved text uses textContent rather than parsing arbitrary HTML.
+Legacy browser bookmarks import once per browser using a stable UUID receipt.
+SQL records import receipts transactionally so retries cannot resurrect a removed
+article. The original local list remains as a backup; an imported browser does not
+keep uploading it. Open the site once on each existing device to import its list.
+The shared list is limited to 500 entries; capacity errors are visible and do not
+silently evict bookmarks. Legacy read metadata is retained, but the Saved page shows all articles.
 
 Share is the single article sharing control; its dialog includes Copy link, phone-only
 SMS, and native Share via apps when supported. Share/Save hit areas are 44 × 44 pixels.
@@ -639,3 +642,51 @@ Mark read/Mark unread. Deleted the unused ReadingControls component, its styles
 and click handlers. Save/bookmark and Share remain. Settings copy no longer
 instructs readers to use removed actions. Existing browser read/mute preferences
 can still be cleared or publishers unmuted in Settings.
+
+### Shared Saved list — October 20, 2026
+
+`SharedArticles` stores one JSON article-copy list in app-owned SQL Server table
+`dbo.MyDailyFeedSavedList`; `dbo.MyDailyFeedSavedImports` holds one-time browser
+import receipts. Apply idempotent `db/018_shared_saved_articles.sql` before deploying
+this feature. No scraper rows or relationships change. SQL serializable transactions
+and a row update lock serialize additions/removals/imports across app instances.
+Explicit add/remove requests are idempotent and never replace another device's
+entire list. Normalized HTTP(S) URLs deduplicate entries; links with credentials
+are rejected. Text lengths and the 500-article capacity are validated. Display uses
+DOM textContent. SQL backups now protect bookmarks; keep both tables on rollback.
+
+Anonymous `/api/saved` GET returns the current list and an antiforgery token with
+`Cache-Control: no-store`. JSON POST `/add`, `/remove`, `/import` validate that token
+in `X-Saved-CSRF`. The public site intentionally shares this list without an account;
+it is not separated by device or user. Do not publicly expose the site expecting
+private per-person Saved lists. This is the user-approved shared-list design.
+
+The client queues refreshes and mutations, polls every 15 seconds while visible,
+and refreshes on focus, reconnect and Blazor enhancedload. Confirmed data is retained
+on errors; offline changes are not queued. Controls recover after successful sync.
+Import failure leaves the shared list usable and the original browser list intact.
+A UUID receipt is stored before import and committed with the SQL update, preventing
+retries or simultaneous tabs from resurrecting removed entries. UUID generation also
+works on an old HTTP LAN origin. Browser storage can be blocked for normal shared
+saving, but importing old browser data requires that storage to be readable/writable.
+
+Existing browser bookmarks must be imported by visiting their original origin:
+HTTPS/Tailscale, HTTP/IP and different browser profiles have separate localStorage.
+Open each old address/profile once; subsequent bookmarks are shared from the server.
+Personal settings, teams and streaming-service selections remain browser-local.
+
+Verification: `SharedArticlesTests` exercises input validation plus a temporary SQL
+Server database for concurrent writers, deduplication, import replay after removal,
+persistence and full-list rollback. It creates/drops only its uniquely named test
+database. `tests/browser/shared-saved.browser.cjs` checks separate device contexts,
+real polling, migrations, blocked storage, unsafe links, CSRF, failure/retry/offline
+recovery and mobile/desktop widths. It removes its unique test bookmarks afterward.
+
+### Saved toolbar removal — October 20, 2026
+
+Removed the Reading list / All saved dropdown and the saved-article total from
+Saved. The page always shows the entire shared list, including imported articles
+with legacy read metadata. Removed obsolete filtering, count and Show all saved
+handlers/styles. The header bookmark badge and sync/error status remain. Rendering
+signatures include sync readiness so an initially empty list shows its guidance
+when the first response completes.

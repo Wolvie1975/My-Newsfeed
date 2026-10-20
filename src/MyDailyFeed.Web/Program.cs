@@ -13,10 +13,13 @@ using MyDailyFeed.Web.Components;
 using MyDailyFeed.Web.Components.Feed;
 using MyDailyFeed.Web.Data;
 using MyDailyFeed.Web.Scores;
+using MyDailyFeed.Web.Saved;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddScoped<BoxScoresRepository>();
+builder.Services.AddSingleton<SharedArticles>();
+builder.Services.AddAntiforgery(options => options.HeaderName = "X-Saved-CSRF");
 builder.Services.AddSingleton<MyDailyFeed.Web.Watching.WatchCatalog>();
 builder.Services.AddHttpClient("watch-catalog",client=>{client.BaseAddress=new Uri("https://api.themoviedb.org/3/");client.Timeout=TimeSpan.FromSeconds(10);});
 builder.Services.AddMemoryCache();
@@ -110,6 +113,7 @@ app.UseAuthorization();
 app.UseAntiforgery();
 
 app.MapStaticAssets();
+app.MapSharedArticles();
 
 // Form posts from the static login page and the nav-menu logout button (antiforgery is validated for [FromForm] endpoints).
 app.MapPost("/account/login", async (HttpContext http, IConfiguration config,

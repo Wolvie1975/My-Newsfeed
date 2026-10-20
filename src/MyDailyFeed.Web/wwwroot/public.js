@@ -102,44 +102,91 @@
     });
 
     // ---- saved articles -------------------------------------------------------------------------------------
-    // Kept only in this browser. Each entry is a copy of what the card showed (from the button's data-* attributes),
-    // because the scraper keeps only the latest articles per source and the database row will be gone later.
+    var SAVED_KEY = 'saved-articles'; // Legacy browser-only bookmarks, imported once.
+    var IMPORT_KEY = 'mydailyfeed-saved-import-v1';
+    var savedCache = [], savedReady = false, savedBusy = false, savedToken = null;
+    var savedQueue = Promise.resolve(), refreshPending = false;
 
-    var SAVED_KEY = 'saved-articles';
-    var SAVED_MAX = 500;
-
-    // Storage can be missing or throw (private windows, blocked site data); then the save buttons stay hidden.
-    var storageOk = (function () {
-        try { localStorage.setItem('saved-probe', '1'); localStorage.removeItem('saved-probe'); return true; }
-        catch (e) { return false; }
-    })();
-
-    // Only http(s) addresses are ever used as a link or picture, even from our own storage.
+    // Only http(s) addresses are ever used as a link or picture.
     function safeUrl(value) {
         if (typeof value !== 'string' || !value) return null;
-        try {
-            var url = new URL(value);
-            return url.protocol === 'http:' || url.protocol === 'https:' ? url.href : null;
-        } catch (e) { return null; }
+        try { var url = new URL(value); return ['http:', 'https:'].includes(url.protocol) && !url.username && !url.password ? url.href : null; }
+        catch (_) { return null; }
     }
-
     function text(value) { return typeof value === 'string' ? value : ''; }
-
-    var savedCache = null;
-    function readSaved() {
-        if (savedCache !== null) return savedCache;
-        if (!storageOk) return [];
+    function readSaved() { return savedCache; }
+    function acceptSaved(data) {
+        savedCache = data.articles;
+        savedReady = true;
+        if (data.token) savedToken = data.token;
+        syncSaves();
+    }
+    async function savedRequest(path, body) {
+        var controller = new AbortController(), timeout = setTimeout(function () { controller.abort(); }, 15000);
         try {
-            var list = JSON.parse(localStorage.getItem(SAVED_KEY) || '[]');
-            savedCache = Array.isArray(list) ? list.filter(function (a) { return a && safeUrl(a.url); }) : [];
-            return savedCache;
-        } catch (e) { return []; }
+            var response = await fetch('/api/saved' + path, { method: body ? 'POST' : 'GET', credentials: 'same-origin',
+                cache: 'no-store', signal: controller.signal,
+                headers: body ? { 'Content-Type': 'application/json', 'X-Saved-CSRF': savedToken } : { 'Accept': 'application/json' },
+                body: body ? JSON.stringify(body) : undefined });
+            if (!response.ok) {
+                var error; try { error = await response.json(); } catch (_) { }
+                throw new Error(error && error.error || 'Saved articles could not sync. Check your connection and try again.');
+            }
+            return await response.json();
+        } finally { clearTimeout(timeout); }
     }
-
-    function writeSaved(list) {
-        try { var trimmed = list.slice(0, SAVED_MAX); localStorage.setItem(SAVED_KEY, JSON.stringify(trimmed)); savedCache = trimmed; document.dispatchEvent(new CustomEvent('mynewsfeed-saved-changed', { detail: trimmed })); return true; }
-        catch (e) { return false; }
+    function importId() {
+        // randomUUID requires HTTPS; old bookmarks may live on an HTTP LAN origin.
+        if (crypto.randomUUID) return crypto.randomUUID();
+        var bytes = crypto.getRandomValues(new Uint8Array(16));
+        bytes[6] = (bytes[6] & 15) | 64; bytes[8] = (bytes[8] & 63) | 128;
+        var hex = Array.from(bytes, function (b) { return b.toString(16).padStart(2, '0'); }).join('');
+        return [hex.slice(0, 8), hex.slice(8, 12), hex.slice(12, 16), hex.slice(16, 20), hex.slice(20)].join('-');
     }
+    async function importLegacy() {
+        var legacy, receipt;
+        try {
+            receipt = JSON.parse(localStorage.getItem(IMPORT_KEY) || 'null');
+            if (receipt && receipt.done) return;
+            legacy = JSON.parse(localStorage.getItem(SAVED_KEY) || '[]');
+            if (!Array.isArray(legacy) || !legacy.length) return;
+            if (!receipt || !receipt.id) {
+                receipt = { id: importId(), done: false };
+                localStorage.setItem(IMPORT_KEY, JSON.stringify(receipt));
+            }
+        } catch (_) { return; } // Shared saving works even when browser storage is blocked.
+        var articles = legacy.filter(function (a) { return a && safeUrl(a.url); }).slice(0, 500).map(function (a) {
+            return { url: safeUrl(a.url), title: text(a.title).slice(0, 1000), source: text(a.source).slice(0, 500),
+                image: safeUrl(a.image), summary: text(a.summary).slice(0, 4000), date: text(a.date).slice(0, 100),
+                dateLabel: text(a.dateLabel).slice(0, 200), read: a.read === true,
+                savedAt: typeof a.savedAt === 'string' && !isNaN(Date.parse(a.savedAt)) ? new Date(a.savedAt).toISOString() : null };
+        });
+        acceptSaved(await savedRequest('/import', { clientId: receipt.id, articles: articles }));
+        // Keep the old list as a backup. The server receipt prevents replay after removal,
+        // even if this final browser write fails or two tabs migrate simultaneously.
+        try { localStorage.setItem(IMPORT_KEY, JSON.stringify({ id: receipt.id, done: true })); } catch (_) { }
+    }
+    function refreshSaved() {
+        if (refreshPending) return;
+        refreshPending = true;
+        savedQueue = savedQueue.then(async function () {
+            try {
+                acceptSaved(await savedRequest(''));
+                try { await importLegacy(); }
+                catch (importError) { announce("Your shared list is available, but browser bookmarks could not be imported. " + importError.message); return; }
+                var status = document.querySelector('[data-saved-status]');
+                if (status) status.textContent = 'Shared across devices. Changes sync automatically.';
+            } catch (error) {
+                savedReady = false; syncSaves();
+                announce(error.message);
+            } finally { refreshPending = false; }
+        });
+    }
+    setInterval(function () { if (!document.hidden) refreshSaved(); }, 15000);
+    window.addEventListener('focus', refreshSaved);
+    window.addEventListener('online', refreshSaved);
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) refreshSaved(); });
+    if (window.Blazor) Blazor.addEventListener('enhancedload', refreshSaved);
 
     function fromButton(button) {
         return {
@@ -226,18 +273,12 @@
         return card;
     }
 
-    // Draws the Saved page from storage. Skipped when nothing changed, because this runs on every DOM change
+    // Draws the Saved page from the shared list. Skipped when nothing changed, because this runs on every DOM change
     // (and its own drawing is a DOM change).
     function renderSavedPage(list) {
         var container = document.querySelector('[data-saved-list]');
         if (!container) return;
-        var filter = document.querySelector('[data-reading-filter]');
-        var mode = filter ? filter.value : 'all';
-        var total = list.length;
-        list = list.filter(function (a) { return mode === 'all' || (mode === 'read' ? a.read === true : a.read !== true); });
-        var signature = mode + ':' + total + ':' + list.map(function (a) { return a.url + ':' + (a.read === true); }).join('\n');
-        var count = document.querySelector('[data-reading-count]');
-        if (count) { count.hidden = total === 0; var label = mode === 'all' ? total + ' saved articles' : list.length + ' of ' + total + ' saved articles'; if (count.textContent !== label) count.textContent = label; }
+        var signature = JSON.stringify([savedReady, list]);
         if (container.getAttribute('data-rendered') === signature) return;
         container.setAttribute('data-rendered', signature);
 
@@ -246,12 +287,10 @@
 
         var empty = document.querySelector('[data-saved-empty]');
         if (empty) {
-            empty.hidden = list.length > 0;
-            var filtered = total > 0;
-            empty.querySelector('[data-saved-empty-title]').textContent = filtered ? 'No articles match this filter' : 'Your reading list is empty';
-            empty.querySelector('[data-saved-empty-description]').textContent = filtered ? 'Try viewing all saved articles.' : 'Tap the bookmark on a news article to save it for later in this browser.';
-            empty.querySelector('[data-saved-empty-action]').hidden = filtered;
-            empty.querySelector('[data-show-all-saved]').hidden = !filtered;
+            empty.hidden = !savedReady || list.length > 0;
+            empty.querySelector('[data-saved-empty-title]').textContent = 'Your reading list is empty';
+            empty.querySelector('[data-saved-empty-description]').textContent = 'Tap the bookmark on a news article to save it across your devices.';
+
         }
     }
 
@@ -263,7 +302,8 @@
 
         matchesWithin(scope, '[data-save]').forEach(function (button) {
             var on = saved[button.getAttribute('data-url')] === true;
-            button.hidden = !storageOk;
+            button.hidden = false;
+            button.disabled = !savedReady || savedBusy;
             if (button.getAttribute('aria-pressed') !== String(on)) button.setAttribute('aria-pressed', String(on));
             var label = on ? 'Remove from saved' : 'Save for later';
             if (button.getAttribute('aria-label') !== label) {
@@ -278,36 +318,22 @@
             if (badge.textContent !== value) badge.textContent = value;
         });
 
-        var toolbar = document.querySelector("[data-reading-toolbar]");
-        if (toolbar) toolbar.hidden = !storageOk || list.length === 0;
         if (scope === document || matchesWithin(scope, '[data-saved-list]').length) renderSavedPage(list);
     }
 
-    document.addEventListener('mynewsfeed-reading-change', function (event) {
-        var detail = event.detail || {};
-        var list = readSaved().map(function (article) { return Object.assign({}, article); });
-        list.forEach(function (article) { if (detail.reset || article.url === detail.url) article.read = detail.reset ? false : detail.read === true; });
-        if (writeSaved(list)) syncSaves();
-    });
-
     function toggleSave(button) {
-        var url = button.getAttribute('data-url');
-        if (!storageOk || !safeUrl(url)) return;
-        var list = readSaved().map(function (article) { return Object.assign({}, article); });
-        var index = list.findIndex(function (a) { return a.url === url; });
-        var title = button.getAttribute('data-title') || 'Article';
-        var message;
-        if (index >= 0) {
-            list.splice(index, 1);
-            message = 'Removed from saved: ' + title;
-        } else {
-            list.unshift(fromButton(button));
-            message = 'Saved: ' + title;
-        }
-        if (!writeSaved(list)) message = 'Could not save: this browser\'s storage is full or blocked.';
-
-        announce(message);
-        syncSaves();
+        var url = safeUrl(button.getAttribute('data-url'));
+        if (!savedReady || savedBusy || !url) return;
+        // Explicit add/remove makes retries idempotent and does not overwrite other devices.
+        var removing = readSaved().some(function (a) { return a.url === url; });
+        savedBusy = true; syncSaves();
+        savedQueue = savedQueue.then(async function () {
+            try {
+                acceptSaved(await savedRequest(removing ? '/remove' : '/add', removing ? { url: url } : fromButton(button)));
+                announce(removing ? 'Removed from the shared Saved list.' : 'Saved across your devices.');
+            } catch (error) { announce(error.message); }
+            finally { savedBusy = false; syncSaves(); }
+        });
     }
 
     // Tells screen readers what just happened, through the page's own status line. Pages without one (the home page)
@@ -407,11 +433,8 @@
         });
     }
 
-    document.addEventListener('change', function (e) {
-        if (e.target.matches('[data-reading-filter]')) syncSaves();
-    });
     // Another tab saved or removed something.
-    window.addEventListener('storage', function (e) { if (e.key === SAVED_KEY || e.key === null) { savedCache = null; syncSaves(); } });
+    window.addEventListener('storage', function (e) { if (e.key === IMPORT_KEY || e.key === null) refreshSaved(); });
 
     // Blazor re-renders the toggle button on navigation (and swaps in new pages with fresh save buttons); put labels,
     // pressed states and the saved list back in step.
@@ -438,6 +461,7 @@
     syncToggles();
     syncSaves();
     syncShares();
+    refreshSaved();
 
     // ---- load more ------------------------------------------------------------------------------------------
 
@@ -516,7 +540,6 @@
             return;
         }
 
-        if (e.target.closest('[data-show-all-saved]')) { var filter = document.querySelector('[data-reading-filter]'); if (filter) filter.value = 'all'; syncSaves(); return; }
 
         var save = e.target.closest('[data-save]');
         if (save) {

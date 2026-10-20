@@ -278,7 +278,7 @@
 .pub .loadmore { display: flex; flex-direction: column; align-items: stretch; gap: 12px; padding-top: 12px; text-align: center; }
 .pub .empty { color: var(--text-2); }
 
-/* ---------- Saved articles (kept in this browser; see public.js) ---------- */
+/* ---------- Saved articles (shared server list; see public.js) ---------- */
 /* The bookmark on each card. Hidden until public.js knows storage works; filled in when the article is saved. */
 .pub .save {
     display: inline-flex; align-items: center; justify-content: center; flex: none;
@@ -924,9 +924,7 @@
 /* Video channel navigation stays a dropdown at every screen size. */
 .pub .filters--videos .catselect { display: flex; flex: 0 1 360px; }
 
-.pub .favorites-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
-.pub .favorites-toolbar[hidden], .pub [data-team-home][hidden], .pub .group[hidden] { display: none; }
-.pub .favorites-toolbar select { padding: 8px 12px; border-radius: 8px; border: 1px solid var(--field-border); background: var(--surface); color: var(--text); font: inherit; }
+.pub [data-team-home][hidden], .pub .group[hidden] { display: none; }
 .pub .favorite-list { display: flex; flex-wrap: wrap; gap: 12px; }
 
 .pub .page > .catselect { flex: none; width: min(100%, 360px); }

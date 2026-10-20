@@ -3,6 +3,60 @@
 Read this file when continuing work from the previous chat. These are dated
 observations; check current repository and hosting state before acting.
 
+## Simplify Saved page — October 20, 2026
+
+Removed the Reading list / All saved selector and saved-article total shown in the
+user's screenshot. Saved always displays the full shared list; imported read
+metadata does not hide cards. Removed obsolete filter/count markup, handlers,
+styles and Show all saved fallback. Header bookmark badge and sync/error status
+remain. Rendering signature includes readiness, fixing initial empty-list guidance.
+
+Deployed mydailyfeed-web:saved-toolbar-20261020 (85cb568ecbfd), healthy. Rollback
+image mynewsfeed-web:before-saved-toolbar-20261020 (bea9cc17cbdf), retained
+container mynewsfeed-web-before-saved-toolbar-20261020. Private snapshots/scripts:
+/tmp/mydailyfeed-saved-toolbar-deploy/. Runtime settings/mounts/ports preserved;
+private HTTPS health returned 200. Docker publish/static-asset guard passed with
+existing PKCS warnings. Shared-Saved browser checks include initial empty guidance,
+removed toolbar/count, imported read-marked bookmarks visible, independent-device
+save/remove/polling, migration replay protection, CSRF/unsafe links, blocked storage,
+failure/retry, offline recovery and phone/desktop layout. No schema changes for
+this UI simplification. No commit or push made for this release.
+
+## Shared Saved articles across devices — October 20, 2026
+
+Saved now uses a single server-backed list shared by everyone who can access the
+site, with no new login screen. Article copies survive scraper retention and
+redeployments. Devices refresh every 15 seconds while visible, on focus/reconnect
+and enhanced navigation. Saving/removing updates the shared list; other personal
+settings remain local. Saved page copy explains the shared list.
+
+Applied idempotent db/018_shared_saved_articles.sql: app-owned singleton JSON list
+and UUID import-receipt tables. Serializable SQL writes prevent lost updates.
+Explicit add/remove is idempotent; duplicate URLs merge. Existing browser bookmarks
+import once, retaining local backup and server receipts to prevent resurrection
+after removal/retries. Visit each original browser/address to import its local list
+(HTTP/IP and HTTPS have separate storage). New saves work with storage blocked.
+Offline writes are not queued; errors preserve confirmed state and retry on sync.
+Capacity is 500 articles, with visible errors rather than silent eviction.
+
+GET /api/saved is no-store and supplies antiforgery tokens; JSON write routes
+validate X-Saved-CSRF, HTTP(S) links, bounded text and request sizes. All saved
+text remains rendered through DOM textContent. Schema is independent of scraper
+rows. Keep the added tables on rollback and include them in SQL backups.
+
+Deployed mydailyfeed-web:shared-saved-20261020 (bea9cc17cbdf), healthy. Rollback
+image mynewsfeed-web:before-shared-saved-20261020 (2db42b038e39), retained container
+mynewsfeed-web-before-shared-saved-20261020. Private snapshots/scripts/logs:
+/tmp/mydailyfeed-shared-saved-deploy/. Runtime settings, mounts, ports and networks
+preserved; private HTTPS health returned 200. Docker publish/static-asset guard
+passed with existing PKCS dependency warnings. Six focused tests passed, including
+a temporary isolated SQL database covering concurrent writers, deduplication, import
+replay, persistence and capacity rollback. Preview personal-features checks passed.
+Preview and live shared-Saved browser suites cover independent devices, real polling,
+legacy import including UUID fallback, removal/replay, CSRF/unsafe links, blocked
+storage, failure/retry, offline recovery and phone/desktop layout. Test bookmarks
+are removed after checks. No commit or push made for this release.
+
 ## Remove article read and mute actions — October 20, 2026
 
 Removed Mark read/Mark unread and Mute publisher from Home and shared article
