@@ -2,6 +2,7 @@
 @layout PublicLayout
 @inject IDbContextFactory<WebScraperContext> Factory
 @inject FeedDates Dates
+@inject NavigationManager Nav
 @inject ILogger<DigitalReleases> Log
 
 <PageTitle>Digital rental / purchase · MyDailyFeed</PageTitle>
@@ -70,5 +71,9 @@ else
         try { await using var db = await Factory.CreateDbContextAsync(); data = await DigitalReleasesQuery.GetAsync(db, Dates.Today, SourceKey); }
         catch (Exception ex) when (ex is System.Data.Common.DbException or InvalidOperationException)
         { Log.LogError(ex, "Digital releases read failed."); data = null; }
+        // Keep bookmarks and the visible provider in agreement after enablement changes.
+        // Navigate outside the read-error handler so static SSR can issue its redirect.
+        if (data is not null && SourceKey != data.Selected?.SourceKey)
+            Nav.NavigateTo(Nav.GetUriWithQueryParameter("source", data.Selected?.SourceKey), replace: true);
     }
 }

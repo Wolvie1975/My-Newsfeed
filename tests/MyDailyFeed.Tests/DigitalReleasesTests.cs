@@ -18,6 +18,11 @@ public class DigitalReleasesTests
         insider.Enabled = false;
         Assert.Same(other, DigitalReleasesQuery.SelectSource([other, insider], "movieinsider"));
         Assert.Null(DigitalReleasesQuery.SelectSource([], null));
+        var disabled = new MovieReleaseSource { ID = 3, SourceKey = "dvdsreleasedates", Name = "DVDs Release Dates", Enabled = false, LastError = "Old provider failure" };
+        insider.Enabled = true;
+        Assert.Same(insider, DigitalReleasesQuery.SelectSource([disabled, other, insider], "dvdsreleasedates"));
+        insider.Enabled = other.Enabled = false;
+        Assert.Null(DigitalReleasesQuery.SelectSource([disabled, other, insider], "dvdsreleasedates"));
     }
 
     [Fact]
@@ -66,6 +71,23 @@ public class DigitalReleasesTests
         Assert.All(own, i => Assert.Null(i.Year));
         var alternate = await DigitalReleasesQuery.GetAsync(db, monday.AddDays(6), "whentostream");
         Assert.Equal(separate.ID, Assert.Single(alternate.Items, i => i.Title == tag).Id);
+        // Disabled providers cannot appear in choices, leak releases or contribute warnings.
+        other.Enabled = false; other.LastError = "Alternate failed"; insider.LastError = null;
+        await db.SaveChangesAsync();
+        var fallback = await DigitalReleasesQuery.GetAsync(db, monday, "whentostream");
+        Assert.Equal(insider.ID, fallback.Selected!.ID);
+        Assert.Null(fallback.Selected.LastError);
+        Assert.DoesNotContain(fallback.Sources, s => s.ID == other.ID);
+        Assert.DoesNotContain(fallback.Items, i => i.Id == separate.ID);
+        // An enabled provider with no upcoming rows must not borrow another source's data.
+        var future = new DateOnly(9998, 1, 1);
+        var futureAlternate = Release("future-alternate", future); futureAlternate.MovieSourceLinkId = otherLink.ID;
+        db.Add(futureAlternate); await db.SaveChangesAsync();
+        Assert.DoesNotContain((await DigitalReleasesQuery.GetAsync(db, future, "movieinsider")).Items, i => i.Title == tag);
+        await db.MovieReleaseSources.Where(s => s.Enabled).ExecuteUpdateAsync(set => set.SetProperty(s => s.Enabled, false));
+        var none = await DigitalReleasesQuery.GetAsync(db, monday, "dvdsreleasedates");
+        Assert.Null(none.Selected); Assert.Empty(none.Sources); Assert.Empty(none.Items);
+        await db.MovieReleaseSources.Where(s => s.ID == insider.ID).ExecuteUpdateAsync(set => set.SetProperty(s => s.Enabled, true));
         early.ReleaseDate = monday.AddDays(8); await db.SaveChangesAsync();
         var changed = await DigitalReleasesQuery.GetAsync(db, monday.AddDays(6), "movieinsider");
         Assert.Equal(monday.AddDays(8), Assert.Single(changed.Items, i => i.Id == early.ID).Date);

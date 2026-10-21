@@ -40,9 +40,12 @@ subscription catalog. It includes today and all known future release dates, orde
 soonest first. The old current Monday–Sunday restriction is superseded.
 
 Prefer Movie Insider whenever enabled; otherwise select another enabled source.
-The source dropdown also offers When To Stream and DVDs Release Dates when enabled,
-even if that source has no matching rows. Preserve `?source=`; invalid/disabled keys
-fall back to the preferred enabled source. Do not silently blend providers when a
+The source dropdown offers only enabled providers, even when a source has no
+matching rows. As of October 21, 2026, Movie Insider and When To Stream are enabled;
+DVDs Release Dates is disabled by scraper configuration. Retained records from
+disabled providers remain excluded. Default, invalid and disabled `?source=` keys
+resolve to the preferred enabled source, redirecting to its canonical URL. If no
+provider is enabled, remove the stale source parameter and show the empty state. Do not silently blend providers when a
 selected source is empty. Generic digital data does not prove platform, pricing,
 rental versus purchase or subscription availability.
 

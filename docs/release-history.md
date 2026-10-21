@@ -6,11 +6,34 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The most recent verified web release is `mydailyfeed-web:video-actions-20261021`,
-with rollback recorded as `mynewsfeed-web:before-video-actions-20261021`.
+The most recent verified web release is `mydailyfeed-web:digital-provider-20261021`,
+with rollback recorded as `mynewsfeed-web:before-digital-provider-20261021`.
 Its container was healthy on October 21, 2026 (Central). This is a dated
 observation, not live hosting status.
 
+
+## Enabled Digital / VOD providers and canonical selection — October 21, 2026
+
+Digital / VOD now redirects default, invalid and disabled source selections to the
+resolved enabled provider's URL, preferring Movie Insider. With no enabled provider,
+a stale source query is removed and the existing empty state is shown. Existing
+queries already restrict choices/results to enabled sources, confirmed US digital,
+digital_purchase and digital_rental releases from today onward. Existing selected-
+provider warnings remain isolated. Production options verified as Movie Insider and
+When To Stream; disabled DVDs Release Dates is absent. No provider configuration,
+historical data, date-window or schema changes were made by this frontend release.
+
+Deployed `mydailyfeed-web:digital-provider-20261021` (7cc3c35d5749), healthy.
+Rollback image `mynewsfeed-web:before-digital-provider-20261021` (9315a715c39c),
+retained container `mynewsfeed-web-before-digital-provider-20261021`. Runtime settings,
+ports, mounts and keys preserved. DigitalReleases tests passed (2), including
+transactional SQL cases for disabled-source isolation, selected-source warning
+metadata, empty selected-provider results, no enabled providers and date boundaries.
+SQL fixture changes were rolled back. Docker publish/static-asset guard passed with
+existing PKCS dependency warnings. Live browser checks passed default/disabled/unknown
+URL redirects, both enabled choices, alternate-provider labels and selection, layouts
+at 390/1440px, no JavaScript errors and health 200. Scraper collection was not rerun.
+Private deployment files: `/tmp/mydailyfeed-digital-provider-deploy/`.
 
 ## Align video Share and Watch later — October 21, 2026
 
