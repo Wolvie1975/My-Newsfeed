@@ -31,8 +31,8 @@
             <div class="standings-scroll d-rankings__table" role="region" aria-label="Top 25 teams" tabindex="0">
                 <table class="standings-table rankings-table">
                     <caption class="sr-only">@Data.Selected.Sport · @poll.PollName</caption>
-                    <colgroup><col class="home-rank" /><col class="home-school" /><col class="home-record" /><col class="home-conference" /><col class="home-previous" /></colgroup>
-                    <thead><tr><th scope="col">Rank</th><th scope="col" class="standing-team">School</th><th scope="col">Record</th><th scope="col">Conference</th><th scope="col">Previous rank</th></tr></thead>
+                    <colgroup><col class="home-rank" /><col class="home-school" /><col class="home-record" /><col class="home-previous" /></colgroup>
+                    <thead><tr><th scope="col">Rank</th><th scope="col" class="standing-team">School</th><th scope="col">Record</th><th scope="col">Previous rank</th></tr></thead>
                     <tbody>
                     @foreach (var team in RankedTeams)
                     {
@@ -42,7 +42,6 @@
                                 <span>@team.TeamName</span>
                             </span></th>
                             <td>@(team.Record ?? "—")</td>
-                            <td>@(team.IsBig12 == true ? "Big 12" : Conferences.TryGetValue(team.TeamId, out var conference) ? conference : "—")</td>
                             <td>@RankingsQuery.Previous(team)</td>
                         </tr>
                     }
@@ -55,7 +54,6 @@
 </section>
 
 @code {
-    [Parameter] public IReadOnlyDictionary<string, string> Conferences { get; set; } = new Dictionary<string, string>();
     [Parameter] public RankingsPage Data { get; set; } = new([], null, null, []);
     private IEnumerable<MyDailyFeed.Web.Data.Models.SportsRankingTeam> RankedTeams =>
         Data.Teams.Where(t => t.Rank is >= 1 and <= 25).OrderBy(t => t.Rank).ThenBy(t => t.TeamName);

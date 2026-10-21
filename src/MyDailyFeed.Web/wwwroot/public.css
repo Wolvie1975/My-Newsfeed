@@ -2224,14 +2224,12 @@
 
 /* Consistent homepage poll columns, with a readable narrow-screen scroll area. */
 .pub .d-rankings__meta { display: flex; flex-wrap: wrap; gap: 2px 12px; margin: 0 0 10px; font-size: 12px; line-height: 1.5; }
-.pub .d-rankings__table .standings-table { table-layout: fixed; min-width: 440px; font-size: 13px; line-height: 1.4; font-variant-numeric: tabular-nums; }
+.pub .d-rankings__table .standings-table { table-layout: fixed; min-width: 344px; font-size: 13px; line-height: 1.4; font-variant-numeric: tabular-nums; }
 .pub .d-rankings__table .home-rank { width: 44px; }
 .pub .d-rankings__table .home-record { width: 64px; }
-.pub .d-rankings__table .home-conference { width: 96px; }
 .pub .d-rankings__table .home-previous { width: 74px; }
 .pub .d-rankings__table th, .pub .d-rankings__table td { padding: 8px; vertical-align: middle; text-align: center; white-space: normal; }
 .pub .d-rankings__table .standing-team { min-width: 0; text-align: left; font-weight: 600; overflow-wrap: break-word; }
-.pub .d-rankings__table tr > :nth-child(4) { text-align: left; }
 .pub .d-rankings__table .standing-team-name { display: block; max-width: none; }
 .pub .d-rankings__table thead th { font-size: 12px; font-weight: 700; }
 .pub .d-rankings__table .ranking-big12 > * { background: color-mix(in srgb, var(--accent) 12%, var(--surface)); border-bottom-color: var(--field-border); }

@@ -817,3 +817,10 @@ It works with Enter or Search and does not require JavaScript.
 At desktop widths (1024px and above), homepage Top 25 expands to show all available
 ranked schools without an internal vertical scrollbar. Smaller screens keep the
 440px-high scrolling table. The homepage column layout adapts to the taller card.
+
+### Homepage Top 25 without Conference — October 21, 2026
+
+The current homepage columns are Rank, School, Record and Previous rank. Conference
+is removed, along with its unused HTTP lookup/cache. Big 12 highlighting still uses
+the stored IsBig12 flag, independent of any conference lookup. Desktop continues
+to show the full list, while mobile retains its height cap and internal scrolling.

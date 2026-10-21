@@ -23,8 +23,6 @@ builder.Services.AddAntiforgery(options => options.HeaderName = "X-Saved-CSRF");
 builder.Services.AddSingleton<MyDailyFeed.Web.Watching.WatchCatalog>();
 builder.Services.AddHttpClient("watch-catalog",client=>{client.BaseAddress=new Uri("https://api.themoviedb.org/3/");client.Timeout=TimeSpan.FromSeconds(10);});
 builder.Services.AddMemoryCache();
-builder.Services.AddHttpClient("ranking-conferences", client => client.Timeout = TimeSpan.FromSeconds(5));
-builder.Services.AddSingleton<MyDailyFeed.Web.Data.RankingConferences>();
 builder.Services.AddSingleton<LocalWeather>();
 builder.Services.AddHttpClient("local-weather", client => {
     client.Timeout = TimeSpan.FromSeconds(8);

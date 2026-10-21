@@ -6,11 +6,30 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The most recent verified web release is `mydailyfeed-web:desktop-top25-20261021`,
-with rollback recorded as `mynewsfeed-web:before-desktop-top25-20261021`.
+The most recent verified web release is `mydailyfeed-web:top25-no-conference-20261021`,
+with rollback recorded as `mynewsfeed-web:before-top25-no-conference-20261021`.
 Its container was healthy on October 21, 2026 (Central). This is a dated
 observation, not live hosting status.
 
+
+## Remove Conference from homepage Top 25 — October 21, 2026
+
+Homepage Top 25 now shows Rank, School, Record and Previous rank. Removed Conference,
+its column-specific styling, and the unused conference HTTP lookup/cache and related
+registration/tests. Narrowed the table's minimum width to suit four columns. Big 12
+row tint and left markers remain driven by stored IsBig12, independent of conference
+data. Full desktop list, mobile scrolling and poll selection remain intact.
+
+Deployed `mydailyfeed-web:top25-no-conference-20261021` (dcddade43463), healthy.
+Rollback image `mynewsfeed-web:before-top25-no-conference-20261021` (c54b1a6215f0),
+retained container `mynewsfeed-web-before-top25-no-conference-20261021`. Runtime
+settings, ports, mounts and keys preserved; no schema/data changes. HomeRankings
+tests passed (2). Docker publish/static-asset guard and diff checks passed with
+existing PKCS warnings. Live browser checks passed exact four-column headers,
+retained Big 12 markers, all available poll selections, full desktop list/mobile
+height cap across 390–1920px and no-JavaScript Apply. Visually inspected the table;
+no overflow or JavaScript errors; health 200. Private deployment files:
+`/tmp/mydailyfeed-top25-no-conference-deploy/`.
 
 ## Show full homepage Top 25 on desktop — October 21, 2026
 
