@@ -2203,3 +2203,6 @@
 /* YouTube Watch later controls share the server-backed Saved list. */
 .pub .save[data-kind="video"]:has([data-save-label]) { width: auto; min-width: 44px; padding: 0 8px; gap: 6px; font-size: 12px; white-space: nowrap; flex-shrink: 0; }
 .pub .vmeta, .pub .d-vid__meta { flex-wrap: wrap; }
+
+.pub .saved-section + .saved-section { margin-top: 32px; }
+.pub .saved-section > .saved-head { margin-bottom: 16px; }

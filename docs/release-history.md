@@ -6,11 +6,28 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The most recent verified web release is `mydailyfeed-web:watch-later-20261021`,
-with rollback recorded as `mynewsfeed-web:before-watch-later-20261021`.
+The most recent verified web release is `mydailyfeed-web:saved-sections-20261021`,
+with rollback recorded as `mynewsfeed-web:before-saved-sections-20261021`.
 Its container was healthy on October 21, 2026 (Central). This is a dated
 observation, not live hosting status.
 
+
+## Separate Articles and Videos in Saved — October 21, 2026
+
+Saved now displays Articles followed by Videos as separate sections on one page.
+Each keeps newest saves first and shows its own empty message. Legacy bookmarks
+without Kind belong to Articles. Existing save/remove and cross-device behavior
+are unchanged; no database migration.
+
+Deployed `mydailyfeed-web:saved-sections-20261021` (16ae005bec41), healthy.
+Rollback image `mynewsfeed-web:before-saved-sections-20261021` (54748a4fd601),
+retained container `mynewsfeed-web-before-saved-sections-20261021`. Runtime settings,
+ports, mounts and keys preserved. Docker publish/static-asset guard passed with
+existing PKCS dependency warnings. Browser checks passed mixed, article-only,
+video-only, empty and legacy lists at 390/768/1440px. Live Watch later regression
+passed save, independent-device visibility, reload, removal and button-state sync;
+no JavaScript errors, health 200. Test video removed after verification.
+Private deployment files: `/tmp/mydailyfeed-saved-sections-deploy/`.
 
 ## YouTube Watch later in Saved — October 21, 2026
 

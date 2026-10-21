@@ -229,7 +229,7 @@
 
         var body = el('div', 'body');
         if (a.kind === 'video') body.appendChild(el('span', 'cat', 'YouTube'));
-        var title = el('h2', 'title');
+        var title = el('h3', 'title');
         var link = el('a', null, text(a.title) || href);
         link.href = href; link.target = '_blank'; link.rel = 'noopener noreferrer';
         title.appendChild(link);
@@ -286,7 +286,26 @@
         container.setAttribute('data-rendered', signature);
 
         container.textContent = '';
-        list.forEach(function (a) { container.appendChild(savedCard(a)); });
+        [
+            { kind: 'article', title: 'Articles', empty: 'No saved articles yet.' },
+            { kind: 'video', title: 'Videos', empty: 'No videos saved for later yet.' }
+        ].forEach(function (group) {
+            var section = el('section', 'saved-section');
+            section.setAttribute('data-saved-section', group.kind);
+            section.setAttribute('aria-labelledby', 'saved-' + group.kind + '-heading');
+            var heading = el('h2', 'saved-head', group.title);
+            heading.id = 'saved-' + group.kind + '-heading';
+            section.appendChild(heading);
+            var items = list.filter(function (a) { return (a.kind === 'video' ? 'video' : 'article') === group.kind; });
+            if (items.length) {
+                var feed = el('div', 'feed');
+                items.forEach(function (a) { feed.appendChild(savedCard(a)); });
+                section.appendChild(feed);
+            } else if (savedReady) {
+                section.appendChild(el('p', 'empty', group.empty));
+            }
+            container.appendChild(section);
+        });
 
         var empty = document.querySelector('[data-saved-empty]');
         if (empty) {

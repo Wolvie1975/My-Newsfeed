@@ -736,3 +736,10 @@ are now labeled Saved. This list is independent of YouTube account Watch Later.
 Saved payloads have an optional Kind (article by default, or video); old article
 JSON remains compatible. The existing 500-item shared limit, polling, CSRF checks
 and server persistence apply to both types. No schema migration is required.
+
+### Separate Saved sections — October 21, 2026
+
+Saved displays Articles followed by Videos on the same page. Each section preserves
+the shared list's newest-save-first order and has its own empty message. Older
+bookmarks without Kind appear under Articles. Saving, removing, synchronization
+and the shared 500-item limit remain unchanged.
