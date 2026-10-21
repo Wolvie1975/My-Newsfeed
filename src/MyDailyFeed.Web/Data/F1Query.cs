@@ -79,6 +79,15 @@ public static class F1Query
 
     public static DateOnly LocalDate(F1Session session, FeedDates dates) => session.StartsUtc is { } utc
         ? DateOnly.ParseExact(dates.DayKey(utc), "yyyy-MM-dd") : session.Date;
+    // Race-weekend placement uses the site's calendar, including Saturday races and UTC rollovers.
+    public static F1Race? HomeWeekendRace(F1Page page, FeedDates dates, DateOnly today) =>
+        page.Source?.Enabled == true ? page.Races.FirstOrDefault(r =>
+        {
+            var raceDay = LocalDate(new F1Session("Grand Prix", r.RaceDate, StartsUtc(r.RaceDate, r.RaceTimeUtc)), dates);
+            var friday = raceDay.AddDays(-((7 + (int)raceDay.DayOfWeek - (int)DayOfWeek.Friday) % 7));
+            return today >= friday && today <= raceDay;
+        }) : null;
+
     public static bool Upcoming(F1Race race, FeedDates dates, DateOnly today) => Sessions(race).Any(s => LocalDate(s, dates) >= today);
     public static string Points(decimal points) => points.ToString("0.###", CultureInfo.InvariantCulture);
     public static string Position(int position, string? text) => string.IsNullOrWhiteSpace(text) ? position.ToString(CultureInfo.InvariantCulture) : text;

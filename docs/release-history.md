@@ -6,11 +6,36 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The most recent verified web release is `mydailyfeed-web:home-posters-20261021`,
-with rollback recorded as `mynewsfeed-web:before-home-posters-20261021`.
+The most recent verified web release is `mydailyfeed-web:f1-weekend-20261021`,
+with rollback recorded as `mynewsfeed-web:before-f1-weekend-20261021`.
 Its container was healthy on October 21, 2026 (Central). This is a dated
 observation, not live hosting status.
 
+
+## F1 inside Today & Tonight on race weekends — October 21, 2026
+
+F1 moves into Today & Tonight from the Friday preceding the Grand Prix through
+race day, inclusive, and the standalone homepage F1 card is omitted during that
+window. Outside it, the separate F1 card remains. Placement uses the site's local
+calendar day (America/Chicago), including Saturday races and UTC date rollovers;
+unknown starts use the published race date. Published results do not end the window
+early. Race time, next session, latest result, links, attribution and freshness
+warnings remain. F1 summary data is loaded once by Home for either placement, and
+F1 read errors retain the existing public fallback. Existing F1 visibility preferences
+apply to both placements. No schema or collector changes.
+
+Deployed `mydailyfeed-web:f1-weekend-20261021` (abc5bae5d421), healthy.
+Rollback image `mynewsfeed-web:before-f1-weekend-20261021` (f86cdbe1fbfe), retained
+container `mynewsfeed-web-before-f1-weekend-20261021`. Runtime settings, ports,
+mounts and keys preserved. Focused F1 tests passed (19), including Friday/race-day
+boundaries, completed results, Saturday UTC rollovers, unknown times, disabled data
+and both component placements. Final Docker publish/static-asset guard and diff
+checks passed with existing PKCS warnings. Live checks verified today's single
+standalone F1 summary, desktop/mobile race details, no overflow/JavaScript errors
+and health 200. Homepage column regression passed across 390–1920px, dynamic heights,
+hidden sections, enhanced navigation and no-JavaScript fallback. Weekend placement
+was verified with deterministic fixtures; production date/data were not changed.
+Private deployment files: `/tmp/mydailyfeed-f1-weekend-deploy/`.
 
 ## Smaller homepage movie posters — October 21, 2026
 

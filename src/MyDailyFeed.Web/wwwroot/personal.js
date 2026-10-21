@@ -40,6 +40,7 @@
                 const section = grid.querySelector(`[data-home-section="${key}"]`);
                 if (section) { section.hidden = p.hidden.includes(key); if (grid.children[index] !== section) grid.insertBefore(section, grid.children[index] || null); }
             });
+            grid.querySelectorAll('[data-home-f1]').forEach(section => section.hidden = p.hidden.includes('f1'));
             const empty = document.querySelector('[data-home-empty]'); if (empty) empty.hidden = grid.querySelector('[data-home-section]:not([hidden])') !== null;
             const rows = [...grid.querySelectorAll('[data-home-team-item]')];
             rows.forEach(row => row.hidden = p.teamsOnly && !matchesTeams(row, selected));

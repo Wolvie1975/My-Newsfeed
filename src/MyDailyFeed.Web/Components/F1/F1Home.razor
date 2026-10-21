@@ -1,9 +1,7 @@
-@inject IDbContextFactory<WebScraperContext> Factory
 @inject FeedDates Dates
-@inject ILogger<F1Home> Log
 
-<section data-home-section="f1" class="d-card d-f1" aria-labelledby="h-f1">
-    <div class="d-card__head"><h2 class="d-card__title" id="h-f1">F1</h2><a href="f1">Full schedule</a></div>
+<section data-home-section="@(Embedded ? null : "f1")" data-home-f1 class="@(Embedded ? "d-f1 d-f1--embedded" : "d-card d-f1")" aria-labelledby="h-f1">
+    <div class="d-card__head">@if (Embedded) { <h3 class="d-card__title" id="h-f1">F1 · Race weekend</h3> } else { <h2 class="d-card__title" id="h-f1">F1</h2> }<a href="f1">Full schedule</a></div>
     <div class="d-f1__body">
         @if (error is not null)
         { <p class="d-empty" role="status">@error</p> }
@@ -20,7 +18,7 @@
                     <p><SessionTime Session="@(new F1Session("Grand Prix", race.RaceDate, F1Query.StartsUtc(race.RaceDate, race.RaceTimeUtc)))" /></p>
                     @if (nextSession is { Name: not "Grand Prix" } session)
                     { <p class="updated">Next session: @session.Name · <SessionTime Session="session" /></p> }
-                    @if (F1Query.StartsUtc(race.RaceDate, race.RaceTimeUtc) is { } start && start < DateTime.UtcNow)
+                    @if (F1Query.StartsUtc(race.RaceDate, race.RaceTimeUtc) is { } start && start < NowUtc && !data.Choices.Any(c => c.Round == race.Round && c.SessionType == "Race"))
                     { <p class="updated">Results pending/unavailable.</p> }
                 }
                 else
@@ -38,7 +36,7 @@
             </div>
             <div class="d-f1__freshness">
                 @if (data.FetchedAt is { } updated) { <p class="updated">F1 snapshot updated @Dates.PublishedFull(updated)</p> }
-                @if (F1Query.Freshness(data, DateTime.UtcNow) is { } warning) { <p class="updated" role="status">@warning</p> }
+                @if (F1Query.Freshness(data, NowUtc) is { } warning) { <p class="updated" role="status">@warning</p> }
                 <p class="updated">Data: <a href="https://github.com/jolpica/jolpica-f1" target="_blank" rel="noopener noreferrer">Jolpica F1</a> · Periodically collected published data.</p>
             </div>
         }
@@ -46,26 +44,24 @@
 </section>
 
 @code {
-    private F1Page data = F1Page.Empty;
+    [Parameter] public F1Page Data { get; set; } = F1Page.Empty;
+    [Parameter] public string? Error { get; set; }
+    [Parameter] public bool Embedded { get; set; }
+    [Parameter] public DateTime NowUtc { get; set; }
+    private F1Page data => Data;
+    private string? error => Error;
     private MyDailyFeed.Web.Data.Models.F1Race? nextRace;
     private MyDailyFeed.Web.Data.Models.F1Race? latestRace;
     private F1ResultChoice? latest;
     private F1Session? nextSession;
-    private string? error;
-    protected override async Task OnInitializedAsync()
+    protected override void OnParametersSet()
     {
-        try
-        {
-            await using var db = await Factory.CreateDbContextAsync();
-            data = await F1Query.GetAsync(db, "schedule");
-            nextRace = data.Races.FirstOrDefault(r => F1Query.Upcoming(r, Dates, Dates.Today)
-                && !data.Choices.Any(c => c.Round == r.Round && c.SessionType == "Race"));
-            if (nextRace is not null)
-                nextSession = F1Query.Sessions(nextRace).FirstOrDefault(s => s.StartsUtc is { } start ? start >= DateTime.UtcNow : s.Date >= Dates.Today);
-            latest = F1Query.Select(data.Choices, null);
-            latestRace = data.Races.FirstOrDefault(r => r.Round == latest?.Round);
-        }
-        catch (Exception ex) when (ex is System.Data.Common.DbException or InvalidOperationException)
-        { Log.LogError(ex, "Could not read home F1 summary."); error = "F1 data is temporarily unavailable. Please try again."; }
+        var today = Dates.TodayAt(NowUtc);
+        nextRace = F1Query.HomeWeekendRace(data, Dates, today) ?? data.Races.FirstOrDefault(r => F1Query.Upcoming(r, Dates, today)
+            && !data.Choices.Any(c => c.Round == r.Round && c.SessionType == "Race"));
+        nextSession = nextRace is null ? null : F1Query.Sessions(nextRace)
+            .FirstOrDefault(s => s.StartsUtc is { } start ? start >= NowUtc : s.Date >= today);
+        latest = F1Query.Select(data.Choices, null);
+        latestRace = data.Races.FirstOrDefault(r => r.Round == latest?.Round);
     }
 }

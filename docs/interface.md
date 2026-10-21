@@ -766,3 +766,14 @@ and team filters remain effective.
 
 Homepage theater and Digital / VOD posters are capped at 120px wide (180px
 high at their 2:3 aspect ratio), including the missing-image fallback.
+
+### F1 race-weekend placement — October 21, 2026
+
+From the Friday preceding a Grand Prix through its race day (inclusive), the F1
+home summary is nested inside Today & Tonight and the standalone F1 card is
+omitted. Race day is calculated in the site's display zone (America/Chicago),
+using the confirmed UTC start when present and the calendar race date otherwise.
+Saturday races end their window on Saturday. Published results do not end the
+window early. Outside that window, the separate F1 card remains. Both placements
+retain race/session details, results links, attribution and freshness warnings.
+The F1 hidden-section preference applies to either placement.

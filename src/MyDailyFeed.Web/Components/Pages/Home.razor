@@ -4,6 +4,7 @@
 @inject IDbContextFactory<WebScraperContext> Factory
 @inject FeedDates Dates
 @inject NavigationManager Nav
+@inject ILogger<Home> Log
 
 <PageTitle>Home · MyDailyFeed</PageTitle>
 
@@ -52,6 +53,10 @@
                 </li>
             }
         </ul>
+        @if (FoldF1)
+        {
+            <MyDailyFeed.Web.Components.F1.F1Home Data="homeF1" Error="@homeF1Error" NowUtc="nowUtc" Embedded="true" />
+        }
     </section>
 
     <section data-home-section="tv" class="d-card d-episodes" aria-labelledby="h-tv">
@@ -220,7 +225,10 @@
         }
     </section>
 
-    <MyDailyFeed.Web.Components.F1.F1Home />
+    @if (!FoldF1)
+    {
+        <MyDailyFeed.Web.Components.F1.F1Home Data="homeF1" Error="@homeF1Error" NowUtc="nowUtc" />
+    }
 
     <section data-home-section="movies" class="d-card d-movies" aria-labelledby="h-movies h-digital">
         <div class="d-card__head">
@@ -315,6 +323,9 @@
 </div>
 
 @code {
+    private F1Page homeF1 = F1Page.Empty;
+    private string? homeF1Error;
+    private bool FoldF1 => F1Query.HomeWeekendRace(homeF1, Dates, Dates.TodayAt(nowUtc)) is not null;
     private TeamRecords records = TeamRecords.Empty;
     // News used to live at "/", so an old bookmark like "/?category=3" is sent on to "/news" with its query intact.
     [SupplyParameterFromQuery(Name = "category")] private string? Category { get; set; }
@@ -341,6 +352,10 @@
 
         nowUtc = DateTime.UtcNow;
         await using var db = await Factory.CreateDbContextAsync();
+        homeF1 = F1Page.Empty; homeF1Error = null;
+        try { homeF1 = await F1Query.GetAsync(db, "schedule"); }
+        catch (Exception ex) when (ex is System.Data.Common.DbException or InvalidOperationException)
+        { Log.LogError(ex, "Could not read home F1 summary."); homeF1Error = "F1 data is temporarily unavailable. Please try again."; }
         records = await TeamRecords.LoadAsync(db, Dates.Today, RecordPhases);
 
         // The queries run one after another: one DbContext cannot run two at once.
