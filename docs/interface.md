@@ -750,3 +750,7 @@ Home and Videos use the same Share control as news articles. Video sharing also
 works in Saved. The dialog says Share video and offers Copy link, mobile SMS, and
 native app sharing when supported in a secure browser context. Article sharing
 retains its existing label and behavior.
+
+Video Share and Watch later buttons sit together at the right of the metadata
+row with a 4px gap, equal button heights and centered icons. The controls wrap
+together on narrow screens.

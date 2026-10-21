@@ -2206,3 +2206,8 @@
 
 .pub .saved-section + .saved-section { margin-top: 32px; }
 .pub .saved-section > .saved-head { margin-bottom: 16px; }
+
+/* Keep video sharing and saving together, including when metadata wraps. */
+.pub .video-actions { display: inline-flex; align-items: center; gap: 4px; margin-left: auto; flex-shrink: 0; }
+.pub .video-actions .share-button, .pub .video-actions .save { margin: 0; }
+.pub .vmeta, .pub .d-vid__meta { align-items: center; }

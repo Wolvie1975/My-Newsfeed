@@ -6,11 +6,26 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The most recent verified web release is `mydailyfeed-web:video-share-20261021`,
-with rollback recorded as `mynewsfeed-web:before-video-share-20261021`.
+The most recent verified web release is `mydailyfeed-web:video-actions-20261021`,
+with rollback recorded as `mynewsfeed-web:before-video-actions-20261021`.
 Its container was healthy on October 21, 2026 (Central). This is a dated
 observation, not live hosting status.
 
+
+## Align video Share and Watch later — October 21, 2026
+
+Grouped Share and Watch later together on Home and Videos, right aligned with a
+4px gap. Removed the save button's independent auto/negative margins inside this
+group. Buttons share a centered baseline and stay together when metadata wraps.
+
+Deployed `mydailyfeed-web:video-actions-20261021` (9315a715c39c), healthy.
+Rollback image `mynewsfeed-web:before-video-actions-20261021` (1a74d818d4f2), retained
+container `mynewsfeed-web-before-video-actions-20261021`. Runtime configuration,
+ports, mounts and keys preserved; no schema changes. Docker publish/static-asset
+guard and diff checks passed with existing PKCS warnings. Live Home/Videos browser
+checks verified adjacent controls, 4px spacing, equal heights and centered alignment
+at 390/768/1440px with no overflow or JavaScript errors. Visually inspected the
+Home video section. Private deployment files: `/tmp/mydailyfeed-video-actions-deploy/`.
 
 ## Share YouTube videos — October 21, 2026
 
