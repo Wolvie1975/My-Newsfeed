@@ -674,7 +674,7 @@
 /* Phones: events, news, the movie strip, then videos. */
 .pub .d-grid { display: flex; flex-direction: column; gap: 12px; }
 .pub .d-today { order: 1; }
-.pub .d-f1 { order: 5; }
+.pub .d-f1, .pub .d-rankings { order: 5; }
 .pub .d-news { order: 3; }
 .pub .d-movies { order: 6; }
 .pub .d-episodes { order: 2; }
@@ -2214,3 +2214,10 @@
 .pub .vmeta, .pub .d-vid__meta { align-items: center; }
 
 .pub .d-f1--embedded { border-top: 1px solid var(--row-border); }
+
+.pub .d-rankings__body { padding: 16px 20px; min-width: 0; }
+.pub .d-rankings__body .catselect { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 12px; }
+.pub .d-rankings__body select { max-width: 100%; min-width: 0; }
+.pub .d-rankings__table { max-height: 440px; overflow: auto; }
+.pub .d-rankings__table .standings-table { min-width: 0; width: 100%; }
+.pub .d-rankings__table .standing-team-name { white-space: normal; }

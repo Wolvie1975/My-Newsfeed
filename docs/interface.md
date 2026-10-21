@@ -777,3 +777,14 @@ Saturday races end their window on Saturday. Published results do not end the
 window early. Outside that window, the separate F1 card remains. Both placements
 retain race/session details, results links, attribution and freshness warnings.
 The F1 hidden-section preference applies to either placement.
+
+### Homepage Top 25 and F1 card removal — October 21, 2026
+
+The standalone homepage F1 card is removed. F1 appears only within Today & Tonight
+during its Friday-through-race-day window; the dedicated F1 pages remain available.
+Top 25 follows Today’s episodes in the right column, ahead of movies. Its Sport
+and poll selector uses the rankings page's enabled, season-eligible sources. The
+selection is shareable via rankingSourceId on the homepage; View all opens that
+source on /rankings. The compact scrollable table includes ranked teams 1–25,
+records, logos, Big 12 highlights, poll dates and existing freshness warnings.
+Empty/unavailable sources show honest messages. Apply works without JavaScript.

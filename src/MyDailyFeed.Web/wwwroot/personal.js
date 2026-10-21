@@ -2,8 +2,8 @@
 (function () {
     'use strict';
     const PREFS = 'mynewsfeed-personal-v1', TEAMS = 'mynewsfeed-sports-teams-v1';
-    const defaults = ['sports', 'tv', 'news', 'videos', 'f1', 'movies'];
-    const labels = { sports: 'Today & Tonight', f1: 'F1', news: 'Latest news', movies: 'Movies & Digital', tv: 'Today’s episodes', videos: 'Latest videos' };
+    const defaults = ['sports', 'tv', 'news', 'videos', 'rankings', 'movies'];
+    const labels = { sports: 'Today & Tonight', f1: 'F1', rankings: 'Top 25', news: 'Latest news', movies: 'Movies & Digital', tv: 'Today’s episodes', videos: 'Latest videos' };
     let storage = true, pending = false, weatherController;
     try { localStorage.setItem('mynewsfeed-personal-probe', '1'); localStorage.removeItem('mynewsfeed-personal-probe'); } catch (_) { storage = false; }
     const safe = value => { try { const url = new URL(value); return ['https:', 'http:'].includes(url.protocol) ? url.href : null; } catch (_) { return null; } };
@@ -13,7 +13,7 @@
     function prefs() {
         const raw = load(PREFS, {}), p = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
         const order = [...new Set(list(p.order).filter(k => defaults.includes(k)))];
-        return { order: order.concat(defaults.filter(k => !order.includes(k))), hidden: list(p.hidden).filter(k => defaults.includes(k)),
+        return { order: order.concat(defaults.filter(k => !order.includes(k))), hidden: list(p.hidden).filter(k => defaults.includes(k) || k === 'f1'),
             teamsOnly: p.teamsOnly === true, hideRead: p.hideRead === true,
             muted: [...new Set(list(p.muted).filter(s => typeof s === 'string' && s.length <= 2048))].slice(0, 500),
             read: [...new Set(list(p.read).filter(s => safe(s)))].slice(0, 2000),

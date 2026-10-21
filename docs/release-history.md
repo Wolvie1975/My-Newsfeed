@@ -6,11 +6,35 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The most recent verified web release is `mydailyfeed-web:f1-weekend-20261021`,
-with rollback recorded as `mynewsfeed-web:before-f1-weekend-20261021`.
+The most recent verified web release is `mydailyfeed-web:home-top25-20261021`,
+with rollback recorded as `mynewsfeed-web:before-home-top25-20261021`.
 Its container was healthy on October 21, 2026 (Central). This is a dated
 observation, not live hosting status.
 
+
+## Homepage Top 25 and standalone F1 removal — October 21, 2026
+
+Removed the standalone homepage F1 card. F1 now appears on Home only inside Today
+& Tonight during the existing Friday-through-race-day window. Added Top 25 after
+Today’s episodes in the right column, before movies. Its Sport and poll selector
+uses the rankings page's enabled/season-eligible sources and carries the selection
+in rankingSourceId. View all opens the selected poll on /rankings. The bounded
+scrollable table displays ranks 1–25, logos, records and Big 12 highlighting, with
+poll dates, freshness warnings, attribution and honest empty/error states. Apply
+works without JavaScript. Hidden-section ordering now includes rankings while
+preserving the F1 visibility preference for its embedded summary.
+
+Deployed `mydailyfeed-web:home-top25-20261021` (2fc0cc192635), healthy.
+Rollback image `mynewsfeed-web:before-home-top25-20261021` (abc5bae5d421), retained
+container `mynewsfeed-web-before-home-top25-20261021`. Runtime settings, ports,
+mounts and keys preserved; no schema or collector changes. Focused HomeRankings,
+Rankings and F1Home tests passed (20). Docker publish/static-asset guard and diff
+checks passed with existing PKCS warnings. Live checks passed all available source
+selections, matching full-page links, ranked-only rows, bounded scrolling, absence
+of standalone F1, no-JavaScript Apply and 390/768/1024/1440/1920px layouts. Homepage
+column regression passed dynamic heights, hidden sections, enhanced navigation,
+mobile order and no-JavaScript fallback. No overflow or JavaScript errors; visually
+inspected Top 25; health 200. Private files: `/tmp/mydailyfeed-home-top25-deploy/`.
 
 ## F1 inside Today & Tonight on race weekends — October 21, 2026
 
