@@ -6,11 +6,34 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The most recent verified web release is `mydailyfeed-web:digital-provider-20261021`,
-with rollback recorded as `mynewsfeed-web:before-digital-provider-20261021`.
+The most recent verified web release is `mydailyfeed-web:home-columns-v2-20261021`,
+with rollback recorded as `mynewsfeed-web:before-home-columns-20261021`.
 Its container was healthy on October 21, 2026 (Central). This is a dated
 observation, not live hosting status.
 
+
+## Fixed homepage columns and episode order — October 21, 2026
+
+Latest news and Latest videos now occupy the left desktop column. The right column
+shows Today & Tonight, Today’s episodes, F1, then movies/digital releases. Explicit
+column positions and independently calculated row spans prevent cards switching
+columns. Mobile order is Today & Tonight, episodes, news, videos, F1, movies.
+This arrangement supersedes stored ordering while retaining hidden-section and
+team preferences. Updated server markup, mobile CSS order and browser ordering.
+
+Deployed `mydailyfeed-web:home-columns-v2-20261021` (24e4e1037c8f), healthy.
+Pre-change rollback image `mynewsfeed-web:before-home-columns-20261021`
+(7cc3c35d5749), retained container `mynewsfeed-web-before-home-columns-20261021`.
+An interim desktop release (232c3f5f0b7c) is retained as
+`mynewsfeed-web:before-home-columns-v2-20261021`; final build also corrects legacy
+mobile CSS order found during verification. Runtime settings, ports, mounts and
+keys preserved; no schema changes. Docker publish/static-asset guard passed with
+existing PKCS warnings. Live browser checks passed fixed columns and order at
+390/768/1024/1440/1920px, resize transitions, dynamic card height, enhanced Home
+navigation, stored-order override, hidden-section collapse and no-JavaScript column
+fallback. No overflow or JavaScript errors; visually inspected desktop; health 200.
+Private deployment files: `/tmp/mydailyfeed-home-columns-v2-deploy/` and
+`/tmp/mydailyfeed-home-columns-deploy/`.
 
 ## Enabled Digital / VOD providers and canonical selection — October 21, 2026
 

@@ -2,7 +2,7 @@
 (function () {
     'use strict';
     const PREFS = 'mynewsfeed-personal-v1', TEAMS = 'mynewsfeed-sports-teams-v1';
-    const defaults = ['sports', 'f1', 'news', 'movies', 'tv', 'videos'];
+    const defaults = ['sports', 'tv', 'news', 'videos', 'f1', 'movies'];
     const labels = { sports: 'Today & Tonight', f1: 'F1', news: 'Latest news', movies: 'Movies & Digital', tv: 'Today’s episodes', videos: 'Latest videos' };
     let storage = true, pending = false, weatherController;
     try { localStorage.setItem('mynewsfeed-personal-probe', '1'); localStorage.removeItem('mynewsfeed-personal-probe'); } catch (_) { storage = false; }
@@ -36,7 +36,7 @@
         const grid = document.querySelector('[data-home-grid]');
         if (grid) {
             grid.classList.toggle('is-customized', p.hidden.length > 0 || JSON.stringify(p.order) !== JSON.stringify(defaults));
-            p.order.forEach((key, index) => {
+            defaults.forEach((key, index) => {
                 const section = grid.querySelector(`[data-home-section="${key}"]`);
                 if (section) { section.hidden = p.hidden.includes(key); if (grid.children[index] !== section) grid.insertBefore(section, grid.children[index] || null); }
             });

@@ -54,7 +54,48 @@
         </ul>
     </section>
 
-    <MyDailyFeed.Web.Components.F1.F1Home />
+    <section data-home-section="tv" class="d-card d-episodes" aria-labelledby="h-tv">
+        <div class="d-card__head">
+            <h2 class="d-card__title" id="h-tv">Today’s episodes <span class="d-card__count">@episodes.Count @(episodes.Count == 1 ? "episode" : "episodes")</span></h2>
+            <a class="d-more" href="tv">View calendar <span aria-hidden="true">→</span></a>
+        </div>
+        @if (episodes.Count == 0)
+        {
+            <p class="d-empty">No new episodes from followed series today.</p>
+        }
+        else
+        {
+            <ul class="d-list d-tv__list">
+                @foreach (var group in episodes.GroupBy(e => e.ShowId))
+                {
+                    var series = group.First();
+                    <li class="d-tv__show">
+                        <div class="tv-poster" aria-hidden="true">
+                            @if (EventsText.LogoUrl(series.Poster) is { } poster)
+                            { <img src="@poster" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()" /> }
+                        </div>
+                        <div class="d-tv__body">
+                            <p class="movie-kind">@(series.Platform ?? "Network not announced")</p>
+                            <h3 class="d-vid__title">@series.SeriesTitle</h3>
+                            <ul class="d-tv__episodes">
+                                @foreach (var episode in group)
+                                {
+                                    var label = episode.Special ? "Special" : episode.Season is { } season && episode.Number is { } number ? $"S{season:00} E{number:00}" : "Episode";
+                                    <li>
+                                        @if (FeedQuery.SafeHref(episode.Url) is { } link)
+                                        { <a href="@link" target="_blank" rel="noopener noreferrer">@label · @(episode.Title ?? "Title to be announced")</a> }
+                                        else { <span>@label · @episode.Title</span> }
+                                        <span class="movie-meta">@(episode.StartsUtc is { } time ? Dates.TimeWithOffset(time) : "Time not confirmed")</span>
+                                    </li>
+                                }
+                            </ul>
+                        </div>
+                    </li>
+                }
+            </ul>
+        }
+        <p class="d-tv__credit">Episode data and images: <a href="https://www.tvmaze.com" target="_blank" rel="noopener noreferrer">TVmaze</a> · <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener noreferrer">CC BY-SA 4.0</a>. Date-only releases retain their original date; confirmed times use @Dates.Zone.Id.</p>
+    </section>
 
     <section data-home-section="news" class="d-card d-news" aria-labelledby="h-news">
         <div class="d-card__head">
@@ -120,6 +161,66 @@
             </ul>
         }
     </section>
+
+    <section data-home-section="videos" class="d-card d-vids" aria-labelledby="h-vids">
+        <div class="d-card__head">
+            <h2 class="d-card__title" id="h-vids">Latest videos <span class="d-card__count">Up to 10 channels · rotates hourly</span></h2>
+            <a class="d-more" href="videos">View all <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="m13 6 6 6-6 6"></path></svg></a>
+        </div>
+        @if (videos.Count == 0)
+        {
+            <p class="d-empty">No videos yet. Check back soon.</p>
+        }
+        else
+        {
+            <ul class="d-list">
+                @foreach (var video in videos)
+                {
+                    var href = FeedQuery.SafeHref(video.Url);
+                    var picture = VideosText.Thumbnail(video.ThumbnailUrl, video.VideoId);
+                    var views = VideosText.Views(video.ViewCount);
+                    <li class="d-vid">
+                        <a class="d-thumb" href="@href" target="_blank" rel="noopener noreferrer" tabindex="-1" aria-hidden="true">
+                            <span class="d-thumb__ph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"></rect><circle cx="9" cy="10" r="1.6"></circle><path d="m21 16-5-5-8 9"></path></svg></span>
+                            @if (picture is not null)
+                            {
+                                <img src="@picture" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()" />
+                            }
+                            <span class="play"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15a1 1 0 0 0 1.5.86l12-7.5a1 1 0 0 0 0-1.72l-12-7.5A1 1 0 0 0 7 4.5z"></path></svg></span>
+                        </a>
+                        <div class="d-vid__body">
+                            <p class="d-vid__chan"><span class="d-mark" aria-hidden="true">@VideosText.Initial(video.ChannelName)</span><span class="d-vid__name">@video.ChannelName</span></p>
+                            <h3 class="d-vid__title">
+                                @if (href is not null)
+                                {
+                                    <a href="@href" target="_blank" rel="noopener noreferrer">@video.Title</a>
+                                }
+                                else
+                                {
+                                    @video.Title
+                                }
+                            </h3>
+
+                            <p class="d-vid__meta">
+                                <time datetime="@video.PublishedAt.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'")" title="@Dates.PublishedFull(video.PublishedAt)">@Dates.Published(video.PublishedAt)</time>
+                                @if (views is not null)
+                                {
+                                    <span aria-hidden="true">·</span>
+                                    <span>@views</span>
+                                }
+                                <span class="video-actions">
+                                    <MyDailyFeed.Web.Components.Feed.ShareButton Url="@video.Url" Title="@video.Title" Kind="video" />
+                                    <MyDailyFeed.Web.Components.Feed.VideoSaveButton Item="video" />
+                                </span>
+                            </p>
+                        </div>
+                    </li>
+                }
+            </ul>
+        }
+    </section>
+
+    <MyDailyFeed.Web.Components.F1.F1Home />
 
     <section data-home-section="movies" class="d-card d-movies" aria-labelledby="h-movies h-digital">
         <div class="d-card__head">
@@ -210,106 +311,6 @@
         }
     </section>
 
-    <section data-home-section="tv" class="d-card d-episodes" aria-labelledby="h-tv">
-        <div class="d-card__head">
-            <h2 class="d-card__title" id="h-tv">Today’s episodes <span class="d-card__count">@episodes.Count @(episodes.Count == 1 ? "episode" : "episodes")</span></h2>
-            <a class="d-more" href="tv">View calendar <span aria-hidden="true">→</span></a>
-        </div>
-        @if (episodes.Count == 0)
-        {
-            <p class="d-empty">No new episodes from followed series today.</p>
-        }
-        else
-        {
-            <ul class="d-list d-tv__list">
-                @foreach (var group in episodes.GroupBy(e => e.ShowId))
-                {
-                    var series = group.First();
-                    <li class="d-tv__show">
-                        <div class="tv-poster" aria-hidden="true">
-                            @if (EventsText.LogoUrl(series.Poster) is { } poster)
-                            { <img src="@poster" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()" /> }
-                        </div>
-                        <div class="d-tv__body">
-                            <p class="movie-kind">@(series.Platform ?? "Network not announced")</p>
-                            <h3 class="d-vid__title">@series.SeriesTitle</h3>
-                            <ul class="d-tv__episodes">
-                                @foreach (var episode in group)
-                                {
-                                    var label = episode.Special ? "Special" : episode.Season is { } season && episode.Number is { } number ? $"S{season:00} E{number:00}" : "Episode";
-                                    <li>
-                                        @if (FeedQuery.SafeHref(episode.Url) is { } link)
-                                        { <a href="@link" target="_blank" rel="noopener noreferrer">@label · @(episode.Title ?? "Title to be announced")</a> }
-                                        else { <span>@label · @episode.Title</span> }
-                                        <span class="movie-meta">@(episode.StartsUtc is { } time ? Dates.TimeWithOffset(time) : "Time not confirmed")</span>
-                                    </li>
-                                }
-                            </ul>
-                        </div>
-                    </li>
-                }
-            </ul>
-        }
-        <p class="d-tv__credit">Episode data and images: <a href="https://www.tvmaze.com" target="_blank" rel="noopener noreferrer">TVmaze</a> · <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener noreferrer">CC BY-SA 4.0</a>. Date-only releases retain their original date; confirmed times use @Dates.Zone.Id.</p>
-    </section>
-
-    <section data-home-section="videos" class="d-card d-vids" aria-labelledby="h-vids">
-        <div class="d-card__head">
-            <h2 class="d-card__title" id="h-vids">Latest videos <span class="d-card__count">Up to 10 channels · rotates hourly</span></h2>
-            <a class="d-more" href="videos">View all <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="m13 6 6 6-6 6"></path></svg></a>
-        </div>
-        @if (videos.Count == 0)
-        {
-            <p class="d-empty">No videos yet. Check back soon.</p>
-        }
-        else
-        {
-            <ul class="d-list">
-                @foreach (var video in videos)
-                {
-                    var href = FeedQuery.SafeHref(video.Url);
-                    var picture = VideosText.Thumbnail(video.ThumbnailUrl, video.VideoId);
-                    var views = VideosText.Views(video.ViewCount);
-                    <li class="d-vid">
-                        <a class="d-thumb" href="@href" target="_blank" rel="noopener noreferrer" tabindex="-1" aria-hidden="true">
-                            <span class="d-thumb__ph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"></rect><circle cx="9" cy="10" r="1.6"></circle><path d="m21 16-5-5-8 9"></path></svg></span>
-                            @if (picture is not null)
-                            {
-                                <img src="@picture" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()" />
-                            }
-                            <span class="play"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15a1 1 0 0 0 1.5.86l12-7.5a1 1 0 0 0 0-1.72l-12-7.5A1 1 0 0 0 7 4.5z"></path></svg></span>
-                        </a>
-                        <div class="d-vid__body">
-                            <p class="d-vid__chan"><span class="d-mark" aria-hidden="true">@VideosText.Initial(video.ChannelName)</span><span class="d-vid__name">@video.ChannelName</span></p>
-                            <h3 class="d-vid__title">
-                                @if (href is not null)
-                                {
-                                    <a href="@href" target="_blank" rel="noopener noreferrer">@video.Title</a>
-                                }
-                                else
-                                {
-                                    @video.Title
-                                }
-                            </h3>
-
-                            <p class="d-vid__meta">
-                                <time datetime="@video.PublishedAt.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'")" title="@Dates.PublishedFull(video.PublishedAt)">@Dates.Published(video.PublishedAt)</time>
-                                @if (views is not null)
-                                {
-                                    <span aria-hidden="true">·</span>
-                                    <span>@views</span>
-                                }
-                                <span class="video-actions">
-                                    <MyDailyFeed.Web.Components.Feed.ShareButton Url="@video.Url" Title="@video.Title" Kind="video" />
-                                    <MyDailyFeed.Web.Components.Feed.VideoSaveButton Item="video" />
-                                </span>
-                            </p>
-                        </div>
-                    </li>
-                }
-            </ul>
-        }
-    </section>
 
 </div>
 

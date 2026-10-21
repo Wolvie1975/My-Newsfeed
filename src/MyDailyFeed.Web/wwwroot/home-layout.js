@@ -1,4 +1,4 @@
-// Small grid-row spans let desktop cards cascade without changing DOM/tab order.
+// Give news/videos the left column and planning sections the right, without row gaps.
 (function () {
     'use strict';
     const desktop = matchMedia('(min-width: 1024px)');
@@ -14,15 +14,20 @@
         const cards = [...grid.children].filter(n => n.matches('[data-home-section]'));
         if (!desktop.matches) {
             grid.removeAttribute('data-masonry');
-            cards.forEach(card => card.style.removeProperty('grid-row-end'));
+            cards.forEach(card => { card.style.removeProperty('grid-row-end'); card.style.removeProperty('grid-row-start'); });
             return;
         }
         // align-items:start keeps each card at its natural height inside its span.
         const gap = parseFloat(getComputedStyle(grid).rowGap) || 0;
+        const nextRow = [1, 1];
         cards.forEach(card => {
-            if (card.hidden) { card.style.removeProperty('grid-row-end'); return; }
+            if (card.hidden) { card.style.removeProperty('grid-row-end'); card.style.removeProperty('grid-row-start'); return; }
             const span = 'span ' + Math.ceil((card.getBoundingClientRect().height + gap) / (1 + gap));
+            const column = ['news', 'videos'].includes(card.dataset.homeSection) ? 0 : 1;
+            const start = String(nextRow[column]);
+            if (card.style.gridRowStart !== start) card.style.gridRowStart = start;
             if (card.style.gridRowEnd !== span) card.style.gridRowEnd = span;
+            nextRow[column] += parseInt(span.slice(5), 10);
         });
         grid.setAttribute('data-masonry', '');
     }
