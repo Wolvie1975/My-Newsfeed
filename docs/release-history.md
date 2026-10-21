@@ -6,11 +6,25 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The most recent verified web release is `mydailyfeed-web:ranking-logos-20261021`,
-with rollback recorded as `mynewsfeed-web:before-ranking-logos-20261021`.
+The most recent verified web release is `mydailyfeed-web:home-local-link-20261021`,
+with rollback recorded as `mynewsfeed-web:before-home-local-link-20261021`.
 Its container was healthy on October 21, 2026 (Central). This is a dated
 observation, not live hosting status.
 
+
+## Remove homepage Kansas City shortcut — October 21, 2026
+
+Removed the Kansas City link below the homepage greeting and its now-empty daily-
+links navigation row. Local remains available through the main navigation.
+
+Deployed `mydailyfeed-web:home-local-link-20261021` (975a2217e423), healthy.
+Rollback image `mynewsfeed-web:before-home-local-link-20261021` (484aaad7e785), retained
+container `mynewsfeed-web-before-home-local-link-20261021`. Runtime settings, ports,
+mounts and keys preserved; no schema/data changes. Docker publish/static-asset guard
+and diff checks passed with existing PKCS warnings. Live checks verified the link
+and empty row are absent at 390/1440px, the homepage search remains visible, and
+no overflow or JavaScript errors. Home, Local and health returned 200.
+Private deployment files: `/tmp/mydailyfeed-home-local-link-deploy/`.
 
 ## Restore homepage Top 25 school logos — October 21, 2026
 

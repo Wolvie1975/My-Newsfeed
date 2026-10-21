@@ -828,3 +828,7 @@ to show the full list, while mobile retains its height cap and internal scrollin
 Homepage Top 25 School cells again show compact 22px school logos alongside
 the name. Missing/failed logos leave the name visible. Four columns, Big 12 row
 highlights, full desktop rankings and mobile scrolling remain unchanged.
+
+The homepage Kansas City shortcut below the greeting has been removed, including
+its now-empty daily-links navigation row. Local news remains available in the
+main navigation.
