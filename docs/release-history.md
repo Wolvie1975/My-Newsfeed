@@ -6,11 +6,32 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The most recent verified web release is `mydailyfeed-web:ranking-columns-v2-20261021`,
-with rollback recorded as `mynewsfeed-web:before-ranking-columns-20261021`.
+The most recent verified web release is `mydailyfeed-web:poll-style-20261021`,
+with rollback recorded as `mynewsfeed-web:before-poll-style-20261021`.
 Its container was healthy on October 21, 2026 (Central). This is a dated
 observation, not live hosting status.
 
+
+## Clear Big 12 highlighting and compact homepage poll — October 21, 2026
+
+Homepage Top 25 Big 12 rows now have a full-row accent tint, a left marker and
+stronger school text. Previously they shared the standard background and differed
+only by a thin border. Scoped homepage table styles now use fixed column proportions,
+consistent alignment/padding, tabular numerals and compact typography. School and
+Conference align left; numeric columns center. Poll metadata wraps with consistent
+spacing; the redundant visual table caption is now screen-reader-only. All five
+requested columns remain, with internal scrolling on narrow screens.
+
+Deployed `mydailyfeed-web:poll-style-20261021` (cbdeec42d02d), healthy.
+Rollback image `mynewsfeed-web:before-poll-style-20261021` (c2da4328dfda), retained
+container `mynewsfeed-web-before-poll-style-20261021`. Runtime settings, ports,
+mounts and keys preserved; no data/schema changes. Docker publish/static-asset guard
+and diff checks passed with existing PKCS warnings. Live style checks verified
+full-row tint, marker, column geometry/alignment and no overflow at
+390/768/1024/1440/1920px in both light and dark themes using the real theme toggle.
+Visually inspected both themes. Selector, five-column content, ranked-only rows,
+scrolling and no-JavaScript Apply regression passed; no JavaScript errors; health 200.
+Private files: `/tmp/mydailyfeed-poll-style-deploy/`.
 
 ## Homepage Top 25 five-column table — October 21, 2026
 

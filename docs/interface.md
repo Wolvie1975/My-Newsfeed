@@ -797,3 +797,10 @@ standings, cached for six hours; failed lookups retain available data and retry
 after five minutes. Stored Big 12 membership takes precedence over the lookup; unknown conferences
 use an em dash.
 The conference lookup does not change the stored rankings or dedicated rankings page.
+
+Homepage Top 25 uses a tinted row and left accent marker for Big 12 schools in
+light and dark themes. Its fixed column proportions, tabular numbers, compact
+cell padding and consistent alignment keep polls visually uniform. School and
+Conference align left; Rank, Record and Previous rank align center. The poll
+metadata wraps with consistent gaps; its duplicate visual table caption is hidden
+while retaining the accessible caption. Narrow layouts scroll within the table.

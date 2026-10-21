@@ -25,12 +25,13 @@
         { <p class="empty">Rankings not available yet for @Data.Selected.DisplayName.</p> }
         else
         {
-            <p class="updated">@poll.PollName · @poll.SeasonLabel · @(RankingsQuery.OldPoll(poll, DateTime.UtcNow) ? "Latest available poll dated" : "Poll dated") @Dates.Published(poll.PublishedAtUtc)</p>
+            <p class="updated d-rankings__meta"><span>@poll.PollName</span><span>@poll.SeasonLabel</span><span>@(RankingsQuery.OldPoll(poll, DateTime.UtcNow) ? "Latest available poll dated" : "Poll dated") @Dates.Published(poll.PublishedAtUtc)</span></p>
             @if (RankingsQuery.Freshness(Data.Selected, DateTime.UtcNow) is { } warning)
             { <p class="updated" role="status">@warning</p> }
             <div class="standings-scroll d-rankings__table" role="region" aria-label="Top 25 teams" tabindex="0">
                 <table class="standings-table rankings-table">
-                    <caption>@Data.Selected.Sport · @poll.PollName</caption>
+                    <caption class="sr-only">@Data.Selected.Sport · @poll.PollName</caption>
+                    <colgroup><col class="home-rank" /><col class="home-school" /><col class="home-record" /><col class="home-conference" /><col class="home-previous" /></colgroup>
                     <thead><tr><th scope="col">Rank</th><th scope="col" class="standing-team">School</th><th scope="col">Record</th><th scope="col">Conference</th><th scope="col">Previous rank</th></tr></thead>
                     <tbody>
                     @foreach (var team in RankedTeams)
