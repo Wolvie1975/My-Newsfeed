@@ -763,3 +763,6 @@ movies and digital releases. Each column flows independently without large gaps.
 Mobile stacks Today & Tonight, Today’s episodes, news, videos, F1, then movies.
 This fixed arrangement supersedes stored homepage ordering; existing hidden-section
 and team filters remain effective.
+
+Homepage theater and Digital / VOD posters are capped at 120px wide (180px
+high at their 2:3 aspect ratio), including the missing-image fallback.

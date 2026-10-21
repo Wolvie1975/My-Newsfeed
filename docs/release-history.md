@@ -6,11 +6,27 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The most recent verified web release is `mydailyfeed-web:home-columns-v2-20261021`,
-with rollback recorded as `mynewsfeed-web:before-home-columns-20261021`.
+The most recent verified web release is `mydailyfeed-web:home-posters-20261021`,
+with rollback recorded as `mynewsfeed-web:before-home-posters-20261021`.
 Its container was healthy on October 21, 2026 (Central). This is a dated
 observation, not live hosting status.
 
+
+## Smaller homepage movie posters — October 21, 2026
+
+Capped homepage theater and Digital / VOD posters at 120px wide while preserving
+the 2:3 portrait ratio (180px high), including missing-image fallbacks. The cap
+scales down if its card is narrower. Dedicated movie-page poster styles are unchanged.
+
+Deployed `mydailyfeed-web:home-posters-20261021` (f86cdbe1fbfe), healthy.
+Rollback image `mynewsfeed-web:before-home-posters-20261021` (24e4e1037c8f), retained
+container `mynewsfeed-web-before-home-posters-20261021`. Runtime settings, ports,
+mounts and keys preserved; no schema changes. Docker publish/static-asset guard
+and diff checks passed with existing PKCS warnings. Live browser checks verified
+poster dimensions and aspect ratio at 390/768/1024/1440/1920px, no overflow or
+JavaScript errors and health 200. Visually inspected the homepage movie section.
+The theater list was empty during the check; both lists use the same poster class.
+Private deployment files: `/tmp/mydailyfeed-home-posters-deploy/`.
 
 ## Fixed homepage columns and episode order — October 21, 2026
 
