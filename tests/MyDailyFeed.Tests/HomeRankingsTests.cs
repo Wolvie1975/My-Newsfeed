@@ -10,11 +10,11 @@ namespace MyDailyFeed.Tests;
 
 public class HomeRankingsTests
 {
-    private static async Task<string> Render(RankingsPage page)
+    private static async Task<string> Render(RankingsPage page, IReadOnlyDictionary<string, string>? conferences = null)
     {
         await using var services = new ServiceCollection().AddLogging().AddSingleton(FeedDates.Create("America/Chicago")).BuildServiceProvider();
         await using var renderer = new HtmlRenderer(services, services.GetRequiredService<ILoggerFactory>());
-        return await renderer.Dispatcher.InvokeAsync(async () => (await renderer.RenderComponentAsync<HomeRankings>(ParameterView.FromDictionary(new Dictionary<string, object?> { ["Data"] = page }))).ToHtmlString());
+        return await renderer.Dispatcher.InvokeAsync(async () => (await renderer.RenderComponentAsync<HomeRankings>(ParameterView.FromDictionary(new Dictionary<string, object?> { ["Data"] = page, ["Conferences"] = conferences ?? new Dictionary<string, string>() }))).ToHtmlString());
     }
 
     [Fact]
@@ -22,12 +22,15 @@ public class HomeRankingsTests
     {
         var source = new SportsRankingSource { Id = 12, Sport = "Football", DisplayName = "Football AP", Enabled = true, LastSuccessAt = DateTime.UtcNow };
         var alternate = new SportsRankingSource { Id = 15, Sport = "Volleyball", DisplayName = "Volleyball", Enabled = true };
-        var teams = Enumerable.Range(1, 26).Select(i => new SportsRankingTeam { Rank = i, TeamName = "Team-" + i + "-name", Record = "5-0", IsBig12 = i == 1 }).Append(new() { TeamName = "Unranked team" }).ToList();
-        var html = await Render(new([source, alternate], source, new() { PollName = "AP Top 25", SeasonLabel = "2026", PublishedAtUtc = DateTime.UtcNow }, teams));
+        var teams = Enumerable.Range(1, 26).Select(i => new SportsRankingTeam { Rank = i, TeamName = "Team-" + i + "-name", Record = "5-0", IsBig12 = i == 1, TeamId = i.ToString(), PreviousRank = i == 1 ? 3 : null, PreviouslyUnranked = i == 2 }).Append(new() { TeamName = "Unranked team" }).ToList();
+        var html = await Render(new([source, alternate], source, new() { PollName = "AP Top 25", SeasonLabel = "2026", PublishedAtUtc = DateTime.UtcNow }, teams), new Dictionary<string,string> { ["1"] = "Old conference", ["2"] = "SEC" });
         Assert.Contains("Team-25-name", html); Assert.DoesNotContain("Team-26-name", html); Assert.DoesNotContain("Unranked team", html);
         Assert.Contains("rankings?sourceId=12", html); Assert.Contains("rankingSourceId", html);
         Assert.Contains("Football AP", html); Assert.Contains("Volleyball", html);
         Assert.Contains("ranking-big12", html); Assert.Contains("5-0", html);
+        Assert.Contains(">School</th>", html); Assert.Contains(">Conference</th>", html); Assert.Contains(">Previous rank</th>", html);
+        Assert.DoesNotContain("Old conference", html); Assert.Contains("SEC", html); Assert.Contains("Big 12</td>", html); Assert.Contains(">NR</td>", html);
+        Assert.DoesNotContain("<img", html); Assert.DoesNotContain("big12-badge", html);
         Assert.Contains("Poll dated", html); Assert.Contains("<noscript>", html);
     }
 

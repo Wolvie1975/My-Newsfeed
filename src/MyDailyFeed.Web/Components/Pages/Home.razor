@@ -5,6 +5,7 @@
 @inject FeedDates Dates
 @inject NavigationManager Nav
 @inject ILogger<Home> Log
+@inject RankingConferences ConferenceLookup
 
 <PageTitle>Home · MyDailyFeed</PageTitle>
 
@@ -225,7 +226,7 @@
         }
     </section>
 
-    <HomeRankings Data="homeRankings" />
+    <HomeRankings Data="homeRankings" Conferences="homeConferences" />
 
     <section data-home-section="movies" class="d-card d-movies" aria-labelledby="h-movies h-digital">
         <div class="d-card__head">
@@ -321,6 +322,7 @@
 
 @code {
     [SupplyParameterFromQuery(Name = "rankingSourceId")] private string? RankingSourceId { get; set; }
+    private IReadOnlyDictionary<string, string> homeConferences = new Dictionary<string, string>();
     private RankingsPage homeRankings = new([], null, null, []);
     private F1Page homeF1 = F1Page.Empty;
     private string? homeF1Error;
@@ -358,6 +360,8 @@
         try { homeRankings = await RankingsQuery.GetAsync(db, StandingsQuery.ParseSourceId(RankingSourceId), Log, Dates.TodayAt(nowUtc)); }
         catch (Exception ex) when (ex is System.Data.Common.DbException or InvalidOperationException)
         { Log.LogError(ex, "Could not read home rankings."); homeRankings = new([], null, null, [], "Rankings are temporarily unavailable."); }
+        homeConferences = homeRankings is { Selected: { } rankingSource, Poll: { } rankingPoll }
+            ? await ConferenceLookup.GetAsync(rankingSource.Sport, rankingPoll.Season) : new Dictionary<string, string>();
         records = await TeamRecords.LoadAsync(db, Dates.Today, RecordPhases);
 
         // The queries run one after another: one DbContext cannot run two at once.

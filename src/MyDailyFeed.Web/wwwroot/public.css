@@ -2221,3 +2221,7 @@
 .pub .d-rankings__table { max-height: 440px; overflow: auto; }
 .pub .d-rankings__table .standings-table { min-width: 0; width: 100%; }
 .pub .d-rankings__table .standing-team-name { white-space: normal; }
+
+.pub .d-rankings__table th, .pub .d-rankings__table td { padding: 10px 8px; }
+.pub .d-rankings__table .standing-team { min-width: 130px; }
+.pub .d-rankings__table th:not(.standing-team) { white-space: normal; }

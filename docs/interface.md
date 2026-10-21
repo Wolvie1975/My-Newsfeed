@@ -788,3 +788,12 @@ selection is shareable via rankingSourceId on the homepage; View all opens that
 source on /rankings. The compact scrollable table includes ranked teams 1–25,
 records, logos, Big 12 highlights, poll dates and existing freshness warnings.
 Empty/unavailable sources show honest messages. Apply works without JavaScript.
+
+The homepage Top 25 table now contains exactly Rank, School, Record, Conference
+and Previous rank. Logos and inline Big 12 badges were removed from School; Big 12
+row highlighting remains. Previous rank uses NR when previously unranked and an
+em dash when unknown. Conference membership comes from ESPN season-specific
+standings, cached for six hours; failed lookups retain available data and retry
+after five minutes. Stored Big 12 membership takes precedence over the lookup; unknown conferences
+use an em dash.
+The conference lookup does not change the stored rankings or dedicated rankings page.

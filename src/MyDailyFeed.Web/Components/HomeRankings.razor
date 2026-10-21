@@ -31,19 +31,18 @@
             <div class="standings-scroll d-rankings__table" role="region" aria-label="Top 25 teams" tabindex="0">
                 <table class="standings-table rankings-table">
                     <caption>@Data.Selected.Sport · @poll.PollName</caption>
-                    <thead><tr><th scope="col">Rank</th><th scope="col" class="standing-team">Team</th><th scope="col">Record</th></tr></thead>
+                    <thead><tr><th scope="col">Rank</th><th scope="col" class="standing-team">School</th><th scope="col">Record</th><th scope="col">Conference</th><th scope="col">Previous rank</th></tr></thead>
                     <tbody>
                     @foreach (var team in RankedTeams)
                     {
                         <tr class="@(team.IsBig12 == true ? "ranking-big12" : null)">
                             <td>@team.Rank</td>
                             <th scope="row" class="standing-team"><span class="standing-team-name">
-                                @if (EventsText.LogoUrl(team.LogoUrl) is { } logo)
-                                { <img src="@logo" alt="" width="24" height="24" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()" /> }
                                 <span>@team.TeamName</span>
-                                @if (team.IsBig12 == true) { <span class="big12-badge">Big 12</span> }
                             </span></th>
                             <td>@(team.Record ?? "—")</td>
+                            <td>@(team.IsBig12 == true ? "Big 12" : Conferences.TryGetValue(team.TeamId, out var conference) ? conference : "—")</td>
+                            <td>@RankingsQuery.Previous(team)</td>
                         </tr>
                     }
                     </tbody>
@@ -55,6 +54,7 @@
 </section>
 
 @code {
+    [Parameter] public IReadOnlyDictionary<string, string> Conferences { get; set; } = new Dictionary<string, string>();
     [Parameter] public RankingsPage Data { get; set; } = new([], null, null, []);
     private IEnumerable<MyDailyFeed.Web.Data.Models.SportsRankingTeam> RankedTeams =>
         Data.Teams.Where(t => t.Rank is >= 1 and <= 25).OrderBy(t => t.Rank).ThenBy(t => t.TeamName);

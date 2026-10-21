@@ -6,11 +6,37 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The most recent verified web release is `mydailyfeed-web:home-top25-20261021`,
-with rollback recorded as `mynewsfeed-web:before-home-top25-20261021`.
+The most recent verified web release is `mydailyfeed-web:ranking-columns-v2-20261021`,
+with rollback recorded as `mynewsfeed-web:before-ranking-columns-20261021`.
 Its container was healthy on October 21, 2026 (Central). This is a dated
 observation, not live hosting status.
 
+
+## Homepage Top 25 five-column table — October 21, 2026
+
+Homepage Top 25 now shows exactly Rank, School, Record, Conference and Previous
+rank. Removed logos and inline Big 12 badges from School; row highlighting remains.
+Previous rank uses stored values, NR for previously unranked schools and an em dash
+when unknown. Conference names are supplemented from ESPN season-specific standings
+through a six-hour memory cache, with a five-second HTTP timeout, prior-data fallback
+and five-minute failure retry. Stored Big 12 membership takes precedence over provider
+conference names; unresolved conferences show an em dash. No schema changes or
+rankings writes. Dedicated rankings pages are unchanged.
+
+Deployed `mydailyfeed-web:ranking-columns-v2-20261021` (c2da4328dfda), healthy.
+Pre-change rollback `mynewsfeed-web:before-ranking-columns-20261021` (2fc0cc192635),
+retained container `mynewsfeed-web-before-ranking-columns-20261021`. Intermediate
+build (ccf3b8cd07e5) retained as `mynewsfeed-web:before-ranking-columns-v2-20261021`;
+final build resolves an older ESPN conference label conflicting with stored Big 12
+membership. Runtime settings, ports, mounts and keys preserved. Focused tests passed
+(6), covering columns, previous-rank display, Big 12 precedence, conference nesting,
+season mismatch and missing metadata. Docker publish/static-asset guard passed with
+existing PKCS warnings. Live browser checks passed exact table headers, no logos or
+inline badges, populated football conferences, all available selections, ranks 1–25,
+internal scrolling, mobile/desktop layouts, no-JavaScript Apply and health 200.
+Visually inspected the final table; no overflow or JavaScript errors.
+Private files: `/tmp/mydailyfeed-ranking-columns-v2-deploy/` and
+`/tmp/mydailyfeed-ranking-columns-deploy/`.
 
 ## Homepage Top 25 and standalone F1 removal — October 21, 2026
 
