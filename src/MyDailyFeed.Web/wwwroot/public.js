@@ -256,6 +256,7 @@
         share.setAttribute('data-share-open', '');
         share.setAttribute('data-url', href);
         share.setAttribute('data-title', text(a.title));
+        share.setAttribute('data-kind', a.kind === 'video' ? 'video' : 'article');
         share.setAttribute('aria-label', a.kind === 'video' ? 'Share video' : 'Share article');
         share.title = a.kind === 'video' ? 'Share video' : 'Share article';
         share.innerHTML = SHARE_ICON;
@@ -393,9 +394,10 @@
         var url = safeUrl(button.getAttribute('data-url'));
         var host = button.closest('.pub');
         if (!url || !host) return;
-        var title = button.getAttribute('data-title') || 'Article';
+        var video = button.getAttribute('data-kind') === 'video';
+        var title = button.getAttribute('data-title') || (video ? 'Video' : 'Article');
         var dialog = el('dialog', 'article-share');
-        var heading = el('h2', null, 'Share article');
+        var heading = el('h2', null, video ? 'Share video' : 'Share article');
         heading.id = 'article-share-title';
         dialog.setAttribute('aria-labelledby', heading.id);
         dialog.appendChild(heading);

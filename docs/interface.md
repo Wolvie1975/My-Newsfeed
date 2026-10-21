@@ -743,3 +743,10 @@ Saved displays Articles followed by Videos on the same page. Each section preser
 the shared list's newest-save-first order and has its own empty message. Older
 bookmarks without Kind appear under Articles. Saving, removing, synchronization
 and the shared 500-item limit remain unchanged.
+
+### YouTube sharing — October 21, 2026
+
+Home and Videos use the same Share control as news articles. Video sharing also
+works in Saved. The dialog says Share video and offers Copy link, mobile SMS, and
+native app sharing when supported in a secure browser context. Article sharing
+retains its existing label and behavior.

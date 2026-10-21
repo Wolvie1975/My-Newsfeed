@@ -6,11 +6,29 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The most recent verified web release is `mydailyfeed-web:saved-sections-20261021`,
-with rollback recorded as `mynewsfeed-web:before-saved-sections-20261021`.
+The most recent verified web release is `mydailyfeed-web:video-share-20261021`,
+with rollback recorded as `mynewsfeed-web:before-video-share-20261021`.
 Its container was healthy on October 21, 2026 (Central). This is a dated
 observation, not live hosting status.
 
+
+## Share YouTube videos — October 21, 2026
+
+Added the existing article Share control to YouTube cards on Home and Videos.
+Video dialogs, including those in Saved, now say Share video. Copy link, mobile
+SMS and native app sharing use the existing implementation; native sharing remains
+conditional on browser support and a secure context. Article labels are unchanged.
+
+Deployed `mydailyfeed-web:video-share-20261021` (1a74d818d4f2), healthy.
+Rollback image `mynewsfeed-web:before-video-share-20261021` (16ae005bec41), retained
+container `mynewsfeed-web-before-video-share-20261021`. Runtime configuration,
+ports, mounts and keys preserved; no schema changes. Docker publish/static-asset
+guard and diff checks passed with existing PKCS warnings. Live desktop/mobile
+browser checks passed Home/Videos/Saved video sharing and news article regression:
+correct dialog heading/title, copied URL, SMS URL, Escape/focus return and no
+horizontal overflow or JavaScript errors. Copy transport was stubbed for assertions;
+native OS share sheets were not exercised. Private deployment files:
+`/tmp/mydailyfeed-video-share-deploy/`.
 
 ## Separate Articles and Videos in Saved — October 21, 2026
 
