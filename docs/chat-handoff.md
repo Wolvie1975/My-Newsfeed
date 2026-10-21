@@ -3,6 +3,39 @@
 Read this file when continuing work from the previous chat. These are dated
 observations; check current repository and hosting state before acting.
 
+## Navigation logo — October 20, 2026
+
+Replaced the MyDailyFeed navigation text with the existing ribbon logo, linked to
+Home with an accessible link name. The logo is 44px square on desktop and mobile.
+
+Deployed `mydailyfeed-web:header-logo-20261020` (2f8b334e4277), healthy.
+Rollback image `mynewsfeed-web:before-header-logo-20261020` (8f1c56409f05), retained
+container `mynewsfeed-web-before-header-logo-20261020`. Runtime settings, mounts,
+ports and keys preserved; no schema changes. Local build and Docker publish/static-
+asset guard passed with existing PKCS warnings. Live browser checks passed image
+loading, dimensions, accessible Home link and navigation, no horizontal overflow
+at 390/768/1440px and no JavaScript errors. Private HTTPS health returned 200.
+Private deployment files: `/tmp/mydailyfeed-header-logo-deploy/`.
+No commit or push for this release.
+
+## Homepage watch link and simplified Settings/TV — October 20, 2026
+
+Replaced the homepage Customize Home link with Where to watch beside Kansas City.
+Removed Your homepage from Settings and its section-order controls. Existing browser
+homepage preferences still apply; an all-sections-hidden homepage offers a restore
+button instead of the removed Settings destination. Removed Find a tracked series
+from TV & Streaming and disconnected its q parameter from filtering/navigation.
+
+Deployed `mydailyfeed-web:home-links-20261020` (8f1c56409f05), healthy.
+Rollback image `mynewsfeed-web:before-home-links-20261020` (5209576be142), retained
+container `mynewsfeed-web-before-home-links-20261020`. Runtime settings, mounts,
+ports and keys preserved; no schema changes. Local build, Docker publish/static-asset
+guard and diff checks passed, with existing PKCS warnings. Live phone/desktop browser
+checks passed the watch link/navigation, removed customization link and Settings
+section/order row, removed TV search, calendar navigation and no JavaScript errors.
+Public route checks and private HTTPS health returned 200. Private deployment files:
+`/tmp/mydailyfeed-home-links-deploy/`. No commit or push for this release.
+
 ## Home source note and video rotation — October 20, 2026
 
 Moved the digital-release source/date note beside its heading using the Latest News

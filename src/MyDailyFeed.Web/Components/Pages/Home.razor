@@ -16,8 +16,8 @@
     <p>@Dates.TodayLabel(nowUtc)</p>
 </div>
 
-<nav class="personal-links" aria-label="Your daily links"><a href="local">Kansas City</a><a href="settings#home-preferences">Customize Home</a></nav>
-<p class="empty" data-home-empty hidden>All home sections are hidden. <a href="settings#home-preferences">Choose sections in Settings</a>.</p>
+<nav class="personal-links" aria-label="Your daily links"><a href="local">Kansas City</a><a href="watch">Where to watch</a></nav>
+<p class="empty" data-home-empty hidden>All home sections are hidden. <button type="button" data-home-reset class="nf-btn nf-btn--secondary">Restore default homepage</button></p>
 <p class="updated" data-personal-status role="status"></p>
 <div class="d-grid" data-home-grid>
 
@@ -299,6 +299,7 @@
                                     <span aria-hidden="true">·</span>
                                     <span>@views</span>
                                 }
+                                <MyDailyFeed.Web.Components.Feed.VideoSaveButton Item="video" />
                             </p>
                         </div>
                     </li>

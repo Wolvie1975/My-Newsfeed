@@ -25,7 +25,7 @@ const base = process.env.BASE_URL || 'http://127.0.0.1:5297';
         const emptyPage = await emptyContext.newPage();
         await emptyPage.route('**/api/saved', route => route.fulfill({ contentType: 'application/json', body: '{"articles":[],"token":"empty-test"}' }));
         await emptyPage.goto(base + '/saved');
-        await emptyPage.getByRole('heading', { name: 'Your reading list is empty' }).waitFor();
+        await emptyPage.getByRole('heading', { name: 'Your Saved list is empty' }).waitFor();
         assert.equal(await emptyPage.locator('[data-reading-filter], [data-reading-count], [data-reading-toolbar]').count(), 0);
         await emptyContext.close();
         const first = await browser.newContext(), second = await browser.newContext();

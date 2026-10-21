@@ -17,8 +17,8 @@ public static class SavedEndpoints
                 return await next(context);
             }
             catch (AntiforgeryValidationException) { return Results.BadRequest(new { error = "Refresh the page and try again." }); }
-            catch (ArgumentException) { return Results.BadRequest(new { error = "Invalid saved article data." }); }
-            catch (SavedListFullException) { return Results.Conflict(new { error = "Your shared list is full (500 articles). Remove some articles and try again." }); }
+            catch (ArgumentException) { return Results.BadRequest(new { error = "Invalid saved content." }); }
+            catch (SavedListFullException) { return Results.Conflict(new { error = "Your shared list is full (500 items). Remove some items and try again." }); }
         });
         api.MapGet("", async (HttpContext http, IAntiforgery antiforgery, SharedArticles saved) =>
             Results.Ok(new { articles = await saved.Read(http.RequestAborted), token = antiforgery.GetAndStoreTokens(http).RequestToken }));

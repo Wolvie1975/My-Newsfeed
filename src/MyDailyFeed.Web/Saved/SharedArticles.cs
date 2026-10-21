@@ -6,7 +6,7 @@ using MyDailyFeed.Web.Data;
 namespace MyDailyFeed.Web.Saved;
 
 public sealed record SavedArticle(string Url, string Title, string Source = "", string? Image = null,
-    string Summary = "", string? Date = null, string? DateLabel = null, DateTimeOffset? SavedAt = null, bool Read = false);
+    string Summary = "", string? Date = null, string? DateLabel = null, DateTimeOffset? SavedAt = null, bool Read = false, string Kind = "article");
 public sealed record SavedImport(Guid ClientId, SavedArticle[] Articles);
 public sealed record SavedRemoval(string Url);
 
@@ -22,6 +22,7 @@ public sealed class SharedArticles(IDbContextFactory<WebScraperContext> factory)
         ArgumentNullException.ThrowIfNull(article);
         static string Text(string? value, int maximum) => (value ?? "").Length <= maximum
             ? value ?? "" : throw new ArgumentException("Article text is too long.");
+        if (article.Kind is not ("article" or "video")) throw new ArgumentException("Invalid saved content type.");
         return article with { Url = NormalizeUrl(article.Url), Title = Text(article.Title, 1000),
             Source = Text(article.Source, 500), Summary = Text(article.Summary, 4000),
             Image = string.IsNullOrEmpty(article.Image) ? null : NormalizeUrl(article.Image),

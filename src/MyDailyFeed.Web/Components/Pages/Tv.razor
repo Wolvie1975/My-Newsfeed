@@ -5,7 +5,6 @@
 
 <PageTitle>TV &amp; Streaming · MyDailyFeed</PageTitle>
 <PageHeading Title="TV &amp; Streaming" Eyebrow="YOUR EPISODE CALENDAR" Description="Upcoming original releases for the series we follow." />
-<form class="personal-toolbar" method="get" action="tv"><label for="tv-search">Find a tracked series</label><input id="tv-search" name="q" type="search" value="@Q" maxlength="120" /><button class="nf-btn nf-btn--secondary" type="submit">Search</button></form>
 <details class="tracked-series"><summary>Tracked series · @schedule.Shows.Count</summary><ul class="agenda-list">@foreach (var series in schedule.Shows) { <li class="agenda-item"><h3><a href="@($"tv?show={series.Id}")">@series.Title</a></h3></li> }</ul></details>
 <nav class="tv-week" aria-label="Episode calendar dates">
     <span>@start.ToString("MMM d", System.Globalization.CultureInfo.InvariantCulture) – @start.AddDays(6).ToString("MMM d, yyyy", System.Globalization.CultureInfo.InvariantCulture)</span>
@@ -64,7 +63,6 @@
 
 @code {
     [SupplyParameterFromQuery(Name = "from")] private string? From { get; set; }
-    [SupplyParameterFromQuery(Name = "q")] private string? Q { get; set; }
     [SupplyParameterFromQuery(Name = "show")] private string? Show { get; set; }
     private DateOnly start;
     private TvSchedule schedule = new([], 0, [], [], null);
@@ -74,7 +72,7 @@
         start = DateOnly.TryParseExact(From, "yyyy-MM-dd", out var parsed)
             && parsed.Year <= 9998 && parsed >= today ? parsed : today;
         await using var db = await Factory.CreateDbContextAsync();
-        schedule = await TvQuery.GetAsync(db, Dates, start, int.TryParse(Show, out var show) && show > 0 ? show : null, search: QueryText.Term(Q));
+        schedule = await TvQuery.GetAsync(db, Dates, start, int.TryParse(Show, out var show) && show > 0 ? show : null);
     }
-    private string Href(DateOnly date) => $"tv?from={date:yyyy-MM-dd}" + (int.TryParse(Show, out var show) && show > 0 ? $"&show={show}" : "") + (string.IsNullOrWhiteSpace(Q) ? "" : "&q=" + Uri.EscapeDataString(Q));
+    private string Href(DateOnly date) => $"tv?from={date:yyyy-MM-dd}" + (int.TryParse(Show, out var show) && show > 0 ? $"&show={show}" : "");
 }

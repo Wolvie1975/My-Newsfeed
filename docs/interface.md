@@ -724,3 +724,15 @@ the bottom. No data, settings keys, card content limits or destinations changed.
 `tests/browser/home-cascade.browser.cjs` checks gaps/overlap at 1024/1440/1920px,
 dynamic height, hide/reorder preferences, enhanced Home navigation, resizing back
 to mobile/tablet, and the no-JavaScript fallback.
+
+### YouTube Watch later — October 21, 2026
+
+Home and Videos offer Watch later on each video. Saved combines articles and
+YouTube videos in the existing shared list, newest saves first. Video cards retain
+the thumbnail, title, channel and publication date, show a YouTube label, and open
+YouTube in a new tab. The bookmark removes either type. Header and mobile links
+are now labeled Saved. This list is independent of YouTube account Watch Later.
+
+Saved payloads have an optional Kind (article by default, or video); old article
+JSON remains compatible. The existing 500-item shared limit, polling, CSRF checks
+and server persistence apply to both types. No schema migration is required.

@@ -26,6 +26,16 @@ public class SharedArticlesTests
     }
 
     [Fact]
+    public void Video_copies_preserve_type_and_old_articles_default_to_article()
+    {
+        var video = SharedArticles.Normalize(new("https://www.youtube.com/watch?v=test", "Video", "Channel", Kind: "video"));
+        Assert.Equal("video", video.Kind);
+        var legacy = System.Text.Json.JsonSerializer.Deserialize<SavedArticle>("{\"Url\":\"https://example.com/\",\"Title\":\"Old article\"}");
+        Assert.Equal("article", legacy!.Kind);
+        Assert.Throws<ArgumentException>(() => SharedArticles.Normalize(video with { Kind = "unsupported" }));
+    }
+
+    [Fact]
     public async Task Sql_shared_list_merges_concurrent_saves_and_import_receipts_prevent_resurrection()
     {
         var config = new ConfigurationBuilder()

@@ -127,7 +127,8 @@
     border-bottom: 1px solid var(--header-border);
 }
 .pub .site-header :focus-visible { outline-color: #FFFFFF; }
-.pub .brand { font-size: 20px; font-weight: 700; letter-spacing: -0.02em; }
+.pub .brand { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 44px; height: 44px; }
+.pub .brand img { display: block; width: 44px; height: 44px; border-radius: 10px; }
 .pub .brand:hover { text-decoration: none; }
 .pub .header-actions { display: flex; align-items: center; gap: 2px; }
 .pub .theme-toggle {
@@ -2198,3 +2199,7 @@
     .pub .d-grid .d-movies .d-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .pub .d-grid .d-tv__list, .pub .d-grid .d-vids .d-list, .pub .d-grid .d-f1__body { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* YouTube Watch later controls share the server-backed Saved list. */
+.pub .save[data-kind="video"]:has([data-save-label]) { width: auto; min-width: 44px; padding: 0 8px; gap: 6px; font-size: 12px; white-space: nowrap; flex-shrink: 0; }
+.pub .vmeta, .pub .d-vid__meta { flex-wrap: wrap; }

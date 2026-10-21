@@ -1,8 +1,8 @@
 (function(){
     'use strict';
     const key='mynewsfeed-settings-order-v1';
-    const defaults=['appearance','colors','home','reading','services','teams'];
-    const labels={appearance:'Light and dark mode',colors:'Color scheme',home:'Your homepage',reading:'Reading preferences',services:'My services',teams:'My Teams'};
+    const defaults=['appearance','colors','reading','services','teams'];
+    const labels={appearance:'Light and dark mode',colors:'Color scheme',reading:'Reading preferences',services:'My services',teams:'My Teams'};
     function order(){let saved=[];try{saved=JSON.parse(localStorage.getItem(key)||'[]');}catch{}if(!Array.isArray(saved))saved=[];return [...new Set(saved.filter(s=>defaults.includes(s))),...defaults.filter(s=>!saved.includes(s))];}
     function render(){
         const grid=document.querySelector('[data-settings-sections]'),host=document.querySelector('[data-settings-order-controls]');if(!grid||!host)return;

@@ -6,11 +6,70 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The most recent verified web release is `mydailyfeed-web:home-rotation-20261020`,
-with rollback recorded as `mynewsfeed-web:before-home-rotation-20261020`.
-Its container was healthy on October 20, 2026 (Central). This is a dated
+The most recent verified web release is `mydailyfeed-web:watch-later-20261021`,
+with rollback recorded as `mynewsfeed-web:before-watch-later-20261021`.
+Its container was healthy on October 21, 2026 (Central). This is a dated
 observation, not live hosting status.
 
+
+## YouTube Watch later in Saved — October 21, 2026
+
+Added Watch later to YouTube cards on Home and Videos. The existing shared Saved
+list now combines articles and videos; video cards show a YouTube label, channel,
+thumbnail and publication date, and open YouTube in a new tab. Saved navigation
+and empty-state copy describe both content types. Existing article bookmarks remain
+compatible; optional Kind metadata defaults to article. The existing 500-item limit,
+CSRF protection, cross-device polling and persistence apply to both types. This is
+independent of the YouTube account's Watch Later list. No schema changes.
+
+Deployed `mydailyfeed-web:watch-later-20261021` (54748a4fd601), healthy.
+Rollback image `mynewsfeed-web:before-watch-later-20261021` (2f8b334e4277), retained
+container `mynewsfeed-web-before-watch-later-20261021`. Runtime configuration,
+mounts, ports and keys preserved. Focused SharedArticles/Videos tests passed (36);
+Docker publish/static-asset guard passed with existing PKCS dependency warnings.
+Live browser checks passed actual video saving, channel/thumbnail/type display,
+independent-device visibility, reload persistence, removal and button-state sync.
+Home/Videos/Saved fit 390/768/1440px without overflow or JavaScript errors.
+Shared Saved browser regression also passed import/replay protection, polling, CSRF,
+unsafe links, blocked storage, failure/retry and offline recovery; test saves removed.
+Health and public runbook routes returned 200; unauthenticated admin returned 302.
+Private deployment files: `/tmp/mydailyfeed-watch-later-deploy/`.
+Source committed locally after deployment, together with the previously
+deployed navigation logo and homepage/Settings/TV updates. GitHub push is pending
+because this workspace currently has no working GitHub authentication.
+
+## Navigation logo — October 20, 2026
+
+Replaced the MyDailyFeed navigation text with the existing ribbon logo, linked to
+Home with an accessible link name. The logo is 44px square on desktop and mobile.
+
+Deployed `mydailyfeed-web:header-logo-20261020` (2f8b334e4277), healthy.
+Rollback image `mynewsfeed-web:before-header-logo-20261020` (8f1c56409f05), retained
+container `mynewsfeed-web-before-header-logo-20261020`. Runtime settings, mounts,
+ports and keys preserved; no schema changes. Local build and Docker publish/static-
+asset guard passed with existing PKCS warnings. Live browser checks passed image
+loading, dimensions, accessible Home link and navigation, no horizontal overflow
+at 390/768/1440px and no JavaScript errors. Private HTTPS health returned 200.
+Private deployment files: `/tmp/mydailyfeed-header-logo-deploy/`.
+No commit or push for this release.
+
+## Homepage watch link and simplified Settings/TV — October 20, 2026
+
+Replaced the homepage Customize Home link with Where to watch beside Kansas City.
+Removed Your homepage from Settings and its section-order controls. Existing browser
+homepage preferences still apply; an all-sections-hidden homepage offers a restore
+button instead of the removed Settings destination. Removed Find a tracked series
+from TV & Streaming and disconnected its q parameter from filtering/navigation.
+
+Deployed `mydailyfeed-web:home-links-20261020` (8f1c56409f05), healthy.
+Rollback image `mynewsfeed-web:before-home-links-20261020` (5209576be142), retained
+container `mynewsfeed-web-before-home-links-20261020`. Runtime settings, mounts,
+ports and keys preserved; no schema changes. Local build, Docker publish/static-asset
+guard and diff checks passed, with existing PKCS warnings. Live phone/desktop browser
+checks passed the watch link/navigation, removed customization link and Settings
+section/order row, removed TV search, calendar navigation and no JavaScript errors.
+Public route checks and private HTTPS health returned 200. Private deployment files:
+`/tmp/mydailyfeed-home-links-deploy/`. No commit or push for this release.
 
 ## Home source note and video rotation — October 20, 2026
 

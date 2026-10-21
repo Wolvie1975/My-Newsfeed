@@ -193,6 +193,7 @@
             url: button.getAttribute('data-url'),
             title: text(button.getAttribute('data-title')),
             source: text(button.getAttribute('data-source')),
+            kind: button.getAttribute('data-kind') === 'video' ? 'video' : 'article',
             image: button.getAttribute('data-image') || null,
             summary: text(button.getAttribute('data-summary')),
             date: button.getAttribute('data-date') || null,
@@ -227,6 +228,7 @@
         card.appendChild(thumb);
 
         var body = el('div', 'body');
+        if (a.kind === 'video') body.appendChild(el('span', 'cat', 'YouTube'));
         var title = el('h2', 'title');
         var link = el('a', null, text(a.title) || href);
         link.href = href; link.target = '_blank'; link.rel = 'noopener noreferrer';
@@ -254,8 +256,8 @@
         share.setAttribute('data-share-open', '');
         share.setAttribute('data-url', href);
         share.setAttribute('data-title', text(a.title));
-        share.setAttribute('aria-label', 'Share article');
-        share.title = 'Share article';
+        share.setAttribute('aria-label', a.kind === 'video' ? 'Share video' : 'Share article');
+        share.title = a.kind === 'video' ? 'Share video' : 'Share article';
         share.innerHTML = SHARE_ICON;
         src.appendChild(share);
 
@@ -265,6 +267,7 @@
         button.setAttribute('data-save', '');
         button.setAttribute('data-url', href);
         button.setAttribute('data-title', text(a.title));
+        button.setAttribute('data-kind', a.kind === 'video' ? 'video' : 'article');
         button.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4.5L5 21V4a1 1 0 0 1 1-1z"></path></svg>';
         src.appendChild(button);
         body.appendChild(src);
@@ -288,8 +291,8 @@
         var empty = document.querySelector('[data-saved-empty]');
         if (empty) {
             empty.hidden = !savedReady || list.length > 0;
-            empty.querySelector('[data-saved-empty-title]').textContent = 'Your reading list is empty';
-            empty.querySelector('[data-saved-empty-description]').textContent = 'Tap the bookmark on a news article to save it across your devices.';
+            empty.querySelector('[data-saved-empty-title]').textContent = 'Your Saved list is empty';
+            empty.querySelector('[data-saved-empty-description]').textContent = 'Save an article or choose Watch later on a YouTube video to keep it here across your devices.';
 
         }
     }
@@ -305,7 +308,10 @@
             button.hidden = false;
             button.disabled = !savedReady || savedBusy;
             if (button.getAttribute('aria-pressed') !== String(on)) button.setAttribute('aria-pressed', String(on));
-            var label = on ? 'Remove from saved' : 'Save for later';
+            var video = button.getAttribute('data-kind') === 'video';
+            var label = on ? 'Remove from saved' : video ? 'Watch later' : 'Save for later';
+            var caption = button.querySelector('[data-save-label]');
+            if (caption && caption.textContent !== (on ? 'Saved' : 'Watch later')) caption.textContent = on ? 'Saved' : 'Watch later';
             if (button.getAttribute('aria-label') !== label) {
                 button.setAttribute('aria-label', label);
                 button.setAttribute('title', label);
