@@ -6,11 +6,29 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The most recent verified web release is `mydailyfeed-web:header-clock-20261021`,
-with rollback recorded as `mynewsfeed-web:before-header-clock-20261021`.
+The most recent verified web release is `mydailyfeed-web:mobile-clock-20261021`,
+with rollback recorded as `mynewsfeed-web:before-mobile-clock-20261021`.
 Its container was healthy on October 21, 2026 (Central). This is a dated
 observation, not live hosting status.
 
+
+## Mobile clock beside logo — October 21, 2026
+
+Moved the mobile date and clock beside the logo in two lines. Mobile uses a shorter
+date without the weekday (for example, Oct 21, 2026); time retains AM/PM and timezone
+without seconds. Browser preview checks passed at 320, 360, 375, 412, 767, 768 and
+1600px, including header alignment and horizontal overflow checks. Visually inspected
+the 320px preview. JavaScript syntax and diff checks passed.
+
+Deployed `mydailyfeed-web:mobile-clock-20261021` (3d8a6f89f8f0).
+Rollback image `mynewsfeed-web:before-mobile-clock-20261021` (baf8259acf3c),
+retained container `mynewsfeed-web-before-mobile-clock-20261021`. Runtime environment,
+mounts, ports, restart policy and network preserved; no schema changes. Docker publish
+and static-asset guard passed. Live browser checks passed at 320, 375, 768, 1280,
+1600 and 1920px, including mobile logo/clock/button alignment, AM/PM without seconds,
+no horizontal overflow, enhanced navigation and no JavaScript errors. Health and
+/news, /events, /results, /standings, /rankings, /movies, /movies/digital and
+/box-office returned 200. Evidence: `/tmp/mydailyfeed-header-clock-deploy/`.
 
 ## Header date and live clock — October 21, 2026
 

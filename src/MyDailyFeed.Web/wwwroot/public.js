@@ -691,11 +691,13 @@
 // Read the device clock each tick so sleep, midnight and clock changes stay accurate.
 (function () {
     var dateFormat = new Intl.DateTimeFormat(undefined, { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
+    var compactDateFormat = new Intl.DateTimeFormat(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
     var timeFormat = new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit', hour12: true, timeZoneName: 'short' });
     function updateClock() {
         var now = new Date();
         document.querySelectorAll('[data-header-clock]').forEach(function (clock) {
             clock.querySelector('[data-clock-date]').textContent = dateFormat.format(now);
+            clock.querySelector('[data-clock-date-compact]').textContent = compactDateFormat.format(now);
             clock.querySelector('[data-clock-time]').textContent = timeFormat.format(now);
             clock.dateTime = now.toISOString();
             clock.hidden = false;
