@@ -6,11 +6,34 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The most recent verified web release is `mydailyfeed-web:location-weather-20261021`,
-with rollback recorded as `mynewsfeed-web:before-location-weather-20261021`.
+The most recent verified web release is `mydailyfeed-web:header-clock-20261021`,
+with rollback recorded as `mynewsfeed-web:before-header-clock-20261021`.
 Its container was healthy on October 21, 2026 (Central). This is a dated
 observation, not live hosting status.
 
+
+## Header date and live clock — October 21, 2026
+
+Added a browser-local date and 12-hour time with AM/PM and timezone (without seconds) to the public
+header. The clock uses a compact separate row on mobile and narrower screens, and
+sits inline on wide desktops. It updates each second, after tab visibility changes
+and enhanced navigation; it stays hidden when JavaScript is unavailable. No live
+screen-reader announcements are emitted for clock updates.
+
+Validation: solution build, JavaScript syntax and diff checks passed. Isolated clock
+checks passed initial rendering, one-second scheduling, midnight rollover and enhanced
+navigation. Existing package security and xUnit analyzer warnings remain.
+
+Deployed `mydailyfeed-web:header-clock-20261021` (baf8259acf3c), healthy.
+Rollback image `mynewsfeed-web:before-header-clock-20261021` (713fdefd1110),
+retained container `mynewsfeed-web-before-header-clock-20261021`. Runtime environment,
+mounts, ports and restart policy preserved; no schema changes. Docker publish and
+static-asset guard passed. Live browser checks passed at 320, 375, 768, 1280, 1600
+and 1920px: local date, 12-hour AM/PM without seconds, no horizontal overflow,
+enhanced navigation and no JavaScript errors. Visually inspected mobile and desktop
+screenshots. Health and /news, /events, /results, /standings, /rankings, /movies,
+/movies/digital and /box-office returned 200. Private deployment evidence:
+`/tmp/mydailyfeed-header-clock-deploy/`.
 
 ## Device-location forecast with Kansas City fallback — October 21, 2026
 

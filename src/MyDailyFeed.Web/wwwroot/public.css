@@ -2249,3 +2249,12 @@
 
 .pub .weather-location-controls { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
 .pub .weather-location-controls [hidden] { display: none; }
+
+/* The clock gets its own row until there is room beside the full navigation. */
+.pub .site-header { flex-wrap: wrap; height: auto; min-height: 64px; padding-top: 8px; padding-bottom: 8px; column-gap: 12px; }
+.pub .header-clock { display: flex; align-items: baseline; justify-content: center; gap: 12px; order: 4; flex: 0 0 100%; padding-top: 4px; font-size: 12px; line-height: 1.5; white-space: nowrap; }
+.pub .header-clock[hidden] { display: none; }
+.pub .header-clock__time { font-variant-numeric: tabular-nums; }
+@media (min-width: 1600px) {
+    .pub .header-clock { order: 0; flex: none; flex-direction: column; align-items: flex-end; gap: 0; padding: 0; }
+}
