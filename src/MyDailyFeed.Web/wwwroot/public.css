@@ -2230,7 +2230,9 @@
 .pub .d-rankings__table .home-previous { width: 74px; }
 .pub .d-rankings__table th, .pub .d-rankings__table td { padding: 8px; vertical-align: middle; text-align: center; white-space: normal; }
 .pub .d-rankings__table .standing-team { min-width: 0; text-align: left; font-weight: 600; overflow-wrap: break-word; }
-.pub .d-rankings__table .standing-team-name { display: block; max-width: none; }
+.pub .d-rankings__table .standing-team-name { display: flex; flex-wrap: nowrap; align-items: center; gap: 8px; max-width: none; }
+.pub .d-rankings__table .standing-team-name img { width: 22px; height: 22px; flex: none; object-fit: contain; }
+.pub .d-rankings__table .standing-team-name > span { min-width: 0; }
 .pub .d-rankings__table thead th { font-size: 12px; font-weight: 700; }
 .pub .d-rankings__table .ranking-big12 > * { background: color-mix(in srgb, var(--accent) 12%, var(--surface)); border-bottom-color: var(--field-border); }
 .pub .d-rankings__table .ranking-big12 > :first-child { box-shadow: inset 3px 0 0 var(--accent); font-weight: 700; }

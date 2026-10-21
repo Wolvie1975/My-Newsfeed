@@ -824,3 +824,7 @@ The current homepage columns are Rank, School, Record and Previous rank. Confere
 is removed, along with its unused HTTP lookup/cache. Big 12 highlighting still uses
 the stored IsBig12 flag, independent of any conference lookup. Desktop continues
 to show the full list, while mobile retains its height cap and internal scrolling.
+
+Homepage Top 25 School cells again show compact 22px school logos alongside
+the name. Missing/failed logos leave the name visible. Four columns, Big 12 row
+highlights, full desktop rankings and mobile scrolling remain unchanged.

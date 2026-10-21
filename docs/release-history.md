@@ -6,11 +6,29 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The most recent verified web release is `mydailyfeed-web:top25-no-conference-20261021`,
-with rollback recorded as `mynewsfeed-web:before-top25-no-conference-20261021`.
+The most recent verified web release is `mydailyfeed-web:ranking-logos-20261021`,
+with rollback recorded as `mynewsfeed-web:before-ranking-logos-20261021`.
 Its container was healthy on October 21, 2026 (Central). This is a dated
 observation, not live hosting status.
 
+
+## Restore homepage Top 25 school logos — October 21, 2026
+
+Restored safe source logos at 22px beside school names, with consistent spacing
+and centered alignment. Missing or failed images leave the school name visible.
+Rank, School, Record and Previous rank remain the only columns; Big 12 highlighting,
+full desktop list and compact mobile scrolling are retained.
+
+Deployed `mydailyfeed-web:ranking-logos-20261021` (484aaad7e785), healthy.
+Rollback image `mynewsfeed-web:before-ranking-logos-20261021` (dcddade43463), retained
+container `mynewsfeed-web-before-ranking-logos-20261021`. Runtime settings, ports,
+mounts and keys preserved; no schema/data changes. HomeRankings tests passed (2).
+Docker publish/static-asset guard and diff checks passed with existing PKCS warnings.
+Live browser regression passed logos/dimensions, four-column headers, Big 12 markers,
+all available polls, full desktop list/mobile height cap, no-JavaScript Apply and
+health 200. Verified an actual logo image loaded at 22px and visually inspected
+the table; no overflow or JavaScript errors. Private deployment files:
+`/tmp/mydailyfeed-ranking-logos-deploy/`.
 
 ## Remove Conference from homepage Top 25 — October 21, 2026
 

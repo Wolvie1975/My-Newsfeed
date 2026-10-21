@@ -39,6 +39,8 @@
                         <tr class="@(team.IsBig12 == true ? "ranking-big12" : null)">
                             <td>@team.Rank</td>
                             <th scope="row" class="standing-team"><span class="standing-team-name">
+                                @if (EventsText.LogoUrl(team.LogoUrl) is { } logo)
+                                { <img src="@logo" alt="" width="22" height="22" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()" /> }
                                 <span>@team.TeamName</span>
                             </span></th>
                             <td>@(team.Record ?? "—")</td>
