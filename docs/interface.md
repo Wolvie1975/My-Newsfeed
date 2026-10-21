@@ -813,3 +813,7 @@ beside Kansas City; the main navigation destination remains. A labeled movie/TV
 search field submits q directly to /watch, using its existing multi-title search
 and results. The required field has the same 120-character limit as that page.
 It works with Enter or Search and does not require JavaScript.
+
+At desktop widths (1024px and above), homepage Top 25 expands to show all available
+ranked schools without an internal vertical scrollbar. Smaller screens keep the
+440px-high scrolling table. The homepage column layout adapts to the taller card.

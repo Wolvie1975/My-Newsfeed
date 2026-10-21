@@ -2244,3 +2244,5 @@
 .pub .d-watch__search .watch-search-row { align-items: stretch; }
 .pub .d-watch__search button { flex: none; }
 @media (max-width: 380px) { .pub .d-watch__search .watch-search-row { flex-direction: column; } }
+
+@media (min-width: 1024px) { .pub .d-rankings__table { max-height: none; } }

@@ -6,11 +6,28 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The most recent verified web release is `mydailyfeed-web:home-watch-search-20261021`,
-with rollback recorded as `mynewsfeed-web:before-home-watch-search-20261021`.
+The most recent verified web release is `mydailyfeed-web:desktop-top25-20261021`,
+with rollback recorded as `mynewsfeed-web:before-desktop-top25-20261021`.
 Its container was healthy on October 21, 2026 (Central). This is a dated
 observation, not live hosting status.
 
+
+## Show full homepage Top 25 on desktop — October 21, 2026
+
+Removed the homepage ranking table's vertical height cap at desktop widths of
+1024px and above, showing all available ranked schools without an internal vertical
+scrollbar. Smaller screens retain the 440px-high scrolling list. Five columns,
+Big 12 highlighting, poll selection and homepage column layout remain intact.
+
+Deployed `mydailyfeed-web:desktop-top25-20261021` (c54b1a6215f0), healthy.
+Rollback image `mynewsfeed-web:before-desktop-top25-20261021` (0da7bd047096), retained
+container `mynewsfeed-web-before-desktop-top25-20261021`. Runtime settings, ports,
+mounts and keys preserved; no data/schema changes. Docker publish/static-asset
+guard and diff checks passed with existing PKCS warnings. Live browser checks passed
+available poll selections, last-row visibility without internal vertical scrolling
+on desktop, retained mobile height cap, responsive widths 390–1920px, no-JavaScript
+Apply and homepage column regression with the taller card. No overflow or JavaScript
+errors; health 200. Private files: `/tmp/mydailyfeed-desktop-top25-deploy/`.
 
 ## Where to watch search on Home — October 21, 2026
 
