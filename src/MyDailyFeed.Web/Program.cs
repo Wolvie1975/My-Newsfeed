@@ -203,10 +203,11 @@ app.MapGet("/feed/more", async (HttpContext http, IDbContextFactory<WebScraperCo
     });
 });
 
-app.MapGet("/local/weather", async (LocalWeather weather, HttpContext context) =>
+app.MapGet("/local/weather", async (LocalWeather weather, HttpContext context, double? lat, double? lon) =>
 {
-    context.Response.Headers.CacheControl = "public,max-age=120";
-    return Results.Json(await weather.GetAsync(context.RequestAborted));
+    context.Response.Headers.CacheControl = lat is not null || lon is not null ? "private,no-store" : "public,max-age=120";
+    try { return Results.Json(await weather.GetAsync(context.RequestAborted, lat, lon)); }
+    catch (ArgumentException) { return Results.BadRequest(new { error = "Valid latitude and longitude are required." }); }
 });
 
 app.MapRazorComponents<App>()

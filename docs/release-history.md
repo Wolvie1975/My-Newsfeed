@@ -6,11 +6,41 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The most recent verified web release is `mydailyfeed-web:top25-previous-20261021`,
-with rollback recorded as `mynewsfeed-web:before-top25-previous-20261021`.
+The most recent verified web release is `mydailyfeed-web:location-weather-20261021`,
+with rollback recorded as `mynewsfeed-web:before-location-weather-20261021`.
 Its container was healthy on October 21, 2026 (Central). This is a dated
 observation, not live hosting status.
 
+
+## Device-location forecast with Kansas City fallback — October 21, 2026
+
+Added Use my location and Use Kansas City controls to the Local forecast. Location
+permission is requested only after a click on a secure origin. Coordinates are
+rounded to two decimal places in the browser and server; the selection stays in
+memory, not persistent storage. The forecast title uses the NWS nearby city/state,
+and its official link follows the selected point. Local news/events remain KC.
+The API validates coordinate pairs, finite values and ranges, caches per rounded
+location, and sets custom forecast responses private/no-store. Existing Kansas City
+caching and stale-data behavior remain. Denial, timeout, unavailable location and
+unsupported/failed NWS locations fall back to KC with an explanation. Reset cancels
+pending selection and superseded requests cannot overwrite newer results.
+
+Deployed `mydailyfeed-web:location-weather-20261021` (713fdefd1110), healthy.
+Rollback image `mynewsfeed-web:before-location-weather-20261021` (a663937b4932),
+retained container `mynewsfeed-web-before-location-weather-20261021`. Runtime settings,
+ports, mounts and keys preserved; no schema changes. LocalWeather tests passed (6):
+cache isolation, rounded/validated coordinates, city labels, stale fallback and
+untrusted forecast-host rejection. Docker publish/static-asset guard and diff checks
+passed with existing PKCS warnings. Browser tests passed explicit geolocation,
+rounding, labels/official links, reset, denied/timeout/unavailable/unsupported fallback,
+cancellation, mobile/desktop, no-JavaScript fallback and API validation/privacy.
+Existing weather icon/theme regression passed. Tested permission flow on actual
+private HTTPS with simulated browser coordinates and confirmed real NWS New York
+forecast rendering (4 periods). Real KC and NY API responses succeeded; private HTTPS
+health 200. HTTP location control correctly explains HTTPS and falls back to KC.
+Production device location was not obtained; browser tests used controlled coordinates.
+Visually inspected the location forecast. Private files:
+`/tmp/mydailyfeed-location-weather-deploy/`.
 
 ## Rename homepage poll column to Previous — October 21, 2026
 

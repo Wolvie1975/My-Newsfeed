@@ -835,3 +835,23 @@ main navigation.
 
 The homepage Top 25 final column is labeled Previous (formerly Previous rank).
 Its values and behavior are unchanged.
+
+### Forecast using device location — October 21, 2026
+
+The Local forecast offers Use my location, requesting browser geolocation only
+after a click, and Use Kansas City to reset. HTTPS (or a trusted local development
+origin) is required for browser location. Coordinates are rounded to two decimal
+places before submission and again on the server; selection stays in the current
+tab's memory rather than persistent browser storage. The forecast heading uses
+the NWS nearby city/state and the official forecast link follows the selected point.
+Local news and community calendars remain Kansas City content.
+
+The existing /local/weather endpoint accepts paired lat/lon values, validates
+finite ranges, caches by rounded location and marks custom responses private/no-store.
+A provider failure never substitutes another location's cached forecast. Denied,
+unavailable or timed-out geolocation, or an unsupported/unavailable NWS forecast,
+falls back to Kansas City with an explanation. Reset cancels pending location
+selection; superseded fetches cannot replace newer results. The existing icon,
+stale-data and no-JavaScript official-link fallbacks remain. No schema changes.
+
+References: [browser location requirements](https://developer.mozilla.org/en-US/docs/Web/API/Geolocation/getCurrentPosition) and [NWS forecast API](https://www.weather.gov/documentation/services-web-api).

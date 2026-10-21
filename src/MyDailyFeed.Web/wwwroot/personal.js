@@ -110,17 +110,60 @@
         else if (n.matches('[data-news-category]')) { p.category = n.value; save(PREFS, p); }
         else if (n.matches('[data-sports-choice]')) sync();
     });
-    async function weather() {
-        const host = document.querySelector('[data-local-weather]'); if (!host || host.dataset.loading) return;
+    let weatherLocation = null, weatherLocationRequest = 0;
+    function weatherNotice(host, message) { const notice = host.querySelector('[data-weather-location-status]'); if (notice) notice.textContent = message; }
+    function resetWeather(host, message) {
+        weatherLocationRequest++; weatherLocation = null;
+        const button = host.querySelector('[data-weather-locate]'); if (button) button.disabled = false;
+        weatherNotice(host, message || 'Showing Kansas City.'); weather(true);
+    }
+    function locateWeather(host) {
+        const request = ++weatherLocationRequest;
+        if (!window.isSecureContext || !navigator.geolocation) {
+            resetWeather(host, 'Location is unavailable in this browser. Open the site over HTTPS to use your location. Showing Kansas City.'); return;
+        }
+        host.querySelector('[data-weather-locate]').disabled = true;
+        host.querySelector('[data-weather-reset]').hidden = false;
+        weatherNotice(host, 'Finding your location…');
+        navigator.geolocation.getCurrentPosition(position => {
+            if (request !== weatherLocationRequest || !host.isConnected) return;
+            host.querySelector('[data-weather-locate]').disabled = false;
+            const lat = Number(position.coords.latitude.toFixed(2)), lon = Number(position.coords.longitude.toFixed(2));
+            if (!Number.isFinite(lat) || !Number.isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180) {
+                resetWeather(host, 'Your location could not be determined. Showing Kansas City.'); return;
+            }
+            weatherLocation = { lat, lon };
+            weatherNotice(host, 'Using your approximate location for this tab.'); weather(true);
+        }, error => {
+            if (request !== weatherLocationRequest || !host.isConnected) return;
+            resetWeather(host, error.code === 1 ? 'Location access was declined. Showing Kansas City.'
+                : error.code === 3 ? 'Location request timed out. Showing Kansas City.' : 'Your location is unavailable. Showing Kansas City.');
+        }, { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 });
+    }
+    document.addEventListener('click', event => {
+        const button = event.target.closest('[data-weather-locate], [data-weather-reset]');
+        if (!button) return;
+        const host = button.closest('[data-local-weather]'); if (!host) return;
+        if (button.matches('[data-weather-locate]')) locateWeather(host); else resetWeather(host);
+    });
+    async function weather(force = false) {
+        const host = document.querySelector('[data-local-weather]'); if (!host || (host.dataset.loading && !force)) return;
         host.dataset.loading = 'true';
+        const point = weatherLocation;
+        const locate = host.querySelector('[data-weather-locate]'); if (locate) locate.hidden = false;
+        const reset = host.querySelector('[data-weather-reset]'); if (reset) reset.hidden = !point;
         weatherController?.abort(); const controller = new AbortController(); weatherController = controller;
         const status = host.querySelector('[data-weather-status]'), periods = host.querySelector('[data-weather-periods]');
-        status.textContent = 'Loading the National Weather Service forecast…';
+        const title = host.querySelector('[data-weather-title]'), official = host.querySelector('[data-weather-link]');
+        if (title) title.textContent = point ? 'Your local forecast' : 'Kansas City forecast';
+        if (official) official.href = 'https://forecast.weather.gov/MapClick.php?lat=' + (point?.lat ?? 39.0997) + '&lon=' + (point?.lon ?? -94.5786);
+        periods.replaceChildren(); status.textContent = 'Loading the National Weather Service forecast…';
         try {
-            const response = await fetch('local/weather', { signal: controller.signal }); if (!response.ok) throw Error('Forecast unavailable');
-            const data = await response.json(); if (!host.isConnected) return;
-            periods.replaceChildren();
+            const query = point ? '?' + new URLSearchParams(point) : '';
+            const response = await fetch('local/weather' + query, { signal: controller.signal }); if (!response.ok) throw Error('Forecast unavailable');
+            const data = await response.json(); if (!host.isConnected || controller.signal.aborted) return;
             if (!Array.isArray(data.periods) || !data.periods.length) throw Error('No forecast');
+            if (title) title.textContent = (txt(data.location) || (point ? 'Your location' : 'Kansas City')) + ' forecast';
             data.periods.forEach(p => {
                 const card = node('article', '', 'weather-period');
                 const reading = node('div', '', 'weather-reading');
@@ -130,7 +173,11 @@
             });
             const date = new Date(data.updated);
             status.textContent = (data.stale ? 'Last available forecast · may be out of date. ' : '') + 'National Weather Service · updated ' + (Number.isNaN(date.getTime()) ? 'time unavailable' : date.toLocaleString('en-US', {timeZone: 'America/Chicago', timeZoneName:'short'}));
-        } catch (_) { if (host.isConnected) status.textContent = 'Forecast temporarily unavailable. Open the National Weather Service link for current conditions.'; }
+        } catch (_) {
+            if (!host.isConnected || controller.signal.aborted) return;
+            if (point) { weatherLocation = null; weatherNotice(host, 'A forecast is unavailable for this location. Showing Kansas City.'); return weather(true); }
+            status.textContent = 'Forecast temporarily unavailable. Open the National Weather Service link for current conditions.';
+        }
     }
     function schedule() { if (pending) return; pending = true; requestAnimationFrame(() => { pending = false; sync(); weather(); }); }
     const markers = '[data-home-grid], [data-home-preferences], [data-news-url], [data-news-page], [data-news-muted], [data-local-weather], [data-personal-control]';

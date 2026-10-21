@@ -7,8 +7,13 @@
 <PageHeading Title="Kansas City" Eyebrow="CLOSER TO HOME" Description="Local reading, the forecast and places to find your next outing." />
 <nav class="personal-links" aria-label="Kansas City sections"><a href="local#local-news">News</a><a href="local#local-weather">Weather</a><a href="local#local-events">Community events</a></nav>
 <section class="local-panel" id="local-weather" data-local-weather>
-    <div class="d-card__head"><h2>Kansas City forecast</h2><a href="https://forecast.weather.gov/MapClick.php?lat=39.0997&amp;lon=-94.5786" target="_blank" rel="noopener noreferrer">National Weather Service ↗</a></div>
-    <p class="updated" data-weather-status>Open the official forecast for current weather.</p>
+    <div class="d-card__head"><h2 data-weather-title>Kansas City forecast</h2><a data-weather-link href="https://forecast.weather.gov/MapClick.php?lat=39.0997&amp;lon=-94.5786" target="_blank" rel="noopener noreferrer">National Weather Service ↗</a></div>
+    <div class="weather-location-controls">
+        <button type="button" class="nf-btn nf-btn--secondary" data-weather-locate hidden>Use my location</button>
+        <button type="button" class="nf-btn nf-btn--secondary" data-weather-reset hidden>Use Kansas City</button>
+    </div>
+    <p class="updated" data-weather-location-status role="status" aria-live="polite"></p>
+    <p class="updated" data-weather-status aria-live="polite">Open the official forecast for current weather.</p>
     <div class="weather-grid" data-weather-periods></div>
     <noscript><p>Use the National Weather Service link to view the forecast.</p></noscript>
 </section>
