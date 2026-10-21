@@ -6,11 +6,24 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The most recent verified web release is `mydailyfeed-web:home-local-link-20261021`,
-with rollback recorded as `mynewsfeed-web:before-home-local-link-20261021`.
+The most recent verified web release is `mydailyfeed-web:top25-previous-20261021`,
+with rollback recorded as `mynewsfeed-web:before-top25-previous-20261021`.
 Its container was healthy on October 21, 2026 (Central). This is a dated
 observation, not live hosting status.
 
+
+## Rename homepage poll column to Previous — October 21, 2026
+
+Relabeled Previous rank as Previous in homepage Top 25. Values, logos and Big 12
+highlighting are unchanged. Updated existing label assertions.
+
+Deployed `mydailyfeed-web:top25-previous-20261021` (a663937b4932), healthy.
+Rollback image `mynewsfeed-web:before-top25-previous-20261021` (975a2217e423), retained
+container `mynewsfeed-web-before-top25-previous-20261021`. Runtime settings, ports,
+mounts and keys preserved; no data/schema changes. Docker publish/static-asset guard
+and diff checks passed with existing PKCS warnings. Live browser verified headings
+Rank, School, Record, Previous; health returned 200.
+Private deployment files: `/tmp/mydailyfeed-top25-previous-deploy/`.
 
 ## Remove homepage Kansas City shortcut — October 21, 2026
 

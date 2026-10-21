@@ -832,3 +832,6 @@ highlights, full desktop rankings and mobile scrolling remain unchanged.
 The homepage Kansas City shortcut below the greeting has been removed, including
 its now-empty daily-links navigation row. Local news remains available in the
 main navigation.
+
+The homepage Top 25 final column is labeled Previous (formerly Previous rank).
+Its values and behavior are unchanged.

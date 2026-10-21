@@ -28,7 +28,7 @@ public class HomeRankingsTests
         Assert.Contains("rankings?sourceId=12", html); Assert.Contains("rankingSourceId", html);
         Assert.Contains("Football AP", html); Assert.Contains("Volleyball", html);
         Assert.Contains("ranking-big12", html); Assert.Contains("5-0", html);
-        Assert.Contains(">School</th>", html); Assert.DoesNotContain(">Conference</th>", html); Assert.Contains(">Previous rank</th>", html);
+        Assert.Contains(">School</th>", html); Assert.DoesNotContain(">Conference</th>", html); Assert.Contains(">Previous</th>", html);
         Assert.Contains(">NR</td>", html);
         Assert.Contains("<img", html); Assert.Contains("width=\"22\"", html); Assert.DoesNotContain("big12-badge", html);
         Assert.Contains("Poll dated", html); Assert.Contains("<noscript>", html);
