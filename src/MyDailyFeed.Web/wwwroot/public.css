@@ -2237,3 +2237,10 @@
 .pub .d-rankings__table .ranking-big12 > * { background: color-mix(in srgb, var(--accent) 12%, var(--surface)); border-bottom-color: var(--field-border); }
 .pub .d-rankings__table .ranking-big12 > :first-child { box-shadow: inset 3px 0 0 var(--accent); font-weight: 700; }
 .pub .d-rankings__table .ranking-big12 > .standing-team { font-weight: 750; }
+
+.pub .d-watch { order: 0; }
+.pub .d-watch__search { max-width: none; margin: 0; padding: 16px 20px 20px; }
+.pub .d-watch__search label { font-size: 13px; }
+.pub .d-watch__search .watch-search-row { align-items: stretch; }
+.pub .d-watch__search button { flex: none; }
+@media (max-width: 380px) { .pub .d-watch__search .watch-search-row { flex-direction: column; } }

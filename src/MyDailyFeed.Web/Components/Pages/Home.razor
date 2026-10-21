@@ -18,10 +18,21 @@
     <p>@Dates.TodayLabel(nowUtc)</p>
 </div>
 
-<nav class="personal-links" aria-label="Your daily links"><a href="local">Kansas City</a><a href="watch">Where to watch</a></nav>
+<nav class="personal-links" aria-label="Your daily links"><a href="local">Kansas City</a></nav>
 <p class="empty" data-home-empty hidden>All home sections are hidden. <button type="button" data-home-reset class="nf-btn nf-btn--secondary">Restore default homepage</button></p>
 <p class="updated" data-personal-status role="status"></p>
 <div class="d-grid" data-home-grid>
+
+    <section data-home-section="watch" class="d-card d-watch" aria-labelledby="h-home-watch">
+        <div class="d-card__head"><h2 class="d-card__title" id="h-home-watch">Where to watch</h2></div>
+        <form method="get" action="watch" class="watch-search d-watch__search" role="search" aria-label="Where to watch search">
+            <label for="home-watch-query">Movie or TV title</label>
+            <div class="watch-search-row">
+                <input id="home-watch-query" name="q" type="search" maxlength="120" placeholder="Search a movie or TV show…" required />
+                <button class="nf-btn nf-btn--primary" type="submit">Search</button>
+            </div>
+        </form>
+    </section>
 
     <section data-home-section="sports" class="d-card d-today" aria-labelledby="h-tonight">
         <div class="d-card__head"><h2 class="d-card__title" id="h-tonight">Today &amp; Tonight</h2><a href="events">All games</a></div>

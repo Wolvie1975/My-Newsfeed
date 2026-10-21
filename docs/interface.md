@@ -804,3 +804,12 @@ cell padding and consistent alignment keep polls visually uniform. School and
 Conference align left; Rank, Record and Previous rank align center. The poll
 metadata wraps with consistent gaps; its duplicate visual table caption is hidden
 while retaining the accessible caption. Narrow layouts scroll within the table.
+
+### Homepage Where to watch search — October 21, 2026
+
+A Where to watch search card now sits above Today & Tonight in the right desktop
+column and first in the mobile stack. It replaces the small Where to watch link
+beside Kansas City; the main navigation destination remains. A labeled movie/TV
+search field submits q directly to /watch, using its existing multi-title search
+and results. The required field has the same 120-character limit as that page.
+It works with Enter or Search and does not require JavaScript.

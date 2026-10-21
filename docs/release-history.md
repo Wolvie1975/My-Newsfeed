@@ -6,11 +6,32 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The most recent verified web release is `mydailyfeed-web:poll-style-20261021`,
-with rollback recorded as `mynewsfeed-web:before-poll-style-20261021`.
+The most recent verified web release is `mydailyfeed-web:home-watch-search-20261021`,
+with rollback recorded as `mynewsfeed-web:before-home-watch-search-20261021`.
 Its container was healthy on October 21, 2026 (Central). This is a dated
 observation, not live hosting status.
 
+
+## Where to watch search on Home — October 21, 2026
+
+Replaced the small Where to watch link beside Kansas City with a search card above
+Today & Tonight in the right desktop column and first in the mobile stack. Its
+labeled movie/TV title field submits q to the existing /watch results page. The
+field is required with a 120-character limit; normal GET submission works with
+Enter/Search and without JavaScript. Existing primary navigation remains available.
+Updated homepage ordering and column regression to include the new card.
+
+Deployed `mydailyfeed-web:home-watch-search-20261021` (0da7bd047096), healthy.
+Rollback image `mynewsfeed-web:before-home-watch-search-20261021` (cbdeec42d02d),
+retained container `mynewsfeed-web-before-home-watch-search-20261021`. Runtime
+settings, ports, mounts, keys and watch credentials preserved; no schema changes.
+Docker publish/static-asset guard and diff checks passed with existing PKCS warnings.
+Live browser checks passed search-card placement at 360/390/1440px, removal of the
+inline link, required/length attributes and special-character title submission to
+/watch with the query retained, with and without JavaScript. Homepage column,
+resize, hidden-section, enhanced navigation and no-JavaScript regression passed.
+Visually inspected desktop; no overflow or JavaScript errors; health 200.
+Private files: `/tmp/mydailyfeed-home-watch-search-deploy/`.
 
 ## Clear Big 12 highlighting and compact homepage poll — October 21, 2026
 
