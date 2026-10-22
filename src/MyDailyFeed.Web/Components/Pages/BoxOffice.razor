@@ -44,16 +44,17 @@
                     <div class="boxoffice-movie-body">
                         <h3>@if (movie.MovieUrl is { } url) { <a href="@url" target="_blank" rel="noopener noreferrer">@movie.Title</a> } else { @movie.Title }</h3>
                         <dl class="boxoffice-stats">
-                            <div><dt>Weekend</dt><dd>@BoxOfficeChartQuery.Money(movie.WeekendGross)</dd></div>
+                            <div><dt>Weekend · @BoxOfficeChartQuery.StatusLabel(movie.ResultStatus)</dt><dd>@BoxOfficeChartQuery.Money(movie.WeekendGross)</dd></div>
                             <div><dt>Total domestic</dt><dd>@BoxOfficeChartQuery.Money(movie.TotalDomesticGross)</dd></div>
                             <div><dt>Weekly change</dt><dd>@BoxOfficeChartQuery.Change(movie.WeeklyChangePercent)</dd></div>
                         </dl>
+                        <BoxOfficeResultEvidence Movie="movie" />
                     </div>
                 </li>
             }
         </ol>
         <p class="updated">Source: @if (movies[0].SourceUrl is { } source) { <a href="@source" target="_blank" rel="noopener noreferrer">The Numbers</a> } else { <span>The Numbers</span> } · Last checked @Dates.PublishedFull(movies.Min(m => m.FetchedAt))</p>
-        <p class="updated">Reported totals may be revised. — means weekly change is unavailable or the movie is new.</p>
+        <p class="updated">Final means provider-reported actuals; totals may still be revised. — means weekly change is unavailable or the movie is new.</p>
     }
 
 }

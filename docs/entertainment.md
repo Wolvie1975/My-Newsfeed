@@ -116,8 +116,16 @@ WeekendStart is Friday, ending Sunday (+2 days). Format labels without convertin
 calendar dates, including both years for a New Year boundary. Display rank, linked
 title, USD integer weekend/total domestic grosses and percentage change. Null change
 means unavailable/new, not zero. FetchedAt is UTC; display it using the site's time
-helper. Attribute The Numbers with SourceUrl and say reported totals may be revised,
-not final actuals. Show a stale warning when Friday is more than ten days old.
+helper. Attribute The Numbers and say reported totals may be revised. Weekend gross
+labels read ResultStatus: estimated → Estimated, final → Final, all other/NULL values
+→ Reported totals. Final denotes provider-reported actuals, subject to correction.
+Do not apply these labels to TotalDomesticGross. StatusSourceUrl falls back to
+SourceUrl; validate links. Show StatusAsOfUtc as provider update time only when
+present, separately from collection time FetchedAt. Read these fields and amounts
+in one query. The homepage binds its expected Friday for Sunday–Tuesday results;
+missing current-weekend data shows a waiting message. The box-office results view
+can show the latest chart with its actual weekend. Show a stale warning when Friday
+is more than ten days old.
 
 Configure scraper schema with `--configure-boxoffice` using migration credentials,
 then collect `--boxoffice` using normal ingestion credentials. Keep that flag in hourly

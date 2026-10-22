@@ -2,8 +2,8 @@
 (function () {
     'use strict';
     const PREFS = 'mynewsfeed-personal-v1', TEAMS = 'mynewsfeed-sports-teams-v1';
-    const defaults = ['watch', 'sports', 'tv', 'news', 'videos', 'rankings', 'movies'];
-    const labels = { watch: 'Where to watch', sports: 'Today & Tonight', f1: 'F1', rankings: 'Top 25', news: 'Latest news', movies: 'Movies & Digital', tv: 'Today’s episodes', videos: 'Latest videos' };
+    const defaults = ['watch', 'sports', 'tv', 'news', 'videos', 'rankings', 'forecasts', 'movies'];
+    const labels = { watch: 'Where to watch', sports: 'Today & Tonight', f1: 'F1', rankings: 'Top 25', news: 'Latest news', forecasts: 'Weekend box office', movies: 'Movies & Digital', tv: 'Today’s episodes', videos: 'Latest videos' };
     let storage = true, pending = false, weatherController;
     try { localStorage.setItem('mynewsfeed-personal-probe', '1'); localStorage.removeItem('mynewsfeed-personal-probe'); } catch (_) { storage = false; }
     const safe = value => { try { const url = new URL(value); return ['https:', 'http:'].includes(url.protocol) ? url.href : null; } catch (_) { return null; } };

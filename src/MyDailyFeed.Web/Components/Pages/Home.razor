@@ -114,7 +114,7 @@
 
     <section data-home-section="news" class="d-card d-news" aria-labelledby="h-news">
         <div class="d-card__head">
-            <h2 class="d-card__title" id="h-news">Latest news <span class="d-card__count">Up to 10 sources · rotates hourly</span></h2>
+            <h2 class="d-card__title" id="h-news">Latest news <span class="d-card__count">Up to <span class="home-limit-desktop">@HomeNewsCount</span><span class="home-limit-mobile">8</span> sources · rotates hourly</span></h2>
             <a class="d-more" href="news">View all <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="m13 6 6 6-6 6"></path></svg></a>
         </div>
         @if (news.Count == 0)
@@ -179,7 +179,7 @@
 
     <section data-home-section="videos" class="d-card d-vids" aria-labelledby="h-vids">
         <div class="d-card__head">
-            <h2 class="d-card__title" id="h-vids">Latest videos <span class="d-card__count">Up to 10 channels · rotates hourly</span></h2>
+            <h2 class="d-card__title" id="h-vids">Latest videos <span class="d-card__count">Up to <span class="home-limit-desktop">10</span><span class="home-limit-mobile">5</span> channels · rotates hourly</span></h2>
             <a class="d-more" href="videos">View all <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="m13 6 6 6-6 6"></path></svg></a>
         </div>
         @if (videos.Count == 0)
@@ -236,6 +236,16 @@
     </section>
 
     <HomeRankings Data="homeRankings" />
+
+    @if (HomeBoxOfficeSchedule.ShowResults(Dates.TodayAt(nowUtc)))
+    {
+        <HomeBoxOfficeResults Rows="homeBoxOffice" Weekend="@HomeBoxOfficeSchedule.ResultsWeekend(Dates.TodayAt(nowUtc))" Failed="homeBoxOfficeFailed" />
+    }
+    else
+    {
+    <BoxOfficeForecastSection HomeCard="true" Rows="@(homeForecasts.Movies.Where(m => m.Kind == BoxOfficeForecastQuery.Preview).ToList())"
+        Source="@(homeForecasts.Sources.SingleOrDefault(s => s.Kind == BoxOfficeForecastQuery.Preview))" UtcNow="@nowUtc" />
+    }
 
     <section data-home-section="movies" class="d-card d-movies" aria-labelledby="h-movies h-digital">
         <div class="d-card__head">
@@ -346,6 +356,9 @@
     private IReadOnlyList<TonightItem> tonight = [];
     private IReadOnlyList<FeedItem> news = [];
     private IReadOnlyList<VideoItem> videos = [];
+    private IReadOnlyList<BoxOfficeMovie> homeBoxOffice = [];
+    private bool homeBoxOfficeFailed;
+    private BoxOfficeForecastSnapshot homeForecasts = new([], []);
     private IReadOnlyList<MovieReleaseItem> movies = [];
     private IReadOnlyList<MovieReleaseItem> digitalMovies = [];
     private DigitalReleasePage? digitalData;
@@ -374,6 +387,24 @@
         todays = await EventsQuery.GetOnDateAsync(db, Dates.TodayAt(nowUtc));
         news = await FeedQuery.GetHomeNewsAsync(db, HomeNewsCount);
         videos = await VideosQuery.GetHomeVideosAsync(db);
+        homeForecasts = new([], []);
+        homeBoxOffice = []; homeBoxOfficeFailed = false;
+        if (HomeBoxOfficeSchedule.ShowResults(Dates.TodayAt(nowUtc)))
+        {
+            try
+            {
+                var weekend = HomeBoxOfficeSchedule.ResultsWeekend(Dates.TodayAt(nowUtc));
+                homeBoxOffice = await BoxOfficeChartQuery.GetAsync(db, weekend);
+            }
+            catch (Exception ex) when (ex is System.Data.Common.DbException or InvalidOperationException)
+            { Log.LogError(ex, "Could not read home weekend results."); homeBoxOfficeFailed = true; }
+        }
+        else
+        {
+        try { homeForecasts = await BoxOfficeForecastQuery.GetAsync(db, Dates.TodayAt(nowUtc)); }
+        catch (Exception ex) when (ex is System.Data.Common.DbException or InvalidOperationException)
+        { Log.LogError(ex, "Could not read home weekend predictions."); }
+        }
         movies = await MoviesQuery.GetFridayTheatricalAsync(db, Dates.TodayAt(nowUtc));
         digitalData = await DigitalReleasesQuery.GetAsync(db, Dates.TodayAt(nowUtc), null, take: 5);
         digitalMovies = digitalData.Items;
@@ -382,5 +413,5 @@
         tonight = TodayTonight.Build(todays, Dates);
     }
 
-    private const int HomeNewsCount = 10;
+    private const int HomeNewsCount = 15;
 }

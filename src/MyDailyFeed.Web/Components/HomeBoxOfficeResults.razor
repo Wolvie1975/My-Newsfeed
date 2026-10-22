@@ -1,0 +1,45 @@
+@inject FeedDates Dates
+
+<section class="d-card boxoffice-forecasts d-forecasts" data-home-section="forecasts" aria-labelledby="h-home-boxoffice">
+    <div class="d-card__head">
+        <h2 class="d-card__title" id="h-home-boxoffice">Weekend results</h2>
+        <a class="d-more" href="box-office">View all <span aria-hidden="true">→</span></a>
+    </div>
+    <h3 class="boxoffice-forecast-date">@BoxOfficeChartQuery.WeekendLabel(Weekend)</h3>
+    @if (Failed)
+    {
+        <p class="empty" role="status">Weekend results are temporarily unavailable.</p>
+    }
+    else if (Rows.Count == 0)
+    {
+        <p class="empty" role="status">Results for this weekend have not been published yet. Check back for reported totals.</p>
+    }
+    else
+    {
+        <p class="updated">Final means provider-reported actuals. Reported totals may still be revised.</p>
+        <ol class="boxoffice-chart" aria-label="Weekend box-office results">
+            @foreach (var movie in Rows)
+            {
+                <li class="boxoffice-movie">
+                    <span class="boxoffice-rank" aria-label="@($"Rank {movie.Rank}")">@movie.Rank</span>
+                    <MoviePoster Url="@movie.PosterUrl" Title="@movie.Title" Class="boxoffice-poster" />
+                    <div class="boxoffice-movie-body">
+                        <h4>@if (movie.MovieUrl is { } url) { <a href="@url" target="_blank" rel="noopener noreferrer">@movie.Title</a> } else { @movie.Title }</h4>
+                        <dl class="boxoffice-stats">
+                            <div><dt>Weekend gross · @BoxOfficeChartQuery.StatusLabel(movie.ResultStatus)</dt><dd>@BoxOfficeChartQuery.Money(movie.WeekendGross)</dd></div>
+                            <div><dt>Total domestic</dt><dd>@BoxOfficeChartQuery.Money(movie.TotalDomesticGross)</dd></div>
+                        </dl>
+                        <BoxOfficeResultEvidence Movie="movie" />
+                    </div>
+                </li>
+            }
+        </ol>
+        <p class="updated">Source: @if (Rows[0].SourceUrl is { } source) { <a href="@source" target="_blank" rel="noopener noreferrer">The Numbers</a> } else { <span>The Numbers</span> } · Last checked @Dates.PublishedFull(Rows.Min(m => m.FetchedAt))</p>
+    }
+</section>
+
+@code {
+    [Parameter] public IReadOnlyList<BoxOfficeMovie> Rows { get; set; } = [];
+    [Parameter] public DateOnly Weekend { get; set; }
+    [Parameter] public bool Failed { get; set; }
+}

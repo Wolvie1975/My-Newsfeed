@@ -1,5 +1,15 @@
-<section class="boxoffice-forecasts" aria-label="@Title">
-    <h2>@Title</h2>
+<section class="@(HomeCard ? "boxoffice-forecasts d-card d-forecasts" : "boxoffice-forecasts")" aria-label="@Title" data-home-section="@(HomeCard ? "forecasts" : null)">
+    @if (HomeCard)
+    {
+        <div class="d-card__head">
+            <h2 class="d-card__title">@Title</h2>
+            <a class="d-more" href="box-office/weekend-preview">View all <span aria-hidden="true">→</span></a>
+        </div>
+    }
+    else
+    {
+        <h2>@Title</h2>
+    }
     @if (Source is { Failed: true } || (Rows.Count > 0 && !BoxOfficeForecastQuery.IsRecent(Source, UtcNow)))
     {
         <p class="standing-status" role="status">Forecast refresh is delayed; showing previously collected predictions.</p>
@@ -38,6 +48,7 @@
     }
 </section>
 @code {
+    [Parameter] public bool HomeCard { get; set; }
     [Parameter] public string Kind { get; set; } = BoxOfficeForecastQuery.Preview;
     [Parameter] public IReadOnlyList<BoxOfficeForecast> Rows { get; set; } = [];
     [Parameter] public BoxOfficeForecastSource? Source { get; set; }

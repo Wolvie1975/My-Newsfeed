@@ -2267,3 +2267,21 @@
     .pub .header-clock__date-compact { display: inline; }
     .pub .header-actions { flex-shrink: 0; }
 }
+
+/* Forecast content shares the homepage card frame. */
+.pub .d-forecasts > .boxoffice-forecast-date, .pub .d-forecasts > p { margin: 16px 20px; }
+.pub .d-forecasts > .boxoffice-chart { margin: 0; padding: 0 20px 20px; }
+/* Homepage spacing comes from the card grid, not standalone section margins. */
+.pub .d-grid > .d-forecasts { margin-top: 0; }
+@media (max-width: 1023px) {
+    .pub .d-forecasts { order: 6; }
+}
+
+/* Shorter homepage reading lists on phones; full lists remain on larger screens. */
+.pub .home-limit-mobile { display: none; }
+@media (max-width: 767px) {
+    .pub .home-limit-desktop { display: none; }
+    .pub .home-limit-mobile { display: inline; }
+    .pub .d-news > .d-list > li:nth-child(n + 9),
+    .pub .d-vids > .d-list > li:nth-child(n + 6) { display: none; }
+}

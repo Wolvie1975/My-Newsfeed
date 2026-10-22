@@ -6,11 +6,139 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The most recent verified web release is `mydailyfeed-web:mobile-menu-label-20261021`,
-with rollback recorded as `mynewsfeed-web:before-mobile-menu-label-20261021`.
+The most recent verified web release is `mydailyfeed-web:mobile-home-limits-20261021`,
+with rollback recorded as `mynewsfeed-web:before-mobile-home-limits-20261021`.
 Its container was healthy on October 21, 2026 (Central). This is a dated
 observation, not live hosting status.
 
+
+## Mobile homepage news and video limits — October 21, 2026
+
+At phone widths through 767px, homepage Latest news shows up to 8 source stories
+and Latest videos up to 5 channels. Headings reflect the responsive limits. Larger
+screens retain 15 news sources and 10 video channels; View all and hourly rotation
+remain. CSS hides excess homepage rows without requiring JavaScript. Browser CSS
+preview checks passed at 320, 412, 767, 768 and 1280px, including resizing back to
+the larger lists.
+
+Deployed `mydailyfeed-web:mobile-home-limits-20261021` (6b6cbf9d3ab6), healthy.
+Rollback image `mynewsfeed-web:before-mobile-home-limits-20261021` (dddf64c4dfdc),
+retained container `mynewsfeed-web-before-mobile-home-limits-20261021`. Runtime
+environment, key volume, ports, restart policy and network preserved; no schema
+changes. Build, Docker publish/static-asset guard and diff checks passed. Live browser
+checks at 320, 412, 767, 768, 1280 and 1920px verified counts, responsive headings,
+no horizontal overflow and no JavaScript errors. Health, /news, /videos, /box-office,
+/box-office/weekend-preview and /movies returned 200. Evidence:
+`/tmp/mydailyfeed-header-clock-deploy/limits-*`.
+
+## Box-office estimate and final labels — October 21, 2026
+
+Integrated the scraper status contract into box-office results and the homepage
+Sunday–Tuesday results card. Each weekend gross displays Estimated, Final or
+Reported totals (NULL/unrecognized statuses fall back to Reported totals).
+Cumulative domestic totals have no estimate/final label. Safe status-evidence links
+fall back to chart attribution; provider update time appears only when supplied,
+and collection time remains separately labeled. Final means provider-reported
+actuals; later corrections are possible. Current-weekend Home reads bind the
+expected Friday as a SQL date; no older chart is substituted. Weekday rotation,
+previews, posters and empty/error handling remain.
+
+Deployed `mydailyfeed-web:boxoffice-status-20261021` (dddf64c4dfdc), healthy.
+Rollback image `mynewsfeed-web:before-boxoffice-status-20261021` (126256560c42),
+retained container `mynewsfeed-web-before-boxoffice-status-20261021`. Runtime
+environment, key volume, ports, restart policy and network preserved. No frontend
+DDL or collector changes. Existing reader successfully read the new fields before
+replacement. Twenty-one status/schedule/forecast tests passed, including mixed
+mock statuses and absent provider timestamps. Docker publish/static-asset guard
+and diff checks passed with existing warnings. Live browser checks at 320, 412,
+1280 and 1920px passed estimated/unknown labels, separate domestic totals, missing
+provider timestamps, source links and overflow. Predictions remain visible on the
+current day. Final was tested with mock data only; no live Final row was verified.
+Health, Home, all box-office views, /news, /movies, /events, /results, /standings
+and /rankings returned 200. Evidence:
+`/tmp/mydailyfeed-header-clock-deploy/status-*`.
+
+## Homepage Latest news expanded to 15 sources — October 21, 2026
+
+Increased the Latest news card limit from 10 to 15 distinct sources, retaining
+one latest story per source and hourly rotation. The heading uses the same count
+as the query limit.
+
+Deployed `mydailyfeed-web:home-news15-20261021` (126256560c42), healthy.
+Rollback image `mynewsfeed-web:before-home-news15-20261021` (f2b6f3283649),
+retained container `mynewsfeed-web-before-home-news15-20261021`. Runtime
+environment, key volume, ports, restart policy and network preserved; no schema
+changes. Build, Docker publish/static-asset guard and diff checks passed. Live
+browser checks at 320, 412, 1280 and 1920px confirmed 15 news items, the updated
+heading and no horizontal overflow. Health, /news, /box-office and /movies
+returned 200. Evidence: `/tmp/mydailyfeed-header-clock-deploy/news15-*`.
+
+## Homepage box-office card spacing — October 21, 2026
+
+Removed the standalone forecast section’s 40px top margin from homepage cards so
+the card grid controls both surrounding gaps. Applies to predictions and weekend
+results. Set the mobile card order to match Friday releases, keeping box office
+immediately above releases. Browser CSS preview checks at 320, 412, 1280 and 1920px
+verified surrounding gaps match the grid spacing (including desktop row rounding).
+
+Deployed `mydailyfeed-web:boxoffice-spacing-20261021` (f2b6f3283649), healthy.
+Rollback image `mynewsfeed-web:before-boxoffice-spacing-20261021` (7a8be93ea555),
+retained container `mynewsfeed-web-before-boxoffice-spacing-20261021`. Runtime
+environment, key volume, ports, restart policy and network preserved. Docker publish
+and static-asset guard passed. Live browser spacing checks passed at 320, 412,
+1280 and 1920px; mobile gaps are 12px on both sides and desktop gaps follow the
+existing grid row rounding. Health, Home, box-office results/preview and Movies
+returned 200. No schema changes. Evidence:
+`/tmp/mydailyfeed-header-clock-deploy/spacing-*`.
+
+## Homepage box-office weekly rotation — October 21, 2026
+
+The homepage box-office card shows predictions Wednesday through Saturday and
+reported weekend results Sunday through Tuesday, using the configured display
+zone (Central in production). Both variants share the same homepage visibility
+setting, now named Weekend box office, and stay above Friday theater releases.
+Results show the current weekend only; missing current-weekend rows show a waiting
+message instead of an older chart. Read failures leave the rest of Home available.
+
+The existing results feed has no estimate/final indicator. Totals refresh from
+The Numbers and carry a revision notice; they are not labeled final by calendar day.
+Explicit estimate-to-final labeling requires scraper-supplied publication status.
+No schema changes were made. Fifteen schedule/forecast tests passed, covering every
+weekday, weekend selection, year boundary and Central midnight. Build succeeded
+with existing package/analyzer warnings; diff checks passed.
+
+Deployed `mydailyfeed-web:boxoffice-rotation-20261021` (7a8be93ea555), healthy.
+Rollback image `mynewsfeed-web:before-boxoffice-rotation-20261021` (e2a913b6fbad),
+retained container `mynewsfeed-web-before-boxoffice-rotation-20261021`. Runtime
+environment, key volume, ports, restart policy and network preserved; no schema
+changes. Docker publish/static-asset guard passed. Live predictions-card checks
+at 320, 412, 1280 and 1920px passed placement, link, overflow and visibility checks.
+Sunday–Tuesday selection was verified by automated tests, not by changing the
+production clock. Health, Home, all three box-office views, /movies, /news, /events,
+/results, /standings and /rankings returned 200. Evidence:
+`/tmp/mydailyfeed-header-clock-deploy/rotation-*`.
+
+## Homepage weekend predictions card — October 21, 2026
+
+Added Upcoming weekend preview — Predictions as a separate homepage card above
+Friday theater releases. Reuses the box-office forecast section, including ranks,
+posters, predicted gross ranges, dates, source links and stale/empty messaging.
+View all links to /box-office/weekend-preview. Added a Weekend predictions visibility
+choice to homepage settings. Forecast read failures leave the rest of Home available.
+
+Validation: solution build, JavaScript syntax and diff checks passed; four existing
+forecast tests passed. Local browser checks at 320, 412, 1280 and 1920px verified
+card placement, View all link, no horizontal overflow and independent visibility.
+
+Deployed `mydailyfeed-web:home-forecasts-20261021` (e2a913b6fbad), healthy.
+Rollback image `mynewsfeed-web:before-home-forecasts-20261021` (75b5eb21198b),
+retained container `mynewsfeed-web-before-home-forecasts-20261021`. Runtime
+environment, key volume, ports, restart policy and network preserved; no schema
+changes. Docker publish/static-asset guard passed. Live browser checks repeated
+at 320, 412, 1280 and 1920px passed placement, link, overflow and visibility checks.
+Health, Home, all three box-office views, /movies, /news, /events, /results,
+/standings and /rankings returned 200. Private deployment evidence:
+`/tmp/mydailyfeed-header-clock-deploy/forecasts-*`.
 
 ## Remove redundant mobile News label — October 21, 2026
 
