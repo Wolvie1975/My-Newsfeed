@@ -1,7 +1,27 @@
-# Chat handoff — October 19, 2026
+# Chat handoff
 
 Read this file when continuing work from the previous chat. These are dated
 observations; check current repository and hosting state before acting.
+
+## Session handoff — October 22, 2026 (Central)
+
+- Reviewed the README, topic-guide structure, maintenance notes, release history,
+  application startup, homepage, feed queries, shared saved-content implementation,
+  and test layout to establish context. No application changes, tests, deployment,
+  commits or pushes were performed in this session.
+- Working tree was clean before this handoff update. Current HEAD was `92bc9a7`
+  (`Add rotating box-office homepage card and mobile content limits`).
+- Release history records `mydailyfeed-web:mobile-home-limits-20261021` as the
+  latest verified web release. Hosting status was not checked this session.
+  Consult release history before the older deployment snapshots below.
+- The user agreed to reuse this file for session continuity. At the end of a work
+  session, update it with changes, commit/deployment state, checks, unresolved
+  work, decisions and a concrete next step. Do not store secrets here or treat
+  historical session permissions as current authorization.
+- No implementation task is currently pending. Next session: read this note,
+  README and current release history, inspect Git state, then follow the user's
+  next request. The maintenance guide contains previously documented follow-ups;
+  they were not revalidated during this orientation.
 
 ## Navigation logo — October 20, 2026
 
