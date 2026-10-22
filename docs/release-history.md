@@ -6,11 +6,38 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The most recent verified web release is `mydailyfeed-web:nav-order-20261022`,
-with rollback recorded as `mynewsfeed-web:before-nav-order-20261022`.
+The most recent verified web release is `mydailyfeed-web:mobile-tools-20261022`,
+with rollback recorded as `mynewsfeed-web:before-mobile-tools-20261022`.
 Its container was healthy on October 22, 2026 (Central). This is a dated
 observation, not live hosting status.
 
+
+## Mobile Tools group — October 22, 2026
+
+Deployed `mydailyfeed-web:mobile-tools-20261022` (4e29e3f0e6ab). Mobile Saved,
+Settings and Admin sign in (Administration when authorized) now share a Tools
+group using existing mobile group styling. Desktop navigation is unchanged.
+Docker publish/static-asset guard passed. Live anonymous checks at 320, 390,
+768 and 1440px verified group labels and targets, Saved active state, menu
+closure, mobile menu bounds and desktop controls. Screenshot reviewed at 390px.
+Health returned 200; runtime settings and mounts preserved. Saved content had
+365px document width at a 320px viewport; the navigation itself fit, and wider
+checked viewports had no document overflow. Authenticated label verified in
+source only. Previous container retained as
+`mynewsfeed-web-before-mobile-tools-20261022`, rollback image
+`mynewsfeed-web:before-mobile-tools-20261022`. No schema changes.
+Evidence: `/tmp/mydailyfeed-mobile-tools-deploy/`.
+
+## Watch and YouTube after Entertainment — October 22, 2026
+
+Deployed `mydailyfeed-web:nav-after-entertainment-20261022` (e012d18cd66f).
+Desktop and mobile begin Home, News, Sports, Entertainment, Where to watch,
+YouTube. Docker publish/static-asset guard passed. Live checks at 390, 768 and
+1440px verified order, no horizontal overflow and health HTTP 200. Runtime
+settings and mounts preserved; prior container retained as
+`mynewsfeed-web-before-nav-after-entertainment-20261022`, with rollback image
+`mynewsfeed-web:before-nav-after-entertainment-20261022`. No schema changes.
+Evidence: `/tmp/mydailyfeed-nav-after-entertainment-deploy/`.
 
 ## Navigation link order — October 22, 2026
 

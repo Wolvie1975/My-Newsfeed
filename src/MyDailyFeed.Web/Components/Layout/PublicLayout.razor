@@ -35,8 +35,6 @@
         @* Wide screens: the navigation sits in the header. Smaller screens get a dropdown below it. *@
         <nav class="site-nav site-nav--inline" aria-label="Main">
             <a href="" aria-current="@(onHome ? "page" : null)">Home</a>
-            <a href="watch" aria-current="@(onWatch ? "page" : null)">Where to watch</a>
-            <a href="videos" aria-current="@(onVideos ? "page" : null)">YouTube</a>
             <details class="desktop-nav-group" data-mobile-nav>
                 <summary class="@((onNews || onLocal || onBoxOffice) ? "is-current" : null)">News ▾</summary>
                 <div class="desktop-nav-links">
@@ -55,6 +53,8 @@
             <details class="desktop-nav-group" data-mobile-nav><summary class="@((onMovies || onTv) ? "is-current" : null)">Entertainment ▾</summary><div class="desktop-nav-links">            <a href="movies" aria-current="@(onMovies && !onDigital ? "page" : null)">Movies</a>
             <a href="tv" aria-current="@(onTv ? "page" : null)">TV &amp; Streaming</a>
             <a href="movies/digital" aria-current="@(onDigital ? "page" : null)">Digital rental / purchase</a></div></details>
+            <a href="watch" aria-current="@(onWatch ? "page" : null)">Where to watch</a>
+            <a href="videos" aria-current="@(onVideos ? "page" : null)">YouTube</a>
         </nav>
 
         <time class="header-clock" data-header-clock hidden aria-live="off">
@@ -99,8 +99,6 @@
         </summary>
         <nav aria-label="Main" class="mobile-nav__links">
             <a href="" aria-current="@(onHome ? "page" : null)">Home</a>
-            <a href="watch" aria-current="@(onWatch ? "page" : null)">Where to watch</a>
-            <a href="videos" aria-current="@(onVideos ? "page" : null)">YouTube</a>
             <div class="mobile-nav-group" role="group" aria-labelledby="mobile-news-heading">
                 <span class="nav-group-label" id="mobile-news-heading">News</span>
                 <div class="mobile-subnav">
@@ -124,9 +122,17 @@
             <a href="movies/digital">Digital rental / purchase</a>
             </div></div>
 
-            <a href="saved" aria-current="@(onSaved ? "page" : null)">Saved</a>
-            <a href="settings" aria-current="@(onTeams ? "page" : null)">Settings</a>
-            <AuthorizeView><Authorized><a href="admin">Administration</a></Authorized><NotAuthorized><a href="login">Admin sign in</a></NotAuthorized></AuthorizeView>
+            <a href="watch" aria-current="@(onWatch ? "page" : null)">Where to watch</a>
+            <a href="videos" aria-current="@(onVideos ? "page" : null)">YouTube</a>
+
+            <div class="mobile-nav-group" role="group" aria-labelledby="mobile-tools-heading">
+                <span class="nav-group-label" id="mobile-tools-heading">Tools</span>
+                <div class="mobile-subnav">
+                    <a href="saved" aria-current="@(onSaved ? "page" : null)">Saved</a>
+                    <a href="settings" aria-current="@(onTeams ? "page" : null)">Settings</a>
+                    <AuthorizeView><Authorized><a href="admin">Administration</a></Authorized><NotAuthorized><a href="login">Admin sign in</a></NotAuthorized></AuthorizeView>
+                </div>
+            </div>
         </nav>
     </details>
 
