@@ -6,11 +6,59 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The most recent verified web release is `mydailyfeed-web:theatrical-window-20261022`,
-with rollback recorded as `mynewsfeed-web:before-theatrical-window-20261022`.
+The most recent verified web release is `mydailyfeed-web:digital-card-20261022`,
+with rollback recorded as `mynewsfeed-web:before-digital-card-20261022`.
 Its container was healthy on October 22, 2026 (Central). This is a dated
 observation, not live hosting status.
 
+
+## Separate homepage Digital / VOD card — October 22, 2026
+
+Upcoming Digital / VOD now has its own homepage card and cascades independently
+of Friday theater releases. The theatrical card is absent Monday–Wednesday;
+Digital remains available all week. Source/date selection, poster and retailer
+behavior are preserved. Legacy hidden Movies & Digital preferences hide both.
+
+Deployed `mydailyfeed-web:digital-card-20261022` (761fae8e3900), healthy.
+Rollback image `mynewsfeed-web:before-digital-card-20261022` (bb5d0487fb60),
+retained container `mynewsfeed-web-before-digital-card-20261022`. Runtime settings
+and persistent mounts compared and preserved; no schema changes. Solution build,
+Docker publish/static-asset guard, JavaScript syntax and diff checks passed with
+existing dependency warnings. Live checks at 320, 390, 768, 1024, 1440 and 1920px
+passed independent card markup, links, no overlap/overflow or JavaScript errors,
+legacy hidden preference and health. Digital card screenshot reviewed. Evidence:
+`/tmp/mydailyfeed-digital-card-deploy/`. No commit or push for this release.
+
+## Theatrical scraper handoff completion — October 22, 2026
+
+Reviewed the scraper's theatrical/no-disc completion handoff. The frontend keeps
+its enabled-provider, country, status and view-specific date filters; CollectDisc
+remains a scraper collection policy, with no new frontend mapping or write flow.
+Home's theatrical View all now links to `/movies?type=theatrical`. Digital provider
+help explains that DVDs Release Dates also supplies theater/digital dates; admin
+status help explains that disabling a provider hides all its release types.
+
+Deployed `mydailyfeed-web:theatrical-completion-20261022` (bb5d0487fb60), healthy.
+Rollback image `mynewsfeed-web:before-theatrical-completion-20261022` (6ce5d5c9c5d8),
+retained container `mynewsfeed-web-before-theatrical-completion-20261022`. Runtime
+environment, entrypoint, health check, mounts, ports, restart policy and network
+mode compared and preserved. No frontend schema or provider setting changes.
+
+Twenty-eight focused tests passed, including SQL connection-local temporary-table
+fixtures for CollectDisc=0 theatrical/digital coverage, withdrawn discs, disabled
+providers, deduplication before Home's cap, Central-time dates and distinct
+Home/Movies date windows, plus schedule and commerce tests. Production rows were
+not modified by these fixtures. Docker publish/static-asset guard and diff checks
+passed with existing dependency/analyzer warnings. Live browser checks at 390 and
+1440px confirmed five films on Home, six on theatrical Movies, keyboard navigation
+through View all, provider wording, no disc badges in All releases, no overflow or
+JavaScript errors. These counts are dated observations. Read-only diagnostics
+confirmed six scheduled theatrical, six digital and five subscription releases,
+24 withdrawn discs and no scheduled discs. Health and checked public routes
+returned 200 (Digital follows its canonical-source redirect); admin redirects to
+login. Private HTTPS was not separately checked. Evidence:
+`/tmp/mydailyfeed-theatrical-completion-deploy/` and
+`/tmp/mydailyfeed-movies-diagnosis/contract-tests.log`. Not committed or pushed.
 
 ## Homepage theatrical window — October 22, 2026
 

@@ -2284,3 +2284,6 @@
     .pub .d-news > .d-list > li:nth-child(n + 9),
     .pub .d-vids > .d-list > li:nth-child(n + 6) { display: none; }
 }
+
+/* Digital releases cascade independently of the theatrical card. */
+@media (max-width: 1023px) { .pub .d-digital { order: 7; } }

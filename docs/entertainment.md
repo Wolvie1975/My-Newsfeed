@@ -10,6 +10,12 @@ Friday is queried; later Fridays are not substituted when no releases are stored
 The existing five-item limit, enabled-source filtering and deduplication remain.
 Digital / VOD stays visible throughout the week, and the full Movies page is unchanged.
 
+The homepage's Upcoming Digital / VOD is a separate card from Friday theater
+releases. It participates independently in the desktop cascading layout and stacks
+after the theatrical card on mobile. Theatrical dates, digital provider selection,
+posters and retailer links retain their existing behavior. A legacy hidden
+Movies & Digital preference continues to hide both cards.
+
 Current contracts consolidated October 13, 2026 (Central). See
 [Deployment](../DEPLOY.md) for rollout and [Release history](release-history.md)
 for historical validation. Rust commands and `sql/` paths refer to the separate
@@ -51,9 +57,12 @@ soonest first. The old current Monday–Sunday restriction is superseded.
 
 Prefer Movie Insider whenever enabled; otherwise select another enabled source.
 The source dropdown offers only enabled providers, even when a source has no
-matching rows. As of October 21, 2026, Movie Insider and When To Stream are enabled;
-DVDs Release Dates is disabled by scraper configuration. Retained records from
-disabled providers remain excluded. Default, invalid and disabled `?source=` keys
+matching rows. Updated October 22, 2026: Movie Insider, When To Stream and DVDs Release Dates
+are enabled. DVDs Release Dates supplies theatrical and digital dates; its scraper
+CollectDisc policy is disabled and retained scheduled disc rows were withdrawn.
+CollectDisc controls collection, not provider-wide public visibility; the frontend
+does not require CollectDisc=1. Retained records from disabled providers and
+withdrawn releases remain excluded. Default, invalid and disabled `?source=` keys
 resolve to the preferred enabled source, redirecting to its canonical URL. If no
 provider is enabled, remove the stale source parameter and show the empty state. Do not silently blend providers when a
 selected source is empty. Generic digital data does not prove platform, pricing,

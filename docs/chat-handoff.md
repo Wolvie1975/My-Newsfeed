@@ -5,6 +5,16 @@ observations; check current repository and hosting state before acting.
 
 ## Session handoff — October 22, 2026 (Central)
 
+### Latest release: separate Digital / VOD homepage card
+
+Deployed `mydailyfeed-web:digital-card-20261022` (761fae8e3900), healthy.
+Upcoming Digital / VOD is now a separate cascading card, available all week.
+The theatrical card retains its Thursday–Sunday window. Legacy hidden Movies &
+Digital preferences still hide both. Runtime settings/mounts preserved; no schema
+changes. Build, Docker static-asset guard and responsive browser checks passed.
+Rollback image/container use `before-digital-card-20261022`; see release history
+and `/tmp/mydailyfeed-digital-card-deploy/`. Changes remain uncommitted.
+
 ### Deployment permission for this session
 
 The user explicitly granted permission to deploy during this October 22, 2026
@@ -16,12 +26,21 @@ does not mean a deployment has occurred.
 
 ### Scraper coordination: theatrical coverage
 
-The user disabled DVDs Release Dates to avoid DVDs, not theatrical releases.
-Read-only diagnosis found six October 23 theatrical rows hidden by that provider's
-disabled flag. No provider/data changes were made. The requested scraper handoff
-is [scraper-theatrical-handoff.md](scraper-theatrical-handoff.md); it covers
-theatrical-only coverage, verification of stale dates, retained disc rows and
-frontend coordination before provider re-enablement.
+Completed frontend review of the scraper handoff on October 22. Scraper restored
+the provider with CollectDisc=0 and withdrew retained discs. Read-only checks found
+six theatrical, six digital, five subscription scheduled rows and 24 withdrawn
+discs. No frontend provider setting/schema changes were needed. Home's theatrical
+View all now selects the theatrical Movies view; digital/admin help clarifies
+provider-wide enablement versus disc collection policy.
+
+Deployed `mydailyfeed-web:theatrical-completion-20261022` (bb5d0487fb60), healthy;
+rollback image/container use `before-theatrical-completion-20261022`. Runtime settings
+and mounts preserved. Twenty-eight focused tests passed, including SQL temporary
+fixtures; live phone/desktop checks confirmed five Home films, six theatrical
+Movies films, provider wording, keyboard navigation and no discs/overflow/JS errors.
+See release history for evidence and limits. These updates are uncommitted; earlier
+session changes were committed as `3cb517b`. The original request is preserved in
+[scraper-theatrical-handoff.md](scraper-theatrical-handoff.md), now historical.
 
 ### Homepage cascading layout — deployed
 

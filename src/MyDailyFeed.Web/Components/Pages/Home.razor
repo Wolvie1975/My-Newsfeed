@@ -249,12 +249,12 @@
         Source="@(homeForecasts.Sources.SingleOrDefault(s => s.Kind == BoxOfficeForecastQuery.Preview))" UtcNow="@nowUtc" />
     }
 
-    <section data-home-section="movies" class="d-card d-movies" aria-labelledby="@(ShowTheatrical ? "h-movies h-digital" : "h-digital")">
-        @if (ShowTheatrical)
-        {
+    @if (ShowTheatrical)
+    {
+    <section data-home-section="movies" class="d-card d-movies" aria-labelledby="h-movies">
         <div class="d-card__head">
             <h2 class="d-card__title" id="h-movies">Friday theater releases</h2>
-            <a class="d-more" href="movies">View all <span aria-hidden="true">→</span></a>
+            <a class="d-more" href="movies?type=theatrical">View all <span aria-hidden="true">→</span></a>
         </div>
         @if (movies.Count == 0)
         {
@@ -290,7 +290,10 @@
                 }
             </ul>
         }
-        }
+    </section>
+    }
+
+    <section data-home-section="digital" class="d-card d-movies d-digital" aria-labelledby="h-digital">
         <div class="d-card__head">
             <h2 class="d-card__title" id="h-digital">Upcoming Digital / VOD
                 @if (digitalData?.Selected is { } source)

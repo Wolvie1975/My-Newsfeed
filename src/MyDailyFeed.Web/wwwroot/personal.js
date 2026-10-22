@@ -2,8 +2,8 @@
 (function () {
     'use strict';
     const PREFS = 'mynewsfeed-personal-v1', TEAMS = 'mynewsfeed-sports-teams-v1';
-    const defaults = ['watch', 'news', 'sports', 'tv', 'videos', 'rankings', 'forecasts', 'movies'];
-    const labels = { watch: 'Where to watch', sports: 'Today & Tonight', f1: 'F1', rankings: 'Top 25', news: 'Latest news', forecasts: 'Weekend box office', movies: 'Movies & Digital', tv: 'Today’s episodes', videos: 'Latest videos' };
+    const defaults = ['watch', 'news', 'sports', 'tv', 'videos', 'rankings', 'forecasts', 'movies', 'digital'];
+    const labels = { watch: 'Where to watch', sports: 'Today & Tonight', f1: 'F1', rankings: 'Top 25', news: 'Latest news', forecasts: 'Weekend box office', movies: 'Friday theater releases', digital: 'Upcoming Digital / VOD', tv: 'Today’s episodes', videos: 'Latest videos' };
     let storage = true, pending = false, weatherController;
     try { localStorage.setItem('mynewsfeed-personal-probe', '1'); localStorage.removeItem('mynewsfeed-personal-probe'); } catch (_) { storage = false; }
     const safe = value => { try { const url = new URL(value); return ['https:', 'http:'].includes(url.protocol) ? url.href : null; } catch (_) { return null; } };
@@ -38,7 +38,7 @@
             grid.classList.toggle('is-customized', p.hidden.length > 0 || JSON.stringify(p.order) !== JSON.stringify(defaults));
             defaults.forEach((key, index) => {
                 const section = grid.querySelector(`[data-home-section="${key}"]`);
-                if (section) { section.hidden = p.hidden.includes(key); if (grid.children[index] !== section) grid.insertBefore(section, grid.children[index] || null); }
+                if (section) { section.hidden = p.hidden.includes(key) || (key === 'digital' && p.hidden.includes('movies')); if (grid.children[index] !== section) grid.insertBefore(section, grid.children[index] || null); }
             });
             grid.querySelectorAll('[data-home-f1]').forEach(section => section.hidden = p.hidden.includes('f1'));
             const empty = document.querySelector('[data-home-empty]'); if (empty) empty.hidden = grid.querySelector('[data-home-section]:not([hidden])') !== null;
