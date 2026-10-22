@@ -5,12 +5,12 @@
 @inject FeedDates Dates
 
 <div data-news-page data-category-explicit="@(CategoryQuery is not null || !string.IsNullOrWhiteSpace(Q) || SourceQuery is not null || AfterQuery is not null ? "true" : "false")" data-category-current="@Category" hidden></div>
-<PageTitle>News · MyDailyFeed</PageTitle>
+<PageTitle>Headlines · MyDailyFeed</PageTitle>
 
 @* Static (non-interactive) page. Filters are plain links and a GET form, so every view has a shareable URL and works
    without JavaScript; public.js only upgrades "Load more" to append in place. *@
 
-<PageHeading Title="News" Eyebrow="THE LATEST STORIES" Description="Latest articles from the sources we follow." />
+<PageHeading Title="Headlines" Eyebrow="THE LATEST STORIES" Description="Latest articles from the sources we follow." />
 
 
 <p><a href="box-office">Weekend box office →</a></p>

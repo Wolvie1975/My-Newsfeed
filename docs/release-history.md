@@ -6,11 +6,39 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The most recent verified web release is `mydailyfeed-web:digital-card-20261022`,
-with rollback recorded as `mynewsfeed-web:before-digital-card-20261022`.
+The most recent verified web release is `mydailyfeed-web:nav-order-20261022`,
+with rollback recorded as `mynewsfeed-web:before-nav-order-20261022`.
 Its container was healthy on October 22, 2026 (Central). This is a dated
 observation, not live hosting status.
 
+
+## Navigation link order — October 22, 2026
+
+Deployed `mydailyfeed-web:nav-order-20261022` (b0251e72ab5d). Desktop and mobile
+now begin Home, Where to watch, YouTube, News, Sports, Entertainment. Build and
+Docker static-asset guard passed with existing dependency warnings. Live browser
+checks at 390, 768 and 1440px verified order and no horizontal overflow; health
+returned 200. Runtime settings and mounts preserved; prior container retained as
+`mynewsfeed-web-before-nav-order-20261022`, rollback image
+`mynewsfeed-web:before-nav-order-20261022`. No schema changes.
+Evidence: `/tmp/mydailyfeed-nav-order-deploy/`.
+
+## News navigation group — October 22, 2026
+
+Deployed `mydailyfeed-web:news-nav-20261022` (65afd3dddc7c), healthy.
+News now groups Headlines, Local and Box Office on desktop and mobile; the
+News page heading and title are Headlines. Desktop News highlights all three
+destinations. Runtime configuration and persistent mounts were compared and
+preserved; no schema changes. Previous container retained as
+`mynewsfeed-web-before-news-nav-20261022`, with rollback image
+`mynewsfeed-web:before-news-nav-20261022`.
+
+Build and Docker static-asset guard passed with existing dependency warnings.
+Live browser checks at 390, 768 and 1440px passed grouping, all three active
+states, link navigation, heading, menu close on selection, no horizontal
+overflow or JavaScript errors. Health returned 200 and container was healthy.
+Private HTTPS was not separately checked. Evidence:
+`/tmp/mydailyfeed-news-nav-deploy/`.
 
 ## Separate homepage Digital / VOD card — October 22, 2026
 
