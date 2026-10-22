@@ -6,11 +6,28 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The most recent verified web release is `mydailyfeed-web:mobile-clock-20261021`,
-with rollback recorded as `mynewsfeed-web:before-mobile-clock-20261021`.
+The most recent verified web release is `mydailyfeed-web:mobile-menu-label-20261021`,
+with rollback recorded as `mynewsfeed-web:before-mobile-menu-label-20261021`.
 Its container was healthy on October 21, 2026 (Central). This is a dated
 observation, not live hosting status.
 
+
+## Remove redundant mobile News label — October 21, 2026
+
+Removed the non-linked News group label above Home in the mobile Browse menu.
+The News navigation link and Sports/Entertainment group labels remain. Verified
+the intended markup change and diff formatting.
+
+Deployed `mydailyfeed-web:mobile-menu-label-20261021` (75b5eb21198b), healthy.
+Rollback image `mynewsfeed-web:before-mobile-menu-label-20261021` (3d8a6f89f8f0),
+retained container `mynewsfeed-web-before-mobile-menu-label-20261021`. Runtime
+environment, key volume, ports, restart policy and network preserved; no schema
+changes. Docker publish/static-asset guard passed. Live browser checks at 320,
+412 and 768px verified the label is absent, Home/News links and Sports/Entertainment
+labels remain, navigation works and no horizontal overflow or JavaScript errors
+occur. Clock remains visible. Health and /news, /events, /results, /standings,
+/rankings, /movies, /movies/digital and /box-office returned 200. Evidence:
+`/tmp/mydailyfeed-header-clock-deploy/menu-*`.
 
 ## Mobile clock beside logo — October 21, 2026
 
