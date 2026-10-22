@@ -39,23 +39,12 @@ else
         </p>
     </details>
     <p class="updated ranking-legend"><span class="big12-badge">Big 12</span> Conference members highlighted</p>
-    @if (data.Selected.Sport == "Football")
-    {
-        <div class="football-polls">
-            <FootballPoll Poll="poll" Teams="data.Teams" />
-        </div>
-    }
-    else
-    {
-    var points = data.Teams.Any(t => t.Points != null);
-    var votes = data.Teams.Any(t => t.FirstPlaceVotes != null);
     <div class="ranking-view">
     <label class="ranking-detail-toggle"><input type="checkbox" /> Show full poll details</label>
     <div class="standings-scroll" role="region" aria-label="National rankings table" tabindex="0">
         <table class="standings-table rankings-table">
             <caption>@poll.PollName · @poll.SeasonLabel</caption>
-            <thead><tr><th scope="col">Rank</th><th scope="col" class="standing-team">Team</th><th scope="col">Record</th><th scope="col" class="ranking-extra">Previous</th><th scope="col">Change</th>
-                @if (points) { <th scope="col" class="ranking-extra">Points</th> } @if (votes) { <th scope="col" class="ranking-extra">First-place votes</th> }
+            <thead><tr><th scope="col">Rank</th><th scope="col" class="standing-team">Team</th><th scope="col">Record</th><th scope="col" class="ranking-extra">Points</th><th scope="col" class="ranking-extra">Previous</th><th scope="col">Trend</th>
             </tr></thead><tbody>
             @foreach (var team in data.Teams)
             {
@@ -65,19 +54,20 @@ else
                         @if (EventsText.LogoUrl(team.LogoUrl) is { } logo) { <img src="@logo" alt="" width="28" height="28" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()" /> }
                         @if (FeedQuery.SafeHref(team.TeamUrl) is { } teamUrl) { <a href="@teamUrl" target="_blank" rel="noopener noreferrer">@team.TeamName</a> }
                         else { <span>@team.TeamName</span> }
+                        @if (team.FirstPlaceVotes is > 0) { <span class="poll-votes">(@team.FirstPlaceVotes)</span> }
                         @if (team.IsBig12 == true) { <span class="big12-badge">Big 12</span> }
                     </span></th>
-                    <td>@(team.Record ?? "—")</td><td class="ranking-extra">@RankingsQuery.Previous(team)</td><td>@RankingsQuery.Movement(team)</td>
-                    @if (points) { <td class="ranking-extra">@(team.Points?.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) ?? "—")</td> }
-                    @if (votes) { <td class="ranking-extra">@(team.FirstPlaceVotes?.ToString() ?? "—")</td> }
+                    <td>@(team.Record ?? "—")</td>
+                    <td class="ranking-extra">@(team.Points?.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) ?? "—")</td>
+                    <td class="ranking-extra">@RankingsQuery.Previous(team)</td>
+                    <td>@RankingsQuery.Movement(team)</td>
                 </tr>
             }
             </tbody>
         </table>
     </div>
     </div>
-    }
-
+    <p class="updated">Parentheses indicate first-place votes.</p>
 }
 
 @code {

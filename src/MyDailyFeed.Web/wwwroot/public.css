@@ -955,7 +955,23 @@
 .pub .ranking-detail-toggle input { width: 18px; height: 18px; accent-color: var(--accent); }
 .pub .rankings-table .ranking-extra { display: none; }
 .pub .ranking-view:has(.ranking-detail-toggle input:checked) .ranking-extra { display: table-cell; }
+@media (min-width: 1024px) {
+    .pub .ranking-view .ranking-detail-toggle { display: none; }
+    .pub .ranking-view .ranking-extra { display: table-cell; }
+}
 .pub .rankings-table .standing-team { position: static; }
+.pub .ranking-view .rankings-table { width: 100%; font-variant-numeric: tabular-nums; }
+.pub .ranking-view .rankings-table th:not(.standing-team), .pub .ranking-view .rankings-table td { text-align: center; white-space: nowrap; }
+.pub .ranking-view .poll-votes { color: var(--text-2); white-space: nowrap; }
+/* Highlight every cell, including the team header, across Big 12 rows. */
+.pub .ranking-view .rankings-table .ranking-big12 > * {
+    background: color-mix(in srgb, #E8000D 12%, var(--surface));
+    border-bottom-color: #E8000D;
+}
+.pub .ranking-view .rankings-table .ranking-big12 > :first-child { box-shadow: inset 3px 0 0 #E8000D; }
+@media (max-width: 1023px) {
+    .pub .ranking-view .rankings-table .big12-badge { display: none; }
+}
 @media (max-width: 767px) {
     .pub .rankings-table { font-size: 13px; }
     .pub .rankings-table th, .pub .rankings-table td { padding: 10px 8px; }

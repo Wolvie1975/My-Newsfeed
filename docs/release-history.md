@@ -6,11 +6,41 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The most recent verified web release is `mydailyfeed-web:mobile-tools-20261022`,
-with rollback recorded as `mynewsfeed-web:before-mobile-tools-20261022`.
+The most recent verified web release is `mydailyfeed-web:big12-rows-20261022`,
+with rollback recorded as `mynewsfeed-web:before-big12-rows-20261022`.
 Its container was healthy on October 22, 2026 (Central). This is a dated
 observation, not live hosting status.
 
+
+## Big 12 full-row highlighting — October 22, 2026
+
+Deployed `mydailyfeed-web:big12-rows-20261022` (5c0e31e7f9d5). Full rankings
+tables highlight every cell of Big 12 rows with a light red background and red
+border. Below 1024px team badges are hidden; the legend above the table remains.
+Desktop team badges remain visible. Docker publish/static-asset guard passed;
+live light/dark checks at 390, 768, 1024 and 1440px passed consistent cell color,
+badge visibility, retained legend and no document overflow. Health returned 200.
+Runtime configuration and mounts preserved; previous container retained as
+`mynewsfeed-web-before-big12-rows-20261022`, rollback image
+`mynewsfeed-web:before-big12-rows-20261022`. No schema changes.
+Evidence: `/tmp/mydailyfeed-big12-rows-deploy/`.
+
+## Uniform full rankings tables — October 22, 2026
+
+Deployed `mydailyfeed-web:uniform-rankings-20261022` (f33ec770ba51). All sports
+on full rankings pages now share Rank, Team, Record, Points, Previous and Trend
+columns. First-place votes appear beside team names with an explanatory legend.
+Full columns display automatically at 1024px and wider; smaller screens retain
+the opt-in detail toggle. Homepage rankings remain compact.
+
+Docker publish/static-asset guard passed. Live checks passed all three populated
+poll sources at 390, 768, 1023, 1024 and 1440px, including column consistency,
+detail visibility, mobile toggle, no document overflow or JavaScript errors.
+Home, College rankings and health returned HTTP 200; desktop screenshot reviewed.
+Runtime configuration and persistent mounts compared and preserved. Previous
+container retained as `mynewsfeed-web-before-uniform-rankings-20261022`, rollback
+image `mynewsfeed-web:before-uniform-rankings-20261022`. No schema changes.
+Evidence: `/tmp/mydailyfeed-uniform-rankings-deploy/`.
 
 ## Mobile Tools group — October 22, 2026
 
