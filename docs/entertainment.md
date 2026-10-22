@@ -1,5 +1,15 @@
 # Entertainment data and public views
 
+## Homepage theatrical release window
+
+Updated October 22, 2026: the homepage shows the current Friday's US theatrical
+releases from Thursday through Sunday, inclusive, using the configured display
+time zone (Central in production). Saturday and Sunday retain that Friday's
+releases. Monday through Wednesday hide the theatrical subsection. Only that
+Friday is queried; later Fridays are not substituted when no releases are stored.
+The existing five-item limit, enabled-source filtering and deduplication remain.
+Digital / VOD stays visible throughout the week, and the full Movies page is unchanged.
+
 Current contracts consolidated October 13, 2026 (Central). See
 [Deployment](../DEPLOY.md) for rollout and [Release history](release-history.md)
 for historical validation. Rust commands and `sql/` paths refer to the separate

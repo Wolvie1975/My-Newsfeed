@@ -97,7 +97,7 @@ public class MoviesTests
     }
 
     [Fact]
-    public async Task Home_shows_only_upcoming_Friday_theatrical_releases_and_deduplicates_movies()
+    public async Task Home_shows_current_Friday_releases_Thursday_through_Sunday_and_deduplicates_movies()
     {
         var config = new ConfigurationBuilder()
             .AddJsonFile(Path.GetFullPath("../../../../../src/MyDailyFeed.Web/appsettings.json", AppContext.BaseDirectory))
@@ -127,13 +127,15 @@ public class MoviesTests
         };
         var friday = today.AddDays(1);
         db.AddRange(Release("friday", friday), Release("duplicate", friday), Release("thursday", today),
-            Release("past", friday.AddDays(-7)), Release("streaming", friday, "digital"),
+            Release("past", friday.AddDays(-7)), Release("next-week", friday.AddDays(7)), Release("streaming", friday, "digital"),
             Release("cancelled", friday, status: "cancelled"), Release("unknown", null));
         await db.SaveChangesAsync();
         var items = await MoviesQuery.GetFridayTheatricalAsync(db, today);
         Assert.Equal(friday, Assert.Single(items).Date);
         Assert.Single(await MoviesQuery.GetFridayTheatricalAsync(db, friday));
-        Assert.Empty(await MoviesQuery.GetFridayTheatricalAsync(db, friday.AddDays(1)));
+        Assert.Single(await MoviesQuery.GetFridayTheatricalAsync(db, friday.AddDays(1)));
+        Assert.Single(await MoviesQuery.GetFridayTheatricalAsync(db, friday.AddDays(2)));
+        Assert.Empty(await MoviesQuery.GetFridayTheatricalAsync(db, friday.AddDays(3)));
         for (int i = 0; i < 6; i++)
         {
             var another = new Movie { Title = $"Movie {i} {tag}", FirstSeenAt = DateTime.UtcNow, LastSeenAt = DateTime.UtcNow };
@@ -143,7 +145,7 @@ public class MoviesTests
                 ExternalMovieId = $"movie-{i}-{tag}", Url = "https://test.invalid", FirstSeenAt = DateTime.UtcNow, LastSeenAt = DateTime.UtcNow };
             db.Add(anotherLink);
             await db.SaveChangesAsync();
-            var release = Release($"more-{i}", friday.AddDays(7));
+            var release = Release($"more-{i}", friday);
             release.MovieSourceLinkId = anotherLink.ID;
             db.Add(release);
         }

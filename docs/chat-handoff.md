@@ -5,6 +5,57 @@ observations; check current repository and hosting state before acting.
 
 ## Session handoff — October 22, 2026 (Central)
 
+### Deployment permission for this session
+
+The user explicitly granted permission to deploy during this October 22, 2026
+session. Deployment may proceed within the work authorized in this session,
+following the deployment runbook and preserving runtime configuration and data.
+This permission applies only to this session; future sessions must not infer
+deployment authorization from this historical note. Recording this permission
+does not mean a deployment has occurred.
+
+### Scraper coordination: theatrical coverage
+
+The user disabled DVDs Release Dates to avoid DVDs, not theatrical releases.
+Read-only diagnosis found six October 23 theatrical rows hidden by that provider's
+disabled flag. No provider/data changes were made. The requested scraper handoff
+is [scraper-theatrical-handoff.md](scraper-theatrical-handoff.md); it covers
+theatrical-only coverage, verification of stale dates, retained disc rows and
+frontend coordination before provider re-enablement.
+
+### Homepage cascading layout — deployed
+
+Subsequent release: `mydailyfeed-web:theatrical-window-20261022` (6ce5d5c9c5d8)
+shows the current Friday's theatrical releases Thursday–Sunday (display zone),
+retaining Friday on Saturday/Sunday and hiding that subsection Monday–Wednesday.
+Digital / VOD remains visible all week. Ten date-window tests and live Thursday
+responsive/route checks passed; SQL integration tests were updated but not run.
+Runtime settings/mounts were preserved; no schema changes. Rollback image and
+container use `before-theatrical-window-20261022`. Evidence and limitations are in
+release history and `/tmp/mydailyfeed-theatrical-window-deploy/`. Uncommitted.
+
+- Restored shorter-column placement on desktop, with Where to watch and Latest
+  news leading. Mobile shows Where to watch first and Latest news second.
+  Updated document order, browser preference defaults, CSS and the layout script;
+  existing hidden-section and team preferences remain effective.
+- Updated the interface guide and consolidated the two homepage layout browser
+  check entry points around the current layout. Build passed with six existing
+  dependency/analyzer warnings. JavaScript syntax and diff checks passed.
+- Browser checks passed at 320, 390, 767, 768, 1023, 1024, 1440 and 1920px,
+  including resizing, shorter-column selection, overlap/overflow, dynamic heights,
+  hidden cards and no-JavaScript fallback. Initial checks used representative
+  cards; the same checks subsequently passed against the live container.
+- Deployed `mydailyfeed-web:cascade-priority-20261022` (6eac62c942c8), healthy.
+  Runtime settings and persistent mounts were preserved. Rollback image and
+  retained container use `before-cascade-priority-20261022`. Checked public routes
+  returned 200 over container HTTP; private HTTPS was not separately checked.
+  See release history and `/tmp/mydailyfeed-cascade-check/` for evidence.
+  No schema changes, commit or push for this release.
+- The earlier handoff was committed as `7501336`; its push failed because this
+  environment had no GitHub HTTPS credentials. Remote state was not rechecked.
+
+### Initial orientation
+
 - Reviewed the README, topic-guide structure, maintenance notes, release history,
   application startup, homepage, feed queries, shared saved-content implementation,
   and test layout to establish context. No application changes, tests, deployment,

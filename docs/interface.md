@@ -757,12 +757,14 @@ together on narrow screens.
 
 ### Homepage columns — October 21, 2026
 
-At desktop widths (1024px and above), Latest news and Latest videos occupy the
-left column. The right column shows Today & Tonight, Today’s episodes, F1, then
-movies and digital releases. Each column flows independently without large gaps.
-Mobile stacks Today & Tonight, Today’s episodes, news, videos, F1, then movies.
-This fixed arrangement supersedes stored homepage ordering; existing hidden-section
-and team filters remain effective.
+Updated October 22, 2026: at desktop widths (1024px and above), Where to
+watch and Latest news lead the two-column cascading layout. Each following card
+uses the shorter column, avoiding large gaps below shorter cards. At narrower
+widths, Where to watch comes first, followed by Latest news, Today & Tonight,
+Today’s episodes and the remaining cards. Existing hidden-section and team filters
+remain effective; legacy saved ordering does not override this priority. Without
+JavaScript, desktop falls back to a regular two-column grid with the same leading
+cards. This supersedes the October 21 fixed news/planning columns.
 
 Homepage theater and Digital / VOD posters are capped at 120px wide (180px
 high at their 2:3 aspect ratio), including the missing-image fallback.

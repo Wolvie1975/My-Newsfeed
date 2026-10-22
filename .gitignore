@@ -6,6 +6,9 @@
 # dotenv files
 .env
 
+# Local development projects
+/new development/
+
 # User-specific files
 *.rsuser
 *.suo

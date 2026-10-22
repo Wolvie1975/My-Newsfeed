@@ -6,11 +6,55 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The most recent verified web release is `mydailyfeed-web:mobile-home-limits-20261021`,
-with rollback recorded as `mynewsfeed-web:before-mobile-home-limits-20261021`.
-Its container was healthy on October 21, 2026 (Central). This is a dated
+The most recent verified web release is `mydailyfeed-web:theatrical-window-20261022`,
+with rollback recorded as `mynewsfeed-web:before-theatrical-window-20261022`.
+Its container was healthy on October 22, 2026 (Central). This is a dated
 observation, not live hosting status.
 
+
+## Homepage theatrical window — October 22, 2026
+
+The homepage shows the current Friday's US theatrical releases Thursday through
+Sunday inclusive, using the configured display time zone. Saturday/Sunday retain
+that Friday; Monday–Wednesday hide the theatrical subsection. No future Friday is
+substituted. Digital / VOD remains visible all week; the Movies page is unchanged.
+
+Deployed `mydailyfeed-web:theatrical-window-20261022` (6ce5d5c9c5d8), healthy.
+Rollback image `mynewsfeed-web:before-theatrical-window-20261022` (6eac62c942c8),
+retained container `mynewsfeed-web-before-theatrical-window-20261022`. Runtime
+configuration and persistent mounts compared and preserved; no schema changes.
+Ten date-window tests passed, including all weekdays and a year boundary.
+SQL integration expectations were updated but not run. Docker publish/static-asset
+guard passed with existing warnings. Live Thursday checks at 320, 390, 768, 1024,
+1440 and 1920px passed theatrical/digital visibility, Friday dates when present,
+overflow and JavaScript checks. Health, Home, Movies, Digital/VOD, News, Where to
+watch, Events, Results and Box office returned 200 over container HTTP. Other
+weekdays were verified through date-window tests, not live clock changes.
+The live cascading-layout regression also passed priorities, resizing, dynamic
+heights, hidden cards and no-JavaScript fallback.
+Private HTTPS was not separately checked. Evidence:
+`/tmp/mydailyfeed-theatrical-window-deploy/`. No commit or push for this release.
+
+## Cascading homepage with Watch and news priority — October 22, 2026
+
+Restored shorter-column placement on desktop. Where to watch and Latest news
+lead the columns; subsequent cards use the shorter column. Mobile shows Where
+to watch first and Latest news second. Hidden-section and team preferences remain
+effective; legacy saved ordering does not override these priorities.
+
+Deployed `mydailyfeed-web:cascade-priority-20261022` (6eac62c942c8), healthy.
+Rollback image `mynewsfeed-web:before-cascade-priority-20261022` (6b6cbf9d3ab6),
+retained container `mynewsfeed-web-before-cascade-priority-20261022`. Environment,
+entrypoint, health check, persistent mounts, ports, restart policy and network mode
+were compared and preserved. No schema changes. Solution build, Docker publish/
+static-asset guard, JavaScript syntax and diff checks passed with existing warnings.
+Live browser checks at 320, 390, 767, 768, 1023, 1024, 1440 and 1920px passed
+priority, shorter-column placement, resizing, dynamic heights, hidden cards,
+overlap/overflow, JavaScript errors and no-JavaScript desktop/mobile fallback.
+Health, Home, News, Videos, Events, Results, Standings, Rankings, Movies,
+Digital/VOD, both box-office views and Where to watch returned 200 over container
+HTTP. Private HTTPS was not separately checked. Screenshots and verification
+evidence: `/tmp/mydailyfeed-cascade-check/`. No commit or push for this release.
 
 ## Mobile homepage news and video limits — October 21, 2026
 

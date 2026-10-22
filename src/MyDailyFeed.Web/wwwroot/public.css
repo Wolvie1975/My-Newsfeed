@@ -671,13 +671,13 @@
 .pub .d-hello h1 { margin: 0; font-size: 26px; line-height: 1.2; font-weight: 700; letter-spacing: -0.02em; }
 .pub .d-hello p { margin: 2px 0 0; font-size: 15px; color: var(--text-2); }
 
-/* Phones: events, news, the movie strip, then videos. */
+/* Phones: Watch and News lead the stacked cards. */
 .pub .d-grid { display: flex; flex-direction: column; gap: 12px; }
-.pub .d-today { order: 1; }
+.pub .d-today { order: 2; }
 .pub .d-f1, .pub .d-rankings { order: 5; }
-.pub .d-news { order: 3; }
+.pub .d-news { order: 1; }
 .pub .d-movies { order: 6; }
-.pub .d-episodes { order: 2; }
+.pub .d-episodes { order: 3; }
 .pub .d-vids { order: 4; }
 
 .pub .d-card {
@@ -2192,10 +2192,9 @@
 .pub .mobile-subnav { display: flex; flex-direction: column; gap: 4px; margin-left: 12px; padding-left: 8px; border-left: 2px solid var(--header-line); }
 .pub .mobile-subnav a { padding-left: 12px; }
 
-/* Desktop news/videos stay left; planning sections stay right. */
+/* Desktop cascading cards; document order prioritizes Watch and News. */
 @media (min-width: 1024px) {
-    .pub .d-grid > [data-home-section] { grid-area: auto; grid-column: 2; order: 0; min-width: 0; }
-    .pub .d-grid > [data-home-section="news"], .pub .d-grid > [data-home-section="videos"] { grid-column: 1; }
+    .pub .d-grid > [data-home-section] { grid-area: auto; order: 0; min-width: 0; }
     .pub .d-grid[data-masonry] { grid-auto-rows: 1px; grid-auto-flow: dense; }
     .pub .d-grid .d-movies .d-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .pub .d-grid .d-tv__list, .pub .d-grid .d-vids .d-list, .pub .d-grid .d-f1__body { grid-template-columns: minmax(0, 1fr); }
