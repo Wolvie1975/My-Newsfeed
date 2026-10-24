@@ -4,6 +4,32 @@ namespace MyDailyFeed.Tests;
 
 public class ScoreboardTests
 {
+    [Fact]
+    public void Follows_match_only_explicit_ids_in_the_same_provider_and_competition()
+    {
+        var game = new ScoreboardGame { Provider = "espn", Sport = "football", League = "college-football", HomeTeamId = "2305", AwayTeamId = "9", HomeName = "Kansas" };
+        var team = new ScoreboardFollow(1, "Kansas", "football", "college-football", "team", "2305", new HashSet<string>());
+        Assert.True(team.Matches(game));
+        game.HomeTeamId = "other";
+        Assert.False(team.Matches(game)); // Matching display names are not identities.
+        var conference = team with { Kind = "conference", TeamId = null, Members = new HashSet<string> { "9" } };
+        Assert.True(conference.Matches(game)); // Includes non-conference opponents.
+        game.League = "nfl";
+        Assert.False(conference.Matches(game));
+        game.League = "college-football";
+        game.Provider = "other";
+        Assert.False(conference.Matches(game));
+    }
+    [Fact]
+    public void Empty_membership_and_unknown_follow_types_do_not_match_games()
+    {
+        var game = new ScoreboardGame { Provider = "espn", Sport = "soccer", League = "usa.1" };
+        var follow = new ScoreboardFollow(1, "MLS", "soccer", "usa.1", "league", null, new HashSet<string>());
+        Assert.True(follow.Matches(game));
+        Assert.False((follow with { Kind = "team" }).Matches(game));
+        Assert.False((follow with { Kind = "conference" }).Matches(game));
+        Assert.False((follow with { Kind = "unknown" }).Matches(game));
+    }
     [Theory]
     [InlineData("upcoming", "Upcoming")]
     [InlineData("live", "Live")]

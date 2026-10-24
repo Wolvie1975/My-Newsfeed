@@ -25,6 +25,14 @@ public class ScoreboardReadTests
             Assert.Contains(snapshot.Coverage, c => c.Sport == g.Sport && c.League == g.League);
             Assert.True(g.ScoreboardDate == today || g.ScoreboardDate < today && g.Active);
         });
+        var finals = await repository.ReadAsync(today, true, finalsOnly: true);
+        Assert.True(finals.Available);
+        Assert.Equal(snapshot.Games.Where(g => g.Completed && g.Status == "final").Select(g => g.Key).Order(), finals.Games.Select(g => g.Key).Order());
+        foreach (var follow in snapshot.Follows ?? []) {
+            var filtered = await repository.ReadAsync(today, true, followId: follow.Id);
+            Assert.True(filtered.Available);
+            Assert.Equal(snapshot.Games.Where(follow.Matches).Select(g => g.Key).Order(), filtered.Games.Select(g => g.Key).Order());
+        }
         foreach (var competition in snapshot.Coverage.DistinctBy(c => c.Key).Take(3)) {
             var filtered = await repository.ReadAsync(today, true, competition.Key);
             Assert.True(filtered.Available);

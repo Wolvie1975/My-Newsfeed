@@ -138,10 +138,18 @@ app.MapPost("/account/logout", async (HttpContext http) =>
 });
 
 // Used by the container health check: healthy only when the database is reachable.
-app.MapGet("/scoreboard/fragment", (HttpContext http, string? day, string? competition, bool? compact) => {
+// Preserve old result bookmarks as final-score views of Scoreboard.
+app.MapGet("/results", (HttpContext http) => {
+    var query = new Dictionary<string, string?> { ["status"] = "final" };
+    foreach (var key in new[] { "day", "follow" })
+        if (http.Request.Query.TryGetValue(key, out var value)) query[key] = value.ToString();
+    return Results.LocalRedirect(Microsoft.AspNetCore.WebUtilities.QueryHelpers.AddQueryString("/scoreboard", query));
+});
+
+app.MapGet("/scoreboard/fragment", (HttpContext http, string? day, string? competition, bool? compact, int? follow, string? status) => {
     http.Response.Headers.CacheControl = "no-store";
     return new Microsoft.AspNetCore.Http.HttpResults.RazorComponentResult<MyDailyFeed.Web.Components.ScoreboardPanel>(
-        new Dictionary<string, object?> { ["Day"] = day, ["Competition"] = competition, ["Compact"] = compact == true });
+        new Dictionary<string, object?> { ["Day"] = day, ["Competition"] = competition, ["Compact"] = compact == true, ["Follow"] = follow, ["Status"] = status });
 });
 
 app.MapGet("/healthz", async (IDbContextFactory<WebScraperContext> factory) =>

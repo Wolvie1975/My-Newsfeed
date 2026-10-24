@@ -51,6 +51,8 @@ const base=process.env.BASE_URL || 'http://127.0.0.1:5310';
   assert(await nojs.locator('.scoreboard-game').count()>0);assert.equal(await nojs.locator('[data-scoreboard-team]:visible').count(),0);
   await nojs.selectOption('#scoreboard-competition',choice);await nojs.getByRole('button',{name:'Apply',exact:true}).click();await nojs.waitForURL(/competition=/);
   const previous=nojs.getByRole('link',{name:'← Previous day',exact:true});await previous.click();await nojs.waitForURL(/day=/);
+  await nojs.getByRole('link',{name:'← Previous day',exact:true}).waitFor({state:'detached'});
+  assert.equal(await nojs.getByRole('link',{name:'← Previous day',exact:true}).count(),0, 'Yesterday is the earliest browsable day');
   const box=nojs.locator('[data-box-score]').first();if(await box.count()){const response=await nojs.request.get(await box.getAttribute('href'));assert.equal(response.status(),200)}
   console.log('Scoreboard: responsive/theme, coverage filtering, preferences, deduplication, failed-read retention/recovery, five-minute hidden-tab polling, and no-JS controls passed.');
  } finally {await browser.close()}

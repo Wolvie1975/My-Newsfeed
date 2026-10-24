@@ -1,13 +1,21 @@
 @inject ScoreboardRepository Repository
 @inject BoxScoresRepository BoxScores
+@inject ILogger<ScoreboardPanel> Log
 @inject FeedDates Dates
+@inject IDbContextFactory<WebScraperContext> Factory
+@inject MyDailyFeed.Web.Scores.LeaguePhases RecordPhases
 
 <div data-scoreboard data-scoreboard-compact="@Compact.ToString().ToLowerInvariant()">
     <p class="updated scoreboard-note">Scores update approximately every 10 minutes. <span>Checks every five minutes while visible.</span></p>
     @if (!Compact)
     {
+        <MyDailyFeed.Web.Components.Events.TeamRecordsNote />
+        <div class="scoreboard-season-links">
+            @if (hasMls) { <a href="mls/results">MLS season results →</a> }
+            @if (hasChampionship) { <a href="championship/results">EFL Championship season results →</a> }
+        </div>
         <nav class="tv-week" aria-label="Scoreboard dates">
-            @if (selectedDay > today.AddDays(-3)) { <a class="nf-btn nf-btn--secondary" href="@Href(selectedDay.AddDays(-1))">← Previous day</a> }
+            @if (selectedDay > today.AddDays(-1)) { <a class="nf-btn nf-btn--secondary" href="@Href(selectedDay.AddDays(-1))">← Previous day</a> }
             <strong>@FeedDates.LongDate(selectedDay) · CT</strong>
             @if (selectedDay < today.AddDays(7)) { <a class="nf-btn nf-btn--secondary" href="@Href(selectedDay.AddDays(1))">Next day →</a> }
             @if (selectedDay != today) { <a href="@Href(today)">Today</a> }
@@ -20,6 +28,16 @@
                 @foreach (var c in snapshot.Coverage.DistinctBy(c => c.Key).OrderBy(c => c.Sport).ThenBy(c => c.League)) {
                     <option value="@c.Key" selected="@(Competition == c.Key)">@CompetitionLabel(c.Sport, c.League)</option>
                 }
+            </select>
+            <label for="scoreboard-follow">Following</label>
+            <select id="scoreboard-follow" name="follow">
+                <option value="">All enabled coverage</option>
+                @foreach (var f in snapshot.Follows ?? []) { <option value="@f.Id" selected="@(Follow == f.Id)">@f.Label</option> }
+            </select>
+            <label for="scoreboard-status">Games</label>
+            <select id="scoreboard-status" name="status">
+                <option value="">All statuses</option>
+                <option value="final" selected="@(Status == "final")">Final scores</option>
             </select>
             <button class="nf-btn nf-btn--secondary" type="submit">Apply</button>
         </form>
@@ -43,12 +61,12 @@
                 </header>
                 <div class="scoreboard-matchup">
                     <div class="scoreboard-team @(game.Status == "final" && game.Completed && game.WinnerSide == "away" ? "scoreboard-winner" : "")">
-                        <MyDailyFeed.Web.Components.Events.TeamCell Name="@game.AwayName" LogoUrl="@game.AwayLogoUrl" />
+                        <MyDailyFeed.Web.Components.Events.TeamCell Name="@game.AwayName" LogoUrl="@game.AwayLogoUrl" Record="@RecordFor(game, false)" />
                         <strong class="scoreboard-score">@ScoreboardGame.Score(game.AwayScore)</strong>
                         @if (game.AwayPreference is {} away) { <button type="button" class="scoreboard-favorite" data-scoreboard-team="@away" aria-label="@($"Highlight {game.AwayName} in this competition")" aria-pressed="false" hidden>☆</button> }
                     </div>
                     <div class="scoreboard-team @(game.Status == "final" && game.Completed && game.WinnerSide == "home" ? "scoreboard-winner" : "")">
-                        <MyDailyFeed.Web.Components.Events.TeamCell Name="@game.HomeName" LogoUrl="@game.HomeLogoUrl" />
+                        <MyDailyFeed.Web.Components.Events.TeamCell Name="@game.HomeName" LogoUrl="@game.HomeLogoUrl" Record="@RecordFor(game, true)" />
                         <strong class="scoreboard-score">@ScoreboardGame.Score(game.HomeScore)</strong>
                         @if (game.HomePreference is {} home) { <button type="button" class="scoreboard-favorite" data-scoreboard-team="@home" aria-label="@($"Highlight {game.HomeName} in this competition")" aria-pressed="false" hidden>☆</button> }
                     </div>
@@ -97,20 +115,39 @@
     [Parameter] public bool Compact { get; set; }
     [Parameter, SupplyParameterFromQuery(Name="day")] public string? Day { get; set; }
     [Parameter, SupplyParameterFromQuery(Name="competition")] public string? Competition { get; set; }
+    [Parameter, SupplyParameterFromQuery(Name="follow")] public int? Follow { get; set; }
+    [Parameter, SupplyParameterFromQuery(Name="status")] public string? Status { get; set; }
+    private TeamRecords records = TeamRecords.Empty;
+    private bool hasMls, hasChampionship;
+    private TeamRecordValue? RecordFor(ScoreboardGame game, bool home) {
+        if (game.Provider != "espn") return null;
+        var competition = TeamRecords.Competition(game.Sport, game.League);
+        return records.Find(competition.Provider, competition.Sport, home ? game.HomeName : game.AwayName, home ? game.HomeTeamId : game.AwayTeamId);
+    }
     private readonly TimeZoneInfo central = TimeZoneInfo.FindSystemTimeZoneById("America/Chicago");
     private DateOnly today, selectedDay;
     private ScoreboardSnapshot snapshot = new([], [], true);
     private IReadOnlyList<ScoreboardGame> visibleGames = [];
     private IReadOnlyDictionary<string,string> boxLabels = new Dictionary<string,string>();
-    private string Href(DateOnly day) => $"scoreboard?day={day:yyyy-MM-dd}" + (string.IsNullOrEmpty(Competition) ? "" : "&competition=" + Uri.EscapeDataString(Competition));
+    private string Href(DateOnly day) => $"scoreboard?day={day:yyyy-MM-dd}" + (string.IsNullOrEmpty(Competition) ? "" : "&competition=" + Uri.EscapeDataString(Competition)) + (Follow is {} follow ? "&follow=" + follow : "") + (Status == "final" ? "&status=final" : "");
     public static string CompetitionLabel(string sport, string league) => league switch {
         "nfl" => "NFL", "mlb" => "MLB", "nhl" => "NHL", "wnba" => "WNBA", "usa.1" => "MLS", "usa.nwsl" => "NWSL", "eng.1" => "Premier League", "eng.2" => "EFL Championship",
         "college-football" => "College football", "mens-college-basketball" => "Men’s college basketball", "womens-college-basketball" => "Women’s college basketball", "usa.ncaa.w.1" => "Women’s college soccer", "womens-college-volleyball" => "Women’s college volleyball", _ => sport + " · " + league
     };
     protected override async Task OnParametersSetAsync() {
         today = DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, central));
-        selectedDay = !Compact && DateOnly.TryParseExact(Day, "yyyy-MM-dd", out var day) && day >= today.AddDays(-3) && day <= today.AddDays(7) ? day : today;
-        snapshot = await Repository.ReadAsync(selectedDay, selectedDay == today, Compact ? null : Competition);
+        selectedDay = !Compact && DateOnly.TryParseExact(Day, "yyyy-MM-dd", out var day) && day >= today.AddDays(-1) && day <= today.AddDays(7) ? day : today;
+        snapshot = await Repository.ReadAsync(selectedDay, selectedDay == today, Compact ? null : Competition, Compact ? null : Follow, !Compact && Status == "final");
+        try {
+        await using var db = await Factory.CreateDbContextAsync();
+        records = await TeamRecords.LoadAsync(db, today, RecordPhases);
+        hasMls = !Compact && await db.SportsEventsTypes.AsNoTracking().AnyAsync(s => s.Enabled && s.ProviderKey == "espn-mls");
+        hasChampionship = !Compact && await db.SportsEventsTypes.AsNoTracking().AnyAsync(s => s.Enabled && s.ProviderKey == "espn-championship");
+        } catch (Exception ex) when (ex is System.Data.Common.DbException or InvalidOperationException) {
+            records = TeamRecords.Empty;
+            hasMls = hasChampionship = false;
+            Log.LogWarning(ex, "Optional scoreboard records and season links unavailable");
+        }
         visibleGames = Compact ? snapshot.Games.Take(6).ToList() : snapshot.Games;
         boxLabels = await BoxScores.AvailableAsync(visibleGames.Where(g => g.Provider == "espn" && g.HasBoxScore).Select(g => new BoxIdentity(g.Sport, g.League, g.EventId)));
     }

@@ -2473,3 +2473,11 @@
 @media (min-width:1180px) { .pub [data-scoreboard-compact="false"] .scoreboard-games { grid-template-columns: repeat(3,minmax(0,1fr)); } }
 @media (max-width:1023px) { .pub .d-scoreboard { order: 2; } }
 .pub [data-scoreboard-compact="false"] .scoreboard-actions { min-height: 44px; }
+
+.pub .scoreboard-season-links { display: flex; flex-wrap: wrap; gap: 12px 24px; margin: 16px 0; font-size: 13px; }
+.pub .scoreboard-season-links:empty { display: none; }
+.pub .scoreboard-team .team__name { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 6px; }
+@media (max-width:767px) {
+    .pub .scoreboard-filter label { flex: 0 0 100%; }
+    .pub .scoreboard-filter select { flex-basis: 100%; width: 100%; }
+}

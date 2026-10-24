@@ -6,11 +6,29 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The most recent verified web release is `mydailyfeed-web:scoreboard-style-20261023`,
-with rollback recorded as `mynewsfeed-web:before-scoreboard-style-20261023`.
+The most recent verified web release is `mydailyfeed-web:scoreboard-history-20261023`,
+with rollback recorded as `mynewsfeed-web:before-scoreboard-history-20261023`.
 Its container was healthy on October 23, 2026 (Central). This is a dated
 observation, not live hosting status.
 
+
+## Scoreboard history limited to yesterday — October 23, 2026
+
+Deployed `mydailyfeed-web:scoreboard-history-20261023` (f8694fbf28ee), healthy.
+Previous day navigation stops at yesterday in Central time. Older date parameters
+fall back to today in both the full page and refresh fragment. Seven days ahead
+and prior-day active/paused carry-over remain. Stored games and scraper retention
+were not changed.
+
+Solution build and Docker publish/static-asset guard passed with existing warnings.
+Live JavaScript/no-JavaScript checks at 320/390/1440px passed yesterday's boundary,
+older page/fragment fallback, future limit, no overflow/errors and five public/health
+routes. Private HTTPS Scoreboard returned 200 using a hostname resolution override.
+Runtime settings, entrypoint, health check, mounts, ports, network mode and restart
+policy were compared and preserved. Previous container retained as
+`mynewsfeed-web-before-scoreboard-history-20261023`; rollback image:
+`mynewsfeed-web:before-scoreboard-history-20261023`. No schema or collection changes.
+Evidence: `/tmp/mydailyfeed-scoreboard-history-deploy/`. No commit or push.
 
 ## Consistent scoreboard styling — October 23, 2026
 

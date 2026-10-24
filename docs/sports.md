@@ -696,8 +696,9 @@ links to Scoreboard on desktop and mobile. Existing schedules, results and F1
 remain independent; Big 12 calendar IDs have no validated ESPN bridge, so those
 fixtures are not merged with scoreboard games.
 
-The full page offers enabled competition choices and Central dates from three
-days back through seven ahead. Today includes older live/delayed/suspended games,
+The full page offers enabled competition choices and Central dates from yesterday
+through seven days ahead. Older date URLs fall back to today. Today includes older
+live/delayed/suspended games,
 with their assigned date shown. Home shows up to six games with live/paused games
 first and links to the full page. Each Central midnight is converted separately
 for daylight saving changes. Coverage comes from enabled sources and does not

@@ -3,6 +3,25 @@
 Read this file when continuing work from the previous chat. These are dated
 observations; check current repository and hosting state before acting.
 
+## Scoreboard past-day limit deployed — October 23, 2026 (Central)
+
+User requested yesterday as the earliest past scoreboard day and explicitly
+requested deployment. Live release: `mydailyfeed-web:scoreboard-history-20261023`
+(f8694fbf28ee), healthy. Both public page and refresh-fragment validation reject
+older dates by falling back to today; Previous day navigation stops at yesterday
+(Central). Seven days ahead and older active-game carry-over on today remain.
+No scraper retention setting or stored rows were changed.
+
+Solution build and Docker/static-asset guard passed with existing warnings. Live
+JS/no-JS checks at 320/390/1440px verified yesterday's lower limit, older page and
+fragment fallback, seven-day future limit, no overflow/errors and five healthy
+routes. Private HTTPS Scoreboard returned 200 with a hostname resolution override.
+Runtime settings/mounts compared and preserved. Rollback image/container use
+`before-scoreboard-history-20261023`; evidence is under
+`/tmp/mydailyfeed-scoreboard-history-deploy/`. Documentation and browser assertion
+updated. Changes remain uncommitted; no push attempted. No pending implementation
+request remains.
+
 ## End-of-night GitHub checkpoint — October 23, 2026 (Central)
 
 The user approved the deployed scoreboard styling and requested a GitHub check-in
