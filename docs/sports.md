@@ -686,3 +686,47 @@ The championship sample in new development/mens-college-basketball-boxscore-exam
 is used only for offline parsing/rendering and browser fixture checks. It does not
 create a production result or cached detail route. The component also supports
 other basketball leagues through the same dynamic contract.
+
+## Live scoreboard
+
+`/scoreboard` and a separate homepage card read the scraper-owned
+`dbo.SportsScoreboard` and `dbo.SportsScoreboardCoverage` views using existing
+frontend SELECT access. These reads never trigger collection. Sports navigation
+links to Scoreboard on desktop and mobile. Existing schedules, results and F1
+remain independent; Big 12 calendar IDs have no validated ESPN bridge, so those
+fixtures are not merged with scoreboard games.
+
+The full page offers enabled competition choices and Central dates from three
+days back through seven ahead. Today includes older live/delayed/suspended games,
+with their assigned date shown. Home shows up to six games with live/paused games
+first and links to the full page. Each Central midnight is converted separately
+for daylight saving changes. Coverage comes from enabled sources and does not
+promise national college coverage or a complete historical archive.
+
+Scores update approximately every ten minutes. Visible pages read stored HTML
+again every five minutes and immediately when returning to a visible tab. Failed
+reads retain the displayed sample with a retry message. Open box-score dialogs
+and focused scoreboard controls prevent background replacement. SQL sample times,
+stale/error/partial warnings, status labels and fixed sampled clocks distinguish
+freshness from active play. NULL scores stay unavailable; actual zero stays zero.
+Shootouts remain separate, and only explicit final winner flags receive emphasis.
+Baseball counts/bases, per-period/set scores, venue and broadcasts appear under
+Game info on the full page when supplied. Native disclosures work without
+JavaScript and stay expanded across automatic refresh. Team badges match other
+sports views; full-page cards use aligned footers and up to three desktop columns.
+Home uses compact divided rows within its existing card. Short update times have
+full date/time tooltips; stale and collection warnings remain visible.
+
+Stars save highlights in `mydailyfeed-scoreboard-teams-v1`, keyed by
+Sport/League/TeamId. Unknown IDs have no star; existing name-based team preferences
+are preserved separately. No login or server write is needed. Without JavaScript,
+server-rendered scores, date links, competition forms and cached box-score detail
+links work; automatic refresh and stars require JavaScript.
+
+Cached box scores reuse existing validated payloads and modal links. The detail
+reader also accepts games still visible through enabled ESPN scoreboard coverage.
+Missing or unusable cache entries never hide games. The frontend adds no schema,
+collection jobs, write grants or upstream statistics requests.
+
+Checks: `ScoreboardTests`, the read-only SQL `ScoreboardReadTests`, and
+`tests/browser/scoreboard.browser.cjs` (BASE_URL and PLAYWRIGHT_MODULE optional).

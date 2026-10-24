@@ -87,6 +87,11 @@ City Local section with weather forecasts and icons. See
 [personal planning and discovery](docs/interface.md#personal-planning-and-discovery--october-19-2026)
 for routes, data scope and browser-local storage behavior.
 
+Sports → [Scoreboard](docs/sports.md#live-scoreboard) now provides sampled live scores,
+upcoming games and finals, with a separate homepage card and tap-based date/competition
+filters. Scores are stored by the independent collector and refresh approximately
+every ten minutes; browser reads check every five minutes while visible.
+
 Sports results also support [cached box scores and game-stat modals](docs/sports.md#cached-box-scores-and-game-stat-modals)
 when collected detail is available, with ordinary detail-page links as a fallback.
 

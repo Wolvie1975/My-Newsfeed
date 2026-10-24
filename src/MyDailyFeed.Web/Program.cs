@@ -18,6 +18,7 @@ using MyDailyFeed.Web.Saved;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddScoped<BoxScoresRepository>();
+builder.Services.AddScoped<ScoreboardRepository>();
 builder.Services.AddSingleton<SharedArticles>();
 builder.Services.AddAntiforgery(options => options.HeaderName = "X-Saved-CSRF");
 builder.Services.AddSingleton<MyDailyFeed.Web.Watching.WatchCatalog>();
@@ -137,6 +138,12 @@ app.MapPost("/account/logout", async (HttpContext http) =>
 });
 
 // Used by the container health check: healthy only when the database is reachable.
+app.MapGet("/scoreboard/fragment", (HttpContext http, string? day, string? competition, bool? compact) => {
+    http.Response.Headers.CacheControl = "no-store";
+    return new Microsoft.AspNetCore.Http.HttpResults.RazorComponentResult<MyDailyFeed.Web.Components.ScoreboardPanel>(
+        new Dictionary<string, object?> { ["Day"] = day, ["Competition"] = competition, ["Compact"] = compact == true });
+});
+
 app.MapGet("/healthz", async (IDbContextFactory<WebScraperContext> factory) =>
 {
     await using var db = await factory.CreateDbContextAsync();

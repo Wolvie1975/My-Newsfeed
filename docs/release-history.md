@@ -6,11 +6,73 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The most recent verified web release is `mydailyfeed-web:home-refresh-20261023`,
-with rollback recorded as `mynewsfeed-web:before-home-refresh-20261023`.
+The most recent verified web release is `mydailyfeed-web:scoreboard-style-20261023`,
+with rollback recorded as `mynewsfeed-web:before-scoreboard-style-20261023`.
 Its container was healthy on October 23, 2026 (Central). This is a dated
 observation, not live hosting status.
 
+
+## Consistent scoreboard styling — October 23, 2026
+
+Deployed `mydailyfeed-web:scoreboard-style-20261023` (c52b23d52a89), healthy.
+Shared sports team badges, aligned score/star columns, consistent Live/Final pills
+and action links, and aligned footers replace uneven matchup cards. The full page
+uses up to three desktop columns; Game info disclosures contain venue/broadcast/
+period details. Home uses compact divided rows. Short update times retain full
+UTC-backed date/time tooltips. Stale and collection warnings remain visible.
+Expanded disclosures survive automatic refresh; keyboard focus still prevents
+replacement while controls are in use.
+
+Clean publish and Docker/static-asset guard passed with existing dependency
+warnings. Local phone checks passed 320/375/390/430px light/dark. Live tests passed
+320/390/768/1440/1884px light/dark for Home and Scoreboard, no overflow, expanded
+details, three-column footer alignment, eight health/public routes and no JavaScript
+errors. The existing scoreboard suite passed filters, preferences, failed-read
+retention/recovery, five-minute hidden-tab polling, disclosure retention and
+no-JavaScript controls against the deployed image. Live mobile screenshot reviewed;
+private HTTPS Scoreboard returned 200 using a hostname resolution override.
+
+Runtime environment, entrypoint, health check, mounts, ports, restart policy and
+network mode were compared and preserved. No schema or collector changes.
+Rollback image: `mynewsfeed-web:before-scoreboard-style-20261023`; retained container:
+`mynewsfeed-web-before-scoreboard-style-20261023`. Evidence and live screenshots:
+`/tmp/mydailyfeed-scoreboard-style-deploy/`. Earlier local review artifacts remain
+in `/tmp/mydailyfeed-scoreboard-style-review/`. No commit or push for this release.
+
+## Live scoreboard — October 23, 2026
+
+Deployed `mydailyfeed-web:scoreboard-20261023` (0585962b33b5), healthy.
+Home has a separate six-game Scoreboard card; Sports navigation links to the new
+`/scoreboard` page with enabled competition filtering and Central date navigation
+(three days back through seven ahead). Today includes prior-day active/paused
+games. Existing schedules/results and F1 remain separate. Browser reads use
+scraper-owned views only, with no new collection, schema or write permissions.
+
+Five-minute visible-page refresh and return-to-tab reads retain the last displayed
+sample on failure. Fixed sampled clocks, stale/error/partial warnings, optional
+period/count/base details and separate shootout scores preserve source semantics.
+Stars use separate browser preferences keyed by sport/league/team ID. Cached
+box-score actions reuse existing modals; detail visibility now recognizes enabled
+scoreboard coverage as well as existing result sources.
+
+Solution build and 37 focused scoreboard/box-score tests passed, including a
+read-only SQL view/materialization/filter check. Docker publish/static-asset guard
+passed with existing PKCS dependency warnings. Preview, built-image preview and
+live browser checks passed 320/390/768/1440px, light/dark, competition/date forms,
+canonical deduplication, star persistence, failed-read retention/recovery,
+five-minute/hidden-tab refresh and no-JavaScript controls. All three advertised
+box-score modals opened in the image preview; mobile screenshot reviewed. Fourteen
+live public/health routes returned 200, no runtime error markers were observed,
+and private HTTPS `/scoreboard` returned 200 using a hostname resolution override.
+Live data is dated evidence, not a guarantee of every status or sport appearing.
+Status/NULL/zero/stale/JSON/DST cases also have deterministic tests; no production
+sources were disabled or fixture games inserted for testing.
+
+Runtime environment, entrypoint, health check, mounts, ports, restart policy and
+network mode were compared and preserved. Previous container retained as
+`mynewsfeed-web-before-scoreboard-20261023`; rollback image:
+`mynewsfeed-web:before-scoreboard-20261023`. Temporary image preview removed.
+Evidence: `/tmp/mydailyfeed-scoreboard-deploy/`. No commit or push for this release.
 
 ## Homepage Refresh control — October 23, 2026
 

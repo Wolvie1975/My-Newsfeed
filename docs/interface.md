@@ -857,3 +857,18 @@ selection; superseded fetches cannot replace newer results. The existing icon,
 stale-data and no-JavaScript official-link fallbacks remain. No schema changes.
 
 References: [browser location requirements](https://developer.mozilla.org/en-US/docs/Web/API/Geolocation/getCurrentPosition) and [NWS forecast API](https://www.weather.gov/documentation/services-web-api).
+
+### Scoreboard browsing and highlights
+
+Scoreboard shares sports team badges, fixed score/star columns, Live/Final badges
+and consistent action links. Optional full-page metadata lives under Game info;
+Home uses compact divided rows.
+
+Sports → Scoreboard offers tap-based previous/next dates, Today, and an enabled
+competition dropdown with Apply. Home has a separate six-game card and View all.
+Stars highlight teams within their sport/league using provider IDs; these browser
+preferences are independent of existing school/team choices. No typed input is
+required. Server-rendered games and navigation work without JavaScript. Automatic
+stored-score reads run every five minutes while visible; displayed clocks never
+tick locally. See [Live scoreboard](sports.md#live-scoreboard) for coverage and
+freshness behavior.

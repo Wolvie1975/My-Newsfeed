@@ -109,7 +109,10 @@ public sealed class BoxScoresRepository(IDbContextFactory<WebScraperContext> fac
             if(!ordinary && !seasonVisible && id.Sport=="hockey" && id.League=="nhl"
                 && int.TryParse(id.EventId,out var nhlGameId))
                 seasonVisible=await NhlBoxScoreVisibility.ContainsAsync(db,nhlGameId);
-            if(!ordinary && !seasonVisible)return null;
+            if(!ordinary && !seasonVisible) {
+                var publicScoreboard = await db.Database.SqlQuery<int>($"SELECT COUNT(*) AS Value FROM dbo.SportsScoreboard WHERE Sport={id.Sport} AND League={id.League} AND EventId={id.EventId} AND Provider='espn'").SingleAsync();
+                if(publicScoreboard == 0)return null;
+            }
             var row=await db.Database.SqlQuery<BoxSnapshot>($"SELECT Sport,League,EventId,HasBoxScore,Availability,Payload,FetchedAt,SummaryUrl,BoxScoreUrl FROM dbo.SportsBoxScores WHERE Sport={id.Sport} AND League={id.League} AND EventId={id.EventId}").SingleOrDefaultAsync();
             if(row?.HasBoxScore!=true || row.Availability=="unavailable" || BoxData.Parse(row.Payload,id) is not {} data)return null;
             return new(data,row.FetchedAt,ProviderUrl(row.BoxScoreUrl,id) ?? ProviderUrl(row.SummaryUrl,id));

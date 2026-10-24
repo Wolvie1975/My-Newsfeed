@@ -255,3 +255,13 @@ The legacy admin cookie name and data-protection discriminator intentionally sta
 MyNewsFeed.Admin and MyNewsFeed to preserve sign-in compatibility. Browser storage
 keys and PWA id/scope remain unchanged. GitHub repository renaming was not part of
 this deployment.
+
+### Live scoreboard prerequisites
+
+Before deploying `/scoreboard`, verify the runtime principal can SELECT
+`dbo.SportsScoreboard` and `dbo.SportsScoreboardCoverage`. The independent
+web-scoreboard service owns collection/schema; frontend rollout needs no migration
+or new write permission. Confirm materialized rows, enabled competition filters,
+Home card, sampled/stale labels, cached box-score navigation and visible-only
+refresh. Preserve existing results-worker settings. Application rollback leaves
+all scoreboard storage and the independent collector intact.

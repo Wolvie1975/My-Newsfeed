@@ -3,6 +3,72 @@
 Read this file when continuing work from the previous chat. These are dated
 observations; check current repository and hosting state before acting.
 
+## End-of-night GitHub checkpoint — October 23, 2026 (Central)
+
+The user approved the deployed scoreboard styling and requested a GitHub check-in
+to close the session. This checkpoint includes the complete scoreboard feature,
+styling revision, browser/SQL tests and updated guides/release evidence. Latest
+verified deployment remains `mydailyfeed-web:scoreboard-style-20261023`, healthy;
+its rollback image/container use `before-scoreboard-style-20261023`.
+
+Fetched origin before committing: `develop` and `origin/develop` both pointed to
+`c027826`, so the earlier theme checkpoint is now present on the remote. Historical
+notes below about uncommitted scoreboard work are superseded by this checkpoint.
+Build, focused tests and deployment/browser verification are recorded below and
+in release history; closing diff whitespace checks passed. No additional code or
+deployment was needed for this check-in. The closing push failed because GitHub
+HTTPS credentials are unavailable in this workspace; the checkpoint is committed
+locally. After authenticating, run `git push origin develop`. Verify Git state when
+resuming. No outstanding implementation request remains; follow the user's next
+brief. Prior deployment permissions remain session-scoped.
+
+## Scoreboard styling deployed — October 23, 2026 (Central)
+
+After reviewing the local styling and phone checks, the user explicitly requested
+deployment. Now live: `mydailyfeed-web:scoreboard-style-20261023` (c52b23d52a89),
+healthy. Shared sports badges, fixed score/star columns, consistent Live/Final
+pills/actions and aligned footers unify the cards. Full-page metadata lives under
+native Game info disclosures; Home uses compact divided rows. Expanded disclosures
+survive refresh; stale and collection warnings remain visible.
+
+Clean publish, Docker/static-asset guard, live scoreboard behavior suite and ten
+viewport/theme combinations passed. Live phone/desktop checks covered expanded
+info, footer alignment, no overflow/JavaScript errors, eight routes and private
+HTTPS Scoreboard. Runtime settings/mounts preserved; no schema/collector changes.
+Rollback image/container use `before-scoreboard-style-20261023`. Release history
+and `/tmp/mydailyfeed-scoreboard-style-deploy/` contain evidence/live screenshots.
+The temporary local preview was stopped; review screenshots remain available.
+Changes remain uncommitted, with no new push attempt. Next: user's visual review
+of the deployed styling.
+
+## Live scoreboard — October 23, 2026 (Central)
+
+User explicitly authorized implementation and deployment in this session.
+Implemented and deployed `mydailyfeed-web:scoreboard-20261023` (0585962b33b5),
+healthy. Home has a separate six-game card; Sports → Scoreboard offers enabled
+competition filters and Central dates from three days back through seven ahead.
+Today includes overnight active/paused games. Existing Today & Tonight, schedules,
+results and F1 remain independent; no speculative calendar/ESPN identity joining.
+
+Reads use the existing frontend principal against `SportsScoreboard` and
+`SportsScoreboardCoverage`. No schema, collector, credentials or write grants were
+changed. Five-minute visible-only refresh retains displayed samples on failure;
+clocks never tick locally. Separate stable-ID star preferences preserve existing
+name-based team choices. Existing box-score detail visibility now also recognizes
+public scoreboard games. See sports/interface guides for behavior and limits.
+
+Build, 37 focused tests (including read-only SQL), Docker/static-asset guard,
+preview/image/live browser checks, 14 live routes and private HTTPS Scoreboard
+passed. Runtime configuration/mounts preserved; no runtime error markers observed.
+Rollback image/container use `before-scoreboard-20261023`. Details and evidence
+are in release history and `/tmp/mydailyfeed-scoreboard-deploy/`. Temporary previews
+were stopped/removed. Changes remain uncommitted; no push attempted for this work.
+
+Earlier GitHub checkpoint committed as `c027826`; push failed because this
+workspace has no GitHub HTTPS credentials. `develop` remained one commit ahead
+of `origin/develop` before scoreboard implementation. Next: user's review of the
+live feature; no additional implementation request pending.
+
 ## GitHub checkpoint — October 23, 2026 (Central)
 
 The user requested a GitHub check-in before starting the next larger project.
