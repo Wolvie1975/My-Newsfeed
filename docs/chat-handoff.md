@@ -3,6 +3,59 @@
 Read this file when continuing work from the previous chat. These are dated
 observations; check current repository and hosting state before acting.
 
+## Home Opinion spotlight deployed — October 24, 2026
+
+Deployed `mynewspaper-web:home-opinion-20261024` (image `8ed93c383a5f`).
+Container is healthy; runtime configuration and persistent mounts were preserved.
+Rollback image: `mynewsfeed-web:before-mynewspaper-home-opinion-20261024`;
+previous container retained. No database or News page changes.
+
+Live checks passed: 12 health/public routes, Tailscale HTTPS, Opinion card at
+320/390/430px in light/dark with screenshot review, tablet/desktop, hourly refresh
+and failed-refresh retention, mocked save writes/share, reading preferences and
+no-JavaScript link. Homepage columns/resizing/hidden-section checks passed after
+correcting the test to compare rounded grid spans instead of unrounded card
+bottoms; no runtime layout change was needed. Runtime error markers: zero.
+No real-device check available. Evidence: `/tmp/mynewspaper-home-opinion-deploy/`.
+User subsequently requested GitHub check-in; this change set includes the
+implementation, tests and deployment evidence. No runtime changes during check-in;
+mobile verification remains the live evidence recorded above.
+
+## Home Opinion publisher spotlight — local update, October 24, 2026
+
+User requested an Opinion homepage card alternating sources hourly, explicitly
+leaving the News page alone. Added HomeOpinionCard after Latest news, with one
+publisher's newest article, attribution/image/date/summary, existing share/save
+controls and a View all link to the existing Opinion category. Membership resolves
+by category name, never fixed IDs. Latest-per-source query accepts an optional
+category filter; all existing callers keep their previous behavior.
+
+HomeOpinionQuery uses the actual UTC hour and a stable round-robin of eligible
+source URLs. Each publisher gets one slot before the cycle repeats; selection is
+stable within an hour. Only enabled Opinion feeds with retained articles compete;
+empty/retired feeds are skipped. Missing data has a normal empty state, while a
+query failure is isolated from other homepage cards. No News page changes.
+
+/home/opinion serves a no-store card fragment. home-opinion.js refreshes just the
+card at the next hour boundary, catches up on focus/visibility return and preserves
+the outer card, layout, reading/hidden preferences and controls. Failed requests
+retain the last good story and retry after a minute. Without JavaScript the initial
+card and existing feed link render; reloading updates the hourly selection.
+Registered Opinion in the existing personal section list; saved reading/visibility
+preferences remain honored. No database, collector or source configuration changes.
+
+Build/publish and 165 focused tests passed, including complete publisher cycles,
+hour stability, deterministic newest/tie selection, empty/single-source cases and
+connection-local SQL fixtures proving enabled/category scoping. Browser checks
+passed at 320/390/430px light/dark with screenshot review, plus 768/1440 regression:
+card metadata/links, share/save (mocked writes), muted/hidden preferences, no-JS
+Opinion link, clock-driven refresh and failed-refresh retention. Existing homepage
+cascading-column/mobile/no-JS suite passed. No real-device check available.
+Evidence/read-only preview: `/tmp/mynewspaper-home-opinion-review/`, port 5326.
+
+This local review was subsequently deployed; see the deployment entry above.
+Implementation is included in the subsequent GitHub check-in.
+
 ## Section dropdown navigation check-in — October 24, 2026
 
 User requested GitHub check-in after deployment. Local commit on develop includes

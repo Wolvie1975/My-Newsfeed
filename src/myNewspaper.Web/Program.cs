@@ -139,6 +139,14 @@ app.MapPost("/account/logout", async (HttpContext http) =>
 
 // Used by the container health check: healthy only when the database is reachable.
 // Preserve old result bookmarks as final-score views of Scoreboard.
+// Hourly homepage spotlight; only this card refreshes.
+app.MapGet("/home/opinion", async (HttpContext http, IDbContextFactory<WebScraperContext> factory) => {
+    http.Response.Headers.CacheControl = "no-store";
+    await using var db = await factory.CreateDbContextAsync();
+    var snapshot = await HomeOpinionQuery.GetAsync(db, DateTime.UtcNow);
+    return new Microsoft.AspNetCore.Http.HttpResults.RazorComponentResult<HomeOpinionCard>(new { Snapshot = snapshot });
+});
+
 // Native navigation selects work with JavaScript disabled; never redirect off-site.
 app.MapGet("/navigate", (string? to) => {
     var local = !string.IsNullOrEmpty(to) && to[0] == '/'

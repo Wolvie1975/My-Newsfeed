@@ -177,8 +177,9 @@ public static class FeedQuery
     }
 
     /// <summary>The newest article per enabled source, ordered by story date.</summary>
-    public static async Task<IReadOnlyList<FeedItem>> GetLatestPerSourceAsync(WebScraperContext db, int take = 5) =>
+    public static async Task<IReadOnlyList<FeedItem>> GetLatestPerSourceAsync(WebScraperContext db, int take = 5, int? categoryId = null) =>
         await Visible(db)
+            .Where(p => categoryId == null || p.Source.SourceCategoryId == categoryId)
             .Where(p => p.Id == db.Pages.Where(other => other.SourceId == p.SourceId)
                 .OrderBy(other => other.Published == null ? 1 : 0)
                 .ThenByDescending(other => other.Published ?? other.ScrapedAt)

@@ -2501,3 +2501,6 @@
 .pub .section-select { display: flex; flex-direction: column; align-items: stretch; gap: 6px; margin: 20px 0; width: 100%; max-width: 420px; }
 .pub .section-select label { font-size: 14px; font-weight: 600; }
 .pub .section-select select { width: 100%; min-width: 0; min-height: 44px; }
+
+.pub .d-opinion { order: 1; }
+.pub .d-opinion .d-story__tools > button { min-width: 44px; min-height: 44px; }

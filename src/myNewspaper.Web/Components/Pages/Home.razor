@@ -105,6 +105,8 @@
         }
     </section>
 
+    <HomeOpinionCard Snapshot="@opinion" />
+
     <section data-home-section="sports" class="d-card d-today" aria-labelledby="h-tonight">
         <div class="d-card__head"><h2 class="d-card__title" id="h-tonight">Today &amp; Tonight</h2><a href="events">All games</a></div>
         @if (tonight.Count == 0) { <p class="d-empty">No remaining games today. View All games for upcoming fixtures.</p> }
@@ -377,6 +379,7 @@
     private IReadOnlyList<EventItem> todays = [];
     private IReadOnlyList<TonightItem> tonight = [];
     private IReadOnlyList<FeedItem> news = [];
+    private HomeOpinion opinion = new(null,null,0,60000);
     private IReadOnlyList<VideoItem> videos = [];
     private IReadOnlyList<BoxOfficeMovie> homeBoxOffice = [];
     private bool homeBoxOfficeFailed;
@@ -408,6 +411,11 @@
         // The queries run one after another: one DbContext cannot run two at once.
         todays = await EventsQuery.GetOnDateAsync(db, Dates.TodayAt(nowUtc));
         news = await FeedQuery.GetHomeNewsAsync(db, HomeNewsCount);
+        try { opinion = await HomeOpinionQuery.GetAsync(db, nowUtc); }
+        catch (Exception ex) when (ex is System.Data.Common.DbException or InvalidOperationException) {
+            Log.LogError(ex, "Could not read home Opinion spotlight.");
+            opinion = new(null,null,nowUtc.Ticks / TimeSpan.TicksPerHour,60000,true);
+        }
         videos = await VideosQuery.GetHomeVideosAsync(db);
         homeForecasts = new([], []);
         homeBoxOffice = []; homeBoxOfficeFailed = false;

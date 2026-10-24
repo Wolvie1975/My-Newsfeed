@@ -1007,3 +1007,18 @@ GET /navigate handler accepts only local absolute paths, including their query o
 fragment, and redirects invalid/external targets to Home. It performs no data writes.
 Checks: tests/browser/section-select.browser.cjs plus updated Watch sort and mixed
 search/navigation browser regressions.
+
+### Home Opinion spotlight
+
+Home includes an Opinion card after Latest news. It features the newest article
+from one enabled Opinion publisher, with a stable round-robin source selection
+based on the current UTC hour. Eligible publishers each receive a slot before
+repeating; empty/retired feeds are excluded. Existing article styles, safe URLs,
+missing-image/date/summary behavior, share/save and reading preferences are reused.
+View all opens the existing Opinion category; the News page is unchanged.
+
+The card refreshes independently on the next hour boundary while visible, catches
+up after returning to the page, and retains the last good story on a failed
+request. Normal empty/error states are isolated to this card. Without JavaScript,
+server-rendered content and the Opinion link work; reload to update the spotlight.
+The card participates in existing homepage layout/visibility handling.

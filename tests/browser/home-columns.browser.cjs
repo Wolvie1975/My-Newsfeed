@@ -24,12 +24,16 @@ const base = process.env.BASE_URL || 'http://127.0.0.1:5297';
                 assert(cards[0].x < cards[1].x);
                 assert(Math.abs(cards[0].y - cards[1].y) < 2);
                 const bottoms = [cards[0].bottom, cards[1].bottom];
+                const rowGap = await page.locator('[data-home-grid]').evaluate(node => parseFloat(getComputedStyle(node).rowGap));
+                const nextRow = cards.slice(0, 2).map(card => Math.ceil((card.bottom - card.y + rowGap) / (1 + rowGap)));
                 for (const card of cards.slice(2)) {
-                    const column = bottoms[0] <= bottoms[1] ? 0 : 1;
+                    // Placement uses rounded grid spans; natural bottoms can differ within a row.
+                    const column = nextRow[0] <= nextRow[1] ? 0 : 1;
                     assert.equal(card.x, cards[column].x, `${card.key} should use the shorter column`);
                     const gap = card.y - bottoms[column];
                     assert(gap >= 23 && gap <= 50, `${card.key} gap: ${gap}`);
                     bottoms[column] = card.bottom;
+                    nextRow[column] += Math.ceil((card.bottom - card.y + rowGap) / (1 + rowGap));
                 }
             } else {
                 assert.equal(await page.locator('[data-home-grid]').getAttribute('data-masonry'), null);

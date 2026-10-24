@@ -95,5 +95,16 @@ public class EntertainmentNewsTests
         Assert.Equal(4,(await FeedQuery.GetFeedAsync(db,null,null,null,headlinesOnly:true)).Total);
         Assert.Contains(await FeedQuery.GetSourcesAsync(db,null,headlinesOnly:true),s => s.Id == 100);
 
+        await db.Database.ExecuteSqlRawAsync("""
+            INSERT #NewsCategories VALUES (10,'Opinion','20261024','headlines');
+            INSERT #NewsSources VALUES (120,'https://test.invalid/opinion-a','Opinion A',1,10,'20261026',NULL),(130,'https://test.invalid/opinion-b','Opinion B',1,10,'20261026',NULL),(140,'https://test.invalid/retired','Retired opinion',0,10,'20261026',NULL),(150,'https://test.invalid/empty','Empty opinion',1,10,'20261026',NULL);
+            INSERT #NewsPages VALUES (14,'https://test.invalid/14','Active opinion A',NULL,NULL,'20261026','20261026',120),(15,'https://test.invalid/15','Active opinion B',NULL,NULL,'20261026','20261026',130),(16,'https://test.invalid/16','Retired opinion',NULL,NULL,'20261027','20261027',140);
+            """);
+        var opinionA=await HomeOpinionQuery.GetAsync(db,new DateTime(2026,10,24,12,0,0,DateTimeKind.Utc));
+        var opinionB=await HomeOpinionQuery.GetAsync(db,new DateTime(2026,10,24,13,0,0,DateTimeKind.Utc));
+        Assert.Equal(10,opinionA.CategoryId);
+        Assert.NotEqual(opinionA.Article!.SourceUrl,opinionB.Article!.SourceUrl);
+        Assert.Equal(new[]{14,15},new[]{opinionA.Article.Id,opinionB.Article.Id}.Order());
+
     }
 }

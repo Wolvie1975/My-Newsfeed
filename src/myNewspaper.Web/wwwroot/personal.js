@@ -2,8 +2,8 @@
 (function () {
     'use strict';
     const PREFS = 'mynewsfeed-personal-v1', TEAMS = 'mynewsfeed-sports-teams-v1';
-    const defaults = ['watch', 'news', 'sports', 'scoreboard', 'tv', 'videos', 'rankings', 'forecasts', 'movies', 'digital'];
-    const labels = { scoreboard: 'Scoreboard', watch: 'Where to watch', sports: 'Today & Tonight', f1: 'F1', rankings: 'Top 25', news: 'Latest news', forecasts: 'Weekend box office', movies: 'Friday theater releases', digital: 'Upcoming Digital / VOD', tv: 'Today’s episodes', videos: 'Latest videos' };
+    const defaults = ['watch', 'news', 'opinion', 'sports', 'scoreboard', 'tv', 'videos', 'rankings', 'forecasts', 'movies', 'digital'];
+    const labels = { scoreboard: 'Scoreboard', watch: 'Where to watch', sports: 'Today & Tonight', f1: 'F1', rankings: 'Top 25', news: 'Latest news', opinion: 'Opinion', forecasts: 'Weekend box office', movies: 'Friday theater releases', digital: 'Upcoming Digital / VOD', tv: 'Today’s episodes', videos: 'Latest videos' };
     let storage = true, pending = false, weatherController;
     try { localStorage.setItem('mynewsfeed-personal-probe', '1'); localStorage.removeItem('mynewsfeed-personal-probe'); } catch (_) { storage = false; }
     const safe = value => { try { const url = new URL(value); return ['https:', 'http:'].includes(url.protocol) ? url.href : null; } catch (_) { return null; } };
@@ -79,6 +79,8 @@
             while (sibling && !sibling.matches('.daylabel')) { if (sibling.matches('[data-news-url]') && !sibling.hidden) visible = true; sibling = sibling.nextElementSibling; }
             heading.hidden = !visible;
         });
+        const opinion = document.querySelector('[data-home-opinion]');
+        if (opinion) { const filtered = opinion.querySelector('[data-opinion-filtered]'), article = opinion.querySelector('[data-news-url]'); if (filtered && article) filtered.hidden = !article.hidden; }
         const muted = document.querySelector('[data-news-muted]');
         if (muted && muted.dataset.signature !== JSON.stringify(p.muted)) {
             muted.dataset.signature = JSON.stringify(p.muted); muted.replaceChildren();
