@@ -1022,3 +1022,69 @@ up after returning to the page, and retains the last good story on a failed
 request. Normal empty/error states are isolated to this card. Without JavaScript,
 server-rendered content and the Opinion link work; reload to update the spotlight.
 The card participates in existing homepage layout/visibility handling.
+
+## Newspaper section fronts
+
+News uses a lead article, four latest headlines, three supporting image cards and
+thumbnail rows for the remaining stories. The selection keeps the existing feed
+order; it does not assign editorial importance or add new publishers. Source and
+category filters, saved articles, sharing and cursor pagination remain available.
+
+The Sports hub (`/sports`) adds a horizontally scrollable six-game scoreboard and an
+upcoming schedule panel. The scoreboard covers all enabled sports. Full scoreboard and schedule pages retain
+their detailed filters; news category selectors filter articles on the separate
+article browsers. Known start times already in the past are omitted from the
+upcoming preview; unknown times remain explicitly unannounced.
+
+The Entertainment hub (`/entertainment`) adds an On screen strip, movie/streaming release
+previews, tonight's tracked TV episodes and links to the existing entertainment
+guides. Missing schedule data produces an explicit message rather than hiding news.
+
+YouTube uses chronological videos with a large first video and four smaller cards
+on desktop, followed by a video grid. Channel filtering, older/newer page links,
+sharing and Watch later remain available. No invented video categories or summaries
+are shown: the stored video model provides channel, title, thumbnail and date.
+
+At phone widths, hub schedules appear after the lead/latest headlines and before
+supporting stories. Cards stack, thumbnail rows stay compact, and News filters span
+the available width at 430px and below. Existing light/dark preferences are preserved.
+
+Publisher metadata in newspaper cards uses separate rows for date, publisher and
+share/save actions. This keeps action buttons from squeezing short publisher names
+into one-letter columns in supporting cards and compact phone rows.
+
+Coming up cards use 14px vertical and 16px horizontal inner padding, with a 10px
+bottom gap, so release and schedule text stays clear of the card borders.
+
+## Sports and Entertainment homepage hubs
+
+`/sports` and `/entertainment` are section overviews with up to eight stories,
+using the existing source-diverse homepage selection. They reuse the newspaper
+lead/latest/supporting structure and shared score/release/schedule components.
+Sports includes score and schedule links, College Sports, F1, standings and rankings.
+Entertainment includes releases, tracked TV, viewing guides and up to three box-office
+predictions/results, following the same day-of-week policy as Home. Empty and failed
+reads retain explicit messages; one failed box-office read does not remove news.
+
+The desktop Sports/Entertainment labels open section dropdowns, each with its hub
+Home link first. Mobile section groups likewise list the hub Home link first, below
+the group heading. There is no separate hub label beside a dropdown arrow. Active
+hub links and the Browse context reflect the current route. These links and controls
+work without JavaScript. Saved articles and appearance preferences retain their
+existing behavior.
+
+`/sports/news` and `/entertainment/news` remain article browsers with category/source
+filters and cursor pagination. Scores, releases and schedule panels now live in the
+hubs rather than repeating on these article pages. Each article browser links back
+to its overview. Existing category routes, scoreboard, schedule and viewing pages
+remain directly accessible. Hub story selection is stable per collection hour and
+uses existing enabled sources; it does not register feeds or alter data collection.
+
+### Hub section navigation uses native dropdowns
+
+User clarification October 24, 2026: replace the hub link rows with dropdown
+navigation, rather than bubbles/pills or plain link rows. Sports and Entertainment
+reuse SectionSelect, with a visible label, current-home selection and the full set
+of section destinations. The native select keeps a minimum 44px height and full
+width on phones. Choosing an option submits to the existing local-only /navigate
+endpoint; without JavaScript, a Go button submits the same form.

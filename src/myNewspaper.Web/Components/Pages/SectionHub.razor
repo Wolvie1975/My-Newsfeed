@@ -1,0 +1,77 @@
+@page "/sports"
+@page "/entertainment"
+@layout PublicLayout
+@using myNewspaper.Web.Components.Feed
+@inject NavigationManager Nav
+@inject IDbContextFactory<WebScraperContext> Factory
+@inject FeedDates Dates
+@inject ILogger<SectionHub> Log
+
+<PageTitle>@Title · myNewspaper</PageTitle>
+<PageHeading Title="@Title" Eyebrow="YOUR DAILY OVERVIEW" Description="@(Entertainment ? "Stories, new releases and what to watch next." : "Scores, stories and the games coming up.")" />
+<SectionSelect Id="hub-section" Label="@(Title + " sections")" Choices="HubChoices" Current="@(Entertainment ? "entertainment" : "sports")" />
+@if (Entertainment) {
+    <SectionAgenda Entertainment="true" Strip="true" />
+} else {
+    <section class="front-strip" aria-label="Today's scoreboard">
+        <div class="front-strip__head"><h2>Today’s scores</h2><a href="scoreboard">Full scoreboard →</a></div>
+        <ScoreboardPanel Compact="true" />
+    </section>
+}
+<div class="news-front news-front--hub section-hub">
+    <div class="news-front__stories">
+        <section class="feed paper-feed" aria-label="@(Title + " featured stories")">
+            @if (newsUnavailable) { <p class="updated" role="status">Headlines are temporarily unavailable. Please try again.</p> }
+            else if (stories.Count == 0) { <p class="empty">No recent stories are available yet.</p> }
+            else { <NewspaperFeed Items="stories" Featured="true" /> }
+        </section>
+        <a class="nf-btn nf-btn--secondary hub-all-news" href="@NewsPath">Browse all @Title.ToLowerInvariant() headlines →</a>
+    </div>
+    <aside class="news-front__agenda"><SectionAgenda Entertainment="Entertainment" /></aside>
+</div>
+@if (Entertainment) {
+    <section class="hub-boxoffice" aria-labelledby="hub-boxoffice-title">
+        <div class="front-strip__head"><h2 id="hub-boxoffice-title">Box office</h2><a href="box-office">Full box office →</a></div>
+        @if (boxOfficeUnavailable) { <p class="updated" role="status">Box office is temporarily unavailable. Please try again.</p> }
+        else if (showResults) { <HomeBoxOfficeResults Rows="boxOffice" Weekend="weekend" /> }
+        else {
+            <BoxOfficeForecastSection HomeCard="true" Kind="@BoxOfficeForecastQuery.Preview" Rows="@forecasts.Movies.Where(f => f.Kind == BoxOfficeForecastQuery.Preview).Take(3).ToArray()" Source="@forecasts.Sources.FirstOrDefault(s => s.Kind == BoxOfficeForecastQuery.Preview)" UtcNow="nowUtc" />
+        }
+    </section>
+}
+
+@code {
+    private IReadOnlyList<NavigationChoice> HubChoices => Entertainment
+        ? [new("entertainment", "Entertainment home"), new("entertainment/news", "All headlines"), new("movies", "Movies"), new("tv", "TV & streaming"), new("movies/digital", "Digital releases"), new("box-office", "Box office"), new("watch", "Where to watch")]
+        : [new("sports", "Sports home"), new("sports/news", "All headlines"), new("scoreboard", "Scoreboard"), new("events", "Schedule"), new("standings", "Standings"), new("rankings", "Top 25"), new("college", "College Sports"), new("f1", "F1")];
+    private bool Entertainment => Nav.ToBaseRelativePath(Nav.Uri).Split('?')[0].TrimEnd('/').Equals("entertainment", StringComparison.OrdinalIgnoreCase);
+    private string Title => Entertainment ? "Entertainment" : "Sports";
+    private string NewsPath => Entertainment ? "entertainment/news" : "sports/news";
+    private IReadOnlyList<FeedItem> stories = [];
+    private bool newsUnavailable, boxOfficeUnavailable, showResults;
+    private DateTime nowUtc;
+    private DateOnly weekend;
+    private IReadOnlyList<BoxOfficeMovie> boxOffice = [];
+    private BoxOfficeForecastSnapshot forecasts = new([], []);
+    protected override async Task OnParametersSetAsync() {
+        nowUtc = DateTime.UtcNow;
+        newsUnavailable = false; boxOfficeUnavailable = false;
+        stories = []; boxOffice = []; forecasts = new([], []);
+        await using var db = await Factory.CreateDbContextAsync();
+        try { stories = await FeedQuery.GetHomeNewsAsync(db, 8, Entertainment ? "entertainment" : "sports"); }
+        catch (Exception ex) when (ex is System.Data.Common.DbException or InvalidOperationException) {
+            newsUnavailable = true; Log.LogError(ex, "Could not read section hub headlines.");
+        }
+        if (Entertainment) {
+            var today = Dates.TodayAt(nowUtc);
+            showResults = HomeBoxOfficeSchedule.ShowResults(today);
+            weekend = HomeBoxOfficeSchedule.ResultsWeekend(today);
+            try {
+                if (showResults) boxOffice = (await BoxOfficeChartQuery.GetAsync(db, weekend)).Take(3).ToArray();
+                else forecasts = await BoxOfficeForecastQuery.GetAsync(db, today);
+            } catch (Exception ex) when (ex is System.Data.Common.DbException or InvalidOperationException) {
+                boxOfficeUnavailable = true; Log.LogError(ex, "Could not read section hub box office.");
+            }
+        }
+    }
+}

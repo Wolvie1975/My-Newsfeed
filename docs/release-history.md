@@ -3658,3 +3658,196 @@ included current source. Rollback must always use a compatible preserved runtime
 | docs/standings-layout-deployment.md | `mynewsfeed-web:standings-layout-20261013`, `mynewsfeed-web:before-standings-layout` |
 | MLS schedule/results update | `mynewsfeed-web:mls-schedule-results-20261013`, `mynewsfeed-web:before-mls-schedule-results` |
 | Movie-section posters update | `mynewsfeed-web:movie-section-posters-20261013`, `mynewsfeed-web:before-movie-section-posters` |
+
+## October 24, 2026 — News, Sports, Entertainment and YouTube fronts
+
+Deployed `mynewspaper-web:frontpages-20261024` to `mynewsfeed-web`, using the
+existing sql2025 / WebScraper runtime. Final image:
+`sha256:77ba60512a836e02d01469c7425c93393e7bd43b2863e2e6ab3e9b669974c8a3`.
+No database migrations, publisher registration or scraper deployment were required.
+Environment, health check, ports, network, restart policy and persistent mounts
+were compared with the previous runtime and preserved.
+
+News has a lead/latest/supporting layout and compact story rows. Sports adds a
+scrollable scoreboard and upcoming schedule; Entertainment adds releases and
+tracked TV highlights. YouTube has a chronological featured-video grid. Existing
+source/channel filters, article sharing/saving, Watch later and paging remain.
+See the interface guide for selection and schedule scope.
+
+Validation: application build and container publish/static-asset guard passed;
+108 relevant helper/render tests passed. Preview and live browser matrices covered
+320, 390, 430, 768 and 1440px in light/dark mode, representative populated articles
+and videos, overflow, 44px card controls, mobile agenda order, source/channel
+filtering, reload, unique cursor pagination and no-JavaScript forms/paging.
+Sports/Entertainment navigation regression suites and sharing-dialog checks passed.
+Phone and desktop screenshots were inspected. No physical-device verification was
+available. Existing Pkcs package advisory warnings remain; the full integration
+suite was not run against production.
+
+Live health and ten affected/related public routes returned 200. Container health
+was healthy and the initial runtime log had no failure/unhandled-exception markers.
+Final markup and fingerprinted CSS were explicitly verified after live review caught
+an intermediate image serving the older narrow-phone filter row. Final phone
+filters were checked at all three required widths in both themes.
+
+Original rollback image:
+`sha256:df4b96088426241b0d59169d61784d378f99ca1ba9a4e2d7e557c4e74683bb0b`,
+also tagged `mynewsfeed-web:before-mynewspaper-frontpages-20261024`.
+Original container retained as
+`mynewsfeed-web-before-mynewspaper-frontpages-20261024`; an intermediate container
+is also retained with the `before-mynewspaper-frontpages-final-20261024` suffix.
+Evidence and private runtime snapshots: `/tmp/mynewspaper-frontpages-deploy/`.
+
+### October 24, 2026 — Publisher wrapping repair
+
+A user screenshot exposed publisher names wrapping one letter per line in narrow
+supporting cards. The shared article metadata grid had reserved columns for two
+44px actions beside the publisher. Newspaper cards now give date, publisher and
+actions their own rows, preserving readable names and button target sizes across
+News, Sports and Entertainment.
+
+Deployed `mynewspaper-web:source-wrap-20261024`, image
+`sha256:97a325eba7c218ace8d43da86b8ee927fa8af43c507257a3d4b6d8f3d0750c77`.
+The container build/static-asset guard passed, health is healthy, `/healthz` returned
+200, and the final fingerprinted stylesheet was verified. Runtime settings and
+persistent mounts were preserved. No database or scraper changes were needed.
+
+Preview and live verification each passed 54 combinations: News/Sports/Entertainment
+at 320, 390, 430, 700, 753, 900, 1024, 1150 and 1440px in light/dark mode. Checks
+covered publisher width, single-line Nerdist labels, document overflow, 44px actions,
+sharing dialog/Escape/focus return. Screenshots included every required phone width,
+the reproduced narrow desktop arrangement and full desktop; representative phone
+and desktop screenshots were inspected. No physical-device checks were available.
+
+Previous image/container retained under the
+`before-mynewspaper-source-wrap-20261024` rollback tag/name. Evidence resides in
+`/tmp/mynewspaper-source-wrap-deploy/`. The original front-page release files and
+other pre-existing local changes were preserved.
+The live 40-view front-page regression matrix also passed, including source/channel
+filters, reload, unique pagination and no-JavaScript forms/paging.
+
+### October 24, 2026 — Coming up card spacing
+
+Added 14px vertical/16px horizontal padding inside Coming up release/schedule cards
+and a 10px gap between cards. This resolves titles/dates crowding bordered cards.
+Deployed `mynewspaper-web:agenda-padding-20261024`, image
+`sha256:a002221fb8f4e188e5ec4d7001da083edcccf708ce06f572eb0ac046c208ca22`.
+Container publish/static-asset guard passed; runtime settings and mounts were
+preserved; live health was healthy and `/healthz` returned 200. No database changes.
+
+Preview and live each passed 20 page/width/theme checks: Entertainment and Sports
+at 320/390/430/768/1440px in light/dark mode. Assertions covered computed inner
+padding, card gaps, page overflow, 44px links and schedule navigation. Phone/desktop
+screenshots were inspected, including the live movie cards. No real device was
+available. Existing behavior/preferences and no-JavaScript links are unchanged by
+this CSS-only update. Evidence: `/tmp/mynewspaper-agenda-padding-deploy/`.
+Previous runtime/image retained under `before-mynewspaper-agenda-padding-20261024`.
+
+### October 24, 2026 — Dedicated Sports and Entertainment hubs
+
+Added `/sports` and `/entertainment` as bounded section overviews. Both show up to
+eight source-diverse stories with the existing newspaper hierarchy. Sports leads
+with scores and includes upcoming games; Entertainment includes release/TV previews
+and up to three weekend box-office predictions/results. Detailed News pages now
+focus on article filtering/paging and link back to the overview. Existing score,
+schedule, movie, viewing-guide and category routes remain available.
+
+Desktop Sports/Entertainment labels navigate directly to their hubs; adjacent
+44px arrow controls open section dropdowns. Mobile section headings are hub links,
+with correct active labels/Browse context. Reused publisher metadata and card
+padding fixes remain present.
+
+Deployed `mynewspaper-web:section-hubs-20261024`, image
+`sha256:816bda113f841fcc1ef5c77b49237643ce73b5882f6a1d795d54824017aabbb8`.
+Runtime environment, mounts/keys, ports, network, health check and restart policy
+were preserved. Existing sql2025 / WebScraper data supplies the hubs; no database
+migration, publisher registration or scraper deployment was required. Previous
+container/image retained under `before-mynewspaper-section-hubs-20261024`.
+
+Build, publish/static-asset guard and 119 relevant helper/render tests passed.
+Preview checks covered both hubs at 320/390/430/768/1440px in light/dark mode,
+including bounded content, score/release/TV/box-office panels, overflow, 44px links,
+mobile agenda order, desktop dropdowns, hub/article navigation, reload, share-dialog
+focus return and no-JavaScript links. The 1280px header boundary and saved appearance
+after reload also passed. Existing Sports and Entertainment category/navigation
+regressions and the 40-view News/YouTube filter/pagination/no-JavaScript matrix
+passed in preview. Representative phone/desktop screenshots were inspected; no
+physical-device check was available. Existing Pkcs advisory warnings remain.
+
+Live health was healthy and twelve public/health routes returned 200, with no
+initial runtime failure/unhandled-exception markers. Release evidence and private
+runtime snapshots reside in `/tmp/mynewspaper-section-hubs-deploy/`.
+Post-deployment verification passed the same 20 hub width/theme combinations and
+the 40-view News/YouTube regression matrix, including live desktop/mobile hub links,
+no-JavaScript navigation, source/channel filters, pagination and sharing. Live phone
+and desktop screenshots were inspected. The deployed container remains healthy.
+
+### October 24, 2026 — Plain hub navigation links
+
+Removed bubble styling from Sports/Entertainment section navigation: no borders,
+rounded backgrounds or filled containers; 44px vertical link targets remain. Recorded
+the user's plain-section-link preference in the interface guide.
+Deployed `mynewspaper-web:plain-hub-links-20261024`, image
+`sha256:c75770fba969f20b7b51559f7480d91ec80f798477836b547dff6a5e9387dd41`.
+Container publish/static-asset guard passed, runtime configuration/mounts were
+preserved, health is healthy and `/healthz` returned 200. Previous container/image
+retained under `before-mynewspaper-plain-hub-links-20261024`.
+
+Preview and live each passed 20 Sports/Entertainment width/theme combinations at
+320/390/430/768/1440px in light/dark mode. Verified transparent backgrounds, zero
+borders/radius, 44px targets, no page overflow and headline-link navigation. Phone
+and desktop screenshots were captured; representative preview/live phone screenshots
+were inspected. No real device was available. This is a CSS-only change to existing
+links. Evidence: `/tmp/mynewspaper-plain-hub-links-deploy/`.
+
+### October 24, 2026 — Hub dropdown navigation
+
+User clarified that hub section navigation should be dropdowns, rather than bubble
+links or plain link rows. Replaced those rows with the existing native SectionSelect
+component. Sports offers eight destinations and Entertainment seven, including each
+hub's selected Home entry. Selecting a destination submits through the existing
+local-only `/navigate` endpoint; a Go button supports JavaScript-disabled browsers.
+Removed obsolete hub-link styling and corrected the maintained preference text.
+
+Deployed `mynewspaper-web:hub-dropdown-20261024`, image
+`sha256:50c613e906e8370b60a38345ed516bac74cb868a497aa8c0d4f03bd90c77ed63`.
+Application build and container publish/static-asset guard passed, with existing
+Pkcs package advisory warnings. Runtime settings/mounts were preserved, and
+`/healthz` returned 200. Previous runtime/image retained under
+`before-mynewspaper-hub-dropdown-20261024`. No database or collector changes.
+
+Preview verification covered 20 hub/page/width/theme combinations at
+320/390/430/768/1440px in light/dark mode, including 44px select height, current
+selection, absence of link rows, dropdown destinations, mobile order, page overflow,
+hub/article navigation, share-dialog focus and no-JavaScript select/Go navigation.
+All 15 dropdown destinations also resolved successfully. Phone/desktop screenshots
+were captured and representative phone screenshots inspected. No real device was
+available. Evidence: `/tmp/mynewspaper-hub-dropdown-deploy/`.
+The same 20-view hub matrix passed after deployment, including native dropdown
+navigation and no-JavaScript Go submission. Live phone/desktop screenshots were
+captured; the deployed container is healthy.
+
+### October 24, 2026 — Hub links first inside section menus
+
+Removed separate Sports/Entertainment hub links beside dropdown arrows. Each
+section's header label now opens its complete dropdown, with Sports home or
+Entertainment home first. Mobile groups use a heading followed by the same hub-first
+link ordering. The on-page native hub selectors remain available. Active states and
+44px menu targets are preserved; obsolete split-header styling was removed.
+
+Deployed `mynewspaper-web:hub-menu-20261024`, image
+`sha256:b88d56ffd16efed274140db45535af342cf039496f454590bbf452d551e055e3`.
+Application build/publish/static-asset guard passed. Runtime configuration and mounts
+were preserved; live container health was healthy and `/healthz` returned 200. No
+database/collector changes. Prior container/image retained under
+`before-mynewspaper-hub-menu-20261024`.
+
+Preview menu checks passed 20 page/width/theme combinations at
+320/390/430/768/1440px in light/dark mode: hub-first ordering, absence of split-header
+links, active states, 44px targets, overflow, headlines navigation and no-JavaScript
+hub links. The 20-view hub regression suite also passed, including native section
+selectors, content/agenda order, share focus and no-JavaScript navigation. Phone and
+desktop screenshots were captured and representative images inspected. No physical
+device was available. Evidence: `/tmp/mynewspaper-hub-menu-deploy/`.
+Both 20-view suites passed after deployment. Live mobile menu screenshots were
+inspected, confirming the hub is the first link below its section heading.

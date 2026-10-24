@@ -28,7 +28,7 @@
     </form>
     <h2>@NewsSections.LabelFor(SectionCategory)</h2>
 }
-<div class="filters">
+<div class="filters news-front-filters">
     @if (!SectionNews && categories.Count > 0)
     {
         @* Selecting a filter submits the form; Apply remains available without JavaScript. *@
@@ -79,6 +79,9 @@
     </p>
 }
 
+@if (SectionNews) {
+    <nav class="front-links" aria-label="Section overview"><a href="@(EntertainmentSection ? "entertainment" : "sports")">← @(EntertainmentSection ? "Entertainment" : "Sports") overview</a></nav>
+}
 @if (feed is null || feed.Items.Count == 0)
 {
     <p class="empty">
@@ -103,9 +106,13 @@ else
         <p><a href="@Href(Category, null)">← Back to the newest articles</a></p>
     }
 
-    <section class="feed" aria-label="Articles" data-last-day="@lastDay">
-        <FeedArticles Items="feed.Items" LeadFirst="@(After is null)" Total="@(After is null ? feed.Total : null)" />
-    </section>
+    <div class="news-front">
+        <div class="news-front__stories">
+            <section class="feed paper-feed" aria-label="Articles" data-last-day="@lastDay">
+                <NewspaperFeed Items="feed.Items" Featured="@(After is null)" Total="@(After is null ? feed.Total : null)" />
+            </section>
+        </div>
+    </div>
 
     <div class="loadmore">
         @if (feed.Next is { } next)

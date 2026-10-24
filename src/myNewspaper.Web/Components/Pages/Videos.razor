@@ -6,7 +6,7 @@
 <PageTitle>Videos · myNewspaper</PageTitle>
 
 @* Static (non-interactive) page. Filters are plain links and a GET form, so every view has a shareable URL and works
-   without JavaScript. One section per channel, newest video first. *@
+   without JavaScript. A chronological magazine grid, newest video first. *@
 
 <PageHeading Title="Videos" Eyebrow="FROM OUR CHANNELS" Description="Latest videos from the channels we follow." />
 
@@ -64,29 +64,13 @@
 }
 else
 {
-    <div class="vfeed">
-        @foreach (var group in listing.Items.GroupBy(v => v.ChannelId)
-            .OrderBy(g => g.First().ChannelName, StringComparer.OrdinalIgnoreCase).ThenBy(g => g.Key, StringComparer.Ordinal))
-        {
-            var first = group.First();
-            var link = VideosText.ChannelUrl(group.Key);
-            <section class="channel" aria-labelledby="ch-@group.Key">
-                <header class="channel__head">
-                    <span class="mark" aria-hidden="true">@VideosText.Initial(first.ChannelName)</span>
-                    <h2 class="channel__name" id="ch-@group.Key">@first.ChannelName</h2>
-                    <span class="channel__count">@group.Count() @(group.Count() == 1 ? "video" : "videos")</span>
-                    @if (link is not null)
-                    {
-                        <a class="channel__link" href="@link" target="_blank" rel="noopener noreferrer">View channel <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="m13 6 6 6-6 6"></path></svg></a>
-                    }
-                </header>
-                <ul class="videos">
-                    @foreach (var video in group)
+    <div class="video-front"><ul class="videos">
+                    @foreach (var video in listing.Items)
                     {
                         var href = FeedQuery.SafeHref(video.Url);
                         var picture = VideosText.Thumbnail(video.ThumbnailUrl, video.VideoId);
                         var views = VideosText.Views(video.ViewCount);
-                        <li class="video">
+                        <li class="video @(video == listing.Items[0] && page == 1 ? "video--featured" : "")">
                             <a class="vthumb" href="@href" target="_blank" rel="noopener noreferrer" tabindex="-1" aria-hidden="true">
                                 <span class="vthumb__ph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"></rect><circle cx="9" cy="10" r="1.6"></circle><path d="m21 16-5-5-8 9"></path></svg></span>
                                 @if (picture is not null)
@@ -108,6 +92,7 @@ else
                                     }
                                 </h3>
 
+                                <p class="video-channel">@video.ChannelName</p>
                                 <p class="vmeta">
                                     <time datetime="@video.PublishedAt.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'")" title="@Dates.PublishedFull(video.PublishedAt)">@Dates.Published(video.PublishedAt)</time>
                                     @if (views is not null)
@@ -123,17 +108,14 @@ else
                             </div>
                         </li>
                     }
-                </ul>
-            </section>
-        }
-    </div>
+    </ul></div>
 
     @if (listing.Total > 50 || page > 1)
     {
         <nav class="tv-week" aria-label="Video pages">
             @if (page > 1) { <a class="nf-btn nf-btn--secondary" href="@PageHref(page - 1)">← Newer videos</a> }
             <span>Page @(page) · @listing.Total videos</span>
-            @if (offset + listing.Items.Count < listing.Total) { <a class="nf-btn nf-btn--secondary" href="@PageHref(page + 1)">Older videos →</a> }
+            @if (offset + listing.Items.Count < listing.Total) { <a class="nf-btn nf-btn--secondary" href="@PageHref(page + 1)">More videos →</a> }
         </nav>
     }
 }

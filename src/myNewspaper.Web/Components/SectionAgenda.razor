@@ -1,0 +1,83 @@
+@inject IDbContextFactory<WebScraperContext> Factory
+@inject FeedDates Dates
+@inject ILogger<SectionAgenda> Log
+
+@if (unavailable) {
+    <p class="updated" role="status">Schedules are temporarily unavailable. Please try again.</p>
+} else if (Strip) {
+    <section class="front-strip" aria-label="Movies and TV highlights">
+        <div class="front-strip__head"><h2>On screen</h2><a href="movies">All releases →</a></div>
+        <div class="release-strip">
+            @foreach (var movie in movies.Take(3)) {
+                <article class="agenda-item"><a href="movies">@movie.Title</a><p>@movie.Date?.ToString("ddd, MMM d") · @(movie.Platform ?? MoviesQuery.Types.GetValueOrDefault(movie.Type, movie.Type))</p></article>
+            }
+            @foreach (var episode in episodes.Take(3)) {
+                <article class="agenda-item"><a href="tv">@episode.SeriesTitle</a><p>Tonight · @(episode.StartsUtc is {} start ? Dates.Time(start) : "Time to be announced") · @episode.Platform</p></article>
+            }
+            @if (movies.Count == 0 && episodes.Count == 0) { <p class="updated">No movie or tracked TV highlights are listed yet.</p> }
+        </div>
+    </section>
+} else {
+<section class="front-agenda">
+    <h2>@(Entertainment ? "Coming up" : "Upcoming games")</h2>
+    @if (Entertainment) {
+        <h3>Movies & streaming</h3>
+        @if (movies.Count == 0) { <p class="updated">No upcoming releases are listed.</p> }
+        @foreach (var movie in movies) {
+            <article class="agenda-item">
+                <a href="movies">@movie.Title</a>
+                <p>@movie.Date?.ToString("ddd, MMM d") · @(movie.Platform ?? MoviesQuery.Types.GetValueOrDefault(movie.Type, movie.Type))</p>
+            </article>
+        }
+        <a class="agenda-more" href="movies">All releases →</a>
+        <h3>Tonight on TV</h3>
+        @if (episodes.Count == 0) { <p class="updated">No tracked episodes are listed tonight.</p> }
+        @foreach (var episode in episodes.Take(4)) {
+            <article class="agenda-item"><a href="tv">@episode.SeriesTitle</a><p>@(episode.StartsUtc is {} start ? Dates.Time(start) : "Time to be announced") · @episode.Platform</p></article>
+        }
+        <a class="agenda-more" href="tv">Full TV schedule →</a>
+    } else {
+        @foreach (var race in races) {
+            <article class="agenda-item"><a href="f1">@race.RaceName</a><p>@race.RaceDate.ToString("ddd, MMM d") · @(F1Query.StartsUtc(race.RaceDate, race.RaceTimeUtc) is {} raceStart ? Dates.Time(raceStart) : "Time to be announced")</p></article>
+        }
+        @if (games.Count == 0 && races.Count == 0) { <p class="updated">No upcoming games are listed for this selection.</p> }
+        @foreach (var game in games) {
+            <article class="agenda-item"><a href="events">@game.Title</a><p>@game.EventDate.ToString("ddd, MMM d") · @(game.StartsAtUtc is {} start ? Dates.Time(start) : "Time to be announced")</p>
+                @if (!string.IsNullOrWhiteSpace(game.Tv)) { <p>@game.Tv</p> }
+            </article>
+        }
+        <a class="agenda-more" href="events">Full schedule →</a>
+        <nav class="front-links" aria-label="Sports guides"><a href="scoreboard">Scoreboard</a><a href="standings">Standings</a><a href="rankings">Rankings</a><a href="f1">F1</a></nav>
+    }
+</section>
+}
+
+@code {
+    [Parameter] public bool Strip { get; set; }
+    [Parameter] public bool Entertainment { get; set; }
+    [Parameter] public string? CategoryName { get; set; }
+    private IReadOnlyList<myNewspaper.Web.Data.Models.F1Race> races = [];
+    private bool unavailable;
+    private IReadOnlyList<EventItem> games = [];
+    private IReadOnlyList<MovieReleaseItem> movies = [];
+    private IReadOnlyList<TvEpisodeItem> episodes = [];
+    protected override async Task OnParametersSetAsync() {
+        unavailable = false;
+        races = []; games = []; movies = []; episodes = [];
+        try {
+        await using var db = await Factory.CreateDbContextAsync();
+        var today = Dates.TodayAt(DateTime.UtcNow);
+        if (Entertainment) {
+            movies = (await MoviesQuery.GetAsync(db, today, null, null, null, null, take: 4)).Items;
+            episodes = await TvQuery.GetOnDateAsync(db, Dates, today);
+        } else {
+            var sport = CategoryName == NewsSections.MensBasketball ? "Men's Basketball" : null;
+            if (CategoryName == F1NewsQuery.CategoryName) races = (await F1Query.GetAsync(db, "schedule")).Races.Where(r => r.RaceDate >= today).Take(3).ToArray();
+            games = CategoryName == F1NewsQuery.CategoryName ? [] : (await EventsQuery.GetUpcomingAsync(db, today, sport, null, limit: 40)).Items.Where(g => g.StartsAtUtc == null || g.StartsAtUtc > DateTime.UtcNow).Take(5).ToArray();
+        }
+        } catch (Exception ex) when (ex is System.Data.Common.DbException or InvalidOperationException) {
+            unavailable = true;
+            Log.LogError(ex, "Could not read section agenda.");
+        }
+    }
+}

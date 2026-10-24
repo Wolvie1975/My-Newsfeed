@@ -3,6 +3,8 @@
 
 @{
     var path = Nav.ToBaseRelativePath(Nav.Uri);
+    var onSportsHub = path.Split('?')[0].TrimEnd('/').Equals("sports", StringComparison.OrdinalIgnoreCase);
+    var onEntertainmentHub = path.Split('?')[0].TrimEnd('/').Equals("entertainment", StringComparison.OrdinalIgnoreCase);
     var onLocal = path.Split('?')[0].Equals("local", StringComparison.OrdinalIgnoreCase);
     var onCollege = path.Equals("college", StringComparison.OrdinalIgnoreCase) || path.StartsWith("college/", StringComparison.OrdinalIgnoreCase) || path.StartsWith("college?", StringComparison.OrdinalIgnoreCase);
     var onF1 = path.Equals("f1", StringComparison.OrdinalIgnoreCase) || path.StartsWith("f1/", StringComparison.OrdinalIgnoreCase) || path.StartsWith("f1?", StringComparison.OrdinalIgnoreCase);
@@ -29,7 +31,7 @@
     var onNews = path.StartsWith("news", StringComparison.OrdinalIgnoreCase);
     var onSaved = path.StartsWith("saved", StringComparison.OrdinalIgnoreCase);
     var onHome = path.Length == 0 || path[0] is '?' or '#';
-    var section = (onSportsNews || onBasketballNews) ? "Sports headlines" : onBig12News ? "Big 12 News" : onF1News ? "F1 News" : (onEntertainmentNews || onTvFilmNews) ? "Entertainment headlines" : onScoreboard ? "Scoreboard" : onWatch ? "Where to watch" : onLocal ? "Kansas City" : onCollege ? "College Sports" : onF1 ? "F1" : onTeams ? "Settings" : onTv ? "TV & Streaming" : onEvents ? "Sports Events" : onDigital ? "Digital rental / purchase" : onMovies ? "Movies" : onVideos ? "YouTube"
+    var section = onSportsHub ? "Sports" : onEntertainmentHub ? "Entertainment" : (onSportsNews || onBasketballNews) ? "Sports headlines" : onBig12News ? "Big 12 News" : onF1News ? "F1 News" : (onEntertainmentNews || onTvFilmNews) ? "Entertainment headlines" : onScoreboard ? "Scoreboard" : onWatch ? "Where to watch" : onLocal ? "Kansas City" : onCollege ? "College Sports" : onF1 ? "F1" : onTeams ? "Settings" : onTv ? "TV & Streaming" : onEvents ? "Sports Events" : onDigital ? "Digital rental / purchase" : onMovies ? "Movies" : onVideos ? "YouTube"
         : onRankings ? "Top 25" : onStandings ? "Standings" : onResults ? "Results" : onBoxOffice ? "Box Office" : onNews ? "Headlines" : onSaved ? "Saved" : onHome ? "Home" : "Browse";
 }
 
@@ -49,7 +51,8 @@
                     <a href="local" aria-current="@(onLocal ? "page" : null)">Local</a>
                 </div>
             </details>
-            <details class="desktop-nav-group" data-mobile-nav><summary class="@((onSportsNews || onBasketballNews || onScoreboard || onEvents || onResults || onStandings || onRankings || onF1 || onCollege) ? "is-current" : null)">Sports ▾</summary><div class="desktop-nav-links">
+            <details class="desktop-nav-group" data-mobile-nav><summary class="@((onSportsHub || onSportsNews || onBasketballNews || onScoreboard || onEvents || onResults || onStandings || onRankings || onF1 || onCollege) ? "is-current" : null)">Sports ▾</summary><div class="desktop-nav-links">
+            <a href="sports" aria-current="@(onSportsHub ? "page" : null)">Sports home</a>
             <a href="sports/news" aria-current="@((onSportsNews || onBasketballNews) ? "page" : null)">Sports headlines</a>
             <a href="events" aria-current="@(onEvents ? "page" : null)">Sports Events</a>
             <a href="scoreboard" aria-current="@(onScoreboard ? "page" : null)">Scoreboard</a>
@@ -57,7 +60,8 @@
             <a href="college" aria-current="@(onCollege ? "page" : null)">College Sports</a>
             <a href="f1" aria-current="@(onF1 ? "page" : null)">F1</a>
             <a href="rankings" aria-current="@(onRankings ? "page" : null)">Top 25</a></div></details>
-            <details class="desktop-nav-group" data-mobile-nav><summary class="@((onMovies || onTv || onEntertainmentNews || onTvFilmNews || onBoxOffice) ? "is-current" : null)">Entertainment ▾</summary><div class="desktop-nav-links">
+            <details class="desktop-nav-group" data-mobile-nav><summary class="@((onEntertainmentHub || onMovies || onTv || onEntertainmentNews || onTvFilmNews || onBoxOffice) ? "is-current" : null)">Entertainment ▾</summary><div class="desktop-nav-links">
+            <a href="entertainment" aria-current="@(onEntertainmentHub ? "page" : null)">Entertainment home</a>
             <a href="entertainment/news" aria-current="@((onEntertainmentNews || onTvFilmNews) ? "page" : null)">Entertainment headlines</a>
             <a href="movies" aria-current="@(onMovies && !onDigital ? "page" : null)">Movies</a>
             <a href="box-office" aria-current="@(onBoxOffice ? "page" : null)">Box Office</a>
@@ -117,6 +121,7 @@
                 </div>
             </div>
             <div class="mobile-nav-group" role="group" aria-labelledby="mobile-sports-heading"><span class="nav-group-label" id="mobile-sports-heading">Sports</span><div class="mobile-subnav">
+            <a href="sports" aria-current="@(onSportsHub ? "page" : null)">Sports home</a>
 
             <a href="sports/news" aria-current="@((onSportsNews || onBasketballNews) ? "page" : null)">Sports headlines</a>
             <a href="events" aria-current="@(onEvents ? "page" : null)">Sports Events</a>
@@ -127,6 +132,7 @@
             <a href="rankings" aria-current="@(onRankings ? "page" : null)">Top 25</a>
             </div></div>
             <div class="mobile-nav-group" role="group" aria-labelledby="mobile-entertainment-heading"><span class="nav-group-label" id="mobile-entertainment-heading">Entertainment</span><div class="mobile-subnav">
+            <a href="entertainment" aria-current="@(onEntertainmentHub ? "page" : null)">Entertainment home</a>
             <a href="entertainment/news" aria-current="@((onEntertainmentNews || onTvFilmNews) ? "page" : null)">Entertainment headlines</a>
             <a href="movies" aria-current="@(onMovies ? "page" : null)">Movies</a>
             <a href="box-office" aria-current="@(onBoxOffice ? "page" : null)">Box Office</a>
