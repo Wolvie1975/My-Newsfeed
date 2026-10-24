@@ -1,4 +1,4 @@
-// Cascade cards into the shorter column, with Watch and News first in document order.
+// Cascade cards into the shorter column, with Watch directly after the full-width lead.
 (function () {
     'use strict';
     const desktop = matchMedia('(min-width: 1024px)');
@@ -23,6 +23,15 @@
         cards.forEach(card => {
             if (card.hidden) { card.style.removeProperty('grid-row-end'); card.style.removeProperty('grid-row-start'); card.style.removeProperty('grid-column'); return; }
             const span = 'span ' + Math.ceil((card.getBoundingClientRect().height + gap) / (1 + gap));
+            if (card.hasAttribute('data-home-wide')) {
+                const start = String(Math.max(nextRow[0], nextRow[1]));
+                if (card.style.gridColumn !== '1 / -1') card.style.gridColumn = '1 / -1';
+                if (card.style.gridRowStart !== start) card.style.gridRowStart = start;
+                if (card.style.gridRowEnd !== span) card.style.gridRowEnd = span;
+                const next = Number(start) + parseInt(span.slice(5), 10);
+                nextRow[0] = nextRow[1] = next;
+                return;
+            }
             const column = nextRow[0] <= nextRow[1] ? 0 : 1;
             const columnValue = String(column + 1);
             if (card.style.gridColumn !== columnValue) card.style.gridColumn = columnValue;

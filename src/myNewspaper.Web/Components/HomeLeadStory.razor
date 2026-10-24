@@ -1,0 +1,53 @@
+@inject FeedDates Dates
+
+<section class="d-card d-lead" data-home-section="lead" data-home-wide data-home-lead
+         data-lead-hour="@Snapshot.Hour" data-lead-refresh-after="@Snapshot.RefreshAfterMs" aria-labelledby="h-home-lead">
+    <div class="d-card__head">
+        <h2 class="d-card__title" id="h-home-lead">Top story</h2>
+        <a class="d-more" href="news">All headlines <span aria-hidden="true">→</span></a>
+    </div>
+    @if (Snapshot.Failed)
+    {
+        <p class="d-empty" role="status">The top story is temporarily unavailable. Please try again.</p>
+    }
+    else if (Snapshot.Article is not { } item)
+    {
+        <p class="d-empty">No headline is available right now. Check back soon.</p>
+    }
+    else
+    {
+        var href = FeedQuery.SafeHref(item.Url);
+        var image = FeedQuery.SafeHref(item.ImageUrl);
+        var title = FeedText.StripEmoji(item.Title);
+        var summary = FeedText.StripEmoji(FeedQuery.Excerpt(item.Description));
+        var sourceName = FeedText.SourceName(item.SourceLabel, item.SourceUrl);
+        <article class="d-lead__story" data-news-url="@href" data-news-source="@sourceName">
+            @if (href is not null)
+            {
+                <a class="d-lead__image" href="@href" target="_blank" rel="noopener noreferrer" aria-label="Read: @(title.Length > 0 ? title : item.Title)">
+                    @if (image is not null) { <img src="@image" alt="" fetchpriority="high" referrerpolicy="no-referrer" onerror="this.remove()" /> }
+                    else { <span aria-hidden="true">myNewspaper</span> }
+                </a>
+            }
+            <div class="d-lead__body">
+                <p class="d-lead__source">@(item.CategoryName ?? "Headlines") <span aria-hidden="true">·</span> @sourceName</p>
+                <h3 class="d-lead__title">
+                    @if (href is not null) { <a href="@href" target="_blank" rel="noopener noreferrer">@(title.Length > 0 ? title : item.Title)</a> }
+                    else { @(title.Length > 0 ? title : item.Title) }
+                </h3>
+                @if (!string.IsNullOrWhiteSpace(summary)) { <p class="d-lead__summary">@summary</p> }
+                <div class="d-lead__meta">
+                    @if (!item.Undated) { <time datetime="@item.Date.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'")">@Dates.Published(item.Date) · @Dates.Time(item.Date)</time> }
+                    <span class="d-story__tools">
+                        <myNewspaper.Web.Components.Feed.ShareButton Url="@item.Url" Title="@(title.Length > 0 ? title : item.Title)" />
+                        <myNewspaper.Web.Components.Feed.SaveButton Item="item" Title="@(title.Length > 0 ? title : item.Title)" Source="@sourceName" Summary="@summary" />
+                    </span>
+                </div>
+            </div>
+        </article>
+    }
+</section>
+
+@code {
+    [Parameter, EditorRequired] public HomeLeadSnapshot Snapshot { get; set; } = new(null, 0, 60000);
+}

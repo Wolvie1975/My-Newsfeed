@@ -3,6 +3,53 @@
 Read this file when continuing work from the previous chat. These are dated
 observations; check current repository and hosting state before acting.
 
+## Homepage hourly lead and article actions — deployed October 24, 2026
+
+Follow-up request: make the homepage Top story rotate hourly as well as Opinion.
+Added HomeLeadQuery: it round-robins the newest headline per enabled source across
+UTC hours, excluding Opinion so the separate Opinion spotlight stays distinct.
+HomeLeadStory exposes the next-boundary delay; `/home/lead` serves a no-store card
+fragment, and home-lead.js refreshes only this card, retains the last good story on
+failure, and pauses while hidden. No News page or database changes.
+
+Build passed. Published preview behavior passed with a simulated clock, including
+one failed refresh retaining the story and a later successful retry. Mobile browser
+checks and screenshot review passed at 320/390/430px in light/dark; desktop at
+1440px in both themes passed. Real device not available.
+
+Follow-up layout request: place Where to watch immediately below Top story on both
+mobile and desktop. Homepage News, Sports and Entertainment shelf articles include
+share and save controls with 44px touch targets. Deployed as
+`mynewspaper-web:home-lead-actions-20261024` (image
+`df4b96088426`); production container is healthy. Rollback image:
+`mynewsfeed-web:before-home-lead-actions-20261024`; previous container retained.
+
+Live browser checks passed at 320/390/430/1440px in light and dark themes for
+section order, overflow, and share/save visibility and touch targets. Share dialog
+and mocked save interaction passed; `/healthz`, `/` and `/home/lead` returned 200;
+runtime error markers: zero. Screenshots are under
+`/tmp/mynewspaper-home-lead-review/`. No real-device check available. Tailscale
+Serve still maps the tailnet URL to host port 8085, but this runner could not resolve
+the tailnet hostname for an HTTPS browser check.
+
+## Homepage editorial layout deployed — October 24, 2026
+
+Deployed `mynewspaper-web:homepage-reorg-20261024` (image `ef323ab7626c`).
+Container healthy; runtime configuration, persistent mounts and restart settings
+were preserved. Rollback image: `mynewsfeed-web:before-mynewspaper-homepage-reorg-20261024`;
+previous container retained. No schema or feed-collector changes.
+
+Homepage now leads with the newest available headline, then shows separate News,
+Sports and Entertainment shelves and the existing rotating Opinion card. Added
+hub-scoped story queries, preference controls for the new homepage sections, and a
+full-width desktop lead. News/Sports/Entertainment routes are existing hub URLs.
+
+Before deployment, published preview passed 320/390/430px light/dark and 1440px
+light/dark checks for section order, lead link, touch controls and horizontal
+overflow; screenshots reviewed. The same checks passed against production after
+deployment. 12 health/public routes and Tailscale HTTPS passed; runtime error
+markers: zero. No real-device check available. Evidence: `/tmp/mynewspaper-homepage-reorg-deploy/`.
+
 ## Home Opinion spotlight deployed — October 24, 2026
 
 Deployed `mynewspaper-web:home-opinion-20261024` (image `8ed93c383a5f`).

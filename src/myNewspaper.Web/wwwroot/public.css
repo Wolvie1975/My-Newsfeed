@@ -671,14 +671,20 @@
 .pub .d-hello h1 { margin: 0; font-size: 26px; line-height: 1.2; font-weight: 700; letter-spacing: -0.02em; }
 .pub .d-hello p { margin: 2px 0 0; font-size: 15px; color: var(--text-2); }
 
-/* Phones: Watch and News lead the stacked cards. */
+/* Keep the watch search directly after the lead on phones and desktop. */
 .pub .d-grid { display: flex; flex-direction: column; gap: 12px; }
-.pub .d-today { order: 2; }
-.pub .d-f1, .pub .d-rankings { order: 5; }
-.pub .d-news { order: 1; }
-.pub .d-movies { order: 6; }
-.pub .d-episodes { order: 3; }
-.pub .d-vids { order: 4; }
+.pub .d-lead { order: 0; }
+.pub .d-watch { order: 1; }
+.pub .d-news { order: 2; }
+.pub .d-sports-headlines { order: 3; }
+.pub .d-entertainment-headlines { order: 4; }
+.pub .d-opinion { order: 5; }
+.pub .d-today { order: 6; }
+.pub .d-f1, .pub .d-rankings { order: 6; }
+.pub .d-scoreboard { order: 7; }
+.pub .d-movies { order: 8; }
+.pub .d-episodes { order: 9; }
+.pub .d-vids { order: 10; }
 
 .pub .d-card {
     margin: 0; background: var(--surface);
@@ -700,6 +706,25 @@
 .pub .d-list { list-style: none; margin: 0; padding: 0; }
 .pub .d-list > li + li { border-top: 1px solid var(--row-border); }
 .pub .d-empty { margin: 0; padding: 24px 16px; text-align: center; color: var(--text-2); }
+
+/* One visual lead, followed by compact section shelves. */
+.pub .d-lead__story { display: grid; grid-template-columns: minmax(0, 1fr); }
+.pub .d-lead__image { position: relative; display: grid; place-items: center; min-height: 150px; aspect-ratio: 16 / 8; overflow: hidden; background: var(--ph-bg); color: var(--text-2); font-weight: 700; }
+.pub .d-lead__image img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.pub .d-lead__body { min-width: 0; padding: 18px 20px; }
+.pub .d-lead__source { margin: 0 0 8px; color: var(--accent); font-size: 12px; font-weight: 700; }
+.pub .d-lead__title { margin: 0; font-size: clamp(22px, 5vw, 34px); line-height: 1.15; letter-spacing: -.025em; }
+.pub .d-lead__summary { margin: 10px 0 0; max-width: 72ch; color: var(--text-2); line-height: 1.5; }
+.pub .d-lead__meta { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-top: 12px; color: var(--text-2); font-size: 13px; }
+.pub .d-lead__meta .d-story__tools { display: inline-flex; gap: 6px; }
+.pub .d-headline-shelf__list { list-style: none; margin: 0; padding: 4px 16px; }
+.pub .d-headline-shelf__list li { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px 12px; padding: 10px 0; }
+.pub .d-headline-shelf__list li + li { border-top: 1px solid var(--row-border); }
+.pub .d-headline-shelf__body { display: grid; gap: 3px; min-width: 0; }
+.pub .d-headline-shelf__list a, .pub .d-headline-shelf__title { font-size: 16px; line-height: 1.35; font-weight: 650; overflow-wrap: anywhere; }
+.pub .d-headline-shelf__source { color: var(--text-2); font-size: 12px; }
+.pub .d-headline-shelf__actions { display: inline-flex; align-items: center; gap: 2px; flex: none; }
+.pub .d-headline-shelf__actions .share-button, .pub .d-headline-shelf__actions .save { width: 44px; height: 44px; min-width: 44px; min-height: 44px; margin: 0; }
 
 /* News rows */
 /* News rows. Phones: source and category on top, the picture beside the headline, the summary full width below. */
@@ -789,6 +814,7 @@
     .pub .d-story__body { grid-area: body; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
     .pub .d-game { padding: 16px 24px; }
     .pub .d-vid { padding: 14px 24px; }
+    .pub .d-headline-shelf__list { padding: 4px 24px; }
 }
 
 @media (min-width: 1024px) {
@@ -796,6 +822,10 @@
         display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; grid-auto-flow: dense;
     }
     .pub .d-story__title { font-size: 18px; }
+    .pub .d-lead__story { grid-template-columns: minmax(0, 1.2fr) minmax(280px, .8fr); min-height: 300px; }
+    .pub .d-lead__image { min-height: 300px; aspect-ratio: auto; }
+    .pub .d-lead__body { display: flex; flex-direction: column; justify-content: center; padding: 28px clamp(24px, 4vw, 64px); }
+    .pub .d-headline-shelf__list li { min-height: 74px; align-content: center; }
 }
 
 /* =====================================================================================================================
@@ -2245,7 +2275,6 @@
 .pub .d-rankings__table .ranking-big12 > :first-child { box-shadow: inset 3px 0 0 var(--accent); font-weight: 700; }
 .pub .d-rankings__table .ranking-big12 > .standing-team { font-weight: 750; }
 
-.pub .d-watch { order: 0; }
 .pub .d-watch__search { max-width: none; margin: 0; padding: 16px 20px 20px; }
 .pub .d-watch__search label { font-size: 13px; }
 .pub .d-watch__search .watch-search-row { align-items: stretch; }
@@ -2471,7 +2500,7 @@
 .pub .d-scoreboard [data-scoreboard] > .updated:not(.scoreboard-note):not(:empty) { margin: 10px 16px; }
 @media (min-width:768px) { .pub [data-scoreboard-compact="false"] .scoreboard-games { grid-template-columns: repeat(2,minmax(0,1fr)); } }
 @media (min-width:1180px) { .pub [data-scoreboard-compact="false"] .scoreboard-games { grid-template-columns: repeat(3,minmax(0,1fr)); } }
-@media (max-width:1023px) { .pub .d-scoreboard { order: 2; } }
+@media (max-width:1023px) { .pub .d-scoreboard { order: 7; } }
 .pub [data-scoreboard-compact="false"] .scoreboard-actions { min-height: 44px; }
 
 .pub .scoreboard-season-links { display: flex; flex-wrap: wrap; gap: 12px 24px; margin: 16px 0; font-size: 13px; }
@@ -2502,5 +2531,9 @@
 .pub .section-select label { font-size: 14px; font-weight: 600; }
 .pub .section-select select { width: 100%; min-width: 0; min-height: 44px; }
 
-.pub .d-opinion { order: 1; }
+.pub .d-opinion { order: 5; }
 .pub .d-opinion .d-story__tools > button { min-width: 44px; min-height: 44px; }
+
+@media (max-width:1023px) {
+    .pub .d-grid.is-customized > [data-home-section] { order: 0; }
+}

@@ -177,9 +177,12 @@ public static class FeedQuery
     }
 
     /// <summary>The newest article per enabled source, ordered by story date.</summary>
-    public static async Task<IReadOnlyList<FeedItem>> GetLatestPerSourceAsync(WebScraperContext db, int take = 5, int? categoryId = null) =>
+    public static async Task<IReadOnlyList<FeedItem>> GetLatestPerSourceAsync(WebScraperContext db, int take = 5, int? categoryId = null, string? hub = null) =>
         await Visible(db)
             .Where(p => categoryId == null || p.Source.SourceCategoryId == categoryId)
+            .Where(p => hub == null || (hub == "headlines"
+                ? p.Source.SourceCategory == null || p.Source.SourceCategory.NewsHub == "headlines"
+                : p.Source.SourceCategory != null && p.Source.SourceCategory.NewsHub == hub))
             .Where(p => p.Id == db.Pages.Where(other => other.SourceId == p.SourceId)
                 .OrderBy(other => other.Published == null ? 1 : 0)
                 .ThenByDescending(other => other.Published ?? other.ScrapedAt)
@@ -199,10 +202,10 @@ public static class FeedQuery
             .ToListAsync();
 
     /// <summary>Rotate Home sources when successful news collection advances to another UTC hour.</summary>
-    public static async Task<IReadOnlyList<FeedItem>> GetHomeNewsAsync(WebScraperContext db, int take = 10)
+    public static async Task<IReadOnlyList<FeedItem>> GetHomeNewsAsync(WebScraperContext db, int take = 10, string? hub = null)
     {
-        var updated = await GetLastUpdatedAsync(db);
-        var candidates = await GetLatestPerSourceAsync(db, int.MaxValue);
+        var updated = await GetLastUpdatedAsync(db, headlinesOnly: hub == "headlines");
+        var candidates = await GetLatestPerSourceAsync(db, int.MaxValue, hub: hub);
         return SelectHomeNews(candidates, updated ?? DateTime.UnixEpoch, take);
     }
 
