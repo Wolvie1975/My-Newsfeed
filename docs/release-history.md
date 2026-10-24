@@ -6,11 +6,69 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The most recent verified web release is `mydailyfeed-web:scoreboard-history-20261023`,
-with rollback recorded as `mynewsfeed-web:before-scoreboard-history-20261023`.
-Its container was healthy on October 23, 2026 (Central). This is a dated
+The most recent verified web release is `mydailyfeed-web:scoreboard-mobile-20261024`,
+with rollback recorded as `mynewsfeed-web:before-scoreboard-mobile-20261024`.
+Its container was healthy on October 24, 2026 (Central). This is a dated
 observation, not live hosting status.
 
+
+## Scoreboard mobile controls and Home order — October 24, 2026
+
+Deployed `mydailyfeed-web:scoreboard-mobile-20261024` (11296ffaa696), healthy.
+Today & Tonight precedes Scoreboard in homepage document/default order and saved
+layouts with the reversed pair; other preferences remain effective. Competition is
+now labelled Sports, defaulting to All sports. Sports/Following/Games submit GET
+forms on selection, with Apply available without JavaScript. Phone date controls
+show a centered date above equal-width Previous/Next buttons and a separate Today
+shortcut. Existing query parameters, date limits and filters remain compatible.
+
+Clean publish and Docker/static-asset guard passed with existing dependency
+warnings. Three live browser suites passed automatic/fallback submission, default/
+legacy Home ordering, matched 44px mobile date buttons, responsive/no-overflow
+layouts, consolidated navigation/filters, refresh persistence/recovery, polling
+and no-JavaScript behavior. Targeted widths: 320/375/390/430/767/768/1440px, with
+real light/dark themes under JavaScript. Twelve live health/public routes and
+private HTTPS Scoreboard returned 200 (hostname resolution override used). Live
+dark phone screenshot reviewed; no runtime error markers observed.
+
+Runtime environment, entrypoint, health check, mounts, ports, restart policy and
+network mode compared and preserved. No schema/collector/credential changes.
+Rollback image: `mynewsfeed-web:before-scoreboard-mobile-20261024`; retained previous
+container: `mynewsfeed-web-before-scoreboard-mobile-20261024`. Evidence and live
+screenshot: `/tmp/mydailyfeed-scoreboard-mobile-deploy/`. Temporary local review
+preview stopped; earlier screenshots remain under
+`/tmp/mydailyfeed-scoreboard-mobile-review/`. No commit or push for this release.
+
+## Daily Results consolidated into Scoreboard — October 24, 2026
+
+Deployed `mydailyfeed-web:scoreboard-consolidation-20261024` (10d84111ec48), healthy.
+Scoreboard now includes current team records, enabled league/team/conference
+Following choices, final-only filtering and links to enabled MLS/Championship
+season results. `/results` redirects temporarily to Scoreboard's final-score view,
+preserving day/follow queries. The duplicate Results navigation item is removed;
+box-score/admin links point to Scoreboard. College/season results, F1, existing
+result storage and synchronization remain intact. Filters persist through date
+links and stored-score refresh. Phone controls use aligned label/select columns.
+Records retain regular-season confirmation, playoff suppression and stale labels.
+
+Local build/clean publish and 34 focused scoreboard/team-record tests passed,
+including read-only SQL follow/final checks. Docker publish/static-asset guard
+passed with existing dependency warnings. Live consolidation, scoreboard and
+cached box-score browser suites passed redirects/bookmarks, filters, date/refresh
+persistence, JS/no-JS responsive layouts, failed-read recovery, hidden-tab polling,
+disclosure retention and modal/keyboard/fallback behavior. Twelve health/public
+routes returned 200; legacy Results over private HTTPS redirected successfully,
+preserving its follow parameter (hostname resolution override used). Live mobile
+screenshot reviewed; no runtime error markers observed.
+
+Runtime environment, entrypoint, health check, persistent mounts, ports, restart
+policy and network mode were compared and preserved. No schema, collector or
+credential changes. Previous container retained as
+`mynewsfeed-web-before-scoreboard-consolidation-20261024`; rollback image:
+`mynewsfeed-web:before-scoreboard-consolidation-20261024`. Deployment evidence:
+`/tmp/mydailyfeed-scoreboard-consolidation-deploy/`; local test/review artifacts:
+`/tmp/mydailyfeed-scoreboard-consolidation/`. Core consolidation was already in
+`3b6e960`; remaining polish/documentation changes are uncommitted. No push attempted.
 
 ## Scoreboard history limited to yesterday — October 23, 2026
 

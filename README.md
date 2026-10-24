@@ -11,6 +11,11 @@ Build public browsing around links, cards, tabs, dropdowns and simple selections
 avoid features that require typed input. See the
 [standing interaction guideline](docs/interface.md#standing-product-guideline-tap-to-link).
 
+**Required development check:** Every feature and fix must be verified on mobile
+before completion and again after deployment. Desktop checks alone are insufficient.
+See [mobile acceptance checks](docs/interface.md#required-mobile-verification) and
+[project instructions](AGENTS.md).
+
 **Approved exception (October 20, 2026):** Where to watch supports typed movie/TV title search, alongside tap-to-browse genres and popular titles. This does not restore site-wide Search.
 
 | Guide | Contents |
@@ -89,7 +94,9 @@ for routes, data scope and browser-local storage behavior.
 
 Sports → [Scoreboard](docs/sports.md#live-scoreboard) now provides sampled live scores,
 upcoming games and finals, with a separate homepage card and tap-based date/competition
-filters. Scores are stored by the independent collector and refresh approximately
+filters. Following and Final scores filters, current team records and season-results
+links consolidate the former daily Results page; old `/results` bookmarks redirect
+to Scoreboard with their date/follow selections. Scores are stored by the independent collector and refresh approximately
 every ten minutes; browser reads check every five minutes while visible.
 
 Sports results also support [cached box scores and game-stat modals](docs/sports.md#cached-box-scores-and-game-stat-modals)

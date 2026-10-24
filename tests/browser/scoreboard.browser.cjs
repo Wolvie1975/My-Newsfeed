@@ -17,7 +17,7 @@ const base=process.env.BASE_URL || 'http://127.0.0.1:5310';
   const choices=await page.locator('#scoreboard-competition option').evaluateAll(o=>o.map(x=>x.value).filter(Boolean));
   assert(choices.length>=10);assert.equal(choices.length,new Set(choices).size);
   const choice=choices.find(x=>x==='baseball|mlb')||choices[0];
-  await page.selectOption('#scoreboard-competition',choice);await page.getByRole('button',{name:'Apply',exact:true}).click();
+  await page.selectOption('#scoreboard-competition',choice);
   await page.waitForURL(/competition=/);assert.equal(new URL(page.url()).searchParams.get('competition'),choice);
   assert((await page.locator('[data-scoreboard-key]').evaluateAll(n=>n.map(x=>x.dataset.scoreboardKey))).every(k=>k.includes('|'+choice+'|')));
   const favorite=page.locator('[data-scoreboard-team]').first();const id=await favorite.getAttribute('data-scoreboard-team');
@@ -53,7 +53,7 @@ const base=process.env.BASE_URL || 'http://127.0.0.1:5310';
   const previous=nojs.getByRole('link',{name:'← Previous day',exact:true});await previous.click();await nojs.waitForURL(/day=/);
   await nojs.getByRole('link',{name:'← Previous day',exact:true}).waitFor({state:'detached'});
   assert.equal(await nojs.getByRole('link',{name:'← Previous day',exact:true}).count(),0, 'Yesterday is the earliest browsable day');
-  const box=nojs.locator('[data-box-score]').first();if(await box.count()){const response=await nojs.request.get(await box.getAttribute('href'));assert.equal(response.status(),200)}
+  const box=nojs.locator('[data-box-score]').first();if(await box.count()){const response=await nojs.request.get(new URL(await box.getAttribute('href'),base+'/').href);assert.equal(response.status(),200)}
   console.log('Scoreboard: responsive/theme, coverage filtering, preferences, deduplication, failed-read retention/recovery, five-minute hidden-tab polling, and no-JS controls passed.');
  } finally {await browser.close()}
 })().catch(e=>{console.error(e);process.exit(1)});

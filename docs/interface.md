@@ -28,6 +28,32 @@ This records future design direction; it does not itself request removal of ever
 existing text field. Administration and sign-in may retain necessary text entry.
 Existing public text inputs should not become a prerequisite for reaching content.
 
+## Required mobile verification
+
+User direction recorded October 24, 2026 (Central): **mobile is a necessary check
+for anything we develop.** This is a standing acceptance requirement, including
+backend/query changes that affect displayed data. Verify affected mobile flows
+before calling a feature/fix complete or ready to deploy; repeat them on the live
+build after deployment. Desktop success does not establish mobile success.
+
+Use phone emulation at **320, 390 and 430px minimum**, in light and dark mode,
+with representative content, plus real-device checks when available. Inspect
+screenshots and exercise the controls, alongside automated assertions:
+
+- No horizontal document overflow, clipped content or unreadable wrapping.
+- Correct card/section order, aligned date navigation and usable filters.
+- Readable text, status/selection contrast and at least 44px touch targets.
+- Working mobile navigation, forms, dialogs and keyboard/focus behavior.
+- Refresh, persisted preferences, long/empty/error data and no-JavaScript
+  fallback where relevant to the change.
+
+Check tablet/desktop layouts for regressions too. Record tested widths, themes,
+flows, results and limits in the handoff and release evidence. If mobile checks
+cannot run, report that validation as outstanding rather than claiming readiness.
+For documentation-only changes with no UI/data-display impact, record why mobile
+verification is not applicable. This documentation-only policy update has no
+rendered or interactive impact and does not require a new browser run.
+
 ## Navigation and layout
 
 Desktop navigation groups Sports and Entertainment with native disclosures. The
@@ -872,3 +898,24 @@ required. Server-rendered games and navigation work without JavaScript. Automati
 stored-score reads run every five minutes while visible; displayed clocks never
 tick locally. See [Live scoreboard](sports.md#live-scoreboard) for coverage and
 freshness behavior.
+
+### Daily results consolidation
+
+Scoreboard now hosts daily final scores, with Following and Games (All statuses /
+Final scores) dropdowns alongside Competition. Old Results bookmarks redirect to
+the final-score view, preserving dates and follow selections. Date navigation and
+background refresh retain all three filters. The duplicate Results navigation
+item is removed; enabled MLS/Championship season-result links remain on Scoreboard.
+Current records share the other sports pages' regular-season/playoff rules.
+
+### Scoreboard mobile controls and homepage order
+
+Today & Tonight precedes Scoreboard in the homepage document/default order and
+in saved layouts that previously placed Scoreboard first. Other hidden sections
+and team preferences are retained. On Scoreboard, the competition selector is
+labelled Sports with All sports as its default; its existing competition query
+parameter still works. Sports, Following and Games apply on selection using GET
+forms. Apply appears only as a no-JavaScript fallback. On phones the Central date
+sits above equal-width Previous day / Next day buttons with 44px minimum targets;
+Today appears on its own line when applicable. Yesterday/seven-day bounds and
+filter preservation are unchanged.

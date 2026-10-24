@@ -2,7 +2,7 @@
 (function () {
     'use strict';
     const PREFS = 'mynewsfeed-personal-v1', TEAMS = 'mynewsfeed-sports-teams-v1';
-    const defaults = ['watch', 'news', 'scoreboard', 'sports', 'tv', 'videos', 'rankings', 'forecasts', 'movies', 'digital'];
+    const defaults = ['watch', 'news', 'sports', 'scoreboard', 'tv', 'videos', 'rankings', 'forecasts', 'movies', 'digital'];
     const labels = { scoreboard: 'Scoreboard', watch: 'Where to watch', sports: 'Today & Tonight', f1: 'F1', rankings: 'Top 25', news: 'Latest news', forecasts: 'Weekend box office', movies: 'Friday theater releases', digital: 'Upcoming Digital / VOD', tv: 'Today’s episodes', videos: 'Latest videos' };
     let storage = true, pending = false, weatherController;
     try { localStorage.setItem('mynewsfeed-personal-probe', '1'); localStorage.removeItem('mynewsfeed-personal-probe'); } catch (_) { storage = false; }
@@ -13,7 +13,13 @@
     function prefs() {
         const raw = load(PREFS, {}), p = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
         const order = [...new Set(list(p.order).filter(k => defaults.includes(k)))];
-        return { order: order.concat(defaults.filter(k => !order.includes(k))), hidden: list(p.hidden).filter(k => defaults.includes(k) || k === 'f1'),
+        const arranged = order.concat(defaults.filter(k => !order.includes(k)));
+        // Keep the sports overview before its detailed scoreboard in saved layouts too.
+        if (arranged.indexOf('scoreboard') < arranged.indexOf('sports')) {
+            arranged.splice(arranged.indexOf('scoreboard'), 1);
+            arranged.splice(arranged.indexOf('sports') + 1, 0, 'scoreboard');
+        }
+        return { order: arranged, hidden: list(p.hidden).filter(k => defaults.includes(k) || k === 'f1'),
             teamsOnly: p.teamsOnly === true, hideRead: p.hideRead === true,
             muted: [...new Set(list(p.muted).filter(s => typeof s === 'string' && s.length <= 2048))].slice(0, 500),
             read: [...new Set(list(p.read).filter(s => safe(s)))].slice(0, 2000),

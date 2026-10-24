@@ -2478,6 +2478,17 @@
 .pub .scoreboard-season-links:empty { display: none; }
 .pub .scoreboard-team .team__name { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 6px; }
 @media (max-width:767px) {
-    .pub .scoreboard-filter label { flex: 0 0 100%; }
-    .pub .scoreboard-filter select { flex-basis: 100%; width: 100%; }
+    .pub .scoreboard-filter { display: grid; grid-template-columns: auto minmax(0,1fr); }
+    .pub .scoreboard-filter select { width: 100%; }
+    .pub .scoreboard-filter button { grid-column: 2; justify-self: start; }
+}
+
+@media (max-width:767px) {
+    .pub .scoreboard-dates { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; }
+    .pub .scoreboard-dates .scoreboard-date { grid-column: 1 / -1; grid-row: 1; text-align: center; padding: 4px 0; }
+    .pub .scoreboard-dates .scoreboard-prev { grid-column: 1; grid-row: 2; }
+    .pub .scoreboard-dates .scoreboard-next { grid-column: 2; grid-row: 2; }
+    .pub .scoreboard-dates .nf-btn { width: 100%; min-width: 0; min-height: 44px; padding: 10px 6px; font-size: 13px; justify-content: center; }
+    .pub .scoreboard-dates .scoreboard-today { grid-column: 1 / -1; text-align: center; min-height: 44px; align-content: center; }
+    .pub .scoreboard-filter noscript { grid-column: 2; }
 }

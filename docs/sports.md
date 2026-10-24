@@ -692,8 +692,8 @@ other basketball leagues through the same dynamic contract.
 `/scoreboard` and a separate homepage card read the scraper-owned
 `dbo.SportsScoreboard` and `dbo.SportsScoreboardCoverage` views using existing
 frontend SELECT access. These reads never trigger collection. Sports navigation
-links to Scoreboard on desktop and mobile. Existing schedules, results and F1
-remain independent; Big 12 calendar IDs have no validated ESPN bridge, so those
+links to Scoreboard on desktop and mobile. Existing schedules, college/season results
+and F1 remain independent; Big 12 calendar IDs have no validated ESPN bridge, so those
 fixtures are not merged with scoreboard games.
 
 The full page offers enabled competition choices and Central dates from yesterday
@@ -731,3 +731,24 @@ collection jobs, write grants or upstream statistics requests.
 
 Checks: `ScoreboardTests`, the read-only SQL `ScoreboardReadTests`, and
 `tests/browser/scoreboard.browser.cjs` (BASE_URL and PLAYWRIGHT_MODULE optional).
+
+### Consolidated daily results
+
+The daily `/results` route redirects to `/scoreboard?status=final`, preserving
+`day` and numeric `follow` query selections. Sports navigation has one Scoreboard
+entry. College/F1 results and full-season MLS/Championship pages remain available;
+Scoreboard links to enabled MLS and Championship season results. The results sync
+worker, result tables and college result queries remain intact.
+
+Sports (the competition selector), Following and Games selections combine as an intersection and remain
+in date links and automatic refresh requests. Following choices come from enabled
+ResultFollows rows within enabled scoreboard competitions. League follows match
+the competition; team and conference follows match explicit ESPN participant IDs
+and current ResultFollowTeams membership, including non-conference opponents.
+Names never establish game identity. All statuses and Final scores are available;
+final-only requires both normalized final status and Completed=true.
+
+Current team records reuse TeamRecords and TeamCell, including regular-season
+confirmation, playoff suppression, stale labels and update-time tooltips. Missing
+records do not hide games. Records also appear in Home's compact scoreboard.
+Optional record/link lookup failures leave the scoreboard usable.

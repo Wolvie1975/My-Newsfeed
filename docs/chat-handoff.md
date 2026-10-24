@@ -3,6 +3,88 @@
 Read this file when continuing work from the previous chat. These are dated
 observations; check current repository and hosting state before acting.
 
+## Closing GitHub checkpoint — October 24, 2026 (Central)
+
+User requested a GitHub check-in and to end work for now. This checkpoint includes
+the final Results consolidation polish/docs, deployed mobile controls and Home
+ordering fixes, browser checks, and the standing mandatory-mobile requirement in
+AGENTS.md and the maintained guides. Latest verified deployment remains
+`mydailyfeed-web:scoreboard-mobile-20261024` (11296ffaa696); rollback uses
+`before-scoreboard-mobile-20261024`. Deployment and live test evidence is below.
+
+Fetched origin before committing: develop matched origin/develop at `3b6e960`.
+Earlier notes about these changes being uncommitted are superseded by this
+checkpoint. Closing diff checks passed. This check-in adds only documentation;
+mobile verification is not applicable to that addition, and the deployed feature
+checks already passed. No new deployment or additional implementation was needed.
+Push failed because this workspace has no GitHub HTTPS credentials. The checkpoint
+is committed locally; after authenticating, run `git push origin develop`.
+Verify the current Git/push state when resuming. No outstanding implementation task remains;
+follow the user's next request and retain mandatory mobile acceptance checks.
+
+## Standing mobile acceptance requirement — October 24, 2026 (Central)
+
+User explicitly requested documenting mobile as a necessary check for anything we
+develop. This requirement is now in root AGENTS.md, README, the interface acceptance
+checklist and DEPLOY.md. Every feature/fix, including changes affecting rendered
+data, requires affected mobile flows at 320/390/430px minimum in light/dark mode,
+interaction and screenshot checks before completion, plus live verification after
+deployment. Record evidence/gaps; desktop-only checks are insufficient. Future
+sessions must retain this requirement.
+
+This is a documentation-only update with no rendered/interactive impact, so no
+new mobile/browser test or deployment was needed. Diff checks passed. No commit
+or push performed.
+
+## Scoreboard mobile/order fixes deployed — October 24, 2026 (Central)
+
+User explicitly requested deployment when ready. Live release:
+`mydailyfeed-web:scoreboard-mobile-20261024` (11296ffaa696), healthy. Today & Tonight
+now precedes Scoreboard, including saved reversed layouts. Sports / All sports
+replaces Competition. All three scoreboard selects submit on change; noscript
+Apply remains. Phone date navigation uses a centered date above matched Previous/
+Next buttons, with Today on its own line. Date limits, filters and unrelated
+preferences remain effective.
+
+Clean publish, Docker/static-asset guard and three live browser suites passed.
+Targeted widths 320/375/390/430/767/768/1440px verified real light/dark themes,
+no-JS fallback, matched 44px controls, no overflow and Home default/legacy order.
+Scoreboard/consolidation suites passed filters, links and refresh behavior.
+Twelve public/health routes and private HTTPS Scoreboard returned 200; no runtime
+error markers observed; live dark phone screenshot reviewed. Runtime settings and
+mounts preserved. No schema/collector/credential changes.
+
+Rollback image/container use `before-scoreboard-mobile-20261024`. Release history
+and `/tmp/mydailyfeed-scoreboard-mobile-deploy/` hold evidence; local review
+artifacts remain under `/tmp/mydailyfeed-scoreboard-mobile-review/`, with its
+preview stopped. No commit/push in this turn; changes remain uncommitted.
+Next: user feedback; no pending implementation task.
+
+## Results consolidation deployed — October 24, 2026 (Central)
+
+User explicitly requested deployment after local consolidation was finished.
+Live release: `mydailyfeed-web:scoreboard-consolidation-20261024` (10d84111ec48),
+healthy. Scoreboard now includes current team records, Following and Final scores
+filters and enabled MLS/Championship season links. `/results` redirects to the
+final-score view, preserving day/follow. Duplicate Results navigation removed;
+box-score/admin links point to Scoreboard. College/F1/season result pages and
+existing result collection/storage remain intact. Phone filters are aligned.
+
+Local build/clean publish and 34 focused tests (including read-only SQL) passed.
+Docker/static-asset guard and three live browser suites passed consolidated
+navigation/redirects, filter/date/refresh persistence, responsive JS/no-JS views,
+scoreboard recovery/polling/disclosures and cached box-score modal/fallback checks.
+Twelve live health/public routes and private HTTPS Results redirect passed;
+mobile screenshot reviewed; no runtime error markers observed. Runtime settings
+and persistent mounts preserved. No schema, collector or credential changes.
+
+Rollback image/container use `before-scoreboard-consolidation-20261024`.
+Release history and `/tmp/mydailyfeed-scoreboard-consolidation-deploy/` contain
+live evidence; earlier local review artifacts remain under
+`/tmp/mydailyfeed-scoreboard-consolidation/`. Core consolidation was already in
+user-created commit `3b6e960`; final polish/docs remain uncommitted. No commit or
+push performed in this deployment turn. Next: user feedback; no pending task.
+
 ## Scoreboard past-day limit deployed — October 23, 2026 (Central)
 
 User requested yesterday as the earliest past scoreboard day and explicitly

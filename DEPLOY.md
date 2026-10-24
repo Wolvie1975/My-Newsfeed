@@ -109,6 +109,13 @@ registration scripts are needed for the frontend rollout.
 
 ## Build and deploy
 
+Mobile verification is a required release check for every feature/fix, including
+data/query changes that affect displayed content. Before rollout, verify affected
+flows at 320, 390 and 430px minimum in light/dark mode, inspect screenshots and
+exercise controls. Desktop-only verification is insufficient. See the
+[mobile acceptance checklist](docs/interface.md#required-mobile-verification).
+Record any missing verification as outstanding; do not claim readiness without it.
+
 Run relevant application checks; the full suite is:
 
 ```bash
@@ -136,7 +143,10 @@ rather than discarding settings. Never include runtime secrets in a report.
 The container should become healthy within about a minute; `/healthz` checks database
 reachability. Verify `/healthz`, `/news`, `/events`, `/results`, `/standings`, `/rankings`,
 `/movies`, `/movies/digital`, `/box-office` and affected admin views. Unauthenticated
-admin access should redirect to login. Inspect theme/responsive layout, selected-source
+admin access should redirect to login. Repeat affected mobile flows against the deployed build at the required phone
+widths/themes, including actual controls and screenshot review, before reporting
+the release as verified. Record outcomes and limits in release history/handoff.
+Inspect theme/responsive layout, selected-source
 URLs, paging and no-JavaScript controls relevant to the release. Inspect application
 logs without publishing credentials or connection strings.
 
@@ -265,3 +275,12 @@ or new write permission. Confirm materialized rows, enabled competition filters,
 Home card, sampled/stale labels, cached box-score navigation and visible-only
 refresh. Preserve existing results-worker settings. Application rollback leaves
 all scoreboard storage and the independent collector intact.
+
+### Consolidated daily Results
+
+`/results` now returns a temporary redirect to `/scoreboard?status=final`, retaining
+its day/follow parameters. Verify the redirect and destination rather than expecting
+a direct 200 response from the legacy route. Scoreboard's Following/Games filters
+reuse enabled follow configuration and existing records rules. Keep the results
+worker settings and result tables: college/season pages still use them. No schema
+migration or collector change accompanies this consolidation.

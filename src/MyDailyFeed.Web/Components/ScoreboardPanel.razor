@@ -9,37 +9,37 @@
     <p class="updated scoreboard-note">Scores update approximately every 10 minutes. <span>Checks every five minutes while visible.</span></p>
     @if (!Compact)
     {
-        <MyDailyFeed.Web.Components.Events.TeamRecordsNote />
+        <p class="updated scoreboard-note">Records show current-season standings and are hidden during playoffs.</p>
         <div class="scoreboard-season-links">
             @if (hasMls) { <a href="mls/results">MLS season results →</a> }
             @if (hasChampionship) { <a href="championship/results">EFL Championship season results →</a> }
         </div>
-        <nav class="tv-week" aria-label="Scoreboard dates">
-            @if (selectedDay > today.AddDays(-1)) { <a class="nf-btn nf-btn--secondary" href="@Href(selectedDay.AddDays(-1))">← Previous day</a> }
-            <strong>@FeedDates.LongDate(selectedDay) · CT</strong>
-            @if (selectedDay < today.AddDays(7)) { <a class="nf-btn nf-btn--secondary" href="@Href(selectedDay.AddDays(1))">Next day →</a> }
-            @if (selectedDay != today) { <a href="@Href(today)">Today</a> }
+        <nav class="tv-week scoreboard-dates" aria-label="Scoreboard dates">
+            @if (selectedDay > today.AddDays(-1)) { <a class="nf-btn nf-btn--secondary scoreboard-prev" href="@Href(selectedDay.AddDays(-1))">← Previous day</a> }
+            <strong class="scoreboard-date">@FeedDates.LongDate(selectedDay) · CT</strong>
+            @if (selectedDay < today.AddDays(7)) { <a class="nf-btn nf-btn--secondary scoreboard-next" href="@Href(selectedDay.AddDays(1))">Next day →</a> }
+            @if (selectedDay != today) { <a class="scoreboard-today" href="@Href(today)">Today</a> }
         </nav>
         <form method="get" action="scoreboard" class="catselect scoreboard-filter">
             <input type="hidden" name="day" value="@selectedDay.ToString("yyyy-MM-dd")" />
-            <label for="scoreboard-competition">Competition</label>
-            <select id="scoreboard-competition" name="competition">
-                <option value="">All enabled competitions</option>
+            <label for="scoreboard-competition">Sports</label>
+            <select id="scoreboard-competition" name="competition" onchange="this.form.requestSubmit()">
+                <option value="">All sports</option>
                 @foreach (var c in snapshot.Coverage.DistinctBy(c => c.Key).OrderBy(c => c.Sport).ThenBy(c => c.League)) {
                     <option value="@c.Key" selected="@(Competition == c.Key)">@CompetitionLabel(c.Sport, c.League)</option>
                 }
             </select>
             <label for="scoreboard-follow">Following</label>
-            <select id="scoreboard-follow" name="follow">
+            <select id="scoreboard-follow" name="follow" onchange="this.form.requestSubmit()">
                 <option value="">All enabled coverage</option>
                 @foreach (var f in snapshot.Follows ?? []) { <option value="@f.Id" selected="@(Follow == f.Id)">@f.Label</option> }
             </select>
             <label for="scoreboard-status">Games</label>
-            <select id="scoreboard-status" name="status">
+            <select id="scoreboard-status" name="status" onchange="this.form.requestSubmit()">
                 <option value="">All statuses</option>
                 <option value="final" selected="@(Status == "final")">Final scores</option>
             </select>
-            <button class="nf-btn nf-btn--secondary" type="submit">Apply</button>
+            <noscript><button class="nf-btn nf-btn--secondary" type="submit">Apply</button></noscript>
         </form>
     }
     <p class="scoreboard-read-status updated" role="status">@(snapshot.Available ? "" : "Scores are temporarily unavailable. Please retry.")</p>
