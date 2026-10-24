@@ -5,8 +5,8 @@ const base=process.env.BASE_URL||'http://127.0.0.1:5313',root=process.env.SCREEN
  const categories=[],movedSources=new Set();
  for(const [route,title,view] of [['entertainment/news','Entertainment headlines','entertainment-news'],['entertainment/news/tv-film','Entertainment headlines','tv-film-news']]){
   await p.goto(base+'/'+route);assert.equal(await p.locator('h1').innerText(),title);
-  assert.equal(await p.locator('.news-section-tabs a[aria-current="page"]').getAttribute('href'),route);
-  await p.locator('.news-section-tabs a').last().click();await p.waitForURL(base+'/entertainment/news/tv-film');
+  assert.equal(await p.locator('#hub-category').inputValue(),await p.locator('form input[name="category"]').inputValue());
+  const last=await p.locator('#hub-category option').last().getAttribute('value');await p.selectOption('#hub-category',last);await p.waitForURL(base+'/entertainment/news/tv-film');
   await p.getByRole('heading',{name:'TV/Film',exact:true}).waitFor();assert.equal(await p.locator('h2').first().innerText(),'TV/Film');await p.goto(base+'/'+route);
   const category=await p.locator('form input[name="category"]').inputValue();categories.push(category);
   (await p.locator('#source option').evaluateAll(ns=>ns.map(n=>n.value).filter(Boolean))).forEach(id=>movedSources.add(id));
@@ -26,7 +26,7 @@ const base=process.env.BASE_URL||'http://127.0.0.1:5313',root=process.env.SCREEN
   await p.selectOption('#source',firstSource);await p.waitForURL(u=>u.searchParams.get('source')===firstSource);assert.equal(new URL(p.url()).pathname,'/'+route);
   for(const width of [320,390,430,768,1440])for(const theme of ['light','dark']){
    await p.setViewportSize({width,height:900});await p.emulateMedia({colorScheme:theme});await p.goto(base+'/'+route);
-   assert.equal(await p.locator('html').getAttribute('data-theme'),theme);assert(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));assert(!await p.locator('#blazor-error-ui').isVisible());assert(await p.locator('.news-section-tabs a').evaluateAll(ns=>ns.every(n=>n.getBoundingClientRect().height>=44)));
+   assert.equal(await p.locator('html').getAttribute('data-theme'),theme);assert(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));assert(!await p.locator('#blazor-error-ui').isVisible());assert(await p.locator('#hub-category').evaluate(n=>n.getBoundingClientRect().height>=44));
    if(width<768){await p.locator('.mobile-nav > summary').click();const group=p.locator('[aria-labelledby="mobile-entertainment-heading"]');assert.equal(await group.locator('a[href="entertainment/news"][aria-current="page"]').count(),1);assert.equal(await p.locator('[aria-labelledby="mobile-news-heading"] a[href="'+route+'"]').count(),0);assert(await group.locator('a[href="entertainment/news"]').evaluate(n=>n.getBoundingClientRect().height>=44));await p.locator('.mobile-nav > summary').click();}
    if(root&&width<768)await p.waitForTimeout(250);
    if(root&&width<768)await p.screenshot({path:root+'/'+route.replaceAll('/','-')+'-'+width+'-'+theme+'.png'});
@@ -36,6 +36,6 @@ const base=process.env.BASE_URL||'http://127.0.0.1:5313',root=process.env.SCREEN
  await p.goto(base+'/news?category=all');const names=await p.locator('#category option').allTextContents();assert(!names.includes('Entertainment')&&!names.includes('TV/Film'));
  const sourceIds=await p.locator('#source option').evaluateAll(ns=>ns.map(n=>n.value));assert(sourceIds.every(id=>!movedSources.has(id)));
  const plain=await browser.newPage({javaScriptEnabled:false,viewport:{width:390,height:900}});
- for(const route of ['entertainment/news','entertainment/news/tv-film']){await plain.goto(base+'/'+route);const more=plain.locator('[data-load-more]');if(await more.count()){await more.click();await plain.waitForURL(u=>u.searchParams.has('after'));assert.equal(new URL(plain.url()).pathname,'/'+route);assert(await plain.locator('.feed .article').count()>0)}assert(await plain.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));}
+ for(const route of ['entertainment/news','entertainment/news/tv-film']){await plain.goto(base+'/'+route);const current=await plain.locator('#hub-category').inputValue();await plain.selectOption('#hub-category',current);await plain.locator('.news-category-select button').click();await plain.waitForURL(u=>u.pathname==='/'+route);const more=plain.locator('[data-load-more]');if(await more.count()){await more.click();await plain.waitForURL(u=>u.searchParams.has('after'));assert.equal(new URL(plain.url()).pathname,'/'+route);assert(await plain.locator('.feed .article').count()>0)}assert(await plain.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));}
  assert.deepEqual(errors,[]);await plain.close();console.log('Entertainment/TV-Film navigation, active states, old links, source filters, scoped JS/no-JS pagination, Headlines separation and mobile light/dark layouts passed.');
 }finally{await browser.close()}})().catch(e=>{console.error(e);process.exit(1)});

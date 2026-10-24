@@ -2493,5 +2493,7 @@
     .pub .scoreboard-filter noscript { grid-column: 2; }
 }
 
-.pub .news-section-tabs a { display: inline-flex; align-items: center; min-height: 44px; padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; font-weight: 600; }
-.pub .news-section-tabs a[aria-current="page"] { background: var(--selection-bg); color: var(--selection-fg); border-color: var(--field-border); }
+/* A single category control stays compact as hubs gain new categories. */
+.pub .news-category-select { display: flex; flex-direction: column; align-items: stretch; gap: 6px; margin: 20px 0; width: 100%; max-width: 420px; }
+.pub .news-category-select label { font-size: 14px; font-weight: 600; }
+.pub .news-category-select select { width: 100%; min-width: 0; min-height: 44px; }

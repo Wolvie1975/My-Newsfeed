@@ -17,11 +17,15 @@
 <PageTitle>@Title · myNewspaper</PageTitle>
 <PageHeading Title="@Title" Eyebrow="THE LATEST STORIES" Description="@(SectionNews ? (EntertainmentSection ? "Latest stories from our entertainment sources." : "Latest stories from our sports sources.") : "Latest articles from the sources we follow.")" />
 @if (SectionNews) {
-    <nav class="tv-week news-section-tabs" aria-label="@(EntertainmentSection ? "Entertainment headline categories" : "Sports headline categories")">
-        @foreach (var item in HubCategories) {
-            <a href="@NewsSections.RouteFor(item)" aria-current="@(Category == item.Id ? "page" : null)">@NewsSections.LabelFor(item.Name)</a>
-        }
-    </nav>
+    <form class="catselect news-category-select" method="get" action="news">
+        <label for="hub-category">Category</label>
+        <select id="hub-category" name="category" onchange="this.form.requestSubmit()" disabled="@(HubCategories.Count == 0)">
+            @foreach (var item in HubCategories) {
+                <option value="@item.Id" selected="@(Category == item.Id)">@NewsSections.LabelFor(item.Name)</option>
+            }
+        </select>
+        <noscript><button class="nf-btn nf-btn--secondary" type="submit">Apply</button></noscript>
+    </form>
     <h2>@NewsSections.LabelFor(SectionCategory)</h2>
 }
 <div class="filters">

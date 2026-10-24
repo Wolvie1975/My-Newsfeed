@@ -981,3 +981,12 @@ list uses cards with 44px editing controls.
 Database prerequisite: `db/019_news_category_hubs.sql`, adding SourceCategories.NewsHub
 with default/check constraints and initial assignments. Reapplying it preserves
 admin changes. Apply before running the updated web app; no collector change.
+
+### Hub category selector
+
+Sports/Entertainment headline hubs use a Category dropdown instead of wrapping
+category buttons. Selecting a category applies automatically and opens its
+canonical feed URL; an Apply button is available without JavaScript. The control
+has a 44px minimum height and fits the phone width. Saved hub assignments still
+supply options automatically; sources and paging remain scoped to the selected
+category. The selected category heading remains below the dropdown.

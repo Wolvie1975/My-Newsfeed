@@ -6,11 +6,56 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The most recent verified web release is `mynewspaper-web:category-hubs-20261024`,
-with rollback recorded as `mynewsfeed-web:before-mynewspaper-category-hubs-20261024`.
+The most recent verified web release is `mynewspaper-web:category-dropdown-20261024`,
+with rollback recorded as `mynewsfeed-web:before-mynewspaper-category-dropdown-20261024`.
 Its container was healthy on October 24, 2026 (Central). This is a dated
 observation, not live hosting status.
 
+
+## Hub category dropdowns deployed — October 24, 2026 (Central)
+
+User requested deployment and GitHub check-in. Live image:
+`mynewspaper-web:category-dropdown-20261024` (`20e8cab3cd79`), container
+`mynewsfeed-web`, healthy. Rollback image:
+`mynewsfeed-web:before-mynewspaper-category-dropdown-20261024`; prior container
+retained as `mynewsfeed-web-before-mynewspaper-category-dropdown-20261024`.
+Runtime environment, renamed entrypoint, mounts/keys, network, ports, restart
+policy and healthcheck verified preserved. No database/collector changes.
+
+Sports/Entertainment headline category buttons are now a native dropdown, applying
+on selection. Without JavaScript, Apply submits the same GET selection. Saved hub
+assignments still supply options; canonical links, source resets and paging remain.
+Final Docker build, twelve health/public-route smoke checks and private HTTPS
+passed. Both live hub browser suites passed: actual dropdown selection, source
+filters, redirects, cross-hub API rejection and JS/no-JS selection/pagination.
+Phone 320/390/430px light/dark with screenshot review and 44px selector targets,
+plus 768/1440 regressions passed. No real-device check. Runtime smoke log had zero
+failure/unhandled-exception markers. Evidence:
+`/tmp/mynewspaper-category-dropdown-deploy/`.
+
+Local check-in follows on develop. GitHub authentication preflight still failed
+(could not read HTTPS Username); remote push is not confirmed. The recorded
+origin/develop already includes `1369f64`; the dropdown commit remains local.
+Restore GitHub authentication and run
+`git push origin develop` if the final push attempt remains blocked.
+Earlier local-only dropdown notes below are superseded by this deployment.
+
+## Hub category dropdowns — local update, October 24, 2026
+
+User requested replacing wrapping category bubbles on Sports/Entertainment headline
+pages with a dropdown. Both now use a visible Category label and native select,
+44px minimum height, responsive width, automatic GET submission and an Apply
+fallback without JavaScript. Options still come from saved eligible hub assignments.
+Selection uses the existing category redirect so canonical section URLs, source
+reset and scoped paging remain. Removed obsolete category-button styles.
+
+Publish and both adapted hub browser suites passed: actual category selection,
+source filters, redirects, scoped API/JS/no-JS pagination and no-JS selector Apply.
+320/390/430px light/dark screenshots reviewed, with 768/1440 regressions; no root
+overflow. No real-device check. Evidence/read-only preview:
+`/tmp/mynewspaper-category-dropdown-review/`, port 5324.
+No database changes. Not deployed/committed/pushed; latest verified live release
+remains `mynewspaper-web:category-hubs-20261024`.
 
 ## Category hub assignments deployed; GitHub check-in — October 24, 2026
 

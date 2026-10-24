@@ -10,8 +10,8 @@ const sections=[
  const p=await browser.newPage();const errors=[];p.on('pageerror',e=>errors.push(e.message));const movedSources=new Set();
  for(const [route,title,view,selector] of sections){
   await p.goto(base+'/'+route);assert.equal(await p.locator('h1').innerText(),title);
-  assert.equal(await p.locator('.news-section-tabs a[aria-current="page"]').getAttribute('href'),route);
-  const tab=p.locator('.news-section-tabs a').last();await tab.click();await p.waitForURL(base+'/sports/news/f1');
+  assert.equal(await p.locator('#hub-category').inputValue(),await p.locator('form input[name="category"]').inputValue());
+  const last=await p.locator('#hub-category option').last().getAttribute('value');await p.selectOption('#hub-category',last);await p.waitForURL(base+'/sports/news/f1');
   await p.getByRole('heading',{name:'F1',exact:true}).waitFor();assert.equal(await p.locator('h2').first().innerText(),'F1');await p.goto(base+'/'+route);
   const ids=await p.locator(selector+' option').evaluateAll(ns=>ns.map(n=>n.value).filter(Boolean));assert(ids.length);ids.forEach(id=>movedSources.add(id));
   if(selector==='#source'){
@@ -53,6 +53,6 @@ const sections=[
  for(const name of ['Sports','Big 12 News','F1 News',"Men's College Basketball News",'Entertainment','TV/Film'])assert(!names.includes(name),name);
  assert((await p.locator('#source option').evaluateAll(ns=>ns.map(n=>n.value))).every(id=>!movedSources.has(id)));
  const plain=await browser.newPage({javaScriptEnabled:false,viewport:{width:390,height:900}});
- for(const [route] of sections){await plain.goto(base+'/'+route);const more=plain.locator('[data-load-more]');if(await more.count()){await more.click();await plain.waitForURL(u=>u.searchParams.has('after'));assert.equal(new URL(plain.url()).pathname,'/'+route);assert(await plain.locator('.feed .article').count()>0)}assert(await plain.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await plain.locator('.mobile-nav > summary').click();assert(await plain.locator('[aria-labelledby="mobile-sports-heading"] a[href="sports/news"]').count())}
- assert.deepEqual(errors,[]);await plain.close();console.log('Sports headline hub tabs, existing F1/Big12 readers, legacy links, source filters, scoped JS/no-JS paging, Headlines exclusion and mobile light/dark navigation passed.');
+ for(const [route] of sections){await plain.goto(base+'/'+route);const current=await plain.locator('#hub-category').inputValue();await plain.selectOption('#hub-category',current);await plain.locator('.news-category-select button').click();await plain.waitForURL(u=>u.pathname==='/'+route);const more=plain.locator('[data-load-more]');if(await more.count()){await more.click();await plain.waitForURL(u=>u.searchParams.has('after'));assert.equal(new URL(plain.url()).pathname,'/'+route);assert(await plain.locator('.feed .article').count()>0)}assert(await plain.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await plain.locator('.mobile-nav > summary').click();assert(await plain.locator('[aria-labelledby="mobile-sports-heading"] a[href="sports/news"]').count())}
+ assert.deepEqual(errors,[]);await plain.close();console.log('Sports headline category dropdown, existing F1/Big12 readers, legacy links, source filters, scoped JS/no-JS paging, Headlines exclusion and mobile light/dark navigation passed.');
 }finally{await browser.close()}})().catch(e=>{console.error(e);process.exit(1)});
