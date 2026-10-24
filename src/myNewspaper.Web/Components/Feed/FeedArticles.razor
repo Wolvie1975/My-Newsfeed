@@ -59,9 +59,9 @@
             {
                 <p class="summary">@summary</p>
             }
-            <p class="src">
-                <span class="src__mark" aria-hidden="true">@FeedText.SourceMark(sourceName)</span>
-                <span class="src__name">@sourceName</span>
+            <div class="src">
+                <span class="article-publisher"><span class="src__mark" aria-hidden="true">@FeedText.SourceMark(sourceName)</span>
+                <span class="src__name">@sourceName</span></span>
                 @if (!item.Undated)
                 {
                 <span class="src__sep" aria-hidden="true">·</span>
@@ -71,9 +71,9 @@
                 {
                     <span class="publication-unavailable">Publication date unavailable</span>
                 }
-                <ShareButton Url="@item.Url" Title="@(title.Length > 0 ? title : item.Title)" />
-                <SaveButton Item="item" Title="@(title.Length > 0 ? title : item.Title)" Source="@sourceName" Summary="@summary" />
-            </p>
+                <span class="article-actions"><ShareButton Url="@item.Url" Title="@(title.Length > 0 ? title : item.Title)" />
+                <SaveButton Item="item" Title="@(title.Length > 0 ? title : item.Title)" Source="@sourceName" Summary="@summary" /></span>
+            </div>
             @if (isLead && href is not null)
             {
                 <a class="more" href="@href" target="_blank" rel="noopener noreferrer">

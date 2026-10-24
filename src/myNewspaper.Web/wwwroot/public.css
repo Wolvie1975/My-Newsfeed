@@ -1036,7 +1036,7 @@
 .pub .article-share .nf-btn { display: flex; width: 100%; justify-content: center; margin: 10px 0; }
 .pub .article-share__hint { font-size: 13px; color: var(--text-2); line-height: 1.5; }
 
-.pub .src > .share-button { grid-area: share; align-self: center; }
+.pub .src .share-button { grid-area: share; align-self: center; }
 .pub .share-button[hidden] { display: none; }
 .pub .soccer-league-links { flex-wrap: wrap; justify-content: flex-start; gap: 8px; }
 .pub :is(.championship-results, .mls-results) th, .pub :is(.championship-results, .mls-results) td { text-align: center; white-space: normal; }
@@ -2590,9 +2590,16 @@
  .pub .paper-latest { grid-column:2; grid-row:1 / 3; border-left:1px solid var(--border); padding-left:24px; }
  .pub .paper-support { grid-column:1; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; }
  .pub .paper-support .title { font-size:16px; }
- .pub .paper-rows .article,.pub .paper-feed > .article { grid-template-columns:120px minmax(0,1fr); }
+ .pub .paper-feed { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:24px; }
+ .pub .paper-feed > .paper-top,.pub .paper-feed > .paper-label { grid-column:1 / -1; }
+ .pub .paper-rows { display:contents; }
+ .pub .paper-rows .article,.pub .paper-feed > .article { display:flex; flex-direction:column; gap:12px; }
+ .pub .paper-rows .thumb,.pub .paper-feed > .article .thumb { flex:none; width:100%; height:200px; aspect-ratio:auto; border-radius:6px; }
  .pub .video-front .videos { grid-template-columns:repeat(2,minmax(0,1fr)); }
  .pub .video-front .video--featured { grid-column:1 / -1; }
+}
+@media(min-width:1024px) {
+ .pub .paper-feed { grid-template-columns:repeat(3,minmax(0,1fr)); }
 }
 @media(min-width:1150px) {
  .pub .news-front--hub { grid-template-columns:minmax(0,1fr) 280px; align-items:start; }
@@ -2636,7 +2643,7 @@
 }
 .pub .paper-feed .src__name { grid-area:name; overflow-wrap:normal; word-break:normal; }
 .pub .paper-feed .src time,.pub .paper-feed .src .publication-unavailable { grid-area:date; }
-.pub .paper-feed .src > .share-button { justify-self:end; }
+.pub .paper-feed .src .share-button { justify-self:end; }
 
 /* Inset content inside the bordered Coming up cards. */
 .pub .front-agenda .agenda-item { padding:14px 16px; margin-bottom:10px; }
@@ -2647,4 +2654,30 @@
 @media(max-width:699px) {
  .pub .section-hub .hub-all-news { order:5; justify-self:start; }
  .pub .section-hub .news-front__agenda { margin-bottom:8px; }
+}
+
+.pub .article-publisher,.pub .article-actions { display:contents; }
+@media(max-width:699px) {
+ .pub .paper-rows .article,.pub .paper-feed > .article,.pub .paper-support .article {
+  grid-template-columns:80px minmax(0,1fr); grid-template-areas:"thumb cat" "thumb title" "summary summary" "meta meta";
+  column-gap:12px; row-gap:6px; padding:14px 0; align-items:start;
+ }
+ .pub .paper-rows .body,.pub .paper-feed > .article .body,.pub .paper-support .body { display:contents; }
+ .pub .paper-rows .thumb,.pub .paper-feed > .article .thumb,.pub .paper-support .thumb { grid-area:thumb; width:80px; height:80px; }
+ .pub .paper-rows .cat,.pub .paper-feed > .article .cat,.pub .paper-support .cat { margin:0; }
+ .pub .paper-rows .title,.pub .paper-feed > .article .title,.pub .paper-support .title { margin:0; font-size:18px; line-height:1.3; }
+ .pub .paper-rows .summary,.pub .paper-feed > .article .summary,.pub .paper-support .summary { margin:0; }
+ .pub .paper-feed .src { display:flex; flex-wrap:wrap; align-items:center; gap:4px 8px; margin:0; }
+ .pub .paper-feed .src time,.pub .paper-feed .publication-unavailable { order:-1; flex-basis:100%; }
+ .pub .paper-feed .article-publisher { display:flex; align-items:center; gap:8px; flex:1 0 auto; max-width:100%; min-height:44px; }
+ .pub .paper-feed .src__name { overflow-wrap:break-word; }
+ .pub .paper-feed .article-actions { display:flex; align-items:center; gap:4px; margin-left:auto; }
+ .pub .paper-feed .src__sep { display:none; }
+}
+
+@media(max-width:699px) {
+ .pub .paper-rows .article,.pub .paper-feed > .article,.pub .paper-support .article {
+  grid-template-columns:minmax(0,1fr); grid-template-areas:"cat" "title" "summary" "meta";
+ }
+ .pub .paper-rows .thumb,.pub .paper-feed > .article .thumb,.pub .paper-top .thumb { display:none; }
 }

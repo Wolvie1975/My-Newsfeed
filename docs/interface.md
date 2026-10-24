@@ -1088,3 +1088,26 @@ reuse SectionSelect, with a visible label, current-home selection and the full s
 of section destinations. The native select keeps a minimum 44px height and full
 width on phones. Choosing an option submits to the existing local-only /navigate
 endpoint; without JavaScript, a Go button submits the same form.
+
+### Compact mobile newspaper stories
+
+At widths below 700px, supporting stories, story lists and newly loaded articles
+use compact cards with hidden images and full-width headlines. The mobile
+Top Headlines lead and featured stories also hide their images. Summaries and
+publication dates span the whole card. Publisher and 44px share/save actions use a
+wrapping footer: short publisher names share a row with the actions; longer names
+move the actions below without squeezing text into a narrow column. Lead/latest
+cards reuse this compact footer. Desktop image layouts remain intact.
+Desktop metadata retains its existing separate rows. This also removes unused body
+grid space when a story has no summary.
+
+Desktop More stories images match the large featured cards in the reference:
+full card width and 200px tall above the headline. More stories uses two columns
+from 700px and three from 1024px, including Load more articles.
+
+Deployed and verified October 24, 2026. Preview and live checks covered News,
+Sports news, Entertainment news and both hubs at 320/390/430/768/1440px in
+light/dark modes. Checks included hidden mobile images, desktop image dimensions,
+overflow, 44px controls, publisher wrapping, share/Escape/focus, refresh and Load
+more. Mobile and desktop screenshots were inspected. Real-device checks were
+unavailable. See release history for image tags and verification evidence.

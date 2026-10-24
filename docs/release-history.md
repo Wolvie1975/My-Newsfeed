@@ -3851,3 +3851,106 @@ desktop screenshots were captured and representative images inspected. No physic
 device was available. Evidence: `/tmp/mynewspaper-hub-menu-deploy/`.
 Both 20-view suites passed after deployment. Live mobile menu screenshots were
 inspected, confirming the hub is the first link below its section heading.
+
+### October 24, 2026 — Compact mobile story rows
+
+User screenshot showed excessive space in mobile news cards, with all metadata
+constrained beside a thumbnail and actions on a separate row. Below 700px, list and
+supporting cards now pair an 80px thumbnail with category/headline, then use the
+full card width for summary/date and a wrapping publisher/actions footer. Short
+publishers share a row with 44px share/save controls; long names move the actions
+below. Lead/latest cards reuse the compact footer. Publisher/action wrappers are
+transparent to the existing desktop grids. No-summary rows no longer reserve a
+large body grid area. Both initial and Load more articles use the shared markup.
+
+Deployed `mynewspaper-web:compact-stories-20261024`, image
+`sha256:763e829976ffa2e32c252001be6043dfab61528171d79a6e7a382b1fb2b8133c`.
+Build/publish/static-asset guard and 108 relevant helper/render tests passed.
+Runtime environment, mounts, network and port/restart settings were preserved.
+Container health was healthy; `/healthz` returned 200. No database or collector
+changes. Previous container/image retained under
+`before-mynewspaper-compact-stories-20261024`.
+
+Preview: 50 page/width/theme combinations covered News, Sports News, Entertainment
+News and both hubs at 320/390/430/768/1440px in light/dark mode. Assertions covered
+thumbnail/headline placement, full-width dates, 44px buttons, short/long publisher
+footers, no overflow, sharing/Escape/focus and Load more row layout. Additional
+40-view front-page/filter/pagination/no-JavaScript checks, 54 publisher wrapping
+views and Home/News/Videos/Saved sharing regressions passed. Representative phone
+and desktop screenshots were inspected, including a long-publisher fixture. No
+physical-device check was available. Existing Pkcs advisory warnings remain.
+Evidence: `/tmp/mynewspaper-compact-stories-deploy/`.
+Post-deployment verification passed the same 50 compact-story combinations, the
+40-view front-page regression matrix and the sharing regression suite. Live compact
+and long-publisher screenshots were inspected. The deployment remains healthy.
+
+### October 24, 2026 — More stories responsive images
+
+Deployed `mynewspaper-web:more-stories-20261024`, image
+`sha256:6e778fa0ae9799cb0c14e805fc73a8db9866e1ce623c39591f04ac2f8800dd16`.
+Only More stories (including Load more) hides images below 700px and uses
+168px-wide, 16:9 thumbnails on wider screens, matching homepage Top Headlines.
+Build/publish/static-asset guard passed. No database/collector changes were needed.
+Runtime environment, persistent mounts, ports, network and restart policy were
+verified preserved. Previous container and rollback image retained under
+`before-mynewspaper-more-stories-20261024`.
+
+Live verification: healthy container and `/healthz` 200; News, both news sections,
+Events, Standings, Rankings, Movies, Digital and Box Office returned 200; Results
+redirected to Scoreboard and unauthenticated admin redirected to login. All 50
+route/viewport/theme compact-story checks passed across News, both news sections
+and both hubs at 320/390/430/768/1440px, including share/Escape/focus, publisher
+wrapping, 44px actions, overflow and Load more. Twelve additional live checks at
+320/390/430/700/768/1440px in both themes confirmed hidden mobile images and
+168px/16:9 wider-screen thumbnails. Mobile and desktop screenshots were inspected.
+No error-level entries appeared in the sampled startup logs; league-phase/results
+sync completion was not observed in that sample. Real-device checks were unavailable.
+Existing Pkcs dependency advisories remain. Evidence:
+`/tmp/mynewspaper-more-stories-deploy/`.
+
+### October 24, 2026 — More stories reference-image correction
+
+The user's screenshot clarified that More stories should use large images above
+cards, matching the featured story cards, rather than small images beside text.
+Deployed `mynewspaper-web:more-stories-large-20261024`, image
+`sha256:d188a1ed0402c0c50a27b2b4ce20ea916babf83f40038f52a5540743da1b3954`.
+More stories now uses full-card-width, 200px-high images with two columns from
+700px and three from 1024px. Mobile images remain hidden. Initial and loaded
+articles share the layout; lead/latest/featured layouts are preserved.
+
+Build/publish/static-asset guard passed. Container is healthy and `/healthz`
+returned 200. Runtime environment, mounts, network, ports and restart settings were
+verified preserved. No database or collector changes. Previous container/image
+retained under `before-mynewspaper-more-stories-large-20261024` for rollback.
+Preview and live: 50 route/width/theme compact-story checks passed at
+320/390/430/768/1440px in light/dark modes, including share/focus, publisher
+wrapping, 44px controls, overflow and mobile Load more. Additional image checks
+covered 320/390/430/768/1200/1440px in both themes on the three news pages;
+hubs without More stories were skipped in that image-specific check. Desktop
+Load more confirmed full-width 200px images. Live desktop/mobile screenshots
+were inspected. Main routes passed HTTP checks, including Results-to-Scoreboard
+and admin-to-login redirects. Real-device checks were unavailable. Existing Pkcs
+advisories remain. Evidence: `/tmp/mynewspaper-more-stories-large-deploy/`.
+
+### October 24, 2026 — Hide mobile Top Headlines images
+
+Deployed `mynewspaper-web:mobile-headlines-20261024`, image
+`sha256:72846aa5d05c172f381ee7634052ca2a41fd6dbdbc25fa61afd0cffc5103b433`.
+Below 700px, the Top Headlines lead/featured images are hidden, and supporting
+headlines use the full card width. More stories stays text-only on mobile;
+desktop images and large More stories cards retain their prior layout.
+
+Build/publish/static-asset guard passed; container healthy and health endpoint 200.
+Runtime environment, mounts, ports, network and restart settings were verified
+preserved. No schema/collector changes. Rollback container/image retained under
+`before-mynewspaper-mobile-headlines-20261024`.
+
+Preview and live checks passed 50 route/width/theme cases across News, both news
+sections and both hubs at 320/390/430/768/1440px in light/dark modes. Assertions
+covered hidden mobile images, overflow, full-width text, 44px actions, publisher
+wrapping, sharing/focus and Load more. Additional checks confirmed lead/support
+image visibility before/after refresh, unchanged desktop 200px More stories
+images and lead sharing/Escape/focus. Mobile screenshots at all three phone
+widths were inspected. Main route smoke checks passed, including Results and
+admin redirects. Real-device checks were unavailable. Existing Pkcs dependency
+advisories remain. Evidence: `/tmp/mynewspaper-mobile-headlines-deploy/`.
