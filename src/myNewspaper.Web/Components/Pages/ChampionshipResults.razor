@@ -1,0 +1,81 @@
+@inject BoxScoresRepository BoxScores
+@page "/championship/results"
+@layout PublicLayout
+@inject myNewspaper.Web.Scores.LeaguePhases RecordPhases
+@inject IDbContextFactory<WebScraperContext> Factory
+@inject FeedDates Dates
+@inject ILogger<ChampionshipResults> Log
+<PageTitle>EFL Championship results · myNewspaper</PageTitle>
+<PageHeading Title="EFL Championship results" Eyebrow="THE FINAL SCORES" Description="Completed matches from the latest available season." />
+<myNewspaper.Web.Components.Events.TeamRecordsNote />
+<SoccerLeagueLinks Provider="espn-championship" />
+@if (error is not null) { <p class="empty" role="status">@error</p> }
+else if (data.Source is null) { <p class="empty">Championship results are not enabled.</p> }
+else
+{
+    @if (data.Season is { } season) { <p class="updated">Season starting @season</p> }
+    @if (data.Source.LastSuccessAt is { } refreshed) { <p class="updated">Last refreshed @Dates.PublishedFull(refreshed)</p> }
+    @if (!string.IsNullOrWhiteSpace(data.Source.LastError)) { <p class="standing-status" role="status">Latest refresh failed; showing last available results.</p> }
+    else if (data.Source.LastSuccessAt is not { } last || DateTime.UtcNow - DateTime.SpecifyKind(last, DateTimeKind.Utc) > TimeSpan.FromHours(2)) { <p class="standing-status" role="status">Results may be out of date.</p> }
+    <form class="ranking-detail-toggle" method="get" action="championship/results">
+        <label><input type="checkbox" name="team" value="352" checked="@(Team == 352)" onchange="this.form.requestSubmit()" /> Wrexham AFC only</label>
+        <noscript><button type="submit" class="nf-btn nf-btn--secondary">Apply</button></noscript>
+    </form>
+    <p class="updated">@data.Total @(data.Total == 1 ? "match" : "matches")</p>
+    @if (data.Items.Count == 0) { <p class="empty">No completed matches available for this selection.</p> }
+    @foreach (var day in data.Items.GroupBy(r => r.MatchDate))
+    {
+        <h2>@FeedDates.LongDate(day.Key)</h2>
+        <div class="standings-scroll" role="region" aria-label="Championship final scores" tabindex="0">
+            <table class="standings-table championship-results">
+                <caption>EFL Championship · @FeedDates.LongDate(day.Key)</caption>
+                <thead><tr><th scope="col">Home</th><th scope="col">Score</th><th scope="col">Away</th></tr></thead>
+                <tbody>@foreach (var game in day)
+                {
+                    <tr data-sports-teams="@SportsTeamPreferences.Keys(game.HomeTeamName, game.AwayTeamName)">
+                        <th scope="row"><span class="standing-team-name">
+                            @if (EventsText.LogoUrl(game.HomeLogoUrl) is { } logo) { <img src="@logo" alt="" width="24" height="24" loading="lazy" onerror="this.remove()" /> }
+                            @game.HomeTeamName</span><myNewspaper.Web.Components.Events.TeamRecord Value="@records.Find(game.ProviderKey, "Soccer", game.HomeTeamName, game.HomeTeamId.ToString())" /></th>
+                        <td>
+                            @if (FeedQuery.SafeHref(game.SourceUrl) is { } url) { <a href="@url" target="_blank" rel="noopener noreferrer">@game.HomeScore – @game.AwayScore</a> }
+                            else { <span>@game.HomeScore – @game.AwayScore</span> }
+                            <div class="updated">@Dates.EventTime(game.StartsAtUtc)</div>
+                            <myNewspaper.Web.Components.BoxScores.BoxScoreLink Identity="@BoxIdentity.Match(game.ProviderKey,game.GameId)" Labels="boxLabels" Context="@($"{game.AwayTeamName} at {game.HomeTeamName}")" />
+                            @if (ChampionshipResultsQuery.WrexhamOutcome(game) is { } outcome) { <div class="updated">@outcome</div> }
+                            else if (game.ScheduleStatus.Contains("PEN", StringComparison.OrdinalIgnoreCase)) { <div class="updated">Final · Penalties</div> }
+                        </td>
+                        <td><span class="standing-team-name">
+                            @if (EventsText.LogoUrl(game.AwayLogoUrl) is { } awayLogo) { <img src="@awayLogo" alt="" width="24" height="24" loading="lazy" onerror="this.remove()" /> }
+                            @game.AwayTeamName</span><myNewspaper.Web.Components.Events.TeamRecord Value="@records.Find(game.ProviderKey, "Soccer", game.AwayTeamName, game.AwayTeamId.ToString())" /></td>
+                    </tr>
+                }</tbody>
+            </table>
+        </div>
+    }
+    @if (data.Total > ChampionshipResultsQuery.PageSize)
+    {
+        <nav class="tv-week" aria-label="Result pages">
+            @if (data.PageIndex > 0) { <a class="nf-btn nf-btn--secondary" href="@PageHref(data.PageIndex - 1)">← Newer</a> }
+            <span>Page @(data.PageIndex + 1) of @((data.Total + ChampionshipResultsQuery.PageSize - 1) / ChampionshipResultsQuery.PageSize)</span>
+            @if ((data.PageIndex + 1) * ChampionshipResultsQuery.PageSize < data.Total) { <a class="nf-btn nf-btn--secondary" href="@PageHref(data.PageIndex + 1)">Older →</a> }
+        </nav>
+    }
+}
+@code {
+    private IReadOnlyDictionary<string,string> boxLabels = new Dictionary<string,string>();
+    private TeamRecords records = TeamRecords.Empty;
+    [SupplyParameterFromQuery(Name = "team")] private int? Team { get; set; }
+    [SupplyParameterFromQuery(Name = "page")] private string? Page { get; set; }
+    private ChampionshipResultsPage data = new(null, null, [], 0, 0);
+    private string? error;
+    private string PageHref(int page) => $"championship/results?page={page}" + (Team == 352 ? "&team=352" : "");
+    protected override async Task OnParametersSetAsync()
+    {
+        error = null;
+        try { await using var db = await Factory.CreateDbContextAsync();
+        records = await TeamRecords.LoadAsync(db, Dates.Today, RecordPhases); data = await ChampionshipResultsQuery.GetAsync(db, Team == 352, int.TryParse(Page, out var page) ? Math.Clamp(page, 0, 10000) : 0);
+        boxLabels = await BoxScores.AvailableAsync(data.Items.Select(g=>BoxIdentity.Match(g.ProviderKey,g.GameId)).OfType<BoxIdentity>()); }
+        catch (Exception ex) when (ex is System.Data.Common.DbException or InvalidOperationException)
+        { Log.LogError(ex, "Could not read Championship results."); error = "Results are temporarily unavailable. Please try again."; }
+    }
+}

@@ -1,0 +1,19 @@
+@using myNewspaper.Web.Watching
+@inject WatchCatalog Catalog
+<section id="my-services" data-settings-section="services" aria-labelledby="watch-services-heading">
+<h2 id="watch-services-heading">My services</h2>
+<p>Choose up to 20 US services. Where to watch prioritizes subscription and free/ad-supported matches on each results page.</p>
+<form method="get" action="settings#my-services" data-watch-services data-watch-settings>
+@if(services.Count==0){<p role="status">Service choices are temporarily unavailable. Please try again later.</p>}
+<div class="watch-service-options">@foreach(var service in services){<label><input type="checkbox" name="service" value="@service.Id" checked="@Selected.Contains(service.Id)" /> @service.Name</label>}</div>
+<div class="watch-tabs"><button class="nf-btn nf-btn--primary" type="submit">Save services</button><button class="nf-btn nf-btn--secondary" type="button" data-watch-services-clear>Clear selections</button><a data-watch-settings-link href="@($"watch?services={string.Join(",",Selected)}")">Where to watch →</a></div>
+<p class="updated" data-watch-services-status role="status">Selections save in this browser when storage is available.</p>
+<noscript><p>Without JavaScript, apply your selections and use the Where to watch link. Choices will not be remembered across visits.</p></noscript>
+</form>
+</section>
+@code {
+    [Parameter]public string? Selection {get;set;}
+    private int[] Selected=>WatchCatalog.ServiceIds(Selection);
+    private IReadOnlyList<WatchCatalog.Service> services=[];
+    protected override async Task OnInitializedAsync(){services=await Catalog.Services();}
+}

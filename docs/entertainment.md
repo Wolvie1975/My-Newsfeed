@@ -31,7 +31,7 @@ The Digital rental / purchase page similarly links to
 below the source summary and above the first release-date heading. Both links
 open in a new tab with `noopener noreferrer`. These page-level links are separate
 from each film's Fandango action and do not change the release calendar or source
-links. The logos and their source attribution are in `src/MyDailyFeed.Web/wwwroot/images/brands/`.
+links. The logos and their source attribution are in `src/myNewspaper.Web/wwwroot/images/brands/`.
 
 Movie cards on Movies, Digital and the homepage read retailer actions from
 `dbo.MovieCommerce` by MovieId and Provider through the release's source link.
@@ -569,3 +569,31 @@ and opens the correct movie/TV detail and provider route. Clear search returns t
 the originating browse type. Sorting, selected services, US availability filtering
 and filled logical pages remain. Cache-window deduplication uses (kind, ID) so a
 movie and series sharing the same numeric provider ID both survive.
+
+## Entertainment and TV/Film headlines
+
+Entertainment navigation contains **Entertainment headlines** at
+`/entertainment/news` and **TV/Film headlines** at `/entertainment/tv-film`, on
+desktop and mobile. Each feed reads its existing source category, resolved by name
+rather than a deployment-specific ID. Source selections, article actions and
+cursor pagination reuse the existing feed components; no sources or articles are
+moved or deleted in SQL and no collector configuration changes are required.
+
+Headlines no longer offers Entertainment or TV/Film categories or their sources,
+and its All categories feed/pagination excludes both. Other category-specific
+readers and the Home aggregate remain unchanged. Old `/news?category=...` links
+for the enabled moved categories redirect to their section, retaining source,
+search and valid cursor values. Missing/disabled section coverage shows an empty
+feed rather than broadening to all news. Both new pages work without JavaScript;
+JavaScript enhances pagination while preserving the destination/category scope.
+
+Box Office also belongs to Entertainment navigation on desktop and mobile.
+`/box-office`, `/box-office/weekend-preview` and `/box-office/movie-forecasts`
+retain their existing destinations/data and mark Entertainment as current. The
+News menu entry and Headlines' Weekend box office shortcut have been removed.
+
+Entertainment headlines now uses one menu entry and a hub at
+`/entertainment/news`, with General and TV/Film (`/entertainment/news/tv-film`)
+tabs. Both retain scoped sources, counts, timestamps and JS/no-JS pagination.
+`/entertainment/tv-film` still works as a hub alias. Box Office and other
+Entertainment destinations remain in the menu.

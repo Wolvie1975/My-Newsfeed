@@ -6,11 +6,327 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The most recent verified web release is `mydailyfeed-web:scoreboard-mobile-20261024`,
-with rollback recorded as `mynewsfeed-web:before-scoreboard-mobile-20261024`.
+The most recent verified web release is `mynewspaper-web:category-hubs-20261024`,
+with rollback recorded as `mynewsfeed-web:before-mynewspaper-category-hubs-20261024`.
 Its container was healthy on October 24, 2026 (Central). This is a dated
 observation, not live hosting status.
 
+
+## Category hub assignments deployed; GitHub check-in — October 24, 2026
+
+User requested production deployment and GitHub check-in. Live image:
+`mynewspaper-web:category-hubs-20261024` (`34ec4e8dca9e`), container
+`mynewsfeed-web`, healthy. Rollback image:
+`mynewsfeed-web:before-mynewspaper-category-hubs-20261024`; prior container retained
+as `mynewsfeed-web-before-mynewspaper-category-hubs-20261024`. Runtime environment,
+renamed entrypoint, healthcheck, mounts/keys, ports, network and restart policy
+verified preserved. Private Tailscale HTTPS passed.
+
+Saved Headlines/Sports/Entertainment assignments and dynamic category tabs are now
+live. Admin Categories offers Hub on add/edit, with phone cards and 44px controls.
+Enabled sources make future categories available in the assigned hub without code
+registration. Migration 019 was already applied to WebScraper after same-day full
+backup confirmation and repeated safely; no additional database scripts or
+collector changes in this rollout. Initial assignments preserve existing feeds.
+
+Final-source Docker build passed; 161 focused predeployment tests passed. Live
+admin controls/cancel, Sports and Entertainment browser suites passed at
+320/390/430px light/dark and 768/1440px. Category editor and public screenshots
+reviewed, including touch targets and no overflow; source filters, wrong-hub API
+rejection, legacy links and JS/no-JS paging passed. Admin browser checks submitted
+no category changes; persisted assignments tested in isolated SQL fixtures.
+No real-device check available. Twelve health/public route smoke checks passed;
+runtime smoke logs had zero failure/unhandled-exception markers. Evidence:
+`/tmp/mynewspaper-category-hubs-deploy/`.
+
+Check-in includes accumulated scoreboard consolidation/Show filtering, news hub
+organization, myNewspaper project/branding rename and configurable category hubs.
+Branch `develop` matched origin before the local commit. GitHub push authentication
+preflight failed: HTTPS could not read Username and no usable alternate GitHub
+login was available. Local commit can be pushed with `git push origin develop`
+after GitHub authentication is restored. No remote push is confirmed.
+
+Earlier local-only category-hub notes below are superseded by this deployment.
+
+## Saved category hub assignments — local web update, October 24, 2026
+
+User requested routing future news categories to their proper hubs and explicitly
+chose Headlines/Sports/Entertainment only (no Local). Added Hub selection to Admin
+Categories add/edit, defaulting to Headlines. Existing six section categories are
+initially assigned to Sports/Entertainment. New eligible categories automatically
+appear as tabs in the assigned hub; no code registration/redeploy is needed for
+later category additions/assignment changes. Enabled sources are required before a
+category appears publicly. No name guessing. ID-based new-category links survive
+renames. Headlines filtering/sources/timestamps/paging use saved assignments;
+section API reads reject categories assigned to another hub. Existing short aliases,
+College/F1 readers and Home aggregate are retained.
+
+Database setup APPLIED: `db/019_news_category_hubs.sql` adds non-null constrained
+SourceCategories.NewsHub with Headlines default, initially routes existing names
+without renaming categories or changing sources/articles. Verified target WebScraper
+on sql2025 against the preserved runtime connection. Confirmed same-day full backup
+(msdb backup_finish_date 2026-10-24 07:35:01, recorded server value). Migration
+succeeded and repeat application preserved assignments (4 sports, 2 entertainment,
+7 headlines). Old live app remains healthy. No collector changes.
+
+Build/publish and 161 focused .NET tests passed, including SQL temp-table fixtures
+for arbitrary future categories, persisted hub moves/renames and Headlines/source
+exclusion. Public Sports/Entertainment browser suites passed: generic ID routes,
+cross-hub API rejection, redirects, source filters, JS/no-JS pagination, mobile
+320/390/430 light/dark and 768/1440 regressions. Admin add/edit/cancel controls were
+exercised without submitting category data; persistence covered by isolated SQL
+fixtures. Phone category list now uses cards; all category editor buttons/selects have
+verified 44px minimum targets, with no internal phone overflow. Final admin suite
+passed at 320/390/430/768/1440 in both emulated color schemes. Screenshots reviewed; no real-device
+check. Evidence: `/tmp/mynewspaper-category-hubs-review/`; final preview port 5323.
+
+Web changes are NOT deployed/committed/pushed. Database prerequisite is already
+applied; latest live web remains `mynewspaper-web:brand-20261024`. Next deployment
+must include updated model/queries/admin/hub page together. Later category edits do
+not require another migration or deployment.
+
+## myNewspaper rename and final logo deployed — October 24, 2026 (Central)
+
+User authorized deployment. Live image `mynewspaper-web:brand-20261024`
+(`e3db9a7eea2a`), container `mynewsfeed-web`, healthy. Rollback image:
+`mynewsfeed-web:before-mynewspaper-brand-20261024`; prior container retained as
+`mynewsfeed-web-before-mynewspaper-brand-20261024`. Entrypoint deliberately changed
+to `dotnet myNewspaper.Web.dll`. Environment, health check, mounts/keys, ports,
+network and restart policy verified preserved. Existing WebScraper runtime database
+retained; no database scripts, schema changes or collector/source changes.
+
+App/project branding is now exactly `myNewspaper`; the final newspaper “n” logo
+includes the requested flowing ribbons and sunshine. Header/favicon, manifest,
+192px/512px/maskable icons and offline screen use the revised artwork. PWA identity
+and browser storage keys remain stable; worker cache is `mynewsfeed-pwa-v4`.
+SQL saved-list/import tables and legacy authentication/data-protection identifiers
+remain unchanged. Hostname, repository and checkout folder retain existing names.
+
+Final-source Docker build passed; predeployment clean build/publish, 153 focused
+.NET tests, five solar-time JS tests and theme-mode regressions passed. Live
+branding, HTTPS PWA, Sports and Entertainment browser suites passed: logo/style
+assets, preserved preferences, category/source filters, JS/no-JS paging, active
+navigation, manifest dimensions, Chromium installability, old app-cache removal
+with unrelated cache retained, and offline screen. Mobile at 320/390/430px light/
+dark plus 768/1440px checked; screenshots reviewed and 44px brand/navigation
+links exercised. No real-device check available. Health/public-route smoke and
+private Tailscale HTTPS passed; smoke runtime logs had zero failure/unhandled
+exception markers. Evidence: `/tmp/mynewspaper-brand-deploy/`.
+
+Not committed/pushed as part of this request. Earlier local-only rename/logo notes
+below are superseded by this release.
+
+## myNewspaper rename and ribbon/sun logo — local update, October 24, 2026
+
+User requested app/project name `myNewspaper` and a new logo, then asked to retain
+the former logo's ribbons and sunshine. Renamed solution to `myNewspaper.sln`,
+projects/directories to `src/myNewspaper.Web` and `tests/myNewspaper.Tests`, with
+matching namespaces, assembly/style references, page/admin titles and user agents.
+Dockerfile/Compose image naming and maintained build/deploy commands updated.
+The repository/checkout folder, hostname and runtime container are not renamed.
+
+Built-in image generation produced a folded-newspaper “n” logo; final edit adds
+flowing gold/light-blue paper ribbons and a golden sunrise, using the prior logo
+as reference. Final source: `docs/assets/mynewspaper-ribbon-icon-source.png`.
+Prompts/provenance: `docs/assets/mynewspaper-logo.md`. Browser canvas exports:
+`wwwroot/icons/newspaper-ribbon-192.png`, `newspaper-ribbon-512.png`, and inset
+`newspaper-ribbon-maskable-512.png`. Header, favicon, manifest and offline screen
+use the revised icons. Earlier source/logo assets are preserved.
+
+Manifest name/short_name are exactly `myNewspaper`; id/start URL/scope remain `/`.
+Worker cache advances to `mynewsfeed-pwa-v4`, purging only older app caches.
+Persistent contracts remain unchanged: SQL MyDailyFeedSavedList/Imports, legacy
+browser storage keys, MyNewsFeed.Admin cookie, MyNewsFeed data-protection name,
+UserSecretsId, key volume and container identity. No SQL/source/collector writes.
+
+Clean solution build/final publish passed with existing dependency/analyzer
+warnings. 153 focused .NET tests and five solar-time JS tests passed. Final-logo
+branding/PWA/Sports/Entertainment browser suites passed: saved preference keys,
+manifest/icon dimensions, Chromium installability, old-cache cleanup with unrelated
+cache preserved, offline branding, category links/filtering and JS/no-JS paging.
+Phone 320/390/430px light/dark and tablet/desktop 768/1440px checked with screenshots
+reviewed; 44px header link and mobile navigation tested. No real-device check.
+Theme-mode browser checks also passed (automatic boundaries, persistence, manual
+overrides, navigation, cross-tab changes and blocked storage). Seventeen public/health
+routes and unauthenticated admin redirect passed. A stale CSS-isolation scope after renaming was fixed by moving generated bin/obj
+outputs aside and rebuilding; HTML/CSS scopes now match. A Docker preview build
+validated renamed paths/entrypoint before the final artwork revision; it is not a
+final deployment image. Final read-only published preview: http://127.0.0.1:5319.
+Evidence: `/tmp/mynewspaper-brand-review/`.
+
+Local only, not deployed/committed/pushed. Latest verified live release remains
+`mydailyfeed-web:headline-menu-20261024`. Future deployment must use
+`dotnet myNewspaper.Web.dll` as Entrypoint when cloning the old runtime config.
+
+## Headlines menu order deployed — October 24, 2026 (Central)
+
+User requested deployment. Live image `mydailyfeed-web:headline-menu-20261024`
+(`989829a7c0f4`), container `mynewsfeed-web`, healthy. Sports headlines and
+Entertainment headlines are first in their respective desktop/mobile menus.
+Rollback image `mynewsfeed-web:before-headline-menu-20261024`; previous container
+retained as `mynewsfeed-web-before-headline-menu-20261024`. Environment, entrypoint,
+healthcheck, mounts/keys, ports, network and restart policy verified preserved.
+No database or collector changes.
+
+Docker build, live health/public-route smoke checks and private HTTPS passed.
+Focused live browser checks passed at 320/390/430/768/1440px in light/dark,
+including order, active states, mobile link clicks, 44px targets, overflow and
+screenshot review. No real-device check available. Runtime smoke logs showed zero
+failure/unhandled-exception markers. Evidence: `/tmp/mydailyfeed-headline-menu-deploy/`.
+Not committed/pushed as part of this request. Earlier local-only menu-order notes
+below are superseded by this release.
+
+## Headline hubs deployed — October 24, 2026 (Central)
+
+User requested deployment. Live image: `mydailyfeed-web:news-hubs-20261024`
+(`49522a036460`), container `mynewsfeed-web`, healthy. Rollback image:
+`mynewsfeed-web:before-news-hubs-20261024`; previous container retained as
+`mynewsfeed-web-before-news-hubs-20261024`. Runtime environment, entrypoint,
+healthcheck, persistent mounts/keys, ports, network and restart policy verified
+preserved. No database migration or collector/source changes.
+
+Sports and Entertainment each have one Headlines menu entry with category tabs:
+Sports General/basketball/Big 12/F1, Entertainment General/TV-Film. Legacy URLs and
+College/F1 news contexts remain available. Category sources and paging stay scoped.
+
+Docker build passed; eight focused predeployment tests passed. All three live
+Sports/Entertainment/Box Office browser suites passed, including tabs, legacy links,
+source filters, JS/no-JS paging, active navigation and Headlines exclusion. Phone
+checks at 320/390/430px light/dark included screenshot review and 44px targets;
+tablet/desktop regressions passed. No real-device check available. Health/public
+route smoke checks and private Tailscale HTTPS passed; runtime logs showed zero
+failure/unhandled-exception markers in the smoke check. Evidence:
+`/tmp/mydailyfeed-news-hubs-deploy/`. Not committed/pushed as part of this request.
+Earlier local-only hub notes below are superseded by this deployment.
+
+## Headline hubs — local update, October 24, 2026 (Central)
+
+User requested similar hub pages instead of separate headline menu links. Sports
+now has one Sports headlines menu link (`/sports/news`) with General, Men's
+college basketball, Big 12 and F1 switching tabs. Entertainment has one
+Entertainment headlines link (`/entertainment/news`) with General and TV/Film tabs.
+Hub titles and mobile Browse context stay consistent while the selected category
+heading/tab and feed change. Categories scope sources, counts, timestamps and
+JS/no-JS pagination. Switching tabs starts the selected feed at its newest items.
+
+Canonical child routes: `/sports/news/basketball`, `/sports/news/big12`,
+`/sports/news/f1`, `/entertainment/news/tv-film`. Old basketball/TV-Film paths remain
+working aliases; old enabled numeric category bookmarks redirect to hub tabs.
+Existing `/college/news` and `/f1/news` remain in their College/F1 hubs. No data,
+source/collector configuration or schema changes. Headlines exclusions remain.
+
+Build/publish and eight focused tests passed. Updated Sports/Entertainment browser
+suites and Box Office regression passed at 320/390/430/768/1440px light/dark (Box
+Office at phone widths/1440), including screenshot review, 44px targets, active
+navigation, tab clicks, scoped filtering/paging and no-JS navigation. No real-device
+check. Evidence/read-only preview: `/tmp/mydailyfeed-news-hubs-review/`, port 5315.
+Local only, not deployed/committed/pushed. Latest verified live release remains
+`mydailyfeed-web:section-news-20261024`.
+
+## Section headline reorganization deployed — October 24, 2026 (Central)
+
+User requested deployment of the pending Sports, Entertainment/TV-Film and Box
+Office reorganization. Live image: `mydailyfeed-web:section-news-20261024`
+(`c20581f1a473`), container `mynewsfeed-web`, healthy. Rollback image:
+`mynewsfeed-web:before-section-news-20261024`; previous container retained as
+`mynewsfeed-web-before-section-news-20261024`. Runtime environment, entrypoint,
+health check, mounts/keys, ports, network and restart policy verified preserved.
+No database migrations or collector/source changes were made.
+
+Sports now contains all four sports headline categories; Entertainment contains
+Entertainment/TV-Film headlines and Box Office. Headlines excludes relocated
+categories and sources, with legacy category redirects and scoped paging retained.
+Existing Big 12/F1 and Box Office routes/readers remain available.
+
+Docker build passed after the eight focused predeployment tests. Live Sports,
+Entertainment and Box Office browser suites passed: source filters, legacy links,
+JS/no-JS pagination, section exclusion, navigation/active states, 44px targets,
+320/390/430px light/dark with screenshot review, and tablet/desktop regressions.
+No real-device check was available. Health/public-route smoke checks and private
+Tailscale HTTPS passed; runtime logs had zero failure/unhandled-exception markers.
+Evidence: `/tmp/mydailyfeed-section-news-deploy/`. Changes are deployed but not
+committed or pushed as part of this request. Earlier pending-local entries below
+are historical and superseded by this release.
+
+## All sports headline categories — pending local update, October 24, 2026
+
+Moved Sports, Men's College Basketball News, Big 12 News and F1 News out of
+Headlines and into Sports navigation on desktop/mobile. Added `/sports/news` and
+`/sports/mens-college-basketball/news`; reused existing `/college/news` and
+`/f1/news`. Headlines category/source controls and paging exclude these categories.
+Enabled legacy category links redirect with filters preserved; fixed section
+feeds retain scoped JS/no-JS paging. Data and Home's aggregate are unchanged.
+
+Build/clean publish and eight focused tests passed. Sports browser coverage and
+both Entertainment regression suites passed. All four sports feeds checked at
+320/390/430/768/1440px light/dark, with phone screenshot review, navigation/touch
+target checks, source filters and no-JS paging. No real-device check. Evidence:
+`/tmp/mydailyfeed-sports-news-review/` (local read-only preview port 5314).
+Not deployed, committed or pushed; the pending Entertainment/Box Office work is
+also local. Latest verified live release remains `mydailyfeed-web:scoreboard-show-20261024`.
+
+## Box Office navigation — pending local addition, October 24, 2026
+
+Moved Box Office from News into Entertainment on desktop/mobile, including parent
+active states for results, weekend preview and movie forecasts. Removed the
+Headlines shortcut. Existing routes, charts, forecasts and data are unchanged.
+This is part of the pending Entertainment headline reorganization, not deployed.
+
+Publish/diff checks and both Entertainment browser suites passed. Box Office
+checks covered all three routes at 320/390/430/1440px, light/dark with JavaScript,
+no-JavaScript layouts, correct parent/selected link, 44px mobile links and no
+overflow/errors. Mobile menu screenshots reviewed; no real-device check. Evidence:
+`/tmp/mydailyfeed-entertainment-news-review/box-office.log` and menu screenshots.
+No commit/push or deployment; live remains `mydailyfeed-web:scoreboard-show-20261024`.
+
+## Entertainment/TV-Film headline placement — pending local update, October 24, 2026
+
+Added Entertainment navigation destinations `/entertainment/news` and
+`/entertainment/tv-film`, reusing the shared news page/cards with fixed category
+scope. Headlines excludes both moved categories from its dropdown, sources,
+All categories queries and pagination. Old enabled category links redirect with
+source/search/cursor preservation. New feed titles, navigation states, source
+filters, scoped JS/no-JS pagination and 44px section tabs are implemented.
+No schema, source-enablement, collector or stored-article changes. Home's aggregate
+and other category readers remain unchanged.
+
+Build/clean publish and four focused tests passed, including connection-local SQL
+fixtures for source/category separation, uncategorised content, disabled sources,
+counts and cursor paging. Published-preview browser checks passed old redirects,
+source controls, API scope, duplicate-free paging, no-JS links, nav active states,
+44px controls and no horizontal overflow. Required 320/390/430px light/dark cases
+were checked with screenshots; 768/1440px regression checks passed too. No real-device
+check was performed. Evidence/screenshots and read-only preview (port 5313):
+`/tmp/mydailyfeed-entertainment-news-review/`. No deployment, commit or push.
+Latest live release remains `mydailyfeed-web:scoreboard-show-20261024`.
+
+## Combined scoreboard Show filter — October 24, 2026
+
+Deployed `mydailyfeed-web:scoreboard-show-20261024` (049ec734719a), healthy.
+Show replaces Sports/Following with grouped All sports, Leagues, Conferences and
+Teams choices, eliminating duplicate league follows and conflicting selections.
+Games remains separate. GET auto-submit and no-JS Apply fallback remain. Date links
+and refresh retain the selection. Old Results/competition/follow bookmarks remain
+usable; valid follows take precedence over incompatible legacy league filters.
+No game, record, freshness, date-limit or source-enablement semantics changed.
+
+Build/clean publish and 35 focused tests passed, including read-only SQL filtering
+and selection-resolution tests. Docker/static-asset guard passed with existing
+PKCS warnings. Four local and live browser suites passed groups/unique choices,
+league/conference/team/all selection, legacy bookmarks, canonical date links,
+filter/refresh persistence, failure recovery, no-JS fallback and Home ordering.
+Required mobile verification ran before and after deployment at 320/390/430px in
+light/dark mode; all six screenshots were reviewed at each stage. Automated
+responsive checks also covered 375/767/768/1440px. No real-device check was run.
+Twelve live routes and private HTTPS Scoreboard returned 200; hostname resolution
+override used for HTTPS. No runtime error markers observed.
+
+Runtime settings, entrypoint, health check, mounts, ports, restart policy and
+network mode compared and preserved. No schema, collector or credential changes.
+Rollback image: `mynewsfeed-web:before-scoreboard-show-20261024`; previous container:
+`mynewsfeed-web-before-scoreboard-show-20261024`. Evidence/screenshots:
+`/tmp/mydailyfeed-scoreboard-show-deploy/`; local evidence under
+`/tmp/mydailyfeed-scoreboard-show-review/`. Preview stopped. No commit or push.
 
 ## Scoreboard mobile controls and Home order — October 24, 2026
 

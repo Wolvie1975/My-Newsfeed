@@ -365,7 +365,7 @@ Targeted query/card/helper validation passed 121 tests. To repeat these checks
 against an appropriate development/test database:
 
 ```bash
-dotnet test MyDailyFeed.sln --filter 'FullyQualifiedName~FeedQueryTests|FullyQualifiedName~FeedArticlesRenderTests|FullyQualifiedName~FeedHelpersTests'
+dotnet test myNewspaper.sln --filter 'FullyQualifiedName~FeedQueryTests|FullyQualifiedName~FeedArticlesRenderTests|FullyQualifiedName~FeedHelpersTests'
 ```
 
 Production browser checks covered category ordering, six source options, source
@@ -628,17 +628,17 @@ direct loads and in-site navigation. A full refresh loads the corrected script i
 existing tabs. Prior direct-load-only browser coverage missed this lifecycle case;
 regressions now enter Settings through actual navigation links.
 
-### Installed app icon — October 20, 2026
+### Installed app icon — October 24, 2026
 
-User selected concept 4: a white ribbon “d”, layered feed cards and a golden
-sunrise on blue. The original built-in imagegen output is preserved at
-`docs/assets/mydailyfeed-icon-source.png`. Prompt direction: combine the ribbon
-“d” with layered daily-feed cards and a sunrise, retaining a simple blue/white/
-gold app mark readable at small sizes. Browser canvas exports provide 192px and
-512px PNGs plus an inset maskable 512px variant under `wwwroot/icons/daily-ribbon-*`.
-Manifest, favicon and offline screen reference the versioned filenames; app id,
-start URL and scope stay `/`. Service worker cache is `mynewsfeed-pwa-v3` and
-activation removes older app caches. Legacy icon files remain for older installs.
+The myNewspaper logo is a white folded newspaper with an “n” silhouette, flowing gold/light-blue
+paper ribbons and a golden sunrise on blue. The built-in image-generation tool created the
+source at `docs/assets/mynewspaper-ribbon-icon-source.png`; browser canvas exports supply
+192px/512px icons and an inset maskable 512px icon under `wwwroot/icons/newspaper-ribbon-*`.
+Manifest, favicon, public header and offline screen use these versioned assets.
+The app name/short name are exactly `myNewspaper`; id/start URL/scope stay `/`.
+Service worker cache `mynewsfeed-pwa-v4` replaces earlier app caches while leaving
+unrelated caches intact. Legacy icon assets remain for older installs. Prior
+MyDailyFeed artwork remains at `docs/assets/mydailyfeed-icon-source.png`.
 
 Open the private HTTPS site with Tailscale connected and Tailscale DNS/MagicDNS
 working. Android Brave can install from its browser menu. An HTTP LAN address is
@@ -891,7 +891,7 @@ and consistent action links. Optional full-page metadata lives under Game info;
 Home uses compact divided rows.
 
 Sports → Scoreboard offers tap-based previous/next dates, Today, and an enabled
-competition dropdown with Apply. Home has a separate six-game card and View all.
+Show dropdown grouped into Leagues, Conferences and Teams. Home has a separate six-game card and View all.
 Stars highlight teams within their sport/league using provider IDs; these browser
 preferences are independent of existing school/team choices. No typed input is
 required. Server-rendered games and navigation work without JavaScript. Automatic
@@ -901,10 +901,10 @@ freshness behavior.
 
 ### Daily results consolidation
 
-Scoreboard now hosts daily final scores, with Following and Games (All statuses /
-Final scores) dropdowns alongside Competition. Old Results bookmarks redirect to
+Scoreboard hosts daily final scores with a grouped Show dropdown and a separate
+Games dropdown (All statuses / Final scores). Old Results bookmarks redirect to
 the final-score view, preserving dates and follow selections. Date navigation and
-background refresh retain all three filters. The duplicate Results navigation
+background refresh retain both selections. The duplicate Results navigation
 item is removed; enabled MLS/Championship season-result links remain on Scoreboard.
 Current records share the other sports pages' regular-season/playoff rules.
 
@@ -913,9 +913,71 @@ Current records share the other sports pages' regular-season/playoff rules.
 Today & Tonight precedes Scoreboard in the homepage document/default order and
 in saved layouts that previously placed Scoreboard first. Other hidden sections
 and team preferences are retained. On Scoreboard, the competition selector is
-labelled Sports with All sports as its default; its existing competition query
-parameter still works. Sports, Following and Games apply on selection using GET
-forms. Apply appears only as a no-JavaScript fallback. On phones the Central date
+now part of Show, with All sports as its default and grouped league, conference
+and team choices. League choices occur once; choosing a team/conference also
+selects its competition. Show and Games apply on selection using GET forms.
+Legacy competition/follow query parameters still work: a valid follow takes
+precedence over a conflicting league; league follows map to the league choice.
+New date links use a single show parameter, preventing conflicting selections. Apply appears only as a no-JavaScript fallback. On phones the Central date
 sits above equal-width Previous day / Next day buttons with 44px minimum targets;
 Today appears on its own line when applicable. Yesterday/seven-day bounds and
 filter preservation are unchanged.
+
+### Entertainment headline placement
+
+Entertainment headlines and TV/Film headlines now sit under Entertainment in both
+navigation layouts, with their own page titles, active states and mobile Browse
+context. The two pages offer 44px feed-switching tabs and scoped source filters.
+Headlines removes these categories/sources and excludes their articles from All
+categories, including Load more. Old category links redirect to the corresponding
+section. Article save/share controls and JS/no-JS paging remain available. This is
+a frontend organization change; database category/source ownership is preserved.
+
+Box Office is grouped under Entertainment too, including its active state for
+results, weekend preview and movie forecasts. News no longer contains its menu
+entry, and Headlines no longer includes the Weekend box office shortcut. Existing
+box-office URLs, section selection and chart/forecast behavior are preserved.
+
+### Sports headline placement
+
+Sports contains Sports headlines, Men's college basketball headlines, Big 12 News
+and F1 News in both navigation layouts. Each has a matching active destination
+and mobile Browse label. The new general/basketball feeds share 44px switching
+tabs, source filtering and JS/no-JS paging; Big 12/F1 keep their existing pages.
+Headlines no longer lists or aggregates those four categories or their sources.
+Old enabled category bookmarks redirect into the appropriate section with their
+filters retained. Home's aggregate and stored category/source data are unchanged.
+
+### Headline hubs
+
+Sports and Entertainment each expose one headline link in desktop/mobile menus.
+Their shared news hub keeps a stable title/Browse context and shows the selected
+category heading and 44px switching links. Sports offers General, Men's college
+basketball, Big 12 and F1; Entertainment offers General and TV/Film. Each tab has
+its own URL and scoped source/count/update/paging state. Tabs reset source/cursor
+when switching feeds. Old standalone basketball/TV-Film URLs still render the hub;
+College/F1 news tabs and Box Office remain independently available.
+
+Sports headlines and Entertainment headlines appear first in their respective
+section menus on desktop and mobile.
+
+### Assigning new news categories to hubs
+
+In Admin → Categories, choose Hub when adding or editing a category: Headlines,
+Sports or Entertainment. Headlines is the default; names are not guessed. New
+categories created by other tools also default to Headlines until assigned.
+Enabled sources make their category available automatically in its assigned hub,
+including before the first articles arrive. Sources remain assigned to their
+existing category; changing its hub moves the feed without moving articles.
+
+Sports/Entertainment tabs discover eligible categories from saved assignments.
+New categories use ID-based URLs; renaming them preserves those URLs. Source
+filters, totals, timestamps and JS/no-JS pagination stay scoped. Headlines excludes
+categories assigned elsewhere. Old enabled numeric category links redirect to the
+saved destination. Existing short routes, College/F1 readers and Home's aggregate
+remain available. Local is not a routing choice. On phones the admin category
+list uses cards with 44px editing controls.
+
+Database prerequisite: `db/019_news_category_hubs.sql`, adding SourceCategories.NewsHub
+with default/check constraints and initial assignments. Reapplying it preserves
+admin changes. Apply before running the updated web app; no collector change.

@@ -1,0 +1,6 @@
+@using myNewspaper.Web.Watching
+@if(Title.Kind=="tv" && Title.Id>0 && !string.IsNullOrWhiteSpace(Title.Name)){
+<p><a class="nf-btn nf-btn--secondary" data-track-series href="@($"tv/track?q={Uri.EscapeDataString(Title.Name)}&year={Uri.EscapeDataString(Title.Year??"")}")">Add to tracked series</a></p>
+<p class="updated">Choose the matching series to add it to this site’s shared tracked-series list.</p>
+}
+@code { [Parameter,EditorRequired]public WatchTitle Title {get;set;}=default!; }

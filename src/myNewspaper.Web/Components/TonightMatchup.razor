@@ -1,0 +1,38 @@
+@using myNewspaper.Web.Data
+
+@{
+    var known = !Item.IsNeutral && Item.IsAway is not null;
+    var schoolAway = !Item.IsNeutral && Item.IsAway == true;
+    var schoolRecord = Records.Find(Item.ProviderKey, Item.Kind, Item.SchoolName, Item.SchoolId?.ToString());
+    var opponentRecord = Records.Find(Item.ProviderKey, Item.Kind, Item.OpponentName, Item.OpponentSchoolId?.ToString());
+    var homeName = schoolAway ? Item.OpponentName : Item.SchoolName;
+    var awayName = schoolAway ? Item.SchoolName : Item.OpponentName;
+    var homeLogo = schoolAway ? Item.OpponentLogoUrl : Item.TeamLogoUrl;
+    var awayLogo = schoolAway ? Item.TeamLogoUrl : Item.OpponentLogoUrl;
+}
+
+<span class="d-game__teams">
+    <span class="d-game__column-label">@(known ? "Home" : Item.IsNeutral ? "Team · Neutral site" : "Team")</span>
+    <span class="d-game__column-label">@(known ? "Away" : "Opponent")</span>
+    <span class="d-game__team">
+        <span class="team-badge @(homeLogo is null ? "no-logo" : "")" aria-hidden="true">
+            <span class="team-badge__fallback">@EventsText.Initials(homeName)</span>
+            @if (homeLogo is { } logo)
+            { <img src="@logo" alt="" width="32" height="32" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.parentNode.classList.add('is-broken');this.remove()" /> }
+        </span>
+        <span>@homeName<myNewspaper.Web.Components.Events.TeamRecord Value="@(schoolAway ? opponentRecord : schoolRecord)" /></span>
+    </span>
+    <span class="d-game__team">
+        <span class="team-badge @(awayLogo is null ? "no-logo" : "")" aria-hidden="true">
+            <span class="team-badge__fallback">@EventsText.Initials(awayName)</span>
+            @if (awayLogo is { } opponentLogo)
+            { <img src="@opponentLogo" alt="" width="32" height="32" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.parentNode.classList.add('is-broken');this.remove()" /> }
+        </span>
+        <span>@awayName<myNewspaper.Web.Components.Events.TeamRecord Value="@(schoolAway ? schoolRecord : opponentRecord)" /></span>
+    </span>
+</span>
+
+@code {
+    [Parameter] public TeamRecords Records { get; set; } = TeamRecords.Empty;
+    [Parameter, EditorRequired] public TonightItem Item { get; set; } = default!;
+}

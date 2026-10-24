@@ -1,0 +1,190 @@
+@page "/news"
+@page "/entertainment/news"
+@page "/entertainment/tv-film"
+@page "/sports/news"
+@page "/sports/mens-college-basketball/news"
+@page "/sports/news/{Topic}"
+@page "/entertainment/news/{Topic}"
+@inject NavigationManager Nav
+@layout PublicLayout
+@using myNewspaper.Web.Components.Feed
+@inject IDbContextFactory<WebScraperContext> Factory
+@inject FeedDates Dates
+
+@if (!SectionNews) {
+    <div data-news-page data-category-explicit="@(CategoryQuery is not null || !string.IsNullOrWhiteSpace(Q) || SourceQuery is not null || AfterQuery is not null ? "true" : "false")" data-category-current="@Category" hidden></div>
+}
+<PageTitle>@Title · myNewspaper</PageTitle>
+<PageHeading Title="@Title" Eyebrow="THE LATEST STORIES" Description="@(SectionNews ? (EntertainmentSection ? "Latest stories from our entertainment sources." : "Latest stories from our sports sources.") : "Latest articles from the sources we follow.")" />
+@if (SectionNews) {
+    <nav class="tv-week news-section-tabs" aria-label="@(EntertainmentSection ? "Entertainment headline categories" : "Sports headline categories")">
+        @foreach (var item in HubCategories) {
+            <a href="@NewsSections.RouteFor(item)" aria-current="@(Category == item.Id ? "page" : null)">@NewsSections.LabelFor(item.Name)</a>
+        }
+    </nav>
+    <h2>@NewsSections.LabelFor(SectionCategory)</h2>
+}
+<div class="filters">
+    @if (!SectionNews && categories.Count > 0)
+    {
+        @* Selecting a filter submits the form; Apply remains available without JavaScript. *@
+        <form class="catselect" method="get" action="@BasePath">
+            @if (!string.IsNullOrWhiteSpace(Q))
+            {
+                <input type="hidden" name="q" value="@Q" />
+            }
+            <label class="sr-only" for="category">Category</label>
+            <select id="category" name="category" onchange="this.form.requestSubmit()">
+                <option value="all" selected="@(Category is null)">All categories</option>
+                @foreach (var category in categories)
+                {
+                    <option value="@category.Id" selected="@(Category == category.Id)">@category.Name</option>
+                }
+            </select>
+            <noscript><button class="nf-btn nf-btn--secondary" type="submit">Apply</button></noscript>
+        </form>
+    }
+    @if (sources.Count > 0)
+    {
+        <form class="catselect" method="get" action="@BasePath">
+            <input type="hidden" name="category" value="@(Category?.ToString() ?? "all")" />
+            @if (!string.IsNullOrWhiteSpace(Q))
+            { <input type="hidden" name="q" value="@Q" /> }
+            <label class="sr-only" for="source">Source</label>
+            <select id="source" name="source" onchange="this.form.requestSubmit()">
+                <option value="">All sources</option>
+                @foreach (var source in sources)
+                {
+                    <option value="@source.Id" selected="@(Source == source.Id)">@source.Name</option>
+                }
+            </select>
+            <noscript><button class="nf-btn nf-btn--secondary" type="submit">Apply</button></noscript>
+        </form>
+    }
+    @if (feed is not null)
+    {
+        <span class="count count--toolbar">@feed.Total @(feed.Total == 1 ? "article" : "articles")</span>
+    }
+</div>
+
+@if (lastUpdated is { } updated)
+{
+    <p class="updated">
+        Feed last updated
+        <time datetime="@updated.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'")">@Dates.PublishedFull(updated)</time>
+    </p>
+}
+
+@if (feed is null || feed.Items.Count == 0)
+{
+    <p class="empty">
+        @if (Category is not null && Source is null && string.IsNullOrWhiteSpace(Q) && After is null)
+        {
+            <span>No articles available yet. Please check back soon.</span>
+        }
+        else if (!string.IsNullOrWhiteSpace(Q) || Category is not null || Source is not null || After is not null)
+        {
+            <span>No articles match. <a href="@BasePath">Clear filters</a></span>
+        }
+        else
+        {
+            <span>No articles yet. Check back soon.</span>
+        }
+    </p>
+}
+else
+{
+    @if (After is not null)
+    {
+        <p><a href="@Href(Category, null)">← Back to the newest articles</a></p>
+    }
+
+    <section class="feed" aria-label="Articles" data-last-day="@lastDay">
+        <FeedArticles Items="feed.Items" LeadFirst="@(After is null)" Total="@(After is null ? feed.Total : null)" />
+    </section>
+
+    <div class="loadmore">
+        @if (feed.Next is { } next)
+        {
+            <a class="nf-btn nf-btn--secondary" data-load-more data-feed-view="@FeedView" data-enhance-nav="false" href="@Href(Category, next.ToToken())">Load more articles</a>
+        }
+        <span class="count" data-shown-total>Showing @feed.Shown of @feed.Total</span>
+        <span class="sr-only" role="status" data-load-status></span>
+    </div>
+}
+
+@code {
+    private string CurrentPath => Nav.ToBaseRelativePath(Nav.Uri).Split('?')[0].TrimEnd('/');
+    private bool EntertainmentSection => CurrentPath.StartsWith("entertainment/", StringComparison.OrdinalIgnoreCase);
+    [Parameter] public string? Topic { get; set; }
+    private bool SportsSection => CurrentPath.StartsWith("sports/", StringComparison.OrdinalIgnoreCase);
+    private bool SectionNews => EntertainmentSection || SportsSection;
+    private string Hub => EntertainmentSection ? "entertainment" : "sports";
+    private IReadOnlyList<FeedCategory> HubCategories = [];
+    private string? SectionCategory => selectedCategory?.Name;
+    private FeedCategory? selectedCategory;
+    private string BasePath => selectedCategory is {} selected && SectionNews ? NewsSections.RouteFor(selected)! : SectionNews ? Hub + "/news" : "news";
+    private string FeedView => SectionNews ? Hub + "-hub-news" : "news";
+    private string Title => EntertainmentSection ? "Entertainment headlines" : SportsSection ? "Sports headlines" : "Headlines";
+    // Query values arrive as text and are parsed leniently: a hand-edited "?category=abc" must not throw.
+    [SupplyParameterFromQuery(Name = "category")] private string? CategoryQuery { get; set; }
+    [SupplyParameterFromQuery(Name = "q")] private string? Q { get; set; }
+    [SupplyParameterFromQuery(Name = "after")] private string? AfterQuery { get; set; }
+    [SupplyParameterFromQuery(Name = "source")] private string? SourceQuery { get; set; }
+
+    private int? Source { get; set; }
+    private IReadOnlyList<FeedSource> sources = [];
+    private int? Category { get; set; }
+    private FeedCursor? After => FeedCursor.Parse(AfterQuery);
+
+    private IReadOnlyList<FeedCategory> categories = [];
+    private FeedPage? feed;
+    private string? lastDay;
+    private DateTime? lastUpdated;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await using var db = await Factory.CreateDbContextAsync();
+        var allCategories = await FeedQuery.GetCategoriesAsync(db);
+        if (!SectionNews && int.TryParse(CategoryQuery, out var oldId)
+            && allCategories.FirstOrDefault(c => c.Id == oldId) is {} oldCategory
+            && NewsSections.RouteFor(oldCategory) is {} destination) {
+            var oldSource = int.TryParse(SourceQuery, out var sid) ? (int?)sid : null;
+            Nav.NavigateTo(destination + FeedQuery.QueryString(null, Q, After?.ToToken(), oldSource), forceLoad: true);
+            return;
+        }
+        categories = allCategories.Where(c => c.Hub == "headlines").ToList();
+        selectedCategory = null;
+        if (SectionNews) {
+            HubCategories = allCategories.Where(c => c.Hub == Hub).OrderBy(NewsSections.Order).ThenBy(c => c.Name).ToList();
+            var topic = Topic?.ToLowerInvariant();
+            var known = topic switch {
+                "tv-film" => NewsSections.TvFilm, "basketball" => NewsSections.MensBasketball,
+                "big12" => Big12NewsQuery.CategoryName, "f1" => F1NewsQuery.CategoryName,
+                _ => CurrentPath == "entertainment/tv-film" ? NewsSections.TvFilm
+                    : CurrentPath == "sports/mens-college-basketball/news" ? NewsSections.MensBasketball : null
+            };
+            var requested = topic?.StartsWith("category-") == true && int.TryParse(topic[9..], out var id)
+                ? allCategories.FirstOrDefault(c => c.Id == id)
+                : known != null ? allCategories.FirstOrDefault(c => c.Name == known) : null;
+            if (requested != null && requested.Hub != Hub) {
+                var assignedDestination = NewsSections.RouteFor(requested) ?? "news";
+                Nav.NavigateTo(assignedDestination + FeedQuery.QueryString(requested.Hub == "headlines" ? requested.Id : null, Q, After?.ToToken(), int.TryParse(SourceQuery, out var source) ? source : null), forceLoad: true);
+                return;
+            }
+            selectedCategory = requested ?? (Topic == null && known == null ? HubCategories.FirstOrDefault() : null);
+        }
+        Category = SectionNews ? selectedCategory?.Id
+            : CategoryQuery is null ? categories.FirstOrDefault(c => c.Name == "Top Headlines")?.Id
+            : int.TryParse(CategoryQuery, out var categoryId) ? categoryId : null;
+        sources = SectionNews && Category == null ? [] : await FeedQuery.GetSourcesAsync(db, Category, headlinesOnly: !SectionNews);
+        Source = int.TryParse(SourceQuery, out var sourceId) && sources.Any(s => s.Id == sourceId) ? sourceId : null;
+        feed = SectionNews && Category == null ? new FeedPage([], 0, 0, null) : await FeedQuery.GetFeedAsync(
+            db, Category, Q, After, After is null ? FeedQuery.FirstBatch : FeedQuery.MoreBatch, Source, headlinesOnly: !SectionNews);
+        lastDay = feed.Items.Count > 0 ? Dates.DayKey(feed.Items[^1]) : null;
+        lastUpdated = SectionNews && Category == null ? null : await FeedQuery.GetLastUpdatedAsync(db, headlinesOnly: !SectionNews, categoryId: Category);
+    }
+
+    /// <summary>A link that keeps the current search and switches category and position.</summary>
+    private string Href(int? category, string? after) => BasePath + FeedQuery.QueryString(category, Q, after, Source, allCategories: category is null);
+}

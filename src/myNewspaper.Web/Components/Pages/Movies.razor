@@ -1,0 +1,103 @@
+@page "/movies"
+@layout PublicLayout
+@inject IDbContextFactory<WebScraperContext> Factory
+@inject FeedDates Dates
+@inject NavigationManager Navigation
+
+<PageTitle>Movies · myNewspaper</PageTitle>
+<PageHeading Title="Movies" Eyebrow="THE RELEASE CALENDAR" Description="Find your next movie night. US releases in theaters, on streaming, and at home." />
+<p class="updated">@(string.IsNullOrWhiteSpace(Q) ? $"Showing releases from today through the end of {Dates.Today:MMMM yyyy}." : $"Searching all collected release dates for “{QueryText.Term(Q)}”.")</p>
+<MovieViewSelect Selected="@Type" Search="@Q" />
+<p class="updated">All enabled providers · US release calendar, including dates awaiting confirmation.</p>
+<div class="movies-summary">
+    <p class="count">@listing.Total @(listing.Total == 1 ? "release" : "releases")</p>
+</div>
+@if (listing.Updated is { } updated)
+{
+    <p class="updated">Releases last updated @Dates.PublishedFull(updated)</p>
+}
+@if (Type == "theatrical")
+{
+    <a class="nf-btn nf-btn--secondary theater-site-link" href="https://www.amctheatres.com/" target="_blank" rel="noopener noreferrer">
+        <img src="images/brands/amc-theatres.svg" alt="" width="44" height="44" />
+        <span>Visit AMC Theatres <span aria-hidden="true">↗</span></span>
+    </a>
+}
+@if (listing.Items.Count == 0)
+{
+    <section class="movies-empty">
+        <span class="movies-empty__icon" aria-hidden="true">▷</span>
+        <h2>@(Type is null ? "Your next movie night is coming" : "No releases in this view")</h2>
+        <p>@(Type is null ? "No releases are scheduled from today through the end of this month." : "Try another release view or browse other releases this month.")</p>
+        @if (Type is not null) { <a class="nf-btn nf-btn--secondary" href="movies">Browse all releases</a> }
+    </section>
+}
+else
+{
+    @foreach (var group in listing.Items.GroupBy(x => x.Date))
+    {
+        <section class="movies-day">
+            <h2>@(group.Key is { } day ? FeedDates.LongDate(day) : "Date to be announced")</h2>
+            <ul class="movie-grid">
+                @foreach (var movie in group)
+                {
+                    <li class="movie-card">
+                        <MoviePoster Url="@movie.Poster" Title="@movie.Title" Class="movie-poster" />
+                        <div class="movie-body">
+                            <p class="movie-kind">@(MoviesQuery.Types.GetValueOrDefault(movie.Type, movie.Type))</p>
+                            <h3>@movie.Title</h3>
+                            <p class="movie-meta">@string.Join(" · ", new[] { movie.Year?.ToString(), movie.Certification, movie.Runtime is { } runtime ? $"{runtime} min" : null }.Where(x => !string.IsNullOrWhiteSpace(x)))</p>
+                            @if (movie.DateStatus == "estimated") { <p class="movie-meta">Estimated release date</p> }
+                            @if (movie.Platform is not null) { <p class="movie-platform">@movie.Platform</p> }
+                            @if (movie.Format is not null) { <p class="movie-meta">@movie.Format</p> }
+                            @if (movie.ReRelease) { <p class="movie-meta">Re-release</p> }
+                            @if (!string.IsNullOrWhiteSpace(movie.Description)) { <p class="movie-description">@movie.Description</p> }
+                            @if (FeedQuery.SafeHref(movie.SourceUrl) is { } href)
+                            {
+                                <a class="movie-source" href="@href" target="_blank" rel="noopener noreferrer">Details at @movie.Source ↗</a>
+                            }
+                            <MovieCommerceAction Item="movie" />
+                            <a href="@($"watch?kind=movie&q={Uri.EscapeDataString(movie.Title)}")">Find streaming options →</a>
+                        </div>
+                    </li>
+                }
+            </ul>
+        </section>
+    }
+    @if (listing.Total > 50 || page > 1)
+    {
+        <nav class="tv-week" aria-label="Movie pages">
+            @if (page > 1) { <a class="nf-btn nf-btn--secondary" href="@PageHref(page - 1)">← Previous</a> }
+            <span>Page @(page) · @listing.Total releases</span>
+            @if (offset + listing.Items.Count < listing.Total) { <a class="nf-btn nf-btn--secondary" href="@PageHref(page + 1)">Next releases →</a> }
+        </nav>
+    }
+}
+
+@code {
+    [SupplyParameterFromQuery(Name = "page")] private string? PageText { get; set; }
+    [SupplyParameterFromQuery(Name = "type")] private string? TypeText { get; set; }
+    private string? Type => TypeText is "theatrical" or "subscription" ? TypeText : null;
+    [SupplyParameterFromQuery(Name = "q")] private string? Q { get; set; }
+    private int page;
+    private int offset;
+    private string PageHref(int target) => "movies?page=" + target + (string.IsNullOrWhiteSpace(Q) ? "" : "&q=" + Uri.EscapeDataString(Q)) + (Type is null ? "" : "&type=" + Uri.EscapeDataString(Type));
+    private MoviesPage listing = new([], 0, [], null);
+    protected override async Task OnParametersSetAsync()
+    {
+        if (TypeText == "digital")
+        {
+            Navigation.NavigateTo("movies/digital", forceLoad: true);
+            return;
+        }
+        await using var db = await Factory.CreateDbContextAsync();
+        page = int.TryParse(PageText, out var requested) ? Math.Clamp(requested, 1, 1000000) : 1;
+        offset = (page - 1) * 50;
+        listing = await MoviesQuery.GetAsync(db, Dates.Today, QueryText.Term(Q), Type, null, string.IsNullOrWhiteSpace(Q) ? "month" : "all", offset: offset, take: 50);
+        if (offset >= listing.Total && page > 1)
+        {
+            page = Math.Max(1, (listing.Total + 49) / 50); offset = (page - 1) * 50;
+            listing = await MoviesQuery.GetAsync(db, Dates.Today, QueryText.Term(Q), Type, null, string.IsNullOrWhiteSpace(Q) ? "month" : "all", offset: offset, take: 50);
+        }
+    }
+}

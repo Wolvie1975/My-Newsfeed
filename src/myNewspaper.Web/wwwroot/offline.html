@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#0051BA">
+    <title>Connect to myNewspaper</title>
+    <link rel="icon" href="/icons/newspaper-ribbon-192.png">
+    <style>
+        :root { color-scheme: light dark; font-family: system-ui, sans-serif; background: #F4F6FA; color: #141B2B; }
+        body { margin: 0; min-height: 100vh; display: grid; place-items: center; }
+        main { max-width: 420px; padding: 32px; text-align: center; }
+        img { width: 80px; height: 80px; }
+        h1 { font-size: 26px; }
+        p { line-height: 1.7; }
+        button { border: 0; border-radius: 8px; background: #0051BA; color: white; padding: 14px 24px; font: inherit; cursor: pointer; }
+        button:focus-visible { outline: 3px solid #E8000D; outline-offset: 4px; }
+        @media (prefers-color-scheme: dark) { :root { background: #091426; color: #E8ECF4; } }
+    </style>
+</head>
+<body><main>
+    <img src="/icons/newspaper-ribbon-192.png" alt="myNewspaper">
+    <h1>myNewspaper can’t be reached</h1>
+    <p>Connect to your home network or turn on Tailscale, then try again. New stories and schedules need a connection to your server.</p>
+    <button type="button" onclick="location.reload()">Try again</button>
+</main></body>
+</html>

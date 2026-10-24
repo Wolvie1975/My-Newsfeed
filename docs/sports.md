@@ -109,7 +109,7 @@ either a final result or finished schedule status arrives.
 The targeted regression checks cover both college and ESPN fixtures:
 
 ```bash
-dotnet test MyDailyFeed.sln --filter 'FullyQualifiedName~HomeEventResultsTests|FullyQualifiedName~Homepage_hides_a_college_final'
+dotnet test myNewspaper.sln --filter 'FullyQualifiedName~HomeEventResultsTests|FullyQualifiedName~Homepage_hides_a_college_final'
 ```
 
 These include a transactional SQL integration fixture; use a development/test
@@ -531,7 +531,7 @@ live timing, driver portraits or constructor logos are supplied.
 F1Tests covers parsing, timezone/date-only behavior, sprint weekend sessions,
 classification choice, decimals, multiple constructors, health and read queries.
 SQL fixtures use connection-local temporary tables and leave production F1 data
-untouched. Run `dotnet test MyDailyFeed.sln --filter FullyQualifiedName~F1Tests`
+untouched. Run `dotnet test myNewspaper.sln --filter FullyQualifiedName~F1Tests`
 with the existing development/test connection configuration.
 
 The dedicated F1 home summary reuses the same read contract in its own card,
@@ -546,7 +546,7 @@ registration scripts or scraper deployment are needed for frontend rollout. See
 [F1 News behavior](interface.md#f1-news).
 
 F1NewsTests covers category isolation, source filtering, cursor pagination and
-article rendering. Run `dotnet test MyDailyFeed.sln --filter FullyQualifiedName~F1NewsTests`
+article rendering. Run `dotnet test myNewspaper.sln --filter FullyQualifiedName~F1NewsTests`
 with the same development/test connection configuration.
 
 ## College Sports hub
@@ -740,15 +740,45 @@ entry. College/F1 results and full-season MLS/Championship pages remain availabl
 Scoreboard links to enabled MLS and Championship season results. The results sync
 worker, result tables and college result queries remain intact.
 
-Sports (the competition selector), Following and Games selections combine as an intersection and remain
-in date links and automatic refresh requests. Following choices come from enabled
-ResultFollows rows within enabled scoreboard competitions. League follows match
-the competition; team and conference follows match explicit ESPN participant IDs
-and current ResultFollowTeams membership, including non-conference opponents.
-Names never establish game identity. All statuses and Final scores are available;
-final-only requires both normalized final status and Completed=true.
+Show combines enabled coverage leagues with conference/team choices from enabled
+ResultFollows, grouped under Leagues, Conferences and Teams. Duplicate league
+follows use the corresponding league choice. Selecting a team/conference chooses
+its competition automatically, using explicit ESPN participant IDs and current
+ResultFollowTeams membership (including non-conference opponents). Names never
+establish game identity. Games remains a separate All statuses / Final scores
+filter; final-only requires both normalized final status and Completed=true.
+
+Show uses `c:Sport|League` or `f:FollowId` values; an empty choice means All sports.
+Selections persist in date links and refresh reads. Old competition/follow links
+are accepted, with a valid follow taking precedence over an incompatible league.
+An explicitly supplied Show selection overrides old filters, including when
+clearing to All sports. Unsupported/disabled choices fall back to All sports;
+public rows remain restricted by enabled coverage views.
 
 Current team records reuse TeamRecords and TeamCell, including regular-season
 confirmation, playoff suppression, stale labels and update-time tooltips. Missing
 records do not hide games. Records also appear in Home's compact scoreboard.
 Optional record/link lookup failures leave the scoreboard usable.
+
+### Sports headlines
+
+Sports navigation includes all sports headline categories: Sports headlines at
+`/sports/news`, Men's college basketball headlines at
+`/sports/mens-college-basketball/news`, Big 12 News at `/college/news` and F1 News
+at `/f1/news`. Big 12/F1 reuse their existing pages/readers. The new shared feeds
+provide switching tabs, scoped source/search filters and JS/no-JS pagination.
+Desktop and mobile navigation identify each destination and its Sports parent.
+
+Headlines excludes these four categories from its category/source controls, All
+categories feed and pagination. Old enabled category bookmarks redirect to their
+section with source/search/valid cursor preserved. No stored articles, source
+ownership, collection settings or schemas change; Home's aggregate is unchanged.
+Checks: focused `EntertainmentNewsTests` SQL fixtures and
+`tests/browser/sports-news.browser.cjs`, including mobile light/dark layouts.
+
+Sports headlines now has one menu entry and a hub at `/sports/news`. Its tabs use
+`/sports/news` (General), `/sports/news/basketball`, `/sports/news/big12` and
+`/sports/news/f1`. Category-specific sources, timestamps, counts and pagination
+remain scoped; the title/Browse context stays Sports headlines. Old basketball
+URLs work, while `/college/news` and `/f1/news` retain their existing hub contexts.
+The earlier separate headline menu entries have been replaced by this single hub.

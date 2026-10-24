@@ -1,6 +1,6 @@
-# MyDailyFeed
+# myNewspaper
 
-MyDailyFeed (formerly MyNewsFeed) is an ASP.NET Core / Blazor daily dashboard with sports schedules, results, standings and polls;
+myNewspaper (formerly MyDailyFeed / MyNewsFeed) is an ASP.NET Core / Blazor daily dashboard with sports schedules, results, standings and polls;
 movie releases, television episodes, a separate YouTube section, saved articles
 and administration.
 The web app and Rust scraper share SQL Server data but have separate collection
@@ -68,8 +68,8 @@ this repository's application migrations are in `db/`.
 Build and run the existing checks from the repository root:
 
 ```bash
-dotnet build MyDailyFeed.sln
-dotnet test MyDailyFeed.sln
+dotnet build myNewspaper.sln
+dotnet test myNewspaper.sln
 ```
 
 The solar calculation checks run independently of SQL Server:
@@ -94,7 +94,7 @@ for routes, data scope and browser-local storage behavior.
 
 Sports → [Scoreboard](docs/sports.md#live-scoreboard) now provides sampled live scores,
 upcoming games and finals, with a separate homepage card and tap-based date/competition
-filters. Following and Final scores filters, current team records and season-results
+filters. Grouped Show and Final scores filters, current team records and season-results
 links consolidate the former daily Results page; old `/results` bookmarks redirect
 to Scoreboard with their date/follow selections. Scores are stored by the independent collector and refresh approximately
 every ten minutes; browser reads check every five minutes while visible.
@@ -104,8 +104,9 @@ when collected detail is available, with ordinary detail-page links as a fallbac
 
 ## Project identity
 
-The solution is MyDailyFeed.sln; the application and test projects are
-src/MyDailyFeed.Web/MyDailyFeed.Web.csproj and
-tests/MyDailyFeed.Tests/MyDailyFeed.Tests.csproj. The existing My-Newsfeed checkout
-and GitHub repository name are retained for link compatibility. See release
-history for the October 20 rebrand and preserved storage/authentication identities.
+The solution is myNewspaper.sln; the application and test projects are
+src/myNewspaper.Web/myNewspaper.Web.csproj and
+tests/myNewspaper.Tests/myNewspaper.Tests.csproj. The existing My-Newsfeed checkout
+and GitHub repository name are retained for link compatibility. The October 24 rename updates assemblies and namespaces to myNewspaper. Saved
+articles, browser preferences, app id/scope and authentication identifiers retain
+their existing identities. See docs/interface.md for the new logo and icon assets.

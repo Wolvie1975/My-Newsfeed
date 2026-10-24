@@ -66,6 +66,7 @@ Keep scraper-owned `sql/` migrations in their separate repository.
 | [015](db/015_seed_big12_womens_soccer.sql) | Big 12 women's soccer; after 013, repeatable |
 | [016](db/016_add_schedule_status.sql) | Nullable ScheduleStatus; apply before web deployment if scraper has not added it; repeatable |
 | [017](db/017_seed_schedule_result_coverage.sql) | WNBA and Big 12 women's basketball coverage; requires conference schema, preserves existing choices |
+| [019](db/019_news_category_hubs.sql) | Adds saved category Hub assignment, initially places existing sports/entertainment categories; repeatable, preserves later admin changes; apply before deploying dynamic headline hubs |
 
 Feature prerequisites include SELECT access to scraper-owned standings, ranking,
 movie, TV, box-office and Championship result tables. Apply scraper schema/runtime
@@ -119,7 +120,7 @@ Record any missing verification as outstanding; do not claim readiness without i
 Run relevant application checks; the full suite is:
 
 ```bash
-dotnet test MyDailyFeed.sln
+dotnet test myNewspaper.sln
 ```
 
 Tests need configured SQL access; use development/staging for integration fixtures.
@@ -254,17 +255,19 @@ container replacement. Missing/invalid credentials leave the page with a retry
 message rather than exposing diagnostics. No new database permission or migration
 is needed. See docs/entertainment.md for provider attribution and cache behavior.
 
-### MyDailyFeed rename compatibility
+### myNewspaper rename compatibility
 
-Build MyDailyFeed.sln or src/MyDailyFeed.Web/MyDailyFeed.Web.csproj. The published
-entrypoint is dotnet MyDailyFeed.Web.dll. The existing production container remains
-mynewsfeed-web at the same hostname/port; new release images use mydailyfeed-web.
+Build myNewspaper.sln or src/myNewspaper.Web/myNewspaper.Web.csproj. The published
+entrypoint is dotnet myNewspaper.Web.dll. The existing production container remains
+mynewsfeed-web at the same hostname/port; new release images use mynewspaper-web.
 When cloning runtime config from an older container, explicitly update Entrypoint
 to the renamed DLL. Preserve the existing environment, mounts and key volume.
 The legacy admin cookie name and data-protection discriminator intentionally stay
 MyNewsFeed.Admin and MyNewsFeed to preserve sign-in compatibility. Browser storage
-keys and PWA id/scope remain unchanged. GitHub repository renaming was not part of
-this deployment.
+keys and PWA id/scope remain unchanged. The GitHub repository and checkout folder retain their existing names.
+When building after the rename, use clean bin/obj outputs: Blazor CSS isolation
+identifiers must be regenerated along with the renamed assembly. Validate that the
+new scoped stylesheet loads and matches the rendered component attributes.
 
 ### Live scoreboard prerequisites
 
@@ -280,7 +283,7 @@ all scoreboard storage and the independent collector intact.
 
 `/results` now returns a temporary redirect to `/scoreboard?status=final`, retaining
 its day/follow parameters. Verify the redirect and destination rather than expecting
-a direct 200 response from the legacy route. Scoreboard's Following/Games filters
+a direct 200 response from the legacy route. Scoreboard's Show/Games filters
 reuse enabled follow configuration and existing records rules. Keep the results
 worker settings and result tables: college/season pages still use them. No schema
 migration or collector change accompanies this consolidation.

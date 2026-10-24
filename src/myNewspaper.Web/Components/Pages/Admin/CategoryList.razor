@@ -1,0 +1,265 @@
+@page "/admin/categories"
+@rendermode InteractiveServer
+@inject IDbContextFactory<WebScraperContext> Factory
+
+<PageTitle>Categories</PageTitle>
+
+<h1>Source categories</h1>
+<p>Choose where each category appears. Enabled sources make it available in that hub automatically.</p>
+
+@if (message is not null)
+{
+    <div class="alert alert-@messageKind" role="alert">@message</div>
+}
+
+<form class="row g-2 mb-4" @onsubmit="AddAsync" @onsubmit:preventDefault>
+    <div class="col-md-5">
+        <label for="new-category" class="visually-hidden">New category name</label>
+        <input id="new-category" class="form-control" maxlength="@MaxNameLength" placeholder="New category name" @bind="newName" />
+    </div>
+    <div class="col-md-4">
+        <label for="new-category-hub">Hub</label>
+        <select id="new-category-hub" class="form-select" @bind="newHub">
+            <option value="headlines">Headlines</option><option value="sports">Sports</option><option value="entertainment">Entertainment</option>
+        </select>
+    </div>
+    <div class="col-md-3">
+        <button type="submit" class="btn btn-primary">Add category</button>
+    </div>
+</form>
+
+@if (pendingDelete is { } target)
+{
+    <div class="alert alert-warning" role="alert">
+        <p class="mb-2">Delete the category <strong>@target.Name</strong>? This cannot be undone.</p>
+        <button class="btn btn-danger btn-sm me-2" @onclick="ConfirmDeleteAsync">Delete category</button>
+        <button class="btn btn-secondary btn-sm" @onclick="() => pendingDelete = null">Cancel</button>
+    </div>
+}
+
+@if (rows is null)
+{
+    <p><em>Loading…</em></p>
+}
+else if (rows.Count == 0)
+{
+    <p>No categories yet. Add the first one above.</p>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-sm align-middle category-table">
+            <thead>
+                <tr>
+                    <th>Category</th>
+                    <th>Hub</th>
+                    <th>Sources</th>
+                    <th>Added</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in rows)
+                {
+                    <tr>
+                        <td>
+                            @if (editingId == row.Id)
+                            {
+                                <form class="category-editor d-flex flex-wrap gap-2" @onsubmit="SaveRenameAsync" @onsubmit:preventDefault>
+                                    <input class="form-control form-control-sm" maxlength="@MaxNameLength"
+                                           aria-label="Category name" @bind="editName" />
+                                    <select class="form-select" aria-label="Category hub" @bind="editHub">
+                                        <option value="headlines">Headlines</option><option value="sports">Sports</option><option value="entertainment">Entertainment</option>
+                                    </select>
+                                    <button type="submit" class="btn btn-primary btn-sm">Save</button>
+                                    <button type="button" class="btn btn-secondary btn-sm" @onclick="() => editingId = null">Cancel</button>
+                                </form>
+                            }
+                            else
+                            {
+                                @row.Name
+                            }
+                        </td>
+                        <td>@HubLabel(row.Hub)</td>
+                        <td>
+                            @if (row.SourceCount > 0)
+                            {
+                                <a href="admin/sources?categoryId=@row.Id">@row.SourceCount</a>
+                            }
+                            else
+                            {
+                                @row.SourceCount
+                            }
+                        </td>
+                        <td class="text-nowrap">@Dates.Stamp(row.DateAdded)</td>
+                        <td class="text-nowrap text-end">
+                            <button class="btn btn-outline-primary btn-sm" @onclick="() => StartRename(row)">Edit</button>
+                            <button class="btn btn-outline-danger btn-sm" disabled="@(row.SourceCount > 0)"
+                                    title="@(row.SourceCount > 0 ? "In use by sources. Move or uncategorize them first." : "Delete category")"
+                                    @onclick="() => StartDelete(row)">Delete</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    private const int MaxNameLength = 100;
+
+    private sealed record CategoryRow(int Id, string Name, DateTime DateAdded, int SourceCount, string Hub);
+
+    private List<CategoryRow>? rows;
+    private CategoryRow? pendingDelete;
+    private string newName = "";
+    private string newHub = "headlines";
+    private string editHub = "headlines";
+    private static string HubLabel(string hub) => hub == "sports" ? "Sports" : hub == "entertainment" ? "Entertainment" : "Headlines";
+    private int? editingId;
+    private string editName = "";
+    private string? message;
+    private string messageKind = "success";
+
+    protected override Task OnInitializedAsync() => LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        await using var db = await Factory.CreateDbContextAsync();
+        rows = await db.SourceCategories.AsNoTracking()
+            .OrderBy(c => c.CategoryName)
+            .Select(c => new CategoryRow(c.Id, c.CategoryName, c.DateAdded, c.Sources.Count, c.NewsHub))
+            .ToListAsync();
+    }
+
+    private void Fail(string text)
+    {
+        messageKind = "danger";
+        message = text;
+    }
+
+    private void Succeed(string text)
+    {
+        messageKind = "success";
+        message = text;
+    }
+
+    /// <summary>Trims the name and returns an error message when it is unusable.</summary>
+    private static string? ValidateName(string raw, out string name)
+    {
+        name = raw.Trim();
+        if (name.Length == 0)
+        {
+            return "Enter a category name.";
+        }
+
+        return name.Length > MaxNameLength ? $"Category names can be at most {MaxNameLength} characters." : null;
+    }
+
+    private async Task AddAsync()
+    {
+        message = null;
+        if (ValidateName(newName, out var name) is { } problem)
+        {
+            Fail(problem);
+            return;
+        }
+
+        if (!NewsSections.ValidHub(newHub)) { Fail("Choose a hub."); return; }
+
+        try
+        {
+            await using var db = await Factory.CreateDbContextAsync();
+            db.SourceCategories.Add(new SourceCategory { CategoryName = name, NewsHub = newHub });
+            await db.SaveChangesAsync();
+            Succeed($"Added {name}.");
+            newName = "";
+        }
+        catch (DbUpdateException ex) when (AdminData.IsUniqueViolation(ex))
+        {
+            Fail($"A category named “{name}” already exists.");
+        }
+
+        await LoadAsync();
+    }
+
+    private void StartRename(CategoryRow row)
+    {
+        message = null;
+        pendingDelete = null;
+        editingId = row.Id;
+        editName = row.Name;
+        editHub = row.Hub;
+    }
+
+    private async Task SaveRenameAsync()
+    {
+        if (editingId is not int id)
+        {
+            return;
+        }
+
+        if (ValidateName(editName, out var name) is { } problem)
+        {
+            Fail(problem);
+            return;
+        }
+
+        if (!NewsSections.ValidHub(editHub)) { Fail("Choose a hub."); return; }
+
+        try
+        {
+            await using var db = await Factory.CreateDbContextAsync();
+            var category = await db.SourceCategories.FindAsync(id);
+            if (category is null)
+            {
+                Fail("That category no longer exists.");
+            }
+            else
+            {
+                category.CategoryName = name;
+                category.NewsHub = editHub;
+                await db.SaveChangesAsync();
+                Succeed($"Saved {name} in {HubLabel(editHub)}.");
+            }
+
+            editingId = null;
+        }
+        catch (DbUpdateException ex) when (AdminData.IsUniqueViolation(ex))
+        {
+            Fail($"A category named “{name}” already exists.");
+        }
+
+        await LoadAsync();
+    }
+
+    private void StartDelete(CategoryRow row)
+    {
+        message = null;
+        editingId = null;
+        pendingDelete = row;
+    }
+
+    private async Task ConfirmDeleteAsync()
+    {
+        if (pendingDelete is not { } target)
+        {
+            return;
+        }
+
+        try
+        {
+            await using var db = await Factory.CreateDbContextAsync();
+            var deleted = await db.SourceCategories.Where(c => c.Id == target.Id).ExecuteDeleteAsync();
+            Succeed(deleted > 0 ? $"Deleted {target.Name}." : $"{target.Name} was already deleted.");
+        }
+        catch (Exception ex) when (AdminData.IsForeignKeyViolation(ex))
+        {
+            // A source was assigned to this category after the list loaded.
+            Fail($"{target.Name} is now in use by a source, so it was not deleted.");
+        }
+
+        pendingDelete = null;
+        await LoadAsync();
+    }
+}
