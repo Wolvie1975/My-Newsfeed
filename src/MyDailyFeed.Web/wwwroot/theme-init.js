@@ -17,5 +17,5 @@
     document.documentElement.setAttribute('data-theme', resolve(readMode()));
     var scheme;
     try { scheme = localStorage.getItem('mynewsfeed-color-scheme'); } catch (e) { }
-    document.documentElement.setAttribute('data-color-scheme', ['monochrome', 'kansas', 'cardinals', 'city', 'christmas', 'halloween', 'st-patricks', 'eighties', 'nineties', 'y2k', 'desert', 'coffee'].includes(scheme) ? scheme : 'kansas');
+    document.documentElement.setAttribute('data-color-scheme', ['ribbon', 'monochrome', 'kansas', 'cardinals', 'city', 'christmas', 'halloween', 'st-patricks', 'eighties', 'nineties', 'y2k', 'desert', 'coffee'].includes(scheme) ? scheme : 'ribbon');
 })();

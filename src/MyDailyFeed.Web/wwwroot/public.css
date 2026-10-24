@@ -1161,27 +1161,19 @@
 .pub .sports-team-option { display: flex; align-items: center; gap: 10px; min-height: 44px; cursor: pointer; }
 .pub .sports-team-option[hidden], .pub .sports-team-group[hidden] { display: none; }
 .pub [data-sports-search] { display: block; width: 100%; max-width: 480px; min-height: 44px; margin: 8px 0 16px; padding: 8px 12px; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 6px; }
-.pub tr.sports-selected { outline: 2px solid #dc2626; outline-offset: -2px; }
-.pub tr.sports-selected > :first-child { border-left: 4px solid #dc2626; }
-.pub tr.sports-selected .team__name, .pub tr.sports-selected .standing-team-name { font-weight: 750; }
-
-:root[data-theme="dark"] .pub tr.sports-selected { outline-color: #f87171; }
-:root[data-theme="dark"] .pub tr.sports-selected > :first-child { border-left-color: #f87171; }
-
-/* Draw table highlights on each cell so the sticky team column cannot cover them.
-   Adjacent selections share a single horizontal edge; inset strokes never resize cells. */
-.pub .standings-table tr.sports-selected { outline: none; --selection-color: #dc2626; --selection-top: 2px; }
-:root[data-theme="dark"] .pub .standings-table tr.sports-selected { --selection-color: #f87171; }
-.pub .standings-table tr.sports-selected + tr.sports-selected { --selection-top: 0px; }
-.pub .standings-table tr.sports-selected > * {
-    --selection-left: 0px; --selection-right: 0px;
-    box-shadow: inset 0 var(--selection-top) 0 var(--selection-color),
-                inset 0 -2px 0 var(--selection-color),
-                inset var(--selection-left) 0 0 var(--selection-color),
-                inset var(--selection-right) 0 0 var(--selection-color);
+/* Fill selected team rows, including sticky cells, without changing their size. */
+.pub tr.sports-selected {
+    outline: none;
+    --team-highlight-edge: var(--accent);
+    background: color-mix(in srgb, var(--accent) 12%, var(--surface));
 }
-.pub .standings-table tr.sports-selected > :first-child { border-left: 0; --selection-left: 2px; }
-.pub .standings-table tr.sports-selected > :last-child { --selection-right: -2px; }
+.pub tr.sports-selected > * {
+    background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+    box-shadow: none;
+}
+.pub tr.sports-selected > :first-child { border-left: 0; box-shadow: inset 4px 0 0 var(--team-highlight-edge); }
+.pub tr.sports-selected .team__name, .pub tr.sports-selected .standing-team-name { font-weight: 750; }
+:root[data-color-scheme="ribbon"] .pub tr.sports-selected { --team-highlight-edge: #FFD34E; }
 
 /* Keep schedule broadcasts separate from link actions. */
 .pub .links.event-links { display: flex; flex-direction: column; align-items: stretch; gap: 6px; min-width: 0; }
@@ -2303,3 +2295,129 @@
 
 /* Digital releases cascade independently of the theatrical card. */
 @media (max-width: 1023px) { .pub .d-digital { order: 7; } }
+
+/* Daily Ribbon: logo-inspired default; other palettes retain their own styling. */
+:root[data-color-scheme="ribbon"], :root:not([data-color-scheme]) {
+    --bg: #F0F6FC;
+    --surface: #FFFFFF;
+    --border: #D5E4F2;
+    --row-border: #DCE8F4;
+    --field-border: #B7CFE7;
+    --text: #142C47;
+    --text-2: #405C77;
+    --text-3: #526B83;
+    --accent: #075CB8;
+    --btn-bg: #0864C9;
+    --btn-fg: #FFFFFF;
+    --header-bg: #0759BD;
+    --header-fg: #FFFFFF;
+    --header-line: #8FC5FA;
+    --header-border: #0752AD;
+    --selection-bg: #FFD34E;
+    --selection-fg: #173453;
+    --brand-accent: #DAA300;
+    --chip-bg: #FFFFFF;
+    --chip-fg: #254562;
+    --chip-line: #B7CFE7;
+    --chip-on-bg: #FFD34E;
+    --chip-on-fg: #173453;
+    --chip-on-line: #B78A00;
+    --pill-bg: #E0EEFC;
+    --pill-fg: #254562;
+    --ph-bg: #E5F0FB;
+    --ph-fg: #476888;
+    --mark-bg: #0864C9;
+    --mark-fg: #FFFFFF;
+}
+:root[data-color-scheme="ribbon"][data-theme="dark"], :root:not([data-color-scheme])[data-theme="dark"] {
+    --bg: #09182B;
+    --surface: #10263E;
+    --border: #29465F;
+    --row-border: #233E58;
+    --field-border: #456783;
+    --text: #ECF5FF;
+    --text-2: #B6CCE0;
+    --text-3: #A3BDD5;
+    --accent: #8DCBFF;
+    --btn-bg: #146AC5;
+    --btn-fg: #FFFFFF;
+    --header-bg: #0B346B;
+    --header-fg: #F2F8FF;
+    --header-line: #699BC9;
+    --header-border: #29465F;
+    --brand-accent: #FFD34E;
+    --chip-bg: #10263E;
+    --chip-fg: #DDEEFF;
+    --chip-line: #456783;
+    --pill-bg: #233F5D;
+    --pill-fg: #DDEEFF;
+    --ph-bg: #183653;
+    --ph-fg: #B6CCE0;
+    --mark-bg: #28527B;
+    --mark-fg: #ECF5FF;
+}
+:root[data-color-scheme="ribbon"] .pub .site-header,
+:root:not([data-color-scheme]) .pub .site-header {
+    background: linear-gradient(115deg, #0649AD 0%, #0869D8 65%, #087AA8 100%);
+}
+:root[data-color-scheme="ribbon"][data-theme="dark"] .pub .site-header,
+:root:not([data-color-scheme])[data-theme="dark"] .pub .site-header {
+    background: linear-gradient(115deg, #0A2856 0%, #104784 65%, #0B4E69 100%);
+}
+:root[data-color-scheme="ribbon"] .pub .d-card {
+    border-radius: 16px;
+    box-shadow: 0 5px 18px color-mix(in srgb, var(--accent) 8%, transparent);
+}
+:root[data-color-scheme="ribbon"] .pub .nf-btn { border-radius: 12px; }
+:root[data-color-scheme="ribbon"] .pub .nf-btn--primary {
+    background: linear-gradient(115deg, var(--btn-bg), color-mix(in srgb, var(--btn-bg) 85%, #003D83));
+}
+
+/* Carry the ribbon's curved silhouette and sunshine through the default theme. */
+:root[data-color-scheme="ribbon"] .pub .site-header {
+    background-image: radial-gradient(ellipse at 95% 140%, #FFFFFF1A 0 32%, transparent 32.5%),
+        linear-gradient(115deg, #0649AD 0%, #0869D8 65%, #087AA8 100%);
+}
+:root[data-color-scheme="ribbon"][data-theme="dark"] .pub .site-header {
+    background-image: radial-gradient(ellipse at 95% 140%, #FFFFFF0D 0 32%, transparent 32.5%),
+        linear-gradient(115deg, #0A2856 0%, #104784 65%, #0B4E69 100%);
+}
+:root[data-color-scheme="ribbon"] .pub .page-heading::after {
+    content: "";
+    display: block;
+    width: 88px;
+    height: 6px;
+    margin-top: 16px;
+    background: #FFD34E;
+    border-radius: 2px 100% 2px 100%;
+}
+:root[data-color-scheme="ribbon"] .pub .d-card__title { border-radius: 3px; }
+:root[data-color-scheme="ribbon"] .pub .nf-btn--secondary { color: var(--accent); }
+:root[data-color-scheme="ribbon"] .pub .catselect select { color: var(--accent); border-radius: 12px; }
+:root[data-color-scheme="ribbon"] .pub .mobile-nav-group { border-radius: 16px; }
+:root[data-color-scheme="ribbon"] .pub .ranking-big12 > * {
+    background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+    border-bottom-color: var(--field-border);
+}
+:root[data-color-scheme="ribbon"] .pub .ranking-big12 > :first-child { box-shadow: inset 4px 0 0 #FFD34E; }
+:root[data-color-scheme="ribbon"] .pub .big12-badge { background: #FFD34E; border-color: #FFD34E; color: #173453; }
+
+/* Stripe complete standings rows so sticky names and emphasized stats stay aligned. */
+.pub .league-standings-table tbody tr:not(.sports-selected):nth-child(odd) > * {
+    background: var(--surface);
+}
+.pub .league-standings-table tbody tr:not(.sports-selected):nth-child(even) > * {
+    background: color-mix(in srgb, var(--accent) 9%, var(--surface));
+}
+.pub .standings-group .league-standings-table tbody tr.sports-selected > * {
+    background: var(--selection-bg);
+    color: var(--selection-fg);
+    border-bottom-color: var(--selection-fg);
+}
+.pub .standings-group .league-standings-table tbody tr.sports-selected > :first-child {
+    box-shadow: inset 4px 0 0 var(--selection-fg);
+}
+
+/* Reload the current homepage URL, retaining any selected poll/source. */
+.pub .d-hello { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.pub .home-refresh { flex: none; gap: 8px; min-height: 44px; }

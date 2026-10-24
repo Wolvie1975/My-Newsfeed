@@ -6,11 +6,116 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The most recent verified web release is `mydailyfeed-web:big12-rows-20261022`,
-with rollback recorded as `mynewsfeed-web:before-big12-rows-20261022`.
-Its container was healthy on October 22, 2026 (Central). This is a dated
+The most recent verified web release is `mydailyfeed-web:home-refresh-20261023`,
+with rollback recorded as `mynewsfeed-web:before-home-refresh-20261023`.
+Its container was healthy on October 23, 2026 (Central). This is a dated
 observation, not live hosting status.
 
+
+## Homepage Refresh control — October 23, 2026
+
+Deployed `mydailyfeed-web:home-refresh-20261023` (7b982425121e). A Refresh link
+styled as a button sits beside the homepage greeting and performs a full GET
+reload of the current URL, preserving source/poll query selections. It works
+without JavaScript and reads latest available content without triggering
+collection jobs. Docker build/static-asset guard passed. Live checks at 320,
+390 and 1440px with JavaScript on/off verified visibility, successful full
+reload, query preservation and no horizontal overflow. Health returned 200;
+runtime settings/mounts preserved. Previous container retained as
+`mynewsfeed-web-before-home-refresh-20261023`, rollback image
+`mynewsfeed-web:before-home-refresh-20261023`. No schema changes.
+Evidence: `/tmp/mydailyfeed-home-refresh-deploy/`.
+
+## Remove Selected badge — October 23, 2026
+
+Deployed `mydailyfeed-web:no-selected-badge-20261023` (29777354a9fe). Removed
+the generated Selected badge beside standings team names; solid selected-row
+colors, contrasting text and edge remain unchanged. Docker build passed. Live
+checks across 13 palettes, light/dark and 390/1440px (52 combinations) passed
+row fill/text contrast, absence of badges and no horizontal document overflow.
+Health returned 200; runtime configuration and mounts preserved. Previous
+container retained as `mynewsfeed-web-before-no-selected-badge-20261023`,
+rollback image `mynewsfeed-web:before-no-selected-badge-20261023`.
+Evidence: `/tmp/mydailyfeed-no-selected-badge-deploy/`.
+
+## Strong selected standings rows — October 23, 2026
+
+Deployed `mydailyfeed-web:selected-standings-20261023` (3a4a4f6bb7fa). Selected
+standings rows now use solid theme selection colors, contrasting text/edge and
+a visible Selected label. Unselected rows retain alternating stripes. Docker
+publish/static-asset guard passed. Live checks across all 13 palettes, light
+and dark at 390 and 1440px (52 combinations) verified consistent cell fills,
+text contrast of at least 4.5:1, labels and no horizontal document overflow.
+Tests applied the existing selected class to real standings rows. Health returned
+200; runtime configuration and mounts preserved. Previous container retained as
+`mynewsfeed-web-before-selected-standings-20261023`, rollback image
+`mynewsfeed-web:before-selected-standings-20261023`. No schema changes.
+Evidence: `/tmp/mydailyfeed-selected-standings-deploy/`.
+
+## Full-width standings row striping — October 23, 2026
+
+Deployed `mydailyfeed-web:standings-stripes-20261023` (d432d17a21a5). Standings
+rows alternate surface and accent-tinted backgrounds across all cells, including
+sticky team names and percentage columns. Selected teams use a stronger fill.
+Docker publish/static-asset guard passed. Live College football standings checks
+at 390 and 1440px in light/dark verified uniform cell backgrounds, alternating
+rows, distinct selected-row fills and no horizontal document overflow. Health
+returned 200; runtime configuration and mounts preserved. Previous container
+retained as `mynewsfeed-web-before-standings-stripes-20261023`, rollback image
+`mynewsfeed-web:before-standings-stripes-20261023`. No schema changes.
+Evidence: `/tmp/mydailyfeed-standings-stripes-deploy/`.
+
+## Selected-team row fill — October 23, 2026
+
+Deployed `mydailyfeed-web:team-highlight-20261023` (ea55ea3cb6c9). Selected
+team rows use an accent-tinted full-row background instead of a red outline,
+including sticky cells. Daily Ribbon uses a yellow edge; other palettes use
+their accent. Shared Results/Events/standings selection styling is updated.
+Docker publish/static-asset guard passed. Live yesterday Results
+(`/results?day=2026-10-22`) verified selected-row fill, no outline, yellow edge,
+light/dark layouts at 390, 768 and 1440px without horizontal overflow or page
+errors. The test applied the existing selected-row class to a real result row.
+Health returned 200; runtime settings and mounts compared and preserved.
+Previous container retained as `mynewsfeed-web-before-team-highlight-20261023`;
+rollback image `mynewsfeed-web:before-team-highlight-20261023`. No schema changes.
+Evidence: `/tmp/mydailyfeed-team-highlight-deploy/`.
+
+## Daily Ribbon finishing details — October 22, 2026
+
+Deployed `mydailyfeed-web:ribbon-finish-20261022` (e59120dff86d). Daily Ribbon
+now includes a subtle curved header ribbon, yellow curved heading accents,
+blue secondary controls and pale blue Big 12 rows with yellow edges and badges.
+Other schemes retain their styling and red full-page ranking highlights. Mobile
+team badges remain hidden with the legend visible.
+
+Docker build/static-asset guard passed. Live checks passed all 13 palette
+choices/persistence, light/dark Home/rankings/Settings at 390 and 1440px,
+consistent highlighted row backgrounds, yellow edges and mobile badge behavior.
+Desktop rankings screenshot reviewed. Health returned 200; runtime configuration
+and mounts preserved. Previous container retained as
+`mynewsfeed-web-before-ribbon-finish-20261022`, rollback image
+`mynewsfeed-web:before-ribbon-finish-20261022`. Evidence:
+`/tmp/mydailyfeed-ribbon-finish-deploy/`.
+
+## Daily Ribbon default palette — October 22, 2026
+
+Deployed `mydailyfeed-web:ribbon-theme-20261022` (7f536e007dbc). New browsers
+use the logo-inspired Daily Ribbon palette: blue gradient header, pale blue
+surfaces, warm yellow selection accents and softer cards/buttons. Dark mode
+uses navy surfaces. Existing saved palettes retain their selection and styling;
+Settings offers Daily Ribbon plus all twelve previous palettes. Existing red
+Big 12 row highlights remain unchanged.
+
+Docker publish/static-asset guard and JavaScript syntax checks passed. Live
+checks verified default selection, all 13 palette controls, persistence after
+reload, and Home/rankings/Settings at 390 and 1440px in light/dark mode without
+horizontal overflow or JavaScript errors. Desktop light and mobile dark
+screenshots reviewed. Health returned 200; runtime settings and mounts preserved.
+Previous container retained as `mynewsfeed-web-before-ribbon-theme-20261022`;
+rollback image `mynewsfeed-web:before-ribbon-theme-20261022`. No schema changes.
+Pre-theme source tag: `design-before-logo-theme-20261022`; source archive and
+reference screenshots are in `new development/design-backup-before-logo-theme/`.
+Evidence: `/tmp/mydailyfeed-ribbon-theme-deploy/`.
 
 ## Big 12 full-row highlighting — October 22, 2026
 

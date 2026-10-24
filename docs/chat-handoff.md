@@ -3,6 +3,22 @@
 Read this file when continuing work from the previous chat. These are dated
 observations; check current repository and hosting state before acting.
 
+## GitHub checkpoint — October 23, 2026 (Central)
+
+The user requested a GitHub check-in before starting the next larger project.
+This checkpoint includes the Daily Ribbon default palette and finishing details,
+selected-team row fills, full-width standings striping and selection contrast,
+removal of the Selected badge, and the homepage Refresh control. Deployment
+evidence is recorded in release history; the latest recorded release is
+`mydailyfeed-web:home-refresh-20261023`. Live hosting was not rechecked here.
+
+Reviewed the existing changes and fetched `origin`; `develop` matched its remote
+before this checkpoint. Solution build, JavaScript syntax and diff whitespace
+checks passed; the build retained six existing dependency/analyzer warnings.
+No new implementation or deployment was requested. Preserve the standing
+tap-to-link product direction and treat older deployment permissions as historical.
+Next: follow the user's larger-project brief.
+
 ## Session handoff — October 22, 2026 (Central)
 
 ### Latest release: separate Digital / VOD homepage card

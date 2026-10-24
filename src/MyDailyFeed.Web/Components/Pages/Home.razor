@@ -13,8 +13,14 @@
    the same day and nothing here needs JavaScript. *@
 
 <div class="d-hello">
-    <h1>@Dates.Greeting(nowUtc)</h1>
-    <p>@Dates.TodayLabel(nowUtc)</p>
+    <div>
+        <h1>@Dates.Greeting(nowUtc)</h1>
+        <p>@Dates.TodayLabel(nowUtc)</p>
+    </div>
+    <a class="nf-btn nf-btn--secondary home-refresh" href="@Nav.Uri" data-enhance-nav="false" aria-label="Refresh homepage">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 7v5h-5" /><path d="M4 17v-5h5" /><path d="M6.1 7a7 7 0 0 1 11.6-2L20 8M4 16l2.3 3A7 7 0 0 0 17.9 17" /></svg>
+        Refresh
+    </a>
 </div>
 
 <p class="empty" data-home-empty hidden>All home sections are hidden. <button type="button" data-home-reset class="nf-btn nf-btn--secondary">Restore default homepage</button></p>
