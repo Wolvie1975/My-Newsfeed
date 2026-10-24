@@ -139,6 +139,13 @@ app.MapPost("/account/logout", async (HttpContext http) =>
 
 // Used by the container health check: healthy only when the database is reachable.
 // Preserve old result bookmarks as final-score views of Scoreboard.
+// Native navigation selects work with JavaScript disabled; never redirect off-site.
+app.MapGet("/navigate", (string? to) => {
+    var local = !string.IsNullOrEmpty(to) && to[0] == '/'
+        && (to.Length == 1 || to[1] is not ('/' or '\\')) && !to.Any(char.IsControl);
+    return Results.LocalRedirect(local ? to! : "/");
+});
+
 app.MapGet("/results", (HttpContext http) => {
     var query = new Dictionary<string, string?> { ["status"] = "final" };
     foreach (var key in new[] { "day", "follow" })

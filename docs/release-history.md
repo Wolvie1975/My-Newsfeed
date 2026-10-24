@@ -6,11 +6,45 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The most recent verified web release is `mynewspaper-web:category-dropdown-20261024`,
-with rollback recorded as `mynewsfeed-web:before-mynewspaper-category-dropdown-20261024`.
+The most recent verified web release is `mynewspaper-web:section-select-20261024`,
+with rollback recorded as `mynewsfeed-web:before-mynewspaper-section-select-20261024`.
 Its container was healthy on October 24, 2026 (Central). This is a dated
 observation, not live hosting status.
 
+
+## Remaining section navigation dropdowns deployed — October 24, 2026
+
+User supplied a College Sports screenshot showing Schedule/Results/Standings/
+Rankings/News bubbles and requested implementation/deployment of dropdowns.
+Replaced College view bubbles and remaining section-choice groups: F1 views,
+calendar scope and championship tables; soccer league Schedule/Table/Season
+results; Watch content type/genres; Kansas City section anchors. Existing news hub
+category dropdowns stay intact. Previous/Next and date paging remain links.
+
+Shared SectionSelect renders a labeled native select, automatic GET submit and
+no-JavaScript Go fallback with 44px minimum height. Local-only /navigate redirects
+preserve query parameters and fragments; external/protocol-relative/backslash
+or control-character targets fall back to Home. College selections preserve sport;
+Watch URL helper preserves sort/services. No data/schema/collector changes.
+
+Live image `mynewspaper-web:section-select-20261024` (`323c6b2645da`), container
+`mynewsfeed-web`, healthy. Rollback image
+`mynewsfeed-web:before-mynewspaper-section-select-20261024`; previous container
+`mynewsfeed-web-before-mynewspaper-section-select-20261024` retained. Environment,
+renamed entrypoint, mounts/keys, network, ports, restart policy and healthcheck
+verified preserved. Docker build, health/public-route smoke and private HTTPS passed.
+
+Local and live section-select browser suites passed: 320/390/430px light/dark,
+768/1440 regressions, screenshots reviewed, all five College views across all four
+sports, sport switching while retaining view, F1 championship selector, Watch
+content/genre/sort, native no-JS Go on College/F1/Local, and local-only redirects.
+Live F1 full/upcoming calendar and all MLS league destination selections passed.
+Both updated Watch sort and mixed-search/navigation regression suites passed locally
+and live. Runtime smoke had zero failure/unhandled-exception markers. No real-device
+check available. Evidence: `/tmp/mynewspaper-section-select-deploy/`.
+
+Source/docs/tests are not committed or pushed as part of this deployment-only
+request. Earlier category dropdown release is superseded by this release.
 
 ## Hub category dropdowns deployed — October 24, 2026 (Central)
 

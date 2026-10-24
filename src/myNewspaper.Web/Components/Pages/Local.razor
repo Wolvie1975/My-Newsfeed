@@ -5,7 +5,7 @@
 @inject ILogger<Local> Logger
 <PageTitle>Kansas City · myNewspaper</PageTitle>
 <PageHeading Title="Kansas City" Eyebrow="CLOSER TO HOME" Description="Local reading, the forecast and places to find your next outing." />
-<nav class="personal-links" aria-label="Kansas City sections"><a href="local#local-news">News</a><a href="local#local-weather">Weather</a><a href="local#local-events">Community events</a></nav>
+<SectionSelect Id="local-section" Label="Section" Choices="@(new NavigationChoice[] { new("local#local-news", "News"), new("local#local-weather", "Weather"), new("local#local-events", "Community events") })" />
 <section class="local-panel" id="local-weather" data-local-weather>
     <div class="d-card__head"><h2 data-weather-title>Kansas City forecast</h2><a data-weather-link href="https://forecast.weather.gov/MapClick.php?lat=39.0997&amp;lon=-94.5786" target="_blank" rel="noopener noreferrer">National Weather Service ↗</a></div>
     <div class="weather-location-controls">

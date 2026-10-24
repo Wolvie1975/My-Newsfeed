@@ -14,11 +14,11 @@
 <p><a href="settings#my-services">My services (@Selected.Length selected) · Manage in Settings →</a></p>
 @if(Selected.Length>0&&SortMode=="services"){<p class="updated">Matching services first on this page. Other titles remain available; availability can change.</p>}
 @if(!Searching){
-<nav class="watch-tabs" aria-label="Content type"><a class="nf-btn nf-btn--secondary" aria-current="@(Media=="movie"?"page":null)" href="@Url("movie")">Movies</a><a class="nf-btn nf-btn--secondary" aria-current="@(Media=="tv"?"page":null)" href="@Url("tv")">TV shows</a></nav>
+<SectionSelect Id="watch-kind" Label="Content type" Current="@Url(Media)" Choices="@(new NavigationChoice[] { new(Url("movie"), "Movies"), new(Url("tv"), "TV shows") })" />
 }
 @if(!Searching){
 @if(Media=="tv"){<p class="updated">Browsing active and upcoming series. Ended or canceled shows are still available through title search.</p>}
-<nav class="watch-tabs" aria-label="Browse genres"><a href="@Url(Media)">Popular</a>@foreach(var genre in WatchCatalog.Genres){<a href="@Url(Media,1,genre.Key)" aria-current="@(Genre==genre.Key?"page":null)">@genre.Value</a>}</nav>
+<SectionSelect Id="watch-genre" Label="Genre" Current="@Url(Media,1,Genre)" Choices="@(new[] { new NavigationChoice(Url(Media), "Popular") }.Concat(WatchCatalog.Genres.Select(g => new NavigationChoice(Url(Media,1,g.Key),g.Value))).ToArray())" />
 }
 else {<p>Movies and TV results for “@WatchCatalog.Term(Q)” · <a href="@($"watch?kind={Media}&services={Selection}&sort={SortMode}")">Clear search</a></p>}
 <form method="get" action="watch" class="watch-sort">

@@ -28,10 +28,8 @@ else
     @if (view == "schedule")
     {
         <h2>Schedule</h2>
-        <nav class="tv-week" aria-label="Calendar scope">
-            <a href="f1" aria-current="@(!FullCalendar ? "page" : null)">Upcoming weekends</a>
-            <a href="f1?calendar=all" aria-current="@(FullCalendar ? "page" : null)">Full calendar</a>
-        </nav>
+        <SectionSelect Id="f1-calendar" Label="Calendar" Current="@(FullCalendar ? "f1?calendar=all" : "f1")"
+            Choices="@(new NavigationChoice[] { new("f1", "Upcoming weekends"), new("f1?calendar=all", "Full calendar") })" />
         @if (visibleRaces.Count == 0)
         { <p class="empty">@(data.Races.Count == 0 ? "No race calendar available yet. Please check back soon." : "No upcoming race weekends in the collected season. View the full calendar for past races.")</p> }
         @foreach (var race in visibleRaces)
@@ -111,10 +109,8 @@ else
     else
     {
         <h2>Championship standings</h2>
-        <nav class="tv-week" aria-label="Championship tables">
-            <a href="f1/standings" aria-current="@(!Constructors ? "page" : null)">Drivers</a>
-            <a href="f1/standings?table=constructors" aria-current="@(Constructors ? "page" : null)">Constructors</a>
-        </nav>
+        <SectionSelect Id="f1-table" Label="Championship table" Current="@(Constructors ? "f1/standings?table=constructors" : "f1/standings")"
+            Choices="@(new NavigationChoice[] { new("f1/standings", "Drivers"), new("f1/standings?table=constructors", "Constructors") })" />
         @if (standingsRound is { } round) { <p class="updated">Championship as of round @round</p> }
         @if (Constructors ? data.Constructors.Count == 0 : data.Drivers.Count == 0)
         { <p class="empty">No championship standings published yet.</p> }

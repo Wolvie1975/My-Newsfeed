@@ -1,17 +1,22 @@
 @inject IDbContextFactory<WebScraperContext> Factory
 @if (Provider is "espn-championship" or "espn-epl" or "espn-mls")
 {
-    <nav class="tv-week soccer-league-links" aria-label="League views">
-        @if (scheduleId is { } feed) { <a class="nf-btn nf-btn--secondary" href="events?school=@feed">Schedule</a> }
-        @if (tableId is { } table) { <a class="nf-btn nf-btn--secondary" href="standings?sourceId=@table">Table</a> }
-        @if (Provider == "espn-championship" && scheduleId is not null) { <a class="nf-btn nf-btn--secondary" href="championship/results">Season results</a> }
-        @if (Provider == "espn-mls" && scheduleId is not null) { <a class="nf-btn nf-btn--secondary" href="mls/results">Season results</a> }
-    </nav>
+    <SectionSelect Id="league-view" Label="League view" Choices="@Options" />
 }
 @code {
     [Parameter] public string? Provider { get; set; }
     private int? scheduleId;
     private int? tableId;
+    private IReadOnlyList<NavigationChoice> Options {
+        get {
+            var choices = new List<NavigationChoice>();
+            if (scheduleId is {} feed) choices.Add(new($"events?school={feed}", "Schedule"));
+            if (tableId is {} table) choices.Add(new($"standings?sourceId={table}", "Table"));
+            if (scheduleId != null && Provider == "espn-championship") choices.Add(new("championship/results", "Season results"));
+            if (scheduleId != null && Provider == "espn-mls") choices.Add(new("mls/results", "Season results"));
+            return choices;
+        }
+    }
     protected override async Task OnParametersSetAsync()
     {
         scheduleId = tableId = null;

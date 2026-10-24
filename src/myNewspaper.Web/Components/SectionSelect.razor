@@ -1,0 +1,21 @@
+@inject NavigationManager Navigation
+<form class="catselect section-select" method="get" action="navigate">
+    <label for="@Id">@Label</label>
+    <select id="@Id" name="to" required onchange="this.form.requestSubmit()">
+        @if (!Choices.Any(c => Path(c.Href) == Selected)) {
+            <option value="" selected disabled>Choose @Label.ToLowerInvariant()</option>
+        }
+        @foreach (var choice in Choices) {
+            <option value="@Path(choice.Href)" selected="@(Path(choice.Href) == Selected)">@choice.Label</option>
+        }
+    </select>
+    <noscript><button class="nf-btn nf-btn--secondary" type="submit">Go</button></noscript>
+</form>
+@code {
+    [Parameter, EditorRequired] public string Id { get; set; } = "";
+    [Parameter, EditorRequired] public string Label { get; set; } = "";
+    [Parameter, EditorRequired] public IReadOnlyList<NavigationChoice> Choices { get; set; } = [];
+    [Parameter] public string? Current { get; set; }
+    private string Selected => Path(Current ?? Navigation.ToBaseRelativePath(Navigation.Uri));
+    private static string Path(string href) => "/" + href.TrimStart('/');
+}

@@ -990,3 +990,20 @@ canonical feed URL; an Apply button is available without JavaScript. The control
 has a 44px minimum height and fits the phone width. Saved hub assignments still
 supply options automatically; sources and paging remain scoped to the selected
 category. The selected category heading remains below the dropdown.
+
+### Section navigation dropdowns
+
+College Sports View, F1 View/Calendar/Championship table, soccer League view,
+Where to Watch Content type/Genre and Kansas City Section use native dropdowns
+instead of wrapping section links/buttons. College retains its Sport selector and
+preserves that sport across Schedule/Results/Standings/Rankings/News selections.
+Watch choices preserve the existing sort/service parameters through its URL helper.
+Existing headline category dropdowns remain in place. Previous/Next pagination and
+date arrows remain links rather than content-section choices.
+
+The shared SectionSelect has a visible label, 44px minimum selector and responsive
+width; selection submits automatically, with a Go button without JavaScript. The
+GET /navigate handler accepts only local absolute paths, including their query or
+fragment, and redirects invalid/external targets to Home. It performs no data writes.
+Checks: tests/browser/section-select.browser.cjs plus updated Watch sort and mixed
+search/navigation browser regressions.

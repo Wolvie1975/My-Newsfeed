@@ -22,10 +22,8 @@
     </select>
     <noscript><button class="nf-btn nf-btn--secondary" type="submit">Apply</button></noscript>
 </form>
-<nav class="tv-week f1-tabs" aria-label="College sports views">
-    @foreach (var tab in Tabs)
-    { <a class="nf-btn nf-btn--secondary" href="@CollegeHub.Href(tab.Key, selected)" aria-current="@(view == tab.Key ? "page" : null)">@tab.Label</a> }
-</nav>
+<SectionSelect Id="college-view" Label="View" Current="@CollegeHub.Href(view, selected)"
+    Choices="@(Tabs.Select(tab => new NavigationChoice(CollegeHub.Href(tab.Key, selected), tab.Label)).ToArray())" />
 <p class="updated">@selected.Name · Big 12 schedule and standings coverage. Results include the college teams and conferences followed by this site; rankings are national polls when available.</p>
 @if (view == "news")
 {
