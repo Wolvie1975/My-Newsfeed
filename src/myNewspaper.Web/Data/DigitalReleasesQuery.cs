@@ -23,17 +23,17 @@ public static class DigitalReleasesQuery
         var selected = SelectSource(sources, sourceKey);
         if (selected is null) return new(sources, null, today, []);
         var query = (from r in db.MovieReleases.AsNoTracking()
-            join link in db.MovieSourceLinks on r.MovieSourceLinkId equals link.ID
-            join movie in db.Movies on link.MovieId equals movie.ID
-            join source in db.MovieReleaseSources on link.MovieReleaseSourceId equals source.ID
-            where source.Enabled && source.SourceKey == selected.SourceKey && r.CountryCode == "US"
-                && (r.ReleaseType == "digital" || r.ReleaseType == "digital_rental" || r.ReleaseType == "digital_purchase")
-                && r.DateStatus == "announced" && r.ReleaseStatus != "cancelled" && r.ReleaseStatus != "withdrawn"
-                && r.ReleaseDate >= today
-            orderby r.ReleaseDate, movie.Title, r.ID
-            select new MovieReleaseItem(r.ID, movie.Title, movie.OriginalYear, movie.Description, movie.PosterUrl,
-                movie.Certification, movie.RuntimeMinutes, r.ReleaseDate, r.DateStatus, r.ReleaseType,
-                r.Platform, r.Format, r.IsReRelease, source.Name, r.SourceUrl));
+                     join link in db.MovieSourceLinks on r.MovieSourceLinkId equals link.ID
+                     join movie in db.Movies on link.MovieId equals movie.ID
+                     join source in db.MovieReleaseSources on link.MovieReleaseSourceId equals source.ID
+                     where source.Enabled && source.SourceKey == selected.SourceKey && r.CountryCode == "US"
+                         && (r.ReleaseType == "digital" || r.ReleaseType == "digital_rental" || r.ReleaseType == "digital_purchase")
+                         && r.DateStatus == "announced" && r.ReleaseStatus != "cancelled" && r.ReleaseStatus != "withdrawn"
+                         && r.ReleaseDate >= today
+                     orderby r.ReleaseDate, movie.Title, r.ID
+                     select new MovieReleaseItem(r.ID, movie.Title, movie.OriginalYear, movie.Description, movie.PosterUrl,
+                         movie.Certification, movie.RuntimeMinutes, r.ReleaseDate, r.DateStatus, r.ReleaseType,
+                         r.Platform, r.Format, r.IsReRelease, source.Name, r.SourceUrl));
         if (take is { } limit) query = query.Take(Math.Max(0, limit));
         var items = await query.ToListAsync();
         return new(sources, selected, today, await MovieCommerceQuery.EnrichAsync(db, items));

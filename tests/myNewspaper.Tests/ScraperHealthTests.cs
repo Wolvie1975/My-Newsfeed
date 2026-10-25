@@ -118,13 +118,23 @@ public class ScraperHealthTests
         // The video is not linked to its channel row (as the scraper writes it): it must still count, by channel id.
         db.YouTubeVideos.Add(new YouTubeVideo
         {
-            VideoId = tag[..10] + "x", ChannelId = channel.ChannelId, Title = "zz", Url = "https://www.youtube.com/watch?v=x",
-            PublishedAt = now, FirstSeenAt = now, LastSeenAt = now,
+            VideoId = tag[..10] + "x",
+            ChannelId = channel.ChannelId,
+            Title = "zz",
+            Url = "https://www.youtube.com/watch?v=x",
+            PublishedAt = now,
+            FirstSeenAt = now,
+            LastSeenAt = now,
         });
         db.SportsEvents.Add(new SportsEvent
         {
-            Url = $"https://{tag}.test.invalid/g/1", Title = "zz game", EventDate = new DateOnly(2020, 1, 1), TimeTbd = true,
-            FirstSeenAt = now, LastSeenAt = now, SportsEventsType = type,
+            Url = $"https://{tag}.test.invalid/g/1",
+            Title = "zz game",
+            EventDate = new DateOnly(2020, 1, 1),
+            TimeTbd = true,
+            FirstSeenAt = now,
+            LastSeenAt = now,
+            SportsEventsType = type,
         });
         await db.SaveChangesAsync();
 

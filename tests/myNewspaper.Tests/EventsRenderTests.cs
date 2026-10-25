@@ -190,8 +190,11 @@ public class EventsRenderTests
     [Fact]
     public async Task Broken_radio_markup_is_omitted_while_audio_link_remains()
     {
-        var html = await RenderAsync(Game() with { Radio = "<IMG SRC=\"https://uhcougars.com/logo",
-            AudioUrl = "https://test.invalid/audio" });
+        var html = await RenderAsync(Game() with
+        {
+            Radio = "<IMG SRC=\"https://uhcougars.com/logo",
+            AudioUrl = "https://test.invalid/audio"
+        });
         Assert.DoesNotContain("Radio &lt;", html);
         Assert.DoesNotContain("uhcougars.com/logo", html);
         Assert.Contains("https://test.invalid/audio", html);
@@ -211,7 +214,8 @@ public class EventsRenderTests
     public async Task Wnba_uses_stored_home_and_away_teams_and_missing_starts_are_tbd()
     {
         var html = await RenderAsync(Game(school: "Connecticut Sun", opponent: "Atlanta Dream", sport: "Basketball")
-            with { StartsAtUtc = null });
+            with
+        { StartsAtUtc = null });
         Assert.Contains("Connecticut Sun", Cell(html, "td-home"));
         Assert.Contains("Atlanta Dream", Cell(html, "td-away"));
         Assert.Contains("Time TBD", Cell(html, "td-time"));

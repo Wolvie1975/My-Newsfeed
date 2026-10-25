@@ -38,11 +38,7 @@ public class SharedArticlesTests
     [Fact]
     public async Task Sql_shared_list_merges_concurrent_saves_and_import_receipts_prevent_resurrection()
     {
-        var config = new ConfigurationBuilder()
-            .AddJsonFile(Path.GetFullPath("../../../../../src/myNewspaper.Web/appsettings.json", AppContext.BaseDirectory))
-            .AddJsonFile(Path.GetFullPath("../../../../../src/myNewspaper.Web/appsettings.Development.json", AppContext.BaseDirectory), true)
-            .AddUserSecrets("c579816a-020e-445a-92f6-efdd7002106c").AddEnvironmentVariables().Build();
-        var builder = new SqlConnectionStringBuilder(config.GetConnectionString("DefaultConnection"));
+        var builder = new SqlConnectionStringBuilder(TestDatabase.ConnectionString);
         var database = "myNewspaperSavedTest_" + Guid.NewGuid().ToString("N");
         builder.InitialCatalog = "master";
         await using var admin = new SqlConnection(builder.ConnectionString);

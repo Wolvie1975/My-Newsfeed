@@ -36,8 +36,10 @@ public static class HomeEventResults
             return false;
         var sport = game.Sport switch
         {
-            "Basketball" => "Men's Basketball", "Women's Soccer" => "Soccer",
-            "Women's Volleyball" => "Volleyball", _ => game.Sport
+            "Basketball" => "Men's Basketball",
+            "Women's Soccer" => "Soccer",
+            "Women's Volleyball" => "Volleyball",
+            _ => game.Sport
         };
         var competition = ScheduleCoverage.Map("big12", sport);
         return competition is { } c && (c.Sport, c.League) == (result.Sport, result.League)
@@ -47,17 +49,22 @@ public static class HomeEventResults
 
     public static bool Matches(EventItem game, SportsMatchResult result) =>
         game.GameId == result.GameId && game.ProviderKey == result.ProviderKey
-        && game.ProviderKey is not null && game.ProviderKey.StartsWith("espn-")
+        && game.ProviderKey is not null && game.ProviderKey.StartsWith("espn-", StringComparison.Ordinal)
         && result.HomeScore >= 0 && result.AwayScore >= 0
-        && (result.ScheduleStatus == "STATUS_FULL_TIME" || result.ScheduleStatus.StartsWith("STATUS_FINAL"));
+        && (result.ScheduleStatus == "STATUS_FULL_TIME" || result.ScheduleStatus.StartsWith("STATUS_FINAL", StringComparison.Ordinal));
 
     private static string? Identity(EventItem game)
     {
         if (game.CanonicalKey?.StartsWith("espn:", StringComparison.Ordinal) == true) return game.CanonicalKey;
         var league = game.ProviderKey switch
         {
-            "espn-nwsl" => "usa.nwsl", "espn-mls" => "usa.1", "espn-championship" => "eng.2",
-            "espn-epl" => "eng.1", "espn-wnba" => "wnba", "espn-mlb" => "mlb", "espn-nhl" => "nhl",
+            "espn-nwsl" => "usa.nwsl",
+            "espn-mls" => "usa.1",
+            "espn-championship" => "eng.2",
+            "espn-epl" => "eng.1",
+            "espn-wnba" => "wnba",
+            "espn-mlb" => "mlb",
+            "espn-nhl" => "nhl",
             _ => null
         };
         return league != null && game.GameId is { } id ? $"espn:{league}:{id}" : null;

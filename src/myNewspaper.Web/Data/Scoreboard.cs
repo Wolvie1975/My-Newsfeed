@@ -48,10 +48,16 @@ public sealed class ScoreboardGame
     public string? AwayPreference => TeamKey(Sport, League, AwayTeamId);
     public static string? TeamKey(string sport, string league, string? id) => string.IsNullOrWhiteSpace(id) ? null : $"{sport}|{league}|{id}";
     public static string Score(decimal? value) => value?.ToString("0.###", CultureInfo.InvariantCulture) ?? "—";
-    public string Label => Status switch {
-        "upcoming" => "Upcoming", "final" => StatusText ?? "Final", "live" => StatusText ?? "Live",
-        "postponed" => "Postponed", "cancelled" => "Cancelled", "suspended" => "Suspended",
-        "delayed" => "Delayed", _ => "Status unavailable"
+    public string Label => Status switch
+    {
+        "upcoming" => "Upcoming",
+        "final" => StatusText ?? "Final",
+        "live" => StatusText ?? "Live",
+        "postponed" => "Postponed",
+        "cancelled" => "Cancelled",
+        "suspended" => "Suspended",
+        "delayed" => "Delayed",
+        _ => "Status unavailable"
     };
     public bool Active => Status is "live" or "delayed" or "suspended";
     public bool Stale(DateTime utcNow) => IsStale || Active && utcNow - DateTime.SpecifyKind(LastObservedAtUtc, DateTimeKind.Utc) > TimeSpan.FromMinutes(25);
@@ -59,21 +65,25 @@ public sealed class ScoreboardGame
     public static string? FormatDetails(string? json, string sport)
     {
         if (string.IsNullOrWhiteSpace(json)) return null;
-        try {
+        try
+        {
             using var doc = JsonDocument.Parse(json);
             if (doc.RootElement.ValueKind != JsonValueKind.Object) return null;
             var root = doc.RootElement;
             var parts = new List<string>();
-            if (sport == "baseball") {
+            if (sport == "baseball")
+            {
                 foreach (var (key, label) in new[] { ("outs", "outs"), ("balls", "balls"), ("strikes", "strikes") })
                     if (root.TryGetProperty(key, out var v) && v.ValueKind == JsonValueKind.Number && v.TryGetInt32(out var number)) parts.Add($"{number} {label}");
                 foreach (var (key, label) in new[] { ("onFirst", "1st occupied"), ("onSecond", "2nd occupied"), ("onThird", "3rd occupied") })
                     if (root.TryGetProperty(key, out var v) && v.ValueKind == JsonValueKind.True) parts.Add(label);
             }
-            foreach (var (key, label) in new[] { ("awayPeriods", "Away"), ("homePeriods", "Home") }) {
+            foreach (var (key, label) in new[] { ("awayPeriods", "Away"), ("homePeriods", "Home") })
+            {
                 if (!root.TryGetProperty(key, out var array) || array.ValueKind != JsonValueKind.Array) continue;
                 var values = new List<string>();
-                foreach (var period in array.EnumerateArray().Take(40)) {
+                foreach (var period in array.EnumerateArray().Take(40))
+                {
                     if (period.ValueKind != JsonValueKind.Object) continue;
                     var value = period.TryGetProperty("displayValue", out var display) && display.ValueKind == JsonValueKind.String ? display.GetString()
                         : period.TryGetProperty("score", out var score) && score.ValueKind == JsonValueKind.Number ? score.GetRawText() : null;
@@ -82,7 +92,8 @@ public sealed class ScoreboardGame
                 if (values.Count > 0) parts.Add($"{label} periods: {string.Join(" · ", values)}");
             }
             return parts.Count > 0 ? string.Join(" · ", parts) : null;
-        } catch (Exception ex) when (ex is JsonException or InvalidOperationException or FormatException) { return null; }
+        }
+        catch (Exception ex) when (ex is JsonException or InvalidOperationException or FormatException) { return null; }
     }
 }
 public sealed class ScoreboardCoverage
@@ -100,7 +111,8 @@ public sealed class ScoreboardCoverage
 }
 public sealed record ScoreboardFollow(int Id, string Label, string Sport, string League, string Kind, string? TeamId, IReadOnlySet<string> Members)
 {
-    public bool Matches(ScoreboardGame game) => game.Provider == "espn" && game.Sport == Sport && game.League == League && Kind switch {
+    public bool Matches(ScoreboardGame game) => game.Provider == "espn" && game.Sport == Sport && game.League == League && Kind switch
+    {
         "league" => true,
         "team" => !string.IsNullOrEmpty(TeamId) && (game.HomeTeamId == TeamId || game.AwayTeamId == TeamId),
         "conference" => game.HomeTeamId != null && Members.Contains(game.HomeTeamId) || game.AwayTeamId != null && Members.Contains(game.AwayTeamId),
@@ -115,13 +127,14 @@ public sealed record ScoreboardSelection(string Value, string? Competition = nul
         ScoreboardSelection ForFollow(ScoreboardFollow f) => f.Kind == "league"
             ? new("c:" + f.Sport + "|" + f.League, f.Sport + "|" + f.League)
             : new("f:" + f.Id, f.Sport + "|" + f.League, f.Id);
-        if (show != null) {
-            if (show.StartsWith("c:") && coverage.Any(c => c.Key == show[2..])) return new(show, show[2..]);
-            if (show.StartsWith("f:") && int.TryParse(show[2..], out var id) && follows.FirstOrDefault(f => f.Id == id) is {} f) return ForFollow(f);
+        if (show != null)
+        {
+            if (show.StartsWith("c:", StringComparison.Ordinal) && coverage.Any(c => c.Key == show[2..])) return new(show, show[2..]);
+            if (show.StartsWith("f:", StringComparison.Ordinal) && int.TryParse(show[2..], out var id) && follows.FirstOrDefault(f => f.Id == id) is { } f) return ForFollow(f);
             return new("");
         }
         // Old bookmarks select their team/conference in preference to a conflicting league.
-        if (follows.FirstOrDefault(f => f.Id == followId) is {} legacy) return ForFollow(legacy);
+        if (follows.FirstOrDefault(f => f.Id == followId) is { } legacy) return ForFollow(legacy);
         return coverage.Any(c => c.Key == competition) ? new("c:" + competition, competition) : new("");
     }
 }
@@ -131,7 +144,8 @@ public sealed class ScoreboardRepository(IDbContextFactory<WebScraperContext> fa
 {
     public async Task<ScoreboardSnapshot> ReadAsync(DateOnly day, bool carryOver = false, string? competition = null, int? followId = null, bool finalsOnly = false, string? show = null)
     {
-        try {
+        try
+        {
             await using var db = await factory.CreateDbContextAsync();
             var coverage = await db.Database.SqlQueryRaw<ScoreboardCoverage>("SELECT ID,SourceKind,OriginId,Sport,League,Label,LastAttemptAt,LastSuccessAt,Availability FROM dbo.SportsScoreboardCoverage").Where(c => c.League != "womens-college-basketball").ToListAsync();
             var origins = await db.ResultFollows.AsNoTracking().Where(f => f.Enabled && f.League != "womens-college-basketball").ToListAsync();
@@ -154,7 +168,9 @@ public sealed class ScoreboardRepository(IDbContextFactory<WebScraperContext> fa
             var games = await query.ToListAsync();
             if (selectedFollow != null) games = games.Where(selectedFollow.Matches).ToList();
             return new(games.DistinctBy(g => g.Key).OrderBy(g => g.Status == "live" ? 0 : g.Active ? 1 : g.Status == "upcoming" ? 2 : 3).ThenBy(g => g.StartsAtUtc).ThenBy(g => g.ID).ToList(), coverage, true, follows);
-        } catch (Exception ex) when (ex is DbException or InvalidOperationException) {
+        }
+        catch (Exception ex) when (ex is DbException or InvalidOperationException)
+        {
             log.LogWarning(ex, "Scoreboard read unavailable");
             return new([], [], false);
         }

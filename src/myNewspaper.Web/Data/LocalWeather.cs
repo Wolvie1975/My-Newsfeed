@@ -7,9 +7,10 @@ namespace myNewspaper.Web.Data;
 public sealed record LocalForecast(string Name, int Temperature, string Unit, string Summary, string Wind, DateTimeOffset Starts, bool IsDaytime = true);
 public sealed record LocalWeatherPage(IReadOnlyList<LocalForecast> Periods, DateTimeOffset? Updated, bool Stale, string Location = "Kansas City", double Latitude = 39.0997, double Longitude = -94.5786);
 
-public sealed class LocalWeather(IHttpClientFactory clients, IMemoryCache cache, ILogger<LocalWeather> logger)
+public sealed class LocalWeather(IHttpClientFactory clients, IMemoryCache cache, ILogger<LocalWeather> logger) : IDisposable
 {
     private readonly SemaphoreSlim gate = new(1, 1);
+    public void Dispose() => gate.Dispose();
     public static (double Latitude, double Longitude) Coordinates(double? latitude, double? longitude)
     {
         if (latitude is null && longitude is null) return (39.0997, -94.5786);
@@ -26,9 +27,11 @@ public sealed class LocalWeather(IHttpClientFactory clients, IMemoryCache cache,
         var location = custom ? "Your location" : "Kansas City";
         if (cache.TryGetValue<LocalWeatherPage>(key, out var fresh)) return fresh!;
         await gate.WaitAsync(cancellationToken);
-        try {
+        try
+        {
             if (cache.TryGetValue<LocalWeatherPage>(key, out fresh)) return fresh!;
-            try {
+            try
+            {
                 var http = clients.CreateClient("local-weather");
                 using var point = await http.GetAsync("https://api.weather.gov/points/" + lat.ToString(CultureInfo.InvariantCulture) + "," + lon.ToString(CultureInfo.InvariantCulture), cancellationToken);
                 point.EnsureSuccessStatusCode();
@@ -60,7 +63,8 @@ public sealed class LocalWeather(IHttpClientFactory clients, IMemoryCache cache,
                 cache.Set(key, result, TimeSpan.FromMinutes(15));
                 return result;
             }
-            catch (Exception ex) when (ex is HttpRequestException or JsonException or InvalidOperationException or KeyNotFoundException || ex is OperationCanceledException && !cancellationToken.IsCancellationRequested) {
+            catch (Exception ex) when (ex is HttpRequestException or JsonException or InvalidOperationException or KeyNotFoundException || ex is OperationCanceledException && !cancellationToken.IsCancellationRequested)
+            {
                 logger.LogWarning(ex, "Weather forecast unavailable");
                 var result = cache.TryGetValue<LocalWeatherPage>(key + "-last", out var last)
                     ? last! with { Stale = true } : new LocalWeatherPage([], null, true, location, lat, lon);

@@ -83,8 +83,14 @@ public class PersonalFeaturesTests
         string espnSport, string league, string? group)
     {
         var feed = new SportsEventsType { ProviderKey = provider, SchoolName = "Kansas" };
-        var follow = new ResultFollow { Enabled = true, Kind = group is null ? "league" : "conference",
-            Sport = espnSport, League = league, GroupId = group };
+        var follow = new ResultFollow
+        {
+            Enabled = true,
+            Kind = group is null ? "league" : "conference",
+            Sport = espnSport,
+            League = league,
+            GroupId = group
+        };
         Assert.True(ScheduleCoverage.Covers(feed, sport, follow));
         follow.Enabled = false; Assert.False(ScheduleCoverage.Covers(feed, sport, follow));
         follow.Enabled = true; follow.League = "other"; Assert.False(ScheduleCoverage.Covers(feed, sport, follow));

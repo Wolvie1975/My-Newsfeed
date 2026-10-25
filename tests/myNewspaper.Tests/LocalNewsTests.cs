@@ -13,19 +13,19 @@ public class LocalNewsTests
         Assert.False(empty.Dedicated);
         Assert.Empty(empty.Feed.Items);
         await db.Database.ExecuteSqlRawAsync("UPDATE #Big12NewsPages SET Title=N'Kansas City update' WHERE ID IN (1,17)");
-        var fallback = await LocalNewsQuery.GetAsync(db,null);
+        var fallback = await LocalNewsQuery.GetAsync(db, null);
         Assert.Single(fallback.Feed.Items);
-        Assert.Equal(1,fallback.Feed.Items[0].Id);
+        Assert.Equal(1, fallback.Feed.Items[0].Id);
         await db.Database.ExecuteSqlRawAsync("""
             INSERT INTO #Big12NewsCategories VALUES (3,N'Kansas City News','20261019');
             UPDATE #Big12NewsSources SET SourceCategoryId=3 WHERE ID=102;
             """);
-        var dedicated = await LocalNewsQuery.GetAsync(db,null);
+        var dedicated = await LocalNewsQuery.GetAsync(db, null);
         Assert.True(dedicated.Dedicated);
-        Assert.Equal(new[]{15,16},dedicated.Feed.Items.Select(i=>i.Id));
+        Assert.Equal(new[] { 15, 16 }, dedicated.Feed.Items.Select(i => i.Id));
         await db.Database.ExecuteSqlRawAsync("UPDATE #Big12NewsSources SET Enabled=0 WHERE ID=102");
-        var disabled = await LocalNewsQuery.GetAsync(db,null);
+        var disabled = await LocalNewsQuery.GetAsync(db, null);
         Assert.False(disabled.Dedicated);
-        Assert.Equal(1,Assert.Single(disabled.Feed.Items).Id);
+        Assert.Equal(1, Assert.Single(disabled.Feed.Items).Id);
     }
 }

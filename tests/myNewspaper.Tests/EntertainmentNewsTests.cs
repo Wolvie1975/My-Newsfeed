@@ -3,11 +3,13 @@ using Microsoft.Extensions.Configuration;
 using myNewspaper.Web.Data;
 using myNewspaper.Web.Data.Models;
 namespace myNewspaper.Tests;
+
 public class EntertainmentNewsTests
 {
     private sealed class FixtureContext(DbContextOptions<WebScraperContext> options) : WebScraperContext(options)
     {
-        protected override void OnModelCreating(ModelBuilder model) {
+        protected override void OnModelCreating(ModelBuilder model)
+        {
             base.OnModelCreating(model);
             model.Entity<Page>().ToTable("#NewsPages");
             model.Entity<Source>().ToTable("#NewsSources");
@@ -27,9 +29,7 @@ public class EntertainmentNewsTests
     [Fact]
     public async Task Headlines_exclude_moved_categories_and_sources_through_paging_without_changing_other_readers()
     {
-        var config = new ConfigurationBuilder().AddJsonFile(Path.GetFullPath("../../../../../src/myNewspaper.Web/appsettings.json", AppContext.BaseDirectory))
-            .AddUserSecrets("c579816a-020e-445a-92f6-efdd7002106c").AddEnvironmentVariables().Build();
-        await using var db = new FixtureContext(new DbContextOptionsBuilder<WebScraperContext>().UseSqlServer(config.GetConnectionString("DefaultConnection")).Options);
+        await using var db = new FixtureContext(new DbContextOptionsBuilder<WebScraperContext>().UseSqlServer(TestDatabase.ConnectionString).Options);
         await db.Database.OpenConnectionAsync();
         await db.Database.ExecuteSqlRawAsync("""
             CREATE TABLE #NewsCategories (ID int, Category_Name nvarchar(100), DateAdded datetime2, NewsHub nvarchar(16) NOT NULL DEFAULT 'headlines');
@@ -55,25 +55,26 @@ public class EntertainmentNewsTests
               (10,'https://test.invalid/10','F1',NULL,NULL,'20261026','20261026',80),
               (11,'https://test.invalid/11','Basketball',NULL,NULL,'20261026','20261026',90);
             """);
-        Assert.Equal(new[] {30,40}, (await FeedQuery.GetSourcesAsync(db,null,headlinesOnly:true)).Select(s=>s.Id));
-        Assert.Equal(new DateTime(2026,10,20), await FeedQuery.GetLastUpdatedAsync(db,headlinesOnly:true));
-        var first = await FeedQuery.GetFeedAsync(db,null,null,null,1,headlinesOnly:true);
-        Assert.Equal(3,first.Total); Assert.Equal(4,Assert.Single(first.Items).Id);
-        var next = await FeedQuery.GetFeedAsync(db,null,null,first.Next,headlinesOnly:true);
-        Assert.Equal(new[] {5,6},next.Items.Select(i=>i.Id));
-        Assert.Empty((await FeedQuery.GetFeedAsync(db,1,null,null,headlinesOnly:true)).Items);
-        Assert.Empty((await FeedQuery.GetFeedAsync(db,null,null,null,sourceId:10,headlinesOnly:true)).Items);
-        var entertainment = await FeedQuery.GetFeedAsync(db,1,null,null,1);
-        Assert.Equal(2,entertainment.Total);
-        Assert.Equal(2,Assert.Single((await FeedQuery.GetFeedAsync(db,1,null,entertainment.Next)).Items).Id);
-        Assert.Single((await FeedQuery.GetFeedAsync(db,2,null,null)).Items);
-        foreach (var category in new[] {4,5,6,7}) {
-            Assert.Empty((await FeedQuery.GetFeedAsync(db,category,null,null,headlinesOnly:true)).Items);
-            Assert.Single((await FeedQuery.GetFeedAsync(db,category,null,null)).Items);
+        Assert.Equal(new[] { 30, 40 }, (await FeedQuery.GetSourcesAsync(db, null, headlinesOnly: true)).Select(s => s.Id));
+        Assert.Equal(new DateTime(2026, 10, 20), await FeedQuery.GetLastUpdatedAsync(db, headlinesOnly: true));
+        var first = await FeedQuery.GetFeedAsync(db, null, null, null, 1, headlinesOnly: true);
+        Assert.Equal(3, first.Total); Assert.Equal(4, Assert.Single(first.Items).Id);
+        var next = await FeedQuery.GetFeedAsync(db, null, null, first.Next, headlinesOnly: true);
+        Assert.Equal(new[] { 5, 6 }, next.Items.Select(i => i.Id));
+        Assert.Empty((await FeedQuery.GetFeedAsync(db, 1, null, null, headlinesOnly: true)).Items);
+        Assert.Empty((await FeedQuery.GetFeedAsync(db, null, null, null, sourceId: 10, headlinesOnly: true)).Items);
+        var entertainment = await FeedQuery.GetFeedAsync(db, 1, null, null, 1);
+        Assert.Equal(2, entertainment.Total);
+        Assert.Equal(2, Assert.Single((await FeedQuery.GetFeedAsync(db, 1, null, entertainment.Next)).Items).Id);
+        Assert.Single((await FeedQuery.GetFeedAsync(db, 2, null, null)).Items);
+        foreach (var category in new[] { 4, 5, 6, 7 })
+        {
+            Assert.Empty((await FeedQuery.GetFeedAsync(db, category, null, null, headlinesOnly: true)).Items);
+            Assert.Single((await FeedQuery.GetFeedAsync(db, category, null, null)).Items);
         }
-        Assert.Single((await F1NewsQuery.GetAsync(db,null,null,null)).Feed.Items);
-        Assert.Single((await Big12NewsQuery.GetAsync(db,null,null,null)).Feed.Items);
-        Assert.Equal(10,(await FeedQuery.GetFeedAsync(db,null,null,null)).Total);
+        Assert.Single((await F1NewsQuery.GetAsync(db, null, null, null)).Feed.Items);
+        Assert.Single((await Big12NewsQuery.GetAsync(db, null, null, null)).Feed.Items);
+        Assert.Equal(10, (await FeedQuery.GetFeedAsync(db, null, null, null)).Total);
         // Arbitrary future categories require no name matching or code registration.
         await db.Database.ExecuteSqlRawAsync("""
             INSERT #NewsCategories VALUES (8,'Pro hoops','20261024','sports'),(9,'New streaming releases','20261024','entertainment');
@@ -81,30 +82,30 @@ public class EntertainmentNewsTests
             INSERT #NewsPages VALUES (12,'https://test.invalid/12','Future sports',NULL,NULL,'20261026','20261026',100),(13,'https://test.invalid/13','Future entertainment',NULL,NULL,'20261026','20261026',110);
             """);
         var future = (await FeedQuery.GetCategoriesAsync(db)).Single(c => c.Id == 8);
-        Assert.Equal("sports",future.Hub);
-        Assert.Equal("sports/news/category-8",NewsSections.RouteFor(future));
-        Assert.Equal(3,(await FeedQuery.GetFeedAsync(db,null,null,null,headlinesOnly:true)).Total);
-        Assert.Single((await FeedQuery.GetFeedAsync(db,8,null,null)).Items);
+        Assert.Equal("sports", future.Hub);
+        Assert.Equal("sports/news/category-8", NewsSections.RouteFor(future));
+        Assert.Equal(3, (await FeedQuery.GetFeedAsync(db, null, null, null, headlinesOnly: true)).Total);
+        Assert.Single((await FeedQuery.GetFeedAsync(db, 8, null, null)).Items);
         var moved = await db.SourceCategories.SingleAsync(c => c.Id == 8);
         moved.NewsHub = "entertainment"; moved.CategoryName = "Renamed coverage";
         await db.SaveChangesAsync();
         future = (await FeedQuery.GetCategoriesAsync(db)).Single(c => c.Id == 8);
-        Assert.Equal("entertainment/news/category-8",NewsSections.RouteFor(future));
-        Assert.Equal("Renamed coverage",future.Name);
+        Assert.Equal("entertainment/news/category-8", NewsSections.RouteFor(future));
+        Assert.Equal("Renamed coverage", future.Name);
         moved.NewsHub = "headlines"; await db.SaveChangesAsync();
-        Assert.Equal(4,(await FeedQuery.GetFeedAsync(db,null,null,null,headlinesOnly:true)).Total);
-        Assert.Contains(await FeedQuery.GetSourcesAsync(db,null,headlinesOnly:true),s => s.Id == 100);
+        Assert.Equal(4, (await FeedQuery.GetFeedAsync(db, null, null, null, headlinesOnly: true)).Total);
+        Assert.Contains(await FeedQuery.GetSourcesAsync(db, null, headlinesOnly: true), s => s.Id == 100);
 
         await db.Database.ExecuteSqlRawAsync("""
             INSERT #NewsCategories VALUES (10,'Opinion','20261024','headlines');
             INSERT #NewsSources VALUES (120,'https://test.invalid/opinion-a','Opinion A',1,10,'20261026',NULL),(130,'https://test.invalid/opinion-b','Opinion B',1,10,'20261026',NULL),(140,'https://test.invalid/retired','Retired opinion',0,10,'20261026',NULL),(150,'https://test.invalid/empty','Empty opinion',1,10,'20261026',NULL);
             INSERT #NewsPages VALUES (14,'https://test.invalid/14','Active opinion A',NULL,NULL,'20261026','20261026',120),(15,'https://test.invalid/15','Active opinion B',NULL,NULL,'20261026','20261026',130),(16,'https://test.invalid/16','Retired opinion',NULL,NULL,'20261027','20261027',140);
             """);
-        var opinionA=await HomeOpinionQuery.GetAsync(db,new DateTime(2026,10,24,12,0,0,DateTimeKind.Utc));
-        var opinionB=await HomeOpinionQuery.GetAsync(db,new DateTime(2026,10,24,13,0,0,DateTimeKind.Utc));
-        Assert.Equal(10,opinionA.CategoryId);
-        Assert.NotEqual(opinionA.Article!.SourceUrl,opinionB.Article!.SourceUrl);
-        Assert.Equal(new[]{14,15},new[]{opinionA.Article.Id,opinionB.Article.Id}.Order());
+        var opinionA = await HomeOpinionQuery.GetAsync(db, new DateTime(2026, 10, 24, 12, 0, 0, DateTimeKind.Utc));
+        var opinionB = await HomeOpinionQuery.GetAsync(db, new DateTime(2026, 10, 24, 13, 0, 0, DateTimeKind.Utc));
+        Assert.Equal(10, opinionA.CategoryId);
+        Assert.NotEqual(opinionA.Article!.SourceUrl, opinionB.Article!.SourceUrl);
+        Assert.Equal(new[] { 14, 15 }, new[] { opinionA.Article.Id, opinionB.Article.Id }.Order());
 
     }
 }

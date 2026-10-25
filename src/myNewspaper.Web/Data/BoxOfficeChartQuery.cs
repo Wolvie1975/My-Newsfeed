@@ -47,10 +47,10 @@ public static class BoxOfficeChartQuery
             var rows = new List<BoxOfficeMovie>();
             while (await reader.ReadAsync())
             {
-                rows.Add(new(Convert.ToInt32(reader.GetValue(0)), DateOnly.FromDateTime(reader.GetDateTime(1)),
-                    reader.GetString(2), Convert.ToInt64(reader.GetValue(3)), Convert.ToInt64(reader.GetValue(4)),
-                    reader.IsDBNull(5) ? null : Convert.ToDecimal(reader.GetValue(5)),
-                    reader.IsDBNull(6) ? null : Convert.ToInt32(reader.GetValue(6)),
+                rows.Add(new(Convert.ToInt32(reader.GetValue(0), CultureInfo.InvariantCulture), DateOnly.FromDateTime(reader.GetDateTime(1)),
+                    reader.GetString(2), Convert.ToInt64(reader.GetValue(3), CultureInfo.InvariantCulture), Convert.ToInt64(reader.GetValue(4), CultureInfo.InvariantCulture),
+                    reader.IsDBNull(5) ? null : Convert.ToDecimal(reader.GetValue(5), CultureInfo.InvariantCulture),
+                    reader.IsDBNull(6) ? null : Convert.ToInt32(reader.GetValue(6), CultureInfo.InvariantCulture),
                     reader.IsDBNull(7) ? null : SafeUrl(reader.GetString(7)),
                     reader.IsDBNull(8) ? null : SafeUrl(reader.GetString(8)),
                     DateTime.SpecifyKind(reader.GetDateTime(9), DateTimeKind.Utc),

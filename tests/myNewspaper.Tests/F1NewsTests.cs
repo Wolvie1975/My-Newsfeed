@@ -19,9 +19,7 @@ public class F1NewsTests
     }
     private static async Task<FixtureContext> Fixture()
     {
-        var config = new ConfigurationBuilder().AddJsonFile(Path.GetFullPath("../../../../../src/myNewspaper.Web/appsettings.json", AppContext.BaseDirectory))
-            .AddUserSecrets("c579816a-020e-445a-92f6-efdd7002106c").AddEnvironmentVariables().Build();
-        var db = new FixtureContext(new DbContextOptionsBuilder<WebScraperContext>().UseSqlServer(config.GetConnectionString("DefaultConnection")).Options);
+        var db = new FixtureContext(new DbContextOptionsBuilder<WebScraperContext>().UseSqlServer(TestDatabase.ConnectionString).Options);
         await db.Database.OpenConnectionAsync();
         await db.Database.ExecuteSqlRawAsync("""
             CREATE TABLE #F1NewsCategories (ID int, Category_Name nvarchar(100), DateAdded datetime2);

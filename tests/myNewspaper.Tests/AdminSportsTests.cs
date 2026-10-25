@@ -202,9 +202,15 @@ public class AdminSportsTests
         var shared = Event($"shared{tag}.test.invalid", 3, legacyType);
         db.AddRange(legacy, provider, shared);
         await db.SaveChangesAsync();
-        db.SportsEventSources.Add(new SportsEventSource { SportsEventId = shared.Id,
-            SportsEventsTypeId = legacyType.Id, ProviderGameId = 3, SourceUrl = shared.Url,
-            FirstSeenAt = DateTime.UtcNow, LastSeenAt = DateTime.UtcNow });
+        db.SportsEventSources.Add(new SportsEventSource
+        {
+            SportsEventId = shared.Id,
+            SportsEventsTypeId = legacyType.Id,
+            ProviderGameId = 3,
+            SourceUrl = shared.Url,
+            FirstSeenAt = DateTime.UtcNow,
+            LastSeenAt = DateTime.UtcNow
+        });
         await db.SaveChangesAsync();
         foreach (var game in new[] { provider, shared })
         {

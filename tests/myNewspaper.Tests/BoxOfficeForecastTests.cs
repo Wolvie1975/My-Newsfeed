@@ -8,6 +8,7 @@ using myNewspaper.Web.Components;
 using myNewspaper.Web.Data;
 
 namespace myNewspaper.Tests;
+
 public class BoxOfficeForecastTests
 {
     private static readonly DateTime Now = new(2026, 10, 14, 1, 0, 0, DateTimeKind.Utc);
@@ -37,9 +38,12 @@ public class BoxOfficeForecastTests
             new(BoxOfficeForecastQuery.Preview, new(2026,10,16), new(2026,10,18), "Movie <one>", "Distributor", 3, 25_000_000, 35_000_000, new(2026,10,13), "https://example.com/analysis", Now),
             new(BoxOfficeForecastQuery.Preview, new(2026,10,16), new(2026,10,18), "Movie two", null, null, 1_000_000, 2_000_000, new(2026,10,13), null, Now)
         };
-        var html = await renderer.Dispatcher.InvokeAsync(async () => (await renderer.RenderComponentAsync<BoxOfficeForecastSection>(ParameterView.FromDictionary(new Dictionary<string, object?> {
-            ["Rows"] = rows, ["Kind"] = BoxOfficeForecastQuery.Preview,
-            ["Source"] = new BoxOfficeForecastSource(BoxOfficeForecastQuery.Preview, Now, true), ["UtcNow"] = Now
+        var html = await renderer.Dispatcher.InvokeAsync(async () => (await renderer.RenderComponentAsync<BoxOfficeForecastSection>(ParameterView.FromDictionary(new Dictionary<string, object?>
+        {
+            ["Rows"] = rows,
+            ["Kind"] = BoxOfficeForecastQuery.Preview,
+            ["Source"] = new BoxOfficeForecastSource(BoxOfficeForecastQuery.Preview, Now, true),
+            ["UtcNow"] = Now
         }))).ToHtmlString());
         Assert.Contains("Predicted rank 3", html);
         Assert.DoesNotContain("Predicted rank 1", html);
@@ -51,19 +55,18 @@ public class BoxOfficeForecastTests
     [Fact]
     public async Task Application_credentials_read_forecasts_and_expired_dates_are_filtered()
     {
-        var config = new ConfigurationBuilder().AddJsonFile(Path.GetFullPath("../../../../../src/myNewspaper.Web/appsettings.json", AppContext.BaseDirectory))
-            .AddUserSecrets("c579816a-020e-445a-92f6-efdd7002106c").AddEnvironmentVariables().Build();
-        await using var db = new WebScraperContext(new DbContextOptionsBuilder<WebScraperContext>().UseSqlServer(config.GetConnectionString("DefaultConnection")).Options);
+        await using var db = new WebScraperContext(new DbContextOptionsBuilder<WebScraperContext>().UseSqlServer(TestDatabase.ConnectionString).Options);
         var today = FeedDates.Create("America/Chicago").Today;
         var snapshot = await BoxOfficeForecastQuery.GetAsync(db, today);
         Assert.Contains(snapshot.Sources, s => s.Kind == BoxOfficeForecastQuery.Preview);
         Assert.Contains(snapshot.Sources, s => s.Kind == BoxOfficeForecastQuery.LongRange);
-        Assert.All(snapshot.Movies, row => {
+        Assert.All(snapshot.Movies, row =>
+        {
             Assert.True(row.PeriodEnd >= today);
             Assert.True(row.Low <= row.High);
             Assert.Equal(DateTimeKind.Utc, row.FetchedAt.Kind);
         });
-        var future = await BoxOfficeForecastQuery.GetAsync(db, new(9999,12,31));
+        var future = await BoxOfficeForecastQuery.GetAsync(db, new(9999, 12, 31));
         Assert.Empty(future.Movies);
         Assert.Equal(snapshot.Sources.Count, future.Sources.Count);
     }

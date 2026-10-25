@@ -11,17 +11,17 @@ public class TvSeries
     [MaxLength(500)] public string Title { get; set; } = null!;
     public int? NetworkId { get; set; }
     [MaxLength(200)] public string? NetworkName { get; set; }
-    [MaxLength(2)] [Column(TypeName = "char(2)")] public string? NetworkCountryCode { get; set; }
+    [MaxLength(2)][Column(TypeName = "char(2)")] public string? NetworkCountryCode { get; set; }
     [MaxLength(100)] public string? NetworkTimeZone { get; set; }
     public int? WebChannelId { get; set; }
     [MaxLength(200)] public string? WebChannelName { get; set; }
-    [MaxLength(2)] [Column(TypeName = "char(2)")] public string? WebChannelCountryCode { get; set; }
+    [MaxLength(2)][Column(TypeName = "char(2)")] public string? WebChannelCountryCode { get; set; }
     [MaxLength(100)] public string? WebChannelTimeZone { get; set; }
     [MaxLength(50)] public string? Status { get; set; }
     public DateOnly? PremiereDate { get; set; }
     [MaxLength(2048)] public string? PosterUrl { get; set; }
     [MaxLength(2048)] public string SourceUrl { get; set; } = null!;
-    [MaxLength(20)] [Column(TypeName = "varchar(20)")] public string? ImdbId { get; set; }
+    [MaxLength(20)][Column(TypeName = "varchar(20)")] public string? ImdbId { get; set; }
     public int? TheTvdbId { get; set; }
     public int? TvRageId { get; set; }
     public string RawMetadata { get; set; } = null!;
@@ -39,7 +39,7 @@ public class TvEpisode
     public int? SeasonNumber { get; set; }
     public int? EpisodeNumber { get; set; }
     [MaxLength(500)] public string? Title { get; set; }
-    [MaxLength(50)] [Column(TypeName = "varchar(50)")] public string? EpisodeType { get; set; }
+    [MaxLength(50)][Column(TypeName = "varchar(50)")] public string? EpisodeType { get; set; }
     public bool IsSpecial { get; set; }
     public DateOnly? Airdate { get; set; }
     [Column(TypeName = "time(0)")] public TimeOnly? Airtime { get; set; }

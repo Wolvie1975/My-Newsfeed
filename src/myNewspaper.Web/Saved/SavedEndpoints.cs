@@ -8,10 +8,12 @@ public static class SavedEndpoints
     public static void MapSharedArticles(this WebApplication app)
     {
         var api = app.MapGroup("/api/saved");
-        api.AddEndpointFilter(async (context, next) => {
+        api.AddEndpointFilter(async (context, next) =>
+        {
             var http = context.HttpContext;
             http.Response.Headers.CacheControl = "no-store";
-            try {
+            try
+            {
                 if (http.Request.Method != "GET")
                     await http.RequestServices.GetRequiredService<IAntiforgery>().ValidateRequestAsync(http);
                 return await next(context);

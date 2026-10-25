@@ -82,18 +82,18 @@ public class VideosTests
 
     private static YouTubeVideo Video(string token, string channel, string title, DateTime published, long? views = null,
         string? channelName = null, YoutubeVideoFeed? feed = null) => new()
-    {
-        VideoId = Guid.NewGuid().ToString("N")[..11],
-        ChannelId = $"UC{token}{channel}",
-        ChannelName = channelName,
-        Title = $"zz {token} {title}",
-        Url = $"https://www.youtube.com/watch?v={token}",
-        PublishedAt = published,
-        ViewCount = views,
-        FirstSeenAt = DateTime.UtcNow,
-        LastSeenAt = DateTime.UtcNow,
-        YoutubeVideoFeed = feed,
-    };
+        {
+            VideoId = Guid.NewGuid().ToString("N")[..11],
+            ChannelId = $"UC{token}{channel}",
+            ChannelName = channelName,
+            Title = $"zz {token} {title}",
+            Url = $"https://www.youtube.com/watch?v={token}",
+            PublishedAt = published,
+            ViewCount = views,
+            FirstSeenAt = DateTime.UtcNow,
+            LastSeenAt = DateTime.UtcNow,
+            YoutubeVideoFeed = feed,
+        };
 
     [Fact]
     public async Task Videos_come_newest_first_and_can_be_filtered_by_channel_and_search()
@@ -127,7 +127,10 @@ public class VideosTests
         var token = Tag();
         var feed = new YoutubeVideoFeed
         {
-            ChannelId = $"UC{token}A", ChannelName = $"Feed {token}", Url = $"https://{token}.test.invalid/feed", DateAdded = DateTime.UtcNow,
+            ChannelId = $"UC{token}A",
+            ChannelName = $"Feed {token}",
+            Url = $"https://{token}.test.invalid/feed",
+            DateAdded = DateTime.UtcNow,
         };
         db.YouTubeVideos.AddRange(
             Video(token, "A", "a", new DateTime(2026, 1, 1), channelName: "Video copy", feed: feed),
@@ -173,7 +176,10 @@ public class VideosTests
         var token = Tag();
         var feed = new YoutubeVideoFeed
         {
-            ChannelId = $"UC{token}A", ChannelName = $"Feed {token}", Url = $"https://{token}.test.invalid/feed", DateAdded = DateTime.UtcNow,
+            ChannelId = $"UC{token}A",
+            ChannelName = $"Feed {token}",
+            Url = $"https://{token}.test.invalid/feed",
+            DateAdded = DateTime.UtcNow,
         };
         db.YouTubeVideos.AddRange(
             Video(token, "A", "a old", new DateTime(2031, 1, 1), channelName: "Video copy", feed: feed),

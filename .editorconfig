@@ -1,0 +1,72 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+indent_style = space
+indent_size = 4
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.{json,yml,yaml,csproj,props,targets}]
+indent_size = 2
+
+[*.md]
+trim_trailing_whitespace = false
+
+[*.{js,cjs,mjs,css}]
+indent_size = 4
+
+[*.{cs,razor}]
+# Layout
+csharp_new_line_before_open_brace = all
+csharp_new_line_before_else = true
+csharp_new_line_before_catch = true
+csharp_new_line_before_finally = true
+csharp_indent_case_contents = true
+csharp_indent_switch_labels = true
+csharp_space_after_cast = false
+csharp_space_after_keywords_in_control_flow_statements = true
+csharp_space_around_binary_operators = before_and_after
+csharp_space_after_comma = true
+csharp_space_before_comma = false
+csharp_space_after_semicolon_in_for_statement = true
+csharp_preserve_single_line_blocks = true
+csharp_preserve_single_line_statements = true
+
+# Language preferences used throughout the codebase
+csharp_style_namespace_declarations = file_scoped:warning
+csharp_style_var_for_built_in_types = true:suggestion
+csharp_style_var_when_type_is_apparent = true:suggestion
+csharp_style_var_elsewhere = true:suggestion
+csharp_style_prefer_primary_constructors = true:suggestion
+dotnet_style_prefer_collection_expression = when_types_loosely_match:suggestion
+dotnet_sort_system_directives_first = true
+
+# Naming: PascalCase types and members, camelCase locals, parameters and private fields
+dotnet_naming_rule.types_and_members_are_pascal.symbols = types_and_members
+dotnet_naming_rule.types_and_members_are_pascal.style = pascal
+dotnet_naming_rule.types_and_members_are_pascal.severity = warning
+dotnet_naming_symbols.types_and_members.applicable_kinds = class, struct, interface, enum, record, method, property, event, delegate
+dotnet_naming_style.pascal.capitalization = pascal_case
+
+# Enforced in the build (EnforceCodeStyleInBuild): formatting and file-scoped namespaces
+dotnet_diagnostic.IDE0055.severity = warning
+dotnet_diagnostic.IDE0161.severity = warning
+
+# Micro-optimisations and naming nits that don't pay their way in this app; still shown as suggestions.
+dotnet_diagnostic.CA1848.severity = suggestion
+dotnet_diagnostic.CA1873.severity = suggestion
+dotnet_diagnostic.CA1859.severity = suggestion
+dotnet_diagnostic.CA1861.severity = suggestion
+dotnet_diagnostic.CA1822.severity = suggestion
+dotnet_diagnostic.CA1720.severity = suggestion
+
+[tests/**.cs]
+# Test method names may use underscores for readability.
+dotnet_diagnostic.CA1707.severity = none
+# Integration tests run serially against one database; per-call cancellation tokens add noise without benefit.
+dotnet_diagnostic.xUnit1051.severity = suggestion
+# Test fixtures use fixed ISO literals and ASCII markup; culture-aware overloads add noise here.
+dotnet_diagnostic.CA1305.severity = none
+dotnet_diagnostic.CA1310.severity = none

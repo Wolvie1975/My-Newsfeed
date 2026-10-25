@@ -5,7 +5,7 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
 # Restore first so the package layer is cached until a .csproj changes.
-COPY myNewspaper.sln ./
+COPY myNewspaper.sln Directory.Build.props .editorconfig ./
 COPY src/myNewspaper.Web/myNewspaper.Web.csproj src/myNewspaper.Web/
 COPY tests/myNewspaper.Tests/myNewspaper.Tests.csproj tests/myNewspaper.Tests/
 RUN dotnet restore src/myNewspaper.Web/myNewspaper.Web.csproj

@@ -10,12 +10,8 @@ public class MoviesTests
     [Fact]
     public async Task Releases_filter_dates_platforms_and_sources_without_shifting_calendar_dates()
     {
-        var config = new ConfigurationBuilder()
-            .AddJsonFile(Path.GetFullPath("../../../../../src/myNewspaper.Web/appsettings.json", AppContext.BaseDirectory))
-            .AddJsonFile(Path.GetFullPath("../../../../../src/myNewspaper.Web/appsettings.Development.json", AppContext.BaseDirectory), true)
-            .AddUserSecrets("c579816a-020e-445a-92f6-efdd7002106c").AddEnvironmentVariables().Build();
         await using var db = new WebScraperContext(new DbContextOptionsBuilder<WebScraperContext>()
-            .UseSqlServer(config.GetConnectionString("DefaultConnection")).Options);
+            .UseSqlServer(TestDatabase.ConnectionString).Options);
         await using var transaction = await db.Database.BeginTransactionAsync();
         var tag = Guid.NewGuid().ToString("N");
         var today = new DateOnly(2026, 10, 8);
@@ -23,15 +19,30 @@ public class MoviesTests
         var movie = new Movie { Title = tag, FirstSeenAt = DateTime.UtcNow, LastSeenAt = DateTime.UtcNow };
         db.AddRange(source, movie);
         await db.SaveChangesAsync();
-        var link = new MovieSourceLink { MovieId = movie.ID, MovieReleaseSourceId = source.ID, ExternalMovieId = tag,
-            Url = "https://test.invalid", FirstSeenAt = DateTime.UtcNow, LastSeenAt = DateTime.UtcNow };
+        var link = new MovieSourceLink
+        {
+            MovieId = movie.ID,
+            MovieReleaseSourceId = source.ID,
+            ExternalMovieId = tag,
+            Url = "https://test.invalid",
+            FirstSeenAt = DateTime.UtcNow,
+            LastSeenAt = DateTime.UtcNow
+        };
         db.Add(link);
         await db.SaveChangesAsync();
         MovieRelease Release(string key, DateOnly? date, string status = "scheduled") => new()
         {
-            MovieSourceLinkId = link.ID, ReleaseKey = key, CountryCode = "US", ReleaseType = "subscription",
-            ReleaseDate = date, DateStatus = date is null ? "tbd" : "announced", ReleaseStatus = status, Platform = "Test streaming",
-            SourceUrl = "https://test.invalid", FirstSeenAt = DateTime.UtcNow, LastSeenAt = DateTime.UtcNow
+            MovieSourceLinkId = link.ID,
+            ReleaseKey = key,
+            CountryCode = "US",
+            ReleaseType = "subscription",
+            ReleaseDate = date,
+            DateStatus = date is null ? "tbd" : "announced",
+            ReleaseStatus = status,
+            Platform = "Test streaming",
+            SourceUrl = "https://test.invalid",
+            FirstSeenAt = DateTime.UtcNow,
+            LastSeenAt = DateTime.UtcNow
         };
         db.AddRange(Release("today", today), Release("yesterday", today.AddDays(-1)), Release("unknown", null),
             Release("old", today.AddDays(-31)), Release("cancelled", today, "cancelled"));
@@ -99,12 +110,8 @@ public class MoviesTests
     [Fact]
     public async Task Home_shows_current_Friday_releases_Thursday_through_Sunday_and_deduplicates_movies()
     {
-        var config = new ConfigurationBuilder()
-            .AddJsonFile(Path.GetFullPath("../../../../../src/myNewspaper.Web/appsettings.json", AppContext.BaseDirectory))
-            .AddJsonFile(Path.GetFullPath("../../../../../src/myNewspaper.Web/appsettings.Development.json", AppContext.BaseDirectory), true)
-            .AddUserSecrets("c579816a-020e-445a-92f6-efdd7002106c").AddEnvironmentVariables().Build();
         await using var db = new WebScraperContext(new DbContextOptionsBuilder<WebScraperContext>()
-            .UseSqlServer(config.GetConnectionString("DefaultConnection")).Options);
+            .UseSqlServer(TestDatabase.ConnectionString).Options);
         await using var transaction = await db.Database.BeginTransactionAsync();
         var tag = Guid.NewGuid().ToString("N");
         var today = new DateOnly(2026, 10, 8);
@@ -112,8 +119,15 @@ public class MoviesTests
         var movie = new Movie { Title = tag, FirstSeenAt = DateTime.UtcNow, LastSeenAt = DateTime.UtcNow };
         db.AddRange(source, movie);
         await db.SaveChangesAsync();
-        var link = new MovieSourceLink { MovieId = movie.ID, MovieReleaseSourceId = source.ID, ExternalMovieId = tag,
-            Url = "https://test.invalid", FirstSeenAt = DateTime.UtcNow, LastSeenAt = DateTime.UtcNow };
+        var link = new MovieSourceLink
+        {
+            MovieId = movie.ID,
+            MovieReleaseSourceId = source.ID,
+            ExternalMovieId = tag,
+            Url = "https://test.invalid",
+            FirstSeenAt = DateTime.UtcNow,
+            LastSeenAt = DateTime.UtcNow
+        };
         db.Add(link);
         await db.SaveChangesAsync();
 
@@ -121,9 +135,16 @@ public class MoviesTests
             .ExecuteUpdateAsync(set => set.SetProperty(x => x.Enabled, false));
         MovieRelease Release(string key, DateOnly? date, string type = "theatrical", string status = "scheduled") => new()
         {
-            MovieSourceLinkId = link.ID, ReleaseKey = key, CountryCode = "US", ReleaseType = type,
-            ReleaseDate = date, DateStatus = date is null ? "tbd" : "announced", ReleaseStatus = status,
-            SourceUrl = "https://test.invalid", FirstSeenAt = DateTime.UtcNow, LastSeenAt = DateTime.UtcNow
+            MovieSourceLinkId = link.ID,
+            ReleaseKey = key,
+            CountryCode = "US",
+            ReleaseType = type,
+            ReleaseDate = date,
+            DateStatus = date is null ? "tbd" : "announced",
+            ReleaseStatus = status,
+            SourceUrl = "https://test.invalid",
+            FirstSeenAt = DateTime.UtcNow,
+            LastSeenAt = DateTime.UtcNow
         };
         var friday = today.AddDays(1);
         db.AddRange(Release("friday", friday), Release("duplicate", friday), Release("thursday", today),
@@ -141,8 +162,15 @@ public class MoviesTests
             var another = new Movie { Title = $"Movie {i} {tag}", FirstSeenAt = DateTime.UtcNow, LastSeenAt = DateTime.UtcNow };
             db.Add(another);
             await db.SaveChangesAsync();
-            var anotherLink = new MovieSourceLink { MovieId = another.ID, MovieReleaseSourceId = source.ID,
-                ExternalMovieId = $"movie-{i}-{tag}", Url = "https://test.invalid", FirstSeenAt = DateTime.UtcNow, LastSeenAt = DateTime.UtcNow };
+            var anotherLink = new MovieSourceLink
+            {
+                MovieId = another.ID,
+                MovieReleaseSourceId = source.ID,
+                ExternalMovieId = $"movie-{i}-{tag}",
+                Url = "https://test.invalid",
+                FirstSeenAt = DateTime.UtcNow,
+                LastSeenAt = DateTime.UtcNow
+            };
             db.Add(anotherLink);
             await db.SaveChangesAsync();
             var release = Release($"more-{i}", friday);

@@ -102,16 +102,16 @@ public class EventsTests
 
     private static SportsEvent Game(string token, string title, DateOnly date, DateTime? startsUtc = null, bool tbd = false,
         string? sport = "Volleyball", string? opponent = "Test U", string? location = "Lawrence, Kan.") => new()
-    {
-        Url = $"http://{token}.test.invalid/calendar.aspx?id={Guid.NewGuid():N}",
-        Title = $"zz {token} {title}",
-        Sport = sport,
-        Opponent = opponent,
-        Location = location,
-        EventDate = date,
-        StartsAtUtc = startsUtc,
-        TimeTbd = tbd,
-    };
+        {
+            Url = $"http://{token}.test.invalid/calendar.aspx?id={Guid.NewGuid():N}",
+            Title = $"zz {token} {title}",
+            Sport = sport,
+            Opponent = opponent,
+            Location = location,
+            EventDate = date,
+            StartsAtUtc = startsUtc,
+            TimeTbd = tbd,
+        };
 
     [Fact]
     public async Task Upcoming_starts_today_and_preserves_legacy_games_with_unknown_status()
@@ -166,8 +166,8 @@ public class EventsTests
         Assert.Equal("soccer game", Assert.Single((await EventsQuery.GetUpcomingAsync(db, day, "Soccer", token)).Items).Title.Replace($"zz {token} ", ""));
         Assert.Single((await EventsQuery.GetUpcomingAsync(db, day, "soccer", token)).Items);                // case-insensitive
         Assert.Empty((await EventsQuery.GetUpcomingAsync(db, day, "Football", token)).Items);
-        Assert.Single((await EventsQuery.GetUpcomingAsync(db, day, null, "Houston")).Items.Where(i => i.Title.Contains(token)));   // opponent
-        Assert.Single((await EventsQuery.GetUpcomingAsync(db, day, null, "Tucson")).Items.Where(i => i.Title.Contains(token)));     // location
+        Assert.Single((await EventsQuery.GetUpcomingAsync(db, day, null, "Houston")).Items, i => i.Title.Contains(token));   // opponent
+        Assert.Single((await EventsQuery.GetUpcomingAsync(db, day, null, "Tucson")).Items, i => i.Title.Contains(token));     // location
         Assert.Single((await EventsQuery.GetUpcomingAsync(db, day, null, $"School{token}")).Items);                                  // school name
     }
 
@@ -282,14 +282,40 @@ public class EventsTests
         espn.GameId = 987654;
         espn.CanonicalKey = "espn:nhl:987654";
         db.SportsEvents.AddRange(final, live, espn);
-        db.ResultGames.Add(new ResultGame { Sport = "hockey", League = "nhl", EventId = "987654",
-            StartsAtUtc = start.AddHours(6), State = "post", Completed = true, HomeTeamId = "1", AwayTeamId = "2",
-            HomeName = "Home", AwayName = "Away", HomeScore = 1, AwayScore = 0,
-            FirstSeenAt = start, LastSeenAt = start });
-        db.ResultGames.Add(new ResultGame { Sport = "football", League = "college-football", EventId = token,
-            StartsAtUtc = start, State = "post", Completed = true, HomeTeamId = "2305", AwayTeamId = "248",
-            HomeName = "Kansas Jayhawks", AwayName = "Houston Cougars", HomeScore = 21, AwayScore = 7,
-            FirstSeenAt = start, LastSeenAt = start });
+        db.ResultGames.Add(new ResultGame
+        {
+            Sport = "hockey",
+            League = "nhl",
+            EventId = "987654",
+            StartsAtUtc = start.AddHours(6),
+            State = "post",
+            Completed = true,
+            HomeTeamId = "1",
+            AwayTeamId = "2",
+            HomeName = "Home",
+            AwayName = "Away",
+            HomeScore = 1,
+            AwayScore = 0,
+            FirstSeenAt = start,
+            LastSeenAt = start
+        });
+        db.ResultGames.Add(new ResultGame
+        {
+            Sport = "football",
+            League = "college-football",
+            EventId = token,
+            StartsAtUtc = start,
+            State = "post",
+            Completed = true,
+            HomeTeamId = "2305",
+            AwayTeamId = "248",
+            HomeName = "Kansas Jayhawks",
+            AwayName = "Houston Cougars",
+            HomeScore = 21,
+            AwayScore = 7,
+            FirstSeenAt = start,
+            LastSeenAt = start
+        });
         await db.SaveChangesAsync();
         var scheduled = await EventsQuery.GetOnDateAsync(db, day);
         var homepage = await HomeEventResults.WithoutFinalResultsAsync(db, scheduled);
@@ -309,9 +335,20 @@ public class EventsTests
         var second = new SportsEventsType { EventsTypeName = tag, SchoolName = "Second", RssUrl = $"https://test.invalid/{tag}/2", Enabled = true };
         db.AddRange(first, second);
         await db.SaveChangesAsync();
-        var game = new SportsEvent { Title = tag, Url = $"https://test.invalid/{tag}/game", EventDate = new DateOnly(2030, 1, 1),
-            SchoolName = "Canonical school", Sport = "Basketball", Opponent = "Second", IsNeutral = true,
-            TimeTbd = true, SportsEventsTypeId = first.Id, FirstSeenAt = DateTime.UtcNow, LastSeenAt = DateTime.UtcNow };
+        var game = new SportsEvent
+        {
+            Title = tag,
+            Url = $"https://test.invalid/{tag}/game",
+            EventDate = new DateOnly(2030, 1, 1),
+            SchoolName = "Canonical school",
+            Sport = "Basketball",
+            Opponent = "Second",
+            IsNeutral = true,
+            TimeTbd = true,
+            SportsEventsTypeId = first.Id,
+            FirstSeenAt = DateTime.UtcNow,
+            LastSeenAt = DateTime.UtcNow
+        };
         db.Add(game);
         await db.SaveChangesAsync();
         db.SportsEventSources.AddRange(
@@ -387,7 +424,8 @@ public class EventsTests
         var feed = await db.SportsEventsTypes.SingleOrDefaultAsync(f => f.ProviderKey == "espn-mls" && f.ProviderSchoolId == 0)
             ?? new SportsEventsType { EventsTypeName = token, RssUrl = $"https://test.invalid/{token}/mls", ProviderKey = "espn-mls", ProviderSchoolId = 0, Enabled = true };
         feed.Enabled = true;
-        SportsEvent Match(string name, string? status = null) {
+        SportsEvent Match(string name, string? status = null)
+        {
             var game = Game(token, name, day, sport: "Soccer"); game.ProviderKey = "espn-mls"; game.SportsEventsType = feed;
             game.ScheduleStatus = status; game.SchoolName = "MLS home"; game.Opponent = "MLS away"; game.IsAway = true; return game;
         }
@@ -395,14 +433,14 @@ public class EventsTests
         var today = Match("today"); today.TimeTbd = true;
         var past = Match("past"); past.EventDate = day.AddDays(-1);
         var mismatch = Match("wrong provider"); mismatch.ProviderKey = "espn-epl";
-        db.AddRange(today,future,past,mismatch,Match("final","STATUS_FINAL_PEN"),Match("canceled","STATUS_CANCELED")); await db.SaveChangesAsync();
-        Assert.Contains(await EventsQuery.GetSchoolsAsync(db),f=>f.Id==feed.Id && f.Name=="MLS");
-        var page=await EventsQuery.GetUpcomingAsync(db,day,null,token,school:feed.Id);
-        Assert.Equal(2,page.Total); Assert.All(page.Items,item=> { Assert.False(item.IsAway); Assert.Equal("MLS",GameGroups.ScheduleLeague(item)); });
-        var onDay=Assert.Single(await EventsQuery.GetOnDateAsync(db,day), e=>e.Title.Contains(token));
-        Assert.False(onDay.IsAway);Assert.Equal("espn-mls",onDay.ProviderKey);
-        feed.Enabled=false;await db.SaveChangesAsync();
-        Assert.Empty((await EventsQuery.GetUpcomingAsync(db,day,null,token,school:feed.Id)).Items);
+        db.AddRange(today, future, past, mismatch, Match("final", "STATUS_FINAL_PEN"), Match("canceled", "STATUS_CANCELED")); await db.SaveChangesAsync();
+        Assert.Contains(await EventsQuery.GetSchoolsAsync(db), f => f.Id == feed.Id && f.Name == "MLS");
+        var page = await EventsQuery.GetUpcomingAsync(db, day, null, token, school: feed.Id);
+        Assert.Equal(2, page.Total); Assert.All(page.Items, item => { Assert.False(item.IsAway); Assert.Equal("MLS", GameGroups.ScheduleLeague(item)); });
+        var onDay = Assert.Single(await EventsQuery.GetOnDateAsync(db, day), e => e.Title.Contains(token));
+        Assert.False(onDay.IsAway); Assert.Equal("espn-mls", onDay.ProviderKey);
+        feed.Enabled = false; await db.SaveChangesAsync();
+        Assert.Empty((await EventsQuery.GetUpcomingAsync(db, day, null, token, school: feed.Id)).Items);
     }
 
     [Fact]
@@ -412,10 +450,22 @@ public class EventsTests
         await using var tx = await BeginScheduleTransactionAsync(db);
         var token = Tag();
         var day = new DateOnly(2031, 3, 4);
-        var nwsl = await db.SportsEventsTypes.SingleOrDefaultAsync(f => f.ProviderKey == "espn-nwsl" && f.ProviderSchoolId == 20907) ?? new SportsEventsType { EventsTypeName = token, RssUrl = $"https://test.invalid/{token}/nwsl",
-            ProviderKey = "espn-nwsl", ProviderSchoolId = 20907, Enabled = true };
-        var wnba = await db.SportsEventsTypes.SingleOrDefaultAsync(f => f.ProviderKey == "espn-wnba" && f.ProviderSchoolId == 0) ?? new SportsEventsType { EventsTypeName = token, RssUrl = $"https://test.invalid/{token}/wnba",
-            ProviderKey = "espn-wnba", ProviderSchoolId = 0, Enabled = true };
+        var nwsl = await db.SportsEventsTypes.SingleOrDefaultAsync(f => f.ProviderKey == "espn-nwsl" && f.ProviderSchoolId == 20907) ?? new SportsEventsType
+        {
+            EventsTypeName = token,
+            RssUrl = $"https://test.invalid/{token}/nwsl",
+            ProviderKey = "espn-nwsl",
+            ProviderSchoolId = 20907,
+            Enabled = true
+        };
+        var wnba = await db.SportsEventsTypes.SingleOrDefaultAsync(f => f.ProviderKey == "espn-wnba" && f.ProviderSchoolId == 0) ?? new SportsEventsType
+        {
+            EventsTypeName = token,
+            RssUrl = $"https://test.invalid/{token}/wnba",
+            ProviderKey = "espn-wnba",
+            ProviderSchoolId = 0,
+            Enabled = true
+        };
         foreach (var status in new[] { "STATUS_SCHEDULED", "STATUS_POSTPONED", "STATUS_DELAYED", "STATUS_SUSPENDED",
             "STATUS_CANCELED", "STATUS_CANCELLED", "STATUS_FULL_TIME", "STATUS_FINAL", "STATUS_FINAL_PEN" })
         {
@@ -473,8 +523,14 @@ public class EventsTests
         await using var tx = await BeginScheduleTransactionAsync(db);
         var token = Tag();
         var day = new DateOnly(2031, 3, 4);
-        var feed = await db.SportsEventsTypes.SingleOrDefaultAsync(f => f.ProviderKey == "espn-mlb" && f.ProviderSchoolId == 0) ?? new SportsEventsType { EventsTypeName = "MLB", RssUrl = $"https://test.invalid/{token}/mlb",
-            ProviderKey = "espn-mlb", ProviderSchoolId = 0, Enabled = true };
+        var feed = await db.SportsEventsTypes.SingleOrDefaultAsync(f => f.ProviderKey == "espn-mlb" && f.ProviderSchoolId == 0) ?? new SportsEventsType
+        {
+            EventsTypeName = "MLB",
+            RssUrl = $"https://test.invalid/{token}/mlb",
+            ProviderKey = "espn-mlb",
+            ProviderSchoolId = 0,
+            Enabled = true
+        };
         var game = Game(token, "mlb", day, sport: "Baseball");
         game.ProviderKey = "espn-mlb";
         game.SportsEventsType = feed;

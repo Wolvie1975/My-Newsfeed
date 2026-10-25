@@ -58,7 +58,8 @@ public class ScoreboardTests
     {
         var game = new ScoreboardGame { Status = status, Completed = true };
         Assert.Equal(expected, game.Label);
-        if (status is "postponed" or "cancelled" or "suspended" or "delayed" or "unknown") {
+        if (status is "postponed" or "cancelled" or "suspended" or "delayed" or "unknown")
+        {
             game.StatusText = "Final";
             Assert.Equal(expected, game.Label);
         }
@@ -85,13 +86,14 @@ public class ScoreboardTests
     public void Central_day_boundaries_follow_dst(string date, int hours)
     {
         var window = ResultsWindow.ForDay(DateOnly.Parse(date), TimeZoneInfo.FindSystemTimeZoneById("America/Chicago"));
-        Assert.Equal(hours, (window.EndUtc-window.StartUtc).TotalHours);
+        Assert.Equal(hours, (window.EndUtc - window.StartUtc).TotalHours);
     }
     [Fact]
     public void Only_active_or_paused_samples_age_into_stale_state()
     {
-        var now = new DateTime(2026,10,24,3,0,0,DateTimeKind.Utc);
-        foreach (var status in new[] { "live", "delayed", "suspended", "final", "upcoming", "cancelled" }) {
+        var now = new DateTime(2026, 10, 24, 3, 0, 0, DateTimeKind.Utc);
+        foreach (var status in new[] { "live", "delayed", "suspended", "final", "upcoming", "cancelled" })
+        {
             var game = new ScoreboardGame { Status = status, LastObservedAtUtc = DateTime.SpecifyKind(now.AddMinutes(-26), DateTimeKind.Unspecified) };
             Assert.Equal(status is "live" or "delayed" or "suspended", game.Stale(now));
         }

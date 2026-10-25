@@ -81,7 +81,15 @@ public static class VideosQuery
             .Skip(Math.Max(0, offset)).Take(limit)
             .Select(v => new
             {
-                v.Id, v.VideoId, v.ChannelId, v.ChannelName, v.Title, v.Url, v.PublishedAt, v.ThumbnailUrl, v.ViewCount,
+                v.Id,
+                v.VideoId,
+                v.ChannelId,
+                v.ChannelName,
+                v.Title,
+                v.Url,
+                v.PublishedAt,
+                v.ThumbnailUrl,
+                v.ViewCount,
                 FeedName = v.YoutubeVideoFeed != null ? v.YoutubeVideoFeed.ChannelName : null,
             })
             .ToListAsync();
@@ -124,7 +132,15 @@ public static class VideosQuery
             .Where(v => v.PublishedAt == db.YouTubeVideos.Where(o => o.ChannelId == v.ChannelId).Max(o => o.PublishedAt))
             .Select(v => new
             {
-                v.Id, v.VideoId, v.ChannelId, v.ChannelName, v.Title, v.Url, v.PublishedAt, v.ThumbnailUrl, v.ViewCount,
+                v.Id,
+                v.VideoId,
+                v.ChannelId,
+                v.ChannelName,
+                v.Title,
+                v.Url,
+                v.PublishedAt,
+                v.ThumbnailUrl,
+                v.ViewCount,
                 FeedName = v.YoutubeVideoFeed != null ? v.YoutubeVideoFeed.ChannelName : null,
             })
             .ToListAsync();

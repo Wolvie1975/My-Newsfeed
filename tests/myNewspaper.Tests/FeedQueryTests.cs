@@ -15,14 +15,14 @@ public class FeedQueryTests
 
     private static Page NewPage(string token, string title, DateTime scraped, DateTime? published = null,
         string? description = null, string? imageUrl = null) => new()
-    {
-        Url = $"https://test.invalid/{token}/{Guid.NewGuid():N}",
-        Title = $"{title} {token}",
-        Description = description,
-        ImageUrl = imageUrl,
-        ScrapedAt = scraped,
-        Published = published,
-    };
+        {
+            Url = $"https://test.invalid/{token}/{Guid.NewGuid():N}",
+            Title = $"{title} {token}",
+            Description = description,
+            ImageUrl = imageUrl,
+            ScrapedAt = scraped,
+            Published = published,
+        };
 
     [Fact]
     public async Task Category_sources_include_empty_enabled_feeds_and_source_paging_keeps_counts_scoped()
@@ -71,7 +71,9 @@ public class FeedQueryTests
         var date = new DateTime(2026, 10, 9);
         var sources = Enumerable.Range(0, 6).Select(i => new Source
         {
-            Url = $"https://test.invalid/{token}/{i}", Label = $"Source {i}", Enabled = true
+            Url = $"https://test.invalid/{token}/{i}",
+            Label = $"Source {i}",
+            Enabled = true
         }).ToList();
         for (int i = 0; i < sources.Count; i++)
         {
@@ -95,8 +97,13 @@ public class FeedQueryTests
         Assert.Equal(6, (await FeedQuery.GetLatestPerSourceAsync(db, 10)).Count);
         await db.Pages.ExecuteDeleteAsync();
         db.ChangeTracker.Clear();
-        db.Pages.Add(new Page { SourceId = sources[0].Id, Url = $"https://test.invalid/{token}/only",
-            Title = "Undated only", ScrapedAt = date });
+        db.Pages.Add(new Page
+        {
+            SourceId = sources[0].Id,
+            Url = $"https://test.invalid/{token}/only",
+            Title = "Undated only",
+            ScrapedAt = date
+        });
         await db.SaveChangesAsync();
         Assert.True(Assert.Single(await FeedQuery.GetLatestPerSourceAsync(db)).Undated);
     }

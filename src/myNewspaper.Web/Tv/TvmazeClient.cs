@@ -34,7 +34,7 @@ public sealed class TvmazeClient(HttpClient http)
     {
         static string? Text(JsonElement e, string key) => e.TryGetProperty(key, out var v) && v.ValueKind == JsonValueKind.String ? v.GetString() : null;
         static string? Child(JsonElement e, string parent, string key) => e.TryGetProperty(parent, out var child) && child.ValueKind == JsonValueKind.Object ? Text(child, key) : null;
-        return new(show.GetProperty("id").GetInt32(), Text(show,"name") ?? "Untitled series", Text(show,"premiered"),
-            Child(show,"webChannel","name") ?? Child(show,"network","name"), Child(show,"image","medium"), Text(show,"url"));
+        return new(show.GetProperty("id").GetInt32(), Text(show, "name") ?? "Untitled series", Text(show, "premiered"),
+            Child(show, "webChannel", "name") ?? Child(show, "network", "name"), Child(show, "image", "medium"), Text(show, "url"));
     }
 }

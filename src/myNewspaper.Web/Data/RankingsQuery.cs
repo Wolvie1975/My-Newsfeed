@@ -1,7 +1,9 @@
+using System.Globalization;
 using Microsoft.EntityFrameworkCore;
 using myNewspaper.Web.Data.Models;
 
 namespace myNewspaper.Web.Data;
+
 public sealed record RankingsPage(IReadOnlyList<SportsRankingSource> Sources, SportsRankingSource? Selected,
     SportsRankingPoll? Poll, IReadOnlyList<SportsRankingTeam> Teams, string? AvailabilityError = null);
 
@@ -12,7 +14,7 @@ public static class RankingsQuery
         var enabled = sources.Where(s => s.Enabled).OrderBy(s => s.DisplayName, StringComparer.OrdinalIgnoreCase).ThenBy(s => s.Id).ToList();
         return enabled.FirstOrDefault(s => s.Id == id) ?? enabled.FirstOrDefault();
     }
-    public static string Previous(SportsRankingTeam team) => team.PreviousRank?.ToString()
+    public static string Previous(SportsRankingTeam team) => team.PreviousRank?.ToString(CultureInfo.InvariantCulture)
         ?? (team.PreviouslyUnranked ? "NR" : "—");
     public static string Movement(SportsRankingTeam team)
     {

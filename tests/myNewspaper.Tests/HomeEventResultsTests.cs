@@ -12,8 +12,15 @@ public class HomeEventResultsTests
     [Fact]
     public void College_final_matches_both_perspectives_and_aliases_but_preserves_other_games()
     {
-        var result = new ResultGame { Completed = true, Sport = "football", League = "college-football",
-            StartsAtUtc = Game.StartsAtUtc!.Value, HomeName = "Houston Cougars", AwayName = "Kansas Jayhawks" };
+        var result = new ResultGame
+        {
+            Completed = true,
+            Sport = "football",
+            League = "college-football",
+            StartsAtUtc = Game.StartsAtUtc!.Value,
+            HomeName = "Houston Cougars",
+            AwayName = "Kansas Jayhawks"
+        };
         Assert.True(HomeEventResults.Matches(Game, result));
         result.Completed = false;
         Assert.False(HomeEventResults.Matches(Game, result));
@@ -30,8 +37,15 @@ public class HomeEventResultsTests
     [InlineData("Volleyball", "volleyball", "womens-college-volleyball")]
     public void College_sports_use_the_configured_results_competition(string sport, string resultSport, string league)
     {
-        var result = new ResultGame { Completed = true, Sport = resultSport, League = league,
-            StartsAtUtc = Game.StartsAtUtc!.Value, HomeName = "Kansas Jayhawks", AwayName = "Houston Cougars" };
+        var result = new ResultGame
+        {
+            Completed = true,
+            Sport = resultSport,
+            League = league,
+            StartsAtUtc = Game.StartsAtUtc!.Value,
+            HomeName = "Kansas Jayhawks",
+            AwayName = "Houston Cougars"
+        };
         Assert.True(HomeEventResults.Matches(Game with { Sport = sport }, result));
     }
 
@@ -61,8 +75,14 @@ public class HomeEventResultsTests
     public void Season_results_require_final_scores_and_provider_identity(string status, int? score, bool expected)
     {
         var game = Game with { ProviderKey = "espn-mls", GameId = 123 };
-        var result = new SportsMatchResult { ProviderKey = "espn-mls", GameId = 123,
-            ScheduleStatus = status, HomeScore = score, AwayScore = 0 };
+        var result = new SportsMatchResult
+        {
+            ProviderKey = "espn-mls",
+            GameId = 123,
+            ScheduleStatus = status,
+            HomeScore = score,
+            AwayScore = 0
+        };
         Assert.Equal(expected, HomeEventResults.Matches(game, result));
         result.ProviderKey = "espn-championship";
         Assert.False(HomeEventResults.Matches(game, result));

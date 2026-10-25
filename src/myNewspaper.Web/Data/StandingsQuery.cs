@@ -78,7 +78,9 @@ public static class StandingsQuery
             return name switch
             {
                 "collegeSoccerGamesPlayed" => ((long)wins + losses + draws).ToString(System.Globalization.CultureInfo.InvariantCulture),
-                "collegeSoccerWins" => record[0], "collegeSoccerDraws" => draws.ToString(System.Globalization.CultureInfo.InvariantCulture), "collegeSoccerLosses" => record[1],
+                "collegeSoccerWins" => record[0],
+                "collegeSoccerDraws" => draws.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                "collegeSoccerLosses" => record[1],
                 _ => "—"
             };
         }

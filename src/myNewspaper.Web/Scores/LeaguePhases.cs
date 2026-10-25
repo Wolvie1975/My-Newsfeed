@@ -22,17 +22,22 @@ public sealed class LeaguePhases
 
     public static (string Sport, string League)? Competition(SportsStandingsSource source) => source.ProviderKey switch
     {
-        "espn-mlb" => ("baseball", "mlb"), "espn-wnba" => ("basketball", "wnba"),
-        "espn-nhl" => ("hockey", "nhl"), "espn-nfl" => ("football", "nfl"),
-        "espn-nwsl" => ("soccer", "usa.nwsl"), "espn-mls" => ("soccer", "usa.1"),
-        "espn-epl" => ("soccer", "eng.1"), "espn-championship" => ("soccer", "eng.2"),
+        "espn-mlb" => ("baseball", "mlb"),
+        "espn-wnba" => ("basketball", "wnba"),
+        "espn-nhl" => ("hockey", "nhl"),
+        "espn-nfl" => ("football", "nfl"),
+        "espn-nwsl" => ("soccer", "usa.nwsl"),
+        "espn-mls" => ("soccer", "usa.1"),
+        "espn-epl" => ("soccer", "eng.1"),
+        "espn-championship" => ("soccer", "eng.2"),
         "big12" => source.Sport switch
         {
             "Football" => ("football", "college-football"),
             "Men's Basketball" => ("basketball", "mens-college-basketball"),
             "Women's Basketball" => ("basketball", "womens-college-basketball"),
             "Volleyball" => ("volleyball", "womens-college-volleyball"),
-            "Soccer" => ("soccer", "usa.ncaa.w.1"), _ => null
+            "Soccer" => ("soccer", "usa.ncaa.w.1"),
+            _ => null
         },
         _ => null
     };

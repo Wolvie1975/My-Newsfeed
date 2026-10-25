@@ -167,7 +167,14 @@ public static class ScraperHealth
             .Select(t => new
             {
                 t.Id,
-                t.EventsTypeName, t.Enabled, t.ProviderKey, t.LastAttemptAt, t.LastSuccessAt, t.LastError, t.LastEventCount, t.LastIssueCount,
+                t.EventsTypeName,
+                t.Enabled,
+                t.ProviderKey,
+                t.LastAttemptAt,
+                t.LastSuccessAt,
+                t.LastError,
+                t.LastEventCount,
+                t.LastIssueCount,
                 Events = db.SportsEvents.Count(e => e.SportsEventsTypeId == t.Id || e.EventSources.Any(s => s.SportsEventsTypeId == t.Id)),
                 Upcoming = db.SportsEvents.Count(e => e.EventDate >= today
                     && (e.ScheduleStatus == null || (e.ScheduleStatus != "STATUS_CANCELED" && e.ScheduleStatus != "STATUS_CANCELLED" && e.ScheduleStatus != "STATUS_FULL_TIME" && !e.ScheduleStatus.StartsWith("STATUS_FINAL"))) && (e.SportsEventsTypeId == t.Id || e.EventSources.Any(s => s.SportsEventsTypeId == t.Id))),
@@ -178,7 +185,11 @@ public static class ScraperHealth
         var movieSources = await db.MovieReleaseSources.AsNoTracking()
             .Select(s => new
             {
-                s.ID, s.Name, s.Enabled, s.LastScrapedAt, s.LastError,
+                s.ID,
+                s.Name,
+                s.Enabled,
+                s.LastScrapedAt,
+                s.LastError,
                 Releases = (from r in db.MovieReleases
                             join link in db.MovieSourceLinks on r.MovieSourceLinkId equals link.ID
                             where link.MovieReleaseSourceId == s.ID
@@ -192,8 +203,13 @@ public static class ScraperHealth
 
         var tv = await db.TvTrackedSeries.AsNoTracking().Select(t => new
         {
-            t.Id, Name = t.Series != null ? t.Series.Title : t.ExpectedTitle, t.Enabled,
-            t.LastAttemptAt, t.LastSuccessAt, t.LastError, t.LastIssueCount,
+            t.Id,
+            Name = t.Series != null ? t.Series.Title : t.ExpectedTitle,
+            t.Enabled,
+            t.LastAttemptAt,
+            t.LastSuccessAt,
+            t.LastError,
+            t.LastIssueCount,
             Episodes = db.TvEpisodes.Count(e => e.SeriesId == t.SeriesId),
             Upcoming = db.TvEpisodes.Count(e => e.SeriesId == t.SeriesId && e.Airdate >= today)
         }).ToListAsync();
@@ -262,6 +278,7 @@ public static class ScraperHealth
         });
 
         return new ScraperHealthReport(nowUtc, staleAfter, lastRun,
-            Ordered(sourceRows), Ordered(channelRows), Ordered(feedRows), unlinkedVideos, unlinkedEvents) { MovieSources = Ordered(movieRows), TvSeries = Ordered(tvRows) };
+            Ordered(sourceRows), Ordered(channelRows), Ordered(feedRows), unlinkedVideos, unlinkedEvents)
+        { MovieSources = Ordered(movieRows), TvSeries = Ordered(tvRows) };
     }
 }

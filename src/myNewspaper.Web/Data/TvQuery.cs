@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.EntityFrameworkCore;
 using myNewspaper.Web.Data.Models;
 
@@ -16,7 +17,8 @@ public static class TvQuery
         var end = start.AddDays(days);
         var window = new ResultsWindow(ResultsWindow.ForDay(start, dates.Zone).StartUtc, ResultsWindow.ForDay(end, dates.Zone).StartUtc);
         var enabled = db.TvTrackedSeries.AsNoTracking().Where(t => t.Enabled);
-        if (!string.IsNullOrWhiteSpace(search)) {
+        if (!string.IsNullOrWhiteSpace(search))
+        {
             var term = QueryText.Term(search);
             enabled = enabled.Where(t => (t.Series != null ? t.Series.Title : t.ExpectedTitle).Contains(term));
         }
@@ -31,11 +33,24 @@ public static class TvQuery
         // SQL filters before fetching; date-only releases retain their source date, timed releases use the display zone.
         var rows = await matching.OrderBy(e => e.Airdate).ThenBy(e => e.Series.Title).ThenBy(e => e.SeasonNumber)
             .ThenBy(e => e.EpisodeNumber).ThenBy(e => e.TvmazeEpisodeId).Take(300)
-            .Select(e => new { e.TvmazeEpisodeId, Show = e.Series.Title, e.Series.PosterUrl,
-                ShowId = e.Series.TvmazeShowId, Platform = e.Series.WebChannelName ?? e.Series.NetworkName, e.Title, e.SeasonNumber, e.EpisodeNumber,
-                e.IsSpecial, e.Airdate, e.IsDateOnly, e.StartsAtUtc, e.SourceUrl }).ToListAsync();
+            .Select(e => new
+            {
+                e.TvmazeEpisodeId,
+                Show = e.Series.Title,
+                e.Series.PosterUrl,
+                ShowId = e.Series.TvmazeShowId,
+                Platform = e.Series.WebChannelName ?? e.Series.NetworkName,
+                e.Title,
+                e.SeasonNumber,
+                e.EpisodeNumber,
+                e.IsSpecial,
+                e.Airdate,
+                e.IsDateOnly,
+                e.StartsAtUtc,
+                e.SourceUrl
+            }).ToListAsync();
         var items = rows.Select(e => new TvEpisodeItem(e.TvmazeEpisodeId, e.Show, e.PosterUrl, e.Platform, e.Title,
-            e.SeasonNumber, e.EpisodeNumber, e.IsSpecial, e.IsDateOnly ? e.Airdate!.Value : DateOnly.Parse(dates.DayKey(e.StartsAtUtc!.Value)),
+            e.SeasonNumber, e.EpisodeNumber, e.IsSpecial, e.IsDateOnly ? e.Airdate!.Value : DateOnly.Parse(dates.DayKey(e.StartsAtUtc!.Value), CultureInfo.InvariantCulture),
             e.IsDateOnly ? null : e.StartsAtUtc, e.SourceUrl, e.ShowId))
             .OrderBy(e => e.Date).ThenBy(e => e.StartsUtc == null).ThenBy(e => e.StartsUtc)
             .ThenBy(e => e.SeriesTitle).ThenBy(e => e.Season).ThenBy(e => e.Number).ThenBy(e => e.ProviderId).ToList();

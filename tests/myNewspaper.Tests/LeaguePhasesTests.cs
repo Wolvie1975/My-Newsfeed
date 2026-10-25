@@ -21,7 +21,8 @@ public class LeaguePhasesTests
     public void Current_league_metadata_classifies_phase_without_using_event_or_standings_phase(
         string sport, string league, string id, string name, LeaguePhase expected)
     {
-        using var json = JsonDocument.Parse(JsonSerializer.Serialize(new {
+        using var json = JsonDocument.Parse(JsonSerializer.Serialize(new
+        {
             leagues = new[] { new { slug = league, season = new { type = new { id, name, type = 14308 } } } },
             events = new[] { new { season = new { type = 2 } } }
         }));

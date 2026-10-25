@@ -30,8 +30,13 @@ public class StandingsTests
         await using var renderer = new HtmlRenderer(services, services.GetRequiredService<ILoggerFactory>());
         var html = await renderer.Dispatcher.InvokeAsync(async () =>
             (await renderer.RenderComponentAsync<StandingsTable>(ParameterView.FromDictionary(new Dictionary<string, object?>
-            { ["Group"] = new StandingGroup("big12", "Big 12", [team], columns), ["Provider"] = "big12",
-                ["Sport"] = "Men's Basketball", ["SourceName"] = "Big 12 Men's Basketball", ["HeadingId"] = "basketball" }))).ToHtmlString());
+            {
+                ["Group"] = new StandingGroup("big12", "Big 12", [team], columns),
+                ["Provider"] = "big12",
+                ["Sport"] = "Men's Basketball",
+                ["SourceName"] = "Big 12 Men's Basketball",
+                ["HeadingId"] = "basketball"
+            }))).ToHtmlString());
         Assert.Contains("basketball-standings", html);
         Assert.DoesNotContain("standing-extra", html);
         Assert.DoesNotContain("colspan=", html);
@@ -91,14 +96,25 @@ public class StandingsTests
 
     private static SportsStanding Row(long id, string group = "east", int position = 1, string? stats = null) => new()
     {
-        Id = id, SourceId = 1, IsCurrent = true, GroupId = group, GroupName = group,
-        Position = position, TeamId = id.ToString(), TeamName = $"Team {id}", Season = "2025-26",
-        Title = "2025-26 Big 12", StatsJson = stats ?? "[]"
+        Id = id,
+        SourceId = 1,
+        IsCurrent = true,
+        GroupId = group,
+        GroupName = group,
+        Position = position,
+        TeamId = id.ToString(),
+        TeamName = $"Team {id}",
+        Season = "2025-26",
+        Title = "2025-26 Big 12",
+        StatsJson = stats ?? "[]"
     };
 
     [Theory]
-    [InlineData("abc", null)] [InlineData("-1", null)] [InlineData("0", null)]
-    [InlineData("7", 7)] [InlineData("2147483648", null)]
+    [InlineData("abc", null)]
+    [InlineData("-1", null)]
+    [InlineData("0", null)]
+    [InlineData("7", 7)]
+    [InlineData("2147483648", null)]
     public void Source_ids_are_parsed_without_throwing(string raw, int? expected) => Assert.Equal(expected, StandingsQuery.ParseSourceId(raw));
 
     [Fact]
@@ -115,7 +131,10 @@ public class StandingsTests
     }
 
     [Theory]
-    [InlineData(null)] [InlineData("not json")] [InlineData("{}")] [InlineData("[null]")]
+    [InlineData(null)]
+    [InlineData("not json")]
+    [InlineData("{}")]
+    [InlineData("[null]")]
     public void Invalid_statistics_are_safe(string? json) => Assert.Empty(StandingsQuery.ParseStatistics(json, 3000000000L, Logger));
 
     [Fact]
@@ -233,9 +252,7 @@ public class StandingsTests
     [Fact]
     public async Task Query_retains_enabled_college_choices_without_opening_fixtures_and_filters_stale_rows()
     {
-        var config = new ConfigurationBuilder().AddJsonFile(Path.GetFullPath("../../../../../src/myNewspaper.Web/appsettings.json", AppContext.BaseDirectory))
-            .AddUserSecrets("c579816a-020e-445a-92f6-efdd7002106c").AddEnvironmentVariables().Build();
-        await using var db = new FixtureContext(new DbContextOptionsBuilder<WebScraperContext>().UseSqlServer(config.GetConnectionString("DefaultConnection")).Options);
+        await using var db = new FixtureContext(new DbContextOptionsBuilder<WebScraperContext>().UseSqlServer(TestDatabase.ConnectionString).Options);
         await using var transaction = await db.Database.BeginTransactionAsync();
         await db.Database.ExecuteSqlRawAsync("""
             CREATE TABLE dbo.StandingsSourceFixture (ID int NOT NULL PRIMARY KEY, ProviderKey nvarchar(100) NOT NULL,

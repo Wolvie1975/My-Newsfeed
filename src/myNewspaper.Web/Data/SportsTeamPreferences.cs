@@ -13,9 +13,9 @@ public static class SportsTeamPreferences
     {
         var providers = new[] { "espn-nfl", "espn-nhl", "espn-mlb", "espn-mls", "espn-nwsl", "espn-wnba", "espn-epl", "espn-championship" };
         var standings = await (from row in db.SportsStandings.AsNoTracking()
-            join source in db.SportsStandingsSources.AsNoTracking() on row.SourceId equals source.Id
-            where source.Enabled && row.IsCurrent && providers.Contains(source.ProviderKey)
-            select new { Name = row.TeamName, Provider = source.ProviderKey }).Distinct().ToListAsync();
+                               join source in db.SportsStandingsSources.AsNoTracking() on row.SourceId equals source.Id
+                               where source.Enabled && row.IsCurrent && providers.Contains(source.ProviderKey)
+                               select new { Name = row.TeamName, Provider = source.ProviderKey }).Distinct().ToListAsync();
         var fixtures = await db.SportsEvents.AsNoTracking()
             .Where(e => e.SportsEventsType != null && e.SportsEventsType.Enabled && providers.Contains(e.ProviderKey!))
             .Select(e => new { e.SchoolName, e.Opponent, Provider = e.ProviderKey! }).Distinct().ToListAsync();

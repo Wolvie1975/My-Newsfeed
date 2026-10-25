@@ -51,9 +51,7 @@ public class RankingsTests
     [Fact]
     public async Task Query_keeps_ties_and_filters_old_polls_correction_rows_and_disabled_sources()
     {
-        var config = new ConfigurationBuilder().AddJsonFile(Path.GetFullPath("../../../../../src/myNewspaper.Web/appsettings.json", AppContext.BaseDirectory))
-            .AddUserSecrets("c579816a-020e-445a-92f6-efdd7002106c").AddEnvironmentVariables().Build();
-        await using var db = new FixtureContext(new DbContextOptionsBuilder<WebScraperContext>().UseSqlServer(config.GetConnectionString("DefaultConnection")).Options);
+        await using var db = new FixtureContext(new DbContextOptionsBuilder<WebScraperContext>().UseSqlServer(TestDatabase.ConnectionString).Options);
         await using var transaction = await db.Database.BeginTransactionAsync();
         await db.Database.ExecuteSqlRawAsync("""
         CREATE TABLE dbo.RankingSourceFixture(ID int PRIMARY KEY,ProviderKey nvarchar(100),Sport nvarchar(100),LeagueId nvarchar(50),PollId nvarchar(50),DisplayName nvarchar(200),Url nvarchar(2048),Enabled bit,LastAttemptAt datetime2 NULL,LastSuccessAt datetime2 NULL,LastError nvarchar(max) NULL);
@@ -83,20 +81,43 @@ public class RankingsTests
     [Fact]
     public async Task Basketball_poll_stays_hidden_until_opening_day_and_current_season_publication()
     {
-        var config = new ConfigurationBuilder().AddJsonFile(Path.GetFullPath("../../../../../src/myNewspaper.Web/appsettings.json", AppContext.BaseDirectory))
-            .AddUserSecrets("c579816a-020e-445a-92f6-efdd7002106c").AddEnvironmentVariables().Build();
-        await using var db = new WebScraperContext(new DbContextOptionsBuilder<WebScraperContext>().UseSqlServer(config.GetConnectionString("DefaultConnection")).Options);
+        await using var db = new WebScraperContext(new DbContextOptionsBuilder<WebScraperContext>().UseSqlServer(TestDatabase.ConnectionString).Options);
         await using var transaction = await db.Database.BeginTransactionAsync();
         var tag = Guid.NewGuid().ToString("N");
-        var source = new SportsRankingSource { ProviderKey = "test-" + tag, Sport = "Men's Basketball", LeagueId = "41", PollId = "1",
-            DisplayName = tag, Url = "https://test.invalid", Enabled = true };
+        var source = new SportsRankingSource
+        {
+            ProviderKey = "test-" + tag,
+            Sport = "Men's Basketball",
+            LeagueId = "41",
+            PollId = "1",
+            DisplayName = tag,
+            Url = "https://test.invalid",
+            Enabled = true
+        };
         db.Add(source); await db.SaveChangesAsync();
         var day = new DateOnly(2031, 11, 2);
-        var poll = new SportsRankingPoll { SourceId = source.Id, PollId = "1", PollName = "Test", Season = 2032,
-            SeasonLabel = "2031-32", PublishedAtUtc = day.ToDateTime(TimeOnly.MinValue), SourceUrl = "https://test.invalid", IsCurrent = true, FetchedAt = DateTime.UtcNow };
+        var poll = new SportsRankingPoll
+        {
+            SourceId = source.Id,
+            PollId = "1",
+            PollName = "Test",
+            Season = 2032,
+            SeasonLabel = "2031-32",
+            PublishedAtUtc = day.ToDateTime(TimeOnly.MinValue),
+            SourceUrl = "https://test.invalid",
+            IsCurrent = true,
+            FetchedAt = DateTime.UtcNow
+        };
         db.Add(poll); await db.SaveChangesAsync();
-        var game = new SportsEvent { Url = "https://test.invalid/" + tag, Title = tag, ProviderKey = "big12",
-            Sport = "Men's Basketball", EventDate = day.AddDays(1), TimeTbd = true };
+        var game = new SportsEvent
+        {
+            Url = "https://test.invalid/" + tag,
+            Title = tag,
+            ProviderKey = "big12",
+            Sport = "Men's Basketball",
+            EventDate = day.AddDays(1),
+            TimeTbd = true
+        };
         db.Add(game); await db.SaveChangesAsync();
         Assert.DoesNotContain((await RankingsQuery.GetAsync(db, source.Id, NullLogger.Instance, day)).Sources, s => s.Id == source.Id);
         game.EventDate = day; await db.SaveChangesAsync();

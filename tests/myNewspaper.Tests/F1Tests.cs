@@ -29,11 +29,16 @@ public class F1Tests
     [Fact]
     public void Sprint_weekends_only_show_available_sessions_without_qualifying_duplicates()
     {
-        var race = new F1Race { RaceDate = new(2026, 10, 18), RaceTimeUtc = "04:00:00Z",
+        var race = new F1Race
+        {
+            RaceDate = new(2026, 10, 18),
+            RaceTimeUtc = "04:00:00Z",
             FirstPractice = """{"date":"2026-10-16","time":"10:00:00Z"}""",
             SprintQualifying = """{"date":"2026-10-16","time":"14:00:00Z"}""",
             SprintShootout = """{"date":"2026-10-16","time":"14:00:00Z"}""",
-            Sprint = """{"date":"2026-10-17"}""", ThirdPractice = "not-json" };
+            Sprint = """{"date":"2026-10-17"}""",
+            ThirdPractice = "not-json"
+        };
         var sessions = F1Query.Sessions(race);
         Assert.Equal(new[] { "Practice 1", "Sprint qualifying", "Sprint", "Grand Prix" }, sessions.Select(s => s.Name));
         Assert.Null(sessions[2].StartsUtc);
@@ -96,9 +101,7 @@ public class F1Tests
     }
     private static async Task<FixtureContext> Fixture()
     {
-        var config = new ConfigurationBuilder().AddJsonFile(Path.GetFullPath("../../../../../src/myNewspaper.Web/appsettings.json", AppContext.BaseDirectory))
-            .AddUserSecrets("c579816a-020e-445a-92f6-efdd7002106c").AddEnvironmentVariables().Build();
-        var db = new FixtureContext(new DbContextOptionsBuilder<WebScraperContext>().UseSqlServer(config.GetConnectionString("DefaultConnection")).Options);
+        var db = new FixtureContext(new DbContextOptionsBuilder<WebScraperContext>().UseSqlServer(TestDatabase.ConnectionString).Options);
         await db.Database.OpenConnectionAsync();
         foreach (var type in Types)
         {

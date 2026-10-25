@@ -11,11 +11,7 @@ public class TvTests
 {
     private static WebScraperContext Create()
     {
-        var config = new ConfigurationBuilder()
-            .AddJsonFile(Path.GetFullPath("../../../../../src/myNewspaper.Web/appsettings.json", AppContext.BaseDirectory))
-            .AddJsonFile(Path.GetFullPath("../../../../../src/myNewspaper.Web/appsettings.Development.json", AppContext.BaseDirectory), true)
-            .AddUserSecrets("c579816a-020e-445a-92f6-efdd7002106c").AddEnvironmentVariables().Build();
-        return new(new DbContextOptionsBuilder<WebScraperContext>().UseSqlServer(config.GetConnectionString("DefaultConnection")).Options);
+        return new(new DbContextOptionsBuilder<WebScraperContext>().UseSqlServer(TestDatabase.ConnectionString).Options);
     }
 
     [Fact]
@@ -26,16 +22,33 @@ public class TvTests
         var id = Random.Shared.Next(1_000_000_000, 1_500_000_000);
         var today = new DateOnly(2030, 1, 10);
         var dates = FeedDates.Create("America/Chicago");
-        var series = new TvSeries { TvmazeShowId = id, Title = "Test series", SourceUrl = "https://www.tvmaze.com/shows/1",
-            RawMetadata = "{}", WebChannelName = "Test platform", FirstSeenAt = DateTime.UtcNow, LastSeenAt = DateTime.UtcNow };
+        var series = new TvSeries
+        {
+            TvmazeShowId = id,
+            Title = "Test series",
+            SourceUrl = "https://www.tvmaze.com/shows/1",
+            RawMetadata = "{}",
+            WebChannelName = "Test platform",
+            FirstSeenAt = DateTime.UtcNow,
+            LastSeenAt = DateTime.UtcNow
+        };
         db.Add(series);
         await db.SaveChangesAsync();
         await TvQuery.FollowAsync(db, id, series.Title);
         TvEpisode Episode(int offset, DateOnly? date, bool special = false) => new()
         {
-            TvmazeEpisodeId = id + offset, SeriesId = series.Id, SeasonNumber = 1, EpisodeNumber = special ? null : offset,
-            IsSpecial = special, Airdate = date, IsDateOnly = true, RawAirstamp = date + "T12:00:00Z",
-            SourceUrl = "https://www.tvmaze.com/episodes/1", RawMetadata = "{}", FirstSeenAt = DateTime.UtcNow, LastSeenAt = DateTime.UtcNow
+            TvmazeEpisodeId = id + offset,
+            SeriesId = series.Id,
+            SeasonNumber = 1,
+            EpisodeNumber = special ? null : offset,
+            IsSpecial = special,
+            Airdate = date,
+            IsDateOnly = true,
+            RawAirstamp = date + "T12:00:00Z",
+            SourceUrl = "https://www.tvmaze.com/episodes/1",
+            RawMetadata = "{}",
+            FirstSeenAt = DateTime.UtcNow,
+            LastSeenAt = DateTime.UtcNow
         };
         db.AddRange(Episode(1, today), Episode(2, today), Episode(3, today, true), Episode(4, today.AddDays(7)), Episode(5, null));
         var timed = Episode(6, today.AddDays(1));

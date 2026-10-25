@@ -27,17 +27,17 @@ public sealed class TeamRecords
     {
         var result = new TeamRecords();
         foreach (var source in sources.Where(s => s.Enabled))
-        foreach (var row in rows.Where(r => r.SourceId == source.Id && r.IsCurrent
-            && (source.ProviderKey == "big12" ? CollegeSeasons.Matches(r.Season, source.Sport, today)
-                : !string.IsNullOrWhiteSpace(source.LatestSeason) && r.Season == source.LatestSeason)))
-        {
-            var text = Format(source.ProviderKey, source.Sport, StandingsQuery.ParseStatistics(row.StatsJson, row.Id, NullLogger.Instance));
-            if (text is null) continue;
-            var updated = row.FetchedAt ?? source.LastSuccessAt;
-            var stale = !string.IsNullOrWhiteSpace(source.LastError) || updated is null
-                || now - DateTime.SpecifyKind(updated.Value, DateTimeKind.Utc) > TimeSpan.FromHours(2);
-            result.entries.Add((source.ProviderKey, NormalizeSport(source.Sport), row.TeamId, TeamNames.Key(row.TeamName), new(text, updated, stale, source.ProviderKey == "big12")));
-        }
+            foreach (var row in rows.Where(r => r.SourceId == source.Id && r.IsCurrent
+                && (source.ProviderKey == "big12" ? CollegeSeasons.Matches(r.Season, source.Sport, today)
+                    : !string.IsNullOrWhiteSpace(source.LatestSeason) && r.Season == source.LatestSeason)))
+            {
+                var text = Format(source.ProviderKey, source.Sport, StandingsQuery.ParseStatistics(row.StatsJson, row.Id, NullLogger.Instance));
+                if (text is null) continue;
+                var updated = row.FetchedAt ?? source.LastSuccessAt;
+                var stale = !string.IsNullOrWhiteSpace(source.LastError) || updated is null
+                    || now - DateTime.SpecifyKind(updated.Value, DateTimeKind.Utc) > TimeSpan.FromHours(2);
+                result.entries.Add((source.ProviderKey, NormalizeSport(source.Sport), row.TeamId, TeamNames.Key(row.TeamName), new(text, updated, stale, source.ProviderKey == "big12")));
+            }
         return result;
     }
 
@@ -56,7 +56,10 @@ public sealed class TeamRecords
 
     private static string NormalizeSport(string? sport) => sport switch
     {
-        "Basketball" => "Men's Basketball", "Women's Soccer" => "Soccer", "Women's Volleyball" => "Volleyball", _ => sport ?? ""
+        "Basketball" => "Men's Basketball",
+        "Women's Soccer" => "Soccer",
+        "Women's Volleyball" => "Volleyball",
+        _ => sport ?? ""
     };
 
     public static string? Format(string provider, string sport, IReadOnlyList<StandingStatistic> stats)
@@ -65,7 +68,7 @@ public sealed class TeamRecords
         {
             var parts = text?.Replace('–', '-').Split('-');
             return parts is { Length: 2 or 3 } && parts.All(p => int.TryParse(p, out var n) && n >= 0)
-                ? string.Join('-', parts.Select(p => int.Parse(p).ToString(CultureInfo.InvariantCulture))) : null;
+                ? string.Join('-', parts.Select(p => int.Parse(p, CultureInfo.InvariantCulture).ToString(CultureInfo.InvariantCulture))) : null;
         }
         if (provider == "big12")
         {
@@ -93,11 +96,19 @@ public sealed class TeamRecords
 
     public static (string? Provider, string? Sport) Competition(string? sport, string? league) => league switch
     {
-        "college-football" => ("big12", "Football"), "mens-college-basketball" => ("big12", "Men's Basketball"),
-        "womens-college-basketball" => ("big12", "Women's Basketball"), "womens-college-volleyball" => ("big12", "Volleyball"),
-        "usa.ncaa.w.1" => ("big12", "Soccer"), "usa.1" => ("espn-mls", "Soccer"), "usa.nwsl" => ("espn-nwsl", "Soccer"),
-        "eng.1" => ("espn-epl", "Soccer"), "eng.2" => ("espn-championship", "Soccer"),
-        "mlb" => ("espn-mlb", "Baseball"), "wnba" => ("espn-wnba", "Women's Basketball"),
-        "nhl" => ("espn-nhl", "Hockey"), "nfl" => ("espn-nfl", "Football"), _ => ("unsupported", sport)
+        "college-football" => ("big12", "Football"),
+        "mens-college-basketball" => ("big12", "Men's Basketball"),
+        "womens-college-basketball" => ("big12", "Women's Basketball"),
+        "womens-college-volleyball" => ("big12", "Volleyball"),
+        "usa.ncaa.w.1" => ("big12", "Soccer"),
+        "usa.1" => ("espn-mls", "Soccer"),
+        "usa.nwsl" => ("espn-nwsl", "Soccer"),
+        "eng.1" => ("espn-epl", "Soccer"),
+        "eng.2" => ("espn-championship", "Soccer"),
+        "mlb" => ("espn-mlb", "Baseball"),
+        "wnba" => ("espn-wnba", "Women's Basketball"),
+        "nhl" => ("espn-nhl", "Hockey"),
+        "nfl" => ("espn-nfl", "Football"),
+        _ => ("unsupported", sport)
     };
 }

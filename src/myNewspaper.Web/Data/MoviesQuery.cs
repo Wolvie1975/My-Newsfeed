@@ -12,8 +12,12 @@ public static class MoviesQuery
 {
     public static readonly IReadOnlyDictionary<string, string> Types = new Dictionary<string, string>
     {
-        ["theatrical"] = "In theaters", ["subscription"] = "Streaming", ["digital"] = "Digital",
-        ["digital_rental"] = "Digital rental", ["digital_purchase"] = "Digital purchase", ["disc"] = "On disc"
+        ["theatrical"] = "In theaters",
+        ["subscription"] = "Streaming",
+        ["digital"] = "Digital",
+        ["digital_rental"] = "Digital rental",
+        ["digital_purchase"] = "Digital purchase",
+        ["disc"] = "On disc"
     };
 
     public static Task<MoviesPage> GetAsync(WebScraperContext db, DateOnly today, string? search,
@@ -66,9 +70,13 @@ public static class MoviesQuery
         var rows = await releases.Where(x => representatives.Contains(x.r.ID))
             .OrderBy(x => x.r.ReleaseDate == null).ThenBy(x => x.r.ReleaseDate)
             .ThenBy(x => x.movie.Title).ThenBy(x => x.r.ID).Skip(Math.Max(0, offset)).Take(take)
-            .Select(x => new { MovieId = x.movie.ID, Item = new MovieReleaseItem(x.r.ID, x.movie.Title, x.movie.OriginalYear, x.movie.Description,
+            .Select(x => new
+            {
+                MovieId = x.movie.ID,
+                Item = new MovieReleaseItem(x.r.ID, x.movie.Title, x.movie.OriginalYear, x.movie.Description,
                 x.movie.PosterUrl, x.movie.Certification, x.movie.RuntimeMinutes, x.r.ReleaseDate, x.r.DateStatus,
-                x.r.ReleaseType, x.r.Platform, x.r.Format, x.r.IsReRelease, x.source.Name, x.r.SourceUrl) }).ToListAsync();
+                x.r.ReleaseType, x.r.Platform, x.r.Format, x.r.IsReRelease, x.source.Name, x.r.SourceUrl)
+            }).ToListAsync();
         var movieIds = rows.Select(x => x.MovieId).Distinct().ToArray();
         var variants = await releases.Where(x => movieIds.Contains(x.movie.ID))
             .Select(x => new { MovieId = x.movie.ID, x.r.ReleaseDate, x.r.ReleaseType, x.r.IsReRelease, x.r.Format, x.r.Platform, x.r.DateStatus })

@@ -55,9 +55,13 @@ public static class EventsQuery
         return rows.Select(r => new ScheduleChoice((r.Provider ?? "") + "|" + r.Sport,
             r.Provider switch
             {
-                "espn-epl" => "Premier League", "espn-championship" => "EFL Championship",
-                "espn-mls" => "MLS", "espn-nwsl" => "NWSL", "espn-mlb" => "MLB",
-                "espn-wnba" => "WNBA", "espn-nhl" => "NHL",
+                "espn-epl" => "Premier League",
+                "espn-championship" => "EFL Championship",
+                "espn-mls" => "MLS",
+                "espn-nwsl" => "NWSL",
+                "espn-mlb" => "MLB",
+                "espn-wnba" => "WNBA",
+                "espn-nhl" => "NHL",
                 "big12" => "Big 12 " + r.Sport,
                 _ => r.Sport ?? "Other events"
             }, r.Provider ?? "", r.Sport))

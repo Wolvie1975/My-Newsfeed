@@ -23,11 +23,17 @@ public sealed class SharedArticles(IDbContextFactory<WebScraperContext> factory)
         static string Text(string? value, int maximum) => (value ?? "").Length <= maximum
             ? value ?? "" : throw new ArgumentException("Article text is too long.");
         if (article.Kind is not ("article" or "video")) throw new ArgumentException("Invalid saved content type.");
-        return article with { Url = NormalizeUrl(article.Url), Title = Text(article.Title, 1000),
-            Source = Text(article.Source, 500), Summary = Text(article.Summary, 4000),
+        return article with
+        {
+            Url = NormalizeUrl(article.Url),
+            Title = Text(article.Title, 1000),
+            Source = Text(article.Source, 500),
+            Summary = Text(article.Summary, 4000),
             Image = string.IsNullOrEmpty(article.Image) ? null : NormalizeUrl(article.Image),
-            Date = Text(article.Date, 100), DateLabel = Text(article.DateLabel, 200),
-            SavedAt = article.SavedAt ?? DateTimeOffset.UtcNow };
+            Date = Text(article.Date, 100),
+            DateLabel = Text(article.DateLabel, 200),
+            SavedAt = article.SavedAt ?? DateTimeOffset.UtcNow
+        };
     }
     public static string NormalizeUrl(string? value)
     {

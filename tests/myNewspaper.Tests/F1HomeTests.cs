@@ -49,7 +49,9 @@ public class F1HomeTests
         await using var renderer = new HtmlRenderer(services, services.GetRequiredService<ILoggerFactory>());
         var html = await renderer.Dispatcher.InvokeAsync(async () => (await renderer.RenderComponentAsync<F1Home>(ParameterView.FromDictionary(new Dictionary<string, object?>
         {
-            ["Data"] = Page, ["Embedded"] = embedded, ["NowUtc"] = new DateTime(2026, 10, 23, 12, 0, 0, DateTimeKind.Utc)
+            ["Data"] = Page,
+            ["Embedded"] = embedded,
+            ["NowUtc"] = new DateTime(2026, 10, 23, 12, 0, 0, DateTimeKind.Utc)
         }))).ToHtmlString());
         Assert.Contains("United States Grand Prix", html);
         Assert.Contains("Practice 1", html);

@@ -2,6 +2,7 @@ using System.Net;
 using Microsoft.Extensions.Configuration;
 using myNewspaper.Web.Watching;
 namespace myNewspaper.Tests;
+
 public class WatchMixedSearchTests
 {
     private sealed class Provider : HttpMessageHandler, IHttpClientFactory
@@ -22,18 +23,19 @@ public class WatchMixedSearchTests
             return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(json) });
         }
     }
-    [Fact] public async Task Mixed_search_keeps_overlapping_movie_tv_ids_filters_people_and_uses_correct_providers()
+    [Fact]
+    public async Task Mixed_search_keeps_overlapping_movie_tv_ids_filters_people_and_uses_correct_providers()
     {
         var provider = new Provider();
-        var catalog = new WatchCatalog(provider, new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string,string?>{{"Movies:AccessToken","test"}}).Build());
-        var result = await catalog.FilledPage("multi", "Shared title", selected:"8");
+        var catalog = new WatchCatalog(provider, new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?> { { "Movies:AccessToken", "test" } }).Build());
+        var result = await catalog.FilledPage("multi", "Shared title", selected: "8");
         Assert.False(result.Failed); Assert.Equal(2, result.Items.Count);
-        Assert.Contains(result.Items, t=>t.Kind=="movie"&&t.Id==7&&t.Year=="2020");
-        Assert.Contains(result.Items, t=>t.Kind=="tv"&&t.Id==7&&t.Year=="2021");
-        Assert.All(result.Items,t=>Assert.Contains("Netflix",t.MatchingServices!));
-        Assert.Contains(provider.Paths,p=>p.Contains("/search/multi?query=Shared%20title"));
-        Assert.Contains(provider.Paths,p=>p.Contains("/movie/7/watch/providers"));
-        Assert.Contains(provider.Paths,p=>p.Contains("/tv/7/watch/providers"));
+        Assert.Contains(result.Items, t => t.Kind == "movie" && t.Id == 7 && t.Year == "2020");
+        Assert.Contains(result.Items, t => t.Kind == "tv" && t.Id == 7 && t.Year == "2021");
+        Assert.All(result.Items, t => Assert.Contains("Netflix", t.MatchingServices!));
+        Assert.Contains(provider.Paths, p => p.Contains("/search/multi?query=Shared%20title"));
+        Assert.Contains(provider.Paths, p => p.Contains("/movie/7/watch/providers"));
+        Assert.Contains(provider.Paths, p => p.Contains("/tv/7/watch/providers"));
         Assert.True((await catalog.FilledPage("multi", null)).Failed);
         Assert.False(WatchCatalog.Kind("multi"));
     }

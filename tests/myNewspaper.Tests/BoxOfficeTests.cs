@@ -17,9 +17,7 @@ public class BoxOfficeTests
     [Fact]
     public async Task Publishers_stay_separate_and_empty_sources_remain_available_with_stable_paging()
     {
-        var config = new ConfigurationBuilder().AddJsonFile(Path.GetFullPath("../../../../../src/myNewspaper.Web/appsettings.json", AppContext.BaseDirectory))
-            .AddUserSecrets("c579816a-020e-445a-92f6-efdd7002106c").AddEnvironmentVariables().Build();
-        await using var db = new WebScraperContext(new DbContextOptionsBuilder<WebScraperContext>().UseSqlServer(config.GetConnectionString("DefaultConnection")).Options);
+        await using var db = new WebScraperContext(new DbContextOptionsBuilder<WebScraperContext>().UseSqlServer(TestDatabase.ConnectionString).Options);
         await using var transaction = await db.Database.BeginTransactionAsync();
         var tag = Guid.NewGuid().ToString("N");
         var category = await db.SourceCategories.SingleOrDefaultAsync(c => c.CategoryName == "Box Office") ?? new SourceCategory { CategoryName = "Box Office" };

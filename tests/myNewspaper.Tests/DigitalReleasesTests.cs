@@ -28,9 +28,7 @@ public class DigitalReleasesTests
     [Fact]
     public async Task Digital_view_includes_today_and_future_dates_but_excludes_past_and_unconfirmed_releases()
     {
-        var config = new ConfigurationBuilder().AddJsonFile(Path.GetFullPath("../../../../../src/myNewspaper.Web/appsettings.json", AppContext.BaseDirectory))
-            .AddUserSecrets("c579816a-020e-445a-92f6-efdd7002106c").AddEnvironmentVariables().Build();
-        await using var db = new WebScraperContext(new DbContextOptionsBuilder<WebScraperContext>().UseSqlServer(config.GetConnectionString("DefaultConnection")).Options);
+        await using var db = new WebScraperContext(new DbContextOptionsBuilder<WebScraperContext>().UseSqlServer(TestDatabase.ConnectionString).Options);
         await using var transaction = await db.Database.BeginTransactionAsync();
         var tag = Guid.NewGuid().ToString("N");
         var insider = await db.MovieReleaseSources.SingleOrDefaultAsync(s => s.SourceKey == "movieinsider")
@@ -42,17 +40,40 @@ public class DigitalReleasesTests
         if (db.Entry(other).State == EntityState.Detached) db.Add(other);
         var movie = new Movie { Title = tag, FirstSeenAt = DateTime.UtcNow, LastSeenAt = DateTime.UtcNow };
         db.Add(movie); await db.SaveChangesAsync();
-        var link = new MovieSourceLink { MovieId = movie.ID, MovieReleaseSourceId = insider.ID, ExternalMovieId = tag,
-            Url = "https://test.invalid", FirstSeenAt = DateTime.UtcNow, LastSeenAt = DateTime.UtcNow };
-        var otherLink = new MovieSourceLink { MovieId = movie.ID, MovieReleaseSourceId = other.ID, ExternalMovieId = tag,
-            Url = "https://test.invalid", FirstSeenAt = DateTime.UtcNow, LastSeenAt = DateTime.UtcNow };
+        var link = new MovieSourceLink
+        {
+            MovieId = movie.ID,
+            MovieReleaseSourceId = insider.ID,
+            ExternalMovieId = tag,
+            Url = "https://test.invalid",
+            FirstSeenAt = DateTime.UtcNow,
+            LastSeenAt = DateTime.UtcNow
+        };
+        var otherLink = new MovieSourceLink
+        {
+            MovieId = movie.ID,
+            MovieReleaseSourceId = other.ID,
+            ExternalMovieId = tag,
+            Url = "https://test.invalid",
+            FirstSeenAt = DateTime.UtcNow,
+            LastSeenAt = DateTime.UtcNow
+        };
         db.AddRange(link, otherLink); await db.SaveChangesAsync();
         var monday = new DateOnly(2026, 10, 5);
         MovieRelease Release(string key, DateOnly day, string type = "digital", string dateStatus = "announced", string status = "scheduled") => new()
         {
-            MovieSourceLinkId = link.ID, ReleaseKey = key, ReleaseDate = day, CountryCode = "US", ReleaseType = type,
-            DateStatus = dateStatus, ReleaseStatus = status, Platform = type == "subscription" ? "Test streaming" : null, SourceUrl = "https://test.invalid", Format = "VOD / Digital",
-            FirstSeenAt = DateTime.UtcNow, LastSeenAt = DateTime.UtcNow
+            MovieSourceLinkId = link.ID,
+            ReleaseKey = key,
+            ReleaseDate = day,
+            CountryCode = "US",
+            ReleaseType = type,
+            DateStatus = dateStatus,
+            ReleaseStatus = status,
+            Platform = type == "subscription" ? "Test streaming" : null,
+            SourceUrl = "https://test.invalid",
+            Format = "VOD / Digital",
+            FirstSeenAt = DateTime.UtcNow,
+            LastSeenAt = DateTime.UtcNow
         };
         var early = Release("early", monday); var sunday = Release("sunday", monday.AddDays(6));
         var next = Release("next", monday.AddDays(7));

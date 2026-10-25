@@ -63,9 +63,9 @@ public static partial class MovieCommerceQuery
         var ids = items.Where(i => Provider(i.Type) is not null).Select(i => i.Id).Distinct().ToArray();
         if (ids.Length == 0) return items;
         var mappings = await (from release in db.MovieReleases.AsNoTracking()
-            join link in db.MovieSourceLinks on release.MovieSourceLinkId equals link.ID
-            where ids.Contains(release.ID)
-            select new { ReleaseId = release.ID, link.MovieId }).ToListAsync();
+                              join link in db.MovieSourceLinks on release.MovieSourceLinkId equals link.ID
+                              where ids.Contains(release.ID)
+                              select new { ReleaseId = release.ID, link.MovieId }).ToListAsync();
         var movieIds = mappings.Select(m => m.MovieId).Distinct().ToArray();
         // Query failures propagate; only an absent cache row is a normal fallback case.
         var cache = await db.Set<MovieCommerceRow>().AsNoTracking().Where(c => movieIds.Contains(c.MovieId)

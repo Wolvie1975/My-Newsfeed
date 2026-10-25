@@ -44,9 +44,7 @@ public class EnglishSoccerTests
     [Fact]
     public async Task Results_filter_disabled_nonfinal_missing_and_old_seasons_then_preserve_last_good_on_feed_error()
     {
-        var config = new ConfigurationBuilder().AddJsonFile(Path.GetFullPath("../../../../../src/myNewspaper.Web/appsettings.json", AppContext.BaseDirectory))
-            .AddUserSecrets("c579816a-020e-445a-92f6-efdd7002106c").AddEnvironmentVariables().Build();
-        await using var db = new FixtureContext(new DbContextOptionsBuilder<WebScraperContext>().UseSqlServer(config.GetConnectionString("DefaultConnection")).Options);
+        await using var db = new FixtureContext(new DbContextOptionsBuilder<WebScraperContext>().UseSqlServer(TestDatabase.ConnectionString).Options);
         await using var transaction = await db.Database.BeginTransactionAsync();
         await db.Database.ExecuteSqlRawAsync("""
             CREATE TABLE dbo.EnglishFeedFixture (ID int PRIMARY KEY, RssUrl nvarchar(2048) NOT NULL, EventsTypeName nvarchar(200) NOT NULL,
@@ -63,10 +61,22 @@ public class EnglishSoccerTests
             """);
         SportsMatchResult Row(int id, int season = 2026, string status = "STATUS_FULL_TIME", int source = 1) => new()
         {
-            Id = id, SourceId = source, ProviderKey = "espn-championship", GameId = id, Season = season,
-            MatchDate = new(2026, 10, 1), StartsAtUtc = new DateTime(2026, 10, 1, 12, 0, 0).AddMinutes(id),
-            HomeTeamId = 352, AwayTeamId = 1, HomeTeamName = "Wrexham", AwayTeamName = "Opponent",
-            HomeScore = 2, AwayScore = 1, ScheduleStatus = status, FirstSeenAt = DateTime.UtcNow, LastSeenAt = DateTime.UtcNow
+            Id = id,
+            SourceId = source,
+            ProviderKey = "espn-championship",
+            GameId = id,
+            Season = season,
+            MatchDate = new(2026, 10, 1),
+            StartsAtUtc = new DateTime(2026, 10, 1, 12, 0, 0).AddMinutes(id),
+            HomeTeamId = 352,
+            AwayTeamId = 1,
+            HomeTeamName = "Wrexham",
+            AwayTeamName = "Opponent",
+            HomeScore = 2,
+            AwayScore = 1,
+            ScheduleStatus = status,
+            FirstSeenAt = DateTime.UtcNow,
+            LastSeenAt = DateTime.UtcNow
         };
         var away = Row(2); away.HomeTeamId = 1; away.AwayTeamId = 352;
         var other = Row(3); other.HomeTeamId = 2;

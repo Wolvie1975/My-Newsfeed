@@ -22,10 +22,11 @@ builder.Services.AddScoped<ScoreboardRepository>();
 builder.Services.AddSingleton<SharedArticles>();
 builder.Services.AddAntiforgery(options => options.HeaderName = "X-Saved-CSRF");
 builder.Services.AddSingleton<myNewspaper.Web.Watching.WatchCatalog>();
-builder.Services.AddHttpClient("watch-catalog",client=>{client.BaseAddress=new Uri("https://api.themoviedb.org/3/");client.Timeout=TimeSpan.FromSeconds(10);});
+builder.Services.AddHttpClient("watch-catalog", client => { client.BaseAddress = new Uri("https://api.themoviedb.org/3/"); client.Timeout = TimeSpan.FromSeconds(10); });
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<LocalWeather>();
-builder.Services.AddHttpClient("local-weather", client => {
+builder.Services.AddHttpClient("local-weather", client =>
+{
     client.Timeout = TimeSpan.FromSeconds(8);
     client.DefaultRequestHeaders.UserAgent.ParseAdd("myNewspaper/1.0 (+https://www.weather.gov/documentation/services-web-api)");
     client.DefaultRequestHeaders.Accept.ParseAdd("application/geo+json");
@@ -140,7 +141,8 @@ app.MapPost("/account/logout", async (HttpContext http) =>
 // Used by the container health check: healthy only when the database is reachable.
 // Preserve old result bookmarks as final-score views of Scoreboard.
 // Hourly homepage spotlight; only this card refreshes.
-app.MapGet("/home/opinion", async (HttpContext http, IDbContextFactory<WebScraperContext> factory) => {
+app.MapGet("/home/opinion", async (HttpContext http, IDbContextFactory<WebScraperContext> factory) =>
+{
     http.Response.Headers.CacheControl = "no-store";
     await using var db = await factory.CreateDbContextAsync();
     var snapshot = await HomeOpinionQuery.GetAsync(db, DateTime.UtcNow);
@@ -148,7 +150,8 @@ app.MapGet("/home/opinion", async (HttpContext http, IDbContextFactory<WebScrape
 });
 
 // Hourly homepage lead; only the lead story card refreshes.
-app.MapGet("/home/lead", async (HttpContext http, IDbContextFactory<WebScraperContext> factory) => {
+app.MapGet("/home/lead", async (HttpContext http, IDbContextFactory<WebScraperContext> factory) =>
+{
     http.Response.Headers.CacheControl = "no-store";
     await using var db = await factory.CreateDbContextAsync();
     var snapshot = await HomeLeadQuery.GetAsync(db, DateTime.UtcNow);
@@ -156,20 +159,23 @@ app.MapGet("/home/lead", async (HttpContext http, IDbContextFactory<WebScraperCo
 });
 
 // Native navigation selects work with JavaScript disabled; never redirect off-site.
-app.MapGet("/navigate", (string? to) => {
+app.MapGet("/navigate", (string? to) =>
+{
     var local = !string.IsNullOrEmpty(to) && to[0] == '/'
         && (to.Length == 1 || to[1] is not ('/' or '\\')) && !to.Any(char.IsControl);
     return Results.LocalRedirect(local ? to! : "/");
 });
 
-app.MapGet("/results", (HttpContext http) => {
+app.MapGet("/results", (HttpContext http) =>
+{
     var query = new Dictionary<string, string?> { ["status"] = "final" };
     foreach (var key in new[] { "day", "follow" })
         if (http.Request.Query.TryGetValue(key, out var value)) query[key] = value.ToString();
     return Results.LocalRedirect(Microsoft.AspNetCore.WebUtilities.QueryHelpers.AddQueryString("/scoreboard", query));
 });
 
-app.MapGet("/scoreboard/fragment", (HttpContext http, string? day, string? competition, bool? compact, int? follow, string? status, string? show) => {
+app.MapGet("/scoreboard/fragment", (HttpContext http, string? day, string? competition, bool? compact, int? follow, string? status, string? show) =>
+{
     http.Response.Headers.CacheControl = "no-store";
     return new Microsoft.AspNetCore.Http.HttpResults.RazorComponentResult<myNewspaper.Web.Components.ScoreboardPanel>(
         new Dictionary<string, object?> { ["Day"] = day, ["Competition"] = competition, ["Compact"] = compact == true, ["Follow"] = follow, ["Status"] = status, ["Show"] = show });
@@ -211,15 +217,21 @@ app.MapGet("/feed/more", async (HttpContext http, IDbContextFactory<WebScraperCo
         if (categoryId is null) return Results.NotFound();
         q = null;
     }
-    var sectionCategoryName = view switch {
-        "entertainment-news" => NewsSections.Entertainment, "tv-film-news" => NewsSections.TvFilm,
-        "sports-news" => NewsSections.Sports, "mens-college-basketball-news" => NewsSections.MensBasketball,
-        "sports-big12-news" => Big12NewsQuery.CategoryName, "sports-f1-news" => F1NewsQuery.CategoryName, _ => null
+    var sectionCategoryName = view switch
+    {
+        "entertainment-news" => NewsSections.Entertainment,
+        "tv-film-news" => NewsSections.TvFilm,
+        "sports-news" => NewsSections.Sports,
+        "mens-college-basketball-news" => NewsSections.MensBasketball,
+        "sports-big12-news" => Big12NewsQuery.CategoryName,
+        "sports-f1-news" => F1NewsQuery.CategoryName,
+        _ => null
     };
     var hub = NewsSections.HubForView(view);
     var sectionNews = hub != null;
     FeedCategory? sectionCategory = null;
-    if (sectionNews) {
+    if (sectionNews)
+    {
         sectionCategory = await db.SourceCategories.Where(c => c.NewsHub == hub
                 && (sectionCategoryName != null ? c.CategoryName == sectionCategoryName : c.Id == categoryId)
                 && db.Sources.Any(s => s.Enabled && s.SourceCategoryId == c.Id))
