@@ -76,8 +76,9 @@ const base = process.env.BASE_URL || 'http://localhost:5295',
                         await page.locator('.mobile-nav > summary').click();
                         const link = page.locator('[aria-labelledby="mobile-entertainment-heading"] a').first();
                         await link.scrollIntoViewIfNeeded();
+                        const target = new URL(await link.getAttribute('href'), base + '/').href;
                         await link.click();
-                        await page.waitForURL(base + '/entertainment/news');
+                        await page.waitForURL(target);
                     }
                     if (root && width <= 430 && path === '/')
                         await page.screenshot({ path: root + '/home-' + width + '-' + theme + '.png' });

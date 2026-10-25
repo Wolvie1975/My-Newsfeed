@@ -19,6 +19,8 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
         await page.locator('.watch-toggle').first().waitFor();
         await page.getByRole('link', { name: 'Movies', exact: true }).click();
         await page.waitForURL((u) => u.searchParams.get('kind') === 'movie');
+        // Blazor updates the URL before patching the page; typing earlier lands in the outgoing search box.
+        await page.locator('.watch-toggle [aria-current=page]', { hasText: 'Movies' }).waitFor();
         assert.equal(param('sort'), 'services');
         await page.locator('#watch-query').fill('Arrival');
         await page.getByRole('button', { name: 'Search', exact: true }).click();

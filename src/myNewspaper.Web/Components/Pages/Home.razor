@@ -27,6 +27,8 @@
 <p class="updated" data-personal-status role="status"></p>
 <div class="d-grid" data-home-grid>
 
+    <HomeLeadStory Snapshot="@lead" />
+
     <section data-home-section="watch" class="d-card d-watch" aria-labelledby="h-home-watch">
         <div class="d-card__head"><h2 class="d-card__title" id="h-home-watch">Where to watch</h2></div>
         <form method="get" action="watch" class="watch-search d-watch__search" role="search" aria-label="Where to watch search">
@@ -38,9 +40,6 @@
         </form>
     </section>
 
-
-
-    <HomeLeadStory Snapshot="@lead" />
 
     <HomeHeadlineShelf SectionKey="news" Title="More headlines" HeadingId="h-news" Href="news"
                        CssClass="d-news" Stories="@headlineStories" EmptyText="More headlines will appear as new stories arrive." />

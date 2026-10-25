@@ -25,13 +25,18 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
         async function check(width) {
             await page.setViewportSize({ width, height: 1000 });
             await page.waitForTimeout(350);
-            const cards = await geometry();
+            const all = await geometry();
+            // The rotating lead story always comes first and Where to watch directly after it.
             assert.deepEqual(
-                cards.slice(0, 2).map((card) => card.key),
-                ['watch', 'news'],
+                all.slice(0, 2).map((card) => card.key),
+                ['lead', 'watch'],
             );
+            const [lead, ...cards] = all;
             if (width >= 1024) {
                 assert.equal(await page.locator('[data-home-grid]').getAttribute('data-masonry'), '');
+                // Full-width lead above the two cascading columns.
+                assert(lead.right - lead.x > 1.8 * (cards[0].right - cards[0].x), 'lead should span both columns');
+                assert(lead.bottom <= Math.min(cards[0].y, cards[1].y));
                 assert(cards[0].x < cards[1].x);
                 assert(Math.abs(cards[0].y - cards[1].y) < 2);
                 const bottoms = [cards[0].bottom, cards[1].bottom];
@@ -52,11 +57,11 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
                 }
             } else {
                 assert.equal(await page.locator('[data-home-grid]').getAttribute('data-masonry'), null);
-                for (let i = 1; i < cards.length; i++) assert(cards[i].y >= cards[i - 1].bottom);
+                for (let i = 1; i < all.length; i++) assert(all[i].y >= all[i - 1].bottom);
             }
-            for (let i = 0; i < cards.length; i++)
-                for (const b of cards.slice(i + 1)) {
-                    const a = cards[i];
+            for (let i = 0; i < all.length; i++)
+                for (const b of all.slice(i + 1)) {
+                    const a = all[i];
                     assert(
                         a.right <= b.x + 1 || b.right <= a.x + 1 || a.bottom <= b.y + 1 || b.bottom <= a.y + 1,
                         'Cards overlap',
@@ -81,30 +86,24 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
         const plain = await browser.newContext({ javaScriptEnabled: false, viewport: { width: 1440, height: 1000 } });
         const staticPage = await plain.newPage();
         await staticPage.goto(base + '/');
-        const first = await staticPage
-            .locator('[data-home-section]')
-            .evaluateAll((nodes) =>
-                nodes.slice(0, 2).map((node) => ({ key: node.dataset.homeSection, y: node.getBoundingClientRect().y })),
+        const firstTwo = () =>
+            staticPage.locator('[data-home-section]').evaluateAll((nodes) =>
+                nodes.slice(0, 2).map((node) => {
+                    const r = node.getBoundingClientRect();
+                    return { key: node.dataset.homeSection, top: r.top, bottom: r.bottom, width: r.width };
+                }),
             );
-        assert.deepEqual(
-            first.map((card) => card.key),
-            ['watch', 'news'],
-        );
-        assert.equal(first[0].y, first[1].y);
-        await staticPage.setViewportSize({ width: 390, height: 1000 });
-        assert(
-            await staticPage
-                .locator('[data-home-section="watch"]')
-                .evaluate(
-                    (node) =>
-                        node.getBoundingClientRect().bottom <=
-                        document.querySelector('[data-home-section="news"]').getBoundingClientRect().top,
-                ),
-        );
+        for (const width of [1440, 390]) {
+            await staticPage.setViewportSize({ width, height: 1000 });
+            const [lead, watch] = await firstTwo();
+            assert.deepEqual([lead.key, watch.key], ['lead', 'watch']);
+            assert(lead.bottom <= watch.top, `no-JS ${width}px: lead should sit above Watch`);
+            if (width >= 1024) assert(lead.width > 1.8 * watch.width, 'no-JS desktop lead should span both columns');
+        }
         await plain.close();
         assert.deepEqual(errors, []);
         console.log(
-            'Cascading columns, Watch/News priority, mobile order, resizing, dynamic heights, hidden sections and no-JavaScript fallback passed.',
+            'Cascading columns, full-width lead then Watch, mobile order, resizing, dynamic heights, hidden sections and no-JavaScript fallback passed.',
         );
     } finally {
         await browser.close();

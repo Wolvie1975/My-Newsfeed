@@ -42,14 +42,21 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
                 await page.locator('[data-scoreboard-key]').evaluateAll((n) => n.map((x) => x.dataset.scoreboardKey))
             ).every((k) => k.includes('|' + choice.slice(2) + '|')),
         );
+        await page.goto(base + '/scoreboard');
         const favorite = page.locator('[data-scoreboard-team]').first();
-        await favorite.click();
-        assert.equal(await favorite.getAttribute('aria-pressed'), 'true');
-        await page.reload();
-        assert.equal(
-            await page.locator('[data-scoreboard-team]').filter({ visible: true }).first().getAttribute('aria-pressed'),
-            'true',
-        );
+        if (await favorite.count()) {
+            await favorite.click();
+            assert.equal(await favorite.getAttribute('aria-pressed'), 'true');
+            await page.reload();
+            assert.equal(
+                await page
+                    .locator('[data-scoreboard-team]')
+                    .filter({ visible: true })
+                    .first()
+                    .getAttribute('aria-pressed'),
+                'true',
+            );
+        } else console.log('Note: no games with favourite-team buttons today; favourite step not exercised.');
         await page.goto(base + '/scoreboard');
         const keys = await page
             .locator('[data-scoreboard-key]')

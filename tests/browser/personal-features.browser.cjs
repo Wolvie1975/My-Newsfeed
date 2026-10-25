@@ -28,10 +28,15 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
         assert.equal((await page.goto(base + '/search?q=Kansas')).status(), 404);
         assert.equal((await page.goto(base + '/week')).status(), 404);
         assert.equal(await page.evaluate(async () => (await fetch('/calendar/week.ics')).status), 404);
-        await page.goto(base + '/settings');
-        await page.uncheck('[data-home-visible="videos"]');
-        await page.locator('[data-home-move="news:-1"]').click();
+        // Homepage section controls left Settings on October 20; saved preferences still apply.
+        const setHomePrefs = (prefs) =>
+            page.evaluate((value) => {
+                const stored = JSON.parse(localStorage.getItem('mynewsfeed-personal-v1') || '{}');
+                localStorage.setItem('mynewsfeed-personal-v1', JSON.stringify({ ...stored, ...value }));
+            }, prefs);
         await page.goto(base + '/');
+        await setHomePrefs({ hidden: ['videos'] });
+        await page.reload();
         assert(await page.locator('[data-home-section="videos"]').isHidden());
         assert(await page.locator('[data-home-grid]').evaluate((e) => e.classList.contains('is-customized')));
         await page.goto(base + '/news');
@@ -46,8 +51,8 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
         // Homepage choices still synchronize between tabs.
         const other = await context.newPage();
         await other.goto(base + '/');
-        await page.goto(base + '/settings');
-        await page.check('[data-home-visible="videos"]');
+        await other.waitForFunction(() => document.querySelector('[data-home-section="videos"]').hidden);
+        await setHomePrefs({ hidden: [] });
         await other.waitForFunction(() => !document.querySelector('[data-home-section="videos"]').hidden);
         await other.close();
         // Saving still works without read/mute buttons.

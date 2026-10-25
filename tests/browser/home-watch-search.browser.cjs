@@ -18,7 +18,10 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
                 const box = await card.boundingBox();
                 const sports = await page.locator('[data-home-section="sports"]').boundingBox();
                 assert(box.y + box.height <= sports.y + 1);
-                if (width >= 1024) assert.equal(box.x, sports.x);
+                // Since October 24 the card sits directly below the full-width lead story.
+                const lead = await page.locator('[data-home-section="lead"]').boundingBox();
+                assert(lead.y + lead.height <= box.y + 1);
+                if (width >= 1024) assert.equal(box.x, lead.x);
                 assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
                 const input = page.getByLabel('Movie or TV title', { exact: true });
                 assert.equal(await input.getAttribute('maxlength'), '120');
@@ -33,7 +36,7 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
             await context.close();
         }
         console.log(
-            'Homepage Where to watch: card above sports, removed inline link, 360/390/1440px, required field, encoded title navigation to /watch, retained query, JS/no-JS passed.',
+            'Homepage Where to watch: card below the lead and above sports, removed inline link, 360/390/1440px, required field, encoded title navigation to /watch, retained query, JS/no-JS passed.',
         );
     } finally {
         await browser.close();

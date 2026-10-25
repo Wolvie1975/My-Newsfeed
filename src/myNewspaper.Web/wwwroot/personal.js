@@ -19,23 +19,6 @@
         'movies',
         'digital',
     ];
-    const labels = {
-        lead: 'Top story',
-        scoreboard: 'Scoreboard',
-        watch: 'Where to watch',
-        sports: 'Today & Tonight',
-        'sports-news': 'Sports headlines',
-        'entertainment-news': 'Entertainment headlines',
-        f1: 'F1',
-        rankings: 'Top 25',
-        news: 'More headlines',
-        opinion: 'Opinion',
-        forecasts: 'Weekend box office',
-        movies: 'Friday theater releases',
-        digital: 'Upcoming Digital / VOD',
-        tv: 'Today’s episodes',
-        videos: 'Latest videos',
-    };
     let storage = true,
         pending = false,
         weatherController;
@@ -154,28 +137,6 @@
             const noTeams = document.querySelector('[data-home-teams-empty]');
             if (noTeams) noTeams.hidden = !p.teamsOnly || !rows.length || rows.some((row) => !row.hidden);
         }
-        const host = document.querySelector('[data-home-preferences]');
-        if (host && host.dataset.signature !== JSON.stringify([p.order, p.hidden])) {
-            host.dataset.signature = JSON.stringify([p.order, p.hidden]);
-            host.replaceChildren();
-            p.order.forEach((key, index) => {
-                const row = node('div', '', 'home-choice'),
-                    label = node('label'),
-                    input = node('input');
-                input.type = 'checkbox';
-                input.checked = !p.hidden.includes(key);
-                input.setAttribute('data-home-visible', key);
-                label.append(input, document.createTextNode(' ' + labels[key]));
-                const up = button('Move up', 'data-home-move', key + ':-1'),
-                    down = button('Move down', 'data-home-move', key + ':1');
-                up.disabled = index === 0;
-                down.disabled = index === p.order.length - 1;
-                up.setAttribute('aria-label', 'Move ' + labels[key] + ' up');
-                down.setAttribute('aria-label', 'Move ' + labels[key] + ' down');
-                row.append(label, up, down);
-                host.append(row);
-            });
-        }
         document.querySelectorAll('[data-home-teams-only]').forEach((n) => (n.checked = p.teamsOnly));
     }
     function renderReading(p) {
@@ -242,18 +203,6 @@
             save(PREFS, p, 'Publisher unmuted.');
             return;
         }
-        const move = e.target.closest('[data-home-move]');
-        if (move) {
-            const [key, delta] = move.dataset.homeMove.split(':'),
-                index = p.order.indexOf(key),
-                target = index + Number(delta);
-            if (index >= 0 && target >= 0 && target < p.order.length) {
-                [p.order[index], p.order[target]] = [p.order[target], p.order[index]];
-                save(PREFS, p);
-                document.querySelector(`[data-home-move="${move.dataset.homeMove}"]`)?.focus();
-            }
-            return;
-        }
         if (e.target.closest('[data-home-reset]')) {
             p.order = defaults;
             p.hidden = [];
@@ -272,12 +221,7 @@
     document.addEventListener('change', (e) => {
         const p = prefs(),
             n = e.target;
-        if (n.matches('[data-home-visible]')) {
-            p.hidden = n.checked
-                ? p.hidden.filter((k) => k !== n.dataset.homeVisible)
-                : [...p.hidden, n.dataset.homeVisible];
-            save(PREFS, p);
-        } else if (n.matches('[data-home-teams-only]')) {
+        if (n.matches('[data-home-teams-only]')) {
             p.teamsOnly = n.checked;
             save(PREFS, p);
         } else if (n.matches('[data-news-hide-read]')) {

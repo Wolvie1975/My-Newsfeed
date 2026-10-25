@@ -7,9 +7,19 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
         const page = await browser.newPage();
         const errors = [];
         page.on('pageerror', (e) => errors.push(e.message));
-        await page.goto(base + (process.env.RESULTS_PATH || '/results?day=2026-10-18'));
         const link = page.locator('[data-box-score][href*="football/nfl/"]').first();
-        assert(await link.count());
+        const day = (offset) =>
+            new Date(Date.now() + offset * 864e5).toLocaleDateString('en-CA', { timeZone: 'America/Chicago' });
+        for (const path of process.env.RESULTS_PATH
+            ? [process.env.RESULTS_PATH]
+            : [0, -1].map((d) => `/scoreboard?status=final&day=${day(d)}`)) {
+            await page.goto(base + path);
+            if (await link.count()) break;
+        }
+        if (!(await link.count())) {
+            console.log('SKIP: no cached NFL box score today or yesterday; set RESULTS_PATH to a page with one.');
+            return;
+        }
         const href = await link.getAttribute('href');
         for (const theme of ['light', 'dark'])
             for (const width of [390, 768, 1440]) {

@@ -2,8 +2,11 @@ const assert = require('node:assert/strict'),
     { chromium } = require('playwright');
 const base = process.env.BASE_URL || 'http://localhost:5295',
     root = process.env.SCREENSHOT_DIR;
+if (!process.env.CATEGORY_ADMIN_PASSWORD) {
+    console.log('SKIP: changes admin category hubs; set CATEGORY_ADMIN_PASSWORD to run it.');
+    process.exit(0);
+}
 (async () => {
-    assert(process.env.CATEGORY_ADMIN_PASSWORD, 'CATEGORY_ADMIN_PASSWORD required');
     const b = await chromium.launch();
     try {
         const p = await b.newPage();

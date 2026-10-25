@@ -42,7 +42,7 @@ async function mockSaved(p) {
                     await p
                         .locator('[data-home-grid] > [data-home-section]')
                         .evaluateAll((ns) => ns.slice(0, 3).map((n) => n.dataset.homeSection)),
-                    ['watch', 'news', 'opinion'],
+                    ['lead', 'watch', 'opinion'],
                 );
                 for (const selector of ['[data-save]', '[data-share-open]']) {
                     await card.locator(selector).waitFor();

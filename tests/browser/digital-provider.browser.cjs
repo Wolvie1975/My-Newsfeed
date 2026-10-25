@@ -7,16 +7,21 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
         const page = await browser.newPage();
         const errors = [];
         page.on('pageerror', (e) => errors.push(e.message));
-        for (const source of [null, 'dvdsreleasedates', 'unknown', 'movieinsider', 'whentostream']) {
+        // Which providers are enabled is admin data; read it from the page, then check canonicalization against it.
+        await page.goto(base + '/movies/digital');
+        const fallback = new URL(page.url()).searchParams.get('source');
+        const options = await page
+            .locator('#digital-source option')
+            .evaluateAll((o) => o.map((x) => ({ value: x.value, label: x.textContent.trim() })));
+        const enabled = options.map((o) => o.value);
+        assert(enabled.includes(fallback), `default provider ${fallback} should be an enabled option`);
+        assert.equal(enabled.length, new Set(enabled).size);
+        for (const source of [null, 'unknown', ...enabled]) {
             await page.goto(base + '/movies/digital' + (source ? '?source=' + source : ''));
-            const selected = source === 'whentostream' ? 'whentostream' : 'movieinsider';
+            const selected = enabled.includes(source) ? source : fallback;
             await page.waitForURL((u) => u.searchParams.get('source') === selected);
             assert.equal(await page.locator('#digital-source').inputValue(), selected);
-            assert.deepEqual(
-                (await page.locator('#digital-source option').evaluateAll((o) => o.map((x) => x.value))).sort(),
-                ['movieinsider', 'whentostream'],
-            );
-            const name = selected === 'movieinsider' ? 'Movie Insider' : 'When To Stream';
+            const name = options.find((o) => o.value === selected).label;
             assert(await page.getByRole('heading', { name, exact: true }).isVisible());
             for (const width of [390, 1440]) {
                 await page.setViewportSize({ width, height: 900 });

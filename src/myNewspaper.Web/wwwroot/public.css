@@ -5265,12 +5265,16 @@
     padding-left: 12px;
 }
 
-/* Desktop cascading cards; document order prioritizes Watch and News. */
+/* Desktop cascading cards in document order: the full-width lead, then Watch. home-layout.js packs the columns;
+   without JavaScript the lead still spans both columns. */
 @media (min-width: 1024px) {
     .pub .d-grid > [data-home-section] {
         grid-area: auto;
         order: 0;
         min-width: 0;
+    }
+    .pub .d-grid > [data-home-wide] {
+        grid-column: 1 / -1;
     }
     .pub .d-grid[data-masonry] {
         grid-auto-rows: 1px;
