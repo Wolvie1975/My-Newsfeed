@@ -973,7 +973,7 @@
         month: 'short',
         day: 'numeric',
     });
-    const compactDateFormat = new Intl.DateTimeFormat(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+    const compactDateFormat = new Intl.DateTimeFormat(undefined, { weekday: 'long', month: 'short', day: 'numeric' });
     const timeFormat = new Intl.DateTimeFormat(undefined, {
         hour: 'numeric',
         minute: '2-digit',

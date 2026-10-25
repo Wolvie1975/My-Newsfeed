@@ -33,23 +33,16 @@ const base = process.env.BASE_URL || 'http://localhost:5295',
                                 await p.screenshot({ path: root + '/box-office-menu-' + width + '-' + theme + '.png' });
                             await p.locator('.mobile-nav > summary').click();
                         } else {
-                            const groups = p.locator('.desktop-nav-group');
-                            const entertainment = groups.filter({
-                                has: p.locator('summary', { hasText: 'Entertainment' }),
-                            });
-                            assert(
-                                await entertainment
-                                    .locator('summary')
-                                    .evaluate((n) => n.classList.contains('is-current')),
-                            );
+                            // Desktop: Entertainment is the current section in the masthead row, not Headlines.
+                            const nav = p.locator('.site-nav--inline');
                             assert.equal(
-                                await entertainment.locator('a[href="box-office"][aria-current="page"]').count(),
-                                1,
+                                await nav.locator('a[href="entertainment"]').getAttribute('aria-current'),
+                                'true',
                             );
-                            const news = groups.filter({ has: p.locator('summary', { hasText: 'News' }) });
-                            assert.equal(await news.locator('a[href="box-office"]').count(), 0);
-                            assert(
-                                !(await news.locator('summary').evaluate((n) => n.classList.contains('is-current'))),
+                            assert.equal(await nav.locator('a[href="news"]').getAttribute('aria-current'), null);
+                            assert.equal(
+                                await p.locator('.section-tabs a[href="box-office"][aria-current="page"]').count(),
+                                1,
                             );
                         }
                     }

@@ -32,18 +32,13 @@ const assert = require('node:assert/strict');
         await page.clock.setSystemTime(new Date(new Date(sunset).getTime() + 1000));
         await page.clock.runFor(30000);
         assert.equal(await theme(), 'dark');
-        await page.locator('[data-theme-toggle]').click();
+        await page.locator('.header-actions > [data-theme-toggle]').click();
         assert.equal(await theme(), 'light');
         assert.equal(await mode('light').isChecked(), true);
         await page.clock.runFor(60000);
         assert.equal(await theme(), 'light');
         await mode('sun').check();
         assert.equal(await theme(), 'dark');
-        await page
-            .locator('.desktop-nav-group')
-            .filter({ has: page.locator('summary', { hasText: /^News/ }) })
-            .locator('summary')
-            .click();
         await page.locator('.site-nav--inline a[href="news"]').click();
         await page.waitForURL('**/news');
         assert.equal(await theme(), 'dark');

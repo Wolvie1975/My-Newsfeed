@@ -57,16 +57,12 @@ const base = process.env.BASE_URL || 'http://localhost:5295',
                         assert.equal(await link.getAttribute('aria-current'), 'page');
                         await p.locator('.mobile-nav > summary').click();
                     } else if (width === 1440) {
-                        const group = p.locator('.desktop-nav-group').filter({
-                            has: p.locator('summary', { hasText: route === 'sports' ? 'Sports' : 'Entertainment' }),
-                        });
+                        // Desktop: the hub is a plain masthead link; its pages are reached from the section tabs.
                         assert.equal(
-                            await group.locator('a[href="' + route + '"]').getAttribute('aria-current'),
+                            await p.locator('.site-nav--inline a[href="' + route + '"]').getAttribute('aria-current'),
                             'page',
                         );
-                        await group.locator('summary').click();
-                        await group.locator('a[href="' + route + '/news"]').waitFor({ state: 'visible' });
-                        await group.locator('summary').click();
+                        await p.locator('.section-tabs a[href="' + route + '/news"]').waitFor({ state: 'visible' });
                     }
                     if (width <= 430 || width === 1440)
                         await p.screenshot({ path: root + route + '-' + width + '-' + theme + '.png', fullPage: true });

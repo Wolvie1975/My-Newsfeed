@@ -31,48 +31,38 @@
     var onNews = path.StartsWith("news", StringComparison.OrdinalIgnoreCase);
     var onSaved = path.StartsWith("saved", StringComparison.OrdinalIgnoreCase);
     var onHome = path.Length == 0 || path[0] is '?' or '#';
-    var section = onSportsHub ? "Sports" : onEntertainmentHub ? "Entertainment" : (onSportsNews || onBasketballNews) ? "Sports headlines" : onBig12News ? "Big 12 News" : onF1News ? "F1 News" : (onEntertainmentNews || onTvFilmNews) ? "Entertainment headlines" : onScoreboard ? "Scoreboard" : onWatch ? "Where to watch" : onLocal ? "Kansas City" : onCollege ? "College Sports" : onF1 ? "F1" : onTeams ? "Settings" : onTv ? "TV & Streaming" : onEvents ? "Sports Events" : onDigital ? "Digital rental / purchase" : onMovies ? "Movies" : onVideos ? "YouTube"
-        : onRankings ? "Top 25" : onStandings ? "Standings" : onResults ? "Results" : onBoxOffice ? "Box Office" : onNews ? "Headlines" : onSaved ? "Saved" : onHome ? "Home" : "Browse";
+    var onSportsSection = onSportsHub || onSportsNews || onBasketballNews || onScoreboard || onEvents || onResults || onStandings || onRankings || onF1 || onCollege || onBig12News || onF1News;
+    var onEntertainmentSection = onEntertainmentHub || (onMovies && !onWatch) || onTv || onEntertainmentNews || onTvFilmNews || onBoxOffice;
 }
 
 <div class="pub" data-page="@(onHome ? "home" : null)">
+    @* Header as in the approved concepts: on phones a coloured bar with the mark, the date and time, Saved and a Menu
+       button that opens every section; from 1024px a plain masthead row with the tile mark, the sections as text links
+       and Saved and Settings on the right. *@
     <header class="site-header">
         <a class="brand" href="" aria-label="myNewspaper home">
-            @* The page mark is inline so its ink and folded corner follow the colour scheme. *@
+            @* The marks are inline so their ink and folded corner follow the colour scheme: the page alone on the
+               coloured phone bar, the page on its tile on the desktop paper. *@
             <svg class="brand-mark" viewBox="11 7 43 50" width="34" height="40" aria-hidden="true">
                 <path class="brand-mark__page" d="M15 11h25l10 10v32H15z" />
                 <path class="brand-mark__fold" d="M40 11v10h10z" />
                 <path class="brand-mark__n" d="M21 27H28V31.2C30 28.6 32.6 27 35.6 27C40 27 42.5 29.9 42.5 34.6V44.5H45V47H35.5V44.5H37.5V35.3C37.5 32.8 36.4 31.6 34.3 31.6C31.9 31.6 29.6 33.2 28 35.6V44.5H30V47H20.5V44.5H23V29.5H21Z" />
             </svg>
+            <svg class="brand-tile" viewBox="0 0 64 64" width="32" height="32" aria-hidden="true">
+                <rect class="bs-mark-tile" width="64" height="64" rx="14" />
+                <path class="bs-mark-page" d="M15 11h25l10 10v32H15z" />
+                <path class="bs-mark-fold" d="M40 11v10h10z" />
+                <path class="bs-mark-n" d="M21 27H28V31.2C30 28.6 32.6 27 35.6 27C40 27 42.5 29.9 42.5 34.6V44.5H45V47H35.5V44.5H37.5V35.3C37.5 32.8 36.4 31.6 34.3 31.6C31.9 31.6 29.6 33.2 28 35.6V44.5H30V47H20.5V44.5H23V29.5H21Z" />
+            </svg>
             <span class="brand-wordmark">myNewspaper</span>
         </a>
 
-        @* Wide screens: the navigation sits in the header. Smaller screens get a dropdown below it. *@
         <nav class="site-nav site-nav--inline" aria-label="Main">
             <a href="" aria-current="@(onHome ? "page" : null)">Home</a>
-            <details class="desktop-nav-group" data-mobile-nav>
-                <summary class="@((onNews || onLocal) ? "is-current" : null)">News ▾</summary>
-                <div class="desktop-nav-links">
-                    <a href="news" aria-current="@(onNews ? "page" : null)">Headlines</a>
-                    <a href="local" aria-current="@(onLocal ? "page" : null)">Local</a>
-                </div>
-            </details>
-            <details class="desktop-nav-group" data-mobile-nav><summary class="@((onSportsHub || onSportsNews || onBasketballNews || onScoreboard || onEvents || onResults || onStandings || onRankings || onF1 || onCollege) ? "is-current" : null)">Sports ▾</summary><div class="desktop-nav-links">
-            <a href="sports" aria-current="@(onSportsHub ? "page" : null)">Sports home</a>
-            <a href="sports/news" aria-current="@((onSportsNews || onBasketballNews) ? "page" : null)">Sports headlines</a>
-            <a href="events" aria-current="@(onEvents ? "page" : null)">Sports Events</a>
-            <a href="scoreboard" aria-current="@(onScoreboard ? "page" : null)">Scoreboard</a>
-            <a href="standings" aria-current="@(onStandings ? "page" : null)">Standings</a>
-            <a href="college" aria-current="@(onCollege ? "page" : null)">College Sports</a>
-            <a href="f1" aria-current="@(onF1 ? "page" : null)">F1</a>
-            <a href="rankings" aria-current="@(onRankings ? "page" : null)">Top 25</a></div></details>
-            <details class="desktop-nav-group" data-mobile-nav><summary class="@((onEntertainmentHub || onMovies || onTv || onEntertainmentNews || onTvFilmNews || onBoxOffice) ? "is-current" : null)">Entertainment ▾</summary><div class="desktop-nav-links">
-            <a href="entertainment" aria-current="@(onEntertainmentHub ? "page" : null)">Entertainment home</a>
-            <a href="entertainment/news" aria-current="@((onEntertainmentNews || onTvFilmNews) ? "page" : null)">Entertainment headlines</a>
-            <a href="movies" aria-current="@(onMovies && !onDigital ? "page" : null)">Movies</a>
-            <a href="box-office" aria-current="@(onBoxOffice ? "page" : null)">Box Office</a>
-            <a href="tv" aria-current="@(onTv ? "page" : null)">TV &amp; Streaming</a>
-            <a href="movies/digital" aria-current="@(onDigital ? "page" : null)">Digital rental / purchase</a></div></details>
+            <a href="news" aria-current="@(onNews ? "page" : null)">Headlines</a>
+            <a href="local" aria-current="@(onLocal ? "page" : null)">Local</a>
+            <a href="sports" aria-current="@(onSportsHub ? "page" : onSportsSection ? "true" : null)">Sports</a>
+            <a href="entertainment" aria-current="@(onEntertainmentHub ? "page" : onEntertainmentSection ? "true" : null)">Entertainment</a>
             <a href="watch" aria-current="@(onWatch ? "page" : null)">Where to watch</a>
             <a href="videos" aria-current="@(onVideos ? "page" : null)">YouTube</a>
         </nav>
@@ -84,81 +74,77 @@
         </time>
 
         <div class="header-actions">
-
-            @* Saved stay in the header; public.js fills in the count. *@
+            @* public.js fills in the saved count. *@
             <a class="saved-link" href="saved" aria-current="@(onSaved ? "page" : null)" title="Saved">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4.5L5 21V4a1 1 0 0 1 1-1z"></path></svg>
-                <span class="sr-only">Saved</span>
+                <span class="saved-link__label">Saved</span>
                 <span class="saved-link__count" data-saved-count hidden></span>
             </a>
-            <a class="saved-link settings-link" href="settings" aria-current="@(onTeams ? "page" : null)" title="Settings">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.21 4.82 L10.26 2.15 L13.74 2.15 L13.79 4.82 L15.81 5.66 L17.74 3.81 L20.19 6.26 L18.34 8.19 L19.18 10.21 L21.85 10.26 L21.85 13.74 L19.18 13.79 L18.34 15.81 L20.19 17.74 L17.74 20.19 L15.81 18.34 L13.79 19.18 L13.74 21.85 L10.26 21.85 L10.21 19.18 L8.19 18.34 L6.26 20.19 L3.81 17.74 L5.66 15.81 L4.82 13.79 L2.15 13.74 L2.15 10.26 L4.82 10.21 L5.66 8.19 L3.81 6.26 L6.26 3.81 L8.19 5.66Z"/><circle cx="12" cy="12" r="3"/></svg>
-                <span class="settings-link__label">Settings</span>
-            </a>
+            <a class="settings-link" href="settings" aria-current="@(onTeams ? "page" : null)">Settings</a>
             @* Label and pressed state are kept in sync by public.js. *@
             <button class="theme-toggle" type="button" aria-label="Switch to dark mode" aria-pressed="false" data-theme-toggle>
                 <svg class="icon-moon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"></path></svg>
                 <svg class="icon-sun" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg>
             </button>
             <AuthorizeView>
-                <Authorized>
-                    <a class="admin-link" href="admin">Admin</a>
-                </Authorized>
-                <NotAuthorized>
-                    <a class="admin-link" href="login">Admin sign in</a>
-                </NotAuthorized>
+                <Authorized><a class="admin-link" href="admin">Admin</a></Authorized>
+                <NotAuthorized><a class="admin-link" href="login">Admin sign in</a></NotAuthorized>
             </AuthorizeView>
+
+            @* Phones and tablets: a native disclosure, so the menu also works without JavaScript. *@
+            <details class="mobile-nav" data-mobile-nav>
+                <summary aria-label="Menu">
+                    <svg class="mobile-nav__open" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"></path></svg>
+                    <svg class="mobile-nav__close" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg>
+                </summary>
+                <nav aria-label="Main" class="mobile-nav__links">
+                    <a href="" aria-current="@(onHome ? "page" : null)">Home</a>
+                    <div class="mobile-nav-group" role="group" aria-labelledby="mobile-news-heading">
+                        <span class="nav-group-label" id="mobile-news-heading">News</span>
+                        <div class="mobile-subnav">
+                            <a href="news" aria-current="@(onNews ? "page" : null)">Headlines</a>
+                            <a href="local" aria-current="@(onLocal ? "page" : null)">Local</a>
+                        </div>
+                    </div>
+                    <div class="mobile-nav-group" role="group" aria-labelledby="mobile-sports-heading">
+                        <span class="nav-group-label" id="mobile-sports-heading">Sports</span>
+                        <div class="mobile-subnav">
+                            <a href="sports" aria-current="@(onSportsHub ? "page" : null)">Sports home</a>
+                            <a href="sports/news" aria-current="@((onSportsNews || onBasketballNews) ? "page" : null)">Sports headlines</a>
+                            <a href="scoreboard" aria-current="@(onScoreboard ? "page" : null)">Scoreboard</a>
+                            <a href="events" aria-current="@(onEvents ? "page" : null)">Sports Events</a>
+                            <a href="standings" aria-current="@(onStandings ? "page" : null)">Standings</a>
+                            <a href="rankings" aria-current="@(onRankings ? "page" : null)">Top 25</a>
+                            <a href="college" aria-current="@(onCollege ? "page" : null)">College Sports</a>
+                            <a href="f1" aria-current="@(onF1 ? "page" : null)">F1</a>
+                        </div>
+                    </div>
+                    <div class="mobile-nav-group" role="group" aria-labelledby="mobile-entertainment-heading">
+                        <span class="nav-group-label" id="mobile-entertainment-heading">Entertainment</span>
+                        <div class="mobile-subnav">
+                            <a href="entertainment" aria-current="@(onEntertainmentHub ? "page" : null)">Entertainment home</a>
+                            <a href="entertainment/news" aria-current="@((onEntertainmentNews || onTvFilmNews) ? "page" : null)">Entertainment headlines</a>
+                            <a href="movies" aria-current="@(onMovies && !onDigital ? "page" : null)">Movies</a>
+                            <a href="tv" aria-current="@(onTv ? "page" : null)">TV &amp; Streaming</a>
+                            <a href="movies/digital" aria-current="@(onDigital ? "page" : null)">Digital releases</a>
+                            <a href="box-office" aria-current="@(onBoxOffice ? "page" : null)">Box Office</a>
+                        </div>
+                    </div>
+                    <a href="watch" aria-current="@(onWatch ? "page" : null)">Where to watch</a>
+                    <a href="videos" aria-current="@(onVideos ? "page" : null)">YouTube</a>
+                    <div class="mobile-nav-group" role="group" aria-labelledby="mobile-tools-heading">
+                        <span class="nav-group-label" id="mobile-tools-heading">Tools</span>
+                        <div class="mobile-subnav">
+                            <a href="saved" aria-current="@(onSaved ? "page" : null)">Saved</a>
+                            <a href="settings" aria-current="@(onTeams ? "page" : null)">Settings</a>
+                            <button class="mobile-nav__theme" type="button" aria-label="Switch to dark mode" aria-pressed="false" data-theme-toggle><span class="when-light">Dark mode</span><span class="when-dark">Light mode</span></button>
+                            <AuthorizeView><Authorized><a href="admin">Administration</a></Authorized><NotAuthorized><a href="login">Admin sign in</a></NotAuthorized></AuthorizeView>
+                        </div>
+                    </div>
+                </nav>
+            </details>
         </div>
     </header>
-
-    <details class="mobile-nav" data-mobile-nav>
-        <summary>
-            <span class="mobile-nav__context">Browse</span>
-            <span class="mobile-nav__section">@section</span>
-            <svg class="mobile-nav__chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg>
-        </summary>
-        <nav aria-label="Main" class="mobile-nav__links">
-            <a href="" aria-current="@(onHome ? "page" : null)">Home</a>
-            <div class="mobile-nav-group" role="group" aria-labelledby="mobile-news-heading">
-                <span class="nav-group-label" id="mobile-news-heading">News</span>
-                <div class="mobile-subnav">
-                    <a href="news" aria-current="@(onNews ? "page" : null)">Headlines</a>
-                    <a href="local" aria-current="@(onLocal ? "page" : null)">Local</a>
-                </div>
-            </div>
-            <div class="mobile-nav-group" role="group" aria-labelledby="mobile-sports-heading"><span class="nav-group-label" id="mobile-sports-heading">Sports</span><div class="mobile-subnav">
-            <a href="sports" aria-current="@(onSportsHub ? "page" : null)">Sports home</a>
-
-            <a href="sports/news" aria-current="@((onSportsNews || onBasketballNews) ? "page" : null)">Sports headlines</a>
-            <a href="events" aria-current="@(onEvents ? "page" : null)">Sports Events</a>
-            <a href="scoreboard" aria-current="@(onScoreboard ? "page" : null)">Scoreboard</a>
-            <a href="standings" aria-current="@(onStandings ? "page" : null)">Standings</a>
-            <a href="college" aria-current="@(onCollege ? "page" : null)">College Sports</a>
-            <a href="f1" aria-current="@(onF1 ? "page" : null)">F1</a>
-            <a href="rankings" aria-current="@(onRankings ? "page" : null)">Top 25</a>
-            </div></div>
-            <div class="mobile-nav-group" role="group" aria-labelledby="mobile-entertainment-heading"><span class="nav-group-label" id="mobile-entertainment-heading">Entertainment</span><div class="mobile-subnav">
-            <a href="entertainment" aria-current="@(onEntertainmentHub ? "page" : null)">Entertainment home</a>
-            <a href="entertainment/news" aria-current="@((onEntertainmentNews || onTvFilmNews) ? "page" : null)">Entertainment headlines</a>
-            <a href="movies" aria-current="@(onMovies ? "page" : null)">Movies</a>
-            <a href="box-office" aria-current="@(onBoxOffice ? "page" : null)">Box Office</a>
-            <a href="tv" aria-current="@(onTv ? "page" : null)">TV &amp; Streaming</a>
-            <a href="movies/digital">Digital rental / purchase</a>
-            </div></div>
-
-            <a href="watch" aria-current="@(onWatch ? "page" : null)">Where to watch</a>
-            <a href="videos" aria-current="@(onVideos ? "page" : null)">YouTube</a>
-
-            <div class="mobile-nav-group" role="group" aria-labelledby="mobile-tools-heading">
-                <span class="nav-group-label" id="mobile-tools-heading">Tools</span>
-                <div class="mobile-subnav">
-                    <a href="saved" aria-current="@(onSaved ? "page" : null)">Saved</a>
-                    <a href="settings" aria-current="@(onTeams ? "page" : null)">Settings</a>
-                    <AuthorizeView><Authorized><a href="admin">Administration</a></Authorized><NotAuthorized><a href="login">Admin sign in</a></NotAuthorized></AuthorizeView>
-                </div>
-            </div>
-        </nav>
-    </details>
 
     <main class="page">
         @Body

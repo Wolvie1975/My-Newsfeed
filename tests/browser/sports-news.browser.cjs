@@ -96,11 +96,12 @@ const sections = [
                         assert(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
                         await p.locator('.mobile-nav > summary').click();
                         await p.waitForTimeout(250);
-                    } else {
-                        const sports = p
-                            .locator('.desktop-nav-group')
-                            .filter({ has: p.locator('summary', { hasText: 'Sports' }) });
-                        assert(await sports.locator('summary').evaluate((n) => n.classList.contains('is-current')));
+                    } else if (width >= 1024) {
+                        // Desktop: the Sports link in the masthead row marks the section.
+                        assert.equal(
+                            await p.locator('.site-nav--inline a[href="sports"]').getAttribute('aria-current'),
+                            'true',
+                        );
                     }
                     if (root && width < 768)
                         await p.screenshot({

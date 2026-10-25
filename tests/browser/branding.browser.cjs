@@ -75,7 +75,8 @@ const base = process.env.BASE_URL || 'http://localhost:5295',
                     assert.equal(await page.locator('html').getAttribute('data-theme'), theme);
                     assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
                     assert(!(await page.locator('#blazor-error-ui').isVisible()));
-                    const brand = page.locator('.brand');
+                    // Desktop Home leaves the mark to its own masthead; everywhere else the header brand is a 44px target.
+                    const brand = page.locator(width >= 1024 && path === '/' ? '.bs-title__name' : '.brand');
                     assert((await brand.boundingBox()).height >= 44);
                     assert((await brand.boundingBox()).width >= 44);
                     if (width <= 430 && path === '/sports/news') {
