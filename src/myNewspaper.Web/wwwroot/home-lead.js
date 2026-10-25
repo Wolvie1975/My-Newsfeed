@@ -1,7 +1,10 @@
 // Keep the homepage lead in step with the server's hourly headline selection.
 (function () {
     'use strict';
-    let host, timer, due = 0, controller;
+    let host,
+        timer,
+        due = 0,
+        controller;
     function schedule(delay) {
         clearTimeout(timer);
         timer = setTimeout(check, Math.max(250, delay));
@@ -12,8 +15,12 @@
     }
     async function check() {
         if (!host?.isConnected || document.hidden || host.hidden || controller) return;
-        if (Date.now() < due) { schedule(due - Date.now() + 250); return; }
-        const current = host, request = new AbortController();
+        if (Date.now() < due) {
+            schedule(due - Date.now() + 250);
+            return;
+        }
+        const current = host,
+            request = new AbortController();
         controller = request;
         const timeout = setTimeout(() => request.abort(), 15000);
         try {
@@ -39,15 +46,23 @@
         if (next === host) return;
         clearTimeout(timer);
         if (controller) controller.abort();
-        controller = null; host = next;
+        controller = null;
+        host = next;
         if (host) arm();
     }
     document.addEventListener('visibilitychange', check);
     window.addEventListener('focus', check);
     if (window.Blazor) Blazor.addEventListener('enhancedload', bind);
-    new MutationObserver(records => {
-        if (records.some(r => [...r.addedNodes].some(n => n.nodeType === 1 && (n.matches('[data-home-lead]') || n.querySelector('[data-home-lead]'))))) bind();
-        if (records.some(r => r.type === 'attributes' && r.target === host && !host.hidden)) check();
+    new MutationObserver((records) => {
+        if (
+            records.some((r) =>
+                [...r.addedNodes].some(
+                    (n) => n.nodeType === 1 && (n.matches('[data-home-lead]') || n.querySelector('[data-home-lead]')),
+                ),
+            )
+        )
+            bind();
+        if (records.some((r) => r.type === 'attributes' && r.target === host && !host.hidden)) check();
     }).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden'] });
     bind();
 })();

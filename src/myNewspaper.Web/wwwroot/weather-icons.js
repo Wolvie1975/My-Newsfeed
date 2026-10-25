@@ -1,13 +1,16 @@
 // Local vector artwork: forecast text remains the accessible description.
 (function (root) {
     'use strict';
-    const sun = '<circle cx="24" cy="24" r="9"/><path d="M24 4v5m0 30v5M4 24h5m30 0h5M10 10l4 4m20 20 4 4M10 38l4-4m20-20 4-4"/>';
+    const sun =
+        '<circle cx="24" cy="24" r="9"/><path d="M24 4v5m0 30v5M4 24h5m30 0h5M10 10l4 4m20 20 4 4M10 38l4-4m20-20 4-4"/>';
     const moon = '<path d="M33 7a18 18 0 1 0 8 28A17 17 0 0 1 33 7Z"/>';
     const cloud = '<path d="M12 33h25a8 8 0 0 0 0-16h-1a12 12 0 0 0-23-2 9 9 0 0 0-1 18Z"/>';
     const smallSun = '<circle cx="16" cy="14" r="7"/><path d="M16 2v3M4 14h3m1-9 2 2m14-2-2 2"/>';
     const smallMoon = '<path d="M21 3A12 12 0 1 0 30 22 12 12 0 0 1 21 3Z"/>';
     const icons = {
-        sun, moon, cloud,
+        sun,
+        moon,
+        cloud,
         'partly-day': smallSun + cloud,
         'partly-night': smallMoon + cloud,
         rain: cloud + '<path d="m17 38-2 6m11-6-2 6m11-6-2 6"/>',
@@ -17,7 +20,8 @@
         mixed: cloud + '<path d="m16 38-2 7m15-7v8m-3-6 6 4m0-4-6 4"/>',
         fog: cloud + '<path d="M6 38h36M10 44h28"/>',
         wind: '<path d="M5 15h26a6 6 0 1 0-6-6M5 24h33a5 5 0 1 0-5-5M5 33h22a6 6 0 1 1-6 6"/>',
-        temperature: '<path d="M19 29V9a5 5 0 0 1 10 0v20a10 10 0 1 1-10 0Z"/><path d="M24 15v20m10-23h5m-5 8h5"/><circle cx="24" cy="36" r="3"/>'
+        temperature:
+            '<path d="M19 29V9a5 5 0 0 1 10 0v20a10 10 0 1 1-10 0Z"/><path d="M24 15v20m10-23h5m-5 8h5"/><circle cx="24" cy="36" r="3"/>',
     };
     function condition(summary, daytime) {
         const text = typeof summary === 'string' ? summary.toLowerCase() : '';

@@ -8,22 +8,27 @@ const assert = require('node:assert/strict');
         const context = await browser.newContext({ timezoneId: 'Asia/Tokyo', colorScheme: 'dark' });
         const page = await context.newPage();
         const errors = [];
-        page.on('pageerror', error => errors.push(error.message));
+        page.on('pageerror', (error) => errors.push(error.message));
         await page.clock.install({ time: new Date('2026-06-21T17:00:00Z') });
-        const base = process.env.NEWSFEED_TEST_URL || 'http://127.0.0.1:5091';
+        const base = process.env.BASE_URL || 'http://localhost:5295';
         await page.goto(base + '/settings');
-        const mode = value => page.locator('input[data-theme-mode][value="' + value + '"]');
+        const mode = (value) => page.locator('input[data-theme-mode][value="' + value + '"]');
         const theme = () => page.locator('html').getAttribute('data-theme');
         assert.equal(await theme(), 'dark');
         assert.equal(await mode('system').isChecked(), true);
         await mode('sun').check();
         assert.equal(await theme(), 'light');
-        assert.match(await page.locator('[data-theme-status]').textContent(), /Kansas City today: sunrise .*CDT · sunset .*CDT/);
+        assert.match(
+            await page.locator('[data-theme-status]').textContent(),
+            /Kansas City today: sunrise .*CDT · sunset .*CDT/,
+        );
         assert.equal(await page.evaluate(() => localStorage.getItem('theme')), 'sun');
         await page.reload();
         assert.equal(await theme(), 'light');
         assert.equal(await mode('sun').isChecked(), true);
-        const sunset = await page.evaluate(() => myNewspaperSolar.times(new Date(), myNewspaperSolar.location).sunset.toISOString());
+        const sunset = await page.evaluate(() =>
+            window.myNewspaperSolar.times(new Date(), window.myNewspaperSolar.location).sunset.toISOString(),
+        );
         await page.clock.setSystemTime(new Date(new Date(sunset).getTime() + 1000));
         await page.clock.runFor(30000);
         assert.equal(await theme(), 'dark');
@@ -34,7 +39,11 @@ const assert = require('node:assert/strict');
         assert.equal(await theme(), 'light');
         await mode('sun').check();
         assert.equal(await theme(), 'dark');
-        await page.locator('.desktop-nav-group').filter({ has: page.locator('summary', { hasText: /^News/ }) }).locator('summary').click();
+        await page
+            .locator('.desktop-nav-group')
+            .filter({ has: page.locator('summary', { hasText: /^News/ }) })
+            .locator('summary')
+            .click();
         await page.locator('.site-nav--inline a[href="news"]').click();
         await page.waitForURL('**/news');
         assert.equal(await theme(), 'dark');
@@ -61,7 +70,9 @@ const assert = require('node:assert/strict');
         assert.deepEqual(errors, []);
         const blocked = await browser.newContext();
         await blocked.addInitScript(() => {
-            Storage.prototype.getItem = Storage.prototype.setItem = () => { throw new Error('Blocked storage'); };
+            Storage.prototype.getItem = Storage.prototype.setItem = () => {
+                throw new Error('Blocked storage');
+            };
         });
         const blockedPage = await blocked.newPage();
         await blockedPage.clock.install({ time: new Date('2026-06-22T17:00:00Z') });
@@ -70,6 +81,13 @@ const assert = require('node:assert/strict');
         assert.equal(await blockedPage.locator('html').getAttribute('data-theme'), 'light');
         await blocked.close();
         await context.close();
-        console.log('PASS: automatic boundaries, persistence, manual override, navigation, focus, device mode, cross-tab, mobile and blocked storage');
-    } finally { await browser.close(); }
-})().catch(error => { console.error(error); process.exitCode = 1; });
+        console.log(
+            'PASS: automatic boundaries, persistence, manual override, navigation, focus, device mode, cross-tab, mobile and blocked storage',
+        );
+    } finally {
+        await browser.close();
+    }
+})().catch((error) => {
+    console.error(error);
+    process.exitCode = 1;
+});

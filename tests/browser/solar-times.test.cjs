@@ -31,7 +31,7 @@ test('summer days are longer and winter sunset can precede UTC midnight', () => 
 test('DST changes affect labels but do not shift astronomy by an hour', () => {
     const before = solar.times(new Date('2026-10-31T17:00:00Z'), location);
     const after = solar.times(new Date('2026-11-01T17:00:00Z'), location);
-    assert.ok(Math.abs((after.sunset - before.sunset) - 86400000) < 5 * 60000);
+    assert.ok(Math.abs(after.sunset - before.sunset - 86400000) < 5 * 60000);
 });
 
 test('supports polar seasons and rejects invalid coordinates', () => {

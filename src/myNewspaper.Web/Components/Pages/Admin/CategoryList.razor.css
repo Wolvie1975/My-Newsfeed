@@ -1,18 +1,75 @@
-input, select, form.row .btn, table.category-table .btn, .alert .btn { min-height: 44px; }
-.category-editor { min-width: 180px; max-width: 320px; }
-.category-editor input, .category-editor select { width: 100%; }
-td:nth-child(2) { white-space: nowrap; }
+input,
+select,
+form.row .btn,
+table.category-table .btn,
+.alert .btn {
+    min-height: 44px;
+}
+.category-editor {
+    min-width: 180px;
+    max-width: 320px;
+}
+.category-editor input,
+.category-editor select {
+    width: 100%;
+}
+td:nth-child(2) {
+    white-space: nowrap;
+}
 @media (max-width: 600px) {
-    table.table.category-table { display: block; width: 100%; min-width: 0; }
-    tbody { display: block; width: 100%; }
-    thead { display: none; }
-    tr { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .5rem; padding: 1rem; margin-bottom: 1rem; border: 1px solid var(--bs-border-color); border-radius: .75rem; }
-    table.category-table tbody tr td { display: block; border: 0; padding: 0; min-width: 0; }
-    td:first-child { grid-column: 1 / -1; font-weight: 600; overflow-wrap: anywhere; }
-    td:nth-child(2)::before { content: "Hub: "; }
-    td:nth-child(3)::before { content: "Sources: "; }
-    td:nth-child(4) { grid-column: 1 / -1; }
-    td:nth-child(4)::before { content: "Added: "; }
-    td:last-child { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: .5rem; }
-    .category-editor { min-width: 0; max-width: none; width: 100%; }
+    table.table.category-table {
+        display: block;
+        width: 100%;
+        min-width: 0;
+    }
+    tbody {
+        display: block;
+        width: 100%;
+    }
+    thead {
+        display: none;
+    }
+    tr {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 0.5rem;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border: 1px solid var(--bs-border-color);
+        border-radius: 0.75rem;
+    }
+    table.category-table tbody tr td {
+        display: block;
+        border: 0;
+        padding: 0;
+        min-width: 0;
+    }
+    td:first-child {
+        grid-column: 1 / -1;
+        font-weight: 600;
+        overflow-wrap: anywhere;
+    }
+    td:nth-child(2)::before {
+        content: 'Hub: ';
+    }
+    td:nth-child(3)::before {
+        content: 'Sources: ';
+    }
+    td:nth-child(4) {
+        grid-column: 1 / -1;
+    }
+    td:nth-child(4)::before {
+        content: 'Added: ';
+    }
+    td:last-child {
+        grid-column: 1 / -1;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    .category-editor {
+        min-width: 0;
+        max-width: none;
+        width: 100%;
+    }
 }

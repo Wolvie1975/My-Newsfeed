@@ -1,27 +1,27 @@
 // Set up event handlers
-const reconnectModal = document.getElementById("components-reconnect-modal");
-reconnectModal.addEventListener("components-reconnect-state-changed", handleReconnectStateChanged);
+const reconnectModal = document.getElementById('components-reconnect-modal');
+reconnectModal.addEventListener('components-reconnect-state-changed', handleReconnectStateChanged);
 
-const retryButton = document.getElementById("components-reconnect-button");
-retryButton.addEventListener("click", retry);
+const retryButton = document.getElementById('components-reconnect-button');
+retryButton.addEventListener('click', retry);
 
-const resumeButton = document.getElementById("components-resume-button");
-resumeButton.addEventListener("click", resume);
+const resumeButton = document.getElementById('components-resume-button');
+resumeButton.addEventListener('click', resume);
 
 function handleReconnectStateChanged(event) {
-    if (event.detail.state === "show") {
+    if (event.detail.state === 'show') {
         reconnectModal.showModal();
-    } else if (event.detail.state === "hide") {
+    } else if (event.detail.state === 'hide') {
         reconnectModal.close();
-    } else if (event.detail.state === "failed") {
-        document.addEventListener("visibilitychange", retryWhenDocumentBecomesVisible);
-    } else if (event.detail.state === "rejected") {
+    } else if (event.detail.state === 'failed') {
+        document.addEventListener('visibilitychange', retryWhenDocumentBecomesVisible);
+    } else if (event.detail.state === 'rejected') {
         location.reload();
     }
 }
 
 async function retry() {
-    document.removeEventListener("visibilitychange", retryWhenDocumentBecomesVisible);
+    document.removeEventListener('visibilitychange', retryWhenDocumentBecomesVisible);
 
     try {
         // Reconnect will asynchronously return:
@@ -41,7 +41,7 @@ async function retry() {
         }
     } catch (err) {
         // We got an exception, server is currently unavailable
-        document.addEventListener("visibilitychange", retryWhenDocumentBecomesVisible);
+        document.addEventListener('visibilitychange', retryWhenDocumentBecomesVisible);
     }
 }
 
@@ -52,12 +52,12 @@ async function resume() {
             location.reload();
         }
     } catch {
-        reconnectModal.classList.replace("components-reconnect-paused", "components-reconnect-resume-failed");
+        reconnectModal.classList.replace('components-reconnect-paused', 'components-reconnect-resume-failed');
     }
 }
 
 async function retryWhenDocumentBecomesVisible() {
-    if (document.visibilityState === "visible") {
+    if (document.visibilityState === 'visible') {
         await retry();
     }
 }

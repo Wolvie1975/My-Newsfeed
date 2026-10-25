@@ -1,2 +1,40 @@
-const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');const assert=require('node:assert/strict');const base=process.env.BASE_URL||'http://127.0.0.1:5296';
-(async()=>{const browser=await chromium.launch();try{const page=await browser.newPage();const ids=()=>page.locator('[data-watch-title]').evaluateAll(ns=>ns.map(n=>n.getAttribute('href')));await page.goto(base+'/watch?kind=tv&sort=title');const first=await ids();assert.equal(first.length,20);await page.getByRole('link',{name:'Next →',exact:true}).click();await page.waitForFunction(()=>document.querySelector('nav[aria-label="Result pages"] span')?.textContent==='Page 2');const second=await ids();assert.equal(second.length,20);assert.equal(new Set([...first,...second]).size,40);await page.getByRole('link',{name:'← Previous',exact:true}).click();await page.waitForFunction(()=>document.querySelector('nav[aria-label="Result pages"] span')?.textContent==='Page 1');assert.deepEqual(await ids(),first);await page.goto(base+'/watch?kind=movie&sort=title');assert.equal((await ids()).length,20);await page.goto(base+'/watch?kind=tv&q=The%20Mentalist');assert(await page.getByRole('heading',{name:'The Mentalist',exact:true}).count());assert((await ids()).length<=20);await page.setViewportSize({width:390,height:900});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);console.log('Full 20-title TV/movie pages, 40 unique titles across Next/Previous, stable back navigation, ended-title search and mobile layout passed.');}finally{await browser.close()}})().catch(e=>{console.error(e);process.exit(1)});
+const { chromium } = require('playwright');
+const assert = require('node:assert/strict');
+const base = process.env.BASE_URL || 'http://localhost:5295';
+(async () => {
+    const browser = await chromium.launch();
+    try {
+        const page = await browser.newPage();
+        const ids = () => page.locator('[data-watch-title]').evaluateAll((ns) => ns.map((n) => n.getAttribute('href')));
+        await page.goto(base + '/watch?kind=tv&sort=title');
+        const first = await ids();
+        assert.equal(first.length, 20);
+        await page.getByRole('link', { name: 'Next →', exact: true }).click();
+        await page.waitForFunction(
+            () => document.querySelector('nav[aria-label="Result pages"] span')?.textContent === 'Page 2',
+        );
+        const second = await ids();
+        assert.equal(second.length, 20);
+        assert.equal(new Set([...first, ...second]).size, 40);
+        await page.getByRole('link', { name: '← Previous', exact: true }).click();
+        await page.waitForFunction(
+            () => document.querySelector('nav[aria-label="Result pages"] span')?.textContent === 'Page 1',
+        );
+        assert.deepEqual(await ids(), first);
+        await page.goto(base + '/watch?kind=movie&sort=title');
+        assert.equal((await ids()).length, 20);
+        await page.goto(base + '/watch?kind=tv&q=The%20Mentalist');
+        assert(await page.getByRole('heading', { name: 'The Mentalist', exact: true }).count());
+        assert((await ids()).length <= 20);
+        await page.setViewportSize({ width: 390, height: 900 });
+        assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
+        console.log(
+            'Full 20-title TV/movie pages, 40 unique titles across Next/Previous, stable back navigation, ended-title search and mobile layout passed.',
+        );
+    } finally {
+        await browser.close();
+    }
+})().catch((e) => {
+    console.error(e);
+    process.exit(1);
+});

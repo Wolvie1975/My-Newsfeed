@@ -1,0 +1,9 @@
+# Only first-party JavaScript and CSS are formatted by Prettier; C# is handled by dotnet format.
+*
+!*/
+!src/myNewspaper.Web/wwwroot/*.js
+!src/myNewspaper.Web/wwwroot/*.css
+!src/myNewspaper.Web/Components/**/*.razor.css
+!src/myNewspaper.Web/Components/**/*.razor.js
+!tests/browser/*.cjs
+!*.config.js
