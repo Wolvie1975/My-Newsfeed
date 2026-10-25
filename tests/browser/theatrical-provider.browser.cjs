@@ -11,7 +11,8 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
             await page.setViewportSize({ width, height: 1000 });
             assert.equal((await page.goto(base + '/')).status(), 200);
             const heading = page.locator('#h-movies');
-            if (await heading.count()) {
+            // An empty theater section is left out (display: none), so only a visible one is exercised.
+            if (await heading.isVisible()) {
                 const link = page.locator('[data-home-section="movies"] .d-more').first();
                 assert.equal(await link.getAttribute('href'), 'movies?type=theatrical');
                 await link.focus();
