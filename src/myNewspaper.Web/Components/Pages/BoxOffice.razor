@@ -47,6 +47,10 @@
                             <div><dt>Weekend · @BoxOfficeChartQuery.StatusLabel(movie.ResultStatus)</dt><dd>@BoxOfficeChartQuery.Money(movie.WeekendGross)</dd></div>
                             <div><dt>Total domestic</dt><dd>@BoxOfficeChartQuery.Money(movie.TotalDomesticGross)</dd></div>
                             <div><dt>Weekly change</dt><dd>@BoxOfficeChartQuery.Change(movie.WeeklyChangePercent)</dd></div>
+                            @if (predictions.TryGetValue(BoxOfficeForecastQuery.TitleKey(movie.Title), out var predicted))
+                            {
+                                <div class="boxoffice-predicted"><dt>Predicted</dt><dd>@BoxOfficeForecastQuery.Range(predicted.Low, predicted.High)</dd></div>
+                            }
                         </dl>
                         <BoxOfficeResultEvidence Movie="movie" />
                     </div>
@@ -71,6 +75,7 @@ else
     private string Title => view switch { "weekend-preview" => "Weekend predictions", "movie-forecasts" => "Movie forecasts", _ => "Box Office" };
 
     private IReadOnlyList<BoxOfficeMovie> movies = [];
+    private IReadOnlyDictionary<string, BoxOfficeForecast> predictions = new Dictionary<string, BoxOfficeForecast>();
     private bool failed;
     private BoxOfficeForecastSnapshot forecasts = new([], []);
     private readonly DateTime utcNow = DateTime.UtcNow;
@@ -91,6 +96,7 @@ else
             {
                 await using var db = await Factory.CreateDbContextAsync();
                 movies = await BoxOfficeChartQuery.GetAsync(db);
+                if (movies.Count > 0) predictions = await BoxOfficeForecastQuery.PredictionsAsync(db, movies[0].WeekendStart);
             }
             catch (Exception ex) when (DataFailures.IsReadFailure(ex))
             { Log.LogError(ex, "Box-office chart read failed."); failed = true; }

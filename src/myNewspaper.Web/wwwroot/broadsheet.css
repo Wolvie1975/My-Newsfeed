@@ -904,3 +904,32 @@
         justify-self: start;
     }
 }
+
+/* ---------- Desktop paper ---------- */
+@media (min-width: 1024px) {
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub {
+        background: var(--surface);
+    }
+}
+
+/* Box office: room for the Predicted figure beside the reported ones. */
+.pub .boxoffice-stats {
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+}
+
+/* TV: a batch drop lists its episode titles on demand. */
+.pub .tv-batch summary {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    color: var(--accent);
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+}
+.pub .tv-batch ul {
+    margin: 0 0 4px;
+    padding-left: 18px;
+    font-size: 14px;
+    line-height: 1.6;
+}

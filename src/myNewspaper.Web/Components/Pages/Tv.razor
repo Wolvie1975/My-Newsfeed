@@ -22,8 +22,9 @@
     <section class="tv-day">
         <h2>@FeedDates.LongDate(group.Key)</h2>
         <ul class="tv-episodes">
-            @foreach (var episode in group)
+            @foreach (var batch in TvBatches.Group(group))
             {
+                var episode = batch[0];
                 <li class="tv-episode">
                     <div class="tv-poster" aria-hidden="true">
                         @if (EventsText.LogoUrl(episode.Poster) is { } poster)
@@ -32,16 +33,35 @@
                     <div class="tv-episode__body">
                         <p class="movie-kind">@(episode.Platform ?? "Network not announced")</p>
                         <h3>@episode.SeriesTitle</h3>
-
-                        <p class="tv-episode__name">
-                            @(episode.Special ? "Special" : episode.Season is { } season && episode.Number is { } number ? $"S{season:00} · E{number:00}" : "Episode")
-                            @if (!string.IsNullOrWhiteSpace(episode.Title)) { <span> · @episode.Title</span> }
-                        </p>
+                        @if (batch.Count > 1)
+                        {
+                            <p class="tv-episode__name">@TvBatches.Label(batch)</p>
+                        }
+                        else
+                        {
+                            <p class="tv-episode__name">
+                                @(episode.Special ? "Special" : episode.Season is { } season && episode.Number is { } number ? $"S{season:00} · E{number:00}" : "Episode")
+                                @if (!string.IsNullOrWhiteSpace(episode.Title)) { <span> · @episode.Title</span> }
+                            </p>
+                        }
                         <p class="movie-meta">
                             @if (episode.StartsUtc is { } time) { <span>@Dates.TimeWithOffset(time)</span> }
                             else { <span>Release date only · Time not confirmed</span> }
                         </p>
-                        @if (FeedQuery.SafeHref(episode.Url) is { } href)
+                        @if (batch.Count > 1)
+                        {
+                            <details class="tv-batch">
+                                <summary>Episode titles</summary>
+                                <ul>
+                                    @foreach (var item in batch)
+                                    {
+                                        var name = (item.Number is { } n ? $"E{n:00}" : "Episode") + (string.IsNullOrWhiteSpace(item.Title) ? "" : " · " + item.Title);
+                                        <li>@if (FeedQuery.SafeHref(item.Url) is { } link) { <a href="@link" target="_blank" rel="noopener noreferrer">@name</a> } else { @name }</li>
+                                    }
+                                </ul>
+                            </details>
+                        }
+                        else if (FeedQuery.SafeHref(episode.Url) is { } href)
                         { <a class="movie-source" href="@href" target="_blank" rel="noopener noreferrer">Episode details on TVmaze ↗</a> }
                     </div>
                 </li>
