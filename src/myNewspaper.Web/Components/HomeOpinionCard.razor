@@ -15,7 +15,6 @@
         var source = FeedText.SourceName(item.SourceLabel, item.SourceUrl);
         <ul class="d-list"><li class="d-story" data-news-url="@href" data-news-source="@source" data-opinion-article="@item.Id">
             <a class="d-thumb" href="@href" target="_blank" rel="noopener noreferrer" tabindex="-1" aria-hidden="true">
-                <span class="d-thumb__ph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2" /><path d="m21 16-5-5-8 9" /></svg></span>
                 @if (image != null) { <img src="@image" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()" /> }
             </a>
             <div class="d-story__body">

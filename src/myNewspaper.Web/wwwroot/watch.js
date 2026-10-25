@@ -2,7 +2,7 @@
     'use strict';
     let active;
     document.addEventListener('click', async function (event) {
-        const link=event.target.closest('a[data-watch-title]');
+        const link=event.target.closest('a[data-watch-title],a[data-watch-open]');
         if(!link || event.button!==0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey || !window.HTMLDialogElement) return;
         const url=new URL(link.href,location.href);
         if(url.origin!==location.origin || !url.pathname.startsWith('/watch/')) return;

@@ -782,3 +782,13 @@ Sports headlines now has one menu entry and a hub at `/sports/news`. Its tabs us
 remain scoped; the title/Browse context stays Sports headlines. Old basketball
 URLs work, while `/college/news` and `/f1/news` retain their existing hub contexts.
 The earlier separate headline menu entries have been replaced by this single hub.
+
+### Women's college basketball scoreboard exclusion
+
+Women's college basketball is excluded from the shared ScoreboardRepository,
+including coverage choices, enabled follow choices and games. This removes both
+the league and Big 12 women's basketball entries from Show and prevents games
+from appearing in the homepage scoreboard or refresh fragments. Men’s college
+basketball and WNBA coverage remain available. The College hub, schedule,
+standings and legacy results already excluded women's college basketball.
+This frontend exclusion preserves stored history and collector configuration.

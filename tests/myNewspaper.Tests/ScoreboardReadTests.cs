@@ -20,6 +20,9 @@ public class ScoreboardReadTests
         var today = FeedDates.Create("America/Chicago").Today;
         var snapshot = await repository.ReadAsync(today, true);
         Assert.True(snapshot.Available);
+        Assert.DoesNotContain(snapshot.Coverage, c => c.League == "womens-college-basketball");
+        Assert.DoesNotContain(snapshot.Follows ?? [], f => f.League == "womens-college-basketball");
+        Assert.DoesNotContain(snapshot.Games, g => g.League == "womens-college-basketball");
         Assert.Equal(snapshot.Games.Count, snapshot.Games.Select(g => g.Key).Distinct().Count());
         Assert.All(snapshot.Games, g => {
             Assert.Contains(snapshot.Coverage, c => c.Sport == g.Sport && c.League == g.League);

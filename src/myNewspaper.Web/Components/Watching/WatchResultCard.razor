@@ -1,0 +1,58 @@
+@using myNewspaper.Web.Watching
+
+<li class="watch-card watch-result">
+    <a class="watch-result__poster" data-watch-title href="@DetailUrl" aria-label="@($"Where to watch {Title.Name}")">
+        @if (Title.Poster is {} poster)
+        { <img src="@poster" alt="" loading="lazy" width="160" height="240" onerror="this.remove()" /> }
+        <span class="watch-result__poster-fallback" aria-hidden="true">@(Title.Kind == "tv" ? "TV" : "MOVIE")</span>
+    </a>
+    <div class="watch-result__body">
+        <div class="watch-result__heading">
+            <h2><a data-watch-open href="@DetailUrl">@Title.Name</a></h2>
+            <span class="updated">@(Title.Year is {} year ? $"({year})" : "Year unavailable") · @(Title.Kind == "tv" ? "TV show" : "Movie")</span>
+        </div>
+        @if (Title.MatchingServices?.Count > 0)
+        { <p class="watch-match">On your services: @string.Join(", ", Title.MatchingServices)</p> }
+        <p class="watch-result__label">Watch now · US</p>
+        @if (Title.OffersUnavailable)
+        { <p class="updated" role="status">Service availability could not be checked. Open the title to try again.</p> }
+        else if (Title.Offers is not { Count: > 0 })
+        { <p class="updated">No US viewing options are currently listed.</p> }
+        else
+        {
+            <div class="watch-result__offers">
+                @foreach (var offer in Title.Offers)
+                {
+                    <section class="watch-provider-group" aria-label="@($"{offer.Category} options for {Title.Name}")">
+                        <h3>@(offer.Category == "Subscription" ? "Stream" : offer.Category)</h3>
+                        <ul class="watch-providers">
+                            @foreach (var provider in offer.Options ?? [])
+                            {
+                                <li class="watch-provider">
+                                    <span class="watch-provider__logo" aria-hidden="true">
+                                        <span>@provider.Name[..1]</span>
+                                        @if (provider.Logo is {} logo)
+                                        { <img src="@logo" alt="" loading="lazy" width="48" height="48" onerror="this.remove()" /> }
+                                    </span>
+                                    <span>@provider.Name</span>
+                                </li>
+                            }
+                        </ul>
+                    </section>
+                }
+            </div>
+        }
+        <div class="watch-result__links">
+            @if (Title.WatchLink is {} link)
+            { <a href="@link" target="_blank" rel="noopener noreferrer">Open viewing options ↗</a> }
+            <a data-watch-open href="@DetailUrl" aria-label="@($"Viewing details for {Title.Name}")">Viewing details →</a>
+        </div>
+        @if (Title.Kind == "tv")
+        { <p class="watch-result__note updated">Series availability; seasons may vary.</p> }
+    </div>
+</li>
+
+@code {
+    [Parameter, EditorRequired] public WatchTitle Title { get; set; } = default!;
+    private string DetailUrl => $"watch/{Title.Kind}/{Title.Id}";
+}

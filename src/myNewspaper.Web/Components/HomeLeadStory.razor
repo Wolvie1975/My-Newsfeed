@@ -26,7 +26,6 @@
             {
                 <a class="d-lead__image" href="@href" target="_blank" rel="noopener noreferrer" aria-label="Read: @(title.Length > 0 ? title : item.Title)">
                     @if (image is not null) { <img src="@image" alt="" fetchpriority="high" referrerpolicy="no-referrer" onerror="this.remove()" /> }
-                    else { <span aria-hidden="true">myNewspaper</span> }
                 </a>
             }
             <div class="d-lead__body">

@@ -597,3 +597,25 @@ Entertainment headlines now uses one menu entry and a hub at
 tabs. Both retain scoped sources, counts, timestamps and JS/no-JS pagination.
 `/entertainment/tv-film` still works as a hub alias. Box Office and other
 Entertainment destinations remain in the menu.
+
+### Provider groups in Where to watch search results
+
+Title search at `/watch?q=...` shows one row per movie or TV series: poster,
+title/year/type, service matches and US provider logos grouped as Stream, Free,
+Free with ads, Rent and Buy when present. Desktop places providers beside the
+poster; phones keep a compact poster/title row and stack provider groups beneath
+it. Browsing without a search retains the poster grid.
+
+The rows reuse the cached provider response already needed for eligibility and
+service matching; they do not fetch every title's detail endpoint. Provider logo
+paths are restricted to the TMDB image CDN, and outbound viewing links remain
+the validated TMDB US viewing-options link. Logos have readable provider-name
+captions and initials if an image is missing or fails. Existing JustWatch/TMDB
+attribution remains. We do not infer prices, season counts, ratings or direct
+provider purchase links from this data.
+
+Poster, title and Viewing details links open the existing dialog, with Escape and
+focus return, or navigate to the title page without JavaScript. Unknown provider
+availability is shown as unavailable to check rather than confirmed absence.
+Sorting, service selection, mixed movie/TV search and stable pagination retain
+existing behavior.

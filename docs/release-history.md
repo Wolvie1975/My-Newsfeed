@@ -3954,3 +3954,114 @@ images and lead sharing/Escape/focus. Mobile screenshots at all three phone
 widths were inspected. Main route smoke checks passed, including Results and
 admin redirects. Real-device checks were unavailable. Existing Pkcs dependency
 advisories remain. Evidence: `/tmp/mynewspaper-mobile-headlines-deploy/`.
+
+### October 24, 2026 — Remove women's college basketball from scoreboard
+
+Deployed `mynewspaper-web:womens-college-removal-20261024`, image
+`sha256:a5fa7bd7b16882da50337510f4c3d30430c6129ee9f0e3dc858532fe6513fc40`.
+The shared scoreboard reader excludes women's college basketball coverage,
+follows and games, removing both its league and Big 12 Show options, including
+Home and refresh fragments. College hub/schedules/standings/legacy results already
+excluded it. Men’s college basketball and WNBA remain. No database or collector
+changes were made.
+
+Twenty-one scoreboard unit/integration tests passed, including assertions against
+coverage/follows/games. Preview and live checks passed 32 viewport/theme/JS cases
+at 320/390/430/1440px in light/dark modes, with and without JavaScript. Checked
+absent league/conference choices and game cards, remaining men's/WNBA options,
+filter submission, legacy removed-league links, Home and overflow; inspected
+mobile screenshots at all three widths. Grouped Show selection, league/team/
+conference/all submissions, legacy filter resolution and date links also passed.
+Real-device checks were unavailable. Build/publish/static-asset guard passed;
+container healthy, `/healthz` and affected scoreboard/College/events/results
+routes returned 200. Runtime settings and mounts were verified preserved.
+Rollback container/image retained under
+`before-mynewspaper-womens-college-removal-20261024`. Existing Pkcs dependency
+advisories remain. Evidence: `/tmp/mynewspaper-womens-college-removal-deploy/`.
+
+### October 24, 2026 — Branded article image placeholder
+
+Deployed `mynewspaper-web:branded-placeholder-20261024`, image
+`sha256:8a8497b4e2669cb2640109c443cb11a8edc815903a8a5cd53155163af277d350`.
+Replaced the generic missing-photo symbol with a shared local SVG containing the
+existing myNewspaper icon and wordmark. Feed cards, homepage lead and Opinion
+use the fallback for missing or failed article images. Actual photos cover it;
+mobile newspaper images remain hidden. Video thumbnails retain their existing
+fallback. No database/collector changes.
+
+Build and publish/static-asset guard passed; 23 relevant feed rendering/Opinion
+tests passed. Preview and live checks covered News and Home at 320/390/430/1440px
+in both themes (16 combinations), including missing/broken-image fixtures,
+Opinion fallback, hidden mobile feed images, asset HTTP 200 and overflow.
+Phone and desktop fallback screenshots were inspected. Real-device checks were
+unavailable. Container healthy; runtime settings/mounts preserved; main routes and
+health endpoint passed HTTP checks. Prior container/image retained under
+`before-mynewspaper-branded-placeholder-20261024`. Existing Pkcs advisories remain.
+Evidence: `/tmp/mynewspaper-branded-placeholder-deploy/`.
+
+### October 24, 2026 — Placeholder cache correction
+
+The browser could reuse the previous generic SVG at `default-article.svg` for an
+hour while loading newer CSS that enlarged it. Moved the branded asset to the
+distinct `branded-article-v1.svg` URL and preserved the original generic asset for
+older styles. Feed, lead and Opinion backgrounds now request the new filename.
+
+Deployed `mynewspaper-web:branded-placeholder-cachefix-20261024`, image
+`sha256:8ab27f4a52dee18dc53b4cbbadc7b93fa7a9f44fdda0aec23bd3beb9feed498e`.
+Build/publish/static-asset guard passed; container healthy and health endpoint 200.
+Runtime settings/mounts preserved. Previous container/image retained under
+`before-mynewspaper-branded-placeholder-cachefix-20261024`. No database changes.
+Preview and live checks passed 16 Home/News combinations at 320/390/430/1440px
+in light/dark modes, including missing/broken-image fixtures, Opinion fallback,
+hidden mobile images and overflow. An assertion confirmed the old placeholder
+URL was never requested. The exact Entertainment lead from the user's screenshot
+was checked on the deployed build; desktop and phone screenshots were inspected.
+Real-device checks were unavailable. Evidence:
+`/tmp/mynewspaper-branded-placeholder-cachefix-deploy/`.
+
+### October 24, 2026 — Logo-only article placeholder
+
+Removed the visible myNewspaper wordmark from the fallback and centered the
+existing logo on the same background. The new `branded-article-v2.svg` filename
+avoids reusing the previous cached image. Article photos and mobile image hiding
+are unchanged.
+
+Deployed `mynewspaper-web:logo-placeholder-20261024`, image
+`sha256:013d08ff5da5887fea9f0a25e7196a14fbff2223aa73f6ff873fa51009de6c85`.
+Build/publish/static-asset guard passed. Container healthy, health endpoint 200;
+runtime settings/mounts preserved. Previous container/image retained under
+`before-mynewspaper-logo-placeholder-20261024`. No database changes.
+Preview and live checks passed 16 Home/News combinations at 320/390/430/1440px
+in light/dark modes: missing/broken images, Opinion fallback, hidden mobile
+images, overflow, new asset HTTP 200 and absence of SVG text elements. Inspected
+phone screenshots and the actual Entertainment lead from the user's screenshot.
+Real-device checks were unavailable. Evidence:
+`/tmp/mynewspaper-logo-placeholder-deploy/`.
+
+### October 24, 2026 — Where to watch provider rows
+
+Title search now shows poster-and-provider rows inspired by the user's reference:
+poster, title/year/type and US provider logos grouped as Stream, Free, Free with
+ads, Rent and Buy where available. Mobile uses a compact poster/title row with
+provider groups below. Browse pages retain the poster grid. Provider metadata
+reuses cached eligibility responses; no extra detail fetch per result. Names and
+initials remain available when logos fail. Existing credits, mixed search,
+personal service matches, sorting, pagination and details modal/no-JS links remain.
+Prices, season counts, ratings and direct provider purchase links are not inferred.
+
+Deployed `mynewspaper-web:watch-results-20261024`, image
+`sha256:f40f3baad6a9445bb1f81c659d5095f9024a1329d1ebd7e56f5bceba68e6fb82`.
+Build/publish/static-asset guard and 27 watch-related unit tests passed, including
+US grouping, safe/missing logos, cached links and provider-error metadata. Preview
+and live checks passed 20 viewport/theme/JS combinations at 320/390/430/768/1440px
+in light/dark modes, covering Arrow logos/categories, poster placement, mobile
+stacking, overflow, 44px action links, sorting/search preservation, modal Escape/
+focus, no-JS details and browse-grid regression. Separate sort, mixed-search/
+navigation and stable 20-title pagination suites passed before/after rollout.
+Phone and desktop screenshots were inspected. Real-device checks unavailable.
+
+Container healthy and health endpoint 200. Watch search/detail and main routes
+passed HTTP checks; runtime environment, mounts/network/ports/restart settings
+verified preserved. No database/collector changes. Previous container/image kept
+under `before-mynewspaper-watch-results-20261024`. Existing Pkcs advisories remain.
+Evidence: `/tmp/mynewspaper-watch-results-deploy/`.

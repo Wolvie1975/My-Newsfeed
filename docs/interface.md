@@ -1111,3 +1111,15 @@ light/dark modes. Checks included hidden mobile images, desktop image dimensions
 overflow, 44px controls, publisher wrapping, share/Escape/focus, refresh and Load
 more. Mobile and desktop screenshots were inspected. Real-device checks were
 unavailable. See release history for image tags and verification evidence.
+
+### Branded article fallback
+
+Article image areas use the centered myNewspaper logo, without visible text, as
+a shared local SVG background. Missing images expose it immediately; failed photo loads
+remove the failed image and reveal the same fallback. This applies to feed cards,
+the homepage lead and Opinion. Article photos cover the background normally.
+Mobile newspaper sections whose images are hidden remain text-only.
+The branded asset uses a distinct versioned filename (`branded-article-v2.svg`)
+so browsers holding the previous generic placeholder do not reuse it with the
+new full-size background styling. CSS revalidates on page loads; image assets
+may remain cached for an hour.

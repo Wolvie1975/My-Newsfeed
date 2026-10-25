@@ -11,7 +11,7 @@ public class WatchCatalogTests
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage r,CancellationToken token){
             Calls++;LastPath=r.RequestUri!.PathAndQuery;
             Assert.Equal("Bearer",r.Headers.Authorization?.Scheme);
-            var json=LastPath.Contains("providers") ? """{"results":{"US":{"link":"https://www.themoviedb.org/movie/1/watch?locale=US","flatrate":[{"provider_id":8,"provider_name":"Service <one>"}],"rent":[{"provider_name":"Rental"}]},"CA":{"buy":[{"provider_name":"Canada only"}]}}}""" : LastPath.Contains("search/") ? """{"total_pages":99,"results":[{"id":1,"title":"Example","release_date":"2020-01-01","popularity":13.5,"poster_path":"/poster.jpg"},{"id":2,"title":"Hidden","adult":true}]}""" : """{"id":1,"title":"Example","name":"Example TV","release_date":"2020-01-01","first_air_date":"2021-01-01","poster_path":"https://evil.invalid/a.jpg"}""";
+            var json=LastPath.Contains("providers") ? """{"results":{"US":{"link":"https://www.themoviedb.org/movie/1/watch?locale=US","flatrate":[{"provider_id":8,"provider_name":"Service <one>","logo_path":"/service.png"}],"rent":[{"provider_name":"Rental","logo_path":"https://evil.invalid/logo.png"}]},"CA":{"buy":[{"provider_name":"Canada only"}]}}}""" : LastPath.Contains("search/") ? """{"total_pages":99,"results":[{"id":1,"title":"Example","release_date":"2020-01-01","popularity":13.5,"poster_path":"/poster.jpg"},{"id":2,"title":"Hidden","adult":true}]}""" : """{"id":1,"title":"Example","name":"Example TV","release_date":"2020-01-01","first_air_date":"2021-01-01","poster_path":"https://evil.invalid/a.jpg"}""";
             if(LastPath.Contains("/discover/"))json="""{"total_pages":2,"results":[{"id":3,"title":"Example movie","name":"Ongoing series","first_air_date":"2020-01-01"}]}""";
             if(LastPath.Contains("/2/watch/providers"))json="""{"results":{"US":{"rent":[{"provider_id":8,"provider_name":"Rental only"}]}}}""";
             if(LastPath.Contains("/3/watch/providers"))json="""{"results":{"CA":{"flatrate":[{"provider_id":8,"provider_name":"Canada only"}]}}}""";
@@ -49,6 +49,22 @@ public class WatchCatalogTests
         Assert.All(original.Items,t=>Assert.Null(t.MatchingServices));
         await catalog.Prioritize(original,"8");Assert.Equal(2,provider.Calls);
         Assert.Equal(new[]{3,8},WatchCatalog.ServiceIds("8,3,8,0,-1,invalid"));
+    }
+    [Fact]public async Task Result_rows_include_grouped_US_providers_safe_logos_and_cached_links_without_selected_services(){
+        var provider=new Provider();var catalog=Catalog(provider);
+        var original=new WatchListing(new[]{new WatchTitle(1,"movie","Example",null,null,""),new WatchTitle(6,"tv","Unknown",null,null,"")},1);
+        var listing=await catalog.Prioritize(original,null,filterUnavailable:false);
+        var title=listing.Items[0];
+        Assert.Equal(new[]{"Subscription","Rent"},title.Offers!.Select(o=>o.Category));
+        var service=Assert.Single(title.Offers[0].Options!);
+        Assert.Equal(8,service.Id);Assert.Equal("Service <one>",service.Name);
+        Assert.Equal("https://image.tmdb.org/t/p/w92/service.png",service.Logo);
+        Assert.Null(Assert.Single(title.Offers[1].Options!).Logo);
+        Assert.StartsWith("https://www.themoviedb.org/",title.WatchLink);
+        Assert.DoesNotContain(title.Offers.SelectMany(o=>o.Providers),n=>n=="Canada only");
+        Assert.False(title.OffersUnavailable);Assert.True(listing.Items[1].OffersUnavailable);
+        Assert.Null(original.Items[0].Offers);
+        await catalog.Prioritize(original,null,filterUnavailable:false);Assert.Equal(2,provider.Calls);
     }
     [Theory]
     [InlineData(60,"Fandango",false)]

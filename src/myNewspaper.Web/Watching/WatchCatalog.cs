@@ -3,9 +3,10 @@ using System.Text.RegularExpressions;
 using Microsoft.Extensions.Caching.Memory;
 namespace myNewspaper.Web.Watching;
 
-public sealed record WatchTitle(int Id,string Kind,string Name,string? Year,string? Poster,string Overview,IReadOnlyList<string>? MatchingServices=null,DateOnly? ReleaseDate=null,double? Popularity=null);
+public sealed record WatchTitle(int Id,string Kind,string Name,string? Year,string? Poster,string Overview,IReadOnlyList<string>? MatchingServices=null,DateOnly? ReleaseDate=null,double? Popularity=null,IReadOnlyList<WatchOffer>? Offers=null,string? WatchLink=null,bool OffersUnavailable=false);
 public sealed record WatchListing(IReadOnlyList<WatchTitle> Items,int Pages,bool Failed=false,bool CanContinue=false);
-public sealed record WatchOffer(string Category,IReadOnlyList<string> Providers);
+public sealed record WatchProvider(int Id,string Name,string? Logo);
+public sealed record WatchOffer(string Category,IReadOnlyList<string> Providers,IReadOnlyList<WatchProvider>? Options=null);
 public sealed record WatchAvailability(WatchTitle Title,IReadOnlyList<WatchOffer> Offers,string? Link,DateTime Checked);
 public sealed class WatchCatalog(IHttpClientFactory factory,IConfiguration configuration)
 {
@@ -105,18 +106,31 @@ public sealed class WatchCatalog(IHttpClientFactory factory,IConfiguration confi
             if(title.RootElement.TryGetProperty("adult",out var adult)&&adult.ValueKind==JsonValueKind.True)return null;
             var offers=new List<WatchOffer>();string? link=null;
             if(providers.RootElement.TryGetProperty("results",out var regions)&&regions.TryGetProperty("US",out var us)){
-                foreach(var (keyName,label) in new[]{("flatrate","Subscription"),("free","Free"),("ads","Free with ads"),("rent","Rent"),("buy","Buy")}){
-                    if(us.TryGetProperty(keyName,out var list)&&list.ValueKind==JsonValueKind.Array){
-                        var names=list.EnumerateArray().Select(x=>Text(x,"provider_name")).Where(x=>!string.IsNullOrWhiteSpace(x)&&HomeViewingService(0,x)).Cast<string>().Distinct().ToList();
-                        if(names.Count>0)offers.Add(new(label,names));
-                    }
-                }
-                var raw=Text(us,"link");
-                if(Uri.TryCreate(raw,UriKind.Absolute,out var uri)&&uri.Scheme=="https"&&uri.Host=="www.themoviedb.org")link=uri.AbsoluteUri;
+                offers.AddRange(ReadOffers(us));
+                link=ProviderLink(us);
             }
             return Save(key,new WatchAvailability(Title(title.RootElement,kind),offers,link,DateTime.UtcNow),TimeSpan.FromHours(6));
         }catch(Exception e) when(e is InvalidOperationException or KeyNotFoundException or FormatException){return null;}
     }
+    private static IReadOnlyList<WatchOffer> ReadOffers(JsonElement us)
+    {
+        var offers=new List<WatchOffer>();
+        foreach(var (key,label) in new[]{("flatrate","Subscription"),("free","Free"),("ads","Free with ads"),("rent","Rent"),("buy","Buy")}){
+            if(!us.TryGetProperty(key,out var list)||list.ValueKind!=JsonValueKind.Array)continue;
+            var options=list.EnumerateArray().Select(item=>{
+                var id=item.TryGetProperty("provider_id",out var value)&&value.TryGetInt32(out var number)?number:0;
+                var name=Text(item,"provider_name");
+                return !string.IsNullOrWhiteSpace(name)&&HomeViewingService(id,name)
+                    ? new WatchProvider(id,name,ProviderLogo(Text(item,"logo_path"))) : null;
+            }).OfType<WatchProvider>().DistinctBy(p=>p.Name,StringComparer.OrdinalIgnoreCase).ToList();
+            if(options.Count>0)offers.Add(new(label,options.Select(p=>p.Name).ToList(),options));
+        }
+        return offers;
+    }
+    private static string? ProviderLogo(string? path)=>path!=null&&Regex.IsMatch(path,@"^/[A-Za-z0-9_.-]+$")
+        ? "https://image.tmdb.org/t/p/w92"+path : null;
+    private static string? ProviderLink(JsonElement us)=>Uri.TryCreate(Text(us,"link"),UriKind.Absolute,out var uri)
+        &&uri.Scheme=="https"&&uri.Host=="www.themoviedb.org"?uri.AbsoluteUri:null;
     public sealed record Service(int Id,string Name);
     public static bool HomeViewingService(int id,string? name)=>id!=60 && !new[]{"Fandango","AMC Theatres","AMC Theaters","Regal Cinemas","Cinemark"}.Contains(name?.Trim(),StringComparer.OrdinalIgnoreCase);
     public static int[] ServiceIds(string? value)=> (value??"").Split(',').Select(s=>int.TryParse(s,out var id)?id:0).Where(id=>id>0&&HomeViewingService(id,null)).Distinct().Order().Take(20).ToArray();
@@ -134,7 +148,7 @@ public sealed class WatchCatalog(IHttpClientFactory factory,IConfiguration confi
         }
         return Save<IReadOnlyList<Service>>(key,services.DistinctBy(s=>s.Id).OrderBy(s=>s.Name).ToList(),TimeSpan.FromHours(12));
     }
-    private sealed record Access(IReadOnlyList<Service> Services,bool Failed=false,bool HasUsOptions=false);
+    private sealed record Access(IReadOnlyList<Service> Services,bool Failed=false,bool HasUsOptions=false,IReadOnlyList<WatchOffer>? Offers=null,string? Link=null);
     private async Task<Access> AccessFor(string kind,int id)
     {
         var key=$"watch:access:{kind}:{id}";
@@ -142,11 +156,12 @@ public sealed class WatchCatalog(IHttpClientFactory factory,IConfiguration confi
         using var doc=await Fetch($"{kind}/{id}/watch/providers");
         if(doc is null)return Save(key,new Access([],true),TimeSpan.FromSeconds(30));
         try {
-            var available=new List<Service>();var hasOptions=false;
+            var available=new List<Service>();var hasOptions=false;IReadOnlyList<WatchOffer> offers=[];string? link=null;
             if(!doc.RootElement.TryGetProperty("results",out var regions)||regions.ValueKind!=JsonValueKind.Object)
                 return Save(key,new Access([],true),TimeSpan.FromSeconds(30));
             if(regions.TryGetProperty("US",out var us)){
                 if(us.ValueKind!=JsonValueKind.Object)return Save(key,new Access([],true),TimeSpan.FromSeconds(30));
+                offers=ReadOffers(us);link=ProviderLink(us);
                 foreach(var category in new[]{"flatrate","free","ads","rent","buy"}){
                     if(!us.TryGetProperty(category,out var list))continue;
                     if(list.ValueKind!=JsonValueKind.Array)return Save(key,new Access([],true),TimeSpan.FromSeconds(30));
@@ -158,17 +173,17 @@ public sealed class WatchCatalog(IHttpClientFactory factory,IConfiguration confi
                     }
                 }
             }
-            return Save(key,new Access(available.DistinctBy(s=>s.Id).ToList(),HasUsOptions:hasOptions),TimeSpan.FromHours(6));
+            return Save(key,new Access(available.DistinctBy(s=>s.Id).ToList(),HasUsOptions:hasOptions,Offers:offers,Link:link),TimeSpan.FromHours(6));
         }catch(Exception e) when(e is InvalidOperationException or KeyNotFoundException or FormatException){return Save(key,new Access([],true),TimeSpan.FromSeconds(30));}
     }
     public async Task<WatchListing> Prioritize(WatchListing listing,string? selected,bool filterUnavailable=true)
     {
         var ids=ServiceIds(selected).ToHashSet();
-        if(listing.Failed||(!filterUnavailable&&ids.Count==0))return listing;
+        if(listing.Failed)return listing;
         var titles=await Task.WhenAll(listing.Items.Select(async title=>{
             var access=await AccessFor(title.Kind,title.Id);
             if(filterUnavailable&&!access.Failed&&!access.HasUsOptions)return null;
-            return title with {MatchingServices=access.Failed?null:access.Services.Where(s=>ids.Contains(s.Id)).Select(s=>s.Name).ToList()};
+            return title with {MatchingServices=access.Failed?null:access.Services.Where(s=>ids.Contains(s.Id)).Select(s=>s.Name).ToList(),Offers=access.Offers,WatchLink=access.Link,OffersUnavailable=access.Failed};
         }));
         return listing with {Items=titles.OfType<WatchTitle>().OrderByDescending(t=>t.MatchingServices?.Count>0).ToList()};
     }

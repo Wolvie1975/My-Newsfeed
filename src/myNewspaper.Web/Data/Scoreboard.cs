@@ -133,8 +133,8 @@ public sealed class ScoreboardRepository(IDbContextFactory<WebScraperContext> fa
     {
         try {
             await using var db = await factory.CreateDbContextAsync();
-            var coverage = await db.Database.SqlQueryRaw<ScoreboardCoverage>("SELECT ID,SourceKind,OriginId,Sport,League,Label,LastAttemptAt,LastSuccessAt,Availability FROM dbo.SportsScoreboardCoverage").ToListAsync();
-            var origins = await db.ResultFollows.AsNoTracking().Where(f => f.Enabled).ToListAsync();
+            var coverage = await db.Database.SqlQueryRaw<ScoreboardCoverage>("SELECT ID,SourceKind,OriginId,Sport,League,Label,LastAttemptAt,LastSuccessAt,Availability FROM dbo.SportsScoreboardCoverage").Where(c => c.League != "womens-college-basketball").ToListAsync();
+            var origins = await db.ResultFollows.AsNoTracking().Where(f => f.Enabled && f.League != "womens-college-basketball").ToListAsync();
             var originIds = origins.Select(f => f.Id).ToArray();
             var members = await db.ResultFollowTeams.AsNoTracking().Where(m => originIds.Contains(m.FollowId)).ToListAsync();
             var follows = origins.Where(f => coverage.Any(c => c.Sport == f.Sport && c.League == f.League))
@@ -148,6 +148,7 @@ public sealed class ScoreboardRepository(IDbContextFactory<WebScraperContext> fa
             var query = db.Database.SqlQueryRaw<ScoreboardGame>("SELECT ID,Provider,Sport,League,EventId,ScoreboardDate,StartsAtUtc,TimeTbd,WasRescheduled,HomeTeamId,AwayTeamId,HomeName,AwayName,HomeLogoUrl,AwayLogoUrl,HomeScore,AwayScore,Status,Completed,ProviderStatus,StatusText,Period,DisplayClock,NeutralSite,HomeShootout,AwayShootout,WinnerSide,Venue,Broadcasts,SourceUrl,LiveDetailsJson,LastObservedAtUtc,IsStale,RequestAvailability,HasBoxScore FROM dbo.SportsScoreboard");
             query = query.Where(g => g.ScoreboardDate == day && (g.TimeTbd || g.StartsAtUtc >= window.StartUtc && g.StartsAtUtc < window.EndUtc)
                 || carryOver && g.ScoreboardDate < day && (g.Status == "live" || g.Status == "delayed" || g.Status == "suspended"));
+            query = query.Where(g => g.League != "womens-college-basketball");
             if (selected != null) query = query.Where(g => g.Sport == selected.Sport && g.League == selected.League);
             if (finalsOnly) query = query.Where(g => g.Status == "final" && g.Completed);
             var games = await query.ToListAsync();

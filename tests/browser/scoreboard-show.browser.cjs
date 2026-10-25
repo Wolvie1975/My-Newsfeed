@@ -12,6 +12,10 @@ const base=process.env.BASE_URL||'http://127.0.0.1:5312';
   assert.deepEqual(groups,['Leagues','Conferences','Teams']);
   const values=await show.locator('option').evaluateAll(ns=>ns.map(n=>n.value));
   assert.equal(values.length,new Set(values).size);
+  assert(!values.some(v=>v.includes('womens-college-basketball')));
+  assert(!(await show.locator('option').allTextContents()).some(t=>/women[’']s.*basketball/i.test(t)));
+  assert(values.includes('c:basketball|wnba'));
+  assert(values.includes('c:basketball|mens-college-basketball'));
   const conference=await show.locator('optgroup[label="Conferences"] option').first().getAttribute('value');
   const team=await show.locator('optgroup[label="Teams"] option').first().getAttribute('value');
   for(const value of ['c:baseball|mlb',conference,team,'']){
