@@ -6,10 +6,31 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The latest recorded web release is `mynewspaper-web:broadsheet-20261025`
-(image `14f6a33cdfd8`), deployed October 25, 2026 (Central). Its rollback image is
-`mynewsfeed-web:before-mynewspaper-broadsheet-20261025`. Deployment checks passed then;
+The latest recorded web release is `mynewspaper-web:header-20261025`
+(image `b2bc2db84360`), deployed October 25, 2026 (Central). Its rollback image is
+`mynewsfeed-web:before-mynewspaper-header-20261025`. Deployment checks passed then;
 this is a dated observation, not live hosting status.
+
+## Broadsheet follow-ups and concept header — deployed October 25, 2026 (Central)
+
+After the first broadsheet release the user compared the live site with the canvas and with their Android phone
+(412px, large system text, installed app). Four further releases, each verified on a preview and then live:
+
+| Image | Change |
+| --- | --- |
+| `broadsheet-v2-20261025` (`f092f65d0a3b`) | Desktop front page matched to option 4: agate Today & Tonight by part of day, headline-first lead, two-column headlines, text-only Opinion, top-3 box office, sports briefs in the side column |
+| `broadsheet-v3-20261025` (`c99c61549b63`) | "More from today" in ruled-column style: agate scoreboard, column-edge alignment, Top 25 fits, empty release sections left out |
+| `broadsheet-v4-20261025` (`6328de622c50`) | Phone top: greeting and Refresh on one row, compact Where to watch, 2 × 2 forecast under 600px (four across on tablets) |
+| `header-20261025` (`b2bc2db84360`) | Header rebuilt to the concepts: phone bar with date and time, Saved and a Menu button opening a full-height section sheet (no "Browse" dropdown); desktop plain masthead row of text links (no dropdowns) with Saved, Settings, light/dark and Admin |
+
+Each rollback image is `mynewsfeed-web:before-mynewspaper-<tag>`; runtime environment, port 8085, `dev-bridge`,
+`/keys` and restart policy were preserved. 721 .NET tests passed; lint and format clean. The browser suite on each
+preview passed apart from intermittent `page.goto` load timeouts on home checks (external images; all passed on
+rerun). Screen matrix (7 pages at 320/390/430/768/1440, light/dark, JavaScript off at 390/1440): no overflow or
+script errors on preview or live. Large system text was approximated at 317px. The phone fixes came from the
+user's Android screenshots; the device was not re-checked after the header release. Section pages other than Home
+still use their old layouts; rebuilding them to their concept boards is planned in batches.
+Evidence: `/tmp/mynewspaper-broadsheet-deploy/v2` to `v5`.
 
 ## Broadsheet redesign — deployed October 25, 2026 (Central)
 

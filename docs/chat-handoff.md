@@ -8,6 +8,17 @@ the deferred service hyperlink decision.
 Read this file when continuing work from the previous chat. These are dated
 observations; check current repository and hosting state before acting.
 
+## Concept header deployed; section pages next — October 25, 2026 (Central)
+
+The user compared live pages with the canvas (https://claude.ai/artifact/JVQ8mU7R63Z1cziNpeW9Z5) and found only Home
+had been rebuilt; section pages were only restyled and the header was unchanged. Agreed plan, one batch at a time
+with a deploy for the user to test: (1) header everywhere — done, `header-20261025`; (2) Entertainment, Movies, TV,
+Digital releases, Box office, Where to watch; (3) Sports, Scoreboard, Standings, Top 25, College, F1; (4) Headlines,
+Local, YouTube, Saved, Settings. Match each page to its desktop and phone boards side by side, including large
+system text (the user's phone behaves like about 317px). The desktop header keeps a light/dark icon and an Admin
+link that the concepts omit; the user may want them removed. Details in [release history](release-history.md).
+Committed locally on `develop`. Pending: the user is testing the header; batch 2 has not started.
+
 ## Broadsheet redesign deployed — October 25, 2026 (Central)
 
 User asked to build the approved redesign (canvas https://claude.ai/artifact/JVQ8mU7R63Z1cziNpeW9Z5)
