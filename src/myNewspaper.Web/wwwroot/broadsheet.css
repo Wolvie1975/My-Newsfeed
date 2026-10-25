@@ -1154,16 +1154,56 @@
 .pub .tt-team .team-record {
     white-space: nowrap;
 }
-@media (max-width: 400px) {
+/* Phones and tablets: as on the phone concept, Where to watch sits right under the header. The greeting and Refresh
+   share one short row (the header already shows the date) and the forecast is a four-across strip. */
+@media (max-width: 1023px) {
+    .pub .bs-title__greeting {
+        font-size: 22px;
+    }
+    .pub .bs-title__date {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+    }
+    .pub .bs-title .home-refresh {
+        grid-row: 1;
+    }
+    .pub .bs-watch__search {
+        margin: 0;
+    }
+    .pub .bs-watch__search label {
+        margin: 0;
+    }
     .pub .bs-glance__weather {
         grid-template-columns: minmax(0, 1fr);
     }
+    .pub .bs-glance__periods li {
+        align-items: center;
+        text-align: center;
+    }
+    /* Names take two lines' height so the temperatures line up across the strip. */
+    .pub .bs-glance__name {
+        min-height: 2.5em;
+        line-height: 1.25;
+        white-space: normal;
+    }
+    .pub .bs-glance__reading {
+        display: -webkit-box;
+        overflow: hidden;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 3;
+        line-clamp: 3;
+    }
+    .pub .bs-glance__weather .d-more {
+        justify-self: end;
+    }
+}
+@media (max-width: 359px) {
     .pub .bs-glance__periods {
         grid-template-columns: repeat(2, minmax(0, 1fr));
         row-gap: 10px;
-    }
-    .pub .bs-glance__weather .d-more {
-        justify-self: start;
     }
 }
 
