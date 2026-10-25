@@ -769,6 +769,23 @@
     .pub .bs-col + .bs-col {
         border-left: 1px solid var(--row-border);
     }
+    /* The side column is too narrow for the five-poster grid: list releases with a thumbnail. */
+    .pub .bs-col--side .d-movies .d-list {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 14px;
+        padding: 8px 0 0;
+    }
+    .pub .bs-col--side .d-movie {
+        flex-direction: row;
+        align-items: flex-start;
+    }
+    .pub .bs-col--side .d-movie__poster {
+        flex: none;
+        width: 56px;
+    }
+    .pub .bs-col--side .d-movie__body {
+        flex: 1 1 auto;
+    }
     .pub .bs-band {
         display: block;
         margin: 40px 0 0;
