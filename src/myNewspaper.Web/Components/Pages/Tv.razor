@@ -4,7 +4,7 @@
 @inject FeedDates Dates
 
 <PageTitle>TV &amp; Streaming · myNewspaper</PageTitle>
-<PageHeading Title="TV &amp; Streaming" Eyebrow="YOUR EPISODE CALENDAR" Description="Upcoming original releases for the series we follow." />
+<PageHeading Section="entertainment" Title="TV &amp; Streaming" Eyebrow="YOUR EPISODE CALENDAR" Description="Upcoming original releases for the series we follow." />
 <details class="tracked-series"><summary>Tracked series · @schedule.Shows.Count</summary><ul class="agenda-list">@foreach (var series in schedule.Shows) { <li class="agenda-item"><h3><a href="@($"tv?show={series.Id}")">@series.Title</a></h3></li> }</ul></details>
 <nav class="tv-week" aria-label="Episode calendar dates">
     <span>@start.ToString("MMM d", System.Globalization.CultureInfo.InvariantCulture) – @start.AddDays(6).ToString("MMM d, yyyy", System.Globalization.CultureInfo.InvariantCulture)</span>

@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="11 7 43 50" role="img" aria-label="myNewspaper">
+  <path d="M15 11h25l10 10v32H15z" fill="#ffffff"/>
+  <path d="M40 11v10h10z" fill="#ffd34d"/>
+  <path d="M21 27H28V31.2C30 28.6 32.6 27 35.6 27C40 27 42.5 29.9 42.5 34.6V44.5H45V47H35.5V44.5H37.5V35.3C37.5 32.8 36.4 31.6 34.3 31.6C31.9 31.6 29.6 33.2 28 35.6V44.5H30V47H20.5V44.5H23V29.5H21Z" fill="#0051ba"/>
+</svg>

@@ -7,3 +7,4 @@
 !src/myNewspaper.Web/Components/**/*.razor.js
 !tests/browser/*.cjs
 !*.config.js
+!tools/*.cjs

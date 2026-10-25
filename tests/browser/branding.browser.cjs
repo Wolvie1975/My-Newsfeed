@@ -32,8 +32,14 @@ const base = process.env.BASE_URL || 'http://localhost:5295',
             assert.equal(await page.locator('.brand').getAttribute('aria-label'), 'myNewspaper home');
             assert((await page.title()).includes('myNewspaper'));
             assert(!/MyDailyFeed|MyNewsFeed/.test(await page.locator('body').innerText()));
-            assert((await page.locator('.brand img').getAttribute('src')).includes('newspaper-ribbon-192'));
-            assert(await page.locator('.brand img').evaluate((n) => n.complete && n.naturalWidth === 192));
+            // The folded-page mark is inline SVG so it can take the colour scheme's ink.
+            assert.equal(await page.locator('.brand svg.brand-mark path').count(), 3);
+            assert.equal(
+                await page.evaluate(() =>
+                    document.querySelector('link[rel="icon"][type="image/svg+xml"]').getAttribute('href'),
+                ),
+                'img/brand/mark.svg',
+            );
         }
         await page.goto(base + '/settings');
         assert.equal(
@@ -54,7 +60,7 @@ const base = process.env.BASE_URL || 'http://localhost:5295',
         assert.equal(manifest.id, '/');
         assert.equal(manifest.scope, '/');
         for (const icon of manifest.icons) {
-            assert(icon.src.includes('newspaper-ribbon-'));
+            assert(icon.src.includes('newspaper-page-'));
             assert.equal((await page.request.get(base + icon.src)).status(), 200);
         }
         const styles = await page.locator('link[rel="stylesheet"]').evaluateAll((ns) => ns.map((n) => n.href));
@@ -85,7 +91,11 @@ const base = process.env.BASE_URL || 'http://localhost:5295',
                 }
                 await page.goto(base + '/offline.html');
                 assert.equal(await page.locator('h1').innerText(), 'myNewspaper can’t be reached');
-                assert(await page.locator('img').evaluate((n) => n.complete && n.naturalWidth === 192));
+                assert(
+                    await page
+                        .locator('img')
+                        .evaluate((n) => n.complete && n.naturalWidth > 0 && n.getBoundingClientRect().width === 80),
+                );
                 assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
             }
         const plain = await browser.newPage({ javaScriptEnabled: false, viewport: { width: 390, height: 900 } });

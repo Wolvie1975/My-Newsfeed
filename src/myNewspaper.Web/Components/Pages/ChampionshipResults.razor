@@ -6,7 +6,7 @@
 @inject FeedDates Dates
 @inject ILogger<ChampionshipResults> Log
 <PageTitle>EFL Championship results · myNewspaper</PageTitle>
-<PageHeading Title="EFL Championship results" Eyebrow="THE FINAL SCORES" Description="Completed matches from the latest available season." />
+<PageHeading Section="sports" SectionCurrent="scoreboard" Title="EFL Championship results" Eyebrow="THE FINAL SCORES" Description="Completed matches from the latest available season." />
 <myNewspaper.Web.Components.Events.TeamRecordsNote />
 <SoccerLeagueLinks Provider="espn-championship" />
 @if (error is not null) { <p class="empty" role="status">@error</p> }

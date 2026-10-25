@@ -13,7 +13,7 @@
 @inject ILogger<College> Log
 
 <PageTitle>College Sports · @selected.Name · myNewspaper</PageTitle>
-<PageHeading Title="College Sports" Eyebrow="CAMPUS SCOREBOARD" Description="Schedules, final scores, conference standings, national polls and conference news in one place." />
+<PageHeading Section="sports" Title="College Sports" Eyebrow="CAMPUS SCOREBOARD" Description="Schedules, final scores, conference standings, national polls and conference news in one place." />
 <form class="catselect college-sport-select" method="get" action="@BasePath">
     <label for="college-sport">Sport</label>
     <select id="college-sport" name="sport" onchange="this.form.requestSubmit()">

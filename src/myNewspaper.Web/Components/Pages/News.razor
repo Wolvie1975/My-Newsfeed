@@ -15,7 +15,7 @@
     <div data-news-page data-category-explicit="@(CategoryQuery is not null || !string.IsNullOrWhiteSpace(Q) || SourceQuery is not null || AfterQuery is not null ? "true" : "false")" data-category-current="@Category" hidden></div>
 }
 <PageTitle>@Title · myNewspaper</PageTitle>
-<PageHeading Title="@Title" Eyebrow="THE LATEST STORIES" Description="@(SectionNews ? (EntertainmentSection ? "Latest stories from our entertainment sources." : "Latest stories from our sports sources.") : "Latest articles from the sources we follow.")" />
+<PageHeading Section="@(SectionNews ? (EntertainmentSection ? "entertainment" : "sports") : null)" SectionCurrent="@(SectionNews ? (EntertainmentSection ? "entertainment/news" : "sports/news") : null)" Title="@Title" Eyebrow="THE LATEST STORIES" Description="@(SectionNews ? (EntertainmentSection ? "Latest stories from our entertainment sources." : "Latest stories from our sports sources.") : "Latest articles from the sources we follow.")" />
 @if (SectionNews) {
     <form class="catselect news-category-select" method="get" action="news">
         <label for="hub-category">Category</label>

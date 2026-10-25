@@ -1,0 +1,237 @@
+/* Broadsheet design system (October 2026), loaded after public.css.
+ *
+ * - Newsreader serif for mastheads, page titles and story headlines; Schibsted Grotesk stays the text face.
+ * - The folded-page mark in the header; its ink and corner follow the colour scheme.
+ * - Section navigation: underlined tabs from 768px; on phones a segmented control (four or fewer choices) or a
+ *   native dropdown (five or more). Nothing scrolls sideways and every target is at least 44px.
+ * - The default scheme is flat royal blue to match the mark; other schemes keep their own colours.
+ *
+ * S = ":root:is([data-color-scheme], :not([data-color-scheme])) .pub" carries the specificity of the per-scheme
+ * rules in public.css, so a rule here applies under every colour scheme without !important.
+ */
+:root {
+    --font-serif: 'Newsreader', Georgia, 'Times New Roman', serif;
+}
+
+/* ---------- Default scheme: flat royal blue, quiet page ---------- */
+:root[data-color-scheme='ribbon'],
+:root:not([data-color-scheme]) {
+    --bg: #f4f6fa;
+    --accent: #0051ba;
+    --btn-bg: #0051ba;
+    --header-bg: #0051ba;
+    --header-border: #00479f;
+    --selection-bg: #ffd34d;
+}
+:root[data-color-scheme='ribbon'][data-theme='dark'],
+:root:not([data-color-scheme])[data-theme='dark'] {
+    --bg: #09182b;
+    --accent: #8dcbff;
+    --btn-bg: #146ac5;
+    --header-bg: #0b346b;
+}
+:root[data-color-scheme='ribbon'] .pub .site-header,
+:root:not([data-color-scheme]) .pub .site-header,
+:root[data-color-scheme='ribbon'][data-theme='dark'] .pub .site-header,
+:root:not([data-color-scheme])[data-theme='dark'] .pub .site-header {
+    background: var(--header-bg);
+    background-image: none;
+}
+:root[data-color-scheme='ribbon'] .pub .nf-btn--primary {
+    background: var(--btn-bg);
+}
+:root:is([data-color-scheme], :not([data-color-scheme])) .pub .page-heading::after {
+    content: none;
+}
+
+/* ---------- Brand ---------- */
+.pub .brand {
+    width: auto;
+    min-width: 44px;
+    min-height: 44px;
+    gap: 10px;
+    padding-right: 4px;
+    color: var(--header-fg);
+}
+.pub .brand-mark {
+    display: block;
+    flex: none;
+}
+.pub .brand-mark__page {
+    fill: #ffffff;
+}
+.pub .brand-mark__fold {
+    fill: var(--selection-bg, #ffd34d);
+}
+.pub .brand-mark__n {
+    fill: var(--header-bg, #0051ba);
+}
+:root[data-theme='dark'] .pub .brand-mark__page {
+    fill: #e8ecf4;
+}
+.pub .brand-wordmark {
+    display: none;
+    font-family: var(--font-serif);
+    font-size: 23px;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    line-height: 1;
+    white-space: nowrap;
+}
+@media (min-width: 1280px) {
+    .pub:not([data-page='home']) .brand-wordmark {
+        display: inline;
+    }
+}
+
+/* ---------- Page headings: the section masthead ---------- */
+.pub .page-heading h1 {
+    font-family: var(--font-serif);
+    font-weight: 800;
+    font-size: clamp(36px, 6vw, 64px);
+    line-height: 1;
+    letter-spacing: -0.02em;
+}
+.pub .page-heading .page-eyebrow {
+    color: var(--accent);
+    font-weight: 800;
+    letter-spacing: 0.12em;
+}
+@media (min-width: 1024px) {
+    .pub .page-heading {
+        margin-bottom: 22px;
+        padding-bottom: 20px;
+        border-bottom: 4px double var(--text);
+    }
+    .pub .page-heading:has(.section-nav) {
+        padding-bottom: 0;
+    }
+}
+
+/* ---------- Section navigation ---------- */
+.pub .section-nav {
+    margin-top: 16px;
+}
+.pub .section-nav .section-select {
+    margin: 0;
+}
+.pub .section-tabs {
+    display: none;
+}
+@media (min-width: 768px) {
+    .pub .section-tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0 4px;
+    }
+    .pub .section-tabs a {
+        display: flex;
+        align-items: center;
+        min-height: 46px;
+        padding: 0 14px;
+        border-bottom: 4px solid transparent;
+        color: var(--text);
+        font-size: 15px;
+        font-weight: 600;
+        text-decoration: none;
+    }
+    .pub .section-tabs a:hover {
+        border-bottom-color: var(--row-border);
+    }
+    .pub .section-tabs a[aria-current='page'] {
+        border-bottom-color: var(--accent);
+        color: var(--accent);
+        font-weight: 800;
+    }
+    .pub .section-nav .section-select {
+        display: none;
+    }
+}
+@media (max-width: 767px) {
+    .pub .section-nav--few .section-tabs {
+        display: grid;
+        grid-auto-flow: column;
+        grid-auto-columns: minmax(0, 1fr);
+        padding: 4px;
+        border-radius: 12px;
+        background: var(--pill-bg);
+    }
+    .pub .section-nav--few .section-tabs a {
+        display: grid;
+        place-items: center;
+        min-height: 44px;
+        padding: 0 6px;
+        border-radius: 9px;
+        color: var(--text-2);
+        font-size: 14px;
+        font-weight: 600;
+        text-align: center;
+        text-decoration: none;
+    }
+    .pub .section-nav--few .section-tabs a[aria-current='page'] {
+        background: var(--surface);
+        color: var(--text);
+        font-weight: 800;
+        box-shadow: 0 1px 2px rgb(0 0 0 / 0.12);
+    }
+    .pub .section-nav--few .section-select {
+        display: none;
+    }
+    .pub .section-nav--many .section-select {
+        flex-direction: row;
+        align-items: center;
+        gap: 10px;
+        max-width: none;
+    }
+    .pub .section-nav--many .section-select label {
+        flex: none;
+        color: var(--text-2);
+        font-size: 13px;
+        font-weight: 700;
+    }
+    .pub .section-nav--many .section-select select {
+        flex: 1 1 auto;
+        min-height: 48px;
+        font-size: 16px;
+        font-weight: 600;
+    }
+}
+
+/* ---------- Headlines in the serif ---------- */
+.pub .feed .title,
+.pub .d-lead__title,
+.pub .d-story__title,
+.pub .d-headline-shelf__title,
+.pub .front-strip h2,
+.pub .d-hello h1 {
+    font-family: var(--font-serif);
+    letter-spacing: -0.005em;
+}
+.pub .feed .title {
+    font-weight: 700;
+}
+.pub .paper-label {
+    padding-bottom: 4px;
+    border-bottom: 2px solid var(--text);
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+/* ---------- Cards: flat paper instead of the ribbon's soft shadows ---------- */
+:root:is([data-color-scheme], :not([data-color-scheme])) .pub .d-card {
+    border-radius: 14px;
+    box-shadow: none;
+}
+@media (min-width: 1024px) {
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .d-card__title {
+        font-size: 13px;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .d-card__head {
+        border-bottom: 2px solid var(--text);
+    }
+}

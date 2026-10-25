@@ -24,8 +24,17 @@ const base = process.env.BASE_URL || 'http://localhost:5295',
                     assert((await cards.count()) > 0 && (await cards.count()) <= 8);
                     assert.equal(await p.locator('#category,#source,[data-load-more]').count(), 0);
                     assert(await p.locator('.front-agenda').isVisible());
-                    assert.equal(await p.locator('#hub-section').inputValue(), '/' + route);
-                    assert((await p.locator('#hub-section').boundingBox()).height >= 44);
+                    // Section navigation: underlined tabs from 768px, a dropdown on phones.
+                    if (width < 768) {
+                        assert.equal(await p.locator('#' + route + '-section').inputValue(), '/' + route);
+                        assert((await p.locator('#' + route + '-section').boundingBox()).height >= 44);
+                        assert(!(await p.locator('.section-tabs').isVisible()));
+                    } else {
+                        const current = p.locator('.section-tabs a[aria-current="page"]');
+                        assert.equal(await current.getAttribute('href'), route);
+                        assert((await current.boundingBox()).height >= 44);
+                        assert(!(await p.locator('#' + route + '-section').isVisible()));
+                    }
                     assert.equal(await p.locator('.hub-links').count(), 0);
                     if (route === 'sports') assert(await p.locator('[data-scoreboard]').count());
                     else assert(await p.locator('.hub-boxoffice').isVisible());
@@ -82,7 +91,7 @@ const base = process.env.BASE_URL || 'http://localhost:5295',
             ['entertainment', 'movies'],
         ]) {
             await p.goto(base + '/' + hub);
-            await p.selectOption('#hub-section', '/' + target);
+            await p.locator('.section-tabs a[href="' + target + '"]').click();
             await p.waitForURL('**/' + target);
             assert.equal(new URL(p.url()).pathname, '/' + target);
         }
@@ -103,13 +112,13 @@ const base = process.env.BASE_URL || 'http://localhost:5295',
                 .click();
             await plain.waitForURL('**/' + route);
             assert(await plain.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
-            await plain.selectOption('#hub-section', '/' + route + '/news');
+            await plain.selectOption('#' + route + '-section', '/' + route + '/news');
             await plain.locator('.section-select button').click();
             await plain.waitForURL('**/' + route + '/news');
         }
         assert.deepEqual(errors, []);
         console.log(
-            '20 hub width/theme views passed; bounded stories, scores/releases/agendas/box office, mobile order, 44px links, desktop dropdowns, hub/article navigation, reload, share focus and no-JS links passed.',
+            '20 hub width/theme views passed; bounded stories, scores/releases/agendas/box office, mobile order, 44px links, desktop tabs and phone dropdowns, hub/article navigation, reload, share focus and no-JS links passed.',
         );
     } finally {
         await b.close();

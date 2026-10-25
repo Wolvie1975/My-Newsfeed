@@ -35,10 +35,16 @@
         : onRankings ? "Top 25" : onStandings ? "Standings" : onResults ? "Results" : onBoxOffice ? "Box Office" : onNews ? "Headlines" : onSaved ? "Saved" : onHome ? "Home" : "Browse";
 }
 
-<div class="pub">
+<div class="pub" data-page="@(onHome ? "home" : null)">
     <header class="site-header">
         <a class="brand" href="" aria-label="myNewspaper home">
-            <img src="@Assets["icons/newspaper-ribbon-192.png"]" alt="" width="44" height="44" />
+            @* The page mark is inline so its ink and folded corner follow the colour scheme. *@
+            <svg class="brand-mark" viewBox="11 7 43 50" width="34" height="40" aria-hidden="true">
+                <path class="brand-mark__page" d="M15 11h25l10 10v32H15z" />
+                <path class="brand-mark__fold" d="M40 11v10h10z" />
+                <path class="brand-mark__n" d="M21 27H28V31.2C30 28.6 32.6 27 35.6 27C40 27 42.5 29.9 42.5 34.6V44.5H45V47H35.5V44.5H37.5V35.3C37.5 32.8 36.4 31.6 34.3 31.6C31.9 31.6 29.6 33.2 28 35.6V44.5H30V47H20.5V44.5H23V29.5H21Z" />
+            </svg>
+            <span class="brand-wordmark">myNewspaper</span>
         </a>
 
         @* Wide screens: the navigation sits in the header. Smaller screens get a dropdown below it. *@

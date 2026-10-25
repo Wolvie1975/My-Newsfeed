@@ -5,7 +5,7 @@
 @inject NavigationManager Navigation
 
 <PageTitle>Movies · myNewspaper</PageTitle>
-<PageHeading Title="Movies" Eyebrow="THE RELEASE CALENDAR" Description="Find your next movie night. US releases in theaters, on streaming, and at home." />
+<PageHeading Section="entertainment" Title="Movies" Eyebrow="THE RELEASE CALENDAR" Description="Find your next movie night. US releases in theaters, on streaming, and at home." />
 <p class="updated">@(string.IsNullOrWhiteSpace(Q) ? $"Showing releases from today through the end of {Dates.Today:MMMM yyyy}." : $"Searching all collected release dates for “{QueryText.Term(Q)}”.")</p>
 <MovieViewSelect Selected="@Type" Search="@Q" />
 <p class="updated">All enabled providers · US release calendar, including dates awaiting confirmation.</p>

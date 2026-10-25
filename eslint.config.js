@@ -40,7 +40,7 @@ module.exports = [
     },
     {
         // Browser checks run Node, plus page.evaluate callbacks that execute in the page.
-        files: ['tests/browser/**/*.cjs', 'eslint.config.js'],
+        files: ['tests/browser/**/*.cjs', 'tools/**/*.cjs', 'eslint.config.js'],
         languageOptions: { sourceType: 'commonjs', globals: { ...globals.node, ...globals.browser } },
     },
     {

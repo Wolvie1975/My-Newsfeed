@@ -2,10 +2,19 @@
     <p class="page-eyebrow">@Eyebrow</p>
     <h1>@Title</h1>
     <p>@Description</p>
+    @if (SectionChoices.For(Section) is { } choices)
+    {
+        <SectionSelect Id="@($"{Section}-section")" Label="@($"{(Section == "sports" ? "Sports" : "Entertainment")} sections")"
+                       Choices="choices" Current="@SectionCurrent" MatchPrefix="true" />
+    }
 </header>
 
 @code {
     [Parameter, EditorRequired] public string Title { get; set; } = "";
     [Parameter, EditorRequired] public string Eyebrow { get; set; } = "";
     [Parameter, EditorRequired] public string Description { get; set; } = "";
+    /// <summary>"sports" or "entertainment": adds that section's navigation under the heading.</summary>
+    [Parameter] public string? Section { get; set; }
+    /// <summary>Overrides which section is current when the page path is ambiguous.</summary>
+    [Parameter] public string? SectionCurrent { get; set; }
 }
