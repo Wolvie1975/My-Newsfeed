@@ -22,6 +22,7 @@
                 var summary = FeedText.StripEmoji(FeedQuery.Excerpt(item.Description));
                 <li data-news-url="@href" data-news-source="@source">
                     <div class="d-headline-shelf__body">
+                        @if (ShowCategory && !string.IsNullOrWhiteSpace(item.CategoryName)) { <span class="d-headline-shelf__kicker">@item.CategoryName</span> }
                         @if (href is not null) { <a href="@href" target="_blank" rel="noopener noreferrer">@displayTitle</a> }
                         else { <span class="d-headline-shelf__title">@displayTitle</span> }
                         <span class="d-headline-shelf__source">@source</span>
@@ -44,4 +45,6 @@
     [Parameter] public string CssClass { get; set; } = "";
     [Parameter] public string EmptyText { get; set; } = "No recent stories are available.";
     [Parameter] public IReadOnlyList<FeedItem> Stories { get; set; } = [];
+    /// <summary>Shows each story’s category above its headline (the front page’s headline grid).</summary>
+    [Parameter] public bool ShowCategory { get; set; }
 }

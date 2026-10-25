@@ -564,6 +564,87 @@
     height: 9px;
 }
 
+.pub .bs-agate__note {
+    margin: 0 0 4px;
+    padding: 0 16px;
+    color: var(--text-2);
+    font-size: 12px;
+}
+.pub .bs-agate__group > ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+.pub .bs-agate__group:not(:has(.bs-agate__row:not([hidden]))) {
+    display: none;
+}
+.pub .bs-agate__heading {
+    margin: 12px 0 2px;
+    padding-bottom: 3px;
+    border-bottom: 2px solid var(--text);
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+.pub .d-headline-shelf__kicker {
+    display: block;
+    margin-bottom: 2px;
+    color: var(--accent);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+/* Desktop: agate listings, one line per game ("1:00  Kansas at TCU (Soccer)  ESPN+"); the group says the half of day. */
+@media (min-width: 1024px) {
+    .pub .bs-agate__row {
+        grid-template-columns: 44px minmax(0, 1fr) auto;
+        gap: 8px;
+        padding: 6px 0;
+        font-size: 14px;
+        line-height: 1.3;
+    }
+    .pub .bs-agate__time {
+        color: var(--text-2);
+        font-size: 14px;
+        font-weight: 400;
+    }
+    .pub .bs-agate__half,
+    .pub .bs-agate__venue {
+        display: none;
+    }
+    .pub .bs-agate__match {
+        font-size: 14px;
+    }
+    .pub .bs-agate .tt-team {
+        font-weight: 600;
+    }
+    .pub .bs-agate .tt-sep {
+        margin: 0 2px;
+        font-size: 14px;
+    }
+    .pub .bs-agate__kind {
+        display: inline;
+        font-size: 14px;
+    }
+    .pub .bs-agate__sport::before {
+        content: ' (';
+    }
+    .pub .bs-agate__sport::after {
+        content: ')';
+    }
+    .pub .bs-agate__tv {
+        font-size: 13px;
+    }
+    .pub .bs-agate__tv--stream {
+        min-height: 0;
+        padding: 0;
+        background: none;
+    }
+}
+
 /* Phones and tablets: one compact tappable row per game — time, matchup (sport beneath), network. */
 @media (max-width: 1023px) {
     .pub .bs-agate__row {
@@ -602,11 +683,6 @@
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
-    }
-}
-@media (max-width: 767px) {
-    .pub .bs-agate .tt-team .team-record {
-        display: none;
     }
 }
 @media (max-width: 400px) {
@@ -809,6 +885,7 @@
         padding: 0 0 4px;
     }
     .pub .bs-home .bs-agate,
+    .pub .bs-home .bs-agate__note,
     .pub .bs-home .d-headline-shelf__list {
         padding-left: 0;
         padding-right: 0;
@@ -822,9 +899,6 @@
     }
     .pub .bs-home .bs-tonight .d-card__head {
         border-bottom: 0;
-    }
-    .pub .bs-home .bs-tonight .bs-agate {
-        border-top: 2px solid var(--text);
     }
     .pub .bs-home .d-headline-shelf__title,
     .pub .bs-home .d-headline-shelf__list a {
@@ -872,27 +946,106 @@
         letter-spacing: 0;
         text-transform: none;
     }
-    /* Lead story: image above the headline inside the main column. */
+    /* Lead story as on the front page concept: kicker, headline, summary, then the picture and tools. */
     .pub .bs-home .d-lead__story {
-        grid-template-columns: minmax(0, 1fr);
+        display: flex;
+        flex-direction: column;
         min-height: 0;
-    }
-    .pub .bs-home .d-lead__image {
-        min-height: 0;
-        aspect-ratio: 16 / 9;
     }
     .pub .bs-home .d-lead__body {
-        padding: 14px 0 0;
+        display: contents;
+    }
+    .pub .bs-home .d-lead__source {
+        order: 1;
+        margin: 4px 0 8px;
     }
     .pub .bs-home .d-lead__title {
-        font-size: 40px;
-        line-height: 1.08;
+        order: 2;
+        margin: 0 0 10px;
+        font-size: 48px;
+        line-height: 1.05;
     }
-    /* Opinion in the side column: picture, then the piece. */
+    .pub .bs-home .d-lead__summary {
+        order: 3;
+        margin: 0 0 14px;
+        font-family: var(--font-serif);
+        font-size: 20px;
+        line-height: 1.45;
+    }
+    .pub .bs-home .d-lead__image {
+        order: 4;
+        height: 300px;
+        min-height: 0;
+        aspect-ratio: auto;
+    }
+    .pub .bs-home .d-lead__image:not(:has(img)) {
+        display: none;
+    }
+    .pub .bs-home .d-lead__meta {
+        order: 5;
+        margin-top: 6px;
+    }
+    /* Opinion in the side column is text only: the piece, its publisher and the tools. */
     .pub .bs-home .d-opinion .d-story {
-        grid-template-columns: minmax(0, 1fr);
-        grid-template-areas: 'thumb' 'top' 'title' 'date' 'sum';
-        padding: 12px 0 0;
+        display: block;
+        padding: 8px 0 0;
+    }
+    .pub .bs-home .d-opinion .d-thumb {
+        display: none;
+    }
+    .pub .bs-home .d-opinion .d-src {
+        padding: 0;
+        background: none;
+        color: var(--text-2);
+        font-size: 12px;
+    }
+    /* Headlines under the lead: two columns, each with its category above it. */
+    .pub .bs-home .bs-col--main .d-headline-shelf__list {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        column-gap: 24px;
+    }
+    .pub .bs-home .bs-col--main .d-headline-shelf__list > li {
+        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-rows: auto auto;
+        align-items: end;
+        align-content: start;
+        padding: 14px 0 6px;
+    }
+    .pub .bs-home .bs-col--main .d-headline-shelf__body {
+        display: contents;
+    }
+    .pub .bs-home .bs-col--main .d-headline-shelf__body > :not(.d-headline-shelf__source) {
+        grid-column: 1 / -1;
+    }
+    .pub .bs-home .bs-col--main .d-headline-shelf__source {
+        align-self: center;
+    }
+    /* Sports briefs closing the side column: plain agate lines, not serif headlines. */
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .bs-home
+        .bs-col--side
+        [data-home-section='sports-news'] {
+        order: 14;
+    }
+    .pub .bs-home .bs-col--side .d-headline-shelf__list a {
+        font-family: inherit;
+        font-size: 14px;
+        font-weight: 600;
+        line-height: 1.35;
+    }
+    /* F1 folded into Today & Tonight takes a section label, not a second serif title. */
+    .pub .bs-home .bs-tonight .d-f1--embedded .d-card__title {
+        font-family: inherit;
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+    }
+    .pub .bs-home .bs-tonight .d-f1--embedded .d-card__head {
+        margin-top: 16px;
+        border-bottom: 2px solid var(--text);
     }
     .pub .bs-home .d-opinion .d-story__title {
         font-size: 22px;
@@ -902,7 +1055,33 @@
     }
 }
 @media (min-width: 1024px) {
-    /* Box office in the side column reads as an agate table: rank, title, weekend and total. */
+    /* Box office in the side column reads as a three-line agate table: rank, title, weekend gross. */
+    .pub .bs-home .bs-col--side .boxoffice-movie:nth-child(n + 4),
+    .pub .bs-home .bs-col--side .d-forecasts > .updated,
+    .pub .bs-home .bs-col--side .boxoffice-movie-body > :not(h4, dl),
+    .pub .bs-home .bs-col--side .boxoffice-stats > :not(:first-child),
+    .pub .bs-home .bs-col--side .boxoffice-stats dt {
+        display: none;
+    }
+    .pub .bs-home .bs-col--side .boxoffice-chart {
+        padding: 0;
+    }
+    .pub .bs-home .bs-col--side .boxoffice-forecast-date {
+        margin: 8px 0 2px;
+        color: var(--text-2);
+        font-size: 13px;
+        font-weight: 700;
+    }
+    .pub .bs-home .bs-col--side .boxoffice-movie-body {
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+        min-width: 0;
+    }
+    .pub .bs-home .bs-col--side .boxoffice-movie-body h4 {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
     .pub .bs-home .bs-col--side .boxoffice-chart {
         gap: 0;
     }
@@ -931,8 +1110,9 @@
         font-size: 15px;
     }
     .pub .bs-home .bs-col--side .boxoffice-stats {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 2px 10px;
+        display: block;
+        margin: 0;
+        font-variant-numeric: tabular-nums;
     }
     .pub .bs-home .bs-col--side .boxoffice-stats dt {
         margin: 0;

@@ -86,11 +86,25 @@ public sealed class FeedDates(TimeZoneInfo zone)
     /// </summary>
     public string EventTime(DateTime utc)
     {
+        var (clock, half) = ClockParts(utc);
+        return $"{clock} {half} {ZoneLabel ?? OffsetText(utc)}";
+    }
+
+    /// <summary>A start time in the display zone split for listings that name the zone once: ("6:00", "P.M.").</summary>
+    public (string Clock, string Half) ClockParts(DateTime utc)
+    {
         var local = Local(utc);
         var hour = local.Hour % 12 == 0 ? 12 : local.Hour % 12;
-        var half = local.Hour < 12 ? "A.M." : "P.M.";
-        return $"{hour}:{local.Minute:00} {half} {ZoneLabel ?? OffsetText(utc)}";
+        return ($"{hour}:{local.Minute:00}", local.Hour < 12 ? "A.M." : "P.M.");
     }
+
+    /// <summary>"Morning", "Afternoon" or "Evening" for a time in the display zone; groups schedule listings.</summary>
+    public string DayPart(DateTime utc) => Local(utc).Hour switch
+    {
+        < 12 => "Morning",
+        < 17 => "Afternoon",
+        _ => "Evening",
+    };
 
     /// <summary>"Good morning", "Good afternoon" or "Good evening" by the hour in the display zone.</summary>
     public string Greeting(DateTime utcNow) => Local(utcNow).Hour switch

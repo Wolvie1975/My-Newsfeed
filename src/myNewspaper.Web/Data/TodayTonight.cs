@@ -21,6 +21,14 @@ public static class TodayTonight
             string.IsNullOrWhiteSpace(g.Tv) ? null : g.Tv.Trim(), FeedQuery.SafeHref(g.StreamUrl), g.IsAway, g.IsNeutral == true, g.ProviderKey, g.SchoolId, g.OpponentSchoolId))
         .OrderBy(i => i.StartsUtc == null).ThenBy(i => i.StartsUtc).ThenBy(i => i.Title).ToList();
 
+    /// <summary>
+    /// Splits the timeline into agate groups by part of day in the display zone ("Morning", "Afternoon", "Evening");
+    /// items without a confirmed start come last under "Time to be confirmed". Order within each group is kept.
+    /// </summary>
+    public static IReadOnlyList<(string Heading, IReadOnlyList<TonightItem> Items)> Groups(IReadOnlyList<TonightItem> items, FeedDates dates) =>
+        items.GroupBy(i => i.StartsUtc is { } start ? dates.DayPart(start) : "Time to be confirmed")
+            .Select(g => (g.Key, (IReadOnlyList<TonightItem>)g.ToList())).ToList();
+
     private static bool IncludeGame(EventItem game) => game.ProviderKey switch
     {
         "espn-epl" => false,

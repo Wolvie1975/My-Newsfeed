@@ -74,6 +74,25 @@ public class PersonalFeaturesTests
     public void Timeline_is_empty_without_games() =>
         Assert.Empty(TodayTonight.Build([], FeedDates.Create("America/Chicago")));
 
+    [Fact]
+    public void Timeline_groups_by_part_of_day_in_display_zone_with_unconfirmed_last()
+    {
+        var dates = FeedDates.Create("America/Chicago");
+        var game = new EventItem(1, "https://test.invalid/game", "Game", "Soccer", "Away", false, null,
+            new DateOnly(2026, 10, 25), null, false, null, null, null, null, null, "Home");
+        var rows = TodayTonight.Build([
+            game with { Id = 1, StartsAtUtc = new DateTime(2026, 10, 25, 16, 0, 0) },   // 11:00 A.M. CDT
+            game with { Id = 2, StartsAtUtc = new DateTime(2026, 10, 25, 21, 59, 0) },  // 4:59 P.M.
+            game with { Id = 3, StartsAtUtc = new DateTime(2026, 10, 25, 22, 0, 0) },   // 5:00 P.M.
+            game with { Id = 4, TimeTbd = true }], dates);
+
+        var groups = TodayTonight.Groups(rows, dates);
+
+        Assert.Equal(["Morning", "Afternoon", "Evening", "Time to be confirmed"], groups.Select(g => g.Heading));
+        Assert.All(groups, g => Assert.Single(g.Items));
+        Assert.Equal(("4:59", "P.M."), dates.ClockParts(rows[1].StartsUtc!.Value));
+    }
+
     [Theory]
     [InlineData("espn-wnba", "Basketball", "basketball", "wnba", null)]
     [InlineData("espn-mlb", "Baseball", "baseball", "mlb", null)]

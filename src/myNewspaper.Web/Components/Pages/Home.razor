@@ -1,6 +1,5 @@
 @page "/"
 @layout PublicLayout
-@inject myNewspaper.Web.Scores.LeaguePhases RecordPhases
 @inject IDbContextFactory<WebScraperContext> Factory
 @inject FeedDates Dates
 @inject NavigationManager Nav
@@ -99,27 +98,41 @@
                 <div class="d-card__head"><h2 class="d-card__title" id="h-tonight">Today &amp; Tonight</h2><a class="d-more" href="events">All games <span aria-hidden="true">→</span></a></div>
                 @if (tonight.Count == 0) { <p class="d-empty">No remaining games today. View All games for upcoming fixtures.</p> }
                 <p class="d-empty" data-home-teams-empty hidden>No remaining games match your selected teams. <a href="events">Browse all games</a>.</p>
+                @if (tonight.Count > 0) { <p class="bs-agate__note">All times @(Dates.ZoneLabel ?? "local") · TV in bold</p> }
                 <ul class="bs-agate">
-                    @foreach (var item in tonight)
+                    @foreach (var (heading, items) in TodayTonight.Groups(tonight, Dates))
                     {
-                        <li class="bs-agate__row" data-home-team-item data-sports-teams="@SportsTeamPreferences.Keys(item.SchoolName, item.OpponentName)">
-                            <span class="bs-agate__time">@item.TimeLabel</span>
-                            <span class="bs-agate__match">
-                                @if (item.Url is not null)
-                                { <a href="@item.Url" target="_blank" rel="noopener noreferrer"><TonightMatchup Item="item" Records="records" /></a> }
-                                else { <TonightMatchup Item="item" Records="records" /> }
-                                <span class="bs-agate__kind">@item.Kind@(item.Location is not null ? " · " + EventsText.SplitLocation(item.Location).Item1 : "")</span>
-                            </span>
-                            @* The network doubles as the stream link, so phones keep one tap target per row. *@
-                            @if (item.StreamUrl is not null)
+                        <li class="bs-agate__group">
+                            <h3 class="bs-agate__heading">@heading</h3>
+                            <ul>
+                            @foreach (var item in items)
                             {
-                                <a class="bs-agate__tv bs-agate__tv--stream" href="@item.StreamUrl" target="_blank" rel="noopener noreferrer"
-                                   aria-label="Watch stream@(item.Tv is not null ? " on " + item.Tv : "")"><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M2 1.2v7.6L8.6 5z" fill="currentColor" /></svg>@(item.Tv ?? "Watch")</a>
+                                <li class="bs-agate__row" data-home-team-item data-sports-teams="@SportsTeamPreferences.Keys(item.SchoolName, item.OpponentName)">
+                                    @if (item.StartsUtc is { } starts)
+                                    {
+                                        var (clock, half) = Dates.ClockParts(starts);
+                                        <span class="bs-agate__time">@clock<span class="bs-agate__half">@(" " + half)</span></span>
+                                    }
+                                    else { <span class="bs-agate__time">@item.TimeLabel</span> }
+                                    <span class="bs-agate__match">
+                                        @if (item.Url is not null)
+                                        { <a href="@item.Url" target="_blank" rel="noopener noreferrer"><TonightMatchup Item="item" /></a> }
+                                        else { <TonightMatchup Item="item" /> }
+                                        <span class="bs-agate__kind"><span class="bs-agate__sport">@item.Kind</span>@if (item.Location is not null) { <span class="bs-agate__venue"> · @EventsText.SplitLocation(item.Location).Item1</span> }</span>
+                                    </span>
+                                    @* The network doubles as the stream link, so phones keep one tap target per row. *@
+                                    @if (item.StreamUrl is not null)
+                                    {
+                                        <a class="bs-agate__tv bs-agate__tv--stream" href="@item.StreamUrl" target="_blank" rel="noopener noreferrer"
+                                           aria-label="Watch stream@(item.Tv is not null ? " on " + item.Tv : "")"><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M2 1.2v7.6L8.6 5z" fill="currentColor" /></svg>@(item.Tv ?? "Watch")</a>
+                                    }
+                                    else if (item.Tv is not null)
+                                    {
+                                        <span class="bs-agate__tv">@item.Tv</span>
+                                    }
+                                </li>
                             }
-                            else if (item.Tv is not null)
-                            {
-                                <span class="bs-agate__tv">@item.Tv</span>
-                            }
+                            </ul>
                         </li>
                     }
                 </ul>
@@ -133,7 +146,7 @@
         <div class="bs-col bs-col--main">
             <HomeLeadStory Snapshot="@lead" />
             <HomeHeadlineShelf SectionKey="news" Title="More headlines" HeadingId="h-news" Href="news"
-                               CssClass="d-news" Stories="@headlineStories" EmptyText="More headlines will appear as new stories arrive." />
+                               CssClass="d-news" Stories="@headlineStories" ShowCategory="true" EmptyText="More headlines will appear as new stories arrive." />
         </div>
 
         <div class="bs-col bs-col--side">
@@ -147,6 +160,8 @@
                 <BoxOfficeForecastSection HomeCard="true" Rows="@(homeForecasts.Movies.Where(m => m.Kind == BoxOfficeForecastQuery.Preview).ToList())"
                     Source="@(homeForecasts.Sources.SingleOrDefault(s => s.Kind == BoxOfficeForecastQuery.Preview))" UtcNow="@nowUtc" />
             }
+            <HomeHeadlineShelf SectionKey="sports-news" Title="Sports headlines" HeadingId="h-sports-headlines" Href="sports/news"
+                               CssClass="d-sports-headlines" Stories="@sportsStories" />
         </div>
     </div>
 
@@ -162,8 +177,6 @@
         </div>
 
         <div class="bs-col bs-col--main">
-            <HomeHeadlineShelf SectionKey="sports-news" Title="Sports headlines" HeadingId="h-sports-headlines" Href="sports/news"
-                               CssClass="d-sports-headlines" Stories="@sportsStories" />
             <HomeHeadlineShelf SectionKey="entertainment-news" Title="Entertainment headlines" HeadingId="h-entertainment-headlines" Href="entertainment/news"
                                CssClass="d-entertainment-headlines" Stories="@entertainmentStories" />
             <section data-home-section="videos" class="d-card d-vids" aria-labelledby="h-vids">
@@ -372,7 +385,6 @@
     private F1Page homeF1 = F1Page.Empty;
     private string? homeF1Error;
     private bool FoldF1 => F1Query.HomeWeekendRace(homeF1, Dates, Dates.TodayAt(nowUtc)) is not null;
-    private TeamRecords records = TeamRecords.Empty;
     // News used to live at "/", so an old bookmark like "/?category=3" is sent on to "/news" with its query intact.
     [SupplyParameterFromQuery(Name = "category")] private string? Category { get; set; }
     [SupplyParameterFromQuery(Name = "q")] private string? Q { get; set; }
@@ -417,7 +429,6 @@
         try { homeRankings = await RankingsQuery.GetAsync(db, StandingsQuery.ParseSourceId(RankingSourceId), Log, Dates.TodayAt(nowUtc)); }
         catch (Exception ex) when (DataFailures.IsReadFailure(ex))
         { Log.LogError(ex, "Could not read home rankings."); homeRankings = new([], null, null, [], "Rankings are temporarily unavailable."); }
-        records = await TeamRecords.LoadAsync(db, Dates.Today, RecordPhases);
 
         // The queries run one after another: one DbContext cannot run two at once.
         todays = await EventsQuery.GetOnDateAsync(db, Dates.TodayAt(nowUtc));
