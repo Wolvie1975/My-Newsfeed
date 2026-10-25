@@ -81,9 +81,9 @@
                         <p>@(game.TimeTbd || game.StartsAtUtc == null ? "Start time TBD" : Dates.EventTime(game.StartsAtUtc.Value)) @(game.WasRescheduled ? "· Rescheduled" : "")</p>
                     }
                     else if (game.Status == "live" || game.Status == "final" && game.Label != "Final") {
-                        <p>@game.Label @if (game.Status == "live") { <span class="scoreboard-sampled">· sampled</span> }</p>
+                        <p>@game.Label @if (game.Status == "live") { <span class="scoreboard-sampled">@(" · sampled")</span> }</p>
                         @if (game.Status == "live" && game.Sport is not ("baseball" or "volleyball") && !string.IsNullOrWhiteSpace(game.DisplayClock) && !game.Label.Contains(game.DisplayClock, StringComparison.OrdinalIgnoreCase)) {
-                            <p>@game.DisplayClock @(game.Period is {} period ? $"· Period {period}" : "") <span class="scoreboard-sampled">· sampled</span></p>
+                            <p>@game.DisplayClock @(game.Period is {} period ? $"· Period {period}" : "") <span class="scoreboard-sampled">@(" · sampled")</span></p>
                         }
                     }
                     @if (game.ScoreboardDate < today && game.Active) { <p>Continuing from @FeedDates.LongDate(game.ScoreboardDate)</p> }

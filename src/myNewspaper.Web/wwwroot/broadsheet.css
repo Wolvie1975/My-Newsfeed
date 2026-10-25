@@ -1195,3 +1195,135 @@
     font-size: 14px;
     line-height: 1.6;
 }
+
+/* ---------- "More from today" on desktop: the same ruled-column style as the front page ---------- */
+@media (min-width: 1024px) {
+    /* Content starts at the column edge, like the front page; the phone cards' inner padding goes. */
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-more .d-scoreboard .scoreboard-note,
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-more .d-scoreboard p.updated,
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-more .d-rankings__body,
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-more .d-tv__credit {
+        margin-left: 0;
+        margin-right: 0;
+        padding-left: 0;
+        padding-right: 0;
+    }
+    /* Top 25 fits the column without sideways scrolling. */
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-more .d-rankings__table table {
+        width: 100%;
+        min-width: 0;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-more .d-rankings__table th,
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-more .d-rankings__table td {
+        padding-left: 4px;
+        padding-right: 4px;
+        font-size: 13px;
+    }
+    /* Scoreboard as agate: competition and status, one line per team with its score, the state of play. */
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-more .d-scoreboard .scoreboard-games {
+        display: block;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-more .d-scoreboard .scoreboard-game {
+        margin: 0;
+        padding: 8px 0;
+        border: 0;
+        border-bottom: 1px dotted var(--row-border);
+        border-radius: 0;
+        background: transparent;
+        box-shadow: none;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-more .d-scoreboard .scoreboard-game-heading,
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-more .d-scoreboard .scoreboard-matchup,
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-more .d-scoreboard .scoreboard-context,
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-more .d-scoreboard .scoreboard-footer {
+        margin: 0;
+        padding: 0;
+        border: 0;
+        background: transparent;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-more .d-scoreboard .scoreboard-game-heading {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 2px;
+        color: var(--text-2);
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-more .d-scoreboard .scoreboard-status {
+        padding: 0;
+        border-radius: 0;
+        background: none;
+        color: var(--text-2);
+        font-size: 11px;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-more .d-scoreboard .scoreboard-live {
+        color: var(--live, #b0001e);
+    }
+    :root[data-theme='dark'] .pub .bs-more .d-scoreboard .scoreboard-live {
+        color: #ff8a99;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-more .d-scoreboard .scoreboard-matchup {
+        display: grid;
+        gap: 0;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-more .d-scoreboard .scoreboard-team {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 8px;
+        min-height: 0;
+        padding: 1px 0;
+        font-size: 14px;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-more .d-scoreboard .team-badge {
+        width: 18px;
+        height: 18px;
+        flex: none;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-more .d-scoreboard .team__name {
+        font-size: 14px;
+        font-weight: 600;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-more .d-scoreboard .scoreboard-winner .team__name,
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .bs-more
+        .d-scoreboard
+        .scoreboard-winner
+        .scoreboard-score {
+        font-weight: 800;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-more .d-scoreboard .scoreboard-score {
+        font-size: 15px;
+        font-variant-numeric: tabular-nums;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-more .d-scoreboard .team-record,
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-more .d-scoreboard .scoreboard-favorite,
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-more .d-scoreboard .scoreboard-context p + p,
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-more .d-scoreboard .scoreboard-updated {
+        display: none;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-more .d-scoreboard .scoreboard-context p {
+        margin: 2px 0 0;
+        color: var(--text-2);
+        font-size: 12px;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-more .d-scoreboard .scoreboard-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0 14px;
+        margin-top: 2px;
+        font-size: 12px;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-more .d-scoreboard .scoreboard-actions a {
+        min-height: 0;
+        padding: 0;
+    }
+}
+
+/* A theater or digital releases section with nothing to list is left out rather than showing an empty state. */
+:root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-home .d-movies:not(:has(.d-list)) {
+    display: none;
+}
