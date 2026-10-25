@@ -1,0 +1,12 @@
+@using myNewspaper.Web.Watching
+<li class="watch-card">
+<a data-watch-title href="@($"watch/{Title.Kind}/{Title.Id}")" aria-label="@($"Where to watch {Title.Name}")">
+<span class="watch-card__poster">@if(Title.Poster is {} poster){<img src="@poster" alt="" loading="lazy" width="200" height="300" />}else{<span class="watch-no-poster" aria-hidden="true">▷</span>}
+@if(Title.MatchingProviders is {Count:>0} matches){<span class="watch-card__badges" aria-hidden="true">@foreach(var provider in matches.Take(3)){<span class="watch-badge"><span>@provider.Name[..1]</span>@if(provider.Logo is {} logo){<img src="@logo" alt="" loading="lazy" width="28" height="28" onerror="this.remove()" />}</span>}@if(matches.Count>3){<span class="watch-badge watch-badge--more">+@(matches.Count-3)</span>}</span>}</span>
+<div>@if(Nested){<h3>@Title.Name</h3>}else{<h2>@Title.Name</h2>}<p class="updated">@(Title.Kind=="movie"?"Movie":"TV show") · @(Title.Year??"Year unavailable")</p>@if(Title.MatchingServices?.Count>0){<p class="watch-match">On your services: @string.Join(", ",Title.MatchingServices)</p>}else if(Title.MatchingServices is null){<p class="updated">Service availability could not be checked.</p>}
+<span>Where to watch →</span></div></a>
+</li>
+@code {
+    [Parameter,EditorRequired]public WatchTitle Title {get;set;}=default!;
+    [Parameter]public bool Nested {get;set;}
+}

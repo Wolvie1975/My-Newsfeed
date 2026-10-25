@@ -74,3 +74,33 @@
     });
     if(window.Blazor?.addEventListener)window.Blazor.addEventListener('enhancedload',restore);restore();
 })();
+
+// Sorting applies on change; the submit button remains the no-JavaScript fallback.
+(function(){
+    function prepare(){document.querySelectorAll('[data-watch-sort] button[type=submit]').forEach(b=>b.hidden=true);}
+    document.addEventListener('change',function(e){
+        const select=e.target.closest('[data-watch-sort] select');if(select)select.form.requestSubmit();
+    });
+    if(window.Blazor?.addEventListener)window.Blazor.addEventListener('enhancedload',prepare);prepare();
+})();
+
+// Featured rows: arrow buttons appear only with JavaScript and disable at either end.
+(function(){
+    function update(shelf){
+        const row=shelf.closest('[data-watch-row]');if(!row)return;
+        const max=shelf.scrollWidth-shelf.clientWidth-2;
+        row.querySelector('[data-watch-scroll="-1"]').disabled=shelf.scrollLeft<=2;
+        row.querySelector('[data-watch-scroll="1"]').disabled=shelf.scrollLeft>=max;
+    }
+    function prepare(){document.querySelectorAll('[data-watch-row]').forEach(row=>{
+        const shelf=row.querySelector('.watch-shelf');if(!shelf||row.classList.contains('watch-row--js'))return;
+        row.classList.add('watch-row--js');shelf.addEventListener('scroll',()=>update(shelf),{passive:true});update(shelf);
+    });}
+    document.addEventListener('click',function(e){
+        const button=e.target.closest('[data-watch-scroll]');if(!button)return;
+        const shelf=button.closest('[data-watch-row]').querySelector('.watch-shelf');
+        shelf.scrollBy({left:Number(button.dataset.watchScroll)*shelf.clientWidth*.85});
+    });
+    addEventListener('resize',()=>document.querySelectorAll('[data-watch-row] .watch-shelf').forEach(update));
+    if(window.Blazor?.addEventListener)window.Blazor.addEventListener('enhancedload',prepare);prepare();
+})();

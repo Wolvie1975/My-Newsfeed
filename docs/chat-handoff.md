@@ -1,7 +1,43 @@
 # Chat handoff
 
+Latest Where to watch work: [Where to watch handoff](where-to-watch-handoff.md)
+(October 25: flow redesign, Featured rows and search results tidy deployed;
+compact layout October 24). Includes validation, rollback, pending Git changes and
+the deferred service hyperlink decision.
+
 Read this file when continuing work from the previous chat. These are dated
 observations; check current repository and hosting state before acting.
+
+## GitHub checkpoint — October 25, 2026 (Central)
+
+User requested a check-in of the overnight Where to watch work and a fresh start.
+This commit covers the October 24 compact layout and the October 25 flow redesign,
+Featured rows and search results tidy, with tests and documentation. All three
+October 25 releases were verified live before this checkpoint; the current release
+is `mynewspaper-web:watch-search-20261025`. Fetched origin first: develop matched
+origin/develop at `c4a2cbe`. Documentation-only addition; no new mobile check needed.
+Check the push result and current Git state when resuming. No pending request.
+
+## Where to watch Featured rows and search tidy deployed — October 25, 2026 (Central)
+
+User approved the rows mockup and chose Featured as default, four rows, a mixed
+services row and 12 per row. From the results-page review they picked Best match
+default + tidier links/heading. Deployed `watch-featured-20261025` then
+`watch-search-20261025` (current; `5b88f6d4b6fb`). 715 .NET tests passed; preview
+and live 20-combination browser matrix (320/390/430/768/1440, light/dark, JS on/off)
+and all Where to watch suites passed live with screenshot review. Real device
+unavailable. Not committed or pushed. No pending request.
+
+## Where to watch flow deployed — October 25, 2026 (Central)
+
+User approved deployment for this session. The search results layout is unchanged.
+Genre was removed. Movies/TV and My services toggles, poster service badges,
+selected-service logos and instant sort were added, with a smaller phone header.
+Deployed `mynewspaper-web:watch-flow-20261025` (`a85358c2c77e`); rollback
+`before-mynewspaper-watch-flow-20261025`. 703 .NET tests passed. Preview and live
+browser checks passed 20 combinations (320/390/430/768/1440px, light/dark, JavaScript
+on/off) with screenshot review. Real device unavailable. Not committed or pushed.
+See [where-to-watch-handoff.md](where-to-watch-handoff.md).
 
 ## Homepage hourly lead and article actions — deployed October 24, 2026
 

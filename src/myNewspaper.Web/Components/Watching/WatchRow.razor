@@ -1,0 +1,16 @@
+@using myNewspaper.Web.Watching
+<section class="watch-row" aria-labelledby="@($"{Id}-heading")" data-watch-row>
+<div class="watch-row__head"><h2 id="@($"{Id}-heading")">@Heading</h2>@if(Listing.Items.Count>0){<a href="@SeeAll" aria-label="@($"See all: {Heading}")">See all →</a>}</div>
+<p class="updated watch-row__sub">@Subtitle</p>
+@if(Listing.Failed){<p role="status">This row is temporarily unavailable. Please try again shortly.</p>}
+else if(Listing.Items.Count==0){<p role="status">@Empty</p>}
+else{<div class="watch-row__wrap"><button class="watch-row__arrow watch-row__arrow--prev" type="button" data-watch-scroll="-1" aria-label="@($"Scroll {Heading} back")">‹</button><ul class="watch-shelf" id="@Id">@foreach(var title in Listing.Items){<WatchPosterCard Title="title" Nested="true" />}</ul><button class="watch-row__arrow watch-row__arrow--next" type="button" data-watch-scroll="1" aria-label="@($"Scroll {Heading} forward")">›</button></div>}
+</section>
+@code {
+    [Parameter,EditorRequired]public string Id {get;set;}="";
+    [Parameter,EditorRequired]public string Heading {get;set;}="";
+    [Parameter,EditorRequired]public string Subtitle {get;set;}="";
+    [Parameter,EditorRequired]public string SeeAll {get;set;}="";
+    [Parameter,EditorRequired]public WatchListing Listing {get;set;}=default!;
+    [Parameter]public string Empty {get;set;}="No titles with US viewing options right now.";
+}

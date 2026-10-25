@@ -24,10 +24,10 @@ public class WatchCatalogTests
     private static WatchCatalog Catalog(Provider provider)=>new(provider,new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string,string?>{{"Movies:AccessToken","test-token"}}).Build());
     [Fact]public async Task Search_encodes_query_bounds_pages_filters_adults_and_caches(){
         var provider=new Provider();var catalog=Catalog(provider);
-        var result=await catalog.List("movie","  A & B  ",0,999);
+        var result=await catalog.List("movie","  A & B  ",999);
         Assert.Single(result.Items);Assert.Equal(new DateOnly(2020,1,1),result.Items[0].ReleaseDate);Assert.Equal(13.5,result.Items[0].Popularity);Assert.Equal(10,result.Pages);Assert.Contains("query=A%20%26%20B",provider.LastPath);Assert.Contains("page=10",provider.LastPath);
         Assert.Equal("https://image.tmdb.org/t/p/w342/poster.jpg",result.Items[0].Poster);
-        await catalog.List("movie","A & B",0,10);Assert.Equal(1,provider.Calls);
+        await catalog.List("movie","A & B",10);Assert.Equal(1,provider.Calls);
         Assert.True((await catalog.List("person","test")).Failed);Assert.Equal(1,provider.Calls);
     }
     [Fact]public async Task Availability_is_US_only_preserves_categories_and_cache_check_time(){
@@ -81,9 +81,9 @@ public class WatchCatalogTests
     [InlineData("tv","Breaking Bad",false)]
     [InlineData("movie",null,false)]
     public async Task Active_status_filter_applies_only_to_tv_browsing(string kind,string? query,bool filtered){
-        var provider=new Provider();var result=await Catalog(provider).List(kind,query,18,2);
+        var provider=new Provider();var result=await Catalog(provider).List(kind,query,2);
         Assert.False(result.Failed);Assert.Contains("page=2",provider.LastPath);
-        if(filtered){Assert.Contains("with_status=0%7C1%7C2%7C5",provider.LastPath);Assert.Contains("with_genres=18",provider.LastPath);}
+        if(filtered){Assert.Contains("with_status=0%7C1%7C2%7C5",provider.LastPath);Assert.DoesNotContain("with_genres",provider.LastPath);}
         else Assert.DoesNotContain("with_status",provider.LastPath);
         if(!string.IsNullOrWhiteSpace(query))Assert.Contains("/search/tv",provider.LastPath);
     }
@@ -96,6 +96,20 @@ public class WatchCatalogTests
         Assert.NotNull(result.Items[0].MatchingServices);Assert.NotNull(result.Items[1].MatchingServices);
         Assert.Null(result.Items[2].MatchingServices);Assert.Null(result.Items[3].MatchingServices);
         await catalog.Prioritize(original,null);Assert.Equal(7,provider.Calls);
+    }
+    [Fact]public async Task Service_filter_applies_to_browsing_but_not_title_search(){
+        var provider=new Provider();var catalog=Catalog(provider);
+        await catalog.List("movie",null,1,"9,8,60");
+        Assert.Contains("with_watch_providers=8%7C9",provider.LastPath);Assert.Contains("with_watch_monetization_types=flatrate%7Cfree%7Cads",provider.LastPath);Assert.Contains("watch_region=US",provider.LastPath);
+        await catalog.List("movie","Example",1,"8");Assert.DoesNotContain("with_watch_providers",provider.LastPath);
+    }
+    [Fact]public async Task Matching_providers_include_logos_for_selected_subscription_services_only(){
+        var catalog=Catalog(new Provider());
+        var result=await catalog.Prioritize(new WatchListing([new WatchTitle(1,"movie","One",null,null,""),new WatchTitle(2,"movie","Two",null,null,"")],1),"8");
+        var one=result.Items.Single(t=>t.Id==1);var two=result.Items.Single(t=>t.Id==2);
+        Assert.Equal(8,Assert.Single(one.MatchingProviders!).Id);Assert.Equal("https://image.tmdb.org/t/p/w92/service.png",one.MatchingProviders![0].Logo);
+        Assert.Empty(two.MatchingProviders!);
+        Assert.Empty((await catalog.Prioritize(new WatchListing([new WatchTitle(1,"movie","One",null,null,"")],1),null)).Items[0].MatchingProviders!);
     }
     [Fact]public async Task Provider_failure_is_distinct_from_empty_results(){var provider=new Provider{Broken=true};var catalog=Catalog(provider);Assert.True((await catalog.List("tv","title")).Failed);Assert.Null(await catalog.Detail("tv",1));}
 }

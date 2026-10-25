@@ -6,11 +6,110 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The latest recorded web release is `mynewspaper-web:home-lead-actions-20261024`
-(image `df4b96088426`), deployed October 24, 2026 (Central). Its rollback image is
-`mynewsfeed-web:before-home-lead-actions-20261024`. Deployment checks passed then;
+The latest recorded web release is `mynewspaper-web:watch-search-20261025`
+(image `5b88f6d4b6fb`), deployed October 25, 2026 (Central). Its rollback image is
+`mynewsfeed-web:before-mynewspaper-watch-search-20261025`. Deployment checks passed then;
 this is a dated observation, not live hosting status.
 
+
+## Where to watch search results tidy — deployed October 25, 2026 (Central)
+
+From a review of the results page, the user picked two changes and declined folding
+Rent/Buy and merging ad tiers. (1) **Best match** is the default sort for searches:
+TMDB relevance order, kept through the paging window (FilledPage no longer reorders by
+services; "Your services first" remains a sort option). New searches no longer carry
+the browse sort. "the office" now lists The Office first, where it previously sank below
+titles on the viewer's services. (2) One-line heading "Results for “term”" with count,
+page and Clear search beside it. The sort shares that row on wider screens.
+Each result keeps only Viewing details (the dialog/page still has Open viewing options).
+The TV seasons note appears once below the results. Provider rows are unchanged.
+
+Deployed `mynewspaper-web:watch-search-20261025` (`5b88f6d4b6fb`), healthy; rollback
+image `mynewsfeed-web:before-mynewspaper-watch-search-20261025` and previous container
+retained; runtime configuration preserved. All 715 .NET tests passed (Best match sort
+tests added). Preview and live matrix passed 20 combinations including Best match
+selection, heading, single details link, no per-row seasons note and 44px Clear search;
+all Where to watch browser suites passed live; screenshots reviewed. track-series passed
+on a rerun after one preview failure (external TVmaze dependency). Real device
+unavailable. home-watch-search still fails as on earlier builds (homepage assertion).
+Evidence: `/tmp/mynewspaper-watch-search-deploy/`.
+
+## Where to watch Featured rows — deployed October 25, 2026 (Central)
+
+User approved the streaming-rows mockup: Featured as the default view, four rows,
+a mixed movie/TV services row and 12 titles per row. `/watch` (no `kind`, or
+`kind=featured`) now shows Popular on your services (only with services selected;
+TMDB discover with the viewer's providers, alternating movies and TV), Trending
+movies this week and Trending TV this week (`trending/{kind}/week`), and New movies
+you can watch (discover, released in the last 60 days in the display time zone,
+US monetization types). Each row keeps up to 12 titles with US viewing options,
+scanning at most three upstream pages per kind. Rows are cached for 15 minutes,
+keep upstream order and personalize badges per viewer. A failed row shows its own
+status and doesn't affect the others. See all opens the matching grid (My services, popular or
+newest). The toggle is Featured | Movies | TV shows. Movies/TV keep the grid, sort,
+My services filter and paging. Rows swipe on phones; at 768px and wider JavaScript
+adds 44px arrow buttons. Row cards hide the services text visually (kept for screen
+readers) since poster badges show it. New `WatchPosterCard` and `WatchRow` components.
+
+Deployed `mynewspaper-web:watch-featured-20261025` (`9c16d8f0b3ab`), healthy; rollback
+image `mynewsfeed-web:before-mynewspaper-watch-featured-20261025` and previous container
+retained. Runtime settings/mounts/network/restart policy preserved. No database changes.
+
+All 708 .NET tests passed (5 new row tests). Preview and live browser matrix passed
+20 combinations (320/390/430/768/1440px, light/dark, JS on/off): row order and counts,
+no page overflow, row scrolling, desktop arrows, row details modal, See all into the
+grid, Featured without services (three rows), plus the existing grid/search flows.
+New `tests/browser/watch-featured.browser.cjs` and the Where to watch suites passed live.
+Screenshots reviewed on preview and live. Tailnet HTTPS `/watch` returned 200. Real
+device unavailable. The matrix helper now waits for network idle after in-page
+navigation: Blazor updates the URL before the DOM, which caused intermittent
+first-run test timeouts (not page failures; uncached TV/My services page measured 0.24s).
+Evidence: `/tmp/mynewspaper-watch-featured-deploy/`.
+
+## Where to watch flow — deployed October 25, 2026 (Central)
+
+User request: improve Where to watch's look and flow while keeping the search results
+layout, and remove genre browsing entirely. Implemented:
+
+- Movies | TV shows toggle links replace the Content type dropdown. The Genre
+  dropdown is gone; old `genre=` links are ignored.
+- All services | My services toggle (shown once services are selected) filters
+  browsing via TMDB discover `with_watch_providers` + flatrate/free/ads, then
+  rechecks each title against cached US offers. Query: `only=1`. Browse only;
+  title search is unaffected. Not saved between visits (URL only).
+- Selected service logos sit beside a Manage/Choose services link to Settings.
+- Browse posters carry up to three logo badges for the viewer's subscription/free
+  services, plus +N.
+- Sort applies on change; Apply sort remains for no-JavaScript browsers.
+- Toolbar note shortened ("Movies with US viewing options · Page 1"); the intro
+  sentence is hidden at 600px and below so posters reach the first phone screen.
+- Desktop puts search and both toggles on one row.
+
+Deployed `mynewspaper-web:watch-flow-20261025` (image `a85358c2c77e`), container
+healthy. Rollback image `mynewsfeed-web:before-mynewspaper-watch-flow-20261025`;
+previous container retained under the same suffix. Runtime environment, mounts,
+ports, network, health check and restart policy verified preserved. No database,
+collector or credential changes.
+
+Build, Docker publish/static-asset guard and all 703 .NET tests passed (three new
+tests cover the service filter, poster badge logos and the separate filtered paging
+window). Preview and live browser checks passed 20 combinations: 320/390/430/768/1440px,
+light/dark, JavaScript on/off. They covered genre removal, the Movies/TV and My services
+toggles, instant sort plus the no-JS Apply button, sort/kind/only preservation through
+sorting, refresh and paging, poster badges shown exactly when a title is on the
+viewer's services, posters on the first phone screen, the details modal with Escape,
+search results unchanged with toggles hidden, no horizontal overflow and 44px
+controls. Phone, tablet and desktop screenshots were inspected on preview and live.
+Updated Where to watch browser suites passed on live (watch, watch-sort,
+watch-results, watch-services, watch-paging, us-options, active-tv, mixed-search-nav,
+section-select, track-series). Main routes returned 200 with the expected Results,
+digital and admin redirects; tailnet HTTPS `/healthz` and `/watch` returned 200.
+Real-device checks unavailable. Known limits: the first live matrix run timed out once
+waiting for modal content on a cold TMDB cache (the immediate rerun passed 20/20), and
+watch-sort timed out twice in 12 preview runs under concurrent load. home-watch-search
+fails identically on the prior live build (homepage layout assertion, unrelated).
+Existing Pkcs advisories remain. Evidence: `/tmp/mynewspaper-watch-flow/` (preview)
+and `/tmp/mynewspaper-watch-flow-deploy/` (live; runtime JSON there is private).
 
 ## Homepage hourly lead and article actions — deployed October 24, 2026
 
@@ -4065,3 +4164,27 @@ passed HTTP checks; runtime environment, mounts/network/ports/restart settings
 verified preserved. No database/collector changes. Previous container/image kept
 under `before-mynewspaper-watch-results-20261024`. Existing Pkcs advisories remain.
 Evidence: `/tmp/mynewspaper-watch-results-deploy/`.
+
+### October 24, 2026 — Compact Where to watch search and browse
+
+Deployed `mynewspaper-web:watch-compact-20261024`, image
+`sha256:cbe552dcd9b66754e0592ab8d9e187371ff9004d464be6954336fba057bd24dd`.
+Search, service settings link and browse selectors share a compact panel; content
+type and genre align side by side on desktop and stack on phones. Sorting shares
+a toolbar with the results note. Existing provider result rows and browse cards
+remain. Service hyperlinks are deferred. No database/collector changes.
+
+Build/publish/static-asset guard and 27 watch-related tests passed. Preview and
+live checks passed 16 combinations at 320/390/430/1440px in light/dark modes,
+with and without JavaScript, covering content type, genre, title search, sort,
+refresh, clear search, service query preservation, overflow and 44px controls.
+Phone screenshots at all three widths and desktop screenshots were inspected.
+Additional 768px light/dark checks, saved-service restoration/refresh and browse
+details modal/Escape passed on preview and live. Real-device checks unavailable.
+Existing Pkcs dependency advisories remain.
+
+Container healthy; health endpoint and main routes passed HTTP checks, including
+expected Results/digital/admin redirects. Runtime environment, mounts, network,
+ports, health check and restart settings verified preserved. Previous
+container/image retained under `before-mynewspaper-watch-compact-20261024`.
+Evidence: `/tmp/mynewspaper-watch-compact-deploy/`.

@@ -994,8 +994,9 @@ category. The selected category heading remains below the dropdown.
 ### Section navigation dropdowns
 
 College Sports View, F1 View/Calendar/Championship table, soccer League view,
-Where to Watch Content type/Genre and Kansas City Section use native dropdowns
-instead of wrapping section links/buttons. College retains its Sport selector and
+Kansas City Section use native dropdowns instead of wrapping section links/buttons.
+Where to Watch was converted too, but on October 25, 2026 the user chose Movies | TV
+shows and All services | My services toggle links instead, and genre was removed. College retains its Sport selector and
 preserves that sport across Schedule/Results/Standings/Rankings/News selections.
 Watch choices preserve the existing sort/service parameters through its URL helper.
 Existing headline category dropdowns remain in place. Previous/Next pagination and

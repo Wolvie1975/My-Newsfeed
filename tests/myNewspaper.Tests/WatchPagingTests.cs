@@ -8,16 +8,17 @@ public class WatchPagingTests
     private sealed class Provider : HttpMessageHandler,IHttpClientFactory
     {
         public readonly List<int> Batches=[];
-        public bool Empty,Fail;
+        public bool Empty,Fail,Streaming;
+        public readonly List<string> Queries=[];
         public int Total=3;
         public HttpClient CreateClient(string name)=>new(this){BaseAddress=new("https://api.themoviedb.org/3/")};
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,CancellationToken token){
             var uri=request.RequestUri!;string json;
             if(uri.AbsolutePath.Contains("/discover/")){
-                var page=int.Parse(uri.Query.TrimStart('?').Split('&').Single(s=>s.StartsWith("page=")).Split('=')[1]);Batches.Add(page);
+                var page=int.Parse(uri.Query.TrimStart('?').Split('&').Single(s=>s.StartsWith("page=")).Split('=')[1]);Batches.Add(page);Queries.Add(uri.Query);
                 var ids=Enumerable.Range((page-1)*20+1,20).Select(id=>page==2&&id==21?20:id);
                 json=JsonSerializer.Serialize(new {total_pages=Total,results=ids.Select(id=>new {id,name="Show "+id,first_air_date="2020-01-01"})});
-            }else{var id=int.Parse(uri.AbsolutePath.Split('/')[3]);json=Empty||id%4==0?"""{"results":{}}""":"""{"results":{"US":{"rent":[{"provider_id":7,"provider_name":"Fandango At Home"}]}}}""";}
+            }else{var id=int.Parse(uri.AbsolutePath.Split('/')[3]);json=Empty||id%4==0?"""{"results":{}}""":Streaming&&id%3==0?"""{"results":{"US":{"flatrate":[{"provider_id":8,"provider_name":"Netflix","logo_path":"/n.png"}]}}}""":"""{"results":{"US":{"rent":[{"provider_id":7,"provider_name":"Fandango At Home"}]}}}""";}
             return Task.FromResult(new HttpResponseMessage(Fail?HttpStatusCode.ServiceUnavailable:HttpStatusCode.OK){Content=new StringContent(json)});
         }
     }
@@ -36,6 +37,15 @@ public class WatchPagingTests
     }
     [Fact]public async Task Scan_budget_leaves_retry_on_same_page_without_inventing_next_page(){
         var provider=new Provider{Empty=true,Total=50};var result=await Catalog(provider).FilledPage("tv",null);Assert.Empty(result.Items);Assert.True(result.CanContinue);Assert.Equal(1,result.Pages);Assert.Equal(10,provider.Batches.Count);
+    }
+    [Fact]public async Task Only_my_services_uses_provider_filter_and_a_separate_window(){
+        var provider=new Provider{Streaming=true};var catalog=Catalog(provider);
+        var mine=await catalog.FilledPage("tv",null,selected:"8",onlySelected:true);
+        Assert.NotEmpty(mine.Items);Assert.All(mine.Items,t=>Assert.Equal("Netflix",Assert.Single(t.MatchingServices!)));
+        Assert.All(provider.Queries,q=>Assert.Contains("with_watch_providers=8",q));
+        var all=await catalog.FilledPage("tv",null,selected:"8");
+        Assert.Contains(all.Items,t=>t.MatchingServices!.Count==0);Assert.DoesNotContain("with_watch_providers",provider.Queries[^1]);
+        var ignored=await catalog.FilledPage("tv",null,selected:"",onlySelected:true);Assert.Equal(all.Items.Select(t=>t.Id).Order(),ignored.Items.Select(t=>t.Id).Order());
     }
     [Fact]public async Task Upstream_failure_remains_distinct_from_no_matching_titles(){var result=await Catalog(new Provider{Fail=true}).FilledPage("tv",null);Assert.True(result.Failed);Assert.True(result.CanContinue);}
 }

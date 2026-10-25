@@ -619,3 +619,97 @@ focus return, or navigate to the title page without JavaScript. Unknown provider
 availability is shown as unavailable to check rather than confirmed absence.
 Sorting, service selection, mixed movie/TV search and stable pagination retain
 existing behavior.
+
+### Deferred: service hyperlinks in Where to watch
+
+User feedback, October 24, 2026 (America/Chicago): the search results layout
+looks good. Consider making each provider logo/name a link to reduce the extra
+clicks through the viewing-options page. The user deferred this decision; revisit
+before implementing.
+
+The current TMDB provider response supplies names/logos and a regional TMDB
+viewing-options link, not direct title links on individual services. Options to
+evaluate are a data source supplying verified direct title links, or supported
+service search URLs as a fallback (which still require choosing the title).
+Reference: [TMDB watch providers](https://developer.themoviedb.org/reference/movie-watch-providers).
+Preserve the existing search results layout when revisiting this idea. The main
+search/browse section redesign remains open while the user considers examples.
+
+This is a planning note only; mobile verification is not applicable because no
+rendered content or interactions changed.
+
+### Compact Where to watch search and browse
+
+The title search, My services link and browse controls share a compact panel.
+Content type and genre sit side by side above 600px and stack on phones. The
+results note and sort form share a wrapping toolbar. Search-result provider rows
+and browse poster cards retain their existing layout and behavior. Service
+hyperlinks remain deferred.
+
+Verification: build and diff whitespace check passed. Browser checks passed 16
+combinations at 320/390/430/1440px in light/dark modes, with and without
+JavaScript: content type, genre, title search, sorting, query service selection,
+refresh, clear search, no horizontal overflow and controls at least 44px tall.
+Phone screenshots at all three widths and desktop screenshots were inspected.
+Additional 768px light/dark checks passed; browser-local saved services restored
+and persisted through refresh, and the browse details dialog opened/closed with
+Escape. Real-device checks were unavailable. Existing Pkcs dependency warnings
+remain. Preview evidence: `/tmp/mynewspaper-watch-compact/`. Deployed as
+`mynewspaper-web:watch-compact-20261024`; the same 16 viewport/theme/JS cases
+and saved-service/tablet/modal checks passed against the live build. Live
+evidence: `/tmp/mynewspaper-watch-compact-deploy/`.
+
+### Where to watch flow — October 25, 2026
+
+Supersedes the content type/genre layout above. - Movies | TV shows toggle links replace the Content type dropdown. The Genre
+  dropdown is gone; old `genre=` links are ignored.
+- All services | My services toggle (shown once services are selected) filters
+  browsing via TMDB discover `with_watch_providers` + flatrate/free/ads, then
+  rechecks each title against cached US offers. Query: `only=1`. Browse only;
+  title search is unaffected. Not saved between visits (URL only).
+- Selected service logos sit beside a Manage/Choose services link to Settings.
+- Browse posters carry up to three logo badges for the viewer's subscription/free
+  services, plus +N.
+- Sort applies on change; Apply sort remains for no-JavaScript browsers.
+- Toolbar note shortened ("Movies with US viewing options · Page 1"); the intro
+  sentence is hidden at 600px and below so posters reach the first phone screen.
+- Desktop puts search and both toggles on one row.
+
+Code: `Components/Pages/Watch.razor`, `Watching/WatchCatalog.cs`
+(`FilledPage(..., onlySelected)`, `WatchTitle.MatchingProviders`, `Service.Logo`),
+`wwwroot/watch.js`, `wwwroot/public.css`. Filtered and unfiltered browsing keep
+separate cached paging windows. Service hyperlinks remain deferred, and the search
+result rows are unchanged.
+
+Verification: see release history, “Where to watch flow”. Mobile checks passed at
+320/390/430px light/dark on preview and live, plus 768/1440px and no-JavaScript.
+
+### Featured rows and search results — October 25, 2026
+
+User approved the streaming-rows mockup: Featured as the default view, four rows,
+a mixed movie/TV services row and 12 titles per row. `/watch` (no `kind`, or
+`kind=featured`) now shows Popular on your services (only with services selected;
+TMDB discover with the viewer's providers, alternating movies and TV), Trending
+movies this week and Trending TV this week (`trending/{kind}/week`), and New movies
+you can watch (discover, released in the last 60 days in the display time zone,
+US monetization types). Each row keeps up to 12 titles with US viewing options,
+scanning at most three upstream pages per kind. Rows are cached for 15 minutes,
+keep upstream order and personalize badges per viewer. A failed row shows its own
+status and doesn't affect the others. See all opens the matching grid (My services, popular or
+newest). The toggle is Featured | Movies | TV shows. Movies/TV keep the grid, sort,
+My services filter and paging. Rows swipe on phones; at 768px and wider JavaScript
+adds 44px arrow buttons. Row cards hide the services text visually (kept for screen
+readers) since poster badges show it. New `WatchPosterCard` and `WatchRow` components.
+
+Search results: (1) **Best match** is the default sort for searches:
+TMDB relevance order, kept through the paging window (FilledPage no longer reorders by
+services; "Your services first" remains a sort option). New searches no longer carry
+the browse sort. "the office" now lists The Office first, where it previously sank below
+titles on the viewer's services. (2) One-line heading "Results for “term”" with count,
+page and Clear search beside it. The sort shares that row on wider screens.
+Each result keeps only Viewing details (the dialog/page still has Open viewing options).
+The TV seasons note appears once below the results. Provider rows are unchanged.
+
+Code: `Watching/WatchCatalog.cs` (`TrendingShelf`, `NewMoviesShelf`, `ServicesShelf`, `SortKey(sort, searching)`),
+`Components/Pages/Watch.razor`, `Components/Watching/WatchRow.razor`, `WatchPosterCard.razor`,
+`WatchResultCard.razor`, `wwwroot/watch.js`, `wwwroot/public.css`. Verification: release history.

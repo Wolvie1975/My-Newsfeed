@@ -16,7 +16,7 @@ before completion and again after deployment. Desktop checks alone are insuffici
 See [mobile acceptance checks](docs/interface.md#required-mobile-verification) and
 [project instructions](AGENTS.md).
 
-**Approved exception (October 20, 2026):** Where to watch supports typed movie/TV title search, alongside tap-to-browse genres and popular titles. This does not restore site-wide Search.
+**Approved exception (October 20, 2026):** Where to watch supports typed movie/TV title search, alongside tap-to-browse Movies/TV toggles, popular titles and a My services filter. This does not restore site-wide Search.
 
 | Guide | Contents |
 | --- | --- |

@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 using Microsoft.Extensions.Caching.Memory;
 namespace myNewspaper.Web.Watching;
 
-public sealed record WatchTitle(int Id,string Kind,string Name,string? Year,string? Poster,string Overview,IReadOnlyList<string>? MatchingServices=null,DateOnly? ReleaseDate=null,double? Popularity=null,IReadOnlyList<WatchOffer>? Offers=null,string? WatchLink=null,bool OffersUnavailable=false);
+public sealed record WatchTitle(int Id,string Kind,string Name,string? Year,string? Poster,string Overview,IReadOnlyList<string>? MatchingServices=null,DateOnly? ReleaseDate=null,double? Popularity=null,IReadOnlyList<WatchOffer>? Offers=null,string? WatchLink=null,bool OffersUnavailable=false,IReadOnlyList<WatchProvider>? MatchingProviders=null);
 public sealed record WatchListing(IReadOnlyList<WatchTitle> Items,int Pages,bool Failed=false,bool CanContinue=false);
 public sealed record WatchProvider(int Id,string Name,string? Logo);
 public sealed record WatchOffer(string Category,IReadOnlyList<string> Providers,IReadOnlyList<WatchProvider>? Options=null);
@@ -16,7 +16,6 @@ public sealed class WatchCatalog(IHttpClientFactory factory,IConfiguration confi
     public bool Configured=>!string.IsNullOrWhiteSpace(configuration["Movies:AccessToken"]);
     public static bool Kind(string kind)=>kind is "movie" or "tv";
     public static string Term(string? query)=>Regex.Replace(query?.Trim() ?? "",@"\s+"," ") is {} s ? s[..Math.Min(s.Length,120)] : "";
-    public static readonly IReadOnlyDictionary<int,string> Genres=new Dictionary<int,string>{{16,"Animation"},{35,"Comedy"},{80,"Crime"},{99,"Documentary"},{18,"Drama"}};
     private async Task<JsonDocument?> Fetch(string path)
     {
         if(!Configured)return null;
@@ -30,20 +29,27 @@ public sealed class WatchCatalog(IHttpClientFactory factory,IConfiguration confi
         } catch(Exception e) when(e is HttpRequestException or TaskCanceledException or JsonException){return null;}
         finally{gate.Release();}
     }
-    public async Task<WatchListing> List(string kind,string? query,int genre=0,int page=1)
+    public async Task<WatchListing> List(string kind,string? query,int page=1,string? providers=null)
     {
-        var batch=await ListBatch(kind,query,genre,Math.Clamp(page,1,10));
+        var batch=await ListBatch(kind,query,ProviderFilter(query,providers),Math.Clamp(page,1,10));
         return batch with {Pages=Math.Min(10,batch.Pages)};
     }
-    private async Task<WatchListing> ListBatch(string kind,string? query,int genre,int page)
+    // Browsing only: TMDB filters discover results to subscription/free titles on any chosen US service.
+    private static string ProviderFilter(string? query,string? providers)=>Term(query).Length>0?"":string.Join("|",ServiceIds(providers));
+    private async Task<WatchListing> ListBatch(string kind,string? query,string providers,int page)
     {
         if(!Kind(kind)&&!(kind=="multi"&&Term(query).Length>0))return new([],0,true);
-        var term=Term(query);page=Math.Clamp(page,1,50);genre=Genres.ContainsKey(genre)?genre:0;
-        var key=$"watch:list:{kind}:{term}:{genre}:{page}";
+        var term=Term(query);page=Math.Clamp(page,1,50);
+        var key=$"watch:list:{kind}:{term}:{providers}:{page}";
         if(cache.TryGetValue<WatchListing>(key,out var saved))return saved!;
-        var path=term.Length>0 ? $"search/{kind}?query={Uri.EscapeDataString(term)}&include_adult=false&page={page}" : $"discover/{kind}?include_adult=false&sort_by=popularity.desc&page={page}&watch_region=US"+(genre>0?$"&with_genres={genre}":"");
+        var path=term.Length>0 ? $"search/{kind}?query={Uri.EscapeDataString(term)}&include_adult=false&page={page}" : $"discover/{kind}?include_adult=false&sort_by=popularity.desc&page={page}&watch_region=US"+(providers.Length>0?$"&with_watch_providers={Uri.EscapeDataString(providers)}&with_watch_monetization_types=flatrate%7Cfree%7Cads":"");
         // TMDB: returning, planned, in production or pilot; exclude ended/canceled only in TV browsing.
         if(kind=="tv" && term.Length==0)path+="&with_status=0%7C1%7C2%7C5";
+        return await Batch(key,path,kind);
+    }
+    private async Task<WatchListing> Batch(string key,string path,string kind)
+    {
+        if(cache.TryGetValue<WatchListing>(key,out var saved))return saved!;
         using var doc=await Fetch(path);
         if(doc==null)return Save(key,new WatchListing([],0,true),TimeSpan.FromSeconds(30));
         try {
@@ -51,6 +57,43 @@ public sealed class WatchCatalog(IHttpClientFactory factory,IConfiguration confi
             var items=root.GetProperty("results").EnumerateArray().Where(x=>!x.TryGetProperty("adult",out var a)||a.ValueKind!=JsonValueKind.True).Where(x=>kind!="multi"||Kind(Text(x,"media_type")??"")).Select(x=>Title(x,kind=="multi"?Text(x,"media_type")!:kind)).Where(x=>x.Id>0&&!string.IsNullOrWhiteSpace(x.Name)).ToList();
             return Save(key,new WatchListing(items,Math.Min(50,root.GetProperty("total_pages").GetInt32())),TimeSpan.FromMinutes(15));
         }catch(Exception e) when(e is InvalidOperationException or KeyNotFoundException or FormatException){return new([],0,true);}
+    }
+
+    // Featured rows: up to ShelfSize titles with US viewing options, scanning at most three upstream pages per kind.
+    public const int ShelfSize=12;
+    public Task<WatchListing> TrendingShelf(string kind,string? selected)=>Kind(kind)
+        ? Shelf($"trending:{kind}",[kind],(k,page)=>Batch($"watch:trending:{k}:{page}",$"trending/{k}/week?page={page}",k),selected,false)
+        : Task.FromResult(new WatchListing([],0,true));
+    public Task<WatchListing> NewMoviesShelf(DateOnly today,string? selected)=>
+        Shelf($"new:{today:yyyyMMdd}",["movie"],(k,page)=>Batch($"watch:new:{today:yyyyMMdd}:{page}",$"discover/movie?include_adult=false&sort_by=popularity.desc&page={page}&watch_region=US&with_watch_monetization_types=flatrate%7Cfree%7Cads%7Crent%7Cbuy&primary_release_date.gte={today.AddDays(-60):yyyy-MM-dd}&primary_release_date.lte={today:yyyy-MM-dd}",k),selected,false);
+    public Task<WatchListing> ServicesShelf(string? selected)
+    {
+        var providers=ProviderFilter(null,selected);
+        return providers.Length==0 ? Task.FromResult(new WatchListing([],0))
+            : Shelf($"services:{providers}",["movie","tv"],(k,page)=>ListBatch(k,null,providers,page),selected,true);
+    }
+    private async Task<WatchListing> Shelf(string key,string[] kinds,Func<string,int,Task<WatchListing>> fetch,string? selected,bool requireMatch)
+    {
+        key="watch:shelf:"+key;
+        if(!cache.TryGetValue<WatchListing>(key,out var shelf)){
+            var failed=false;
+            var lists=await Task.WhenAll(kinds.Select(async kind=>{
+                var titles=new List<WatchTitle>();var seen=new HashSet<int>();
+                for(var page=1;page<=3&&titles.Count<ShelfSize;page++){
+                    var batch=await fetch(kind,page);
+                    if(batch.Failed){failed=true;break;}
+                    var eligible=await Prioritize(batch with {Items=batch.Items.Where(t=>seen.Add(t.Id)).ToList()},requireMatch?selected:null,reorder:false);
+                    titles.AddRange(requireMatch?eligible.Items.Where(t=>t.MatchingServices is null||t.MatchingServices.Count>0):eligible.Items);
+                    if(page>=batch.Pages)break;
+                }
+                return titles;
+            }));
+            // Mixed rows alternate kinds so neither movies nor TV crowds out the other.
+            var mixed=Enumerable.Range(0,ShelfSize).SelectMany(i=>lists.Where(l=>i<l.Count).Select(l=>l[i])).Take(ShelfSize).ToList();
+            shelf=new WatchListing(mixed,1,Failed:failed&&mixed.Count==0);
+            Save(key,shelf,shelf.Failed?TimeSpan.FromSeconds(30):TimeSpan.FromMinutes(15));
+        }
+        return await Prioritize(shelf!,selected,false,reorder:false);
     }
     private sealed class ResultWindow
     {
@@ -62,11 +105,12 @@ public sealed class WatchCatalog(IHttpClientFactory factory,IConfiguration confi
     }
     private readonly MemoryCache windows=new(new MemoryCacheOptions {SizeLimit=32});
     private readonly object windowLock=new();
-    public async Task<WatchListing> FilledPage(string kind,string? query,int genre=0,int page=1,string? selected=null)
+    public async Task<WatchListing> FilledPage(string kind,string? query,int page=1,string? selected=null,bool onlySelected=false)
     {
         if(!Kind(kind)&&!(kind=="multi"&&Term(query).Length>0))return new([],0,true);
-        page=Math.Clamp(page,1,10);genre=Genres.ContainsKey(genre)?genre:0;
-        var key=$"{kind}:{Term(query)}:{genre}";
+        page=Math.Clamp(page,1,10);
+        var providers=onlySelected?ProviderFilter(query,selected):"";
+        var key=$"{kind}:{Term(query)}:{providers}";
         ResultWindow window;
         lock(windowLock){
             if(!windows.TryGetValue<ResultWindow>(key,out var saved)){
@@ -79,11 +123,12 @@ public sealed class WatchCatalog(IHttpClientFactory factory,IConfiguration confi
         try {
             var needed=page*20+(page<10?1:0);var scanned=0;var batchFailed=false;
             while(window.Titles.Count<needed&&!window.Exhausted&&scanned++<10){
-                var batch=await ListBatch(kind,query,genre,window.NextBatch);
+                var batch=await ListBatch(kind,query,providers,window.NextBatch);
                 if(batch.Failed){batchFailed=true;break;}
                 var unique=batch with {Items=batch.Items.Where(t=>window.Seen.Add((t.Kind,t.Id))).ToList()};
-                var eligible=await Prioritize(unique,null);
-                window.Titles.AddRange(eligible.Items);
+                var eligible=await Prioritize(unique,providers.Length>0?selected:null);
+                // Recheck TMDB's provider filter against the cached offers; unknown availability stays visible.
+                window.Titles.AddRange(providers.Length>0?eligible.Items.Where(t=>t.MatchingServices is null||t.MatchingServices.Count>0):eligible.Items);
                 window.Exhausted=window.NextBatch>=batch.Pages||window.NextBatch>=50;
                 window.NextBatch++;
             }
@@ -92,8 +137,8 @@ public sealed class WatchCatalog(IHttpClientFactory factory,IConfiguration confi
             var pending=!window.Exhausted&&window.Titles.Count<needed;
             result=new(items,more?Math.Min(10,page+1):Math.Max(1,(window.Titles.Count+19)/20),Failed:batchFailed&&items.Count==0,CanContinue:pending);
         }finally{window.Gate.Release();}
-        // Membership stays fixed within the cached window; only service badges are personalized.
-        return await Prioritize(result,selected,false);
+        // Membership and upstream order stay fixed within the cached window; only service badges are personalized.
+        return await Prioritize(result,selected,false,reorder:false);
     }
     public async Task<WatchAvailability?> Detail(string kind,int id)
     {
@@ -131,7 +176,7 @@ public sealed class WatchCatalog(IHttpClientFactory factory,IConfiguration confi
         ? "https://image.tmdb.org/t/p/w92"+path : null;
     private static string? ProviderLink(JsonElement us)=>Uri.TryCreate(Text(us,"link"),UriKind.Absolute,out var uri)
         &&uri.Scheme=="https"&&uri.Host=="www.themoviedb.org"?uri.AbsoluteUri:null;
-    public sealed record Service(int Id,string Name);
+    public sealed record Service(int Id,string Name,string? Logo=null);
     public static bool HomeViewingService(int id,string? name)=>id!=60 && !new[]{"Fandango","AMC Theatres","AMC Theaters","Regal Cinemas","Cinemark"}.Contains(name?.Trim(),StringComparer.OrdinalIgnoreCase);
     public static int[] ServiceIds(string? value)=> (value??"").Split(',').Select(s=>int.TryParse(s,out var id)?id:0).Where(id=>id>0&&HomeViewingService(id,null)).Distinct().Order().Take(20).ToArray();
     public async Task<IReadOnlyList<Service>> Services()
@@ -143,7 +188,7 @@ public sealed class WatchCatalog(IHttpClientFactory factory,IConfiguration confi
             using var doc=await Fetch($"watch/providers/{kind}?watch_region=US");
             if(doc is null)return [];
             if(doc.RootElement.TryGetProperty("results",out var list))foreach(var item in list.EnumerateArray()){
-                if(item.TryGetProperty("provider_id",out var id)&&id.TryGetInt32(out var number)&&Text(item,"provider_name") is {} name&&HomeViewingService(number,name))services.Add(new(number,name));
+                if(item.TryGetProperty("provider_id",out var id)&&id.TryGetInt32(out var number)&&Text(item,"provider_name") is {} name&&HomeViewingService(number,name))services.Add(new(number,name,ProviderLogo(Text(item,"logo_path"))));
             }
         }
         return Save<IReadOnlyList<Service>>(key,services.DistinctBy(s=>s.Id).OrderBy(s=>s.Name).ToList(),TimeSpan.FromHours(12));
@@ -176,21 +221,27 @@ public sealed class WatchCatalog(IHttpClientFactory factory,IConfiguration confi
             return Save(key,new Access(available.DistinctBy(s=>s.Id).ToList(),HasUsOptions:hasOptions,Offers:offers,Link:link),TimeSpan.FromHours(6));
         }catch(Exception e) when(e is InvalidOperationException or KeyNotFoundException or FormatException){return Save(key,new Access([],true),TimeSpan.FromSeconds(30));}
     }
-    public async Task<WatchListing> Prioritize(WatchListing listing,string? selected,bool filterUnavailable=true)
+    public async Task<WatchListing> Prioritize(WatchListing listing,string? selected,bool filterUnavailable=true,bool reorder=true)
     {
         var ids=ServiceIds(selected).ToHashSet();
         if(listing.Failed)return listing;
         var titles=await Task.WhenAll(listing.Items.Select(async title=>{
             var access=await AccessFor(title.Kind,title.Id);
             if(filterUnavailable&&!access.Failed&&!access.HasUsOptions)return null;
-            return title with {MatchingServices=access.Failed?null:access.Services.Where(s=>ids.Contains(s.Id)).Select(s=>s.Name).ToList(),Offers=access.Offers,WatchLink=access.Link,OffersUnavailable=access.Failed};
+            var included=new[]{"Subscription","Free","Free with ads"};
+            var logos=access.Failed?null:(access.Offers??[]).Where(o=>included.Contains(o.Category)).SelectMany(o=>o.Options??[]).Where(p=>ids.Contains(p.Id)).DistinctBy(p=>p.Id).ToList();
+            return title with {MatchingServices=access.Failed?null:access.Services.Where(s=>ids.Contains(s.Id)).Select(s=>s.Name).ToList(),Offers=access.Offers,WatchLink=access.Link,OffersUnavailable=access.Failed,MatchingProviders=logos};
         }));
-        return listing with {Items=titles.OfType<WatchTitle>().OrderByDescending(t=>t.MatchingServices?.Count>0).ToList()};
+        var kept=titles.OfType<WatchTitle>();
+        return listing with {Items=(reorder?kept.OrderByDescending(t=>t.MatchingServices?.Count>0):kept).ToList()};
     }
 
-    public static string SortKey(string? sort)=>sort is "title" or "newest" or "popular" ? sort : "services";
+    // Searches default to TMDB's relevance order ("Best match"); browsing defaults to the viewer's services first.
+    public static string SortKey(string? sort,bool searching=false)=>sort is "title" or "newest" or "popular" ? sort
+        : searching&&(string.IsNullOrEmpty(sort)||sort=="relevance") ? "relevance" : "services";
     public static WatchListing Sort(WatchListing listing,string? sort)
     {
+        if(sort=="relevance")return listing;
         var titles=listing.Items;
         IOrderedEnumerable<WatchTitle> sorted=SortKey(sort) switch {
             "title"=>titles.OrderBy(t=>t.Name,StringComparer.InvariantCultureIgnoreCase),

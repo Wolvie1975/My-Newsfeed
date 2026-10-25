@@ -36,7 +36,7 @@ const root = process.env.SCREENSHOT_DIR || '/tmp/mynewspaper-watch-results-deplo
                     }
                     await row.screenshot({path: `${root}/arrow-${width}-${theme}-${js}.png`});
                     await page.locator('#watch-sort').selectOption('title');
-                    await page.getByRole('button', {name: 'Apply sort', exact: true}).click();
+                    if (!js) await page.getByRole('button', {name: 'Apply sort', exact: true}).click();
                     await page.waitForURL(u => u.searchParams.get('sort') === 'title');
                     assert.equal(new URL(page.url()).searchParams.get('q'), 'arrow');
                     assert(await page.locator('.watch-result').count());
