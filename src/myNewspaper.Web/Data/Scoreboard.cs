@@ -1,4 +1,3 @@
-using System.Data.Common;
 using System.Globalization;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
@@ -140,7 +139,7 @@ public sealed record ScoreboardSelection(string Value, string? Competition = nul
 }
 public sealed record ScoreboardSnapshot(IReadOnlyList<ScoreboardGame> Games, IReadOnlyList<ScoreboardCoverage> Coverage, bool Available, IReadOnlyList<ScoreboardFollow>? Follows = null);
 
-public sealed class ScoreboardRepository(IDbContextFactory<WebScraperContext> factory, ILogger<ScoreboardRepository> log)
+public sealed class ScoreboardRepository(IDbContextFactory<WebScraperContext> factory, FeedDates dates, ILogger<ScoreboardRepository> log)
 {
     public async Task<ScoreboardSnapshot> ReadAsync(DateOnly day, bool carryOver = false, string? competition = null, int? followId = null, bool finalsOnly = false, string? show = null)
     {
@@ -158,7 +157,7 @@ public sealed class ScoreboardRepository(IDbContextFactory<WebScraperContext> fa
             var selection = ScoreboardSelection.Resolve(show, competition, followId, coverage, follows);
             var selectedFollow = follows.FirstOrDefault(f => f.Id == selection.FollowId);
             var selected = coverage.FirstOrDefault(c => c.Key == selection.Competition);
-            var window = ResultsWindow.ForDay(day, TimeZoneInfo.FindSystemTimeZoneById("America/Chicago"));
+            var window = ResultsWindow.ForDay(day, dates.Zone);
             var query = db.Database.SqlQueryRaw<ScoreboardGame>("SELECT ID,Provider,Sport,League,EventId,ScoreboardDate,StartsAtUtc,TimeTbd,WasRescheduled,HomeTeamId,AwayTeamId,HomeName,AwayName,HomeLogoUrl,AwayLogoUrl,HomeScore,AwayScore,Status,Completed,ProviderStatus,StatusText,Period,DisplayClock,NeutralSite,HomeShootout,AwayShootout,WinnerSide,Venue,Broadcasts,SourceUrl,LiveDetailsJson,LastObservedAtUtc,IsStale,RequestAvailability,HasBoxScore FROM dbo.SportsScoreboard");
             query = query.Where(g => g.ScoreboardDate == day && (g.TimeTbd || g.StartsAtUtc >= window.StartUtc && g.StartsAtUtc < window.EndUtc)
                 || carryOver && g.ScoreboardDate < day && (g.Status == "live" || g.Status == "delayed" || g.Status == "suspended"));
@@ -169,7 +168,7 @@ public sealed class ScoreboardRepository(IDbContextFactory<WebScraperContext> fa
             if (selectedFollow != null) games = games.Where(selectedFollow.Matches).ToList();
             return new(games.DistinctBy(g => g.Key).OrderBy(g => g.Status == "live" ? 0 : g.Active ? 1 : g.Status == "upcoming" ? 2 : 3).ThenBy(g => g.StartsAtUtc).ThenBy(g => g.ID).ToList(), coverage, true, follows);
         }
-        catch (Exception ex) when (ex is DbException or InvalidOperationException)
+        catch (Exception ex) when (DataFailures.IsReadFailure(ex))
         {
             log.LogWarning(ex, "Scoreboard read unavailable");
             return new([], [], false);

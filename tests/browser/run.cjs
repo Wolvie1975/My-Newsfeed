@@ -2,7 +2,7 @@
 //
 //   BASE_URL=http://localhost:5295 npm run test:browser            all checks
 //   BASE_URL=... npm run test:browser -- watch scoreboard            checks whose file name contains a filter
-//   JOBS=4 BASE_URL=... npm run test:browser                         run checks in parallel (default 2)
+//   JOBS=2 BASE_URL=... npm run test:browser                         run checks in parallel (default 1; heavy checks time out when crowded)
 //
 // Each check is a standalone Node script that exits non-zero on failure; output is kept in test-results/browser/.
 const { spawn } = require('node:child_process');
@@ -12,7 +12,7 @@ const path = require('node:path');
 const here = __dirname;
 const outDir = path.resolve(here, '../../test-results/browser');
 const filters = process.argv.slice(2);
-const jobs = Math.max(1, Number(process.env.JOBS) || 2);
+const jobs = Math.max(1, Number(process.env.JOBS) || 1);
 const base = process.env.BASE_URL || 'http://localhost:5295';
 
 const files = fs

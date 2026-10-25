@@ -1,19 +1,15 @@
-using System.Security.Claims;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.DataProtection;
-using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Web;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.HttpOverrides;
 using System.Net;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using myNewspaper.Web.Auth;
 using myNewspaper.Web.Components;
-using myNewspaper.Web.Components.Feed;
 using myNewspaper.Web.Data;
-using myNewspaper.Web.Scores;
+using myNewspaper.Web.Endpoints;
 using myNewspaper.Web.Saved;
+using myNewspaper.Web.Scores;
+using myNewspaper.Web.Tv;
+using myNewspaper.Web.Watching;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,8 +17,12 @@ builder.Services.AddScoped<BoxScoresRepository>();
 builder.Services.AddScoped<ScoreboardRepository>();
 builder.Services.AddSingleton<SharedArticles>();
 builder.Services.AddAntiforgery(options => options.HeaderName = "X-Saved-CSRF");
-builder.Services.AddSingleton<myNewspaper.Web.Watching.WatchCatalog>();
-builder.Services.AddHttpClient("watch-catalog", client => { client.BaseAddress = new Uri("https://api.themoviedb.org/3/"); client.Timeout = TimeSpan.FromSeconds(10); });
+builder.Services.AddSingleton<WatchCatalog>();
+builder.Services.AddHttpClient("watch-catalog", client =>
+{
+    client.BaseAddress = new Uri("https://api.themoviedb.org/3/");
+    client.Timeout = TimeSpan.FromSeconds(10);
+});
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<LocalWeather>();
 builder.Services.AddHttpClient("local-weather", client =>
@@ -32,7 +32,6 @@ builder.Services.AddHttpClient("local-weather", client =>
     client.DefaultRequestHeaders.Accept.ParseAdd("application/geo+json");
 });
 
-// Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
@@ -66,6 +65,7 @@ builder.Services.AddSingleton(sp => FeedDates.Create(sp.GetRequiredService<IConf
 // Blazor Server circuits are long-lived, so components create short-lived contexts from a factory.
 builder.Services.AddDbContextFactory<WebScraperContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddHealthChecks().AddDbContextCheck<WebScraperContext>();
 
 // Game results from ESPN's public scoreboard data: a background sync stores followed leagues' and teams' games; pages
 // only read the database.
@@ -75,14 +75,14 @@ builder.Services.AddHttpClient<EspnClient>(http =>
         http.Timeout = TimeSpan.FromSeconds(30);
         http.DefaultRequestHeaders.UserAgent.ParseAdd("myNewspaper/1.0 (personal results page)");
     })
-    .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AutomaticDecompression = System.Net.DecompressionMethods.All });
+    .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AutomaticDecompression = DecompressionMethods.All });
 builder.Services.AddSingleton<LeaguePhases>();
 builder.Services.AddHostedService<LeaguePhaseService>();
 builder.Services.AddTransient<ScoresSync>();
 if (builder.Configuration.GetValue("Results:BackgroundSyncEnabled", true))
     builder.Services.AddHostedService<ScoresSyncService>();
 
-builder.Services.AddHttpClient<myNewspaper.Web.Tv.TvmazeClient>(http =>
+builder.Services.AddHttpClient<TvmazeClient>(http =>
 {
     http.BaseAddress = new Uri("https://api.tvmaze.com/");
     http.Timeout = TimeSpan.FromSeconds(15);
@@ -100,11 +100,9 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 var app = builder.Build();
 app.UseForwardedHeaders();
 
-// Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
@@ -116,165 +114,12 @@ app.UseAntiforgery();
 
 app.MapStaticAssets();
 app.MapSharedArticles();
-
-// Form posts from the static login page and the nav-menu logout button (antiforgery is validated for [FromForm] endpoints).
-app.MapPost("/account/login", async (HttpContext http, IConfiguration config,
-    [FromForm] string? password, [FromForm] string? returnUrl) =>
-{
-    var target = AdminAuth.SafeReturnUrl(returnUrl);
-    if (!AdminAuth.PasswordMatches(config["Admin:Password"], password))
-    {
-        return Results.LocalRedirect($"/login?error=1&returnUrl={Uri.EscapeDataString(target)}");
-    }
-
-    var identity = new ClaimsIdentity([new Claim(ClaimTypes.Name, "admin")], AdminAuth.Scheme);
-    await http.SignInAsync(AdminAuth.Scheme, new ClaimsPrincipal(identity));
-    return Results.LocalRedirect(target);
-});
-
-app.MapPost("/account/logout", async (HttpContext http) =>
-{
-    await http.SignOutAsync(AdminAuth.Scheme);
-    return Results.LocalRedirect("/login");
-});
+app.MapAccount();
+app.MapPublicEndpoints();
+app.MapFeed();
 
 // Used by the container health check: healthy only when the database is reachable.
-// Preserve old result bookmarks as final-score views of Scoreboard.
-// Hourly homepage spotlight; only this card refreshes.
-app.MapGet("/home/opinion", async (HttpContext http, IDbContextFactory<WebScraperContext> factory) =>
-{
-    http.Response.Headers.CacheControl = "no-store";
-    await using var db = await factory.CreateDbContextAsync();
-    var snapshot = await HomeOpinionQuery.GetAsync(db, DateTime.UtcNow);
-    return new Microsoft.AspNetCore.Http.HttpResults.RazorComponentResult<HomeOpinionCard>(new { Snapshot = snapshot });
-});
-
-// Hourly homepage lead; only the lead story card refreshes.
-app.MapGet("/home/lead", async (HttpContext http, IDbContextFactory<WebScraperContext> factory) =>
-{
-    http.Response.Headers.CacheControl = "no-store";
-    await using var db = await factory.CreateDbContextAsync();
-    var snapshot = await HomeLeadQuery.GetAsync(db, DateTime.UtcNow);
-    return new Microsoft.AspNetCore.Http.HttpResults.RazorComponentResult<HomeLeadStory>(new { Snapshot = snapshot });
-});
-
-// Native navigation selects work with JavaScript disabled; never redirect off-site.
-app.MapGet("/navigate", (string? to) =>
-{
-    var local = !string.IsNullOrEmpty(to) && to[0] == '/'
-        && (to.Length == 1 || to[1] is not ('/' or '\\')) && !to.Any(char.IsControl);
-    return Results.LocalRedirect(local ? to! : "/");
-});
-
-app.MapGet("/results", (HttpContext http) =>
-{
-    var query = new Dictionary<string, string?> { ["status"] = "final" };
-    foreach (var key in new[] { "day", "follow" })
-        if (http.Request.Query.TryGetValue(key, out var value)) query[key] = value.ToString();
-    return Results.LocalRedirect(Microsoft.AspNetCore.WebUtilities.QueryHelpers.AddQueryString("/scoreboard", query));
-});
-
-app.MapGet("/scoreboard/fragment", (HttpContext http, string? day, string? competition, bool? compact, int? follow, string? status, string? show) =>
-{
-    http.Response.Headers.CacheControl = "no-store";
-    return new Microsoft.AspNetCore.Http.HttpResults.RazorComponentResult<myNewspaper.Web.Components.ScoreboardPanel>(
-        new Dictionary<string, object?> { ["Day"] = day, ["Competition"] = competition, ["Compact"] = compact == true, ["Follow"] = follow, ["Status"] = status, ["Show"] = show });
-});
-
-app.MapGet("/healthz", async (IDbContextFactory<WebScraperContext> factory) =>
-{
-    await using var db = await factory.CreateDbContextAsync();
-    return await db.Database.CanConnectAsync() ? Results.Ok("ok") : Results.StatusCode(StatusCodes.Status503ServiceUnavailable);
-});
-
-// "Load more" on the public feed: the next batch of article cards, rendered by the same component as the page.
-app.MapGet("/feed/more", async (HttpContext http, IDbContextFactory<WebScraperContext> factory, ILoggerFactory loggers,
-    string? after, string? category, string? q, string? day, string? source, string? view, string? sport) =>
-{
-    if (FeedCursor.Parse(after) is not { } cursor)
-    {
-        return Results.BadRequest();
-    }
-
-    int? categoryId = int.TryParse(category, out var parsedCategory) ? parsedCategory : null;
-    await using var db = await factory.CreateDbContextAsync();
-    var boxOffice = view == "box-office";
-    var f1News = view == "f1-news";
-    var big12News = view == "big12-news";
-    if (big12News)
-    {
-        categoryId = await Big12NewsQuery.CategoryIdAsync(db);
-        if (categoryId is null) return Results.NotFound();
-    }
-    if (f1News)
-    {
-        categoryId = await F1NewsQuery.CategoryIdAsync(db);
-        if (categoryId is null) return Results.NotFound();
-    }
-    if (boxOffice)
-    {
-        categoryId = await BoxOfficeQuery.CategoryIdAsync(db);
-        if (categoryId is null) return Results.NotFound();
-        q = null;
-    }
-    var sectionCategoryName = view switch
-    {
-        "entertainment-news" => NewsSections.Entertainment,
-        "tv-film-news" => NewsSections.TvFilm,
-        "sports-news" => NewsSections.Sports,
-        "mens-college-basketball-news" => NewsSections.MensBasketball,
-        "sports-big12-news" => Big12NewsQuery.CategoryName,
-        "sports-f1-news" => F1NewsQuery.CategoryName,
-        _ => null
-    };
-    var hub = NewsSections.HubForView(view);
-    var sectionNews = hub != null;
-    FeedCategory? sectionCategory = null;
-    if (sectionNews)
-    {
-        sectionCategory = await db.SourceCategories.Where(c => c.NewsHub == hub
-                && (sectionCategoryName != null ? c.CategoryName == sectionCategoryName : c.Id == categoryId)
-                && db.Sources.Any(s => s.Enabled && s.SourceCategoryId == c.Id))
-            .Select(c => new FeedCategory(c.Id, c.CategoryName, 0, c.NewsHub)).SingleOrDefaultAsync();
-        if (sectionCategory == null) return Results.NotFound();
-        categoryId = sectionCategory.Id;
-    }
-    int? sourceId = int.TryParse(source, out var parsedSource) && parsedSource > 0 ? parsedSource : null;
-    if (sourceId is not null && !await db.Sources.AnyAsync(s => s.Id == sourceId && s.Enabled
-        && (categoryId == null || s.SourceCategoryId == categoryId))) sourceId = null;
-    var page = await FeedQuery.GetFeedAsync(db, categoryId, q, cursor, FeedQuery.MoreBatch, sourceId, headlinesOnly: !boxOffice && !f1News && !big12News && !sectionNews);
-
-    await using var renderer = new HtmlRenderer(http.RequestServices, loggers);
-    var html = await renderer.Dispatcher.InvokeAsync(async () =>
-    {
-        var output = await renderer.RenderComponentAsync<FeedArticles>(ParameterView.FromDictionary(
-            new Dictionary<string, object?>
-            {
-                [nameof(FeedArticles.Items)] = page.Items,
-                [nameof(FeedArticles.PreviousDay)] = day,
-            }));
-        return output.ToHtmlString();
-    });
-
-    var dates = http.RequestServices.GetRequiredService<FeedDates>();
-    http.Response.Headers.CacheControl = "no-store";
-    return Results.Json(new
-    {
-        html,
-        nextHref = page.Next is { } next ? big12News ? CollegeHub.Href("news", CollegeHub.Resolve(sport)) + "&" + FeedQuery.QueryString(null, q, next.ToToken(), sourceId).TrimStart('?') : (boxOffice ? "box-office" : f1News ? "f1/news" : sectionNews ? NewsSections.RouteFor(sectionCategory!)! : "news") + FeedQuery.QueryString(f1News ? null : categoryId, q, next.ToToken(), sourceId, allCategories: !boxOffice && !f1News && categoryId is null) : null,
-        shown = page.Shown,
-        total = page.Total,
-        added = page.Items.Count,
-        lastDay = page.Items.Count > 0 ? dates.DayKey(page.Items[^1]) : day,
-    });
-});
-
-app.MapGet("/local/weather", async (LocalWeather weather, HttpContext context, double? lat, double? lon) =>
-{
-    context.Response.Headers.CacheControl = lat is not null || lon is not null ? "private,no-store" : "public,max-age=120";
-    try { return Results.Json(await weather.GetAsync(context.RequestAborted, lat, lon)); }
-    catch (ArgumentException) { return Results.BadRequest(new { error = "Valid latitude and longitude are required." }); }
-});
+app.MapHealthChecks("/healthz");
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();

@@ -13,7 +13,7 @@ public class ScoreboardReadTests
     {
         var factory = new PooledDbContextFactory<WebScraperContext>(new DbContextOptionsBuilder<WebScraperContext>()
             .UseSqlServer(TestDatabase.ConnectionString).Options);
-        var repository = new ScoreboardRepository(factory, NullLogger<ScoreboardRepository>.Instance);
+        var repository = new ScoreboardRepository(factory, FeedDates.Create(FeedDates.SiteTimeZoneId), NullLogger<ScoreboardRepository>.Instance);
         var today = FeedDates.Create("America/Chicago").Today;
         var snapshot = await repository.ReadAsync(today, true);
         Assert.True(snapshot.Available);

@@ -8,7 +8,7 @@ public sealed record WatchListing(IReadOnlyList<WatchTitle> Items, int Pages, bo
 public sealed record WatchProvider(int Id, string Name, string? Logo);
 public sealed record WatchOffer(string Category, IReadOnlyList<string> Providers, IReadOnlyList<WatchProvider>? Options = null);
 public sealed record WatchAvailability(WatchTitle Title, IReadOnlyList<WatchOffer> Offers, string? Link, DateTime Checked);
-public sealed class WatchCatalog(IHttpClientFactory factory, IConfiguration configuration) : IDisposable
+public sealed partial class WatchCatalog(IHttpClientFactory factory, IConfiguration configuration) : IDisposable
 {
     private readonly MemoryCache cache = new(new MemoryCacheOptions { SizeLimit = 512 });
     private T Save<T>(string key, T value, TimeSpan ttl) => cache.Set(key, value, new MemoryCacheEntryOptions { Size = 1, AbsoluteExpirationRelativeToNow = ttl });
@@ -19,9 +19,12 @@ public sealed class WatchCatalog(IHttpClientFactory factory, IConfiguration conf
         windows.Dispose();
         gate.Dispose();
     }
+    [GeneratedRegex(@"\s+")] private static partial Regex Whitespace();
+    // TMDB image paths are a single file name such as /abc123.jpg; anything else is not trusted as a URL fragment.
+    [GeneratedRegex(@"^/[A-Za-z0-9_.-]+$")] private static partial Regex TmdbImagePath();
     public bool Configured => !string.IsNullOrWhiteSpace(configuration["Movies:AccessToken"]);
     public static bool Kind(string kind) => kind is "movie" or "tv";
-    public static string Term(string? query) => Regex.Replace(query?.Trim() ?? "", @"\s+", " ") is { } s ? s[..Math.Min(s.Length, 120)] : "";
+    public static string Term(string? query) => Whitespace().Replace(query?.Trim() ?? "", " ") is { } s ? s[..Math.Min(s.Length, 120)] : "";
     private async Task<JsonDocument?> Fetch(string path)
     {
         if (!Configured) return null;
@@ -198,7 +201,7 @@ public sealed class WatchCatalog(IHttpClientFactory factory, IConfiguration conf
         }
         return offers;
     }
-    private static string? ProviderLogo(string? path) => path != null && Regex.IsMatch(path, @"^/[A-Za-z0-9_.-]+$")
+    private static string? ProviderLogo(string? path) => path != null && TmdbImagePath().IsMatch(path)
         ? "https://image.tmdb.org/t/p/w92" + path : null;
     private static string? ProviderLink(JsonElement us) => Uri.TryCreate(Text(us, "link"), UriKind.Absolute, out var uri)
         && uri.Scheme == "https" && uri.Host == "www.themoviedb.org" ? uri.AbsoluteUri : null;
@@ -290,7 +293,7 @@ public sealed class WatchCatalog(IHttpClientFactory factory, IConfiguration conf
     private static WatchTitle Title(JsonElement e, string kind)
     {
         var date = Text(e, kind == "movie" ? "release_date" : "first_air_date"); var poster = Text(e, "poster_path");
-        var image = poster != null && Regex.IsMatch(poster, @"^/[A-Za-z0-9_.-]+$") ? "https://image.tmdb.org/t/p/w342" + poster : null;
+        var image = poster != null && TmdbImagePath().IsMatch(poster) ? "https://image.tmdb.org/t/p/w342" + poster : null;
         return new(e.GetProperty("id").GetInt32(), kind, Text(e, kind == "movie" ? "title" : "name") ?? "", date?.Length >= 4 ? date[..4] : null, image, Text(e, "overview") ?? "", ReleaseDate: DateOnly.TryParseExact(date, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var released) ? released : null, Popularity: e.TryGetProperty("popularity", out var pop) && pop.TryGetDouble(out var value) ? value : null);
     }
 }

@@ -172,7 +172,7 @@ public static class StandingsQuery
                 && !(s.ProviderKey == "big12" && s.Sport == "Women's Basketball")
                 && (collegeSport == null || (s.ProviderKey == "big12" && s.Sport == collegeSport)))
             .OrderBy(s => s.DisplayName).ThenBy(s => s.Id).ToListAsync();
-        var day = today ?? FeedDates.Create("America/Chicago").Today;
+        var day = today ?? FeedDates.Create(FeedDates.SiteTimeZoneId).Today;
         var selected = SelectSource(sources, sourceId);
         if (selected is null) return new(sources, null, []);
         try

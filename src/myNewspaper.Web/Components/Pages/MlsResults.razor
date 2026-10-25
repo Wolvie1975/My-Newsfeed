@@ -56,7 +56,7 @@ else
         try { await using var db = await Factory.CreateDbContextAsync();
         records = await TeamRecords.LoadAsync(db, Dates.Today, RecordPhases); data = await MlsResultsQuery.GetAsync(db, int.TryParse(Page, out var page) ? Math.Clamp(page, 0, 10000) : 0);
         boxLabels = await BoxScores.AvailableAsync(data.Items.Select(g=>BoxIdentity.Match(g.ProviderKey,g.GameId)).OfType<BoxIdentity>()); }
-        catch (Exception ex) when (ex is System.Data.Common.DbException or InvalidOperationException)
+        catch (Exception ex) when (DataFailures.IsReadFailure(ex))
         { Log.LogError(ex, "Could not read MLS results."); error = "Results are temporarily unavailable. Please try again."; }
     }
 }

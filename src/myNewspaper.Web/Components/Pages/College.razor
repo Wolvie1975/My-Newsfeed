@@ -140,7 +140,7 @@ else
                 boxLabels = await BoxScores.AvailableAsync(results.Items.Select(i=>new BoxIdentity(i.Sport ?? "",i.League ?? "",i.EventId)));
             }
         }
-        catch (Exception ex) when (ex is System.Data.Common.DbException or InvalidOperationException)
+        catch (Exception ex) when (DataFailures.IsReadFailure(ex))
         { Log.LogError(ex, "College hub read failed for {Sport} {View}.", selected.Key, view); error = true; }
     }
 }

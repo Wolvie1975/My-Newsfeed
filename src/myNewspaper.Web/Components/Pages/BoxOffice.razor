@@ -92,7 +92,7 @@ else
                 await using var db = await Factory.CreateDbContextAsync();
                 movies = await BoxOfficeChartQuery.GetAsync(db);
             }
-            catch (Exception ex) when (ex is System.Data.Common.DbException or InvalidOperationException)
+            catch (Exception ex) when (DataFailures.IsReadFailure(ex))
             { Log.LogError(ex, "Box-office chart read failed."); failed = true; }
         }
         else
@@ -102,7 +102,7 @@ else
                 await using var db = await Factory.CreateDbContextAsync();
                 forecasts = await BoxOfficeForecastQuery.GetAsync(db, Dates.TodayAt(utcNow));
             }
-            catch (Exception ex) when (ex is System.Data.Common.DbException or InvalidOperationException)
+            catch (Exception ex) when (DataFailures.IsReadFailure(ex))
             { Log.LogError(ex, "Box-office forecast read failed."); }
         }
     }

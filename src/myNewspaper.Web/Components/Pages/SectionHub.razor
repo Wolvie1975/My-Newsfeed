@@ -59,7 +59,7 @@
         stories = []; boxOffice = []; forecasts = new([], []);
         await using var db = await Factory.CreateDbContextAsync();
         try { stories = await FeedQuery.GetHomeNewsAsync(db, 8, Entertainment ? "entertainment" : "sports"); }
-        catch (Exception ex) when (ex is System.Data.Common.DbException or InvalidOperationException) {
+        catch (Exception ex) when (DataFailures.IsReadFailure(ex)) {
             newsUnavailable = true; Log.LogError(ex, "Could not read section hub headlines.");
         }
         if (Entertainment) {
@@ -69,7 +69,7 @@
             try {
                 if (showResults) boxOffice = (await BoxOfficeChartQuery.GetAsync(db, weekend)).Take(3).ToArray();
                 else forecasts = await BoxOfficeForecastQuery.GetAsync(db, today);
-            } catch (Exception ex) when (ex is System.Data.Common.DbException or InvalidOperationException) {
+            } catch (Exception ex) when (DataFailures.IsReadFailure(ex)) {
                 boxOfficeUnavailable = true; Log.LogError(ex, "Could not read section hub box office.");
             }
         }

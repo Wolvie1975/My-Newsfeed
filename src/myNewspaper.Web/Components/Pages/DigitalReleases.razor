@@ -73,7 +73,7 @@ else
     protected override async Task OnParametersSetAsync()
     {
         try { await using var db = await Factory.CreateDbContextAsync(); data = await DigitalReleasesQuery.GetAsync(db, Dates.Today, SourceKey); }
-        catch (Exception ex) when (ex is System.Data.Common.DbException or InvalidOperationException)
+        catch (Exception ex) when (DataFailures.IsReadFailure(ex))
         { Log.LogError(ex, "Digital releases read failed."); data = null; }
         // Keep bookmarks and the visible provider in agreement after enablement changes.
         // Navigate outside the read-error handler so static SSR can issue its redirect.

@@ -75,7 +75,7 @@
             if (CategoryName == F1NewsQuery.CategoryName) races = (await F1Query.GetAsync(db, "schedule")).Races.Where(r => r.RaceDate >= today).Take(3).ToArray();
             games = CategoryName == F1NewsQuery.CategoryName ? [] : (await EventsQuery.GetUpcomingAsync(db, today, sport, null, limit: 40)).Items.Where(g => g.StartsAtUtc == null || g.StartsAtUtc > DateTime.UtcNow).Take(5).ToArray();
         }
-        } catch (Exception ex) when (ex is System.Data.Common.DbException or InvalidOperationException) {
+        } catch (Exception ex) when (DataFailures.IsReadFailure(ex)) {
             unavailable = true;
             Log.LogError(ex, "Could not read section agenda.");
         }

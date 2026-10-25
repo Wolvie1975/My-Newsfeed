@@ -1,4 +1,3 @@
-using System.Data.Common;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore;
@@ -6,11 +5,14 @@ using Microsoft.Data.SqlClient;
 
 namespace myNewspaper.Web.Data;
 
-public sealed record BoxIdentity(string Sport, string League, string EventId)
+public sealed partial record BoxIdentity(string Sport, string League, string EventId)
 {
     public string Key => Sport + "|" + League + "|" + EventId;
-    public bool Valid => Regex.IsMatch(Sport ?? "", "^[a-z-]{1,40}$") && Regex.IsMatch(League ?? "", "^[a-z0-9.-]{1,60}$")
-        && Regex.IsMatch(EventId ?? "", "^[0-9]{1,20}$") && League != "womens-college-basketball";
+    public bool Valid => SportPattern().IsMatch(Sport ?? "") && LeaguePattern().IsMatch(League ?? "")
+        && EventIdPattern().IsMatch(EventId ?? "") && League != "womens-college-basketball";
+    [GeneratedRegex("^[a-z-]{1,40}$")] private static partial Regex SportPattern();
+    [GeneratedRegex("^[a-z0-9.-]{1,60}$")] private static partial Regex LeaguePattern();
+    [GeneratedRegex("^[0-9]{1,20}$")] private static partial Regex EventIdPattern();
     public string Href => $"box-score/{Uri.EscapeDataString(Sport)}/{Uri.EscapeDataString(League)}/{Uri.EscapeDataString(EventId)}";
     public static BoxIdentity? Match(string provider, int gameId) => provider switch
     {
@@ -96,7 +98,7 @@ public sealed class BoxScoresRepository(IDbContextFactory<WebScraperContext> fac
             return rows.Where(r => r.HasBoxScore && r.Availability != "unavailable").Select(r => BoxData.Parse(r.Payload, new(r.Sport, r.League, r.EventId)))
                 .OfType<BoxData>().DistinctBy(d => d.Identity.Key).ToDictionary(d => d.Identity.Key, d => d.Label);
         }
-        catch (Exception ex) when (ex is DbException or InvalidOperationException) { log.LogWarning(ex, "Optional box score availability unavailable"); return new Dictionary<string, string>(); }
+        catch (Exception ex) when (DataFailures.IsReadFailure(ex)) { log.LogWarning(ex, "Optional box score availability unavailable"); return new Dictionary<string, string>(); }
     }
     public async Task<BoxDetail?> GetAsync(BoxIdentity id)
     {
@@ -127,7 +129,7 @@ public sealed class BoxScoresRepository(IDbContextFactory<WebScraperContext> fac
             if (row?.HasBoxScore != true || row.Availability == "unavailable" || BoxData.Parse(row.Payload, id) is not { } data) return null;
             return new(data, row.FetchedAt, ProviderUrl(row.BoxScoreUrl, id) ?? ProviderUrl(row.SummaryUrl, id));
         }
-        catch (Exception ex) when (ex is DbException or InvalidOperationException) { log.LogWarning(ex, "Optional box score detail unavailable"); return null; }
+        catch (Exception ex) when (DataFailures.IsReadFailure(ex)) { log.LogWarning(ex, "Optional box score detail unavailable"); return null; }
     }
     public static string? ProviderUrl(string? value, BoxIdentity id) => Uri.TryCreate(value, UriKind.Absolute, out var uri) && uri.Scheme == "https"
         && (uri.Host == "espn.com" || uri.Host.EndsWith(".espn.com", StringComparison.OrdinalIgnoreCase))

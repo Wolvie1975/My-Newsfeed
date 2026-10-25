@@ -79,7 +79,7 @@ else
     protected override async Task OnParametersSetAsync()
     {
         try { await using var db = await Factory.CreateDbContextAsync(); data = await RankingsQuery.GetAsync(db, StandingsQuery.ParseSourceId(SourceId), Log, Dates.Today, CollegeSport); }
-        catch (Exception ex) when (ex is System.Data.Common.DbException or InvalidOperationException)
+        catch (Exception ex) when (DataFailures.IsReadFailure(ex))
         { Log.LogError(ex, "Rankings source read failed."); data = new([], null, null, [], "Rankings are temporarily unavailable."); }
     }
 }

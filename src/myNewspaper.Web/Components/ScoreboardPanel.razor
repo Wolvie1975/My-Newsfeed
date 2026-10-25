@@ -131,7 +131,6 @@
         var competition = TeamRecords.Competition(game.Sport, game.League);
         return records.Find(competition.Provider, competition.Sport, home ? game.HomeName : game.AwayName, home ? game.HomeTeamId : game.AwayTeamId);
     }
-    private readonly TimeZoneInfo central = TimeZoneInfo.FindSystemTimeZoneById("America/Chicago");
     private DateOnly today, selectedDay;
     private ScoreboardSnapshot snapshot = new([], [], true);
     private IReadOnlyList<ScoreboardGame> visibleGames = [];
@@ -142,7 +141,7 @@
         "college-football" => "College football", "mens-college-basketball" => "Men’s college basketball", "womens-college-basketball" => "Women’s college basketball", "usa.ncaa.w.1" => "Women’s college soccer", "womens-college-volleyball" => "Women’s college volleyball", _ => sport + " · " + league
     };
     protected override async Task OnParametersSetAsync() {
-        today = DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, central));
+        today = Dates.Today;
         selectedDay = !Compact && DateOnly.TryParseExact(Day, "yyyy-MM-dd", out var day) && day >= today.AddDays(-1) && day <= today.AddDays(7) ? day : today;
         snapshot = await Repository.ReadAsync(selectedDay, selectedDay == today, Compact ? null : Competition, Compact ? null : Follow, !Compact && Status == "final", Compact ? null : Show);
         selection = ScoreboardSelection.Resolve(Compact ? null : Show, Compact ? null : Competition, Compact ? null : Follow, snapshot.Coverage, snapshot.Follows ?? []);
@@ -151,7 +150,7 @@
         records = await TeamRecords.LoadAsync(db, today, RecordPhases);
         hasMls = !Compact && await db.SportsEventsTypes.AsNoTracking().AnyAsync(s => s.Enabled && s.ProviderKey == "espn-mls");
         hasChampionship = !Compact && await db.SportsEventsTypes.AsNoTracking().AnyAsync(s => s.Enabled && s.ProviderKey == "espn-championship");
-        } catch (Exception ex) when (ex is System.Data.Common.DbException or InvalidOperationException) {
+        } catch (Exception ex) when (DataFailures.IsReadFailure(ex)) {
             records = TeamRecords.Empty;
             hasMls = hasChampionship = false;
             Log.LogWarning(ex, "Optional scoreboard records and season links unavailable");

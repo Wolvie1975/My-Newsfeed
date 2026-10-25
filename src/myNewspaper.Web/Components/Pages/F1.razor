@@ -168,7 +168,7 @@ else
             standingsRound = Constructors ? data.Constructors.Select(r => (int?)r.StandingsRound).FirstOrDefault()
                 : data.Drivers.Select(r => (int?)r.StandingsRound).FirstOrDefault();
         }
-        catch (Exception ex) when (ex is System.Data.Common.DbException or InvalidOperationException)
+        catch (Exception ex) when (DataFailures.IsReadFailure(ex))
         { Log.LogError(ex, "Could not read F1 {View}.", view); error = "F1 data is temporarily unavailable. Please try again."; }
     }
 }

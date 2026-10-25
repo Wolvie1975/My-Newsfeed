@@ -70,7 +70,7 @@ else
             data = await Big12NewsQuery.GetAsync(db, int.TryParse(SourceQuery, out var source) && source > 0 ? source : null, Q, After);
             lastDay = data.Feed.Items.Count > 0 ? Dates.DayKey(data.Feed.Items[^1]) : null;
         }
-        catch (Exception ex) when (ex is System.Data.Common.DbException or InvalidOperationException)
+        catch (Exception ex) when (DataFailures.IsReadFailure(ex))
         { Log.LogError(ex, "Could not read Big 12 news."); error = "Big 12 news is temporarily unavailable. Please try again."; }
     }
 }

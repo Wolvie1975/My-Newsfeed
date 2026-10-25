@@ -2,6 +2,7 @@
 @page "/sports/teams"
 @layout PublicLayout
 @inject IDbContextFactory<WebScraperContext> Factory
+@inject ILogger<MyTeams> Log
 
 <PageTitle>Settings · myNewspaper</PageTitle>
 <PageHeading Title="Settings" Eyebrow="MAKE IT YOURS" Description="Arrange your settings and choose your appearance, teams and streaming services." />
@@ -105,7 +106,7 @@
     protected override async Task OnInitializedAsync()
     {
         try { await using var db = await Factory.CreateDbContextAsync(); choices = await SportsTeamPreferences.GetChoicesAsync(db); categories = await FeedQuery.GetCategoriesAsync(db); }
-        catch (Exception ex) when (ex is System.Data.Common.DbException or InvalidOperationException)
-        { error = "Professional teams are temporarily unavailable. Reload to try again."; }
+        catch (Exception ex) when (DataFailures.IsReadFailure(ex))
+        { Log.LogError(ex, "Could not read team and category choices."); error = "Professional teams are temporarily unavailable. Reload to try again."; }
     }
 }

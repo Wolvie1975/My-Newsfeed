@@ -351,24 +351,24 @@
         await using var db = await Factory.CreateDbContextAsync();
         homeF1 = F1Page.Empty; homeF1Error = null;
         try { homeF1 = await F1Query.GetAsync(db, "schedule"); }
-        catch (Exception ex) when (ex is System.Data.Common.DbException or InvalidOperationException)
+        catch (Exception ex) when (DataFailures.IsReadFailure(ex))
         { Log.LogError(ex, "Could not read home F1 summary."); homeF1Error = "F1 data is temporarily unavailable. Please try again."; }
         try { homeRankings = await RankingsQuery.GetAsync(db, StandingsQuery.ParseSourceId(RankingSourceId), Log, Dates.TodayAt(nowUtc)); }
-        catch (Exception ex) when (ex is System.Data.Common.DbException or InvalidOperationException)
+        catch (Exception ex) when (DataFailures.IsReadFailure(ex))
         { Log.LogError(ex, "Could not read home rankings."); homeRankings = new([], null, null, [], "Rankings are temporarily unavailable."); }
         records = await TeamRecords.LoadAsync(db, Dates.Today, RecordPhases);
 
         // The queries run one after another: one DbContext cannot run two at once.
         todays = await EventsQuery.GetOnDateAsync(db, Dates.TodayAt(nowUtc));
         try { lead = await HomeLeadQuery.GetAsync(db, nowUtc); }
-        catch (Exception ex) when (ex is System.Data.Common.DbException or InvalidOperationException)
+        catch (Exception ex) when (DataFailures.IsReadFailure(ex))
         { Log.LogError(ex, "Could not read home lead story."); lead = new(null, nowUtc.Ticks / TimeSpan.TicksPerHour, 60000, true); }
         news = await FeedQuery.GetHomeNewsAsync(db, HomeNewsCount, "headlines");
         headlineStories = news.Where(item => item.Id != lead.Article?.Id).Take(4).ToList();
         sportsStories = await FeedQuery.GetHomeNewsAsync(db, HomeShelfCount, "sports");
         entertainmentStories = await FeedQuery.GetHomeNewsAsync(db, HomeShelfCount, "entertainment");
         try { opinion = await HomeOpinionQuery.GetAsync(db, nowUtc); }
-        catch (Exception ex) when (ex is System.Data.Common.DbException or InvalidOperationException) {
+        catch (Exception ex) when (DataFailures.IsReadFailure(ex)) {
             Log.LogError(ex, "Could not read home Opinion spotlight.");
             opinion = new(null,null,nowUtc.Ticks / TimeSpan.TicksPerHour,60000,true);
         }
@@ -382,13 +382,13 @@
                 var weekend = HomeBoxOfficeSchedule.ResultsWeekend(Dates.TodayAt(nowUtc));
                 homeBoxOffice = await BoxOfficeChartQuery.GetAsync(db, weekend);
             }
-            catch (Exception ex) when (ex is System.Data.Common.DbException or InvalidOperationException)
+            catch (Exception ex) when (DataFailures.IsReadFailure(ex))
             { Log.LogError(ex, "Could not read home weekend results."); homeBoxOfficeFailed = true; }
         }
         else
         {
         try { homeForecasts = await BoxOfficeForecastQuery.GetAsync(db, Dates.TodayAt(nowUtc)); }
-        catch (Exception ex) when (ex is System.Data.Common.DbException or InvalidOperationException)
+        catch (Exception ex) when (DataFailures.IsReadFailure(ex))
         { Log.LogError(ex, "Could not read home weekend predictions."); }
         }
         movies = await MoviesQuery.GetFridayTheatricalAsync(db, Dates.TodayAt(nowUtc));

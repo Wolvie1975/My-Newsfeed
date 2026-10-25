@@ -93,7 +93,7 @@ else
             await using var db = await Factory.CreateDbContextAsync();
             page = await StandingsQuery.GetAsync(db, StandingsQuery.ParseSourceId(SourceId), Log, Dates.Today, Config.GetSection("Standings:HiddenProviders").Get<string[]>(), CollegeSport);
         }
-        catch (Exception ex) when (ex is System.Data.Common.DbException or InvalidOperationException)
+        catch (Exception ex) when (DataFailures.IsReadFailure(ex))
         {
             Log.LogError(ex, "Standings database read failed.");
             page = new([], null, [], "Standings are temporarily unavailable. Please try again.");

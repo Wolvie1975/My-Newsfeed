@@ -36,7 +36,7 @@
     protected override async Task OnParametersSetAsync() {
         error = null;
         try { await using var db = await Factory.CreateDbContextAsync(); (feed, dedicated) = await LocalNewsQuery.GetAsync(db, FeedCursor.Parse(After)); }
-        catch (Exception ex) when (ex is System.Data.Common.DbException or InvalidOperationException) {
+        catch (Exception ex) when (DataFailures.IsReadFailure(ex)) {
             Logger.LogWarning(ex,"Local news unavailable"); error = "Local news is temporarily unavailable. Weather and event links remain available.";
         }
     }

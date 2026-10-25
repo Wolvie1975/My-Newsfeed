@@ -13,6 +13,8 @@ public sealed class FeedDates(TimeZoneInfo zone)
 
     /// <summary>Day key for articles that have no publish date; they are grouped together, at the end.</summary>
     public const string UndatedKey = "undated";
+    /// <summary>The site's display zone; used only where no configured FeedDates instance is available (tests, defaults).</summary>
+    public const string SiteTimeZoneId = "America/Chicago";
 
     public TimeZoneInfo Zone => zone;
 
