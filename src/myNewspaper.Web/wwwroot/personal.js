@@ -122,12 +122,11 @@
                 'is-customized',
                 p.hidden.length > 0 || JSON.stringify(p.order) !== JSON.stringify(defaults),
             );
-            defaults.forEach((key, index) => {
+            // The broadsheet layout fixes where each section sits; saved preferences only hide sections.
+            defaults.forEach((key) => {
                 const section = grid.querySelector(`[data-home-section="${key}"]`);
-                if (section) {
+                if (section)
                     section.hidden = p.hidden.includes(key) || (key === 'digital' && p.hidden.includes('movies'));
-                    if (grid.children[index] !== section) grid.insertBefore(section, grid.children[index] || null);
-                }
             });
             grid.querySelectorAll('[data-home-f1]').forEach((section) => (section.hidden = p.hidden.includes('f1')));
             const empty = document.querySelector('[data-home-empty]');

@@ -235,3 +235,672 @@
         border-bottom: 2px solid var(--text);
     }
 }
+
+/* ---------- Home: phone order ---------- */
+/* Column wrappers vanish on phones so every section joins one list, ordered for the phone layout. */
+.pub .bs-home {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+.pub .bs-masthead,
+.pub .bs-front,
+.pub .bs-more,
+.pub .bs-col {
+    display: contents;
+}
+:root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-home [data-home-section],
+.pub .bs-home > section,
+.pub .bs-title,
+.pub .bs-live {
+    order: 50;
+}
+.pub .bs-home .bs-title {
+    order: 0;
+}
+:root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-home [data-home-section='watch'] {
+    order: 1;
+}
+.pub .bs-home .bs-glance {
+    order: 2;
+}
+.pub .bs-home .bs-live {
+    order: 3;
+}
+:root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-home [data-home-section='sports'] {
+    order: 4;
+}
+:root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-home [data-home-section='lead'] {
+    order: 5;
+}
+:root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-home [data-home-section='news'] {
+    order: 6;
+}
+:root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-home [data-home-section='opinion'] {
+    order: 7;
+}
+:root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-home [data-home-section='sports-news'] {
+    order: 8;
+}
+:root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-home [data-home-section='entertainment-news'] {
+    order: 9;
+}
+:root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-home [data-home-section='scoreboard'] {
+    order: 10;
+}
+:root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-home [data-home-section='rankings'] {
+    order: 11;
+}
+:root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-home [data-home-section='videos'] {
+    order: 12;
+}
+:root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-home [data-home-section='forecasts'] {
+    order: 13;
+}
+:root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-home [data-home-section='tv'] {
+    order: 14;
+}
+:root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-home [data-home-section='movies'] {
+    order: 15;
+}
+:root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-home [data-home-section='digital'] {
+    order: 16;
+}
+.pub .bs-home [hidden] {
+    display: none;
+}
+.pub .bs-band {
+    display: none;
+}
+
+/* Title block: greeting and date on phones (the header carries the mark). */
+.pub .bs-title {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 2px 12px;
+}
+.pub .bs-title__name {
+    display: none;
+}
+.pub .bs-title__greeting {
+    margin: 0;
+    font-family: var(--font-serif);
+    font-size: 30px;
+    font-weight: 800;
+    line-height: 1.1;
+}
+.pub .bs-title__date {
+    grid-column: 1;
+    margin: 0;
+    color: var(--text-2);
+    font-size: 14px;
+}
+.pub .bs-title .home-refresh {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+}
+
+/* Ears: Where to watch and live scores. */
+.pub .bs-ear {
+    padding: 14px 16px 16px;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: var(--surface);
+}
+.pub .bs-ear__title {
+    margin: 0 0 10px;
+    font-size: 20px;
+    font-weight: 800;
+}
+.pub .bs-watch__search label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+}
+.pub .bs-watch .watch-search-row {
+    display: flex;
+    gap: 8px;
+}
+.pub .bs-watch input {
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 52px;
+    font-size: 17px;
+}
+.pub .bs-watch .nf-btn {
+    min-height: 52px;
+}
+.pub .bs-live .bs-ear__title {
+    color: var(--live, #b0001e);
+    font-size: 13px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+:root[data-theme='dark'] .pub .bs-live .bs-ear__title {
+    color: #ff8a99;
+}
+.pub .bs-live__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+.pub .bs-live__list a {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 48px;
+    padding: 6px 0;
+    border-top: 1px solid var(--row-border);
+    color: var(--text);
+    text-decoration: none;
+}
+.pub .bs-live__score {
+    font-size: 15px;
+    font-weight: 700;
+}
+.pub .bs-live__clock {
+    color: var(--text-2);
+    font-size: 12px;
+}
+
+/* At a glance: forecast and tonight's new episode. */
+.pub .bs-glance {
+    display: grid;
+    gap: 10px;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: var(--surface);
+}
+.pub .bs-glance__title {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+}
+.pub .bs-glance__weather {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+}
+.pub .bs-glance__periods {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+.pub .bs-glance__periods li {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+}
+.pub .bs-glance__name {
+    color: var(--text-2);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.pub .bs-glance__reading {
+    font-size: 12px;
+    line-height: 1.3;
+    color: var(--text-2);
+}
+.pub .bs-glance__reading b {
+    display: block;
+    color: var(--text);
+    font-size: 18px;
+}
+.pub .bs-glance__tonight {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 48px;
+    padding-top: 10px;
+    border-top: 1px solid var(--row-border);
+    color: var(--text);
+    text-decoration: none;
+}
+.pub .bs-glance__kicker {
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+.pub .bs-glance__show {
+    font-size: 16px;
+    font-weight: 700;
+}
+
+/* Today & Tonight as agate rows. */
+.pub .bs-agate {
+    list-style: none;
+    margin: 0;
+    padding: 0 16px 8px;
+}
+.pub .bs-agate__row {
+    display: grid;
+    grid-template-columns: 66px minmax(0, 1fr) auto;
+    align-items: start;
+    gap: 2px 10px;
+    padding: 9px 0;
+    border-bottom: 1px dotted var(--row-border);
+}
+.pub .bs-agate__row:last-child {
+    border-bottom: 0;
+}
+.pub .bs-agate__time {
+    color: var(--text-2);
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.35;
+    font-variant-numeric: tabular-nums;
+}
+.pub .bs-agate__match {
+    min-width: 0;
+    font-size: 15px;
+    line-height: 1.35;
+}
+.pub .bs-agate__match > a {
+    color: var(--text);
+    text-decoration: none;
+}
+.pub .bs-agate__match > a:hover .tt-team {
+    text-decoration: underline;
+}
+.pub .tt-team {
+    font-weight: 650;
+}
+.pub .tt-team .team-record {
+    margin-left: 4px;
+    color: var(--text-2);
+    font-size: 12px;
+    font-weight: 400;
+}
+.pub .tt-sep {
+    margin: 0 4px;
+    color: var(--text-2);
+    font-size: 13px;
+}
+.pub .bs-agate__kind {
+    display: block;
+    color: var(--text-2);
+    font-size: 12px;
+}
+.pub .bs-agate__tv {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+    max-width: 96px;
+    font-size: 12px;
+    font-weight: 800;
+    text-align: right;
+}
+.pub .bs-agate__tv a {
+    font-weight: 600;
+}
+
+/* ---------- Home: desktop broadsheet ---------- */
+@media (min-width: 1024px) {
+    .pub .bs-home {
+        display: block;
+    }
+    .pub .bs-masthead {
+        display: grid;
+        grid-template-columns: minmax(300px, 1fr) minmax(0, 1.5fr) minmax(300px, 1fr);
+        align-items: center;
+        gap: 24px;
+        padding: 6px 0 22px;
+        border-bottom: 4px double var(--text);
+    }
+    .pub .bs-masthead > .bs-watch {
+        grid-column: 1;
+        grid-row: 1;
+    }
+    .pub .bs-masthead > .bs-title {
+        grid-column: 2;
+        grid-row: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+    .pub .bs-masthead > .bs-live {
+        grid-column: 3;
+        grid-row: 1;
+    }
+    .pub .bs-title__name {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+        margin: 0;
+        font-family: var(--font-serif);
+        font-size: clamp(52px, 5.4vw, 76px);
+        font-weight: 800;
+        line-height: 1;
+        letter-spacing: -0.02em;
+    }
+    .pub .bs-title__mark {
+        flex: none;
+        width: 0.9em;
+        height: 0.9em;
+    }
+    .pub .bs-title__greeting {
+        margin-top: 10px;
+        font-size: 20px;
+        font-style: italic;
+        font-weight: 500;
+    }
+    .pub .bs-title__date {
+        margin-top: 2px;
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+    }
+    .pub .bs-title .home-refresh {
+        margin-top: 10px;
+        min-height: 44px;
+    }
+    .pub .bs-watch {
+        border: 0;
+        background: var(--btn-bg);
+        color: #ffffff;
+    }
+    .pub .bs-watch .bs-ear__title {
+        color: #ffffff;
+    }
+    .pub .bs-watch input {
+        border: 0;
+        min-height: 50px;
+        font-size: 16px;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-watch .nf-btn--primary {
+        min-height: 50px;
+        background: var(--selection-bg, #ffd34d);
+        color: #141b2b;
+        font-weight: 800;
+    }
+    .pub .bs-live {
+        border: 2px solid var(--text);
+        background: transparent;
+    }
+    .pub .bs-glance {
+        grid-template-columns: minmax(0, 3fr) minmax(260px, 1fr);
+        align-items: center;
+        gap: 0;
+        padding: 14px 0;
+        border: 0;
+        border-bottom: 1px solid var(--text);
+        border-radius: 0;
+        background: transparent;
+    }
+    .pub .bs-glance__title {
+        position: static;
+        width: auto;
+        height: auto;
+        overflow: visible;
+        clip: auto;
+        margin: 0;
+        font-family: var(--font-serif);
+        font-size: 24px;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+    .pub .bs-glance__weather {
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        gap: 24px;
+        padding-right: 24px;
+    }
+    .pub .bs-glance__periods {
+        gap: 20px;
+    }
+    .pub .bs-glance__reading {
+        font-size: 14px;
+    }
+    .pub .bs-glance__reading b {
+        display: inline;
+        margin-right: 4px;
+        font-size: 20px;
+    }
+    .pub .bs-glance__tonight {
+        padding: 0 0 0 24px;
+        border-top: 0;
+        border-left: 1px solid var(--row-border);
+    }
+    .pub .bs-front,
+    .pub .bs-more {
+        display: grid;
+        grid-template-columns: minmax(280px, 1fr) minmax(0, 2fr) minmax(280px, 1fr);
+        padding-top: 20px;
+    }
+    .pub .bs-col {
+        display: flex;
+        flex-direction: column;
+        gap: 28px;
+        min-width: 0;
+        padding: 0 24px;
+    }
+    .pub .bs-col:first-child {
+        padding-left: 0;
+    }
+    .pub .bs-col:last-child {
+        padding-right: 0;
+    }
+    .pub .bs-col + .bs-col {
+        border-left: 1px solid var(--row-border);
+    }
+    .pub .bs-band {
+        display: block;
+        margin: 40px 0 0;
+        padding: 10px 0;
+        border-top: 4px double var(--text);
+        border-bottom: 1px solid var(--text);
+        font-family: var(--font-serif);
+        font-size: 28px;
+        font-weight: 800;
+    }
+
+    /* Sections become ruled newspaper columns rather than boxed cards. */
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-home .d-card {
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        overflow: visible;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-home .d-card__head {
+        min-height: 44px;
+        padding: 0 0 4px;
+    }
+    .pub .bs-home .bs-agate,
+    .pub .bs-home .d-headline-shelf__list {
+        padding-left: 0;
+        padding-right: 0;
+    }
+    .pub .bs-home .d-tonight-title,
+    .pub .bs-home .bs-tonight .d-card__title {
+        font-family: var(--font-serif);
+        font-size: 28px;
+        letter-spacing: 0;
+        text-transform: none;
+    }
+    .pub .bs-home .bs-tonight .d-card__head {
+        border-bottom: 0;
+    }
+    .pub .bs-home .bs-tonight .bs-agate {
+        border-top: 2px solid var(--text);
+    }
+    .pub .bs-home .d-headline-shelf__title,
+    .pub .bs-home .d-headline-shelf__list a {
+        font-family: var(--font-serif);
+        font-size: 19px;
+        font-weight: 700;
+    }
+}
+
+/* ---------- Home: refinements ---------- */
+.pub .bs-mark-tile,
+.pub .bs-mark-n {
+    fill: var(--header-bg, #0051ba);
+}
+.pub .bs-mark-page {
+    fill: #ffffff;
+}
+.pub .bs-mark-fold {
+    fill: var(--selection-bg, #ffd34d);
+}
+:root[data-theme='dark'] .pub .bs-mark-page {
+    fill: #e8ecf4;
+}
+.pub .bs-title__greeting:focus {
+    outline: none;
+} /* Blazor focuses the first h1 after navigation; it is not interactive */
+:root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-home .d-card__title {
+    border-left: 0;
+    padding-left: 0;
+}
+.pub .tt-team .team-record {
+    display: inline;
+    margin-top: 0;
+}
+.pub .bs-glance__name {
+    white-space: normal;
+}
+@media (min-width: 1024px) {
+    .pub .bs-title__name {
+        font-size: clamp(44px, 4.3vw, 64px);
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-home .d-card__count {
+        font-size: 12px;
+        font-weight: 400;
+        letter-spacing: 0;
+        text-transform: none;
+    }
+    /* Lead story: image above the headline inside the main column. */
+    .pub .bs-home .d-lead__story {
+        grid-template-columns: minmax(0, 1fr);
+        min-height: 0;
+    }
+    .pub .bs-home .d-lead__image {
+        min-height: 0;
+        aspect-ratio: 16 / 9;
+    }
+    .pub .bs-home .d-lead__body {
+        padding: 14px 0 0;
+    }
+    .pub .bs-home .d-lead__title {
+        font-size: 40px;
+        line-height: 1.08;
+    }
+    /* Opinion in the side column: picture, then the piece. */
+    .pub .bs-home .d-opinion .d-story {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-areas: 'thumb' 'top' 'title' 'date' 'sum';
+        padding: 12px 0 0;
+    }
+    .pub .bs-home .d-opinion .d-story__title {
+        font-size: 22px;
+        font-style: italic;
+        font-weight: 500;
+        line-height: 1.3;
+    }
+}
+@media (min-width: 1024px) {
+    /* Box office in the side column reads as an agate table: rank, title, weekend and total. */
+    .pub .bs-home .bs-col--side .boxoffice-chart {
+        gap: 0;
+    }
+    .pub .bs-home .bs-col--side .boxoffice-movie {
+        align-items: baseline;
+        gap: 10px;
+        padding: 9px 0;
+        border: 0;
+        border-bottom: 1px dotted var(--row-border);
+        border-radius: 0;
+        background: transparent;
+    }
+    .pub .bs-home .bs-col--side .boxoffice-poster,
+    .pub .bs-home .bs-col--side .boxoffice-movie .updated {
+        display: none;
+    }
+    .pub .bs-home .bs-col--side .boxoffice-rank {
+        width: 22px;
+        color: var(--accent);
+        font-family: var(--font-serif);
+        font-size: 18px;
+        font-weight: 800;
+    }
+    .pub .bs-home .bs-col--side .boxoffice-movie h4 {
+        margin: 0 0 2px;
+        font-size: 15px;
+    }
+    .pub .bs-home .bs-col--side .boxoffice-stats {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 2px 10px;
+    }
+    .pub .bs-home .bs-col--side .boxoffice-stats dt {
+        margin: 0;
+        font-size: 11px;
+    }
+    .pub .bs-home .bs-col--side .boxoffice-stats dd {
+        font-size: 14px;
+    }
+    /* Videos: two up, thumbnail above the title. */
+    .pub .bs-home .d-vids .d-list {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0 24px;
+    }
+    .pub .bs-home .d-vid {
+        grid-template-columns: minmax(0, 1fr);
+        padding: 14px 0;
+    }
+    /* F1 race weekend folded into Today & Tonight: one race per row. */
+    .pub .bs-home .bs-col--left .d-f1__body {
+        grid-template-columns: minmax(0, 1fr);
+        padding: 12px 0;
+    }
+}
+@media (min-width: 1024px) {
+    /* Today's episodes in the side column: small poster, full-width text. */
+    .pub .bs-home .bs-col--side .d-tv__show {
+        gap: 12px;
+        padding: 12px 0;
+    }
+    .pub .bs-home .bs-col--side .d-tv__show .tv-poster {
+        flex: 0 0 56px;
+        width: 56px;
+    }
+    .pub .bs-home .bs-col--side .d-tv__body {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+}
+.pub .tt-team .team-record {
+    white-space: nowrap;
+}
+@media (max-width: 400px) {
+    .pub .bs-glance__weather {
+        grid-template-columns: minmax(0, 1fr);
+    }
+    .pub .bs-glance__periods {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        row-gap: 10px;
+    }
+    .pub .bs-glance__weather .d-more {
+        justify-self: start;
+    }
+}

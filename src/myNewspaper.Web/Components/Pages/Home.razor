@@ -5,6 +5,8 @@
 @inject FeedDates Dates
 @inject NavigationManager Nav
 @inject ILogger<Home> Log
+@inject ScoreboardRepository Scoreboard
+@inject LocalWeather Weather
 
 <PageTitle>Home · myNewspaper</PageTitle>
 
@@ -12,299 +14,350 @@
    Today, the greeting and the date are all decided on the server in the display zone (Central), so every visitor sees
    the same day and nothing here needs JavaScript. *@
 
-<div class="d-hello">
-    <div>
-        <h1>@Dates.Greeting(nowUtc)</h1>
-        <p>@Dates.TodayLabel(nowUtc)</p>
-    </div>
-    <a class="nf-btn nf-btn--secondary home-refresh" href="@Nav.Uri" data-enhance-nav="false" aria-label="Refresh homepage">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 7v5h-5" /><path d="M4 17v-5h5" /><path d="M6.1 7a7 7 0 0 1 11.6-2L20 8M4 16l2.3 3A7 7 0 0 0 17.9 17" /></svg>
-        Refresh
-    </a>
-</div>
+@* Broadsheet front page. The markup is in phone order (Watch first, then the forecast, Today & Tonight, the lead and
+   headlines); from 1024px the CSS places the same sections into a masthead, three ruled columns and a "More from today"
+   band. Today, the greeting and the date are decided on the server in the display zone (Central). *@
 
 <p class="empty" data-home-empty hidden>All home sections are hidden. <button type="button" data-home-reset class="nf-btn nf-btn--secondary">Restore default homepage</button></p>
 <p class="updated" data-personal-status role="status"></p>
-<div class="d-grid" data-home-grid>
+<div class="bs-home" data-home-grid>
 
-    <HomeLeadStory Snapshot="@lead" />
+    <div class="bs-masthead">
+        <div class="bs-title">
+            <p class="bs-title__name" aria-hidden="true">
+                <svg class="bs-title__mark" viewBox="0 0 64 64" width="64" height="64" focusable="false"><rect width="64" height="64" rx="14" class="bs-mark-tile" /><path d="M15 11h25l10 10v32H15z" class="bs-mark-page" /><path d="M40 11v10h10z" class="bs-mark-fold" /><path d="M21 27H28V31.2C30 28.6 32.6 27 35.6 27C40 27 42.5 29.9 42.5 34.6V44.5H45V47H35.5V44.5H37.5V35.3C37.5 32.8 36.4 31.6 34.3 31.6C31.9 31.6 29.6 33.2 28 35.6V44.5H30V47H20.5V44.5H23V29.5H21Z" class="bs-mark-n" /></svg>myNewspaper
+            </p>
+            <h1 class="bs-title__greeting">@Dates.Greeting(nowUtc)</h1>
+            <p class="bs-title__date">@Dates.TodayLabel(nowUtc) · Kansas City edition</p>
+            <a class="nf-btn nf-btn--secondary home-refresh" href="@Nav.Uri" data-enhance-nav="false" aria-label="Refresh homepage">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 7v5h-5" /><path d="M4 17v-5h5" /><path d="M6.1 7a7 7 0 0 1 11.6-2L20 8M4 16l2.3 3A7 7 0 0 0 17.9 17" /></svg>
+                Refresh
+            </a>
+        </div>
 
-    <section data-home-section="watch" class="d-card d-watch" aria-labelledby="h-home-watch">
-        <div class="d-card__head"><h2 class="d-card__title" id="h-home-watch">Where to watch</h2></div>
-        <form method="get" action="watch" class="watch-search d-watch__search" role="search" aria-label="Where to watch search">
-            <label for="home-watch-query">Movie or TV title</label>
-            <div class="watch-search-row">
-                <input id="home-watch-query" name="q" type="search" maxlength="120" placeholder="Search a movie or TV show…" required />
-                <button class="nf-btn nf-btn--primary" type="submit">Search</button>
-            </div>
-        </form>
-    </section>
+        <section data-home-section="watch" class="bs-ear bs-watch" aria-labelledby="h-home-watch">
+            <h2 class="bs-ear__title" id="h-home-watch">Where to watch</h2>
+            <form method="get" action="watch" class="watch-search bs-watch__search" role="search" aria-label="Where to watch search">
+                <label for="home-watch-query">Movie or TV title</label>
+                <div class="watch-search-row">
+                    <input id="home-watch-query" name="q" type="search" maxlength="120" placeholder="Search a movie or TV show…" required />
+                    <button class="nf-btn nf-btn--primary" type="submit">Search</button>
+                </div>
+            </form>
+        </section>
 
-
-    <HomeHeadlineShelf SectionKey="news" Title="More headlines" HeadingId="h-news" Href="news"
-                       CssClass="d-news" Stories="@headlineStories" EmptyText="More headlines will appear as new stories arrive." />
-
-    <HomeHeadlineShelf SectionKey="sports-news" Title="Sports headlines" HeadingId="h-sports-headlines" Href="sports/news"
-                       CssClass="d-sports-headlines" Stories="@sportsStories" />
-
-    <HomeHeadlineShelf SectionKey="entertainment-news" Title="Entertainment headlines" HeadingId="h-entertainment-headlines" Href="entertainment/news"
-                       CssClass="d-entertainment-headlines" Stories="@entertainmentStories" />
-
-    <HomeOpinionCard Snapshot="@opinion" />
-
-    <section data-home-section="sports" class="d-card d-today" aria-labelledby="h-tonight">
-        <div class="d-card__head"><h2 class="d-card__title" id="h-tonight">Today &amp; Tonight</h2><a href="events">All games</a></div>
-        @if (tonight.Count == 0) { <p class="d-empty">No remaining games today. View All games for upcoming fixtures.</p> }
-        <p class="d-empty" data-home-teams-empty hidden>No remaining games match your selected teams. <a href="events">Browse all games</a>.</p>
-        <ul class="d-list">
-            @foreach (var item in tonight)
+        <section class="bs-ear bs-live" aria-labelledby="h-home-live" data-home-live>
+            <h2 class="bs-ear__title" id="h-home-live">@(liveGames.Count > 0 ? "Live now" : "Coming up")</h2>
+            @if (liveGames.Count == 0 && upcomingGames.Count == 0)
             {
-                <li class="d-game" data-home-team-item data-sports-teams="@SportsTeamPreferences.Keys(item.SchoolName, item.OpponentName)">
-                    <div class="d-game__body">
-                        <h3 class="d-game__match">
-                        @if (item.Url is not null)
-                        { <a href="@item.Url" target="_blank" rel="noopener noreferrer"><TonightMatchup Item="item" Records="records" /></a> }
-                        else { <TonightMatchup Item="item" Records="records" /> }
-                    </h3><p class="d-game__meta">@item.Kind</p></div>
-                        <div class="d-game__details">
-                            <div><span class="d-game__label">Time</span><span class="d-game__time">@item.TimeLabel</span></div>
-                            @if (item.Location is not null)
-                            {
-                                var (city, venue) = EventsText.SplitLocation(item.Location);
-                                <div><span class="d-game__label">Location</span><span>@city</span>
-                                    @if (venue is not null) { <span>@venue</span> }
-                                </div>
-                            }
-                            @if (item.Tv is not null)
-                            { <div><span class="d-game__label">TV / Streaming</span><span>@item.Tv</span></div> }
-                            @if (item.StreamUrl is not null)
-                            { <a href="@item.StreamUrl" target="_blank" rel="noopener noreferrer">Watch stream</a> }
-                        </div>
-                </li>
+                <p class="d-empty">No games on today’s scoreboard.</p>
             }
-        </ul>
-        @if (FoldF1)
-        {
-            <myNewspaper.Web.Components.F1.F1Home Data="homeF1" Error="@homeF1Error" NowUtc="nowUtc" Embedded="true" />
-        }
-    </section>
-
-    <section data-home-section="scoreboard" class="d-card d-scoreboard" aria-labelledby="h-home-scoreboard">
-        <div class="d-card__head"><h2 class="d-card__title" id="h-home-scoreboard">Scoreboard</h2><a class="d-more" href="scoreboard">View all →</a></div>
-        <ScoreboardPanel Compact="true" />
-    </section>
-
-    <section data-home-section="tv" class="d-card d-episodes" aria-labelledby="h-tv">
-        <div class="d-card__head">
-            <h2 class="d-card__title" id="h-tv">Today’s episodes <span class="d-card__count">@episodes.Count @(episodes.Count == 1 ? "episode" : "episodes")</span></h2>
-            <a class="d-more" href="tv">View calendar <span aria-hidden="true">→</span></a>
-        </div>
-        @if (episodes.Count == 0)
-        {
-            <p class="d-empty">No new episodes from followed series today.</p>
-        }
-        else
-        {
-            <ul class="d-list d-tv__list">
-                @foreach (var group in episodes.GroupBy(e => e.ShowId))
+            <ul class="bs-live__list">
+                @foreach (var game in liveGames.Count > 0 ? liveGames : upcomingGames)
                 {
-                    var series = group.First();
-                    <li class="d-tv__show">
-                        <div class="tv-poster" aria-hidden="true">
-                            @if (EventsText.LogoUrl(series.Poster) is { } poster)
-                            { <img src="@poster" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()" /> }
-                        </div>
-                        <div class="d-tv__body">
-                            <p class="movie-kind">@(series.Platform ?? "Network not announced")</p>
-                            <h3 class="d-vid__title">@series.SeriesTitle</h3>
-                            <ul class="d-tv__episodes">
-                                @foreach (var episode in group)
-                                {
-                                    var label = episode.Special ? "Special" : episode.Season is { } season && episode.Number is { } number ? $"S{season:00} E{number:00}" : "Episode";
-                                    <li>
-                                        @if (FeedQuery.SafeHref(episode.Url) is { } link)
-                                        { <a href="@link" target="_blank" rel="noopener noreferrer">@label · @(episode.Title ?? "Title to be announced")</a> }
-                                        else { <span>@label · @episode.Title</span> }
-                                        <span class="movie-meta">@(episode.StartsUtc is { } time ? Dates.TimeWithOffset(time) : "Time not confirmed")</span>
-                                    </li>
-                                }
-                            </ul>
-                        </div>
-                    </li>
-                }
-            </ul>
-        }
-        <p class="d-tv__credit">Episode data and images: <a href="https://www.tvmaze.com" target="_blank" rel="noopener noreferrer">TVmaze</a> · <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener noreferrer">CC BY-SA 4.0</a>. Date-only releases retain their original date; confirmed times use @Dates.Zone.Id.</p>
-    </section>
-
-
-
-    <section data-home-section="videos" class="d-card d-vids" aria-labelledby="h-vids">
-        <div class="d-card__head">
-            <h2 class="d-card__title" id="h-vids">Latest videos <span class="d-card__count">Up to <span class="home-limit-desktop">10</span><span class="home-limit-mobile">5</span> channels · rotates hourly</span></h2>
-            <a class="d-more" href="videos">View all <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="m13 6 6 6-6 6"></path></svg></a>
-        </div>
-        @if (videos.Count == 0)
-        {
-            <p class="d-empty">No videos yet. Check back soon.</p>
-        }
-        else
-        {
-            <ul class="d-list">
-                @foreach (var video in videos)
-                {
-                    var href = FeedQuery.SafeHref(video.Url);
-                    var picture = VideosText.Thumbnail(video.ThumbnailUrl, video.VideoId);
-                    var views = VideosText.Views(video.ViewCount);
-                    <li class="d-vid">
-                        <a class="d-thumb" href="@href" target="_blank" rel="noopener noreferrer" tabindex="-1" aria-hidden="true">
-                            <span class="d-thumb__ph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"></rect><circle cx="9" cy="10" r="1.6"></circle><path d="m21 16-5-5-8 9"></path></svg></span>
-                            @if (picture is not null)
-                            {
-                                <img src="@picture" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()" />
-                            }
-                            <span class="play"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15a1 1 0 0 0 1.5.86l12-7.5a1 1 0 0 0 0-1.72l-12-7.5A1 1 0 0 0 7 4.5z"></path></svg></span>
+                    <li>
+                        <a href="scoreboard">
+                            <span class="bs-live__score">@game.AwayName@(game.AwayScore is { } a ? " " + a.ToString("0") : ""), @game.HomeName@(game.HomeScore is { } h ? " " + h.ToString("0") : "")</span>
+                            <span class="bs-live__clock">@ScoreboardPanel.CompetitionLabel(game.Sport, game.League) · @(game.Active ? game.StatusText ?? game.DisplayClock ?? "Live" : game.StartsAtUtc is { } start ? Dates.Time(start) : "Time TBD")</span>
                         </a>
-                        <div class="d-vid__body">
-                            <p class="d-vid__chan"><span class="d-mark" aria-hidden="true">@VideosText.Initial(video.ChannelName)</span><span class="d-vid__name">@video.ChannelName</span></p>
-                            <h3 class="d-vid__title">
-                                @if (href is not null)
-                                {
-                                    <a href="@href" target="_blank" rel="noopener noreferrer">@video.Title</a>
-                                }
-                                else
-                                {
-                                    @video.Title
-                                }
-                            </h3>
-
-                            <p class="d-vid__meta">
-                                <time datetime="@video.PublishedAt.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'")" title="@Dates.PublishedFull(video.PublishedAt)">@Dates.Published(video.PublishedAt)</time>
-                                @if (views is not null)
-                                {
-                                    <span aria-hidden="true">·</span>
-                                    <span>@views</span>
-                                }
-                                <span class="video-actions">
-                                    <myNewspaper.Web.Components.Feed.ShareButton Url="@video.Url" Title="@video.Title" Kind="video" />
-                                    <myNewspaper.Web.Components.Feed.VideoSaveButton Item="video" />
-                                </span>
-                            </p>
-                        </div>
                     </li>
                 }
             </ul>
-        }
-    </section>
+            <a class="d-more" href="scoreboard">Scoreboard <span aria-hidden="true">→</span></a>
+        </section>
+    </div>
 
-    <HomeRankings Data="homeRankings" />
-
-    @if (HomeBoxOfficeSchedule.ShowResults(Dates.TodayAt(nowUtc)))
+    @if (weather is { Periods.Count: > 0 } || episodes.Count > 0)
     {
-        <HomeBoxOfficeResults Rows="homeBoxOffice" Weekend="@HomeBoxOfficeSchedule.ResultsWeekend(Dates.TodayAt(nowUtc))" Failed="homeBoxOfficeFailed" />
+        <section class="bs-glance" aria-label="At a glance">
+            @if (weather is { Periods.Count: > 0 } forecast)
+            {
+                <div class="bs-glance__weather">
+                    <h2 class="bs-glance__title">Kansas City weather</h2>
+                    <ul class="bs-glance__periods">
+                        @foreach (var period in forecast.Periods.Take(4))
+                        {
+                            <li><span class="bs-glance__name">@period.Name</span><span class="bs-glance__reading"><b>@period.Temperature°</b> @period.Summary</span></li>
+                        }
+                    </ul>
+                    <a class="d-more" href="local">Local <span aria-hidden="true">→</span></a>
+                </div>
+            }
+            @if (episodes.FirstOrDefault() is { } next)
+            {
+                <a class="bs-glance__tonight" href="tv">
+                    <span class="bs-glance__kicker">New tonight@(next.StartsUtc is { } time ? " · " + Dates.Time(time) : "")@(next.Platform is { } platform ? " · " + platform : "")</span>
+                    <span class="bs-glance__show">@next.SeriesTitle</span>
+                </a>
+            }
+        </section>
     }
-    else
-    {
-    <BoxOfficeForecastSection HomeCard="true" Rows="@(homeForecasts.Movies.Where(m => m.Kind == BoxOfficeForecastQuery.Preview).ToList())"
-        Source="@(homeForecasts.Sources.SingleOrDefault(s => s.Kind == BoxOfficeForecastQuery.Preview))" UtcNow="@nowUtc" />
-    }
 
-    @if (ShowTheatrical)
-    {
-    <section data-home-section="movies" class="d-card d-movies" aria-labelledby="h-movies">
-        <div class="d-card__head">
-            <h2 class="d-card__title" id="h-movies">Friday theater releases</h2>
-            <a class="d-more" href="movies?type=theatrical">View all <span aria-hidden="true">→</span></a>
+    <div class="bs-front">
+        <div class="bs-col bs-col--left">
+            <section data-home-section="sports" class="d-card d-today bs-tonight" aria-labelledby="h-tonight">
+                <div class="d-card__head"><h2 class="d-card__title" id="h-tonight">Today &amp; Tonight</h2><a class="d-more" href="events">All games <span aria-hidden="true">→</span></a></div>
+                @if (tonight.Count == 0) { <p class="d-empty">No remaining games today. View All games for upcoming fixtures.</p> }
+                <p class="d-empty" data-home-teams-empty hidden>No remaining games match your selected teams. <a href="events">Browse all games</a>.</p>
+                <ul class="bs-agate">
+                    @foreach (var item in tonight)
+                    {
+                        <li class="bs-agate__row" data-home-team-item data-sports-teams="@SportsTeamPreferences.Keys(item.SchoolName, item.OpponentName)">
+                            <span class="bs-agate__time">@item.TimeLabel</span>
+                            <span class="bs-agate__match">
+                                @if (item.Url is not null)
+                                { <a href="@item.Url" target="_blank" rel="noopener noreferrer"><TonightMatchup Item="item" Records="records" /></a> }
+                                else { <TonightMatchup Item="item" Records="records" /> }
+                                <span class="bs-agate__kind">@item.Kind@(item.Location is not null ? " · " + EventsText.SplitLocation(item.Location).Item1 : "")</span>
+                            </span>
+                            <span class="bs-agate__tv">
+                                @if (item.Tv is not null) { <span>@item.Tv</span> }
+                                @if (item.StreamUrl is not null) { <a href="@item.StreamUrl" target="_blank" rel="noopener noreferrer">Watch stream</a> }
+                            </span>
+                        </li>
+                    }
+                </ul>
+                @if (FoldF1)
+                {
+                    <myNewspaper.Web.Components.F1.F1Home Data="homeF1" Error="@homeF1Error" NowUtc="nowUtc" Embedded="true" />
+                }
+            </section>
         </div>
-        @if (movies.Count == 0)
-        {
-            <p class="d-empty">No theater releases announced for this Friday yet.</p>
-        }
-        else
-        {
-            <ul class="d-list" tabindex="0" aria-label="This Friday’s theater releases">
-                @foreach (var movie in movies)
-                {
-                    var href = FeedQuery.SafeHref(movie.SourceUrl);
-                    <li class="d-movie">
-                        <MoviePoster Url="@movie.Poster" Title="@movie.Title" Class="d-movie__poster" />
-                        <div class="d-movie__body">
-                            @if (movie.Date is { } date)
-                            {
-                                <p class="d-movie__date"><time datetime="@date.ToString("yyyy-MM-dd")">@date.ToString("ddd, MMM d, yyyy", System.Globalization.CultureInfo.InvariantCulture)</time>@(movie.DateStatus == "estimated" ? " · Estimated" : "")</p>
-                            }
-                            <h3 class="d-vid__title">
-                                @if (href is not null)
-                                {
-                                    <a href="@href" target="_blank" rel="noopener noreferrer">@movie.Title</a>
-                                }
-                                else
-                                {
-                                    @movie.Title
-                                }
-                            </h3>
-                            <p class="d-vid__meta">@string.Join(" · ", new[] { movie.Certification, movie.Runtime is { } runtime ? $"{runtime} min" : null, movie.ReRelease ? "Re-release" : null }.Where(x => !string.IsNullOrWhiteSpace(x)))</p>
-                            <MovieCommerceAction Item="movie" />
-                        </div>
-                    </li>
-                }
-            </ul>
-        }
-    </section>
-    }
 
-    <section data-home-section="digital" class="d-card d-movies d-digital" aria-labelledby="h-digital">
-        <div class="d-card__head">
-            <h2 class="d-card__title" id="h-digital">Upcoming Digital / VOD
-                @if (digitalData?.Selected is { } source)
-                {
-                    <span class="d-card__count">@source.Name · From today onward</span>
-                }
-            </h2>
-            <a class="d-more" href="movies/digital">View all <span aria-hidden="true">→</span></a>
+        <div class="bs-col bs-col--main">
+            <HomeLeadStory Snapshot="@lead" />
+            <HomeHeadlineShelf SectionKey="news" Title="More headlines" HeadingId="h-news" Href="news"
+                               CssClass="d-news" Stories="@headlineStories" EmptyText="More headlines will appear as new stories arrive." />
         </div>
-        @if (digitalData?.Selected is { } digitalSource)
-        {
-            @if (!string.IsNullOrWhiteSpace(digitalSource.LastError)) { <p class="updated">Latest collection failed; showing previously collected releases when available.</p> }
-        }
-        @if (digitalMovies.Count == 0)
-        {
-            <p class="d-empty">No confirmed digital releases from the selected source from today onward.</p>
-        }
-        else
-        {
-            <ul class="d-list" tabindex="0" aria-label="Upcoming Digital / VOD">
-                @foreach (var movie in digitalMovies)
+
+        <div class="bs-col bs-col--side">
+            <HomeOpinionCard Snapshot="@opinion" />
+            @if (HomeBoxOfficeSchedule.ShowResults(Dates.TodayAt(nowUtc)))
+            {
+                <HomeBoxOfficeResults Rows="homeBoxOffice" Weekend="@HomeBoxOfficeSchedule.ResultsWeekend(Dates.TodayAt(nowUtc))" Failed="homeBoxOfficeFailed" />
+            }
+            else
+            {
+                <BoxOfficeForecastSection HomeCard="true" Rows="@(homeForecasts.Movies.Where(m => m.Kind == BoxOfficeForecastQuery.Preview).ToList())"
+                    Source="@(homeForecasts.Sources.SingleOrDefault(s => s.Kind == BoxOfficeForecastQuery.Preview))" UtcNow="@nowUtc" />
+            }
+        </div>
+    </div>
+
+    <h2 class="bs-band">More from today</h2>
+
+    <div class="bs-more">
+        <div class="bs-col bs-col--left">
+            <section data-home-section="scoreboard" class="d-card d-scoreboard" aria-labelledby="h-home-scoreboard">
+                <div class="d-card__head"><h2 class="d-card__title" id="h-home-scoreboard">Scoreboard</h2><a class="d-more" href="scoreboard">View all <span aria-hidden="true">→</span></a></div>
+                <ScoreboardPanel Compact="true" />
+            </section>
+            <HomeRankings Data="homeRankings" />
+        </div>
+
+        <div class="bs-col bs-col--main">
+            <HomeHeadlineShelf SectionKey="sports-news" Title="Sports headlines" HeadingId="h-sports-headlines" Href="sports/news"
+                               CssClass="d-sports-headlines" Stories="@sportsStories" />
+            <HomeHeadlineShelf SectionKey="entertainment-news" Title="Entertainment headlines" HeadingId="h-entertainment-headlines" Href="entertainment/news"
+                               CssClass="d-entertainment-headlines" Stories="@entertainmentStories" />
+            <section data-home-section="videos" class="d-card d-vids" aria-labelledby="h-vids">
+                <div class="d-card__head">
+                    <h2 class="d-card__title" id="h-vids">Latest videos <span class="d-card__count">Up to <span class="home-limit-desktop">10</span><span class="home-limit-mobile">5</span> channels · rotates hourly</span></h2>
+                    <a class="d-more" href="videos">View all <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="m13 6 6 6-6 6"></path></svg></a>
+                </div>
+                @if (videos.Count == 0)
                 {
-                    var href = FeedQuery.SafeHref(movie.SourceUrl);
-                    <li class="d-movie">
-                        <MoviePoster Url="@movie.Poster" Title="@movie.Title" Class="d-movie__poster" />
-                        <div class="d-movie__body">
-                            @if (movie.Date is { } date)
-                            {
-                                <p class="d-movie__date"><time datetime="@date.ToString("yyyy-MM-dd")">@date.ToString("ddd, MMM d, yyyy", System.Globalization.CultureInfo.InvariantCulture)</time>@(movie.DateStatus == "estimated" ? " · Estimated" : "")</p>
-                            }
-                            <h3 class="d-vid__title">
-                                @if (href is not null)
-                                {
-                                    <a href="@href" target="_blank" rel="noopener noreferrer">@movie.Title</a>
-                                }
-                                else
-                                {
-                                    @movie.Title
-                                }
-                            </h3>
-                            <p class="d-vid__meta">VOD / Digital · @movie.Source</p>
-                            <p class="d-vid__meta">@string.Join(" · ", new[] { movie.Certification, movie.Runtime is { } runtime ? $"{runtime} min" : null, movie.ReRelease ? "Re-release" : null }.Where(x => !string.IsNullOrWhiteSpace(x)))</p>
-                            <MovieCommerceAction Item="movie" />
-                        </div>
-                    </li>
+                    <p class="d-empty">No videos yet. Check back soon.</p>
                 }
-            </ul>
-        }
-    </section>
+                else
+                {
+                    <ul class="d-list">
+                        @foreach (var video in videos)
+                        {
+                            var href = FeedQuery.SafeHref(video.Url);
+                            var picture = VideosText.Thumbnail(video.ThumbnailUrl, video.VideoId);
+                            var views = VideosText.Views(video.ViewCount);
+                            <li class="d-vid">
+                                <a class="d-thumb" href="@href" target="_blank" rel="noopener noreferrer" tabindex="-1" aria-hidden="true">
+                                    <span class="d-thumb__ph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"></rect><circle cx="9" cy="10" r="1.6"></circle><path d="m21 16-5-5-8 9"></path></svg></span>
+                                    @if (picture is not null)
+                                    {
+                                        <img src="@picture" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()" />
+                                    }
+                                    <span class="play"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15a1 1 0 0 0 1.5.86l12-7.5a1 1 0 0 0 0-1.72l-12-7.5A1 1 0 0 0 7 4.5z"></path></svg></span>
+                                </a>
+                                <div class="d-vid__body">
+                                    <p class="d-vid__chan"><span class="d-mark" aria-hidden="true">@VideosText.Initial(video.ChannelName)</span><span class="d-vid__name">@video.ChannelName</span></p>
+                                    <h3 class="d-vid__title">
+                                        @if (href is not null)
+                                        {
+                                            <a href="@href" target="_blank" rel="noopener noreferrer">@video.Title</a>
+                                        }
+                                        else
+                                        {
+                                            @video.Title
+                                        }
+                                    </h3>
 
+                                    <p class="d-vid__meta">
+                                        <time datetime="@video.PublishedAt.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'")" title="@Dates.PublishedFull(video.PublishedAt)">@Dates.Published(video.PublishedAt)</time>
+                                        @if (views is not null)
+                                        {
+                                            <span aria-hidden="true">·</span>
+                                            <span>@views</span>
+                                        }
+                                        <span class="video-actions">
+                                            <myNewspaper.Web.Components.Feed.ShareButton Url="@video.Url" Title="@video.Title" Kind="video" />
+                                            <myNewspaper.Web.Components.Feed.VideoSaveButton Item="video" />
+                                        </span>
+                                    </p>
+                                </div>
+                            </li>
+                        }
+                    </ul>
+                }
+            </section>
+        </div>
 
+        <div class="bs-col bs-col--side">
+            <section data-home-section="tv" class="d-card d-episodes" aria-labelledby="h-tv">
+                <div class="d-card__head">
+                    <h2 class="d-card__title" id="h-tv">Today’s episodes <span class="d-card__count">@episodes.Count @(episodes.Count == 1 ? "episode" : "episodes")</span></h2>
+                    <a class="d-more" href="tv">View calendar <span aria-hidden="true">→</span></a>
+                </div>
+                @if (episodes.Count == 0)
+                {
+                    <p class="d-empty">No new episodes from followed series today.</p>
+                }
+                else
+                {
+                    <ul class="d-list d-tv__list">
+                        @foreach (var group in episodes.GroupBy(e => e.ShowId))
+                        {
+                            var series = group.First();
+                            <li class="d-tv__show">
+                                <div class="tv-poster" aria-hidden="true">
+                                    @if (EventsText.LogoUrl(series.Poster) is { } poster)
+                                    { <img src="@poster" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()" /> }
+                                </div>
+                                <div class="d-tv__body">
+                                    <p class="movie-kind">@(series.Platform ?? "Network not announced")</p>
+                                    <h3 class="d-vid__title">@series.SeriesTitle</h3>
+                                    <ul class="d-tv__episodes">
+                                        @foreach (var episode in group)
+                                        {
+                                            var label = episode.Special ? "Special" : episode.Season is { } season && episode.Number is { } number ? $"S{season:00} E{number:00}" : "Episode";
+                                            <li>
+                                                @if (FeedQuery.SafeHref(episode.Url) is { } link)
+                                                { <a href="@link" target="_blank" rel="noopener noreferrer">@label · @(episode.Title ?? "Title to be announced")</a> }
+                                                else { <span>@label · @episode.Title</span> }
+                                                <span class="movie-meta">@(episode.StartsUtc is { } time ? Dates.TimeWithOffset(time) : "Time not confirmed")</span>
+                                            </li>
+                                        }
+                                    </ul>
+                                </div>
+                            </li>
+                        }
+                    </ul>
+                }
+                <p class="d-tv__credit">Episode data and images: <a href="https://www.tvmaze.com" target="_blank" rel="noopener noreferrer">TVmaze</a> · <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener noreferrer">CC BY-SA 4.0</a>. Date-only releases retain their original date; confirmed times use @Dates.Zone.Id.</p>
+            </section>
+            @if (ShowTheatrical)
+            {
+            <section data-home-section="movies" class="d-card d-movies" aria-labelledby="h-movies">
+                <div class="d-card__head">
+                    <h2 class="d-card__title" id="h-movies">Friday theater releases</h2>
+                    <a class="d-more" href="movies?type=theatrical">View all <span aria-hidden="true">→</span></a>
+                </div>
+                @if (movies.Count == 0)
+                {
+                    <p class="d-empty">No theater releases announced for this Friday yet.</p>
+                }
+                else
+                {
+                    <ul class="d-list" tabindex="0" aria-label="This Friday’s theater releases">
+                        @foreach (var movie in movies)
+                        {
+                            var href = FeedQuery.SafeHref(movie.SourceUrl);
+                            <li class="d-movie">
+                                <MoviePoster Url="@movie.Poster" Title="@movie.Title" Class="d-movie__poster" />
+                                <div class="d-movie__body">
+                                    @if (movie.Date is { } date)
+                                    {
+                                        <p class="d-movie__date"><time datetime="@date.ToString("yyyy-MM-dd")">@date.ToString("ddd, MMM d, yyyy", System.Globalization.CultureInfo.InvariantCulture)</time>@(movie.DateStatus == "estimated" ? " · Estimated" : "")</p>
+                                    }
+                                    <h3 class="d-vid__title">
+                                        @if (href is not null)
+                                        {
+                                            <a href="@href" target="_blank" rel="noopener noreferrer">@movie.Title</a>
+                                        }
+                                        else
+                                        {
+                                            @movie.Title
+                                        }
+                                    </h3>
+                                    <p class="d-vid__meta">@string.Join(" · ", new[] { movie.Certification, movie.Runtime is { } runtime ? $"{runtime} min" : null, movie.ReRelease ? "Re-release" : null }.Where(x => !string.IsNullOrWhiteSpace(x)))</p>
+                                    <MovieCommerceAction Item="movie" />
+                                </div>
+                            </li>
+                        }
+                    </ul>
+                }
+            </section>
+            }
+
+            <section data-home-section="digital" class="d-card d-movies d-digital" aria-labelledby="h-digital">
+                <div class="d-card__head">
+                    <h2 class="d-card__title" id="h-digital">Upcoming Digital / VOD
+                        @if (digitalData?.Selected is { } source)
+                        {
+                            <span class="d-card__count">@source.Name · From today onward</span>
+                        }
+                    </h2>
+                    <a class="d-more" href="movies/digital">View all <span aria-hidden="true">→</span></a>
+                </div>
+                @if (digitalData?.Selected is { } digitalSource)
+                {
+                    @if (!string.IsNullOrWhiteSpace(digitalSource.LastError)) { <p class="updated">Latest collection failed; showing previously collected releases when available.</p> }
+                }
+                @if (digitalMovies.Count == 0)
+                {
+                    <p class="d-empty">No confirmed digital releases from the selected source from today onward.</p>
+                }
+                else
+                {
+                    <ul class="d-list" tabindex="0" aria-label="Upcoming Digital / VOD">
+                        @foreach (var movie in digitalMovies)
+                        {
+                            var href = FeedQuery.SafeHref(movie.SourceUrl);
+                            <li class="d-movie">
+                                <MoviePoster Url="@movie.Poster" Title="@movie.Title" Class="d-movie__poster" />
+                                <div class="d-movie__body">
+                                    @if (movie.Date is { } date)
+                                    {
+                                        <p class="d-movie__date"><time datetime="@date.ToString("yyyy-MM-dd")">@date.ToString("ddd, MMM d, yyyy", System.Globalization.CultureInfo.InvariantCulture)</time>@(movie.DateStatus == "estimated" ? " · Estimated" : "")</p>
+                                    }
+                                    <h3 class="d-vid__title">
+                                        @if (href is not null)
+                                        {
+                                            <a href="@href" target="_blank" rel="noopener noreferrer">@movie.Title</a>
+                                        }
+                                        else
+                                        {
+                                            @movie.Title
+                                        }
+                                    </h3>
+                                    <p class="d-vid__meta">VOD / Digital · @movie.Source</p>
+                                    <p class="d-vid__meta">@string.Join(" · ", new[] { movie.Certification, movie.Runtime is { } runtime ? $"{runtime} min" : null, movie.ReRelease ? "Re-release" : null }.Where(x => !string.IsNullOrWhiteSpace(x)))</p>
+                                    <MovieCommerceAction Item="movie" />
+                                </div>
+                            </li>
+                        }
+                    </ul>
+                }
+            </section>
+        </div>
+    </div>
 </div>
 
 @code {
@@ -337,6 +390,9 @@
     private IReadOnlyList<MovieReleaseItem> digitalMovies = [];
     private DigitalReleasePage? digitalData;
     private IReadOnlyList<TvEpisodeItem> episodes = [];
+    private IReadOnlyList<ScoreboardGame> liveGames = [];
+    private IReadOnlyList<ScoreboardGame> upcomingGames = [];
+    private LocalWeatherPage? weather;
 
     protected override async Task OnParametersSetAsync()
     {
@@ -396,6 +452,21 @@
         episodes = await TvQuery.GetOnDateAsync(db, Dates, Dates.TodayAt(nowUtc));
         todays = await HomeEventResults.WithoutFinalResultsAsync(db, todays);
         tonight = TodayTonight.Build(todays, Dates);
+
+        // Masthead ear: what is live, otherwise what starts next. The scoreboard read reports failures itself.
+        var board = await Scoreboard.ReadAsync(Dates.TodayAt(nowUtc), carryOver: true);
+        liveGames = board.Games.Where(g => g.Active).Take(3).ToList();
+        upcomingGames = board.Games.Where(g => g.Status == "upcoming").Take(3).ToList();
+
+        // At-a-glance forecast (cached by LocalWeather). A slow or failed weather service only hides the band.
+        weather = null;
+        try
+        {
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(3));
+            weather = await Weather.GetAsync(timeout.Token);
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or OperationCanceledException or System.Text.Json.JsonException or InvalidOperationException)
+        { Log.LogWarning(ex, "Home forecast unavailable."); }
     }
 
     private const int HomeNewsCount = 15;

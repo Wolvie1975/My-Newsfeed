@@ -33,17 +33,26 @@ async function mockSaved(p) {
                 await card.scrollIntoViewIfNeeded();
                 assert.equal(await card.locator('[data-opinion-article]').count(), 1);
                 assert.equal(
-                    (await card.locator('h2').innerText()).replace(/\s+/g, ' '),
+                    (await card.locator('h2').textContent()).replace(/\s+/g, ' ').trim(),
                     'Opinion Publisher spotlight · rotates hourly',
                 );
                 assert(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
                 assert(!(await p.locator('#blazor-error-ui').isVisible()));
-                assert.deepEqual(
-                    await p
-                        .locator('[data-home-grid] > [data-home-section]')
-                        .evaluateAll((ns) => ns.slice(0, 3).map((n) => n.dataset.homeSection)),
-                    ['lead', 'watch', 'opinion'],
-                );
+                // Broadsheet: Opinion heads the side column on desktop; on phones it follows the headlines.
+                if (width >= 1024)
+                    assert.equal(
+                        await p
+                            .locator('.bs-front .bs-col--side > [data-home-section]')
+                            .first()
+                            .getAttribute('data-home-section'),
+                        'opinion',
+                    );
+                else {
+                    const top = (key) =>
+                        p.locator('[data-home-section="' + key + '"]').evaluate((n) => n.getBoundingClientRect().top);
+                    assert((await top('news')) < (await top('opinion')));
+                    assert((await top('opinion')) < (await top('sports-news')));
+                }
                 for (const selector of ['[data-save]', '[data-share-open]']) {
                     await card.locator(selector).waitFor();
                     assert((await card.locator(selector).boundingBox()).height >= 44);

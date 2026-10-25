@@ -41,15 +41,16 @@ const base = process.env.BASE_URL || 'http://localhost:5295',
                         0,
                     );
                     assert(
-                        await p
-                            .locator('.section-select select')
-                            .evaluateAll((ns) =>
-                                ns.every(
+                        await p.locator('.section-select select').evaluateAll((ns) =>
+                            // Desktop shows tabs instead, so only the visible dropdowns are measured.
+                            ns
+                                .filter((n) => n.offsetParent !== null)
+                                .every(
                                     (n) =>
                                         n.getBoundingClientRect().height >= 44 &&
                                         n.getBoundingClientRect().width <= innerWidth,
                                 ),
-                            ),
+                        ),
                     );
                     if (
                         root &&
@@ -60,7 +61,8 @@ const base = process.env.BASE_URL || 'http://localhost:5295',
                             path: root + '/' + route.split('?')[0].slice(1) + '-' + width + '-' + theme + '.png',
                         });
                 }
-        // Exercise every College view for all four sports and preserve selection both ways.
+        // Phones: College has five views, so it keeps the dropdown; check every view for all four sports.
+        await p.setViewportSize({ width: 390, height: 900 });
         for (const sport of ['football', 'mens-basketball', 'volleyball', 'soccer']) {
             await p.goto(base + '/college?sport=' + sport);
             for (const view of ['results', 'standings', 'rankings', 'news', 'schedule']) {
@@ -74,27 +76,42 @@ const base = process.env.BASE_URL || 'http://localhost:5295',
         await p.goto(base + '/college/results?sport=football');
         await p.selectOption('#college-sport', 'soccer');
         await p.waitForURL((u) => u.pathname === '/college/results' && u.searchParams.get('sport') === 'soccer');
+        // F1 views and tables have four or fewer choices: a segmented control of links on phones.
         await p.goto(base + '/f1');
-        await p.selectOption('#f1-view', '/f1/standings');
+        assert(!(await p.locator('#f1-view').isVisible()));
+        await p.locator('.section-nav--few a[href="f1/standings"]').click();
         await p.waitForURL(base + '/f1/standings');
-        if (await p.locator('#f1-table').count()) {
-            await p.selectOption('#f1-table', '/f1/standings?table=constructors');
+        // Blazor updates the URL before patching the page; wait for the new current tab.
+        await p.locator('.section-nav--few a[aria-current="page"][href="f1/standings"]').first().waitFor();
+        const constructors = p.locator('.section-nav--few a[href="f1/standings?table=constructors"]');
+        if (await constructors.count()) {
+            assert((await constructors.boundingBox()).height >= 44);
+            await constructors.click();
             await p.waitForURL('**table=constructors');
         }
+        // Desktop: the same navigation is underlined tabs.
+        await p.setViewportSize({ width: 1440, height: 900 });
+        await p.goto(base + '/college?sport=football');
+        assert(!(await p.locator('#college-view').isVisible()));
+        await p.locator('nav.section-tabs[aria-label="View"] a', { hasText: 'Standings' }).click();
+        await p.waitForURL((u) => u.pathname === '/college/standings' && u.searchParams.get('sport') === 'football');
+        // Without JavaScript: the dropdown submits through Go; segmented and tab links are plain links.
         const plain = await b.newPage({ javaScriptEnabled: false, viewport: { width: 320, height: 900 } });
-        for (const [route, id, value] of [
-            ['/college?sport=soccer', 'college-view', '/college/results?sport=soccer'],
-            ['/f1', 'f1-view', '/f1/results'],
-            ['/local', 'local-section', '/local#local-events'],
+        await plain.goto(base + '/college?sport=soccer');
+        await plain.selectOption('#college-view', '/college/results?sport=soccer');
+        await plain
+            .locator('form')
+            .filter({ has: plain.locator('#college-view') })
+            .getByRole('button', { name: 'Go', exact: true })
+            .click();
+        await plain.waitForURL(base + '/college/results?sport=soccer');
+        for (const [route, href] of [
+            ['/f1', 'f1/results'],
+            ['/local', 'local#local-events'],
         ]) {
             await plain.goto(base + route);
-            await plain.selectOption('#' + id, value);
-            await plain
-                .locator('form')
-                .filter({ has: plain.locator('#' + id) })
-                .getByRole('button', { name: 'Go', exact: true })
-                .click();
-            await plain.waitForURL(base + value);
+            await plain.locator('.section-nav--few a[href="' + href + '"]').click();
+            await plain.waitForURL(base + '/' + href);
         }
         for (const target of ['https://example.com', '//example.com', '/\\example.com', 'javascript:alert(1)']) {
             const r = await p.request.get(base + '/navigate?to=' + encodeURIComponent(target), { maxRedirects: 0 });
@@ -103,7 +120,7 @@ const base = process.env.BASE_URL || 'http://localhost:5295',
         }
         assert.deepEqual(errors, []);
         console.log(
-            'Section dropdowns: phone 320/390/430 light/dark and 768/1440, all College sports/views, F1 tables, no-JS Go and local-only redirects passed.',
+            'Section navigation: dropdowns (5+) and segmented links (4 or fewer) on phones, tabs on desktop, all College sports/views, F1 tables, no-JS Go and links, local-only redirects passed.',
         );
     } finally {
         await b.close();
