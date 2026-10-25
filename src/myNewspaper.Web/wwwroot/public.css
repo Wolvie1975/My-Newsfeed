@@ -36,6 +36,8 @@
     color-scheme: light;
     --bg: #f4f6fa;
     --surface: #ffffff;
+    --gain: #15803d;
+    --loss: #dc2626;
     --border: #dce3ef;
     --row-border: #dce3ef;
     --field-border: #c6d2e6;
@@ -67,6 +69,8 @@
 }
 
 :root[data-theme='dark'] {
+    --gain: #4ade80;
+    --loss: #f87171;
     color-scheme: dark;
     --bg: #091426;
     --surface: #111f36;
@@ -450,8 +454,6 @@
     color: var(--mark-fg);
     font-size: 11px;
     font-weight: 700;
-}
-.pub .src__mark {
     grid-area: mark;
     align-self: center;
 }
@@ -1745,12 +1747,35 @@
 }
 .pub .d-story__top {
     grid-area: top;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px 12px;
 }
 .pub .d-story__title {
     grid-area: title;
+    margin: 0;
+    font-size: 17px;
+    line-height: 1.3;
+    font-weight: 650;
+    letter-spacing: -0.01em;
+    overflow-wrap: anywhere;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
 }
 .pub .d-story__sum {
     grid-area: sum;
+    margin: 0;
+    font-size: 15px;
+    line-height: 1.5;
+    color: var(--text-2);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
 }
 .pub .d-story__date {
     grid-area: date;
@@ -1758,13 +1783,6 @@
     font-size: 12px;
     line-height: 1.5;
     color: var(--text-2);
-}
-.pub .d-story__top {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 4px 12px;
 }
 .pub .d-src {
     display: inline-block;
@@ -1783,34 +1801,11 @@
     text-transform: uppercase;
     color: var(--accent);
 }
-.pub .d-story__title {
-    margin: 0;
-    font-size: 17px;
-    line-height: 1.3;
-    font-weight: 650;
-    letter-spacing: -0.01em;
-    overflow-wrap: anywhere;
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-}
 .pub .d-story__title a:hover,
 .pub .d-game__match a:hover,
 .pub .d-vid__title a:hover {
     color: var(--accent);
 }
-.pub .d-story__sum {
-    margin: 0;
-    font-size: 15px;
-    line-height: 1.5;
-    color: var(--text-2);
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-}
-
 /* Today's events rows. The time reads "6:00 P.M. CT", so the column is wider than the plain-clock design and never wraps. */
 .pub .d-game {
     display: grid;
@@ -3214,16 +3209,10 @@
     font-weight: 700;
 }
 .pub .nhl-diff[data-sign='positive'] {
-    color: #15803d;
+    color: var(--gain);
 }
 .pub .nhl-diff[data-sign='negative'] {
-    color: #dc2626;
-}
-:root[data-theme='dark'] .pub .nhl-diff[data-sign='positive'] {
-    color: #4ade80;
-}
-:root[data-theme='dark'] .pub .nhl-diff[data-sign='negative'] {
-    color: #f87171;
+    color: var(--loss);
 }
 
 /* Soccer reference tables keep every statistic visible. */
@@ -3339,16 +3328,10 @@
     white-space: nowrap;
 }
 .pub .poll-trend.up {
-    color: #15803d;
+    color: var(--gain);
 }
 .pub .poll-trend.down {
-    color: #dc2626;
-}
-:root[data-theme='dark'] .pub .poll-trend.up {
-    color: #4ade80;
-}
-:root[data-theme='dark'] .pub .poll-trend.down {
-    color: #f87171;
+    color: var(--loss);
 }
 
 /* Big 12 basketball source-style compact standings. */
@@ -4695,6 +4678,10 @@
     gap: 1rem;
     padding: 1rem;
     border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: var(--surface);
 }
 .box-score-dialog__head h2 {
     margin: 0;
@@ -4738,12 +4725,6 @@
 }
 .box-table-scroll th:first-child {
     position: static;
-}
-.box-score-dialog__head {
-    position: sticky;
-    top: 0;
-    z-index: 2;
-    background: var(--surface);
 }
 .box-score-section {
     margin: 1rem 0;
@@ -5022,6 +5003,11 @@
 }
 .basketball-table th:first-child {
     text-align: left;
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    min-width: 9rem;
+    background: var(--surface);
 }
 .basketball-table tbody tr:nth-child(odd) {
     background: color-mix(in srgb, var(--text) 4%, transparent);
@@ -5037,14 +5023,6 @@
     .basketball-team-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
-}
-
-.basketball-table th:first-child {
-    position: sticky;
-    left: 0;
-    z-index: 1;
-    min-width: 9rem;
-    background: var(--surface);
 }
 
 /* Where to watch: an approved, scoped title-search experience. */
@@ -5321,6 +5299,7 @@
 .pub .vmeta,
 .pub .d-vid__meta {
     flex-wrap: wrap;
+    align-items: center;
 }
 
 .pub .saved-section + .saved-section {
@@ -5342,11 +5321,6 @@
 .pub .video-actions .save {
     margin: 0;
 }
-.pub .vmeta,
-.pub .d-vid__meta {
-    align-items: center;
-}
-
 .pub .d-f1--embedded {
     border-top: 1px solid var(--row-border);
 }
@@ -5371,11 +5345,20 @@
     overflow: auto;
 }
 .pub .d-rankings__table .standings-table {
-    min-width: 0;
+    min-width: 344px;
     width: 100%;
+    table-layout: fixed;
+    font-size: 13px;
+    line-height: 1.4;
+    font-variant-numeric: tabular-nums;
 }
 .pub .d-rankings__table .standing-team-name {
     white-space: normal;
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 8px;
+    max-width: none;
 }
 
 /* Consistent homepage poll columns, with a readable narrow-screen scroll area. */
@@ -5386,13 +5369,6 @@
     margin: 0 0 10px;
     font-size: 12px;
     line-height: 1.5;
-}
-.pub .d-rankings__table .standings-table {
-    table-layout: fixed;
-    min-width: 344px;
-    font-size: 13px;
-    line-height: 1.4;
-    font-variant-numeric: tabular-nums;
 }
 .pub .d-rankings__table .home-rank {
     width: 44px;
@@ -5415,13 +5391,6 @@
     text-align: left;
     font-weight: 600;
     overflow-wrap: break-word;
-}
-.pub .d-rankings__table .standing-team-name {
-    display: flex;
-    flex-wrap: nowrap;
-    align-items: center;
-    gap: 8px;
-    max-width: none;
 }
 .pub .d-rankings__table .standing-team-name img {
     width: 22px;
