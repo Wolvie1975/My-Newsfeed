@@ -8,6 +8,20 @@ the deferred service hyperlink decision.
 Read this file when continuing work from the previous chat. These are dated
 observations; check current repository and hosting state before acting.
 
+## Code standards cleanup deployed — October 25, 2026 (Central)
+
+User requested a code review for modern .NET/Blazor/JS standards, approved all phases and
+deployment. Deployed `mynewspaper-web:code-standards-20261025`; details in release history
+and [maintenance](maintenance.md#code-standards-review--october-25-2026). Committed locally
+on `develop` (user pushes). VS Code crashed mid-session; a second session resumed after
+confirming the first had ended without deploying.
+
+New working conventions: connection string in user secrets (`appsettings.json` has none);
+`npm ci` then `npm run lint`, `npm run format:check`, `npm run test:browser` (serial, against
+BASE_URL); builds fail on warnings. Open follow-ups for the user: rotate the `sa` password
+(it stays in Git history) and use a least-privilege login; optional scraper index on
+`SportsBoxScores`; login rate limiting before any public exposure. No pending request.
+
 ## GitHub checkpoint — October 25, 2026 (Central)
 
 User requested a check-in of the overnight Where to watch work and a fresh start.

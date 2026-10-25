@@ -1,6 +1,14 @@
 const assert = require('node:assert/strict');
 const { chromium } = require('playwright');
 const base = process.env.BASE_URL || 'https://mynewsfeed-prod.tailbf31bc.ts.net';
+// Service-worker caches and geolocation only exist in secure contexts (HTTPS or localhost).
+{
+    const { protocol, hostname } = new URL(base);
+    if (protocol !== 'https:' && !['localhost', '127.0.0.1', '[::1]'].includes(hostname)) {
+        console.log(`SKIP: needs a secure context; ${base} is plain HTTP on a non-localhost host.`);
+        process.exit(0);
+    }
+}
 (async () => {
     const browser = await chromium.launch({
         args: process.env.PWA_HOST_IP

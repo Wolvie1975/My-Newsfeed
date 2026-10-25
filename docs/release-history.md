@@ -6,10 +6,34 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The latest recorded web release is `mynewspaper-web:watch-search-20261025`
-(image `5b88f6d4b6fb`), deployed October 25, 2026 (Central). Its rollback image is
-`mynewsfeed-web:before-mynewspaper-watch-search-20261025`. Deployment checks passed then;
+The latest recorded web release is `mynewspaper-web:code-standards-20261025`
+(image `a389d7441916`), deployed October 25, 2026 (Central). Its rollback image is
+`mynewsfeed-web:before-mynewspaper-code-standards-20261025`. Deployment checks passed then;
 this is a dated observation, not live hosting status.
+
+## Code standards cleanup — deployed October 25, 2026 (Central)
+
+User asked for a review against modern .NET/Blazor/JavaScript standards, approved the
+proposed phases, invited better approaches and authorized deployment. Scope and what was
+deliberately left are in [maintenance](maintenance.md#code-standards-review--october-25-2026).
+One visible change: Home renders the lead before Where to watch, so desktop without
+JavaScript shows the lead full width first (previously Watch, with the lead half-width).
+
+Deployed `mynewspaper-web:code-standards-20261025` (`a389d7441916`), healthy; rollback image
+`mynewsfeed-web:before-mynewspaper-code-standards-20261025` (= watch-search) and previous
+container retained; runtime environment, port 8085, `dev-bridge`, `/keys` volume and restart
+policy preserved. Before the swap, the image ran as a throwaway container (no port, sync off):
+healthy, 26 routes as expected, zero error log lines.
+
+Checks: build 0 warnings/0 errors (warnings now fail builds); 715 .NET tests passed; ESLint,
+Prettier and dotnet format clean; Node unit tests 5/5. Browser suite (47 checks): the live
+baseline before the work was 33 passed/14 failed, all failures being drift or environment.
+Preview after: 44 passed, 3 opt-in/data skips. Live after: 42 passed, 3 skips, and pwa and
+location-weather needing a secure context (identical on the old build; both pass on the
+localhost preview; they now skip on plain-HTTP hosts). Computed styles of 45,652 elements on
+16 pages at 390/1440px light/dark were identical before and after the CSS merge. Phone
+screenshots (320/390 light/dark, JS on/off) and 1440px reviewed on preview and live. Real
+device unavailable. Evidence: `/tmp/mynewspaper-code-standards-deploy/`.
 
 
 ## Where to watch search results tidy — deployed October 25, 2026 (Central)
