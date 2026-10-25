@@ -39,8 +39,11 @@ this session only.
   behavior: `docs/entertainment.md` → “Where to watch flow — October 25, 2026”.
 - The "My services" filter is URL-only (`only=1`), not remembered across visits.
   Offer persistence if the user wants it.
-- About 200 stopped `mynewsfeed-web-before-*` containers have accumulated.
-  Cleanup was not requested; ask before removing any.
+- October 25: at the user's request, 187 old stopped `mynewsfeed-web-before-*`
+  containers were removed. The live container, its persistent volume, all image tags
+  and the two newest rollback containers (`before-mynewspaper-watch-search-20261025`,
+  `before-mynewspaper-watch-featured-20261025`) remain. Older release notes name
+  rollback containers that no longer exist; roll back from their image tags instead.
 
 ### Streaming-style rows
 
