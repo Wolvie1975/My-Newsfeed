@@ -110,10 +110,16 @@
                                 else { <TonightMatchup Item="item" Records="records" /> }
                                 <span class="bs-agate__kind">@item.Kind@(item.Location is not null ? " · " + EventsText.SplitLocation(item.Location).Item1 : "")</span>
                             </span>
-                            <span class="bs-agate__tv">
-                                @if (item.Tv is not null) { <span>@item.Tv</span> }
-                                @if (item.StreamUrl is not null) { <a href="@item.StreamUrl" target="_blank" rel="noopener noreferrer">Watch stream</a> }
-                            </span>
+                            @* The network doubles as the stream link, so phones keep one tap target per row. *@
+                            @if (item.StreamUrl is not null)
+                            {
+                                <a class="bs-agate__tv bs-agate__tv--stream" href="@item.StreamUrl" target="_blank" rel="noopener noreferrer"
+                                   aria-label="Watch stream@(item.Tv is not null ? " on " + item.Tv : "")"><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M2 1.2v7.6L8.6 5z" fill="currentColor" /></svg>@(item.Tv ?? "Watch")</a>
+                            }
+                            else if (item.Tv is not null)
+                            {
+                                <span class="bs-agate__tv">@item.Tv</span>
+                            }
                         </li>
                     }
                 </ul>

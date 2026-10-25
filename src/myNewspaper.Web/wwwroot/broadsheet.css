@@ -540,17 +540,82 @@
     font-size: 12px;
 }
 .pub .bs-agate__tv {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 2px;
+    justify-self: end;
     max-width: 96px;
     font-size: 12px;
     font-weight: 800;
     text-align: right;
 }
-.pub .bs-agate__tv a {
-    font-weight: 600;
+.pub .bs-agate__tv--stream {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    min-height: 44px;
+    padding: 0 10px;
+    border-radius: 8px;
+    background: var(--pill-bg);
+    color: var(--accent);
+    text-decoration: none;
+}
+.pub .bs-agate__tv--stream svg {
+    flex: none;
+    width: 9px;
+    height: 9px;
+}
+
+/* Phones and tablets: one compact tappable row per game — time, matchup (sport beneath), network. */
+@media (max-width: 1023px) {
+    .pub .bs-agate__row {
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 0 10px;
+        padding: 4px 0;
+    }
+    .pub .bs-agate__time {
+        max-width: 66px;
+    }
+    .pub .bs-agate__match {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        min-height: 44px;
+    }
+    .pub .bs-agate__match > a {
+        display: block;
+        min-width: 0;
+    }
+    .pub .bs-agate__match > a::after {
+        position: absolute;
+        inset: 0;
+        content: '';
+    }
+    .pub .bs-agate .tt-match {
+        display: -webkit-box;
+        overflow: hidden;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+    }
+    .pub .bs-agate__kind {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+}
+@media (max-width: 767px) {
+    .pub .bs-agate .tt-team .team-record {
+        display: none;
+    }
+}
+@media (max-width: 400px) {
+    .pub .bs-agate__tv {
+        max-width: 76px;
+    }
+    .pub .bs-agate__tv--stream {
+        padding: 0 8px;
+    }
 }
 
 /* ---------- Home: desktop broadsheet ---------- */
