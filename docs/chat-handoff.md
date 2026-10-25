@@ -8,6 +8,17 @@ the deferred service hyperlink decision.
 Read this file when continuing work from the previous chat. These are dated
 observations; check current repository and hosting state before acting.
 
+## Broadsheet redesign deployed — October 25, 2026 (Central)
+
+User asked to build the approved redesign (canvas https://claude.ai/artifact/JVQ8mU7R63Z1cziNpeW9Z5)
+and deploy. Three redesign commits already existed on `develop` from an earlier session that left
+no handoff; this session verified them, fixed phone Today & Tonight (compact rows, 44px targets) and
+the desktop side-column release grid, and deployed `mynewspaper-web:broadsheet-20261025`. Details,
+checks and rollback in [release history](release-history.md#broadsheet-redesign--deployed-october-25-2026-central).
+Committed locally on `develop` (user pushes). Not yet done from the proposed extras: YouTube topic
+chips, league chips in place of typed team search, grouped duplicate stories. The phone scoreboard
+strip on /sports still scrolls sideways (existing component). No pending request.
+
 ## Code standards cleanup deployed — October 25, 2026 (Central)
 
 User requested a code review for modern .NET/Blazor/JS standards, approved all phases and

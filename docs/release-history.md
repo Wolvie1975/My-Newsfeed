@@ -6,10 +6,34 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The latest recorded web release is `mynewspaper-web:code-standards-20261025`
-(image `a389d7441916`), deployed October 25, 2026 (Central). Its rollback image is
-`mynewsfeed-web:before-mynewspaper-code-standards-20261025`. Deployment checks passed then;
+The latest recorded web release is `mynewspaper-web:broadsheet-20261025`
+(image `14f6a33cdfd8`), deployed October 25, 2026 (Central). Its rollback image is
+`mynewsfeed-web:before-mynewspaper-broadsheet-20261025`. Deployment checks passed then;
 this is a dated observation, not live hosting status.
+
+## Broadsheet redesign — deployed October 25, 2026 (Central)
+
+User approved the redesign concepts (canvas, Oct 25) and asked to build and deploy. Ships the
+folded-page logo and broadsheet design system, the broadsheet homepage, broadsheet section pages,
+box office Predicted ranges and TV batch drops (commits `89937fb`, `33f687a`, `c8f8704`), plus two
+fixes found in pre-release review: phone/tablet Today & Tonight rows are compact with 44px targets
+(the network badge is the stream link; records hidden under 768px) (`ac6f06a`), and the desktop
+side column lists digital/theater releases with thumbnails instead of a squeezed poster grid (`07e2a5d`).
+
+Deployed `mynewspaper-web:broadsheet-20261025` (`14f6a33cdfd8`), healthy; rollback image
+`mynewsfeed-web:before-mynewspaper-broadsheet-20261025` (= code-standards) and previous container
+retained; runtime environment, port 8085, `dev-bridge`, `/keys` volume and restart policy preserved.
+No database changes.
+
+Checks: build 0 warnings; 720 .NET tests passed; ESLint and Prettier clean. Preview: 26 routes as
+expected, zero error log lines; browser suite 43 passed, 4 skipped (pwa and location-weather need a
+secure context; two data/opt-in skips). Matrix of 7 pages (home, sports, entertainment, box office,
+TV, watch, news) at 320/390/430/768/1440px, light/dark, JS off at 390/1440: no horizontal overflow
+or script errors on preview or live; screenshots reviewed. Live: routes 200, zero error log lines;
+browser suite 40 passed with home-top25, home-watch-search and scoreboard-mobile timing out on
+`page.goto` (load event); all three passed on rerun and live home loads measured 0.3–0.5s, so these
+are recorded as intermittent external-asset stalls in this runner. Real device and Tailscale HTTPS
+not checked. Evidence: `/tmp/mynewspaper-broadsheet-deploy/`.
 
 ## Code standards cleanup — deployed October 25, 2026 (Central)
 
