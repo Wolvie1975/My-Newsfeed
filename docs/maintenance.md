@@ -57,6 +57,40 @@ script rerun or scraper deployment was part of the frontend rollout. See
 [interface behavior](interface.md#top-headlines-and-news-source-filtering) and
 [deployment evidence](release-history.md#top-headlines-and-news-source-selector--october-17-2026).
 
+## Code standards review — October 25, 2026
+
+A whole-codebase review against current .NET 10, Blazor and JavaScript practice. The
+architecture was already sound (DbContextFactory, static SSR with targeted interactivity,
+filtered exception handling, parameterized SQL); the work addressed consistency and the
+lack of enforced standards. Changes, all deployed in `mynewspaper-web:code-standards-20261025`:
+
+- Tooling: `.editorconfig`, `Directory.Build.props` (AnalysisLevel latest-recommended,
+  EnforceCodeStyleInBuild, TreatWarningsAsErrors except NU190x advisories), `global.json`,
+  ESLint, Prettier and `package.json`. Formatting-only commits are separate.
+- Security: `appsettings.json` no longer holds the `sa` connection string (user secrets
+  locally, container variable in production); `System.Security.Cryptography.Pkcs` pinned
+  to 10.0.13 to clear the advisories inherited from Microsoft.Data.SqlClient.
+- Code: Program.cs endpoints moved to `Endpoints/`; built-in health checks; configured
+  display zone instead of hard-coded `America/Chicago`; one `DataFailures.IsReadFailure`
+  filter; culture-invariant parsing; disposable singletons; generated regexes; modern
+  JavaScript (no `var`, strict mode); nine merged CSS rules and `--gain`/`--loss` tokens
+  (verified identical computed styles on 45,652 elements).
+- Tests: xUnit v3 on Microsoft.Testing.Platform, one `TestDatabase` helper, and a browser
+  runner (`npm run test:browser`). Thirteen browser checks that had drifted from approved
+  designs were repaired; one exposed a real no-JavaScript ordering bug on desktop Home.
+
+Deliberately not changed, with reasons:
+
+- Analyzer rules CA1848/CA1873 (logging delegates), CA1859, CA1861, CA1822, CA1720 and
+  xUnit1051 are suggestions, not errors: micro-optimisations or noise for this app.
+- `public.css` keeps 833 colour literals because they are palette definitions for the
+  22 colour schemes; only ~50 one-off literals remain outside tokens. Eleven far-apart
+  duplicate selectors are later theme sections overriding earlier ones and were left.
+- Razor markup in about 19 components uses long single lines. `dotnet format` does not
+  format Razor and hand-reflowing inline markup can change rendered whitespace.
+- Box-score lookups filter on `Sport+'|'+League+'|'+EventId`, but `dbo.SportsBoxScores`
+  (scraper-owned, ~1,500 rows) has no index, so rewriting the predicate gains nothing.
+
 ## Remaining engineering follow-ups
 
 - Result synchronization's gate is process-local. Multiple web instances need
@@ -70,10 +104,17 @@ script rerun or scraper deployment was part of the frontend rollout. See
   selectable without schedule evidence and filter stale-season rows independently.
 - Interactive admin submission and overlapping sync scenarios deserve targeted
   browser/concurrency coverage in addition to helper and row-rendering tests.
+- The `sa` password was committed in `appsettings.json` from September 20 to October 25,
+  2026 and remains in Git history. Rotate it, and give the web app its own least-privilege
+  SQL login rather than `sa`; then update the container's `ConnectionStrings__DefaultConnection`
+  and local user secrets.
+- Add an index on `dbo.SportsBoxScores (Sport, League, EventId)` in the scraper project if
+  box-score lookups grow; then the web query can match the three columns directly.
+- The admin login has no rate limiting. Low risk while the site is tailnet-only; add
+  ASP.NET Core rate limiting to `/account/login` before any public exposure.
 
 Current implementation evidence is in EventsQuery, StandingsQuery, RankingsQuery,
-ScoresSync and the relevant admin components. The existing two xUnit2031 warnings in
-EventsTests remain analyzer warnings, not build failures.
+ScoresSync and the relevant admin components. The build now has zero warnings (warnings fail it).
 
 ## Big 12 design constraints retained from the expansion review
 

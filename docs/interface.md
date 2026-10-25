@@ -321,9 +321,8 @@ the choice for the current document and shows a save warning.
 
 Calculation regressions run with `node --test tests/browser/solar-times.test.cjs`.
 The browser regression script `tests/browser/theme-mode.browser.cjs` requires
-Playwright and a running local app. Set `NEWSFEED_TEST_URL` for the preview URL
-(default `http://127.0.0.1:5091`) and expose an existing Playwright installation
-through `NODE_PATH` when it is not installed locally. It checks automatic and
+a running local app; Playwright comes from `npm ci`. Set `BASE_URL` for the preview URL
+(default `http://localhost:5295`). It checks automatic and
 manual modes, persistence, navigation, cross-tab updates, blocked storage and a
 mobile viewport, with the device timezone deliberately set outside Central time.
 
@@ -647,8 +646,8 @@ controlled; if the old icon persists, remove and reinstall the installed app.
 Removing an app can also remove its local preferences depending on the browser.
 
 `tests/browser/pwa.browser.cjs` checks actual icon dimensions, manifest identity,
-Chromium installability, worker cache version and offline navigation. Set
-`PLAYWRIGHT_MODULE`, `BASE_URL`, and optionally `PWA_HOST_IP` when the test runner
+Chromium installability, worker cache version and offline navigation. It needs a
+secure context (HTTPS, or `localhost`). Set `BASE_URL`, and optionally `PWA_HOST_IP` when the test runner
 requires an explicit Tailscale hostname mapping. This mapping bypasses DNS only
 for the test runner; it does not repair client-device MagicDNS.
 

@@ -117,13 +117,18 @@ exercise controls. Desktop-only verification is insufficient. See the
 [mobile acceptance checklist](docs/interface.md#required-mobile-verification).
 Record any missing verification as outstanding; do not claim readiness without it.
 
-Run relevant application checks; the full suite is:
+Run relevant application checks; the full suites are:
 
 ```bash
-dotnet test myNewspaper.sln
+dotnet build myNewspaper.sln && dotnet test     # warnings fail the build
+npm ci && npm run lint && npm run format:check
+BASE_URL=<preview> npm run test:browser          # all Playwright checks, serially
 ```
 
-Tests need configured SQL access; use development/staging for integration fixtures.
+Tests need configured SQL access (user secrets or `ConnectionStrings__DefaultConnection`;
+`appsettings.json` carries no credentials); use development/staging for integration
+fixtures. The Docker build copies `Directory.Build.props` and `.editorconfig` before
+restore, so the image compiles with the same analyzer settings as local builds.
 Record the current image ID for rollback. For a Compose-managed deployment whose
 private settings reflect all current runtime overrides:
 
@@ -141,8 +146,8 @@ rather than discarding settings. Never include runtime secrets in a report.
 
 ## Validate and troubleshoot
 
-The container should become healthy within about a minute; `/healthz` checks database
-reachability. Verify `/healthz`, `/news`, `/events`, `/results`, `/standings`, `/rankings`,
+The container should become healthy within about a minute; `/healthz` is an ASP.NET Core
+health check (EF database connectivity) returning `Healthy` with 200, or 503. Verify `/healthz`, `/news`, `/events`, `/results`, `/standings`, `/rankings`,
 `/movies`, `/movies/digital`, `/box-office` and affected admin views. Unauthenticated
 admin access should redirect to login. Repeat affected mobile flows against the deployed build at the required phone
 widths/themes, including actual controls and screenshot review, before reporting

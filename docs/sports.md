@@ -730,7 +730,7 @@ Missing or unusable cache entries never hide games. The frontend adds no schema,
 collection jobs, write grants or upstream statistics requests.
 
 Checks: `ScoreboardTests`, the read-only SQL `ScoreboardReadTests`, and
-`tests/browser/scoreboard.browser.cjs` (BASE_URL and PLAYWRIGHT_MODULE optional).
+`tests/browser/scoreboard.browser.cjs` (BASE_URL optional; run via `npm run test:browser -- scoreboard`).
 
 ### Consolidated daily results
 

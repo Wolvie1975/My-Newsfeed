@@ -32,7 +32,8 @@ Rankings and conference-wide News. Football, men’s basketball, women’s volle
 reuse existing coverage; see [the college hub](docs/sports.md#college-sports-hub).
 
 F1 has its own Sports section with Schedule, Results, Drivers/Constructors
-standings and publisher News, plus a separate home-page F1 card outside Today & Tonight.
+standings and publisher News. On Home, F1 appears inside Today & Tonight during its
+Friday-through-race-day window (the standalone F1 card was removed October 21).
 See [F1 coverage and routes](docs/sports.md#f1-section).
 
 Team-record updates (October 18, 2026, Central): Home, Events and Results now show
@@ -65,21 +66,45 @@ Current behavior takes precedence over historical proposals and release snapshot
 Scraper `sql/` paths and Rust commands refer to the separate Rss-Rust-Scrape project;
 this repository's application migrations are in `db/`.
 
-Build and run the existing checks from the repository root:
+## Development
+
+Code standards are enforced by tooling rather than convention: `.editorconfig` and
+`Directory.Build.props` (latest analyzers, code style in the build, warnings as errors
+except NuGet advisories) for C#, and ESLint plus Prettier for JavaScript and CSS.
+
+The database connection string is not in the repository. Set it once per machine:
 
 ```bash
-dotnet build myNewspaper.sln
-dotnet test myNewspaper.sln
+dotnet user-secrets set ConnectionStrings:DefaultConnection "<connection string>" --project src/myNewspaper.Web
 ```
 
-The solar calculation checks run independently of SQL Server:
+(or set `ConnectionStrings__DefaultConnection`). Local runs in Development and the
+integration tests read it from there; production supplies it as a container variable.
+
+Build and check from the repository root:
 
 ```bash
-node --test tests/browser/solar-times.test.cjs
+dotnet build myNewspaper.sln          # 0 warnings expected; warnings fail the build
+dotnet test                           # xUnit v3 on Microsoft.Testing.Platform (see global.json)
+npm ci                                # ESLint, Prettier and Playwright for the checks below
+npm run lint && npm run format:check  # dotnet format whitespace --verify-no-changes for C#
+npm run test:unit                     # Node unit tests (solar calculations), no SQL Server needed
 ```
 
-For the Playwright appearance checks, see the
-[interface guide](docs/interface.md#automatic-light-and-dark-mode).
+Browser checks need a running site. Each `tests/browser/*.browser.cjs` file is a
+standalone Playwright script; the runner executes them one at a time and keeps logs
+and screenshots in `test-results/browser/`:
+
+```bash
+dotnet run --project src/myNewspaper.Web    # http://localhost:5295
+npm run test:browser                        # all checks against BASE_URL (default http://localhost:5295)
+npm run test:browser -- watch scoreboard    # checks whose file names contain a filter
+```
+
+Three checks skip unless given extra input: `category-hubs` changes admin data and needs
+`CATEGORY_ADMIN_PASSWORD`; `football-boxscore` needs a cached NFL box score from today or
+yesterday (or `RESULTS_PATH`); `basketball-boxscore` needs `BASKETBALL_PREVIEW_FILE`.
+`/healthz` reports `Healthy` or `Unhealthy` (503) from an EF database check.
 
 Integration tests use the configured SQL Server database and application credentials;
 fixtures use rollback transactions or connection-local temporary tables. Use an
