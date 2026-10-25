@@ -30,6 +30,8 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
         await page.reload();
         assert.deepEqual(await read(), original);
         await page.goto(base + '/watch');
+        // On phones Settings is in the Menu sheet.
+        await page.locator('.mobile-nav > summary').click();
         await page.locator('a[href="settings"]:visible').first().click();
         await page.waitForURL('**/settings');
         await page.waitForSelector('[data-settings-move]', { state: 'attached' });
