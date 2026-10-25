@@ -1155,7 +1155,8 @@
     white-space: nowrap;
 }
 /* Phones and tablets: as on the phone concept, Where to watch sits right under the header. The greeting and Refresh
-   share one short row (the header already shows the date) and the forecast is a four-across strip. */
+   share one short row (the header already shows the date). The forecast is a 2 × 2 grid on phones, which holds up
+   with large system text, and a four-across strip on tablets. */
 @media (max-width: 1023px) {
     .pub .bs-title__greeting {
         font-size: 22px;
@@ -1179,6 +1180,20 @@
     .pub .bs-glance__weather {
         grid-template-columns: minmax(0, 1fr);
     }
+    .pub .bs-glance__weather .d-more {
+        justify-self: end;
+    }
+}
+@media (max-width: 599px) {
+    .pub .bs-glance__periods {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px 16px;
+    }
+    .pub .bs-glance__name {
+        white-space: nowrap;
+    }
+}
+@media (min-width: 600px) and (max-width: 1023px) {
     .pub .bs-glance__periods li {
         align-items: center;
         text-align: center;
@@ -1188,22 +1203,6 @@
         min-height: 2.5em;
         line-height: 1.25;
         white-space: normal;
-    }
-    .pub .bs-glance__reading {
-        display: -webkit-box;
-        overflow: hidden;
-        -webkit-box-orient: vertical;
-        -webkit-line-clamp: 3;
-        line-clamp: 3;
-    }
-    .pub .bs-glance__weather .d-more {
-        justify-self: end;
-    }
-}
-@media (max-width: 359px) {
-    .pub .bs-glance__periods {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        row-gap: 10px;
     }
 }
 
