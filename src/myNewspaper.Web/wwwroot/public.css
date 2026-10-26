@@ -3723,7 +3723,8 @@
     --bar-fg: #ffffff;
     --bar-fg-2: #ffffff;
 }
-/* St. Louis CITY SC home kit: River Blue navy leads, City Red for buttons and highlights (the reverse of Cardinals). */
+/* St. Louis CITY SC home kit: River Blue navy leads, City Red for buttons and chips (the reverse of Cardinals);
+   the highlight is navy so the Search button stands out on the red Where to watch panel. */
 :root[data-color-scheme='city']:not([data-theme='dark']) {
     --bg: #f6f8fb;
     --surface: #ffffff;
@@ -3740,7 +3741,7 @@
     --header-fg: #ffffff;
     --header-line: #ccccd5;
     --header-border: transparent;
-    --selection-bg: #dd004a;
+    --selection-bg: #001837;
     --selection-fg: #ffffff;
     --brand-accent: #b8003f;
     --chip-bg: #ffffff;
@@ -3775,7 +3776,7 @@
     --header-fg: #ffffff;
     --header-line: #ccccd5;
     --header-border: transparent;
-    --selection-bg: #dd004a;
+    --selection-bg: #001837;
     --selection-fg: #ffffff;
     --brand-accent: #ff8fb1;
     --chip-bg: #13213a;
