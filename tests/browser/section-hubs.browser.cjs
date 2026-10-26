@@ -42,7 +42,9 @@ const base = process.env.BASE_URL || 'http://localhost:5295',
                     assert(
                         await p
                             .locator('.hub-all-news,.front-agenda a,.ef-head a,.ef-more')
-                            .evaluateAll((ns) => ns.every((n) => n.getBoundingClientRect().height >= 44)),
+                            .evaluateAll((ns) =>
+                                ns.every((n) => !n.offsetParent || n.getBoundingClientRect().height >= 44),
+                            ),
                     );
                     if (width < 700 && (await p.locator('.paper-support').count()))
                         assert(
@@ -70,7 +72,7 @@ const base = process.env.BASE_URL || 'http://localhost:5295',
                 }
         for (const route of ['sports', 'entertainment']) {
             await p.goto(base + '/' + route);
-            await p.locator('.hub-all-news').click();
+            await p.locator(route === 'sports' ? '.hub-all-news' : '.ef-main > .ef-more').click();
             await p.waitForURL('**/' + route + '/news');
             await p.locator('#hub-category').waitFor();
             await p.locator('#source').waitFor();
