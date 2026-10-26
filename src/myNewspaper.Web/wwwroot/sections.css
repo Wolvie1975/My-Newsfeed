@@ -2958,6 +2958,12 @@ a.tvc-row__show:hover {
     .pub .paper-feed .paper-label {
         display: none;
     }
+    /* Local: the stories are cards themselves, so the Kansas City news box gives up its own card. */
+    .pub section.lc-news {
+        padding: 0;
+        border: 0;
+        background: none;
+    }
 }
 @media (max-width: 699px) {
     .pub .loadmore .nf-btn {
@@ -3224,7 +3230,7 @@ a.tvc-row__show:hover {
         border-radius: 0;
         background: none;
     }
-    .pub .lc-news {
+    .pub section.lc-news {
         padding-right: 28px;
         border-right: 1px solid var(--row-border);
     }
