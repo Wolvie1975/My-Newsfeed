@@ -45,9 +45,12 @@ const base = process.env.BASE_URL || 'http://172.18.0.5:8080',
                             ),
                     );
                     if ([320, 390, 430, 753, 1440].includes(width)) {
-                        await p.locator('.paper-support').screenshot({
-                            path: root + route.replaceAll('/', '-') + '-' + width + '-' + theme + '.png',
-                        });
+                        // On phones the support stories are cards in the one list (the box steps aside).
+                        await p
+                            .locator(width < 744 ? '.paper-support .article >> nth=0' : '.paper-support')
+                            .screenshot({
+                                path: root + route.replaceAll('/', '-') + '-' + width + '-' + theme + '.png',
+                            });
                     }
                 }
         await p.goto(base + '/entertainment/news');

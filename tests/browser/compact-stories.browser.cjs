@@ -28,25 +28,21 @@ const base = process.env.BASE_URL || 'http://localhost:5295',
                         .locator('.paper-rows .article,.paper-support .article,.paper-feed > .article')
                         .first();
                     await row.waitFor();
-                    if (width < 700) {
+                    if (width < 744) {
+                        // Phones (October 26, 2026): every story is a picture card, as on F1 News.
                         assert(
                             await p
-                                .locator('.paper-feed .article:not(.article--lead) .thumb')
-                                .evaluateAll((ns) => ns.every((n) => getComputedStyle(n).display === 'none')),
-                            'mobile headline images hidden ' + route,
+                                .locator('.paper-feed .article .thumb')
+                                .evaluateAll((ns) => ns.every((n) => getComputedStyle(n).display !== 'none')),
+                            'mobile headline pictures shown ' + route,
                         );
                         assert(
                             await row.evaluate((n) => {
                                 const a = n.getBoundingClientRect(),
-                                    h = n.querySelector('.title').getBoundingClientRect(),
-                                    d = n.querySelector('time,.publication-unavailable').getBoundingClientRect();
-                                return (
-                                    getComputedStyle(n.querySelector('.thumb')).display === 'none' &&
-                                    Math.abs(h.left - a.left) < 2 &&
-                                    Math.abs(d.left - a.left) < 2
-                                );
+                                    t = n.querySelector('.thumb').getBoundingClientRect();
+                                return Math.abs(t.width - a.width) < 3 && t.top - a.top < 2;
                             }),
-                            'full width metadata ' + route,
+                            'full width picture on top ' + route,
                         );
                         assert(
                             await row
@@ -56,7 +52,7 @@ const base = process.env.BASE_URL || 'http://localhost:5295',
                         if (width === 390 && theme === 'light')
                             await row.screenshot({ path: root + route.replaceAll('/', '-') + '-row.png' });
                     }
-                    if (width >= 700) {
+                    if (width >= 744) {
                         // Tablets: large pictures above the headline. Desktop (concept board): a 96px thumbnail beside it.
                         const card = p.locator('.paper-rows .article').first();
                         if (await card.count())

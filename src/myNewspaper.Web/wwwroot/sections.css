@@ -2958,6 +2958,13 @@ a.tvc-row__show:hover {
     .pub .paper-feed .paper-label {
         display: none;
     }
+    /* The category link above a card's headline gets a 44px tap area; the negative margins keep the card's spacing. */
+    .pub .feed .article .cat {
+        display: inline-flex;
+        align-items: center;
+        min-height: 44px;
+        margin: -13px 0;
+    }
     /* Local: the stories are cards themselves, so the Kansas City news box gives up its own card. */
     .pub section.lc-news {
         padding: 0;
