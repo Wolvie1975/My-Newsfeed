@@ -684,6 +684,15 @@
             syncToggles();
         });
     }).observe(document.body, { childList: true, subtree: true });
+    // Between pages with the same layout (Headlines and Entertainment headlines, say) Blazor updates the existing
+    // elements in place instead of adding new ones, restoring the server's hidden attribute on share buttons and
+    // the default pressed state on save buttons. No nodes are added, so the observer above never sees it.
+    if (window.Blazor)
+        window.Blazor.addEventListener('enhancedload', () => {
+            syncToggles();
+            syncSaves();
+            syncShares();
+        });
     syncToggles();
     syncSaves();
     syncShares();

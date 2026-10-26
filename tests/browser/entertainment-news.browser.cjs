@@ -129,6 +129,15 @@ const base = process.env.BASE_URL || 'http://localhost:5295',
             }
             assert(await plain.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
         }
+        // In-site navigation between same-layout pages updates the stories in place (October 26, 2026): the share
+        // buttons must still be revealed without a refresh.
+        await p.setViewportSize({ width: 1440, height: 900 });
+        await p.goto(base + '/entertainment/news');
+        await p.locator('a[href="news"]:visible').first().click();
+        await p.waitForURL(base + '/news');
+        await p.waitForTimeout(800);
+        assert(await p.locator('[data-share-open]').count());
+        assert.equal(await p.locator('[data-share-open][hidden]').count(), 0, 'share buttons after in-site navigation');
         assert.deepEqual(errors, []);
         await plain.close();
         console.log(
