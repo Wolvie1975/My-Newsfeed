@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
@@ -50,7 +51,7 @@ public static class PublicEndpoints
         app.MapGet("/f1/news", (HttpContext http) =>
         {
             var query = new Dictionary<string, string?>();
-            if (int.TryParse(http.Request.Query["source"], out var source) && source > 0) query["source"] = source.ToString();
+            if (int.TryParse(http.Request.Query["source"], out var source) && source > 0) query["source"] = source.ToString(CultureInfo.InvariantCulture);
             return Results.LocalRedirect(QueryHelpers.AddQueryString("/sports/news/f1", query));
         });
 
