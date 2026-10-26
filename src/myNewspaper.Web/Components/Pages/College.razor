@@ -13,8 +13,13 @@
 @inject ILogger<College> Log
 
 <PageTitle>College Sports · @selected.Name · myNewspaper</PageTitle>
-<PageHeading Section="sports" Title="College Sports" Eyebrow="CAMPUS SCOREBOARD" Description="Schedules, final scores, conference standings, national polls and conference news in one place." />
-<form class="catselect college-sport-select" method="get" action="@BasePath">
+<PageHeading Section="sports" Title="College Sports" Eyebrow="Campus scoreboard" Description="" />
+@* Sports as pills on desktop (as in the approved concept); the dropdown below serves phones. *@
+<nav class="sec-pills sec-pills--desktop cl-sports" aria-label="Sport">
+    @foreach (var sport in CollegeHub.Sports)
+    { <a href="@CollegeHub.Href(view, sport)" aria-current="@(selected.Key == sport.Key ? "page" : null)">@sport.Name</a> }
+</nav>
+<form class="catselect college-sport-select st-select" method="get" action="@BasePath">
     <label for="college-sport">Sport</label>
     <select id="college-sport" name="sport" onchange="this.form.requestSubmit()">
         @foreach (var sport in CollegeHub.Sports)
@@ -24,7 +29,6 @@
 </form>
 <SectionSelect Id="college-view" Label="View" Current="@CollegeHub.Href(view, selected)"
     Choices="@(Tabs.Select(tab => new NavigationChoice(CollegeHub.Href(tab.Key, selected), tab.Label)).ToArray())" />
-<p class="updated">@selected.Name · Big 12 schedule and standings coverage. Results include the college teams and conferences followed by this site; rankings are national polls when available.</p>
 @if (view == "news")
 {
     <Big12News Sport="@selected.Key" />
@@ -41,10 +45,13 @@ else if (error)
 { <p class="empty" role="status">College sports are temporarily unavailable. <a href="@CollegeHub.Href(view, selected)">Try again</a></p> }
 else if (view == "schedule")
 {
-    <h2>@selected.Name schedule</h2>
-    <p class="updated">Today through the next seven days. Start times use the site display timezone; unconfirmed times remain TBD.</p>
+    <div class="cl-cols">
+    <section class="cl-main" aria-labelledby="cl-schedule-title">
+    <div class="st-head">
+        <h2 id="cl-schedule-title">@selected.Name schedule</h2>
+        <span class="mv-updated">Big 12 · next seven days · @(Dates.ZoneLabel ?? "local") time@(updatedAt is { } checkedAt ? " · updated " + Dates.Time(checkedAt) : "")</span>
+    </div>
     @if (events.Items.Count == 0) { <p class="empty">No upcoming games are available for this sport in the next seven days.</p> }
-    @if (updatedAt is { } refreshed) { <p class="updated">Schedule last updated @Dates.PublishedFull(refreshed)</p> }
     @if (events.Items.Count > 0) { <div class="games-head" aria-hidden="true"><span>Sport</span><span>Team / Away</span><span>Team / Home</span><span>Time</span><span>Location</span><span>Links</span></div> }
     <div class="groups">
     @foreach (var day in events.Items.GroupBy(e => e.EventDate))
@@ -68,6 +75,32 @@ else if (view == "schedule")
             @if ((pageIndex + 1) * EventsQuery.Limit < events.Total) { <a href="@PageHref(pageIndex + 1)">Later →</a> }
         </nav>
     }
+    </section>
+    <aside class="cl-side">
+        @if (pollTeams.Count > 0)
+        {
+            <section aria-labelledby="cl-poll-title">
+                <h2 id="cl-poll-title" class="ef-label">Big 12 in the @(pollName ?? "national poll")</h2>
+                <ol class="cl-list">
+                    @foreach (var team in pollTeams) { <li><b>@team.Rank</b><span>@team.TeamName</span><span>@team.Record</span></li> }
+                </ol>
+                <a class="ef-more" href="@CollegeHub.Href("rankings", selected)">Full rankings <span aria-hidden="true">→</span></a>
+            </section>
+        }
+        @if (leaders is { } group && group.Teams.Count > 0)
+        {
+            var columns = group.Columns.Take(2).ToList();
+            <section aria-labelledby="cl-lead-title">
+                <h2 id="cl-lead-title" class="ef-label">Conference leaders</h2>
+                <ol class="cl-list cl-list--standings">
+                    @foreach (var team in group.Teams.Take(5))
+                    { <li><span>@team.Row.TeamName</span>@foreach (var column in columns) { <span>@StandingsQuery.StatisticValue(team, column.Name)</span> }</li> }
+                </ol>
+                <a class="ef-more" href="@CollegeHub.Href("standings", selected)">Full standings <span aria-hidden="true">→</span></a>
+            </section>
+        }
+    </aside>
+    </div>
 }
 else
 {
@@ -109,6 +142,9 @@ else
     private DateTime? updatedAt;
     private int pageIndex;
     private DateOnly resultDay;
+    private IReadOnlyList<myNewspaper.Web.Data.Models.SportsRankingTeam> pollTeams = [];
+    private string? pollName;
+    private StandingGroup? leaders;
     private string PageHref(int page) => CollegeHub.Href(view, selected) + "&page=" + page;
     private string DayHref(DateOnly day) => CollegeHub.Href("results", selected) + $"&day={day:yyyy-MM-dd}";
 
@@ -131,6 +167,11 @@ else
                     provider: "big12", to: Dates.Today.AddDays(7), offset: pageIndex * EventsQuery.Limit);
                 updatedAt = await db.SportsEvents.AsNoTracking().Where(e => e.ProviderKey == "big12" && e.Sport == selected.StandingsSport).MaxAsync(e => (DateTime?)e.LastSeenAt);
                 pageIndex = Math.Min(pageIndex, Math.Max(0, (events.Total - 1) / EventsQuery.Limit));
+                // Side column: Big 12 schools in the national poll and the conference leaders, when published.
+                var poll = await RankingsQuery.GetAsync(db, null, Log, Dates.Today, selected.StandingsSport);
+                pollName = poll.Poll?.PollName;
+                pollTeams = poll.Teams.Where(t => t.IsBig12 == true).Take(8).ToList();
+                leaders = (await StandingsQuery.GetAsync(db, null, Log, Dates.Today, null, selected.StandingsSport)).Groups.FirstOrDefault();
             }
             else
             {

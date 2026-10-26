@@ -1,48 +1,19 @@
 @page "/sports"
 @page "/entertainment"
 @layout PublicLayout
-@using myNewspaper.Web.Components.Feed
 @inject NavigationManager Nav
-@inject IDbContextFactory<WebScraperContext> Factory
-@inject ILogger<SectionHub> Log
 
 <PageTitle>@Title · myNewspaper</PageTitle>
+@* Each section front loads its own data (EntertainmentFront, SportsFront). *@
 @if (Entertainment) {
     <PageHeading Section="entertainment" Title="Entertainment" Eyebrow="Stories, releases and what to watch next" Description="" />
     <EntertainmentFront />
 } else {
-    <PageHeading Section="sports" Title="Sports" Eyebrow="YOUR DAILY OVERVIEW" Description="Scores, stories and the games coming up." />
-    <section class="front-strip" aria-label="Today's scoreboard">
-        <div class="front-strip__head"><h2>Today’s scores</h2><a href="scoreboard">Full scoreboard →</a></div>
-        <ScoreboardPanel Compact="true" />
-    </section>
-    <div class="news-front news-front--hub section-hub">
-        <div class="news-front__stories">
-            <section class="feed paper-feed" aria-label="Sports featured stories">
-                @if (newsUnavailable) { <p class="updated" role="status">Headlines are temporarily unavailable. Please try again.</p> }
-                else if (stories.Count == 0) { <p class="empty">No recent stories are available yet.</p> }
-                else { <NewspaperFeed Items="stories" Featured="true" /> }
-            </section>
-            <a class="nf-btn nf-btn--secondary hub-all-news" href="sports/news">Browse all sports headlines →</a>
-        </div>
-        <aside class="news-front__agenda"><SectionAgenda /></aside>
-    </div>
+    <PageHeading Section="sports" Title="Sports" Eyebrow="Your daily overview" Description="" />
+    <SportsFront />
 }
 
 @code {
     private bool Entertainment => Nav.ToBaseRelativePath(Nav.Uri).Split('?')[0].TrimEnd('/').Equals("entertainment", StringComparison.OrdinalIgnoreCase);
     private string Title => Entertainment ? "Entertainment" : "Sports";
-    private IReadOnlyList<FeedItem> stories = [];
-    private bool newsUnavailable;
-    protected override async Task OnParametersSetAsync() {
-        newsUnavailable = false;
-        stories = [];
-        // Entertainment loads its own front page (EntertainmentFront).
-        if (Entertainment) return;
-        await using var db = await Factory.CreateDbContextAsync();
-        try { stories = await FeedQuery.GetHomeNewsAsync(db, 8, "sports"); }
-        catch (Exception ex) when (DataFailures.IsReadFailure(ex)) {
-            newsUnavailable = true; Log.LogError(ex, "Could not read section hub headlines.");
-        }
-    }
 }

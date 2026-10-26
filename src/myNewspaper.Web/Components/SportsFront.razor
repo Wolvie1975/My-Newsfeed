@@ -1,0 +1,208 @@
+@using myNewspaper.Web.Components.Feed
+@inject IDbContextFactory<WebScraperContext> Factory
+@inject FeedDates Dates
+@inject IConfiguration Config
+@inject ILogger<SportsFront> Log
+
+@* Sports front page as in the approved concept: today's scores across the top, then upcoming games, the lead story and
+   headlines, and a side column of Big 12 football standings and the AP Top 25. Phones get the same sections as cards. *@
+<div class="ef spf">
+    <section class="spf-scores" aria-labelledby="spf-scores-title">
+        <div class="ef-head"><h2 id="spf-scores-title">Today’s scores</h2><a href="scoreboard">Full scoreboard <span aria-hidden="true">→</span></a></div>
+        <ScoreboardPanel Compact="true" />
+    </section>
+
+    <div class="spf-cols">
+        <section class="spf-upcoming" aria-labelledby="spf-up-title">
+            <div class="ef-head"><h2 id="spf-up-title">Upcoming games</h2><a href="events">Schedule <span aria-hidden="true">→</span></a></div>
+            <p class="ef-note">Today · @(Dates.ZoneLabel ?? "local") time · TV in bold</p>
+            @if (upcoming.Count == 0) { <p class="ef-empty">No remaining games today. See the schedule for what’s next.</p> }
+            <ul class="spf-agate">
+                @foreach (var item in upcoming)
+                {
+                    <li>
+                        <a href="@(item.Url ?? "events")" target="@(item.Url is null ? null : "_blank")" rel="@(item.Url is null ? null : "noopener noreferrer")">
+                            <span class="spf-agate__time">@(item.StartsUtc is { } starts ? Dates.Time(starts) : item.TimeLabel)</span>
+                            <span class="spf-agate__match"><TonightMatchup Item="item" /> <span class="spf-agate__sport">(@item.Kind)</span></span>
+                            @if (item.Tv is not null) { <b class="spf-agate__tv">@item.Tv</b> }
+                        </a>
+                    </li>
+                }
+            </ul>
+        </section>
+
+        <div class="ef-main spf-main">
+            @if (newsUnavailable)
+            {
+                <p class="updated" role="status">Headlines are temporarily unavailable. Please try again.</p>
+            }
+            else if (stories.Count == 0)
+            {
+                <p class="ef-empty">No recent stories are available yet.</p>
+            }
+            else
+            {
+                var lead = stories[0];
+                var leadHref = FeedQuery.SafeHref(lead.Url);
+                var leadImage = FeedQuery.SafeHref(lead.ImageUrl);
+                var leadTitle = Title(lead);
+                var leadSummary = FeedText.StripEmoji(FeedQuery.Excerpt(lead.Description));
+                var leadSource = FeedText.SourceName(lead.SourceLabel, lead.SourceUrl);
+                <article class="ef-lead" data-news-url="@leadHref" data-news-source="@leadSource">
+                    @if (leadHref is not null && leadImage is not null)
+                    {
+                        <a class="ef-lead__image" href="@leadHref" target="_blank" rel="noopener noreferrer" tabindex="-1" aria-hidden="true">
+                            <img src="@leadImage" alt="" fetchpriority="high" referrerpolicy="no-referrer" onerror="this.parentElement.remove()" />
+                        </a>
+                    }
+                    <p class="ef-kicker">@(lead.CategoryName ?? "Sports") <span aria-hidden="true">·</span> @leadSource</p>
+                    <h2 class="ef-lead__title">
+                        @if (leadHref is not null) { <a href="@leadHref" target="_blank" rel="noopener noreferrer">@leadTitle</a> }
+                        else { @leadTitle }
+                    </h2>
+                    <div class="ef-meta">
+                        <span class="ef-meta__when">@When(lead)</span>
+                        <ShareButton Url="@lead.Url" Title="@leadTitle" />
+                        <SaveButton Item="lead" Title="@leadTitle" Source="@leadSource" Summary="@leadSummary" />
+                    </div>
+                </article>
+
+                @if (stories.Count > 1)
+                {
+                    <h3 class="ef-label">Latest headlines</h3>
+                    <ul class="ef-headlines spf-headlines">
+                        @foreach (var item in stories.Skip(1))
+                        {
+                            var href = FeedQuery.SafeHref(item.Url);
+                            var title = Title(item);
+                            var source = FeedText.SourceName(item.SourceLabel, item.SourceUrl);
+                            var summary = FeedText.StripEmoji(FeedQuery.Excerpt(item.Description));
+                            <li data-news-url="@href" data-news-source="@source">
+                                @if (!string.IsNullOrWhiteSpace(item.CategoryName)) { <span class="ef-headlines__kicker">@item.CategoryName</span> }
+                                @if (href is not null) { <a class="ef-headlines__title" href="@href" target="_blank" rel="noopener noreferrer">@title</a> }
+                                else { <span class="ef-headlines__title">@title</span> }
+                                <div class="ef-meta">
+                                    <span class="ef-meta__when">@source@(item.Undated ? "" : " · " + Dates.Published(item.Date))</span>
+                                    <ShareButton Url="@item.Url" Title="@title" />
+                                    <SaveButton Item="item" Title="@title" Source="@source" Summary="@summary" />
+                                </div>
+                            </li>
+                        }
+                    </ul>
+                }
+            }
+            <a class="ef-more" href="sports/news">All sports headlines <span aria-hidden="true">→</span></a>
+        </div>
+
+        <aside class="ef-side spf-side">
+            @if (standingsGroup is { } group && standingsSource is { } table)
+            {
+                var columns = group.Columns.Take(3).ToList();
+                <section class="spf-standings" aria-labelledby="spf-stand-title">
+                    <div class="ef-head"><h2 id="spf-stand-title" class="ef-label">@table.DisplayName standings</h2></div>
+                    <table class="spf-table">
+                        <thead><tr><th scope="col">Team</th>@foreach (var (column, index) in columns.Select((c, i) => (c, i))) { <th scope="col">@ColumnLabel(columns, index)</th> }</tr></thead>
+                        <tbody>
+                            @foreach (var team in group.Teams.Take(8))
+                            {
+                                <tr data-sports-teams="@SportsTeamPreferences.Keys(team.Row.TeamName)">
+                                    <th scope="row">@team.Row.TeamName</th>
+                                    @foreach (var column in columns) { <td>@StandingsQuery.StatisticValue(team, column.Name)</td> }
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                    <a class="ef-more" href="@($"standings?sourceId={table.Id}")">All standings <span aria-hidden="true">→</span></a>
+                </section>
+            }
+            @if (rankings.Teams.Count > 0)
+            {
+                <section class="spf-rankings" aria-labelledby="spf-rank-title">
+                    <h2 id="spf-rank-title" class="ef-label">@(rankings.Poll?.PollName ?? "Top 25")</h2>
+                    <table class="spf-table">
+                        <thead class="sr-only"><tr><th scope="col">Rank</th><th scope="col">School</th><th scope="col">Record</th><th scope="col">Move</th></tr></thead>
+                        <tbody>
+                            @foreach (var team in rankings.Teams.Take(5))
+                            {
+                                <tr class="@(team.IsBig12 == true ? "spf-big12" : null)">
+                                    <td class="spf-table__rank">@team.Rank</td>
+                                    <th scope="row">@team.TeamName</th>
+                                    <td>@team.Record</td>
+                                    <td class="spf-move">@Move(team)</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                    <a class="ef-more" href="rankings">All rankings <span aria-hidden="true">→</span></a>
+                </section>
+            }
+        </aside>
+    </div>
+</div>
+
+@code {
+    private IReadOnlyList<FeedItem> stories = [];
+    private IReadOnlyList<TonightItem> upcoming = [];
+    private myNewspaper.Web.Data.Models.SportsStandingsSource? standingsSource;
+    private StandingGroup? standingsGroup;
+    private RankingsPage rankings = new([], null, null, []);
+    private bool newsUnavailable;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var nowUtc = DateTime.UtcNow;
+        var today = Dates.TodayAt(nowUtc);
+        newsUnavailable = false;
+        await using var db = await Factory.CreateDbContextAsync();
+
+        try { stories = await FeedQuery.GetHomeNewsAsync(db, 7, "sports"); }
+        catch (Exception ex) when (DataFailures.IsReadFailure(ex))
+        { newsUnavailable = true; stories = []; Log.LogError(ex, "Could not read sports headlines."); }
+
+        // Upcoming: today's remaining games, the same timeline as the homepage's Today & Tonight.
+        try
+        {
+            var todays = await HomeEventResults.WithoutFinalResultsAsync(db, await EventsQuery.GetOnDateAsync(db, today));
+            upcoming = TodayTonight.Build(todays, Dates).Where(i => i.StartsUtc is null || i.StartsUtc > nowUtc).Take(11).ToList();
+        }
+        catch (Exception ex) when (DataFailures.IsReadFailure(ex))
+        { upcoming = []; Log.LogError(ex, "Could not read upcoming games."); }
+
+        // Big 12 football standings when that source is enabled.
+        try
+        {
+            var hidden = Config.GetSection("Standings:HiddenProviders").Get<string[]>();
+            var all = await StandingsQuery.GetAsync(db, null, Log, today, hidden);
+            standingsSource = all.Sources.FirstOrDefault(s => s.ProviderKey == "big12" && s.Sport == "Football");
+            if (standingsSource is not null)
+            {
+                var page = await StandingsQuery.GetAsync(db, standingsSource.Id, Log, today, hidden);
+                standingsGroup = page.Groups.FirstOrDefault();
+            }
+        }
+        catch (Exception ex) when (DataFailures.IsReadFailure(ex))
+        { standingsSource = null; standingsGroup = null; Log.LogError(ex, "Could not read sports front standings."); }
+
+        try { rankings = await RankingsQuery.GetAsync(db, null, Log, today); }
+        catch (Exception ex) when (DataFailures.IsReadFailure(ex))
+        { rankings = new([], null, null, []); Log.LogError(ex, "Could not read sports front rankings."); }
+    }
+
+    /// <summary>College tables repeat "W-L" for conference and overall records; the compact table names them.</summary>
+    private static string ColumnLabel(IReadOnlyList<StandingColumn> columns, int index)
+    {
+        var label = columns[index].Label;
+        if (columns.Count(c => c.Label == label) < 2) return label;
+        return columns.Take(index).Any(c => c.Label == label) ? "All" : "Conf";
+    }
+
+    private static string Title(FeedItem item) => FeedText.StripEmoji(item.Title) is { Length: > 0 } title ? title : item.Title;
+
+    private string When(FeedItem item) => item.Undated ? "" : $"{Dates.Published(item.Date)} · {Dates.Time(item.Date)}";
+
+    private static string Move(myNewspaper.Web.Data.Models.SportsRankingTeam team) =>
+        team.PreviouslyUnranked ? "New"
+        : team.PreviousRank is { } previous && team.Rank is { } rank
+            ? previous > rank ? $"▲{previous - rank}" : previous < rank ? $"▼{rank - previous}" : "—"
+            : "";
+}

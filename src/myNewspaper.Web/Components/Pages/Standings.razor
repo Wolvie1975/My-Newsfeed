@@ -9,11 +9,16 @@
 @if (CollegeSport is null)
 {
 <PageTitle>Standings · myNewspaper</PageTitle>
-<PageHeading Section="sports" Title="Standings" Eyebrow="THE LEAGUE PICTURE" Description="Full league and conference standings, in the provider’s published order." />
+<PageHeading Section="sports" Title="Standings" Eyebrow="The league picture" Description="" />
 }
 @if (CollegeSport is null && page.Sources.Count > 0)
 {
-    <form class="catselect" method="get" action="@BasePath">
+    @* Leagues as pills on desktop (as in the approved concept); the dropdown below serves phones. *@
+    <nav class="sec-pills sec-pills--desktop st-leagues" aria-label="Leagues">
+        @foreach (var source in page.Sources)
+        { <a href="@($"standings?sourceId={source.Id}")" aria-current="@(page.Selected?.Id == source.Id ? "page" : null)">@source.DisplayName</a> }
+    </nav>
+    <form class="catselect st-select" method="get" action="@BasePath">
         @if (CollegeSport is not null) { <input type="hidden" name="sport" value="@CollegeHub.Resolve(CollegeSport).Key" /> }
         <label class="sr-only" for="standings-source">League or sport</label>
         <select id="standings-source" name="sourceId" onchange="this.form.requestSubmit()">
@@ -37,12 +42,14 @@ else
     var rows = page.Groups.SelectMany(g => g.Teams).Select(t => t.Row).ToList();
     var seasons = rows.Select(r => r.Season).Where(s => !string.IsNullOrWhiteSpace(s)).Distinct().ToList();
     if (seasons.Count == 0 && selected.LatestSeason is { Length: > 0 } season) seasons.Add(season);
-    <h2>@selected.DisplayName</h2>
+    <div class="st-head">
+        <h2>@selected.DisplayName</h2>
+        <span class="mv-updated">@(seasons.Count > 0 ? string.Join(" · ", seasons) + " season · " : "")provider order@(selected.LastSuccessAt is { } checkedAt ? " · refreshed " + Dates.Time(checkedAt) : "")</span>
+    </div>
     <SoccerLeagueLinks Provider="@selected.ProviderKey" />
     @if (selected.ProviderKey == "big12" && selected.Sport == "Soccer")
     { <p class="updated">Conference and overall standings.</p> }
     @if (selected.ProviderKey == "espn-championship") { <p class="updated">Wrexham AFC is highlighted; the full league table remains visible.</p> }
-    @if (seasons.Count > 0) { <p class="updated">Published season: @string.Join(" · ", seasons)</p> }
     <details class="ranking-info"><summary>About these standings</summary>
     @if (selected.LastSuccessAt is { } refreshed)
     { <p class="updated">Last refreshed <time datetime="@refreshed.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'")">@Dates.PublishedFull(refreshed)</time></p> }

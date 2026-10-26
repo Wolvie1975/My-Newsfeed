@@ -9,7 +9,7 @@
 @inject ILogger<F1> Log
 
 <PageTitle>F1 · @ViewLabel · myNewspaper</PageTitle>
-<PageHeading Section="sports" Title="F1" Eyebrow="FORMULA 1" Description="Race weekends, published results and championship standings." />
+<PageHeading Section="sports" Title="F1" Eyebrow="@($"Formula 1{(data.Season is { } year ? " · " + year + " season" : "")}")" Description="" />
 <F1Tabs Current="@view" />
 @if (error is not null)
 {
@@ -21,41 +21,94 @@ else if (data.Source?.Enabled != true)
 }
 else
 {
-    @if (data.Season is { } season) { <p class="updated">Season @season</p> }
-    @if (data.FetchedAt is { } updated)
-    { <p class="updated">Snapshot updated <time datetime="@updated.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'")">@Dates.PublishedFull(updated)</time></p> }
     @if (F1Query.Freshness(data, DateTime.UtcNow) is { } warning) { <p class="updated" role="status">@warning</p> }
     @if (view == "schedule")
     {
-        <h2>Schedule</h2>
-        <SectionSelect Id="f1-calendar" Label="Calendar" Current="@(FullCalendar ? "f1?calendar=all" : "f1")"
-            Choices="@(new NavigationChoice[] { new("f1", "Upcoming weekends"), new("f1?calendar=all", "Full calendar") })" />
-        @if (visibleRaces.Count == 0)
-        { <p class="empty">@(data.Races.Count == 0 ? "No race calendar available yet. Please check back soon." : "No upcoming race weekends in the collected season. View the full calendar for past races.")</p> }
-        @foreach (var race in visibleRaces)
+        @* Schedule as in the approved concept: the next race weekend as a banner, the following rounds as agate rows
+           and the drivers’ championship beside them. *@
+        var next = FullCalendar ? null : visibleRaces.FirstOrDefault();
+        @if (next is { } race)
         {
             var raceSession = new F1Session("Grand Prix", race.RaceDate, F1Query.StartsUtc(race.RaceDate, race.RaceTimeUtc));
+            var raceDay = F1Query.LocalDate(raceSession, Dates) == Dates.Today;
             var published = data.Choices.Any(c => c.Round == race.Round && c.SessionType == "Race");
-            <section class="f1-weekend" aria-labelledby="f1-round-@race.Round" data-f1-round="@race.Round">
-                <p class="movie-kind">Round @race.Round</p>
-                <h3 id="f1-round-@race.Round">@race.RaceName</h3>
-                <p>@race.CircuitName · @string.Join(", ", new[] { race.Locality, race.Country }.Where(x => !string.IsNullOrWhiteSpace(x)))</p>
-                <p><strong>Grand Prix:</strong> <SessionTime Session="raceSession" /></p>
-                @if (published)
-                { <p><a href="@($"f1/results?race={race.Round}:Race")">Race results published →</a></p> }
-                else if (F1Query.LocalDate(raceSession, Dates) < Dates.Today || raceSession.StartsUtc is { } start && start < DateTime.UtcNow)
-                { <p class="updated">Results pending/unavailable.</p> }
-                @if (FeedQuery.SafeHref(race.RaceUrl) is { } reference)
-                { <p><a href="@reference" target="_blank" rel="noopener noreferrer">Race reference</a></p> }
-                <details class="f1-sessions">
-                    <summary>Weekend timetable</summary>
-                    <ul>
-                        @foreach (var session in F1Query.Sessions(race))
-                        { <li><strong>@session.Name</strong><span><SessionTime Session="session" /></span></li> }
-                    </ul>
-                </details>
+            <section class="f1-banner f1-weekend" aria-labelledby="f1-round-@race.Round" data-f1-round="@race.Round">
+                <div class="f1-banner__text">
+                    <p class="f1-banner__kicker">@(raceDay ? "Race day" : "Next race") · Round @race.Round</p>
+                    <h2 id="f1-round-@race.Round">@race.RaceName</h2>
+                    <p class="f1-banner__where">@race.CircuitName · @string.Join(", ", new[] { race.Locality, race.Country }.Where(x => !string.IsNullOrWhiteSpace(x)))</p>
+                </div>
+                <div class="f1-banner__when">
+                    <span class="f1-banner__time"><SessionTime Session="raceSession" /></span>
+                    <div class="f1-banner__links">
+                        @if (published) { <a href="@($"f1/results?race={race.Round}:Race")">Race results <span aria-hidden="true">→</span></a> }
+                        @if (FeedQuery.SafeHref(race.RaceUrl) is { } reference) { <a href="@reference" target="_blank" rel="noopener noreferrer">Race reference</a> }
+                    </div>
+                    <details class="f1-sessions">
+                        <summary>Weekend timetable</summary>
+                        <ul>
+                            @foreach (var session in F1Query.Sessions(race))
+                            { <li><strong>@session.Name</strong><span><SessionTime Session="session" /></span></li> }
+                        </ul>
+                    </details>
+                </div>
             </section>
         }
+        <div class="f1-cols">
+            <section class="f1-rounds" aria-labelledby="f1-rounds-title">
+                <div class="ef-head">
+                    <h2 id="f1-rounds-title" class="ef-label">@(FullCalendar ? "Full calendar" : "Upcoming weekends")</h2>
+                    <a href="@(FullCalendar ? "f1" : "f1?calendar=all")">@(FullCalendar ? "Upcoming weekends" : "Full calendar") <span aria-hidden="true">→</span></a>
+                </div>
+                @if (visibleRaces.Count == 0)
+                { <p class="ef-empty">@(data.Races.Count == 0 ? "No race calendar available yet. Please check back soon." : "No upcoming race weekends in the collected season. View the full calendar for past races.")</p> }
+                <ol class="f1-list">
+                    @foreach (var round in visibleRaces.Where(r => r != next))
+                    {
+                        var raceSession = new F1Session("Grand Prix", round.RaceDate, F1Query.StartsUtc(round.RaceDate, round.RaceTimeUtc));
+                        var published = data.Choices.Any(c => c.Round == round.Round && c.SessionType == "Race");
+                        <li class="f1-round f1-weekend" data-f1-round="@round.Round">
+                            <span class="f1-round__rd">RD @round.Round</span>
+                            <span class="f1-round__name"><b id="f1-round-@round.Round">@round.RaceName</b><span>@round.CircuitName</span></span>
+                            <span class="f1-round__when"><SessionTime Session="raceSession" /></span>
+                            <span class="f1-round__links">
+                                @if (published) { <a href="@($"f1/results?race={round.Round}:Race")">Results <span aria-hidden="true">→</span></a> }
+                                <details class="f1-sessions">
+                                    <summary>Timetable</summary>
+                                    <ul>
+                                        @foreach (var session in F1Query.Sessions(round))
+                                        { <li><strong>@session.Name</strong><span><SessionTime Session="session" /></span></li> }
+                                    </ul>
+                                </details>
+                            </span>
+                        </li>
+                    }
+                </ol>
+            </section>
+            @if (drivers.Count > 0)
+            {
+                <section class="f1-drivers" aria-labelledby="f1-drivers-title">
+                    <div class="ef-head">
+                        <h2 id="f1-drivers-title" class="ef-label">Drivers’ championship@(drivers[0].StandingsRound is var after && after > 0 ? $" · after round {after}" : "")</h2>
+                        <a href="f1/standings?table=constructors">Constructors <span aria-hidden="true">→</span></a>
+                    </div>
+                    <ol class="f1-list">
+                        @foreach (var row in drivers)
+                        {
+                            <li class="f1-driver">
+                                <b class="f1-driver__pos">@F1Query.Position(row.Position, row.PositionText)</b>
+                                <span class="f1-driver__name">@row.GivenName @row.FamilyName<span class="f1-driver__team">@F1Query.Constructors(row.ConstructorsJson)</span></span>
+                                <b class="f1-driver__pts">@F1Query.Points(row.Points)</b>
+                                <span class="f1-driver__wins">@(row.Wins)W</span>
+                            </li>
+                        }
+                    </ol>
+                    <a class="ef-more" href="f1/standings">Full standings <span aria-hidden="true">→</span></a>
+                </section>
+            }
+        </div>
+        @if (data.FetchedAt is { } updated)
+        { <p class="ef-note">Snapshot updated <time datetime="@updated.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'")">@Dates.PublishedFull(updated)</time></p> }
     }
     else if (view == "results")
     {
@@ -152,6 +205,7 @@ else
     private IReadOnlyList<myNewspaper.Web.Data.Models.F1Race> visibleRaces = [];
     private myNewspaper.Web.Data.Models.F1Race? selectedRace;
     private int? standingsRound;
+    private IReadOnlyList<myNewspaper.Web.Data.Models.F1DriverStanding> drivers = [];
     private string? error;
     private string ChoiceLabel(F1ResultChoice choice) => $"Round {choice.Round} · {data.Races.First(r => r.Round == choice.Round).RaceName} · {(choice.SessionType == "Race" ? "Grand Prix" : "Sprint")}";
 
@@ -164,6 +218,7 @@ else
             await using var db = await Factory.CreateDbContextAsync();
             data = await F1Query.GetAsync(db, view, Race);
             visibleRaces = data.Races.Where(r => FullCalendar || F1Query.Upcoming(r, Dates, Dates.Today)).ToList();
+            drivers = view == "schedule" ? (await F1Query.GetAsync(db, "standings", null)).Drivers.Take(10).ToList() : [];
             selectedRace = data.Races.FirstOrDefault(r => r.Round == data.Selected?.Round);
             standingsRound = Constructors ? data.Constructors.Select(r => (int?)r.StandingsRound).FirstOrDefault()
                 : data.Drivers.Select(r => (int?)r.StandingsRound).FirstOrDefault();

@@ -15,9 +15,9 @@
             @if (hasChampionship) { <a href="championship/results">EFL Championship season results →</a> }
         </div>
         <nav class="tv-week scoreboard-dates" aria-label="Scoreboard dates">
-            @if (selectedDay > today.AddDays(-1)) { <a class="nf-btn nf-btn--secondary scoreboard-prev" href="@Href(selectedDay.AddDays(-1))">← Previous day</a> }
-            <strong class="scoreboard-date">@FeedDates.LongDate(selectedDay) · CT</strong>
-            @if (selectedDay < today.AddDays(7)) { <a class="nf-btn nf-btn--secondary scoreboard-next" href="@Href(selectedDay.AddDays(1))">Next day →</a> }
+            @if (selectedDay > today.AddDays(-1)) { <a class="nf-btn nf-btn--secondary scoreboard-prev" href="@Href(selectedDay.AddDays(-1))"><span aria-hidden="true">←</span> <span class="sr-only">Previous day,</span> @selectedDay.AddDays(-1).ToString("ddd", System.Globalization.CultureInfo.InvariantCulture)</a> }
+            <strong class="scoreboard-date">@selectedDay.ToString("dddd, MMMM d", System.Globalization.CultureInfo.InvariantCulture)</strong>
+            @if (selectedDay < today.AddDays(7)) { <a class="nf-btn nf-btn--secondary scoreboard-next" href="@Href(selectedDay.AddDays(1))"><span class="sr-only">Next day,</span> @selectedDay.AddDays(1).ToString("ddd", System.Globalization.CultureInfo.InvariantCulture) <span aria-hidden="true">→</span></a> }
             @if (selectedDay != today) { <a class="scoreboard-today" href="@Href(today)">Today</a> }
         </nav>
         <form method="get" action="scoreboard" class="catselect scoreboard-filter">
@@ -56,9 +56,77 @@
         @if (snapshot.Games.Count == 0) {
             <p class="empty">@(snapshot.Coverage.Count == 0 ? "No scoreboard coverage is currently enabled." : "No games are currently stored for this day and selection. Coverage may still be updating.")</p>
         }
-        <div class="scoreboard-games">
-        @foreach (var game in visibleGames)
+        @if (Compact)
         {
+            <div class="scoreboard-games">
+                @foreach (var game in visibleGames) { @GameCard(game) }
+            </div>
+        }
+        else
+        {
+            @* The full scoreboard groups games by competition, as in the approved concept. *@
+            <div class="sb-groups">
+                @foreach (var group in visibleGames.GroupBy(g => CompetitionLabel(g.Sport, g.League)))
+                {
+                    <section class="sb-group" aria-label="@group.Key">
+                        <h2 class="sb-group__title"><span>@group.Key</span><span class="sb-group__count">@group.Count() @(group.Count() == 1 ? "game" : "games")</span></h2>
+                        <div class="scoreboard-games">
+                            @foreach (var game in group) { @GameCard(game) }
+                        </div>
+                    </section>
+                }
+            </div>
+        }
+        @if (Compact && snapshot.Games.Count > visibleGames.Count) { <p class="updated">Showing @visibleGames.Count of @snapshot.Games.Count games. <a href="scoreboard">See all games →</a></p> }
+    }
+    @if (!Compact) { <p class="updated scoreboard-note">Sampled clocks stay fixed between updates. Coverage excludes F1 and unsupported leagues.</p> }
+</div>
+
+@code {
+    [Parameter] public bool Compact { get; set; }
+    [Parameter, SupplyParameterFromQuery(Name="day")] public string? Day { get; set; }
+    [Parameter, SupplyParameterFromQuery(Name="show")] public string? Show { get; set; }
+    private ScoreboardSelection selection = new("");
+    [Parameter, SupplyParameterFromQuery(Name="competition")] public string? Competition { get; set; }
+    [Parameter, SupplyParameterFromQuery(Name="follow")] public int? Follow { get; set; }
+    [Parameter, SupplyParameterFromQuery(Name="status")] public string? Status { get; set; }
+    private TeamRecords records = TeamRecords.Empty;
+    private bool hasMls, hasChampionship;
+    private TeamRecordValue? RecordFor(ScoreboardGame game, bool home) {
+        if (game.Provider != "espn") return null;
+        var competition = TeamRecords.Competition(game.Sport, game.League);
+        return records.Find(competition.Provider, competition.Sport, home ? game.HomeName : game.AwayName, home ? game.HomeTeamId : game.AwayTeamId);
+    }
+    private DateOnly today, selectedDay;
+    private ScoreboardSnapshot snapshot = new([], [], true);
+    private IReadOnlyList<ScoreboardGame> visibleGames = [];
+    private IReadOnlyDictionary<string,string> boxLabels = new Dictionary<string,string>();
+    private string Href(DateOnly day) => $"scoreboard?day={day:yyyy-MM-dd}" + (selection.Value.Length == 0 ? "" : "&show=" + Uri.EscapeDataString(selection.Value)) + (Status == "final" ? "&status=final" : "");
+    public static string CompetitionLabel(string sport, string league) => league switch {
+        "nfl" => "NFL", "mlb" => "MLB", "nhl" => "NHL", "wnba" => "WNBA", "usa.1" => "MLS", "usa.nwsl" => "NWSL", "eng.1" => "Premier League", "eng.2" => "EFL Championship",
+        "college-football" => "College football", "mens-college-basketball" => "Men’s college basketball", "womens-college-basketball" => "Women’s college basketball", "usa.ncaa.w.1" => "Women’s college soccer", "womens-college-volleyball" => "Women’s college volleyball", _ => sport + " · " + league
+    };
+    protected override async Task OnParametersSetAsync() {
+        today = Dates.Today;
+        selectedDay = !Compact && DateOnly.TryParseExact(Day, "yyyy-MM-dd", out var day) && day >= today.AddDays(-1) && day <= today.AddDays(7) ? day : today;
+        snapshot = await Repository.ReadAsync(selectedDay, selectedDay == today, Compact ? null : Competition, Compact ? null : Follow, !Compact && Status == "final", Compact ? null : Show);
+        selection = ScoreboardSelection.Resolve(Compact ? null : Show, Compact ? null : Competition, Compact ? null : Follow, snapshot.Coverage, snapshot.Follows ?? []);
+        try {
+        await using var db = await Factory.CreateDbContextAsync();
+        records = await TeamRecords.LoadAsync(db, today, RecordPhases);
+        hasMls = !Compact && await db.SportsEventsTypes.AsNoTracking().AnyAsync(s => s.Enabled && s.ProviderKey == "espn-mls");
+        hasChampionship = !Compact && await db.SportsEventsTypes.AsNoTracking().AnyAsync(s => s.Enabled && s.ProviderKey == "espn-championship");
+        } catch (Exception ex) when (DataFailures.IsReadFailure(ex)) {
+            records = TeamRecords.Empty;
+            hasMls = hasChampionship = false;
+            Log.LogWarning(ex, "Optional scoreboard records and season links unavailable");
+        }
+        visibleGames = Compact ? snapshot.Games.Take(6).ToList() : snapshot.Games;
+        boxLabels = await BoxScores.AvailableAsync(visibleGames.Where(g => g.Provider == "espn" && g.HasBoxScore).Select(g => new BoxIdentity(g.Sport, g.League, g.EventId)));
+    }
+
+    private RenderFragment GameCard(ScoreboardGame game) => __builder =>
+    {
             <article class="scoreboard-game" data-scoreboard-key="@game.Key">
                 <header class="scoreboard-game-heading">
                     <span class="scoreboard-competition">@CompetitionLabel(game.Sport, game.League)</span>
@@ -109,53 +177,5 @@
                     </div>
                 </footer>
             </article>
-        }
-        </div>
-        @if (Compact && snapshot.Games.Count > visibleGames.Count) { <p class="updated">Showing @visibleGames.Count of @snapshot.Games.Count games. <a href="scoreboard">See all games →</a></p> }
-    }
-    @if (!Compact) { <p class="updated scoreboard-note">Sampled clocks stay fixed between updates. Coverage excludes F1 and unsupported leagues.</p> }
-</div>
-
-@code {
-    [Parameter] public bool Compact { get; set; }
-    [Parameter, SupplyParameterFromQuery(Name="day")] public string? Day { get; set; }
-    [Parameter, SupplyParameterFromQuery(Name="show")] public string? Show { get; set; }
-    private ScoreboardSelection selection = new("");
-    [Parameter, SupplyParameterFromQuery(Name="competition")] public string? Competition { get; set; }
-    [Parameter, SupplyParameterFromQuery(Name="follow")] public int? Follow { get; set; }
-    [Parameter, SupplyParameterFromQuery(Name="status")] public string? Status { get; set; }
-    private TeamRecords records = TeamRecords.Empty;
-    private bool hasMls, hasChampionship;
-    private TeamRecordValue? RecordFor(ScoreboardGame game, bool home) {
-        if (game.Provider != "espn") return null;
-        var competition = TeamRecords.Competition(game.Sport, game.League);
-        return records.Find(competition.Provider, competition.Sport, home ? game.HomeName : game.AwayName, home ? game.HomeTeamId : game.AwayTeamId);
-    }
-    private DateOnly today, selectedDay;
-    private ScoreboardSnapshot snapshot = new([], [], true);
-    private IReadOnlyList<ScoreboardGame> visibleGames = [];
-    private IReadOnlyDictionary<string,string> boxLabels = new Dictionary<string,string>();
-    private string Href(DateOnly day) => $"scoreboard?day={day:yyyy-MM-dd}" + (selection.Value.Length == 0 ? "" : "&show=" + Uri.EscapeDataString(selection.Value)) + (Status == "final" ? "&status=final" : "");
-    public static string CompetitionLabel(string sport, string league) => league switch {
-        "nfl" => "NFL", "mlb" => "MLB", "nhl" => "NHL", "wnba" => "WNBA", "usa.1" => "MLS", "usa.nwsl" => "NWSL", "eng.1" => "Premier League", "eng.2" => "EFL Championship",
-        "college-football" => "College football", "mens-college-basketball" => "Men’s college basketball", "womens-college-basketball" => "Women’s college basketball", "usa.ncaa.w.1" => "Women’s college soccer", "womens-college-volleyball" => "Women’s college volleyball", _ => sport + " · " + league
     };
-    protected override async Task OnParametersSetAsync() {
-        today = Dates.Today;
-        selectedDay = !Compact && DateOnly.TryParseExact(Day, "yyyy-MM-dd", out var day) && day >= today.AddDays(-1) && day <= today.AddDays(7) ? day : today;
-        snapshot = await Repository.ReadAsync(selectedDay, selectedDay == today, Compact ? null : Competition, Compact ? null : Follow, !Compact && Status == "final", Compact ? null : Show);
-        selection = ScoreboardSelection.Resolve(Compact ? null : Show, Compact ? null : Competition, Compact ? null : Follow, snapshot.Coverage, snapshot.Follows ?? []);
-        try {
-        await using var db = await Factory.CreateDbContextAsync();
-        records = await TeamRecords.LoadAsync(db, today, RecordPhases);
-        hasMls = !Compact && await db.SportsEventsTypes.AsNoTracking().AnyAsync(s => s.Enabled && s.ProviderKey == "espn-mls");
-        hasChampionship = !Compact && await db.SportsEventsTypes.AsNoTracking().AnyAsync(s => s.Enabled && s.ProviderKey == "espn-championship");
-        } catch (Exception ex) when (DataFailures.IsReadFailure(ex)) {
-            records = TeamRecords.Empty;
-            hasMls = hasChampionship = false;
-            Log.LogWarning(ex, "Optional scoreboard records and season links unavailable");
-        }
-        visibleGames = Compact ? snapshot.Games.Take(6).ToList() : snapshot.Games;
-        boxLabels = await BoxScores.AvailableAsync(visibleGames.Where(g => g.Provider == "espn" && g.HasBoxScore).Select(g => new BoxIdentity(g.Sport, g.League, g.EventId)));
-    }
 }
