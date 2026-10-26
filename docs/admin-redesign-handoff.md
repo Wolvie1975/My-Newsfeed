@@ -58,3 +58,34 @@ the source of truth is now the code (`wwwroot/admin.css`, `Components/AdminIcon.
 - Check the "Uncategorized sources appear in Headlines" help text against how the site treats uncategorized sources.
 - Fold in the review's bug fixes while touching pages: unhandled `InvalidOperationException` on event-type delete,
   sync-after-follow failure, scraper status load errors.
+
+## Implementation status (October 26, 2026, release `admin-20261026`)
+
+Done:
+
+- **Phase 1:** `admin.css` (also: sign-in card, dark alerts, dark select arrow, inline code, the switch's off state
+  darkened to `#6f7a8f` for 3:1 against the surface, `#blazor-error-ui` moved in), template CSS removed,
+  `AdminIcon`, `AdminNavCounts` (unit-tested), `NavMenu`, `MainLayout` (the admin menu shows only when signed in, so
+  the sign-in page is a centered card), `AdminContent`.
+- **Phase 2:** `AdminPageHeader`, `StatusBadge`, `AdminSwitch`, `AdminPager` (with `Noun`; used on Sources, Pages,
+  YouTube videos and Events).
+- **Phase 3:** Scraper status, Sources list and source editor as specified. Uncategorized help text checked: such
+  sources appear in Headlines under All categories. Deleting from the editor returns to `admin/sources?deleted=…`.
+- **Phase 4 (partly):** every admin page is wrapped in `AdminContent` with `AdminPageHeader` (eyebrows from the table;
+  "Sports event types" is now **Event feeds** in the menu, heading and title); the other editors sit in a card; TV
+  series following is an `AdminSwitch`; the TV follow form shows its own heading only on the public page; older
+  Bootstrap tables keep a 760px minimum and scroll inside their card on phones; long feed URLs ellipsize. Bug fixes:
+  deleting an event feed with shared attribution reports why (and Delete is hidden for such feeds); a failed first sync
+  after following a league no longer errors the page (`admin/results?syncPending=1`); scraper status load and catch-up
+  errors show a message.
+- **Phase 5:** `tests/browser/admin-layout.browser.cjs` (needs `ADMIN_PASSWORD`; read-only): 21 pages at
+  320/390/430/744/820/1024/1440 light and dark without sideways scroll or script errors, sidebar only above 900px,
+  phone menu opens and closes, active link, WCAG AA text contrast (shared `contrast-audit.cjs`), menu count equals the
+  status page's problems plus stale, Sources filters in the address and kept by Back, editor save bar.
+
+Not done yet (next batch):
+
+- The full list pattern (toolbar, status pills, switches, ⋯ menu, phone cards) on Categories, Pages, YouTube feeds,
+  YouTube videos, Event feeds, Events and Results follows; they use the restyled Bootstrap tables meanwhile.
+- The editor pattern (save bar, health aside) on the page, feed, video and event editors.
+- Phone menu red dot; Escape closing the ⋯ menu (Tab-away leaves it open).

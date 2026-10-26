@@ -6,10 +6,28 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The latest recorded web release is `mynewspaper-web:share-20261026`
-(image `2d3a6f80ab61`), deployed October 26, 2026 (Central). Its rollback image is
-`mynewsfeed-web:before-mynewspaper-share-20261026`. Deployment checks passed then;
+The latest recorded web release is `mynewspaper-web:admin-20261026`
+(image `3d007990c29e`), deployed October 26, 2026 (Central). Its rollback image is
+`mynewsfeed-web:before-mynewspaper-admin-20261026`. Deployment checks passed then;
 this is a dated observation, not live hosting status.
+
+## Admin redesign, phases 1–4 — deployed October 26, 2026 (Central)
+
+From `docs/admin-redesign-handoff.md` (approved Admin mockups on the canvas). The admin area moves from the Blazor
+template to myNewspaper's look: `admin.css` scoped to `.adm` (light and dark, phones below 900px), a new sidebar menu
+with icons and red problem counts, Scraper status (health line, tiles, Needs attention, Catch-up tasks), Sources (search,
+category, status filter with counts, filters in the address, switches, ⋯ menu, Disable-instead confirm, phone cards),
+the source editor (save bar naming changed fields, health and Remove panels), and every other admin page in the new
+header and error boundary. The handoff's implementation status section lists what is done and the next batch.
+Found while checking: the yellow Admin tag on the white sign-in card (1.43:1) and Bootstrap's pink inline code in dark
+mode (3.73:1) were unreadable; both fixed.
+
+Deployed `mynewspaper-web:admin-20261026` (`3d007990c29e`), healthy; rollback
+`mynewsfeed-web:before-mynewspaper-admin-20261026`. 733 .NET tests (new AdminNavCounts test). Preview:
+admin-layout at all seven widths light/dark (21 pages), frontpages, branding, home-columns, compact-stories,
+settings-order, theme-mode, tablet-layout on four public pages and contrast for three schemes on / and /settings
+passed (public site unchanged). Live: admin-layout at 390 and 1440 light/dark, frontpages and branding passed. Nothing
+was saved or deleted by the checks. Real device not checked.
 
 ## Share buttons after in-site navigation — deployed October 26, 2026 (Central)
 
