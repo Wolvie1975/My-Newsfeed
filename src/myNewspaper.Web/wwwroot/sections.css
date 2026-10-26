@@ -2944,63 +2944,22 @@ a.tvc-row__show:hover {
     color: var(--text);
     font-weight: 800;
 }
-@media (max-width: 699px) {
-    /* Phones: the lead as a card with its picture, then the rest as one compact list. */
-    .pub .paper-feed .paper-label {
-        display: none;
-    }
+@media (max-width: 743px) {
+    /* Phones, as on F1 News: every story is its own picture card in one column. The desktop groupings (lead,
+       latest headlines, support stories, More stories rows) step aside so their articles join one list. */
+    .pub .paper-top,
+    .pub .paper-top > section,
     .pub .paper-lead,
     .pub .paper-latest,
     .pub .paper-support,
     .pub .paper-rows {
-        padding: 0 16px;
-        border: 1px solid var(--border);
-        border-radius: 16px;
-        background: var(--surface);
+        display: contents;
     }
-    .pub .paper-feed .paper-top {
-        gap: 12px;
-    }
-    .pub .paper-feed .paper-rows {
-        margin-top: 12px;
-    }
-    .pub .paper-lead {
-        overflow: hidden;
-        padding: 0;
-    }
-    .pub .paper-lead .body {
-        padding: 12px 16px 4px;
-    }
-    .pub .paper-feed .article--lead .thumb {
-        display: block;
-        border-radius: 0;
-    }
-    .pub .paper-feed .article--lead .title {
-        font-size: 25px;
-    }
-    .pub .paper-feed .article:not(.article--lead) .cat,
-    .pub .paper-feed .article:not(.article--lead) .summary,
-    .pub .paper-feed .article:not(.article--lead) .thumb {
+    .pub .paper-feed .paper-label {
         display: none;
     }
-    .pub .paper-feed .article:not(.article--lead) {
-        display: block;
-        padding: 10px 0 0;
-        border-bottom: 1px solid var(--row-border);
-    }
-    .pub .paper-feed .article:not(.article--lead):last-child {
-        border-bottom: 0;
-    }
-    .pub .paper-feed .article:not(.article--lead) .body {
-        display: block;
-        padding: 0;
-    }
-    .pub .paper-feed .article:not(.article--lead) .title {
-        font-family: inherit;
-        font-size: 15px;
-        font-weight: 600;
-        line-height: 1.35;
-    }
+}
+@media (max-width: 699px) {
     .pub .loadmore .nf-btn {
         width: 100%;
     }
@@ -3198,35 +3157,6 @@ a.tvc-row__show:hover {
     font-size: 18px;
     letter-spacing: 0;
     text-transform: none;
-}
-@media (max-width: 699px) {
-    /* Inside the news card the feed needs no second card of its own. */
-    .pub .lc-feed .paper-lead,
-    .pub .lc-feed .paper-rows {
-        padding: 0;
-        border: 0;
-        border-radius: 0;
-        background: none;
-    }
-    .pub .lc-feed .paper-lead .thumb {
-        display: none;
-    }
-    .pub .lc-feed .paper-lead .body {
-        padding: 8px 0 0;
-    }
-    .pub .lc-feed .article--lead .title {
-        font-family: inherit;
-        font-size: 15px;
-        font-weight: 600;
-        line-height: 1.35;
-    }
-    .pub .lc-feed .article--lead .cat,
-    .pub .lc-feed .article--lead .summary {
-        display: none;
-    }
-    .pub .lc-feed .paper-rows {
-        margin-top: 0;
-    }
 }
 .pub .lc-events p {
     margin: 4px 0 12px;
@@ -3674,19 +3604,6 @@ a.tvc-row__show:hover {
     }
     :root:is([data-color-scheme], :not([data-color-scheme])) .pub .sports-team-group .sports-team-options {
         grid-template-columns: repeat(4, minmax(0, 1fr));
-    }
-}
-@media (max-width: 699px) {
-    /* The lead card's text sits inside the card (the older lead rules are more specific). */
-    .pub .paper-feed .paper-top .paper-lead {
-        border: 1px solid var(--border);
-        background: var(--surface);
-    }
-    .pub .paper-feed .paper-lead .article--lead {
-        display: block;
-    }
-    .pub .paper-feed .paper-lead .article--lead .body {
-        padding: 12px 16px 4px;
     }
 }
 @media (min-width: 744px) {

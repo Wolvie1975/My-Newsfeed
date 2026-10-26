@@ -43,9 +43,14 @@ else
     else
     {
         @if (After != null) { <p><a href="@Href(null)">← Back to the newest articles</a></p> }
-        <section class="feed" aria-label="F1 articles" data-last-day="@lastDay">
-            <FeedArticles Items="data.Feed.Items" LeadFirst="@(After is null)" Total="@(After is null ? data.Feed.Total : null)" />
-        </section>
+        @* The Headlines layout: lead with Latest headlines beside it, then More stories (one card per story on phones). *@
+        <div class="news-front">
+            <div class="news-front__stories">
+                <section class="feed paper-feed" aria-label="F1 articles" data-last-day="@lastDay">
+                    <NewspaperFeed Items="data.Feed.Items" Featured="@(After is null)" Total="@(After is null ? data.Feed.Total : null)" />
+                </section>
+            </div>
+        </div>
         <div class="loadmore">
             @if (data.Feed.Next is { } next)
             { <a class="nf-btn nf-btn--secondary" data-load-more data-feed-view="f1-news" data-enhance-nav="false" href="@Href(next.ToToken())">Load more articles</a> }
