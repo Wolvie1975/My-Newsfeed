@@ -21,6 +21,9 @@ const schemes = [
     'y2k',
     'desert',
     'coffee',
+    'coastal',
+    'olive',
+    'golden-hour',
 ];
 if (process.env.SCHEMES) schemes.splice(0, schemes.length, ...process.env.SCHEMES.split(','));
 const pages = (process.env.PAGES || '/,/watch,/sports,/settings').split(',');

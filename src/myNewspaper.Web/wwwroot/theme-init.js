@@ -39,6 +39,9 @@
             'y2k',
             'desert',
             'coffee',
+            'coastal',
+            'olive',
+            'golden-hour',
         ].includes(scheme)
             ? scheme
             : 'ribbon',

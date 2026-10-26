@@ -934,6 +934,9 @@
         'y2k',
         'desert',
         'coffee',
+        'coastal',
+        'olive',
+        'golden-hour',
     ];
     function read() {
         let value;

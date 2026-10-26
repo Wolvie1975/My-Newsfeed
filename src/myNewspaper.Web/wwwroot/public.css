@@ -4372,6 +4372,222 @@
     --bar-fg-2: #ffffff;
 }
 
+/* Coastal: deep ocean cyan and coral. */
+:root[data-color-scheme='coastal']:not([data-theme='dark']) {
+    --bg: #f0f9fb;
+    --surface: #ffffff;
+    --border: #d5d5db;
+    --row-border: #d5d5db;
+    --field-border: #ababb4;
+    --text: #17171c;
+    --text-2: #4c4c56;
+    --text-3: #555560;
+    --accent: #0e7490;
+    --btn-bg: #0e7490;
+    --btn-fg: #ffffff;
+    --header-bg: #0e7490;
+    --header-fg: #ffffff;
+    --header-line: #ccccd5;
+    --header-border: transparent;
+    --selection-bg: #fb7185;
+    --selection-fg: #171717;
+    --brand-accent: #0e7490;
+    --chip-bg: #ffffff;
+    --chip-fg: #17171c;
+    --chip-line: #ababb4;
+    --chip-on-bg: #fb7185;
+    --chip-on-fg: #171717;
+    --chip-on-line: #fb7185;
+    --pill-bg: #f0f9fb;
+    --pill-fg: #17171c;
+    --ph-bg: #e9e9ed;
+    --ph-fg: #555560;
+    --mark-bg: #0e7490;
+    --mark-fg: #ffffff;
+    --bar-bg: #0e7490;
+    --bar-fg: #ffffff;
+    --bar-fg-2: #ffffff;
+}
+:root[data-color-scheme='coastal'][data-theme='dark'] {
+    --bg: #071a21;
+    --surface: #0f2c36;
+    --border: #5f5f66;
+    --row-border: #5f5f66;
+    --field-border: #777780;
+    --text: #f1f1f4;
+    --text-2: #c6c6cf;
+    --text-3: #b9b9c4;
+    --accent: #67e8f9;
+    --btn-bg: #0e7490;
+    --btn-fg: #ffffff;
+    --header-bg: #0e7490;
+    --header-fg: #ffffff;
+    --header-line: #ccccd5;
+    --header-border: transparent;
+    --selection-bg: #fb7185;
+    --selection-fg: #171717;
+    --brand-accent: #67e8f9;
+    --chip-bg: #0f2c36;
+    --chip-fg: #f1f1f4;
+    --chip-line: #777780;
+    --chip-on-bg: #fb7185;
+    --chip-on-fg: #171717;
+    --chip-on-line: #fb7185;
+    --pill-bg: #0f2c36;
+    --pill-fg: #f1f1f4;
+    --ph-bg: #0f2c36;
+    --ph-fg: #c6c6cf;
+    --mark-bg: #0e7490;
+    --mark-fg: #ffffff;
+    --bar-bg: #0e7490;
+    --bar-fg: #ffffff;
+    --bar-fg-2: #ffffff;
+}
+
+/* Olive Grove: olive and butter cream. */
+:root[data-color-scheme='olive']:not([data-theme='dark']) {
+    --bg: #f7f8ef;
+    --surface: #ffffff;
+    --border: #d5d5db;
+    --row-border: #d5d5db;
+    --field-border: #ababb4;
+    --text: #17171c;
+    --text-2: #4c4c56;
+    --text-3: #555560;
+    --accent: #5f6b2a;
+    --btn-bg: #5f6b2a;
+    --btn-fg: #ffffff;
+    --header-bg: #5f6b2a;
+    --header-fg: #ffffff;
+    --header-line: #ccccd5;
+    --header-border: transparent;
+    --selection-bg: #fde68a;
+    --selection-fg: #171717;
+    --brand-accent: #5f6b2a;
+    --chip-bg: #ffffff;
+    --chip-fg: #17171c;
+    --chip-line: #ababb4;
+    --chip-on-bg: #fde68a;
+    --chip-on-fg: #171717;
+    --chip-on-line: #fde68a;
+    --pill-bg: #f7f8ef;
+    --pill-fg: #17171c;
+    --ph-bg: #e9e9ed;
+    --ph-fg: #555560;
+    --mark-bg: #5f6b2a;
+    --mark-fg: #ffffff;
+    --bar-bg: #5f6b2a;
+    --bar-fg: #ffffff;
+    --bar-fg-2: #ffffff;
+}
+:root[data-color-scheme='olive'][data-theme='dark'] {
+    --bg: #14170b;
+    --surface: #262b16;
+    --border: #5f5f66;
+    --row-border: #5f5f66;
+    --field-border: #777780;
+    --text: #f1f1f4;
+    --text-2: #c6c6cf;
+    --text-3: #b9b9c4;
+    --accent: #d4dd9a;
+    --btn-bg: #5f6b2a;
+    --btn-fg: #ffffff;
+    --header-bg: #5f6b2a;
+    --header-fg: #ffffff;
+    --header-line: #ccccd5;
+    --header-border: transparent;
+    --selection-bg: #fde68a;
+    --selection-fg: #171717;
+    --brand-accent: #d4dd9a;
+    --chip-bg: #262b16;
+    --chip-fg: #f1f1f4;
+    --chip-line: #777780;
+    --chip-on-bg: #fde68a;
+    --chip-on-fg: #171717;
+    --chip-on-line: #fde68a;
+    --pill-bg: #262b16;
+    --pill-fg: #f1f1f4;
+    --ph-bg: #262b16;
+    --ph-fg: #c6c6cf;
+    --mark-bg: #5f6b2a;
+    --mark-fg: #ffffff;
+    --bar-bg: #5f6b2a;
+    --bar-fg: #ffffff;
+    --bar-fg-2: #ffffff;
+}
+
+/* Golden Hour: ochre and lavender. */
+:root[data-color-scheme='golden-hour']:not([data-theme='dark']) {
+    --bg: #fdf8ee;
+    --surface: #ffffff;
+    --border: #d5d5db;
+    --row-border: #d5d5db;
+    --field-border: #ababb4;
+    --text: #17171c;
+    --text-2: #4c4c56;
+    --text-3: #555560;
+    --accent: #854d0e;
+    --btn-bg: #854d0e;
+    --btn-fg: #ffffff;
+    --header-bg: #854d0e;
+    --header-fg: #ffffff;
+    --header-line: #ccccd5;
+    --header-border: transparent;
+    --selection-bg: #c4b5fd;
+    --selection-fg: #171717;
+    --brand-accent: #854d0e;
+    --chip-bg: #ffffff;
+    --chip-fg: #17171c;
+    --chip-line: #ababb4;
+    --chip-on-bg: #c4b5fd;
+    --chip-on-fg: #171717;
+    --chip-on-line: #c4b5fd;
+    --pill-bg: #fdf8ee;
+    --pill-fg: #17171c;
+    --ph-bg: #e9e9ed;
+    --ph-fg: #555560;
+    --mark-bg: #854d0e;
+    --mark-fg: #ffffff;
+    --bar-bg: #854d0e;
+    --bar-fg: #ffffff;
+    --bar-fg-2: #ffffff;
+}
+:root[data-color-scheme='golden-hour'][data-theme='dark'] {
+    --bg: #1c140a;
+    --surface: #2f2312;
+    --border: #5f5f66;
+    --row-border: #5f5f66;
+    --field-border: #777780;
+    --text: #f1f1f4;
+    --text-2: #c6c6cf;
+    --text-3: #b9b9c4;
+    --accent: #fcd34d;
+    --btn-bg: #854d0e;
+    --btn-fg: #ffffff;
+    --header-bg: #854d0e;
+    --header-fg: #ffffff;
+    --header-line: #ccccd5;
+    --header-border: transparent;
+    --selection-bg: #c4b5fd;
+    --selection-fg: #171717;
+    --brand-accent: #fcd34d;
+    --chip-bg: #2f2312;
+    --chip-fg: #f1f1f4;
+    --chip-line: #777780;
+    --chip-on-bg: #c4b5fd;
+    --chip-on-fg: #171717;
+    --chip-on-line: #c4b5fd;
+    --pill-bg: #2f2312;
+    --pill-fg: #f1f1f4;
+    --ph-bg: #2f2312;
+    --ph-fg: #c6c6cf;
+    --mark-bg: #854d0e;
+    --mark-fg: #ffffff;
+    --bar-bg: #854d0e;
+    --bar-fg: #ffffff;
+    --bar-fg-2: #ffffff;
+}
+
 /* Season records stay with their team when game cards stack on small screens. */
 .pub .team-record {
     display: block;
