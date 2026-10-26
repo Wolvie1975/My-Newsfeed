@@ -425,6 +425,10 @@
     -webkit-mask: url('img/placeholder-mark.svg') center / contain no-repeat;
     mask: url('img/placeholder-mark.svg') center / contain no-repeat;
 }
+/* A picture hides the mark, including transparent PNGs; it returns if the picture fails and is removed. */
+.pub :is(.thumb, .d-lead__image, .d-opinion .d-thumb):has(> img)::before {
+    display: none;
+}
 .pub .thumb img {
     position: absolute;
     inset: 0;

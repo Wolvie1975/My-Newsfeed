@@ -261,7 +261,8 @@
                     return;
                 }
                 const status = document.querySelector('[data-saved-status]');
-                if (status) status.textContent = 'Shared across devices. Changes sync automatically.';
+                // Synced: the page heading already says the list is shared, so the status line clears.
+                if (status) status.textContent = '';
             } catch (error) {
                 savedReady = false;
                 syncSaves();

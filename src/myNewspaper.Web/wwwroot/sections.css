@@ -3452,6 +3452,14 @@ a.tvc-row__show:hover {
 .pub [data-saved-status] {
     white-space: normal;
 }
+/* The status line is for connecting and errors; once synced it is empty (the heading already explains sharing). */
+.pub [data-saved-status]:empty {
+    display: none;
+}
+/* Flex drops the space before the count, so the gap provides it ("Everything · 2"). */
+.pub .sv-tabs a {
+    gap: 0.3em;
+}
 @media (min-width: 744px) {
     .pub .sv-tabs {
         margin-bottom: 0;
@@ -3479,6 +3487,11 @@ a.tvc-row__show:hover {
     }
     .pub .sv-lists .saved-section:only-child {
         grid-column: 1 / -1;
+    }
+    /* Cards at least 240px wide in each list: the site's fixed four-across story grid crushed the narrower Videos
+       column into slivers. */
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .sv-lists .saved-section .feed {
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
     }
     .pub .sv-lists .saved-head {
         padding-bottom: 4px;
