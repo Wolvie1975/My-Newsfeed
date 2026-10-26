@@ -49,4 +49,21 @@ public class BroadsheetHelpersTests
     [InlineData(950, "$950")]
     public void Compact_money_reads_like_an_agate_table(long value, string expected) =>
         Assert.Equal(expected, BoxOfficeChartQuery.Compact(value));
+
+    private static VideoItem Video(int id, string channel, int hoursAgo, long? views) =>
+        new(id, "v" + id, channel, channel, "Video " + id, "https://www.youtube.com/watch?v=v" + id,
+            new DateTime(2026, 10, 25, 20, 0, 0).AddHours(-hoursAgo), null, views);
+
+    [Fact]
+    public void Featured_videos_are_the_most_watched_recent_ones_one_per_channel()
+    {
+        var picks = VideoFeatured.Pick([
+            Video(1, "a", 0, 100), Video(2, "a", 1, 5000), Video(3, "b", 2, 900),
+            Video(4, "c", 3, null), Video(5, "d", 72, 99999)]);
+        Assert.Equal([2, 3, 4], picks.Select(v => v.Id));
+    }
+
+    [Fact]
+    public void Featured_videos_stop_at_the_count() =>
+        Assert.Equal(2, VideoFeatured.Pick([Video(1, "a", 0, 1), Video(2, "b", 0, 2), Video(3, "c", 0, 3)], 2).Count);
 }

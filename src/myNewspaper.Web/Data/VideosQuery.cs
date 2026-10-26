@@ -227,3 +227,23 @@ public static class VideosText
         return t.Length == 0 ? "?" : char.ToUpperInvariant(t[0]).ToString();
     }
 }
+
+/// <summary>The YouTube page's featured carousel.</summary>
+public static class VideoFeatured
+{
+    /// <summary>
+    /// Up to <paramref name="count"/> videos for the carousel: the most watched from the newest two days of the list,
+    /// at most one per channel, so a busy channel cannot fill it. Videos without a view count rank last; ties go to
+    /// the newer video. The rest of the page lists the others newest first.
+    /// </summary>
+    public static IReadOnlyList<VideoItem> Pick(IReadOnlyList<VideoItem> items, int count = 5)
+    {
+        if (items.Count == 0) return [];
+        var since = items.Max(v => v.PublishedAt).AddDays(-2);
+        return items.Where(v => v.PublishedAt >= since)
+            .OrderByDescending(v => v.ViewCount ?? -1).ThenByDescending(v => v.PublishedAt)
+            .DistinctBy(v => v.ChannelId)
+            .Take(count)
+            .ToList();
+    }
+}

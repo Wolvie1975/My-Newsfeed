@@ -5,11 +5,12 @@
 
 <PageTitle>YouTube · myNewspaper</PageTitle>
 
-@* Static (non-interactive) page. Filters are plain links and a GET form, so every view has a shareable URL and works
-   without JavaScript. A chronological magazine grid, newest video first. *@
 
-<PageHeading Title="YouTube" Eyebrow="From our channels" Description="" />
+@* YouTube as in the approved v2 concept: a featured carousel (still until Play is pressed) beside Latest videos, then
+   More videos. Without JavaScript the first featured video shows and the carousel controls stay hidden. Filters are
+   plain links and a GET form, so every view has a shareable URL. *@
 
+<PageHeading Title="YouTube" Eyebrow="From your channels" Description="" />
 
 <div class="filters filters--videos">
     @if (channels.Count > 1)
@@ -32,22 +33,9 @@
     }
     @if (listing is not null)
     {
-        <p class="count count--toolbar" aria-live="polite">@listing.Total @(listing.Total == 1 ? "video" : "videos")</p>
+        <p class="count count--toolbar" aria-live="polite">@(selectedChannel ?? "All channels") · @listing.Total @(listing.Total == 1 ? "video" : "videos")@(lastUpdated is { } updated ? " · updated " + Dates.Time(updated) : "")</p>
     }
 </div>
-
-@if (listing is not null)
-{
-    <p class="count count--inline">@listing.Total @(listing.Total == 1 ? "video" : "videos")</p>
-}
-
-@if (lastUpdated is { } updated)
-{
-    <p class="updated">
-        Videos last updated
-        <time datetime="@updated.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'")">@Dates.PublishedFull(updated)</time>
-    </p>
-}
 
 @if (listing is null || listing.Items.Count == 0)
 {
@@ -64,13 +52,124 @@
 }
 else
 {
-    <div class="video-front"><ul class="videos">
-                    @foreach (var video in listing.Items)
+    @if (featured.Count > 0)
+    {
+        <div class="yt-top">
+            <section class="yt-feature" data-yt-carousel aria-roledescription="carousel" aria-labelledby="yt-feature-label">
+                <div class="yt-feature__head">
+                    <h2 id="yt-feature-label" class="yt-feature__label">Featured<span data-yt-position hidden> · <span data-yt-index>1</span> of @featured.Count</span></h2>
+                    <div class="yt-feature__controls" data-yt-controls hidden>
+                        <button type="button" class="yt-btn" data-yt-step="-1" aria-label="Previous featured video"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
+                        <button type="button" class="yt-btn" data-yt-toggle aria-pressed="false" aria-label="Play rotation"><svg class="yt-icon-play" viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15a1 1 0 0 0 1.5.86l12-7.5a1 1 0 0 0 0-1.72l-12-7.5A1 1 0 0 0 7 4.5z"/></svg><svg class="yt-icon-pause" viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M7 4h4v16H7zM13 4h4v16h-4z"/></svg></button>
+                        <button type="button" class="yt-btn" data-yt-step="1" aria-label="Next featured video"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
+                    </div>
+                </div>
+                <div class="yt-feature__slides" data-yt-live aria-live="polite">
+                    @foreach (var (video, index) in featured.Select((v, i) => (v, i)))
                     {
                         var href = FeedQuery.SafeHref(video.Url);
                         var picture = VideosText.Thumbnail(video.ThumbnailUrl, video.VideoId);
+                        <article class="yt-slide" data-yt-slide hidden="@(index > 0)" aria-roledescription="slide" aria-label="@($"{index + 1} of {featured.Count}")">
+                            <a class="yt-slide__thumb" href="@href" target="_blank" rel="noopener noreferrer" tabindex="-1" aria-hidden="true">
+                                @if (picture is not null) { <img src="@picture" alt="" loading="@(index == 0 ? "eager" : "lazy")" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()" /> }
+                                <span class="play"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15a1 1 0 0 0 1.5.86l12-7.5a1 1 0 0 0 0-1.72l-12-7.5A1 1 0 0 0 7 4.5z"></path></svg></span>
+                                <span class="yt-progress"><span data-yt-bar></span></span>
+                            </a>
+                            <p class="yt-kicker">@video.ChannelName</p>
+                            <h3 class="yt-slide__title">@if (href is not null) { <a href="@href" target="_blank" rel="noopener noreferrer">@video.Title</a> } else { @video.Title }</h3>
+                            @Meta(video)
+                        </article>
+                    }
+                </div>
+                <div class="yt-tabs" data-yt-tabs hidden>
+                    @foreach (var (video, index) in featured.Select((v, i) => (v, i)))
+                    {
+                        <button type="button" class="yt-tab" data-yt-pick="@index" aria-current="@(index == 0 ? "true" : "false")" aria-label="@($"Show featured video {index + 1}: {video.Title}")"><span class="yt-tab__bar"></span><span class="yt-tab__title">@video.Title</span></button>
+                    }
+                </div>
+            </section>
+            <section class="yt-latest" aria-labelledby="yt-latest-label">
+                <h2 id="yt-latest-label" class="ef-label">Latest videos</h2>
+                @foreach (var video in latest)
+                {
+                    var href = FeedQuery.SafeHref(video.Url);
+                    var picture = VideosText.Thumbnail(video.ThumbnailUrl, video.VideoId);
+                    <article class="yt-row">
+                        <a class="yt-row__thumb" href="@href" target="_blank" rel="noopener noreferrer" tabindex="-1" aria-hidden="true">
+                            @if (picture is not null) { <img src="@picture" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()" /> }
+                        </a>
+                        <div class="yt-row__body">
+                            <p class="yt-kicker">@video.ChannelName</p>
+                            <h3 class="yt-row__title">@if (href is not null) { <a href="@href" target="_blank" rel="noopener noreferrer">@video.Title</a> } else { @video.Title }</h3>
+                            @Meta(video)
+                        </div>
+                    </article>
+                }
+            </section>
+        </div>
+        @if (more.Count > 0) { <h2 class="yt-label">More videos</h2> }
+    }
+    <div class="video-front"><ul class="videos">
+        @foreach (var video in more) { @Card(video) }
+    </ul></div>
+
+    @if (listing.Total > 50 || page > 1)
+    {
+        <nav class="tv-week yt-pages" aria-label="Video pages">
+            @if (page > 1) { <a class="nf-btn nf-btn--secondary" href="@PageHref(page - 1)">← Newer videos</a> }
+            @if (offset + listing.Items.Count < listing.Total) { <a class="nf-btn nf-btn--secondary" href="@PageHref(page + 1)">More videos</a> }
+            <span>Showing @(offset + listing.Items.Count) of @listing.Total</span>
+        </nav>
+    }
+}
+
+@code {
+    [SupplyParameterFromQuery(Name = "page")] private string? PageText { get; set; }
+    private int page;
+    private int offset;
+    private string PageHref(int target) => "videos?page=" + target + (string.IsNullOrWhiteSpace(Q) ? "" : "&q=" + Uri.EscapeDataString(Q)) + (string.IsNullOrWhiteSpace(Channel) ? "" : "&channel=" + Uri.EscapeDataString(Channel));
+    [SupplyParameterFromQuery(Name = "channel")] private string? Channel { get; set; }
+    [SupplyParameterFromQuery(Name = "q")] private string? Q { get; set; }
+
+    private IReadOnlyList<VideoChannel> channels = [];
+    private IReadOnlyList<VideoItem> featured = [];
+    private IReadOnlyList<VideoItem> latest = [];
+    private IReadOnlyList<VideoItem> more = [];
+    private string? selectedChannel;
+    private VideosPage? listing;
+    private DateTime? lastUpdated;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await using var db = await Factory.CreateDbContextAsync();
+        channels = await VideosQuery.GetChannelsAsync(db);
+        page = int.TryParse(PageText, out var requested) ? Math.Clamp(requested, 1, 1000000) : 1;
+        offset = (page - 1) * 50;
+        listing = await VideosQuery.GetVideosAsync(db, Channel, Q, limit: 50, offset: offset);
+        if (offset >= listing.Total && page > 1)
+        {
+            page = Math.Max(1, (listing.Total + 49) / 50); offset = (page - 1) * 50;
+            listing = await VideosQuery.GetVideosAsync(db, Channel, Q, limit: 50, offset: offset);
+        }
+        lastUpdated = await VideosQuery.GetLastUpdatedAsync(db);
+        selectedChannel = channels.FirstOrDefault(IsSelected)?.Name;
+        // The first page leads with the featured carousel and Latest videos; later pages are the plain grid.
+        featured = page == 1 && string.IsNullOrWhiteSpace(Q) ? VideoFeatured.Pick(listing.Items) : [];
+        var rest = listing.Items.Where(v => !featured.Contains(v)).ToList();
+        latest = featured.Count > 0 ? rest.Take(6).ToList() : [];
+        more = rest.Skip(latest.Count).ToList();
+    }
+
+    private bool IsSelected(VideoChannel c) => string.Equals(Channel?.Trim(), c.ChannelId, StringComparison.Ordinal);
+
+
+    /// <summary>One video in the More videos grid.</summary>
+    private RenderFragment Card(VideoItem video) => __builder =>
+    {
+                        var href = FeedQuery.SafeHref(video.Url);
+                        var picture = VideosText.Thumbnail(video.ThumbnailUrl, video.VideoId);
                         var views = VideosText.Views(video.ViewCount);
-                        <li class="video @(video == listing.Items[0] && page == 1 ? "video--featured" : "")">
+                        <li class="video">
                             <a class="vthumb" href="@href" target="_blank" rel="noopener noreferrer" tabindex="-1" aria-hidden="true">
                                 <span class="vthumb__ph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"></rect><circle cx="9" cy="10" r="1.6"></circle><path d="m21 16-5-5-8 9"></path></svg></span>
                                 @if (picture is not null)
@@ -107,46 +206,20 @@ else
                                 </p>
                             </div>
                         </li>
-                    }
-    </ul></div>
+    };
 
-    @if (listing.Total > 50 || page > 1)
+    /// <summary>Date, views and the share and Watch later buttons.</summary>
+    private RenderFragment Meta(VideoItem video) => __builder =>
     {
-        <nav class="tv-week" aria-label="Video pages">
-            @if (page > 1) { <a class="nf-btn nf-btn--secondary" href="@PageHref(page - 1)">← Newer videos</a> }
-            <span>Page @(page) · @listing.Total videos</span>
-            @if (offset + listing.Items.Count < listing.Total) { <a class="nf-btn nf-btn--secondary" href="@PageHref(page + 1)">More videos →</a> }
-        </nav>
-    }
+        var views = VideosText.Views(video.ViewCount);
+        <p class="vmeta">
+            <time datetime="@video.PublishedAt.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'")" title="@Dates.PublishedFull(video.PublishedAt)">@Dates.Published(video.PublishedAt)</time>
+            @if (views is not null) { <span aria-hidden="true">·</span> <span>@views</span> }
+            <span class="video-actions">
+                <myNewspaper.Web.Components.Feed.ShareButton Url="@video.Url" Title="@video.Title" Kind="video" />
+                <myNewspaper.Web.Components.Feed.VideoSaveButton Item="video" />
+            </span>
+        </p>
+    };
 }
 
-@code {
-    [SupplyParameterFromQuery(Name = "page")] private string? PageText { get; set; }
-    private int page;
-    private int offset;
-    private string PageHref(int target) => "videos?page=" + target + (string.IsNullOrWhiteSpace(Q) ? "" : "&q=" + Uri.EscapeDataString(Q)) + (string.IsNullOrWhiteSpace(Channel) ? "" : "&channel=" + Uri.EscapeDataString(Channel));
-    [SupplyParameterFromQuery(Name = "channel")] private string? Channel { get; set; }
-    [SupplyParameterFromQuery(Name = "q")] private string? Q { get; set; }
-
-    private IReadOnlyList<VideoChannel> channels = [];
-    private VideosPage? listing;
-    private DateTime? lastUpdated;
-
-    protected override async Task OnParametersSetAsync()
-    {
-        await using var db = await Factory.CreateDbContextAsync();
-        channels = await VideosQuery.GetChannelsAsync(db);
-        page = int.TryParse(PageText, out var requested) ? Math.Clamp(requested, 1, 1000000) : 1;
-        offset = (page - 1) * 50;
-        listing = await VideosQuery.GetVideosAsync(db, Channel, Q, limit: 50, offset: offset);
-        if (offset >= listing.Total && page > 1)
-        {
-            page = Math.Max(1, (listing.Total + 49) / 50); offset = (page - 1) * 50;
-            listing = await VideosQuery.GetVideosAsync(db, Channel, Q, limit: 50, offset: offset);
-        }
-        lastUpdated = await VideosQuery.GetLastUpdatedAsync(db);
-    }
-
-    private bool IsSelected(VideoChannel c) => string.Equals(Channel?.Trim(), c.ChannelId, StringComparison.Ordinal);
-
-}

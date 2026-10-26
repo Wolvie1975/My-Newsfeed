@@ -15,7 +15,7 @@
     <div data-news-page data-category-explicit="@(CategoryQuery is not null || !string.IsNullOrWhiteSpace(Q) || SourceQuery is not null || AfterQuery is not null ? "true" : "false")" data-category-current="@Category" hidden></div>
 }
 <PageTitle>@Title · myNewspaper</PageTitle>
-<PageHeading Section="@(SectionNews ? (EntertainmentSection ? "entertainment" : "sports") : null)" SectionCurrent="@(SectionNews ? (EntertainmentSection ? "entertainment/news" : "sports/news") : null)" Title="@Title" Eyebrow="The latest stories" Description="" />
+<PageHeading Section="@(SectionNews ? (EntertainmentSection ? "entertainment" : "sports") : null)" SectionCurrent="@(SectionNews ? (EntertainmentSection ? "entertainment/news" : "sports/news") : null)" Title="@Title" Eyebrow="@(SectionNews ? (EntertainmentSection ? "Entertainment" : "Sports") + " · Every story, every source" : "The latest stories")" Description="" />
 @if (!SectionNews && categories.Count > 0)
 {
     @* Categories as underlined tabs on desktop (as in the approved concept); phones keep the dropdown below. *@
@@ -25,9 +25,16 @@
         { <a href="@Href(category.Id, null)" aria-current="@(Category == category.Id ? "page" : null)">@category.Name</a> }
     </nav>
 }
+@if (SectionNews && HubCategories.Count > 0) {
+    @* Categories as pills on desktop (as in the approved concept); phones use the dropdown beside Source. *@
+    <nav class="sec-pills sec-pills--desktop hn-cats" aria-label="@(EntertainmentSection ? "Topic" : "Sport")">
+        @foreach (var item in HubCategories)
+        { <a href="@NewsSections.RouteFor(item)" aria-current="@(Category == item.Id ? "page" : null)">@NewsSections.LabelFor(item.Name)</a> }
+    </nav>
+}
 @if (SectionNews) {
     <form class="catselect news-category-select" method="get" action="news">
-        <label for="hub-category">Category</label>
+        <label for="hub-category">@(EntertainmentSection ? "Topic" : "Sport")</label>
         <select id="hub-category" name="category" onchange="this.form.requestSubmit()" disabled="@(HubCategories.Count == 0)">
             @foreach (var item in HubCategories) {
                 <option value="@item.Id" selected="@(Category == item.Id)">@NewsSections.LabelFor(item.Name)</option>
@@ -35,7 +42,7 @@
         </select>
         <noscript><button class="nf-btn nf-btn--secondary" type="submit">Apply</button></noscript>
     </form>
-    <h2>@NewsSections.LabelFor(SectionCategory)</h2>
+    <h2 class="sr-only">@NewsSections.LabelFor(SectionCategory)</h2>
 }
 <div class="filters news-front-filters">
     @if (!SectionNews && categories.Count > 0)
@@ -88,9 +95,6 @@
     </p>
 }
 
-@if (SectionNews) {
-    <nav class="front-links" aria-label="Section overview"><a href="@(EntertainmentSection ? "entertainment" : "sports")">← @(EntertainmentSection ? "Entertainment" : "Sports") overview</a></nav>
-}
 @if (feed is null || feed.Items.Count == 0)
 {
     <p class="empty">
@@ -115,7 +119,7 @@ else
         <p><a href="@Href(Category, null)">← Back to the newest articles</a></p>
     }
 
-    <div class="news-front">
+    <div class="news-front @(EntertainmentSection ? "news-front--posters" : null)">
         <div class="news-front__stories">
             <section class="feed paper-feed" aria-label="Articles" data-last-day="@lastDay">
                 <NewspaperFeed Items="feed.Items" Featured="@(After is null)" Total="@(After is null ? feed.Total : null)" />

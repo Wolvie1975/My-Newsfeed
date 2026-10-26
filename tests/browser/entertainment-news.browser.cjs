@@ -5,7 +5,8 @@ const base = process.env.BASE_URL || 'http://localhost:5295',
 (async () => {
     const browser = await chromium.launch();
     try {
-        const p = await browser.newPage();
+        // Phone width: the category dropdown (desktop shows category pills instead).
+        const p = await browser.newPage({ viewport: { width: 390, height: 900 } });
         const errors = [];
         p.on('pageerror', (e) => errors.push(e.message));
         const categories = [],
