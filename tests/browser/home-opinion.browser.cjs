@@ -80,7 +80,8 @@ async function mockSaved(p) {
             publisher,
         );
         await p.reload();
-        assert(await p.locator('[data-opinion-filtered]').isVisible());
+        // Old muted-publisher settings no longer hide stories.
+        assert(await card.locator('[data-opinion-article]').isVisible());
         await p.evaluate(() => localStorage.setItem('mynewsfeed-personal-v1', JSON.stringify({ hidden: ['opinion'] })));
         await p.reload();
         assert(await p.locator('[data-home-opinion]').evaluate((n) => n.hidden));

@@ -1,4 +1,4 @@
-/* Personal planning and reading. Copies stay on this device; no account or server writes. */
+/* Personal homepage, teams and weather. Copies stay on this device; no account or server writes. */
 (function () {
     'use strict';
     const PREFS = 'mynewsfeed-personal-v1',
@@ -28,14 +28,6 @@
     } catch (_) {
         storage = false;
     }
-    const safe = (value) => {
-        try {
-            const url = new URL(value);
-            return ['https:', 'http:'].includes(url.protocol) ? url.href : null;
-        } catch (_) {
-            return null;
-        }
-    };
     const txt = (value) => (typeof value === 'string' ? value.slice(0, 2048) : '');
     function load(key, fallback) {
         try {
@@ -61,10 +53,6 @@
             order: arranged,
             hidden: list(p.hidden).filter((k) => defaults.includes(k) || k === 'f1'),
             teamsOnly: p.teamsOnly === true,
-            hideRead: p.hideRead === true,
-            muted: [...new Set(list(p.muted).filter((s) => typeof s === 'string' && s.length <= 2048))].slice(0, 500),
-            read: [...new Set(list(p.read).filter((s) => safe(s)))].slice(0, 2000),
-            category: typeof p.category === 'string' && /^(all|[1-9][0-9]*)$/.test(p.category) ? p.category : '',
         };
     }
     function announce(message) {
@@ -99,12 +87,6 @@
         if (className) n.className = className;
         return n;
     }
-    function button(label, attr, value) {
-        const b = node('button', label, 'nf-btn nf-btn--secondary');
-        b.type = 'button';
-        b.setAttribute(attr, value);
-        return b;
-    }
     function teams() {
         return new Set(list(load(TEAMS, [])).filter((k) => typeof k === 'string'));
     }
@@ -138,51 +120,6 @@
         }
         document.querySelectorAll('[data-home-teams-only]').forEach((n) => (n.checked = p.teamsOnly));
     }
-    function renderReading(p) {
-        document.querySelectorAll('[data-news-hide-read]').forEach((n) => (n.checked = p.hideRead));
-        document.querySelectorAll('[data-news-category]').forEach((n) => (n.value = p.category));
-        document.querySelectorAll('[data-news-url]').forEach((n) => {
-            n.hidden = p.muted.includes(n.dataset.newsSource) || (p.hideRead && p.read.includes(n.dataset.newsUrl));
-        });
-        // Feed headings must not be left standing above a fully hidden group.
-        document.querySelectorAll('.feed > .daylabel').forEach((heading) => {
-            let sibling = heading.nextElementSibling,
-                visible = false;
-            while (sibling && !sibling.matches('.daylabel')) {
-                if (sibling.matches('[data-news-url]') && !sibling.hidden) visible = true;
-                sibling = sibling.nextElementSibling;
-            }
-            heading.hidden = !visible;
-        });
-        const opinion = document.querySelector('[data-home-opinion]');
-        if (opinion) {
-            const filtered = opinion.querySelector('[data-opinion-filtered]'),
-                article = opinion.querySelector('[data-news-url]');
-            if (filtered && article) filtered.hidden = !article.hidden;
-        }
-        const muted = document.querySelector('[data-news-muted]');
-        if (muted && muted.dataset.signature !== JSON.stringify(p.muted)) {
-            muted.dataset.signature = JSON.stringify(p.muted);
-            muted.replaceChildren();
-            if (!p.muted.length) muted.append(node('p', 'No muted publishers.', 'updated'));
-            p.muted.forEach((name) => {
-                const row = node('p', name + ' ');
-                row.append(button('Unmute', 'data-news-unmute', name));
-                muted.append(row);
-            });
-        }
-        const page = document.querySelector('[data-news-page]');
-        if (page && page.dataset.categoryExplicit === 'false' && p.category) {
-            const current = page.dataset.categoryCurrent;
-            // Verify preference is still present before redirecting, and make it explicit to avoid loops.
-            const valid = p.category === 'all' || document.querySelector(`#category option[value="${p.category}"]`);
-            if (valid && p.category !== current) {
-                const url = new URL(location.href);
-                url.searchParams.set('category', p.category);
-                location.replace(url.href);
-            }
-        }
-    }
     function sync() {
         document.querySelectorAll('[data-personal-control]').forEach((n) => (n.hidden = !storage));
         if (!storage) {
@@ -192,29 +129,14 @@
         const p = prefs(),
             selected = teams();
         renderHome(p, selected);
-        renderReading(p);
     }
     document.addEventListener('click', (e) => {
-        const p = prefs(),
-            unmute = e.target.closest('[data-news-unmute]');
-        if (unmute) {
-            p.muted = p.muted.filter((i) => i !== unmute.dataset.newsUnmute);
-            save(PREFS, p, 'Publisher unmuted.');
-            return;
-        }
+        const p = prefs();
         if (e.target.closest('[data-home-reset]')) {
             p.order = defaults;
             p.hidden = [];
             p.teamsOnly = false;
             save(PREFS, p, 'Default homepage restored.');
-        }
-        if (e.target.closest('[data-news-reset]')) {
-            p.muted = [];
-            p.read = [];
-            p.hideRead = false;
-            p.category = '';
-            if (save(PREFS, p, 'Reading preferences reset.'))
-                document.dispatchEvent(new CustomEvent('mynewsfeed-reading-change', { detail: { reset: true } }));
         }
     });
     document.addEventListener('change', (e) => {
@@ -222,12 +144,6 @@
             n = e.target;
         if (n.matches('[data-home-teams-only]')) {
             p.teamsOnly = n.checked;
-            save(PREFS, p);
-        } else if (n.matches('[data-news-hide-read]')) {
-            p.hideRead = n.checked;
-            save(PREFS, p);
-        } else if (n.matches('[data-news-category]')) {
-            p.category = n.value;
             save(PREFS, p);
         } else if (n.matches('[data-sports-choice]')) sync();
     });
@@ -368,8 +284,7 @@
             weather();
         });
     }
-    const markers =
-        '[data-home-grid], [data-home-preferences], [data-news-url], [data-news-page], [data-news-muted], [data-local-weather], [data-personal-control]';
+    const markers = '[data-home-grid], [data-home-preferences], [data-local-weather], [data-personal-control]';
     new MutationObserver((records) => {
         if (
             records.some((r) =>
@@ -378,17 +293,6 @@
         )
             schedule();
     }).observe(document.body, { childList: true, subtree: true });
-    document.addEventListener('mynewsfeed-saved-changed', (event) => {
-        const p = prefs(),
-            previous = JSON.stringify(p.read);
-        list(event.detail).forEach((article) => {
-            if (!safe(article.url)) return;
-            p.read = p.read.filter((url) => url !== article.url);
-            if (article.read === true) p.read.unshift(article.url);
-        });
-        p.read = p.read.slice(0, 2000);
-        if (JSON.stringify(p.read) !== previous) save(PREFS, p, 'Reading status saved.');
-    });
     window.addEventListener('storage', (e) => {
         if ([PREFS, TEAMS, null].includes(e.key)) schedule();
     });

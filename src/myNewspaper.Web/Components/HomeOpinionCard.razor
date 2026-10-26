@@ -27,7 +27,6 @@
                 @if(!string.IsNullOrEmpty(summary)) { <p class="d-story__sum">@summary</p> }
             </div>
         </li></ul>
-        <p class="d-empty" data-opinion-filtered hidden>This publisher is hidden by your reading preferences. <a href="news?category=@Snapshot.CategoryId">Browse Opinion</a>.</p>
     } else { <p class="d-empty">No Opinion articles available yet. Check back soon.</p> }
 </section>
 @code {

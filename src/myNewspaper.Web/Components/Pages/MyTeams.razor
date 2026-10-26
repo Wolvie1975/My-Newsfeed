@@ -5,13 +5,12 @@
 @inject ILogger<MyTeams> Log
 
 <PageTitle>Settings · myNewspaper</PageTitle>
-<PageHeading Title="Settings" Eyebrow="Make it yours" Description="Appearance, reading, streaming services and teams. Everything saves as you tap." />
+<PageHeading Title="Settings" Eyebrow="Make it yours" Description="Appearance, streaming services and teams. Everything saves as you tap." />
 <div class="set-layout">
 @* Section index as in the approved concept (a column on desktop, a row of links on phones). *@
 <nav class="set-index" aria-label="Settings sections">
     <a href="settings#appearance-heading">Light and dark mode</a>
     <a href="settings#color-scheme-heading">Color scheme</a>
-    <a href="settings#reading-preferences-heading">Reading</a>
     <a href="settings#my-services">My services</a>
     <a href="settings#my-teams-heading">My Teams</a>
 </nav>
@@ -49,16 +48,7 @@
     <p class="updated" role="status" data-scheme-status></p>
     <noscript><p class="empty">Enable JavaScript to change and save your color scheme.</p></noscript>
 </section>
-<section data-settings-section="reading" id="reading-preferences" aria-labelledby="reading-preferences-heading">
-    <h2 id="reading-preferences-heading">Reading preferences</h2>
-    <p class="updated">Choose a preferred news category or manage previously saved reading preferences in this browser.</p>
-    <label hidden data-personal-control><input type="checkbox" data-news-hide-read /> Hide read stories</label>
-    <label hidden data-personal-control>Preferred news category <select data-news-category><option value="">Site default · Top Headlines</option><option value="all">All categories</option>@foreach (var category in categories) { <option value="@category.Id">@category.Name</option> }</select></label>
-    <h3>Muted publishers</h3><div data-news-muted></div>
-    <button type="button" hidden data-personal-control data-news-reset class="nf-btn nf-btn--secondary">Reset reading preferences</button>
-</section>
 <p class="updated" data-personal-status role="status"></p>
-<noscript><p class="empty">Enable JavaScript to customize reading preferences.</p></noscript>
 <WatchServiceSettings Selection="@ServiceSelection" />
 <section data-settings-section="teams" aria-labelledby="my-teams-heading">
 <h2 id="my-teams-heading">My Teams</h2>
@@ -118,10 +108,9 @@
     ];
     private IReadOnlyList<SportsTeamChoice> choices = SportsTeamPreferences.GetChoices();
     private string? error;
-    private IReadOnlyList<FeedCategory> categories = [];
     protected override async Task OnInitializedAsync()
     {
-        try { await using var db = await Factory.CreateDbContextAsync(); choices = await SportsTeamPreferences.GetChoicesAsync(db); categories = await FeedQuery.GetCategoriesAsync(db); }
+        try { await using var db = await Factory.CreateDbContextAsync(); choices = await SportsTeamPreferences.GetChoicesAsync(db); }
         catch (Exception ex) when (DataFailures.IsReadFailure(ex))
         { Log.LogError(ex, "Could not read team and category choices."); error = "Professional teams are temporarily unavailable. Reload to try again."; }
     }

@@ -44,10 +44,9 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
             await page.locator('[data-news-read], [data-news-mute], .reading-actions, .reading-preferences').count(),
             0,
         );
+        // Reading preferences were removed (October 26, 2026); Settings no longer offers them.
         await page.goto(base + '/settings');
-        await page.selectOption('[data-news-category]', 'all');
-        await page.goto(base + '/news');
-        await page.waitForURL('**/news?category=all');
+        assert.equal(await page.locator('#reading-preferences, [data-news-category], [data-news-muted]').count(), 0);
         // Homepage choices still synchronize between tabs.
         const other = await context.newPage();
         await other.goto(base + '/');

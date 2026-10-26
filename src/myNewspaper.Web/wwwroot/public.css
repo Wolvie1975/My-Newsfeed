@@ -4605,20 +4605,9 @@
     opacity: 0.5;
     cursor: default;
 }
-#home-preferences,
-#reading-preferences {
+#home-preferences {
     margin: 2rem 0;
     scroll-margin-top: 2rem;
-}
-#reading-preferences > label {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.5rem;
-    margin: 0.75rem 0;
-}
-#reading-preferences select {
-    max-width: 100%;
 }
 .weather-temperature {
     font-size: 1.8rem;

@@ -1,11 +1,10 @@
 (function () {
     'use strict';
     const key = 'mynewsfeed-settings-order-v1';
-    const defaults = ['appearance', 'colors', 'reading', 'services', 'teams'];
+    const defaults = ['appearance', 'colors', 'services', 'teams'];
     const labels = {
         appearance: 'Light and dark mode',
         colors: 'Color scheme',
-        reading: 'Reading preferences',
         services: 'My services',
         teams: 'My Teams',
     };
