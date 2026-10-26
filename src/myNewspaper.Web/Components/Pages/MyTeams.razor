@@ -5,7 +5,17 @@
 @inject ILogger<MyTeams> Log
 
 <PageTitle>Settings · myNewspaper</PageTitle>
-<PageHeading Title="Settings" Eyebrow="MAKE IT YOURS" Description="Arrange your settings and choose your appearance, teams and streaming services." />
+<PageHeading Title="Settings" Eyebrow="Make it yours" Description="Appearance, reading, streaming services and teams. Everything saves as you tap." />
+<div class="set-layout">
+@* Section index as in the approved concept (a column on desktop, a row of links on phones). *@
+<nav class="set-index" aria-label="Settings sections">
+    <a href="settings#appearance-heading">Light and dark mode</a>
+    <a href="settings#color-scheme-heading">Color scheme</a>
+    <a href="settings#reading-preferences-heading">Reading</a>
+    <a href="settings#my-services">My services</a>
+    <a href="settings#my-teams-heading">My Teams</a>
+</nav>
+<div class="set-main">
 <details class="settings-arrange"><summary>Arrange Settings sections</summary><p>Move sections up or down. Changes save in this browser.</p><div data-settings-order-controls></div><button type="button" data-settings-order-reset class="nf-btn nf-btn--secondary">Restore default Settings order</button><p role="status" data-settings-order-status></p><noscript><p>Enable JavaScript to arrange Settings sections.</p></noscript></details>
 <div data-settings-sections>
 <section data-settings-section="appearance" aria-labelledby="appearance-heading">
@@ -63,8 +73,11 @@
         <p class="updated" role="status" data-sports-status>Loading selections…</p>
         @foreach (var group in choices.GroupBy(c => c.Group))
         {
-            <fieldset class="sports-team-group">
-                <legend>@group.Key</legend>
+            @* One collapsible group per league keeps the page short; searching opens every group. *@
+            <details class="sports-team-group">
+            <summary>@group.Key <span class="sports-team-group__count">@group.Count() teams</span></summary>
+            <fieldset>
+                <legend class="sr-only">@group.Key</legend>
                 <div class="sports-team-options">
                 @foreach (var team in group)
                 {
@@ -74,12 +87,15 @@
                 }
                 </div>
             </fieldset>
+            </details>
         }
         <p class="updated" data-sports-no-matches hidden>No teams match your search.</p>
     </div>
 
 </section>
 
+</div>
+</div>
 </div>
 @code {
     [SupplyParameterFromQuery(Name="service")]public int[]? ChosenServices {get;set;}

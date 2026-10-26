@@ -5,12 +5,24 @@
 
 @* public.js loads the shared server list and safely builds the saved article cards. *@
 
-<PageHeading Title="Saved" Eyebrow="ARTICLES & VIDEOS" Description="Articles and YouTube videos saved across your devices. Anyone with access to this site shares this list." />
+<PageHeading Title="Saved" Eyebrow="Articles &amp; videos" Description="Shared across your devices and with anyone who uses this site. Changes sync automatically." />
+
+@* Which list to show, as in the approved concept; public.js fills in the counts and hides the other list. *@
+<nav class="sec-pills sv-tabs" aria-label="Saved lists">
+    <a href="saved" data-saved-tab="" aria-current="@(List is null ? "page" : null)">Everything<span data-saved-tab-count></span></a>
+    <a href="saved?list=article" data-saved-tab="article" aria-current="@(List == "article" ? "page" : null)">Articles<span data-saved-tab-count></span></a>
+    <a href="saved?list=video" data-saved-tab="video" aria-current="@(List == "video" ? "page" : null)">Videos<span data-saved-tab-count></span></a>
+</nav>
 
 <p class="count" data-saved-status aria-live="polite">Connecting to your shared Saved list…</p>
 
-<div data-saved-list></div>
+<div class="sv-lists" data-saved-list data-saved-filter="@List"></div>
 
 <section class="empty saved-empty" data-saved-empty hidden><h2 data-saved-empty-title></h2><p data-saved-empty-description></p><a class="nf-btn nf-btn--primary" href="news" data-saved-empty-action>Browse news</a></section>
 
 <noscript><p class="empty">Saved items need JavaScript turned on.</p></noscript>
+
+@code {
+    [SupplyParameterFromQuery(Name = "list")] private string? ListQuery { get; set; }
+    private string? List => ListQuery is "article" or "video" ? ListQuery : null;
+}

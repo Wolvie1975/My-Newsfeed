@@ -396,10 +396,28 @@
         container.setAttribute('data-rendered', signature);
 
         container.textContent = '';
+        // The Saved tabs show counts; ?list=article or ?list=video shows just that list.
+        const filter = container.getAttribute('data-saved-filter') || '';
+        const count = (kind) => list.filter((a) => !kind || (a.kind === 'video' ? 'video' : 'article') === kind).length;
+        document.querySelectorAll('[data-saved-tab]').forEach((tab) => {
+            const label = tab.querySelector('[data-saved-tab-count]');
+            if (label) label.textContent = savedReady ? ' · ' + count(tab.getAttribute('data-saved-tab')) : '';
+        });
         [
-            { kind: 'article', title: 'Articles', empty: 'No saved articles yet.' },
-            { kind: 'video', title: 'Videos', empty: 'No videos saved for later yet.' },
+            {
+                kind: 'article',
+                title: 'Articles',
+                empty: 'No saved articles yet.',
+                browse: ['news', 'Browse headlines'],
+            },
+            {
+                kind: 'video',
+                title: 'Videos',
+                empty: 'No videos saved for later yet.',
+                browse: ['videos', 'Browse YouTube'],
+            },
         ].forEach((group) => {
+            if (filter && filter !== group.kind) return;
             const section = el('section', 'saved-section');
             section.setAttribute('data-saved-section', group.kind);
             section.setAttribute('aria-labelledby', 'saved-' + group.kind + '-heading');
@@ -416,7 +434,12 @@
                 });
                 section.appendChild(feed);
             } else if (savedReady) {
-                section.appendChild(el('p', 'empty', group.empty));
+                const empty = el('div', 'saved-section__empty');
+                empty.appendChild(el('p', 'empty', group.empty));
+                const browse = el('a', 'nf-btn nf-btn--secondary', group.browse[1]);
+                browse.href = group.browse[0];
+                empty.appendChild(browse);
+                section.appendChild(empty);
             }
             container.appendChild(section);
         });
@@ -858,6 +881,7 @@
                 if (!label.hidden) count++;
             });
             group.hidden = count === 0;
+            if (group.tagName === 'DETAILS') group.open = term.length > 0;
             total += count;
         });
         const empty = document.querySelector('[data-sports-no-matches]');

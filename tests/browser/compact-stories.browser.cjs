@@ -31,7 +31,7 @@ const base = process.env.BASE_URL || 'http://localhost:5295',
                     if (width < 700) {
                         assert(
                             await p
-                                .locator('.paper-feed .thumb')
+                                .locator('.paper-feed .article:not(.article--lead) .thumb')
                                 .evaluateAll((ns) => ns.every((n) => getComputedStyle(n).display === 'none')),
                             'mobile headline images hidden ' + route,
                         );

@@ -4,8 +4,9 @@
 @inject IDbContextFactory<WebScraperContext> Factory
 @inject ILogger<Local> Logger
 <PageTitle>Kansas City · myNewspaper</PageTitle>
-<PageHeading Title="Kansas City" Eyebrow="CLOSER TO HOME" Description="Local reading, the forecast and places to find your next outing." />
-<SectionSelect Id="local-section" Label="Section" Choices="@(new NavigationChoice[] { new("local#local-news", "News"), new("local#local-weather", "Weather"), new("local#local-events", "Events") })" />
+<PageHeading Title="Kansas City" Eyebrow="Closer to home" Description="" />
+@* Layout as in the approved concept: the forecast across the top, then local news beside things to do. *@
+<SectionSelect Id="local-section" Label="Section" Current="local" Choices="@(new NavigationChoice[] { new("local", "Overview"), new("local#local-news", "News"), new("local#local-weather", "Weather"), new("local#local-events", "Events") })" />
 <section class="local-panel" id="local-weather" data-local-weather>
     <div class="d-card__head"><h2 data-weather-title>Kansas City forecast</h2><a data-weather-link href="https://forecast.weather.gov/MapClick.php?lat=39.0997&amp;lon=-94.5786" target="_blank" rel="noopener noreferrer">National Weather Service ↗</a></div>
     <div class="weather-location-controls">
@@ -17,17 +18,29 @@
     <div class="weather-grid" data-weather-periods></div>
     <noscript><p>Use the National Weather Service link to view the forecast.</p></noscript>
 </section>
-<section class="local-panel" id="local-events"><h2>Find something to do</h2>
-    <p>Browse these calendars for community events and current details.</p>
-    <div class="personal-links"><a class="nf-btn nf-btn--secondary" href="https://www.visitkc.com/visitors/events" target="_blank" rel="noopener noreferrer">Visit KC events ↗</a><a class="nf-btn nf-btn--secondary" href="https://www.kcmo.gov/i-want-to/city-calendar" target="_blank" rel="noopener noreferrer">City of Kansas City calendar ↗</a></div>
-</section>
-<section id="local-news"><h2>Kansas City news</h2>
-    <p class="updated">@(dedicated ? "From enabled Kansas City News publishers." : "Stories mentioning Kansas City in the collected news feed. These are keyword matches, including sports; this is not a complete local news service.")</p>
-    @if (error is not null) { <p class="empty" role="status">@error</p> }
-    else if (feed.Items.Count == 0) { <p class="empty">No matching stories available. Check back after the next collection.</p> }
-    else { <section class="feed" aria-label="Kansas City stories"><FeedArticles Items="feed.Items" /></section> }
-    <nav class="personal-links" aria-label="Local news pages">@if (After is not null) { <a href="local#local-news">Newest stories</a> } @if (feed.Next is {} next) { <a href="@($"local?after={Uri.EscapeDataString(next.ToToken())}#local-news")">Older stories →</a> }</nav>
-</section>
+<div class="lc-cols">
+    <section id="local-news" class="lc-news"><h2 class="ef-label">Kansas City news</h2>
+        <p class="ef-note">@(dedicated ? "From enabled Kansas City News publishers." : "Stories mentioning Kansas City in the collected news feed. These are keyword matches, including sports; this is not a complete local news service.")</p>
+        @if (error is not null) { <p class="empty" role="status">@error</p> }
+        else if (feed.Items.Count == 0) { <p class="empty">No matching stories available. Check back after the next collection.</p> }
+        else
+        {
+            @* The newest story leads with its picture; the rest are compact two-column rows. *@
+            <section class="feed paper-feed lc-feed" aria-label="Kansas City stories">
+                <div class="paper-lead"><FeedArticles Items="@feed.Items.Take(1).ToArray()" LeadFirst="true" /></div>
+                <div class="paper-rows"><FeedArticles Items="@feed.Items.Skip(1).ToArray()" /></div>
+            </section>
+        }
+        <nav class="personal-links" aria-label="Local news pages">@if (After is not null) { <a href="local#local-news">Newest stories</a> } @if (feed.Next is {} next) { <a href="@($"local?after={Uri.EscapeDataString(next.ToToken())}#local-news")">Older stories →</a> }</nav>
+    </section>
+    <aside class="local-panel lc-events" id="local-events"><h2 class="ef-label">Find something to do</h2>
+        <p>Browse these calendars for community events and current details.</p>
+        <div class="lc-links">
+            <a href="https://www.visitkc.com/visitors/events" target="_blank" rel="noopener noreferrer">Visit KC events <span aria-hidden="true">↗</span></a>
+            <a href="https://www.kcmo.gov/i-want-to/city-calendar" target="_blank" rel="noopener noreferrer">City of Kansas City calendar <span aria-hidden="true">↗</span></a>
+        </div>
+    </aside>
+</div>
 @code {
     [SupplyParameterFromQuery(Name="after")] private string? After {get;set;}
     private FeedPage feed = new([],0,0,null);

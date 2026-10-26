@@ -2921,3 +2921,729 @@ a.tvc-row__show:hover {
         grid-template-columns: minmax(0, 1fr);
     }
 }
+
+/* ---------- Headlines (and the section headline pages that share its feed) ---------- */
+.pub .hl-cats {
+    display: none;
+}
+.pub .loadmore .nf-btn {
+    min-height: 50px;
+    padding: 0 36px;
+    border: 2px solid var(--text);
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--text);
+    font-weight: 800;
+}
+@media (max-width: 699px) {
+    /* Phones: the lead as a card with its picture, then the rest as one compact list. */
+    .pub .paper-feed .paper-label {
+        display: none;
+    }
+    .pub .paper-lead,
+    .pub .paper-latest,
+    .pub .paper-support,
+    .pub .paper-rows {
+        padding: 0 16px;
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        background: var(--surface);
+    }
+    .pub .paper-feed .paper-top {
+        gap: 12px;
+    }
+    .pub .paper-feed .paper-rows {
+        margin-top: 12px;
+    }
+    .pub .paper-lead {
+        overflow: hidden;
+        padding: 0;
+    }
+    .pub .paper-lead .body {
+        padding: 12px 16px 4px;
+    }
+    .pub .paper-feed .article--lead .thumb {
+        display: block;
+        border-radius: 0;
+    }
+    .pub .paper-feed .article--lead .title {
+        font-size: 25px;
+    }
+    .pub .paper-feed .article:not(.article--lead) .cat,
+    .pub .paper-feed .article:not(.article--lead) .summary,
+    .pub .paper-feed .article:not(.article--lead) .thumb {
+        display: none;
+    }
+    .pub .paper-feed .article:not(.article--lead) {
+        display: block;
+        padding: 10px 0 0;
+        border-bottom: 1px solid var(--row-border);
+    }
+    .pub .paper-feed .article:not(.article--lead):last-child {
+        border-bottom: 0;
+    }
+    .pub .paper-feed .article:not(.article--lead) .body {
+        display: block;
+        padding: 0;
+    }
+    .pub .paper-feed .article:not(.article--lead) .title {
+        font-family: inherit;
+        font-size: 15px;
+        font-weight: 600;
+        line-height: 1.35;
+    }
+    .pub .loadmore .nf-btn {
+        width: 100%;
+    }
+}
+@media (min-width: 1024px) {
+    .pub .hl-cats {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0 4px;
+        margin: -22px 0 18px;
+        padding-bottom: 0;
+        border-bottom: 4px double var(--text);
+    }
+    .pub .page-heading:has(+ .hl-cats) {
+        margin-bottom: 0;
+        border-bottom: 0;
+    }
+    .pub .hl-cats a {
+        display: flex;
+        align-items: center;
+        min-height: 46px;
+        padding: 0 14px;
+        border-bottom: 4px solid transparent;
+        color: var(--text);
+        font-size: 15px;
+        font-weight: 600;
+        text-decoration: none;
+    }
+    .pub .hl-cats a[aria-current] {
+        border-bottom-color: var(--accent);
+        color: var(--accent);
+        font-weight: 800;
+    }
+    .pub .news-front-filters form:has(#category) {
+        display: none;
+    }
+    .pub .paper-feed .paper-label {
+        margin: 24px 0 0;
+        padding: 8px 0;
+        border-top: 1px solid var(--text);
+        border-bottom: 1px solid var(--row-border);
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+    }
+    .pub .paper-latest .paper-label {
+        margin: 0;
+        padding: 0 0 4px;
+        border-top: 0;
+        border-bottom: 2px solid var(--text);
+    }
+    .pub .paper-latest .cat {
+        display: none;
+    }
+    .pub .paper-feed .article--lead .title {
+        font-size: 44px;
+        line-height: 1.05;
+    }
+    /* More stories (and the three under the lead): a small thumbnail beside the headline. */
+    .pub .paper-feed .paper-rows .article,
+    .pub .paper-feed > .article,
+    .pub .paper-support .article {
+        display: grid;
+        grid-template-columns: 96px minmax(0, 1fr);
+        gap: 14px;
+        padding: 16px 0;
+        border-bottom: 1px solid var(--row-border);
+    }
+    .pub .paper-feed .paper-rows .thumb,
+    .pub .paper-feed > .article .thumb,
+    .pub .paper-support .thumb {
+        width: 96px;
+        height: 72px;
+        aspect-ratio: auto;
+        border-radius: 0;
+    }
+    .pub .paper-feed .paper-rows .body,
+    .pub .paper-feed > .article .body,
+    .pub .paper-support .body {
+        padding: 0;
+    }
+    .pub .paper-feed .paper-rows .summary,
+    .pub .paper-feed .paper-rows .cat,
+    .pub .paper-feed > .article .cat,
+    .pub .paper-support .cat {
+        display: none;
+    }
+    .pub .paper-feed .paper-rows .title,
+    .pub .paper-support .title {
+        font-size: 18px;
+        line-height: 1.25;
+    }
+    .pub .paper-feed {
+        column-gap: 28px;
+    }
+}
+
+/* ---------- Local: forecast, news and things to do ---------- */
+:root:is([data-color-scheme], :not([data-color-scheme])) .pub #local-weather {
+    margin-top: 14px;
+    padding: 14px 16px;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: var(--surface);
+}
+:root:is([data-color-scheme], :not([data-color-scheme])) .pub #local-weather .d-card__head {
+    padding: 0;
+    border: 0;
+}
+.pub #local-weather .d-card__head h2 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 800;
+}
+.pub #local-weather .d-card__head a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    font-size: 13px;
+}
+:root:is([data-color-scheme], :not([data-color-scheme])) .pub #local-weather .weather-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+:root:is([data-color-scheme], :not([data-color-scheme])) .pub #local-weather .weather-period {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    padding: 12px;
+    border: 0;
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--accent) 5%, var(--surface));
+    box-shadow: none;
+}
+.pub #local-weather .weather-period h3 {
+    margin: 0;
+    color: var(--text-2);
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+.pub #local-weather .weather-temperature {
+    margin: 0;
+    font-family: var(--font-serif);
+    font-size: 34px;
+    font-weight: 800;
+    line-height: 1.05;
+}
+.pub #local-weather .weather-period > p:not(.updated) {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 700;
+}
+.pub #local-weather .weather-period > .updated {
+    margin: 0;
+    font-size: 12px;
+}
+.pub .lc-cols {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-top: 14px;
+}
+.pub .lc-news,
+:root:is([data-color-scheme], :not([data-color-scheme])) .pub .lc-events {
+    padding: 12px 16px;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: var(--surface);
+}
+.pub .lc-cols .ef-label {
+    padding: 0;
+    border: 0;
+    font-size: 18px;
+    letter-spacing: 0;
+    text-transform: none;
+}
+@media (max-width: 699px) {
+    /* Inside the news card the feed needs no second card of its own. */
+    .pub .lc-feed .paper-lead,
+    .pub .lc-feed .paper-rows {
+        padding: 0;
+        border: 0;
+        border-radius: 0;
+        background: none;
+    }
+    .pub .lc-feed .paper-lead .thumb {
+        display: none;
+    }
+    .pub .lc-feed .paper-lead .body {
+        padding: 8px 0 0;
+    }
+    .pub .lc-feed .article--lead .title {
+        font-family: inherit;
+        font-size: 15px;
+        font-weight: 600;
+        line-height: 1.35;
+    }
+    .pub .lc-feed .article--lead .cat,
+    .pub .lc-feed .article--lead .summary {
+        display: none;
+    }
+    .pub .lc-feed .paper-rows {
+        margin-top: 0;
+    }
+}
+.pub .lc-events p {
+    margin: 4px 0 12px;
+    color: var(--text-2);
+    font-size: 14px;
+}
+.pub .lc-links {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.pub .lc-links a {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 50px;
+    padding: 0 14px;
+    border: 1px solid var(--field-border, var(--row-border));
+    border-radius: 12px;
+    color: var(--text);
+    font-size: 15px;
+    font-weight: 700;
+    text-decoration: none;
+}
+@media (min-width: 1024px) {
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub #local-weather {
+        margin-top: 0;
+        padding: 20px 0;
+        border: 0;
+        border-bottom: 1px solid var(--text);
+        border-radius: 0;
+        background: none;
+    }
+    .pub #local-weather .d-card__head h2 {
+        font-family: var(--font-serif);
+        font-size: 30px;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub #local-weather .weather-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 16px;
+        margin-top: 12px;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub #local-weather .weather-period {
+        padding: 18px;
+        border: 1px solid var(--row-border);
+        border-radius: 14px;
+    }
+    .pub #local-weather .weather-temperature {
+        font-size: 50px;
+    }
+    .pub #local-weather .weather-period > p:not(.updated) {
+        font-size: 17px;
+    }
+    .pub .lc-cols {
+        display: grid;
+        grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+        gap: 0;
+        margin-top: 0;
+        padding-top: 20px;
+    }
+    .pub .lc-news,
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .lc-events {
+        padding: 0;
+        border: 0;
+        border-radius: 0;
+        background: none;
+    }
+    .pub .lc-news {
+        padding-right: 28px;
+        border-right: 1px solid var(--row-border);
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .lc-events {
+        padding-left: 28px;
+    }
+    .pub .lc-cols .ef-label {
+        padding-bottom: 4px;
+        border-bottom: 2px solid var(--text);
+        font-size: 12px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+    }
+    /* Lead story with its picture beside the text, then compact rows in two columns. */
+    .pub .lc-feed {
+        display: block;
+    }
+    .pub .lc-feed .paper-lead .article--lead {
+        display: grid;
+        grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+        gap: 20px;
+        padding: 14px 0;
+        border-bottom: 1px solid var(--row-border);
+    }
+    .pub .lc-feed .article--lead .title {
+        font-size: 30px;
+        line-height: 1.1;
+    }
+    .pub .lc-feed .paper-rows {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        column-gap: 24px;
+    }
+    .pub .lc-feed .paper-rows .article {
+        display: block;
+        padding: 10px 0;
+        border-bottom: 1px dotted var(--row-border);
+    }
+    .pub .lc-feed .paper-rows .thumb {
+        display: none;
+    }
+}
+
+/* ---------- YouTube: one even grid of videos, newest first ---------- */
+.pub .filters--videos .catselect select {
+    width: 100%;
+    min-height: 44px;
+}
+.pub .video-front .count--inline {
+    display: none;
+}
+:root:is([data-color-scheme], :not([data-color-scheme])) .pub .video-front .videos {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+/* The approved concept has no oversized first video. */
+:root:is([data-color-scheme], :not([data-color-scheme])) .pub .video-front .video,
+:root:is([data-color-scheme], :not([data-color-scheme])) .pub .video-front .video--featured {
+    display: flex;
+    flex-direction: column;
+    grid-column: auto;
+    overflow: hidden;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: var(--surface);
+}
+:root:is([data-color-scheme], :not([data-color-scheme])) .pub .video-front .vthumb {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 9;
+    border-radius: 0;
+}
+:root:is([data-color-scheme], :not([data-color-scheme])) .pub .video-front .vbody {
+    padding: 10px 14px 4px;
+}
+:root:is([data-color-scheme], :not([data-color-scheme])) .pub .video-front .vtitle,
+:root:is([data-color-scheme], :not([data-color-scheme])) .pub .video-front .video--featured .vtitle {
+    margin: 2px 0 0;
+    font-family: inherit;
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1.3;
+}
+.pub .video-front .vtitle a {
+    color: var(--text);
+    text-decoration: none;
+}
+:root:is([data-color-scheme], :not([data-color-scheme])) .pub .video-front .video-channel {
+    order: -1;
+    margin: 0;
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 800;
+}
+:root:is([data-color-scheme], :not([data-color-scheme])) .pub .video-front .vbody {
+    display: flex;
+    flex-direction: column;
+}
+.pub .video-front .vmeta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0 6px;
+    margin: 0;
+    color: var(--text-2);
+    font-size: 12px;
+}
+.pub .video-front .video-actions {
+    display: flex;
+    margin-left: auto;
+}
+@media (min-width: 700px) {
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .video-front .videos {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+@media (min-width: 1024px) {
+    .pub .page-heading:has(+ .filters--videos) {
+        margin-bottom: 0;
+    }
+    .pub .filters--videos {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 18px;
+        padding: 0 0 16px;
+        border-bottom: 1px solid var(--text);
+    }
+    .pub .filters--videos .catselect {
+        flex: 0 1 300px;
+        margin: 0;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .video-front .videos {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 28px 24px;
+        margin-top: 18px;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .video-front .video,
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .video-front .video--featured {
+        border: 0;
+        border-radius: 0;
+        background: none;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .video-front .vthumb {
+        border-radius: 10px;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .video-front .vbody {
+        padding: 10px 0 0;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .video-front .vtitle,
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .video-front .video--featured .vtitle {
+        font-family: var(--font-serif);
+        font-size: 18px;
+        line-height: 1.25;
+    }
+}
+
+/* ---------- Saved ---------- */
+.pub .sv-tabs {
+    margin-bottom: 12px;
+}
+.pub .sv-lists {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+.pub .sv-lists .saved-section {
+    padding: 12px 16px;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: var(--surface);
+}
+.pub .sv-lists .saved-head {
+    margin: 0 0 4px;
+    font-size: 18px;
+    font-weight: 800;
+}
+.pub .saved-section__empty {
+    padding: 18px;
+    border: 2px dashed var(--field-border, var(--row-border));
+    border-radius: 14px;
+    text-align: center;
+}
+.pub .saved-section__empty .empty {
+    margin: 0 0 10px;
+    padding: 0;
+    border: 0;
+    background: none;
+}
+/* When nothing at all is saved, the page-wide message replaces the two per-list ones. */
+.pub:has(.saved-empty:not([hidden])) .saved-section__empty {
+    display: none;
+}
+@media (min-width: 1024px) {
+    .pub .sv-tabs {
+        margin-bottom: 0;
+        padding-bottom: 16px;
+        border-bottom: 1px solid var(--text);
+    }
+    .pub .sv-lists {
+        display: grid;
+        grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+        gap: 0;
+        margin-top: 20px;
+    }
+    .pub .sv-lists .saved-section {
+        padding: 0;
+        border: 0;
+        border-radius: 0;
+        background: none;
+    }
+    .pub .sv-lists .saved-section:first-child:not(:only-child) {
+        padding-right: 28px;
+        border-right: 1px solid var(--row-border);
+    }
+    .pub .sv-lists .saved-section + .saved-section {
+        padding-left: 28px;
+    }
+    .pub .sv-lists .saved-section:only-child {
+        grid-column: 1 / -1;
+    }
+    .pub .sv-lists .saved-head {
+        padding-bottom: 4px;
+        border-bottom: 2px solid var(--text);
+        font-size: 12px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+    }
+}
+
+/* ---------- Settings ---------- */
+.pub .set-index {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 16px;
+    margin-bottom: 8px;
+}
+.pub .set-index a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    color: var(--accent);
+    font-size: 14px;
+    font-weight: 700;
+    text-decoration: none;
+}
+.pub .set-main [data-settings-section] {
+    margin: 0 0 14px;
+    padding: 14px 16px;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: var(--surface);
+}
+.pub .set-main [data-settings-section] > h2 {
+    margin: 0 0 4px;
+    font-size: 18px;
+    font-weight: 800;
+}
+/* Choices as tappable buttons, two across on phones. */
+:root:is([data-color-scheme], :not([data-color-scheme])) .pub .set-main .settings-schemes {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin: 10px 0 0;
+    padding: 0;
+    border: 0;
+}
+:root:is([data-color-scheme], :not([data-color-scheme])) .pub .set-main .settings-scheme {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 48px;
+    padding: 4px 10px;
+    border: 2px solid var(--row-border);
+    border-radius: 10px;
+    background: var(--surface);
+    font-size: 13px;
+    font-weight: 600;
+}
+:root:is([data-color-scheme], :not([data-color-scheme])) .pub .set-main .settings-scheme:has(input:checked) {
+    border-color: var(--accent);
+    font-weight: 800;
+}
+.pub .sports-team-group {
+    margin: 8px 0 0;
+    border: 1px solid var(--row-border);
+    border-radius: 12px;
+}
+.pub .sports-team-group > summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    min-height: 48px;
+    padding: 0 14px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+}
+.pub .sports-team-group__count {
+    color: var(--text-2);
+    font-size: 12px;
+    font-weight: 400;
+}
+.pub .sports-team-group > fieldset {
+    margin: 0;
+    padding: 0 14px 12px;
+    border: 0;
+}
+:root:is([data-color-scheme], :not([data-color-scheme])) .pub .sports-team-group .sports-team-options {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+:root:is([data-color-scheme], :not([data-color-scheme])) .pub .sports-team-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 48px;
+    padding: 0 10px;
+    border: 1px solid var(--field-border, var(--row-border));
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+}
+.pub .sports-team-option:has(input:checked) {
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+}
+@media (max-width: 359px) {
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .set-main .settings-schemes,
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .sports-team-group .sports-team-options {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+@media (min-width: 1024px) {
+    .pub .set-layout {
+        display: grid;
+        grid-template-columns: 220px minmax(0, 1fr);
+        gap: 40px;
+        align-items: start;
+    }
+    .pub .set-index {
+        position: sticky;
+        top: 84px;
+        flex-direction: column;
+        margin: 0;
+        padding-top: 4px;
+    }
+    .pub .set-index a {
+        min-height: 40px;
+        border-bottom: 1px dotted var(--row-border);
+        color: var(--text);
+    }
+    .pub .set-main [data-settings-section] {
+        margin: 0;
+        padding: 22px 0;
+        border: 0;
+        border-bottom: 1px solid var(--row-border);
+        border-radius: 0;
+        background: none;
+    }
+    .pub .set-main [data-settings-section] > h2 {
+        font-family: var(--font-serif);
+        font-size: 28px;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .set-main .settings-schemes {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .sports-team-group .sports-team-options {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+}
