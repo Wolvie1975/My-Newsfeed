@@ -22,6 +22,7 @@
     --header-bg: #0051ba;
     --header-border: #00479f;
     --selection-bg: #ffd34d;
+    --selection-fg: #141b2b;
 }
 :root[data-color-scheme='ribbon'][data-theme='dark'],
 :root:not([data-color-scheme])[data-theme='dark'] {
@@ -760,10 +761,10 @@
     .pub .bs-watch {
         border: 0;
         background: var(--btn-bg);
-        color: #ffffff;
+        color: var(--btn-fg, #ffffff);
     }
     .pub .bs-watch .bs-ear__title {
-        color: #ffffff;
+        color: var(--btn-fg, #ffffff);
     }
     .pub .bs-watch input {
         border: 0;
@@ -773,7 +774,7 @@
     :root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-watch .nf-btn--primary {
         min-height: 50px;
         background: var(--selection-bg, #ffd34d);
-        color: #141b2b;
+        color: var(--selection-fg, #141b2b);
         font-weight: 800;
     }
     .pub .bs-live {
