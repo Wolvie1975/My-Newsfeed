@@ -24,7 +24,8 @@ const base = process.env.BASE_URL || 'http://localhost:5295',
                     const items = p.locator(route === 'videos' ? '.video-front .video' : '.paper-feed .article');
                     assert((await items.count()) > 0, route + ' no stories');
                     for (const selector of ['#category', '#source', '#hub-category', '#channel'])
-                        if (await p.locator(selector).count())
+                        // Desktop shows category tabs instead of the #category dropdown.
+                        if (await p.locator(selector).isVisible())
                             assert((await p.locator(selector).boundingBox()).height >= 44, selector);
                     if (width <= 430) {
                         if (route !== 'videos')

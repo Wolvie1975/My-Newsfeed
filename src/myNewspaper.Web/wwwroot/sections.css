@@ -3463,9 +3463,12 @@ a.tvc-row__show:hover {
     border: 0;
     background: none;
 }
-/* When nothing at all is saved, the page-wide message replaces the two per-list ones. */
-.pub:has(.saved-empty:not([hidden])) .saved-section__empty {
+/* When nothing at all is saved, the page-wide message offers the way back; the lists keep their notes. */
+.pub:has(.saved-empty:not([hidden])) .saved-section__empty .nf-btn {
     display: none;
+}
+.pub [data-saved-status] {
+    white-space: normal;
 }
 @media (min-width: 1024px) {
     .pub .sv-tabs {

@@ -57,14 +57,17 @@ const base = process.env.BASE_URL || 'http://localhost:5295',
                             await row.screenshot({ path: root + route.replaceAll('/', '-') + '-row.png' });
                     }
                     if (width >= 700) {
+                        // Tablets: large pictures above the headline. Desktop (concept board): a 96px thumbnail beside it.
                         const card = p.locator('.paper-rows .article').first();
                         if (await card.count())
                             assert(
-                                await card.evaluate((n) => {
+                                await card.evaluate((n, wide) => {
                                     const a = n.getBoundingClientRect(),
                                         t = n.querySelector('.thumb').getBoundingClientRect();
-                                    return Math.abs(t.width - a.width) < 1 && t.height === 200;
-                                }),
+                                    return wide
+                                        ? Math.round(t.width) === 96
+                                        : Math.abs(t.width - a.width) < 1 && t.height === 200;
+                                }, width >= 1024),
                                 'large More stories image ' + route,
                             );
                     }
