@@ -27,7 +27,10 @@ Deployed `mynewspaper-web:youtube-20261026` (`9ba81c595479`), healthy; rollback
 headline layouts (updated) and then passed. Carousel exercised at 1440 and 390 (next, pick, play advancing at 7s,
 pause holding, 44px controls; no-JS one slide). Four-page matrix 317–1440 light/dark: 72 views clean on preview
 and live; six related checks passed live; live featured image loaded (480×360). Built in the light resource mode.
-Real device not re-checked. Evidence: `/tmp/mynewspaper-broadsheet-deploy/b5`.
+Real device not re-checked. Follow-up (same tag, rollback
+`mynewsfeed-web:before-mynewspaper-youtube2-20261026`): the homepage Coming up ear reads "Away at Home" for games
+not yet started instead of the live-score comma format; home checks passed on preview and the live text was
+confirmed. Evidence: `/tmp/mynewspaper-broadsheet-deploy/b5`.
 
 ## Headlines, Local, YouTube, Saved and Settings to concept boards — deployed October 25, 2026 (Central)
 
