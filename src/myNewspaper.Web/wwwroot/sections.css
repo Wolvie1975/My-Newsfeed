@@ -3098,6 +3098,20 @@ a.tvc-row__show:hover {
         column-gap: 28px;
     }
 }
+/* Below 1280px a third of the page is too narrow for a thumbnail beside the headline (titles wrapped a word or two
+   per line on iPads): the three stories under the lead show their picture above the headline instead. Entertainment's
+   posters stay beside; the more specific rule below keeps them. */
+@media (min-width: 744px) and (max-width: 1279px) {
+    .pub .paper-support .article {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 10px;
+    }
+    .pub .paper-support .thumb {
+        width: 100%;
+        height: auto;
+        aspect-ratio: 16 / 9;
+    }
+}
 
 /* ---------- Local: forecast, news and things to do ---------- */
 :root:is([data-color-scheme], :not([data-color-scheme])) .pub #local-weather {
