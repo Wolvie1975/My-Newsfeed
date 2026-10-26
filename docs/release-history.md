@@ -11,6 +11,20 @@ The latest recorded web release is `mynewspaper-web:placeholder-20261026`
 `mynewsfeed-web:before-mynewspaper-placeholder-20261026`. Deployment checks passed then;
 this is a dated observation, not live hosting status.
 
+## Headline categories tidied (data only) — October 26, 2026 (Central)
+
+From a review of each category's sources against its headlines, approved by the user; made in the admin pages, no
+deployment. Sports › Big 12: the USA TODAY Google News source (9420) searched any sports story mentioning "Big 12" and
+mostly returned national college football; it now requires "Big 12" in the title
+(`site:www.usatoday.com/story/sports/ intitle:"Big 12" when:30d`). A version listing team names was tried and dropped:
+Google ignored `when:30d` with it and returned stories from 2024. Entertainment: new **Box Office** category
+(Entertainment hub, id 6443) holding the Deadline, IndieWire, THR and Variety box-office feeds (7094, 9036, 9035, 9034),
+so General is Nerdist and USA TODAY Entertainment. Headlines: **More News** renamed **U.S. News** (2627); new
+**Business** category (Headlines, id 6444) holding USA TODAY Money (9413). Technology: 9to5 Toys (9951, all deals)
+disabled, which hides its stories. Opinion was left mixed on purpose (the user likes the variety). Note:
+`BoxOfficeQuery` (stories for a category named "Box Office") is not used by any page since the Box office redesign.
+Verified by reading each source back in admin and on the public category menus and pages.
+
 ## Story placeholders and support stories on tablets — deployed October 26, 2026 (Central)
 
 At the user's request the story placeholder (a fixed light-blue `img/branded-article-v2.svg` with the old logo) is
