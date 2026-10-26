@@ -6,10 +6,26 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The latest recorded web release is `mynewspaper-web:cards-20261026`
-(image `0b74fa9d5b5f`), deployed October 26, 2026 (Central). Its rollback image is
-`mynewsfeed-web:before-mynewspaper-cards-20261026`. Deployment checks passed then;
+The latest recorded web release is `mynewspaper-web:f1news-20261026`
+(image `20728419f2f7`), deployed October 26, 2026 (Central). Its rollback image is
+`mynewsfeed-web:before-mynewspaper-f1news-20261026`. Deployment checks passed then;
 this is a dated observation, not live hosting status.
+
+## F1 › News retired — deployed October 26, 2026 (Central)
+
+At the user's request: the F1 page's News tab duplicated Sports headlines › F1 (same "F1 News" category, sources and
+articles), so `F1News.razor`, the `f1-news` Load more view, `F1NewsQuery.GetAsync`/`CategoryIdAsync`/`F1NewsPage` and
+`F1NewsTests` were removed (`F1NewsQuery.CategoryName` stays). `/f1/news` redirects (302) to `/sports/news/f1`,
+keeping a numeric `source`. The F1 tabs are Schedule, Results and Standings; the next-race banner links to "F1
+headlines →"; the homepage F1 card's News link now says Headlines and points to `/sports/news/f1`. Banner links gained
+a 4px gap so the arrow keeps its space.
+
+Deployed `mynewspaper-web:f1news-20261026` (`20728419f2f7`), healthy; rollback
+`mynewsfeed-web:before-mynewspaper-f1news-20261026`. 727 .NET tests passed (run the test host directly:
+`dotnet tests/myNewspaper.Tests/bin/Debug/net10.0/myNewspaper.Tests.dll`; `dotnet test` reported "Zero tests ran").
+Preview: redirect (with and without source), sports-news (now checks the redirect and that /f1 has no f1/news link),
+section-select, section-hubs and tablet-layout on /f1 and /sports/news/f1 passed. Live: redirect, sports-news and
+section-select passed.
 
 ## F1 News on the Headlines layout; picture cards on phones — deployed October 26, 2026 (Central)
 
