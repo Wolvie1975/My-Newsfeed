@@ -260,14 +260,14 @@
     text-transform: none;
 }
 /* On phones tonight's episodes already lead On screen. */
-@media (max-width: 1023px) {
+@media (max-width: 743px) {
     .pub .ef-tv {
         display: none;
     }
 }
 
 /* Desktop: On screen across the top, then the lead and headlines beside a ruled side column. */
-@media (min-width: 1024px) {
+@media (min-width: 744px) {
     .pub .ef {
         gap: 0;
     }
@@ -477,7 +477,7 @@
     font-size: 11px;
     text-transform: uppercase;
 }
-@media (min-width: 1024px) {
+@media (min-width: 744px) {
     .pub .page-heading .page-eyebrow {
         font-size: 12px;
     }
@@ -518,7 +518,7 @@
 .pub .sec-pills--desktop {
     display: none;
 }
-@media (min-width: 1024px) {
+@media (min-width: 744px) {
     .pub .sec-pills,
     .pub .sec-pills--desktop {
         display: flex;
@@ -685,7 +685,7 @@
     text-transform: none;
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 744px) {
     .pub .mv-filters {
         flex-direction: row;
         flex-wrap: wrap;
@@ -960,7 +960,7 @@ a.tvc-row__show:hover {
     text-decoration: none;
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 744px) {
     .pub .tvc-jump {
         display: none;
     }
@@ -1163,7 +1163,7 @@ a.tvc-row__show:hover {
     text-decoration: none;
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 744px) {
     .pub .dg-bar {
         flex-direction: row;
         flex-wrap: wrap;
@@ -1355,7 +1355,7 @@ a.tvc-row__show:hover {
     color: #ff8a99;
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 744px) {
     .pub .bo-views {
         padding-bottom: 16px;
         border-bottom: 1px solid var(--text);
@@ -1445,7 +1445,7 @@ a.tvc-row__show:hover {
         color: var(--text-2);
     }
 }
-@media (min-width: 1024px) {
+@media (min-width: 744px) {
     .pub .sec-pills {
         border-radius: 0;
     }
@@ -1544,7 +1544,7 @@ a.tvc-row__show:hover {
     font-weight: 800;
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 744px) {
     .pub .watch-page {
         display: grid;
         grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
@@ -1826,7 +1826,7 @@ a.tvc-row__show:hover {
     gap: 0 16px;
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 744px) {
     :root:is([data-color-scheme], :not([data-color-scheme])) .pub [data-scoreboard-compact='false'] {
         display: grid;
         grid-template-columns: auto minmax(0, 1fr);
@@ -1944,7 +1944,7 @@ a.tvc-row__show:hover {
     justify-content: flex-start;
 }
 /* Phones: previous day, the date and next day on one row; each filter label beside its dropdown. */
-@media (max-width: 1023px) {
+@media (max-width: 743px) {
     :root:is([data-color-scheme], :not([data-color-scheme])) .pub .scoreboard-dates {
         grid-template-columns: 64px minmax(0, 1fr) 64px;
     }
@@ -2173,7 +2173,7 @@ a.tvc-row__show:hover {
     background: color-mix(in srgb, var(--accent) 8%, var(--surface));
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 744px) {
     .pub .spf-scores {
         padding: 2px 0 16px;
         border-bottom: 1px solid var(--text);
@@ -2298,7 +2298,7 @@ a.tvc-row__show:hover {
     width: 100%;
     min-height: 44px;
 }
-@media (min-width: 1024px) {
+@media (min-width: 744px) {
     .pub .st-leagues {
         padding-bottom: 16px;
         border-bottom: 1px solid var(--text);
@@ -2460,7 +2460,7 @@ a.tvc-row__show:hover {
     background: color-mix(in srgb, var(--accent) 8%, var(--surface));
     box-shadow: none;
 }
-@media (min-width: 1024px) {
+@media (min-width: 744px) {
     .pub .rk-cols {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2576,7 +2576,7 @@ a.tvc-row__show:hover {
     font-weight: 600;
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 744px) {
     .pub .cl-sports {
         padding-bottom: 16px;
         border-bottom: 1px solid var(--text);
@@ -2637,7 +2637,7 @@ a.tvc-row__show:hover {
         padding-left: 0;
     }
 }
-@media (max-width: 1023px) {
+@media (max-width: 743px) {
     :root:is([data-color-scheme], :not([data-color-scheme])) .pub .cl-main .group {
         margin-top: 12px;
         padding: 0 14px 4px;
@@ -2823,7 +2823,7 @@ a.tvc-row__show:hover {
     font-size: 12px;
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 744px) {
     :root:is([data-color-scheme], :not([data-color-scheme])) .pub .f1-banner {
         flex-direction: row;
         align-items: flex-end;
@@ -2920,7 +2920,7 @@ a.tvc-row__show:hover {
 .pub .rk-row__rec {
     white-space: nowrap;
 }
-@media (min-width: 1024px) {
+@media (min-width: 744px) {
     .pub .rk-row {
         grid-template-columns: 34px minmax(0, 1fr) auto 56px;
     }
@@ -3005,7 +3005,7 @@ a.tvc-row__show:hover {
         width: 100%;
     }
 }
-@media (min-width: 1024px) {
+@media (min-width: 744px) {
     .pub .hl-cats {
         display: flex;
         flex-wrap: wrap;
@@ -3234,7 +3234,7 @@ a.tvc-row__show:hover {
     font-weight: 700;
     text-decoration: none;
 }
-@media (min-width: 1024px) {
+@media (min-width: 744px) {
     :root:is([data-color-scheme], :not([data-color-scheme])) .pub #local-weather {
         margin-top: 0;
         padding: 20px 0;
@@ -3399,7 +3399,7 @@ a.tvc-row__show:hover {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
-@media (min-width: 1024px) {
+@media (min-width: 744px) {
     .pub .page-heading:has(+ .filters--videos) {
         margin-bottom: 0;
     }
@@ -3479,7 +3479,7 @@ a.tvc-row__show:hover {
 .pub [data-saved-status] {
     white-space: normal;
 }
-@media (min-width: 1024px) {
+@media (min-width: 744px) {
     .pub .sv-tabs {
         margin-bottom: 0;
         padding-bottom: 16px;
@@ -3621,7 +3621,7 @@ a.tvc-row__show:hover {
         grid-template-columns: minmax(0, 1fr);
     }
 }
-@media (min-width: 1024px) {
+@media (min-width: 744px) {
     .pub .set-layout {
         display: grid;
         grid-template-columns: 220px minmax(0, 1fr);
@@ -3672,7 +3672,7 @@ a.tvc-row__show:hover {
         padding: 12px 16px 4px;
     }
 }
-@media (min-width: 1024px) {
+@media (min-width: 744px) {
     /* Source picker and count in one line with the feed note, under the category tabs. */
     .pub .news-front-filters {
         display: flex;
@@ -3696,7 +3696,7 @@ a.tvc-row__show:hover {
 .pub #local-weather .weather-temperature {
     white-space: nowrap;
 }
-@media (max-width: 1023px) {
+@media (max-width: 743px) {
     .pub #local-weather .weather-temperature {
         font-size: 28px;
     }
@@ -3717,7 +3717,7 @@ a.tvc-row__show:hover {
     grid-row: auto;
 }
 /* Side by side, both lists start on the same line (the stacked layout spaced the second one down). */
-@media (min-width: 1024px) {
+@media (min-width: 744px) {
     .pub .sv-lists .saved-section,
     .pub .sv-lists .saved-section + .saved-section {
         margin: 0;
@@ -3959,7 +3959,7 @@ a.tvc-row__show:hover {
     color: var(--text-2);
     font-size: 13px;
 }
-@media (min-width: 1024px) {
+@media (min-width: 744px) {
     .pub .yt-top {
         display: grid;
         grid-template-columns: minmax(0, 2fr) minmax(320px, 1fr);
@@ -4047,7 +4047,7 @@ a.tvc-row__show:hover {
     font-size: 12px;
     font-weight: 700;
 }
-@media (min-width: 1024px) {
+@media (min-width: 744px) {
     .pub .hn-cats {
         padding-bottom: 14px;
         border-bottom: 1px solid var(--row-border);
