@@ -2669,7 +2669,7 @@ a.tvc-row__show:hover {
 }
 .pub .f1-banner__kicker {
     margin: 0;
-    color: #ffd34d;
+    color: var(--header-fg, #ffffff);
     font-size: 12px;
     font-weight: 800;
     letter-spacing: 0.1em;
@@ -2677,8 +2677,17 @@ a.tvc-row__show:hover {
 }
 .pub .f1-banner__where {
     margin: 0;
-    color: #dbe6f7;
+    color: var(--header-fg, #ffffff);
     font-size: 14px;
+}
+/* The gold kicker and pale-blue place line read only on Ribbon's blue; other schemes use their header text colour. */
+:root:not([data-color-scheme]) .pub .f1-banner__kicker,
+:root[data-color-scheme='ribbon'] .pub .f1-banner__kicker {
+    color: #ffd34d;
+}
+:root:not([data-color-scheme]) .pub .f1-banner__where,
+:root[data-color-scheme='ribbon'] .pub .f1-banner__where {
+    color: #dbe6f7;
 }
 .pub .f1-banner__time {
     font-size: 18px;

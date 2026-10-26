@@ -77,7 +77,13 @@ function audit() {
         seen.add(el);
         const r = el.getBoundingClientRect();
         const s = getComputedStyle(el);
-        if (!r.width || !r.height || s.visibility === 'hidden' || Number(s.opacity) === 0 || !el.checkVisibility())
+        if (
+            r.width <= 1 ||
+            r.height <= 1 ||
+            s.visibility === 'hidden' ||
+            Number(s.opacity) === 0 ||
+            !el.checkVisibility()
+        )
             continue;
         if (el.closest('details:not([open])') && !el.closest('summary')) continue;
         const bg = behind(el);
