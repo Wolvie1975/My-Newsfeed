@@ -27,11 +27,10 @@
     var onSportsNews = path.Split('?')[0].StartsWith("sports/news", StringComparison.OrdinalIgnoreCase);
     var onBasketballNews = path.Split('?')[0].Equals("sports/mens-college-basketball/news", StringComparison.OrdinalIgnoreCase);
     var onBig12News = path.Split('?')[0].Equals("college/news", StringComparison.OrdinalIgnoreCase);
-    var onF1News = path.Split('?')[0].Equals("f1/news", StringComparison.OrdinalIgnoreCase);
     var onNews = path.StartsWith("news", StringComparison.OrdinalIgnoreCase);
     var onSaved = path.StartsWith("saved", StringComparison.OrdinalIgnoreCase);
     var onHome = path.Length == 0 || path[0] is '?' or '#';
-    var onSportsSection = onSportsHub || onSportsNews || onBasketballNews || onScoreboard || onEvents || onResults || onStandings || onRankings || onF1 || onCollege || onBig12News || onF1News;
+    var onSportsSection = onSportsHub || onSportsNews || onBasketballNews || onScoreboard || onEvents || onResults || onStandings || onRankings || onF1 || onCollege || onBig12News;
     var onEntertainmentSection = onEntertainmentHub || (onMovies && !onWatch) || onTv || onEntertainmentNews || onTvFilmNews || onBoxOffice;
 }
 

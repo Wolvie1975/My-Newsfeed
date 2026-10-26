@@ -1,5 +1,5 @@
 <SectionSelect Id="f1-view" Label="View" Current="@(Current == "schedule" ? "f1" : "f1/" + Current)" Choices="@choices" />
 @code {
     [Parameter] public string Current { get; set; } = "";
-    private static readonly NavigationChoice[] choices = [new("f1", "Schedule"), new("f1/results", "Results"), new("f1/standings", "Standings"), new("f1/news", "News")];
+    private static readonly NavigationChoice[] choices = [new("f1", "Schedule"), new("f1/results", "Results"), new("f1/standings", "Standings")];
 }

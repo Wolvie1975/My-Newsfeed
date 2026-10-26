@@ -46,6 +46,14 @@ public static class PublicEndpoints
             return Results.LocalRedirect(QueryHelpers.AddQueryString("/scoreboard", query));
         });
 
+        // F1 news moved to Sports headlines; old F1 › News links keep their source filter.
+        app.MapGet("/f1/news", (HttpContext http) =>
+        {
+            var query = new Dictionary<string, string?>();
+            if (int.TryParse(http.Request.Query["source"], out var source) && source > 0) query["source"] = source.ToString();
+            return Results.LocalRedirect(QueryHelpers.AddQueryString("/sports/news/f1", query));
+        });
+
         app.MapGet("/scoreboard/fragment", (HttpContext http, string? day, string? competition, bool? compact, int? follow, string? status, string? show) =>
         {
             http.Response.Headers.CacheControl = "no-store";

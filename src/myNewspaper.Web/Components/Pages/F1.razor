@@ -43,6 +43,8 @@ else
                     <div class="f1-banner__links">
                         @if (published) { <a href="@($"f1/results?race={race.Round}:Race")">Race results <span aria-hidden="true">→</span></a> }
                         @if (FeedQuery.SafeHref(race.RaceUrl) is { } reference) { <a href="@reference" target="_blank" rel="noopener noreferrer">Race reference</a> }
+                        @* F1 news lives in Sports headlines (the F1 page's own News tab was retired October 26, 2026). *@
+                        <a href="sports/news/f1">F1 headlines <span aria-hidden="true">→</span></a>
                     </div>
                     <details class="f1-sessions">
                         <summary>Weekend timetable</summary>

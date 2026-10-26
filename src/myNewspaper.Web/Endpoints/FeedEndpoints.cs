@@ -22,16 +22,10 @@ public static class FeedEndpoints
         int? categoryId = int.TryParse(category, out var parsedCategory) ? parsedCategory : null;
         await using var db = await factory.CreateDbContextAsync();
         var boxOffice = view == "box-office";
-        var f1News = view == "f1-news";
         var big12News = view == "big12-news";
         if (big12News)
         {
             categoryId = await Big12NewsQuery.CategoryIdAsync(db);
-            if (categoryId is null) return Results.NotFound();
-        }
-        if (f1News)
-        {
-            categoryId = await F1NewsQuery.CategoryIdAsync(db);
             if (categoryId is null) return Results.NotFound();
         }
         if (boxOffice)
@@ -67,7 +61,7 @@ public static class FeedEndpoints
         if (sourceId is not null && !await db.Sources.AnyAsync(s => s.Id == sourceId && s.Enabled
             && (categoryId == null || s.SourceCategoryId == categoryId))) sourceId = null;
         var page = await FeedQuery.GetFeedAsync(db, categoryId, q, cursor, FeedQuery.MoreBatch, sourceId,
-            headlinesOnly: !boxOffice && !f1News && !big12News && sectionCategory == null);
+            headlinesOnly: !boxOffice && !big12News && sectionCategory == null);
 
         await using var renderer = new HtmlRenderer(http.RequestServices, loggers);
         var html = await renderer.Dispatcher.InvokeAsync(async () =>
@@ -91,9 +85,9 @@ public static class FeedEndpoints
             }
             else
             {
-                var route = boxOffice ? "box-office" : f1News ? "f1/news" : sectionCategory != null ? NewsSections.RouteFor(sectionCategory)! : "news";
-                nextHref = route + FeedQuery.QueryString(f1News ? null : categoryId, q, token, sourceId,
-                    allCategories: !boxOffice && !f1News && categoryId is null);
+                var route = boxOffice ? "box-office" : sectionCategory != null ? NewsSections.RouteFor(sectionCategory)! : "news";
+                nextHref = route + FeedQuery.QueryString(categoryId, q, token, sourceId,
+                    allCategories: !boxOffice && categoryId is null);
             }
         }
 

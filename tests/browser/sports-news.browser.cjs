@@ -113,11 +113,16 @@ const sections = [
         for (const [route, label] of [
             ['sports/mens-college-basketball/news', 'Men’s college basketball'],
             ['college/news', 'Big 12 News'],
-            ['f1/news', 'F1 News'],
         ]) {
             await p.goto(base + '/' + route);
             assert((await p.locator('main').innerText()).includes(label));
         }
+        // F1 › News was retired (October 26, 2026): old links land on the F1 topic of Sports headlines.
+        await p.goto(base + '/f1/news');
+        assert.equal(new URL(p.url()).pathname, '/sports/news/f1');
+        assert.equal(await p.locator('#hub-category option:checked').innerText(), 'F1');
+        await p.goto(base + '/f1');
+        assert.equal(await p.locator('a[href="f1/news"]').count(), 0);
         await p.goto(base + '/news?category=all');
         const names = await p.locator('#category option').allTextContents();
         for (const name of [

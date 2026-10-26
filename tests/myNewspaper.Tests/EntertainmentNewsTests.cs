@@ -72,7 +72,6 @@ public class EntertainmentNewsTests
             Assert.Empty((await FeedQuery.GetFeedAsync(db, category, null, null, headlinesOnly: true)).Items);
             Assert.Single((await FeedQuery.GetFeedAsync(db, category, null, null)).Items);
         }
-        Assert.Single((await F1NewsQuery.GetAsync(db, null, null, null)).Feed.Items);
         Assert.Single((await Big12NewsQuery.GetAsync(db, null, null, null)).Feed.Items);
         Assert.Equal(10, (await FeedQuery.GetFeedAsync(db, null, null, null)).Total);
         // Arbitrary future categories require no name matching or code registration.
