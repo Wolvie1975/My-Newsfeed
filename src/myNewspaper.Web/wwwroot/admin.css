@@ -1164,6 +1164,16 @@
     width: 100%;
 }
 
+/* Long addresses in the older tables stay on one line with an ellipsis (the full address is in the link). */
+.adm .table .adm-url {
+    display: inline-block;
+    max-width: 280px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: bottom;
+}
+
 /* ---------- Phones ---------- */
 .adm-cards {
     display: none;
@@ -1264,6 +1274,10 @@
     .adm-toolbar > .form-select,
     .adm-toolbar > .form-control {
         flex: 1 1 100%;
+    }
+    /* Older tables (not yet swapped for cards) scroll inside their card instead of squeezing columns to a word. */
+    .adm .table-responsive > .table {
+        min-width: 760px;
     }
 }
 .adm-cardrow {

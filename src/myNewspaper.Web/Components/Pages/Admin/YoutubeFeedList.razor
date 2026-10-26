@@ -89,7 +89,7 @@ else
                         <td>
                             @if (FeedQuery.SafeHref(row.Url) is { } href)
                             {
-                                <a href="@href" target="_blank" rel="noopener noreferrer" class="small text-break">@row.Url</a>
+                                <a href="@href" target="_blank" rel="noopener noreferrer" class="small adm-url" title="@row.Url">@row.Url</a>
                             }
                             else
                             {
