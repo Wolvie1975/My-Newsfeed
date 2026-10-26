@@ -6,10 +6,29 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The latest recorded web release is `mynewspaper-web:labels-20261026`
-(image `cef2c981f245`), deployed October 26, 2026 (Central). Its rollback image is
-`mynewsfeed-web:before-mynewspaper-labels-20261026`. Deployment checks passed then;
+The latest recorded web release is `mynewspaper-web:cards-20261026`
+(image `0b74fa9d5b5f`), deployed October 26, 2026 (Central). Its rollback image is
+`mynewsfeed-web:before-mynewspaper-cards-20261026`. Deployment checks passed then;
 this is a dated observation, not live hosting status.
+
+## F1 News on the Headlines layout; picture cards on phones — deployed October 26, 2026 (Central)
+
+At the user's request: desktop F1 › News (`/f1/news`) renders through `NewspaperFeed` inside `news-front`, like the
+Headlines pages (lead with Latest headlines, support stories, More stories rows). Phones: Headlines, Sports and
+Entertainment headlines (all topics) and Local's Kansas City news show every story as the standard article card F1
+News used (picture on top, category, serif title, date, summary, publisher and actions). How: the newspaper feed's
+base rules and its publisher-line rules in public.css now sit in `@media (min-width: 744px)`; the phone-only compact
+rules (public.css ≤699px blocks, sections.css phone Headlines and Local blocks, an unused `news-front--hub` block)
+were removed; a sections.css ≤743px block sets the groupings to `display: contents`, hides the section labels, gives
+card category links a 44px tap area without moving them, and drops Local's outer news box. A computed-style
+comparison found no difference from the F1 card on any story kind on all four pages. compact-stories,
+publisher-layout and the Load more check were updated to expect picture cards.
+
+Deployed `mynewspaper-web:cards-20261026` (`0b74fa9d5b5f`), healthy; rollback
+`mynewsfeed-web:before-mynewspaper-cards-20261026`. Preview: compact-stories, frontpages, publisher-layout,
+entertainment-news, sports-news, section-hubs, watch-later, shared-saved, tablet-layout (5 pages) and contrast for 16
+schemes on /news, /local and /f1/news passed. Live: compact-stories, frontpages and publisher-layout passed. Real
+device not re-checked.
 
 ## "Headlines" and "Competitions" labels — deployed October 26, 2026 (Central)
 
