@@ -6,10 +6,24 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The latest recorded web release is `mynewspaper-web:ipad-20261026`
-(image `77fa07e55a61`), deployed October 26, 2026 (Central). Its rollback image is
-`mynewsfeed-web:before-mynewspaper-ipad-20261026`. Deployment checks passed then;
+The latest recorded web release is `mynewspaper-web:swap-20261026`
+(image `ae76fe97094d`), deployed October 26, 2026 (Central). Its rollback image is
+`mynewsfeed-web:before-mynewspaper-swap-20261026`. Deployment checks passed then;
 this is a dated observation, not live hosting status.
+
+## Forecast and Where to watch swapped on the home masthead — deployed October 26, 2026 (Central)
+
+At the user's request, from 744px the Kansas City forecast (with New tonight) is the masthead's left ear, outlined like
+Coming up with the periods two by two; the ears match in height. Where to watch is a full-width band in the scheme's
+button colour under the masthead, title beside a search that fills the band. Markup moved (the forecast section into
+the masthead, Watch after it); phones keep Watch first then the forecast through CSS order and look unchanged.
+home-columns and home-watch-search follow the new positions.
+
+Deployed `mynewspaper-web:swap-20261026` (`ae76fe97094d`), healthy; rollback
+`mynewsfeed-web:before-mynewspaper-swap-20261026`. Preview: home-columns, home-watch-search, home-opinion, home-top25,
+frontpages, branding, weather-icons, tablet-layout on / and contrast for all 16 schemes on / passed; screens at 1440
+(Olive light, Ribbon dark), 820 and 390 reviewed. Live: home-columns, home-watch-search and tablet-layout on / passed.
+Real device not re-checked.
 
 ## iPad portrait gets the desktop page layout — deployed October 26, 2026 (Central)
 
