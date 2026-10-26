@@ -1,7 +1,7 @@
 // Readable text under every colour scheme (user request, October 26, 2026): for each scheme in light and dark mode, at
 // phone and desktop width, every visible piece of text in the header and page must meet WCAG AA contrast against the
 // colour actually behind it — 4.5:1, or 3:1 for large text (24px+, or 18.66px+ bold). Text over pictures is skipped.
-// REPORT=1 prints every failure instead of stopping at the first page with one.
+// REPORT=1 prints every failure instead of stopping at the first page with one; SCHEMES and PAGES narrow the run.
 const { chromium } = require('playwright');
 const assert = require('node:assert/strict');
 const base = process.env.BASE_URL || 'http://localhost:5295';
@@ -22,6 +22,7 @@ const schemes = [
     'desert',
     'coffee',
 ];
+if (process.env.SCHEMES) schemes.splice(0, schemes.length, ...process.env.SCHEMES.split(','));
 const pages = (process.env.PAGES || '/,/watch,/sports,/settings').split(',');
 const widths = [390, 1440];
 

@@ -3938,7 +3938,7 @@
     --bar-fg-2: #ffffff;
 }
 
-/* St. Patrick’s Day: emerald green and gold. */
+/* St. Patrick’s Day: kelly green and gold (brighter than Christmas’s forest green). */
 :root[data-color-scheme='st-patricks']:not([data-theme='dark']) {
     --bg: #f6faf4;
     --surface: #ffffff;
@@ -3948,10 +3948,10 @@
     --text: #17171c;
     --text-2: #4c4c56;
     --text-3: #555560;
-    --accent: #065f46;
-    --btn-bg: #065f46;
+    --accent: #15803d;
+    --btn-bg: #15803d;
     --btn-fg: #ffffff;
-    --header-bg: #065f46;
+    --header-bg: #15803d;
     --header-fg: #ffffff;
     --header-line: #ccccd5;
     --header-border: transparent;
@@ -3968,9 +3968,9 @@
     --pill-fg: #17171c;
     --ph-bg: #e9e9ed;
     --ph-fg: #555560;
-    --mark-bg: #065f46;
+    --mark-bg: #15803d;
     --mark-fg: #ffffff;
-    --bar-bg: #065f46;
+    --bar-bg: #15803d;
     --bar-fg: #ffffff;
     --bar-fg-2: #ffffff;
 }
@@ -3983,16 +3983,16 @@
     --text: #f1f1f4;
     --text-2: #c6c6cf;
     --text-3: #b9b9c4;
-    --accent: #6ee7b7;
-    --btn-bg: #065f46;
+    --accent: #86efac;
+    --btn-bg: #15803d;
     --btn-fg: #ffffff;
-    --header-bg: #065f46;
+    --header-bg: #15803d;
     --header-fg: #ffffff;
     --header-line: #ccccd5;
     --header-border: transparent;
     --selection-bg: #d4af37;
     --selection-fg: #171717;
-    --brand-accent: #6ee7b7;
+    --brand-accent: #86efac;
     --chip-bg: #102f25;
     --chip-fg: #f1f1f4;
     --chip-line: #777780;
@@ -4003,9 +4003,9 @@
     --pill-fg: #f1f1f4;
     --ph-bg: #102f25;
     --ph-fg: #c6c6cf;
-    --mark-bg: #065f46;
+    --mark-bg: #15803d;
     --mark-fg: #ffffff;
-    --bar-bg: #065f46;
+    --bar-bg: #15803d;
     --bar-fg: #ffffff;
     --bar-fg-2: #ffffff;
 }
@@ -4226,7 +4226,7 @@
     --bar-fg-2: #ffffff;
 }
 
-/* desert warm palette. */
+/* Desert Sunset: clay terracotta and sunset gold. */
 :root[data-color-scheme='desert']:not([data-theme='dark']) {
     --bg: #fff3e6;
     --surface: #ffffff;
@@ -4236,29 +4236,29 @@
     --text: #17171c;
     --text-2: #4c4c56;
     --text-3: #555560;
-    --accent: #9a3412;
-    --btn-bg: #9a3412;
+    --accent: #8c463f;
+    --btn-bg: #a45a52;
     --btn-fg: #ffffff;
-    --header-bg: #9a3412;
+    --header-bg: #a45a52;
     --header-fg: #ffffff;
     --header-line: #ccccd5;
     --header-border: transparent;
-    --selection-bg: #7c2d12;
-    --selection-fg: #ffffff;
-    --brand-accent: #7c2d12;
+    --selection-bg: #f2b33d;
+    --selection-fg: #171717;
+    --brand-accent: #8c463f;
     --chip-bg: #ffffff;
     --chip-fg: #17171c;
     --chip-line: #ababb4;
-    --chip-on-bg: #7c2d12;
-    --chip-on-fg: #ffffff;
-    --chip-on-line: #7c2d12;
+    --chip-on-bg: #f2b33d;
+    --chip-on-fg: #171717;
+    --chip-on-line: #f2b33d;
     --pill-bg: #fff3e6;
     --pill-fg: #17171c;
     --ph-bg: #e9e9ed;
     --ph-fg: #555560;
-    --mark-bg: #9a3412;
+    --mark-bg: #a45a52;
     --mark-fg: #ffffff;
-    --bar-bg: #9a3412;
+    --bar-bg: #a45a52;
     --bar-fg: #ffffff;
     --bar-fg-2: #ffffff;
 }
@@ -4272,28 +4272,28 @@
     --text-2: #c6c6cf;
     --text-3: #b9b9c4;
     --accent: #fdba9a;
-    --btn-bg: #9a3412;
+    --btn-bg: #a45a52;
     --btn-fg: #ffffff;
-    --header-bg: #9a3412;
+    --header-bg: #a45a52;
     --header-fg: #ffffff;
     --header-line: #ccccd5;
     --header-border: transparent;
-    --selection-bg: #7c2d12;
-    --selection-fg: #ffffff;
+    --selection-bg: #f2b33d;
+    --selection-fg: #171717;
     --brand-accent: #fdba9a;
     --chip-bg: #39261d;
     --chip-fg: #f1f1f4;
     --chip-line: #777780;
-    --chip-on-bg: #7c2d12;
-    --chip-on-fg: #ffffff;
-    --chip-on-line: #7c2d12;
+    --chip-on-bg: #f2b33d;
+    --chip-on-fg: #171717;
+    --chip-on-line: #f2b33d;
     --pill-bg: #39261d;
     --pill-fg: #f1f1f4;
     --ph-bg: #39261d;
     --ph-fg: #c6c6cf;
-    --mark-bg: #9a3412;
+    --mark-bg: #a45a52;
     --mark-fg: #ffffff;
-    --bar-bg: #9a3412;
+    --bar-bg: #a45a52;
     --bar-fg: #ffffff;
     --bar-fg-2: #ffffff;
 }
