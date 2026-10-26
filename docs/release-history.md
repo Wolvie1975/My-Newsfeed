@@ -6,10 +6,28 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The latest recorded web release is `mynewspaper-web:pages-20261026`
-(image `2d2ac46bc5b3`), deployed October 25, 2026 (Central). Its rollback image is
-`mynewsfeed-web:before-mynewspaper-pages-20261026`. Deployment checks passed then;
+The latest recorded web release is `mynewspaper-web:youtube-20261026`
+(image `9ba81c595479`), deployed October 26, 2026 (Central). Its rollback image is
+`mynewsfeed-web:before-mynewspaper-youtube-20261026`. Deployment checks passed then;
 this is a dated observation, not live hosting status.
+
+## YouTube v2 and section headlines — deployed October 26, 2026 (Central)
+
+Built from boards the user added to the canvas: YouTube v2 replaces the earlier YouTube design (featured carousel of
+five videos — most watched in the newest two days, one per channel — still until Play, seven-second rotation with a
+progress bar, arrows and title tabs, pauses while hidden, announces changes only when not rotating; Latest videos
+beside it; More videos grid; youtube.js; later pages keep the grid; no-JS shows the first video). No phone board:
+on phones the tabs become bars and the controls stay 44px. Sports and Entertainment headlines follow their new boards
+(masthead, Sport/Topic pills on desktop and dropdown on phones, poster thumbnails for Entertainment, overview link
+dropped). Thumbnails are now built from the video id first (stored hq720/custom addresses could show YouTube's grey
+placeholder), which also fixes grey boxes elsewhere on the site.
+
+Deployed `mynewspaper-web:youtube-20261026` (`9ba81c595479`), healthy; rollback
+`mynewsfeed-web:before-mynewspaper-youtube-20261026`. 729 .NET tests. Preview suite: four checks expected the old
+headline layouts (updated) and then passed. Carousel exercised at 1440 and 390 (next, pick, play advancing at 7s,
+pause holding, 44px controls; no-JS one slide). Four-page matrix 317–1440 light/dark: 72 views clean on preview
+and live; six related checks passed live; live featured image loaded (480×360). Built in the light resource mode.
+Real device not re-checked. Evidence: `/tmp/mynewspaper-broadsheet-deploy/b5`.
 
 ## Headlines, Local, YouTube, Saved and Settings to concept boards — deployed October 25, 2026 (Central)
 

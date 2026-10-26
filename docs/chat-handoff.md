@@ -17,7 +17,7 @@ Digital releases, Box office, Where to watch; (3) Sports, Scoreboard, Standings,
 Local, YouTube, Saved, Settings. Match each page to its desktop and phone boards side by side, including large
 system text (the user's phone behaves like about 317px). The desktop header keeps a light/dark icon and an Admin
 link that the concepts omit; the user may want them removed. Details in [release history](release-history.md).
-Committed locally on `develop`. Batch 2 (Entertainment pages) deployed as `entertainment-20261026`; see release history. Batch 3 (Sports pages) deployed as `sports-20261026`. Batch 4 (Headlines, Local, YouTube, Saved, Settings) deployed as `pages-20261026`; every page now follows its concept board. The user is drafting new Sports and Entertainment concepts separately. Work in the light resource mode (see release history). Pending: the user is testing batch 4.
+Committed locally on `develop`. Batch 2 (Entertainment pages) deployed as `entertainment-20261026`; see release history. Batch 3 (Sports pages) deployed as `sports-20261026`. Batch 4 (Headlines, Local, YouTube, Saved, Settings) deployed as `pages-20261026`; every page now follows its concept board. The user is drafting new Sports and Entertainment concepts separately. Work in the light resource mode (see release history). Follow-up `youtube-20261026`: YouTube v2 carousel and the new Sports/Entertainment headline boards. Pending: the user is testing.
 
 ## Broadsheet redesign deployed — October 25, 2026 (Central)
 
