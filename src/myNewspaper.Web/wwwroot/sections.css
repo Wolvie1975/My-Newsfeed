@@ -1613,3 +1613,17 @@ a.tvc-row__show:hover {
         font-size: 28px;
     }
 }
+/* Padding counts inside the width, so the blue panel and services row fit narrow phones. */
+.pub .watch-page .watch-search,
+.pub .watch-page .watch-mine {
+    box-sizing: border-box;
+    max-width: 100%;
+}
+/* Narrow phones and large system text: the section label sits above a full-width dropdown. */
+@media (max-width: 400px) {
+    .pub .section-nav--many .section-select {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 4px;
+    }
+}

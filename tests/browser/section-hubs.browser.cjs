@@ -20,10 +20,11 @@ const base = process.env.BASE_URL || 'http://localhost:5295',
                         route + ' overflow ' + width,
                     );
                     assert(!(await p.locator('#blazor-error-ui').isVisible()));
-                    const cards = p.locator('.paper-feed .article');
+                    // Sports keeps its hub; Entertainment is the concept front page (EntertainmentFront).
+                    const cards = p.locator(route === 'sports' ? '.paper-feed .article' : '.ef-lead, .ef-headlines li');
                     assert((await cards.count()) > 0 && (await cards.count()) <= 8);
                     assert.equal(await p.locator('#category,#source,[data-load-more]').count(), 0);
-                    assert(await p.locator('.front-agenda').isVisible());
+                    assert(await p.locator(route === 'sports' ? '.front-agenda' : '.ef-screen').isVisible());
                     // Section navigation: underlined tabs from 768px, a dropdown on phones.
                     if (width < 768) {
                         assert.equal(await p.locator('#' + route + '-section').inputValue(), '/' + route);
@@ -37,10 +38,10 @@ const base = process.env.BASE_URL || 'http://localhost:5295',
                     }
                     assert.equal(await p.locator('.hub-links').count(), 0);
                     if (route === 'sports') assert(await p.locator('[data-scoreboard]').count());
-                    else assert(await p.locator('.hub-boxoffice').isVisible());
+                    else assert(await p.locator('.ef-box').isVisible());
                     assert(
                         await p
-                            .locator('.hub-all-news,.front-agenda a')
+                            .locator('.hub-all-news,.front-agenda a,.ef-head a,.ef-more')
                             .evaluateAll((ns) => ns.every((n) => n.getBoundingClientRect().height >= 44)),
                     );
                     if (width < 700 && (await p.locator('.paper-support').count()))

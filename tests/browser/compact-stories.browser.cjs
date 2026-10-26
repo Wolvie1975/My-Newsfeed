@@ -13,7 +13,8 @@ const base = process.env.BASE_URL || 'http://localhost:5295',
             await p.route('**/public*.css', (r) =>
                 r.fulfill({ contentType: 'text/css', body: fs.readFileSync(process.env.PREVIEW_CSS, 'utf8') }),
             );
-        for (const route of ['news', 'sports/news', 'entertainment/news', 'sports', 'entertainment'])
+        // Entertainment has its own front page (section-hubs); these routes use the compact story rows.
+        for (const route of ['news', 'sports/news', 'entertainment/news', 'sports'])
             for (const width of [320, 390, 430, 768, 1440])
                 for (const theme of ['light', 'dark']) {
                     await p.setViewportSize({ width, height: 950 });
