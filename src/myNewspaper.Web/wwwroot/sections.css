@@ -3491,7 +3491,7 @@ a.tvc-row__show:hover {
     /* Cards at least 240px wide in each list: the site's fixed four-across story grid crushed the narrower Videos
        column into slivers. */
     :root:is([data-color-scheme], :not([data-color-scheme])) .pub .sv-lists .saved-section .feed {
-        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(min(240px, 100%), 1fr));
     }
     .pub .sv-lists .saved-head {
         padding-bottom: 4px;

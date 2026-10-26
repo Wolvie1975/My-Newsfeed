@@ -25,7 +25,7 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
         await page.waitForFunction(() =>
             [...document.querySelectorAll('[data-save][data-kind="video"]')].some((b) => !b.disabled),
         );
-        const button = page.locator('[data-save][data-kind="video"][aria-pressed="false"]').first();
+        const button = page.locator('[data-save][data-kind="video"][aria-pressed="false"]:visible').first();
         assert(await button.count(), 'Need an unsaved video');
         url = await button.getAttribute('data-url');
         const title = await button.getAttribute('data-title');
