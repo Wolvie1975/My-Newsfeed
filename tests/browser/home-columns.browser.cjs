@@ -1,5 +1,6 @@
-// Broadsheet homepage (October 25, 2026): masthead with Where to watch and live ears, an at-a-glance band, three
-// ruled columns and a "More from today" band on desktop; one ordered column on phones, Where to watch first.
+// Broadsheet homepage (October 25, 2026): masthead with the forecast and live ears, Where to watch as a full-width
+// band under it (swapped with the forecast on October 26), three ruled columns and a "More from today" band on
+// desktop; one ordered column on phones, Where to watch first.
 const { chromium } = require('playwright');
 const assert = require('node:assert/strict');
 const base = process.env.BASE_URL || 'http://localhost:5295';
@@ -56,22 +57,26 @@ const phoneOrder = [
                     }
                 if (width >= 744) {
                     const watch = await box('[data-home-section="watch"]');
+                    const weather = await box('.bs-glance');
                     const title = await box('.bs-title');
                     const live = await box('.bs-live');
                     const lead = await box('[data-home-section="lead"]');
                     const tonight = await box('[data-home-section="sports"]');
                     const opinion = await box('[data-home-section="opinion"]');
                     assert(watch.y + watch.height < lead.y && watch.y + watch.height < tonight.y);
+                    // Where to watch: a band under the whole masthead, as wide as the page.
+                    assert(watch.y >= Math.max(weather.y + weather.height, live.y + live.height), 'Watch band below');
+                    assert(watch.width >= live.x + live.width - weather.x - 1, 'Watch band full width');
                     if (width >= 1024) {
-                        // Masthead: Watch ear left, title centre, live ear right, above the front columns.
-                        assert(watch.x < title.x && title.x < live.x, 'masthead order');
+                        // Masthead: forecast ear left, title centre, live ear right.
+                        assert(weather.x < title.x && title.x < live.x, 'masthead order');
                         // Three columns: Today & Tonight | lead and headlines | Opinion.
                         assert(tonight.x < lead.x && lead.x < opinion.x, 'front columns');
                         assert(Math.abs(tonight.y - lead.y) < 40 && Math.abs(lead.y - opinion.y) < 40, 'front row');
                     } else {
                         // iPad portrait (tablet.css): title across the top, the ears side by side beneath it; lead
                         // and Opinion side by side with Today & Tonight below them.
-                        assert(title.y + title.height <= watch.y && watch.x < live.x, 'tablet masthead');
+                        assert(title.y + title.height <= weather.y && weather.x < live.x, 'tablet masthead');
                         assert(lead.x < opinion.x && Math.abs(lead.y - opinion.y) < 40, 'tablet front row');
                         assert(tonight.y > lead.y + lead.height, 'Today & Tonight below the lead');
                     }

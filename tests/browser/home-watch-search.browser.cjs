@@ -18,11 +18,11 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
                 const box = await card.boundingBox();
                 const sports = await page.locator('[data-home-section="sports"]').boundingBox();
                 assert(box.y + box.height <= sports.y + 1);
-                // Broadsheet (October 25): Where to watch comes first — the masthead's left ear on desktop,
-                // the first card on phones — above the lead story.
+                // Broadsheet: Where to watch comes before the lead story — a full-width band under the masthead from
+                // 744px (October 26), the first card on phones.
                 const lead = await page.locator('[data-home-section="lead"]').boundingBox();
                 assert(box.y + box.height <= lead.y + 1);
-                if (width >= 744) assert(box.x < lead.x);
+                if (width >= 744) assert(box.width >= lead.width);
                 assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
                 const input = page.getByLabel('Movie or TV title', { exact: true });
                 assert.equal(await input.getAttribute('maxlength'), '120');

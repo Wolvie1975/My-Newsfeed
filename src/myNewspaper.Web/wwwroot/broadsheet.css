@@ -342,7 +342,7 @@
     grid-row: 1 / span 2;
 }
 
-/* Ears: Where to watch and live scores. */
+/* Ears: Where to watch and live scores (from 744px Where to watch is a band under the masthead). */
 .pub .bs-ear {
     padding: 14px 16px 16px;
     border: 1px solid var(--border);
@@ -708,7 +708,7 @@
         padding: 6px 0 22px;
         border-bottom: 4px double var(--text);
     }
-    .pub .bs-masthead > .bs-watch {
+    .pub .bs-masthead > .bs-glance {
         grid-column: 1;
         grid-row: 1;
     }
@@ -758,13 +758,25 @@
         margin-top: 10px;
         min-height: 44px;
     }
+    /* Where to watch: a full-width band under the masthead, the title beside the search. */
     .pub .bs-watch {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        align-items: center;
+        gap: 24px;
+        margin-top: 18px;
+        padding: 16px 20px;
         border: 0;
         background: var(--btn-bg);
         color: var(--btn-fg, #ffffff);
     }
     .pub .bs-watch .bs-ear__title {
+        margin: 0;
         color: var(--btn-fg, #ffffff);
+        font-size: 22px;
+    }
+    .pub .bs-watch__search {
+        margin: 0;
     }
     .pub .bs-watch input {
         border: 0;
@@ -781,14 +793,15 @@
         border: 2px solid var(--text);
         background: transparent;
     }
+    /* The forecast is the masthead's left ear, outlined like Coming up: periods two by two, New tonight below. */
     .pub .bs-glance {
-        grid-template-columns: minmax(0, 3fr) minmax(260px, 1fr);
-        align-items: center;
-        gap: 0;
-        padding: 14px 0;
-        border: 0;
-        border-bottom: 1px solid var(--text);
-        border-radius: 0;
+        grid-template-columns: minmax(0, 1fr);
+        align-self: stretch;
+        align-content: start;
+        gap: 12px;
+        padding: 14px 16px 16px;
+        border: 2px solid var(--text);
+        border-radius: 16px;
         background: transparent;
     }
     .pub .bs-glance__title {
@@ -797,19 +810,20 @@
         height: auto;
         overflow: visible;
         clip: auto;
+        grid-column: 1 / -1;
         margin: 0;
         font-family: var(--font-serif);
-        font-size: 24px;
+        font-size: 22px;
         font-weight: 700;
-        white-space: nowrap;
     }
     .pub .bs-glance__weather {
-        grid-template-columns: auto minmax(0, 1fr) auto;
-        gap: 24px;
-        padding-right: 24px;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: end;
+        gap: 10px 16px;
     }
     .pub .bs-glance__periods {
-        gap: 20px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px 16px;
     }
     .pub .bs-glance__reading {
         font-size: 14px;
@@ -820,9 +834,9 @@
         font-size: 20px;
     }
     .pub .bs-glance__tonight {
-        padding: 0 0 0 24px;
-        border-top: 0;
-        border-left: 1px solid var(--row-border);
+        padding: 12px 0 0;
+        border-top: 1px solid var(--row-border);
+        border-left: 0;
     }
     .pub .bs-front,
     .pub .bs-more {

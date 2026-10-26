@@ -13,7 +13,7 @@
     }
 
     /* ---------- Home: broadsheet masthead ---------- */
-    /* Title across the top; Where to watch and Coming up side by side underneath. */
+    /* Title across the top; the forecast and Coming up side by side underneath. */
     .pub .bs-masthead {
         grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
         row-gap: 18px;
@@ -22,10 +22,9 @@
         grid-column: 1 / -1;
         grid-row: 1;
     }
-    .pub .bs-masthead > .bs-watch {
+    .pub .bs-masthead > .bs-glance {
         grid-column: 1;
         grid-row: 2;
-        align-self: start;
     }
     .pub .bs-masthead > .bs-live {
         grid-column: 2;
@@ -34,24 +33,6 @@
     .pub .bs-title__name {
         font-size: 52px;
     }
-    /* At a glance: the weather title above its four periods, New tonight on its own row below. */
-    .pub .bs-glance {
-        grid-template-columns: minmax(0, 1fr);
-    }
-    .pub .bs-glance__weather {
-        grid-template-columns: minmax(0, 1fr) auto;
-        gap: 10px 24px;
-        padding-right: 0;
-    }
-    .pub .bs-glance__title {
-        grid-column: 1 / -1;
-    }
-    .pub .bs-glance__tonight {
-        padding: 12px 0 0;
-        border-top: 1px solid var(--row-border);
-        border-left: 0;
-    }
-
     /* ---------- Home: three ruled columns become main + side; the left column moves below ---------- */
     .pub .bs-front,
     .pub .bs-more {

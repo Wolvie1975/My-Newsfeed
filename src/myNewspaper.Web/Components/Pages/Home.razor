@@ -13,9 +13,10 @@
    Today, the greeting and the date are all decided on the server in the display zone (Central), so every visitor sees
    the same day and nothing here needs JavaScript. *@
 
-@* Broadsheet front page. The markup is in phone order (Watch first, then the forecast, Today & Tonight, the lead and
-   headlines); from 744px (iPad portrait) the CSS places the same sections into a masthead, three ruled columns and a "More from today"
-   band. Today, the greeting and the date are decided on the server in the display zone (Central). *@
+@* Broadsheet front page. From 744px (iPad portrait) the markup is the layout: a masthead with the forecast, the title
+   and Coming up; Where to watch as a full-width strip; three ruled columns; a "More from today" band. Phones show one
+   column whose order comes from CSS (Watch first, then the forecast, Today & Tonight, the lead and headlines). Today,
+   the greeting and the date are decided on the server in the display zone (Central). *@
 
 <p class="empty" data-home-empty hidden>All home sections are hidden. <button type="button" data-home-reset class="nf-btn nf-btn--secondary">Restore default homepage</button></p>
 <p class="updated" data-personal-status role="status"></p>
@@ -34,16 +35,31 @@
             </a>
         </div>
 
-        <section data-home-section="watch" class="bs-ear bs-watch" aria-labelledby="h-home-watch">
-            <h2 class="bs-ear__title" id="h-home-watch">Where to watch</h2>
-            <form method="get" action="watch" class="watch-search bs-watch__search" role="search" aria-label="Where to watch search">
-                <label for="home-watch-query">Movie or TV title</label>
-                <div class="watch-search-row">
-                    <input id="home-watch-query" name="q" type="search" maxlength="120" placeholder="Search a movie or TV show…" required />
-                    <button class="nf-btn nf-btn--primary" type="submit">Search</button>
-                </div>
-            </form>
-        </section>
+        @if (weather is { Periods.Count: > 0 } || episodes.Count > 0)
+        {
+            <section class="bs-glance" aria-label="At a glance">
+                @if (weather is { Periods.Count: > 0 } forecast)
+                {
+                    <div class="bs-glance__weather">
+                        <h2 class="bs-glance__title">Kansas City weather</h2>
+                        <ul class="bs-glance__periods">
+                            @foreach (var period in forecast.Periods.Take(4))
+                            {
+                                <li><span class="bs-glance__name">@period.Name</span><span class="bs-glance__reading"><b>@period.Temperature°</b> @period.Summary</span></li>
+                            }
+                        </ul>
+                        <a class="d-more" href="local">Local <span aria-hidden="true">→</span></a>
+                    </div>
+                }
+                @if (episodes.FirstOrDefault() is { } next)
+                {
+                    <a class="bs-glance__tonight" href="tv">
+                        <span class="bs-glance__kicker">New tonight@(next.StartsUtc is { } time ? " · " + Dates.Time(time) : "")@(next.Platform is { } platform ? " · " + platform : "")</span>
+                        <span class="bs-glance__show">@next.SeriesTitle</span>
+                    </a>
+                }
+            </section>
+        }
 
         <section class="bs-ear bs-live" aria-labelledby="h-home-live" data-home-live>
             <h2 class="bs-ear__title" id="h-home-live">@(liveGames.Count > 0 ? "Live now" : "Coming up")</h2>
@@ -69,31 +85,16 @@
         </section>
     </div>
 
-    @if (weather is { Periods.Count: > 0 } || episodes.Count > 0)
-    {
-        <section class="bs-glance" aria-label="At a glance">
-            @if (weather is { Periods.Count: > 0 } forecast)
-            {
-                <div class="bs-glance__weather">
-                    <h2 class="bs-glance__title">Kansas City weather</h2>
-                    <ul class="bs-glance__periods">
-                        @foreach (var period in forecast.Periods.Take(4))
-                        {
-                            <li><span class="bs-glance__name">@period.Name</span><span class="bs-glance__reading"><b>@period.Temperature°</b> @period.Summary</span></li>
-                        }
-                    </ul>
-                    <a class="d-more" href="local">Local <span aria-hidden="true">→</span></a>
-                </div>
-            }
-            @if (episodes.FirstOrDefault() is { } next)
-            {
-                <a class="bs-glance__tonight" href="tv">
-                    <span class="bs-glance__kicker">New tonight@(next.StartsUtc is { } time ? " · " + Dates.Time(time) : "")@(next.Platform is { } platform ? " · " + platform : "")</span>
-                    <span class="bs-glance__show">@next.SeriesTitle</span>
-                </a>
-            }
-        </section>
-    }
+    <section data-home-section="watch" class="bs-ear bs-watch" aria-labelledby="h-home-watch">
+        <h2 class="bs-ear__title" id="h-home-watch">Where to watch</h2>
+        <form method="get" action="watch" class="watch-search bs-watch__search" role="search" aria-label="Where to watch search">
+            <label for="home-watch-query">Movie or TV title</label>
+            <div class="watch-search-row">
+                <input id="home-watch-query" name="q" type="search" maxlength="120" placeholder="Search a movie or TV show…" required />
+                <button class="nf-btn nf-btn--primary" type="submit">Search</button>
+            </div>
+        </form>
+    </section>
 
     <div class="bs-front">
         <div class="bs-col bs-col--left">
