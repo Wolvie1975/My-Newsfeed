@@ -6,10 +6,24 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The latest recorded web release is `mynewspaper-web:settings-20261026`
-(image `88d7fde91cd9`), deployed October 26, 2026 (Central). Its rollback image is
-`mynewsfeed-web:before-mynewspaper-settings-20261026`. Deployment checks passed then;
+The latest recorded web release is `mynewspaper-web:schemes-20261026`
+(image `3da3702d48ef`), deployed October 26, 2026 (Central). Its rollback image is
+`mynewsfeed-web:before-mynewspaper-schemes-20261026`. Deployment checks passed then;
 this is a dated observation, not live hosting status.
+
+## Desert Sunset and St. Patrick's Day colours — deployed October 26, 2026 (Central)
+
+An overlap review (CIEDE2000 between header colours) found near-duplicates: Ribbon/Kansas (same blue), Ribbon/Kansas
+vs Y2K, Monochrome vs City (near-black headers), Christmas vs St. Patrick's (dark greens), Halloween vs Desert (burnt
+orange), and Desert's two rusts reading as one colour. The user chose to keep Kansas, Y2K and City as they are and
+change two: Desert Sunset is now clay terracotta `#a45a52` (links `#8c463f`) with a sunset gold highlight `#f2b33d`
+(dark text); St. Patrick's Day is kelly green `#15803d` (dark-mode accent `#86efac`). Swatches follow. The contrast
+check gained `SCHEMES` to narrow a run.
+
+Deployed `mynewspaper-web:schemes-20261026` (`3da3702d48ef`), healthy; rollback
+`mynewsfeed-web:before-mynewspaper-schemes-20261026`. Preview: contrast passed for both schemes on all 17 pages,
+light/dark, 390/1440; home at 320/390/430 light/dark has no overflow or script errors. Live: contrast on /, /settings
+and /f1 and settings-order passed. Real device not re-checked.
 
 ## Reading preferences removed from Settings — deployed October 26, 2026 (Central)
 
