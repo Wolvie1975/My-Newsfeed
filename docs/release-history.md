@@ -6,10 +6,33 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The latest recorded web release is `mynewspaper-web:f1news-20261026`
-(image `20728419f2f7`), deployed October 26, 2026 (Central). Its rollback image is
-`mynewsfeed-web:before-mynewspaper-f1news-20261026`. Deployment checks passed then;
+The latest recorded web release is `mynewspaper-web:ytcats-20261026`
+(image `7ae34ff5099d`), deployed October 26, 2026 (Central). Its rollback image is
+`mynewsfeed-web:before-mynewspaper-ytcats-20261026`. Deployment checks passed then;
 this is a dated observation, not live hosting status.
+
+## YouTube channel categories — deployed October 26, 2026 (Central)
+
+From the scraper's frontend handoff (`dbo.YoutubeCategories`, `YoutubeVideoFeed.YoutubeCategoryId`, separate from
+news `SourceCategories`). Model: `YoutubeCategory` entity and the nullable FK. `VideosQuery`: `GetCategoriesAsync`
+(categories with at least one video, by name, then `Other` while any video has no category or no channel row),
+`Slug` ("News & Politics" → `news-politics`), and an optional category on `GetVideosAsync`/`GetChannelsAsync`;
+`VideoItem.Category`. YouTube page: pills on desktop (`.yt-cats`, as on the headline pages) and a Category dropdown on
+phones; `videos?category=<slug>`; unknown slugs show All; a channel from another category is dropped. The featured
+carousel, Latest videos, channel list and search stay in the category; a single featured video renders no controls
+(youtube.js skips carousels without them). In All the kicker reads "Category · Channel". Admin: the channel editor has
+a Category dropdown (writes `YoutubeCategoryId`; agreed with the user, a change from the handoff's read-only note) and
+the feed list shows a Category column ("Other" when unset). Categories are still created by the scraper. The site's
+SQL login is `sa`, so no extra grant was needed; the user considers this acceptable for an in-network site.
+
+Deployed `mynewspaper-web:ytcats-20261026` (`7ae34ff5099d`), healthy; rollback
+`mynewsfeed-web:before-mynewspaper-ytcats-20261026`. 732 .NET tests (new: slugs; tabs filter videos and channels,
+Other keeps uncategorized and feed-less videos, empty categories hidden). New `youtube-categories.browser.cjs`:
+4 tabs (News & Politics, Sports, Tech, Video Games) sum to All (320), per-tab channels, kickers, carousel controls,
+phone dropdown, 44px controls, 320–1440px. Found and fixed before release: a `Featured@if` Razor slip printed code into
+the heading (320px overflow, caught by frontpages) and the carousel script errored on one-video carousels. Preview:
+frontpages, video-share, watch-later, tablet-layout and contrast for 16 schemes on /videos passed; admin list and
+editor checked without saving. Live: youtube-categories, frontpages and video-share passed.
 
 ## F1 › News retired — deployed October 26, 2026 (Central)
 
