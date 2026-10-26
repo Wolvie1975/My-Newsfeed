@@ -720,9 +720,11 @@
         align-items: center;
         text-align: center;
     }
+    /* The two ears match in height either side of the title. */
     .pub .bs-masthead > .bs-live {
         grid-column: 3;
         grid-row: 1;
+        align-self: stretch;
     }
     .pub .bs-title__name {
         display: flex;
@@ -776,6 +778,7 @@
         font-size: 22px;
     }
     .pub .bs-watch__search {
+        max-width: none;
         margin: 0;
     }
     .pub .bs-watch input {
