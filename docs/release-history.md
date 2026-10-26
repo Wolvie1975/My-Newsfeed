@@ -6,10 +6,23 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The latest recorded web release is `mynewspaper-web:city-20261026`
-(image `f77d0b3924b5`), deployed October 26, 2026 (Central). Its rollback image is
-`mynewsfeed-web:before-mynewspaper-city-20261026`. Deployment checks passed then;
+The latest recorded web release is `mynewspaper-web:newschemes-20261026`
+(image `d49280da3892`), deployed October 26, 2026 (Central). Its rollback image is
+`mynewsfeed-web:before-mynewspaper-newschemes-20261026`. Deployment checks passed then;
 this is a dated observation, not live hosting status.
+
+## Coastal, Olive Grove and Golden Hour schemes — deployed October 26, 2026 (Central)
+
+Three schemes chosen for header colours at least about 15 CIEDE2000 from every existing header: Coastal (`coastal`,
+ocean cyan `#0e7490`, coral highlight `#fb7185`), Olive Grove (`olive`, `#5f6b2a`, butter cream `#fde68a`) and Golden
+Hour (`golden-hour`, ochre `#854d0e`, lavender `#c4b5fd`). White text on headers, dark text on highlights, light and
+dark variants. Added to public.css, theme-init.js, public.js, the Settings list and the contrast check (16 schemes).
+
+Deployed `mynewspaper-web:newschemes-20261026` (`d49280da3892`), healthy; rollback
+`mynewsfeed-web:before-mynewspaper-newschemes-20261026`. Preview: contrast passed for the three on all 17 pages,
+light/dark, 390/1440; home at 320/390/430 light/dark applies the scheme with no overflow or script errors; choosing
+Golden Hour in Settings persists across reload. Live: contrast on /, /settings and /watch passed and Settings lists
+all three. Real device not re-checked.
 
 ## St. Louis CITY SC home kit colours — deployed October 26, 2026 (Central)
 
