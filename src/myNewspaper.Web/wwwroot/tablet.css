@@ -25,6 +25,7 @@
     .pub .bs-masthead > .bs-watch {
         grid-column: 1;
         grid-row: 2;
+        align-self: start;
     }
     .pub .bs-masthead > .bs-live {
         grid-column: 2;
@@ -121,6 +122,10 @@
         padding: 24px 0 0;
         border-right: 0;
         border-top: 1px solid var(--row-border);
+    }
+    /* Records like 7-0 stay on one line in the narrower standings column. */
+    .pub .spf-side :is(th, td) {
+        white-space: nowrap;
     }
     .pub .spf-main .ef-lead__image {
         height: 240px;
