@@ -6,10 +6,30 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The latest recorded web release is `mynewspaper-web:entertainment-20261026`
-(image `bbd88ca31a96`), deployed October 25, 2026 (Central). Its rollback image is
-`mynewsfeed-web:before-mynewspaper-entertainment-20261026`. Deployment checks passed then;
+The latest recorded web release is `mynewspaper-web:sports-20261026`
+(image `c9d390ff1a3e`), deployed October 25, 2026 (Central). Its rollback image is
+`mynewsfeed-web:before-mynewspaper-sports-20261026`. Deployment checks passed then;
 this is a dated observation, not live hosting status.
+
+## Sports pages to concept boards — deployed October 25, 2026 (Central)
+
+Batch 3 of the concept rebuild. Sports (new SportsFront: score cards, upcoming games agate, lead and headlines, Big 12
+football standings and AP Top 5), Scoreboard (games grouped by competition as agate rows with one status line; pager
+"← Sat / date / Mon →"; script hooks unchanged), Standings (league pills, ruled tables), Top 25 (poll pills, two
+columns of agate rows with coloured movement; College rankings share it), College Sports (sport pills, ruled day
+labels, agate schedule rows, Big 12 poll and conference-leader side column) and F1 (next race banner, upcoming rounds,
+drivers' championship). SectionHub now only routes to the two section fronts. Kept from before: the scoreboard's
+All/Final dropdown (the board's Live filter has no data behind it) and College phone rows with venue and links.
+
+Deployed `mynewspaper-web:sports-20261026` (`c9d390ff1a3e`), healthy; rollback image
+`mynewsfeed-web:before-mynewspaper-sports-20261026`; runtime configuration preserved. 726 .NET tests; lint and
+format clean. The preview suite's six failures were checks that expected the old Sports markup (updated: pager by
+class, one-row phone pager, hub and compact-story checks, share focus on the lead) and all passed on the rebuilt
+preview. Seven-view matrix (Sports, Scoreboard, Standings, Top 25, College, College rankings, F1) at
+317/320/390/430/768/1024/1440, light/dark, JavaScript off at 390/1440: 126 views without overflow or script errors.
+A VS Code crash interrupted the session after the batch commit; the pending fixes were intact on disk and were
+committed before deployment. Live: eight Sports checks passed, the same 126-view matrix was clean and the
+application log showed no errors. Real device not re-checked. Evidence: `/tmp/mynewspaper-broadsheet-deploy/b3`.
 
 ## Entertainment pages to concept boards — deployed October 25, 2026 (Central)
 
