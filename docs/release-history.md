@@ -6,10 +6,24 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The latest recorded web release is `mynewspaper-web:ytcats-20261026`
-(image `7ae34ff5099d`), deployed October 26, 2026 (Central). Its rollback image is
-`mynewsfeed-web:before-mynewspaper-ytcats-20261026`. Deployment checks passed then;
+The latest recorded web release is `mynewspaper-web:saved-20261026`
+(image `22fa89151c9c`), deployed October 26, 2026 (Central). Its rollback image is
+`mynewsfeed-web:before-mynewspaper-saved-20261026`. Deployment checks passed then;
 this is a dated observation, not live hosting status.
+
+## Saved page tidy-up — deployed October 26, 2026 (Central)
+
+From the user's screenshot. Both Saved lists lay cards out with `repeat(auto-fill, minmax(min(240px, 100%), 1fr))`
+(the site's fixed four-across story grid had squeezed the Videos column to about 120px, stacking "Bulwark" a letter
+per line). The status line clears once synced (the heading already explains sharing) and hides when empty. Tab
+counts keep their space ("Everything · 2", a 0.3em gap; flex dropped the leading space). The placeholder mark hides
+whenever a picture is present (`:has(> img)`), so transparent PNGs no longer show it; it returns if the picture fails.
+watch-later now picks a visible unsaved video (a saved featured video had moved its first match into a hidden slide).
+
+Deployed `mynewspaper-web:saved-20261026` (`22fa89151c9c`), healthy; rollback
+`mynewsfeed-web:before-mynewspaper-saved-20261026`. Preview: Saved at 1920/1440/820/390 (no overflow, no mark over
+pictures), saved-sections (caught a 768px overflow, fixed with `min(240px, 100%)`), shared-saved, watch-later,
+video-share, compact-stories and tablet-layout on /saved passed. Live: saved-sections and video-share passed.
 
 ## YouTube channel categories — deployed October 26, 2026 (Central)
 
