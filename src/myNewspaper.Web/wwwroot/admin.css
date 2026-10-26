@@ -1113,6 +1113,13 @@
     font-weight: 800;
     letter-spacing: -0.02em;
 }
+/* Inline code in help text: Bootstrap's pink is too faint on the dark surface. */
+.adm code:not(.adm-code) {
+    padding: 1px 5px;
+    border-radius: 5px;
+    background: var(--adm-row);
+    color: var(--adm-text);
+}
 .adm .validation-message {
     color: var(--adm-bad-fg);
     font-size: 13px;
