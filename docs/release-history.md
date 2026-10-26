@@ -7,7 +7,7 @@ verify an image still exists before using it. Runtime configuration and persiste
 keys were preserved by the documented releases unless otherwise stated.
 
 The latest recorded web release is `mynewspaper-web:pages-20261026`
-(image `e67bcdcb0ce2`), deployed October 25, 2026 (Central). Its rollback image is
+(image `2d2ac46bc5b3`), deployed October 25, 2026 (Central). Its rollback image is
 `mynewsfeed-web:before-mynewspaper-pages-20261026`. Deployment checks passed then;
 this is a dated observation, not live hosting status.
 
@@ -28,7 +28,9 @@ clean. Preview suite: 40 passed, three failures were checks expecting old layout
 Saved overflowing at 317/320px (status line did not wrap; fixed). Five-page matrix at 317–1440, light/dark,
 JavaScript off at 390/1440: 90 views clean on preview and live; six related checks passed live. Proposed extras
 still open: YouTube topic chips (needs a channel-to-topic mapping) and grouped duplicate stories. Real device not
-re-checked. Evidence: `/tmp/mynewspaper-broadsheet-deploy/b4`.
+re-checked. A follow-up the same night lined up the Saved Articles and Videos headings on desktop (same tag,
+image `2d2ac46bc5b3`; rollback `mynewsfeed-web:before-mynewspaper-pages2-20261026`). Evidence:
+`/tmp/mynewspaper-broadsheet-deploy/b4`.
 
 ## Sports pages to concept boards — deployed October 25, 2026 (Central)
 
