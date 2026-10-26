@@ -6,10 +6,29 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The latest recorded web release is `mynewspaper-web:sports-20261026`
-(image `c9d390ff1a3e`), deployed October 25, 2026 (Central). Its rollback image is
-`mynewsfeed-web:before-mynewspaper-sports-20261026`. Deployment checks passed then;
+The latest recorded web release is `mynewspaper-web:pages-20261026`
+(image `e67bcdcb0ce2`), deployed October 25, 2026 (Central). Its rollback image is
+`mynewsfeed-web:before-mynewspaper-pages-20261026`. Deployment checks passed then;
 this is a dated observation, not live hosting status.
+
+## Headlines, Local, YouTube, Saved and Settings to concept boards — deployed October 25, 2026 (Central)
+
+Batch 4, the last of the concept rebuild. Headlines (category tabs on desktop, compact Latest column, More stories as
+small-thumbnail rows, lead card with picture on phones; section headline pages share it), Local (Overview/News/
+Weather/Events tabs, large-temperature forecast, news beside Find something to do), YouTube (renamed from Videos;
+one even grid, no oversized first video), Saved (Everything/Articles/Videos tabs with counts and a ?list= filter,
+lists side by side, browse links in empty lists) and Settings (section index, card sections, two-across choice
+buttons, each My Teams league collapsible and opened by search; phone page 14,761px → 3,753px).
+
+First batch in the light resource mode after the October 25 out-of-memory event: no local app, one memory-capped image
+build at a time (1.5 GB, 2 GB with swap), browser checks one at a time with no headless Chrome left running.
+Deployed `mynewspaper-web:pages-20261026` (`e67bcdcb0ce2`), healthy; rollback image
+`mynewsfeed-web:before-mynewspaper-pages-20261026`; runtime configuration preserved. 726 .NET tests; lint and format
+clean. Preview suite: 40 passed, three failures were checks expecting old layouts (updated), and the matrix found
+Saved overflowing at 317/320px (status line did not wrap; fixed). Five-page matrix at 317–1440, light/dark,
+JavaScript off at 390/1440: 90 views clean on preview and live; six related checks passed live. Proposed extras
+still open: YouTube topic chips (needs a channel-to-topic mapping) and grouped duplicate stories. Real device not
+re-checked. Evidence: `/tmp/mynewspaper-broadsheet-deploy/b4`.
 
 ## Sports pages to concept boards — deployed October 25, 2026 (Central)
 
