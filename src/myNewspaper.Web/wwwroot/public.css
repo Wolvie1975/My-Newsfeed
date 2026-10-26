@@ -403,13 +403,27 @@
     border-radius: 16px;
 }
 
-/* The default image is a neutral picture centred on the placeholder colour; a real image covers it. */
+/* No picture (or one that fails to load): the myNewspaper page mark in the scheme's placeholder colours. A real
+   image covers it. */
 .pub .thumb {
     position: relative;
     display: block;
     overflow: hidden;
     aspect-ratio: 16 / 9;
-    background: var(--ph-bg) url('img/branded-article-v2.svg') center / cover no-repeat;
+    background: var(--ph-bg);
+}
+.pub :is(.thumb, .d-lead__image, .d-opinion .d-thumb)::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    width: 30%;
+    max-width: 64px;
+    height: 50%;
+    background: var(--ph-fg);
+    opacity: 0.45;
+    -webkit-mask: url('img/placeholder-mark.svg') center / contain no-repeat;
+    mask: url('img/placeholder-mark.svg') center / contain no-repeat;
 }
 .pub .thumb img {
     position: absolute;
@@ -418,9 +432,6 @@
     height: 100%;
     object-fit: cover;
     display: block;
-}
-.pub .article--lead .thumb {
-    background-size: cover;
 }
 
 .pub .body {
@@ -6861,10 +6872,10 @@
     }
 }
 
-/* Shared branded fallback stays behind article photos, including failed loads. */
+/* The same placeholder mark (see .thumb) stays behind article photos, including failed loads. */
 .pub .d-lead__image,
 .pub .d-opinion .d-thumb {
-    background: var(--ph-bg) url('img/branded-article-v2.svg') center / cover no-repeat;
+    background: var(--ph-bg);
 }
 
 /* Search results show viewing options beside each title's poster. */
