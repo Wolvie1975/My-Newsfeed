@@ -13,9 +13,9 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
         await page.locator('a[href="settings"]:visible').first().click();
         await page.waitForURL('**/settings');
         await page.waitForSelector('[data-settings-move]', { state: 'attached' });
-        assert.equal(await page.locator('[data-settings-move]').count(), 10);
+        assert.equal(await page.locator('[data-settings-move]').count(), 8);
         const original = await read();
-        assert.equal(original.length, 5);
+        assert.equal(original.length, 4);
         await page.locator('.settings-arrange summary').click();
         await page.locator('[data-settings-move="teams:-1"]').click();
         assert.deepEqual((await read()).slice(-2), ['teams', 'services']);
@@ -35,9 +35,9 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
         await page.locator('a[href="settings"]:visible').first().click();
         await page.waitForURL('**/settings');
         await page.waitForSelector('[data-settings-move]', { state: 'attached' });
-        assert.equal(await page.locator('[data-settings-move]').count(), 10);
+        assert.equal(await page.locator('[data-settings-move]').count(), 8);
         console.log(
-            'In-site navigation and five Settings sections reorder, persist, reset and handle malformed storage with no phone overflow.',
+            'In-site navigation and four Settings sections reorder, persist, reset and handle malformed storage with no phone overflow.',
         );
     } finally {
         await browser.close();
