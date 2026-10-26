@@ -95,7 +95,7 @@ const base = process.env.BASE_URL || 'http://localhost:5295',
             assert.equal(new URL(p.url()).pathname, '/' + target);
         }
         await p.goto(base + '/sports');
-        const share = p.locator('.paper-feed [data-share-open]').first();
+        const share = p.locator('.ef-lead [data-share-open]').first();
         await share.click();
         await p.getByRole('dialog').waitFor();
         await p.keyboard.press('Escape');
