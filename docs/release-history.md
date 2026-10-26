@@ -6,10 +6,23 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The latest recorded web release is `mynewspaper-web:contrast-20261026`
-(image `59d3b6f825c9`), deployed October 26, 2026 (Central). Its rollback image is
-`mynewsfeed-web:before-mynewspaper-contrast-20261026`. Deployment checks passed then;
+The latest recorded web release is `mynewspaper-web:settings-20261026`
+(image `88d7fde91cd9`), deployed October 26, 2026 (Central). Its rollback image is
+`mynewsfeed-web:before-mynewspaper-settings-20261026`. Deployment checks passed then;
 this is a dated observation, not live hosting status.
+
+## Reading preferences removed from Settings — deployed October 26, 2026 (Central)
+
+The user doesn't use it. Removed the Settings section (hide read stories, preferred news category, muted publishers,
+reset), its index link and Arrange entry, and the personal.js code behind it, so values saved earlier in a browser no
+longer hide stories, show the Opinion "hidden by your reading preferences" note or redirect Headlines. Settings now
+has four sections.
+
+Deployed `mynewspaper-web:settings-20261026` (`88d7fde91cd9`), healthy; rollback
+`mynewsfeed-web:before-mynewspaper-settings-20261026`. Preview: personal-features, home-opinion, branding and
+settings-order (updated to four sections) passed; scheme contrast passed on /settings; Settings at 320/390/430
+light/dark has no overflow or script errors. Live: settings-order, personal-features and home-opinion passed. Real
+device not re-checked.
 
 ## Readable text under every colour scheme — deployed October 26, 2026 (Central)
 
