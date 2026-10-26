@@ -22,8 +22,8 @@ const base = process.env.BASE_URL || 'http://localhost:5295',
                 await p.locator('#hub-category').inputValue(),
                 await p.locator('form input[name="category"]').inputValue(),
             );
-            const last = await p.locator('#hub-category option').last().getAttribute('value');
-            await p.selectOption('#hub-category', last);
+            // Pick TV/Film by name: other topics (Box Office, October 26) can follow it in the list.
+            await p.selectOption('#hub-category', { label: 'TV/Film' });
             await p.waitForURL(base + '/entertainment/news/tv-film');
             await p.getByRole('heading', { name: 'TV/Film', exact: true }).waitFor();
             assert.equal(await p.locator('h2').first().innerText(), 'TV/Film');

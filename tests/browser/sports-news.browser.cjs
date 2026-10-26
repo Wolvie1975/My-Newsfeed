@@ -24,8 +24,7 @@ const sections = [
                 await p.locator('#hub-category').inputValue(),
                 await p.locator('form input[name="category"]').inputValue(),
             );
-            const last = await p.locator('#hub-category option').last().getAttribute('value');
-            await p.selectOption('#hub-category', last);
+            await p.selectOption('#hub-category', { label: 'F1' });
             await p.waitForURL(base + '/sports/news/f1');
             await p.getByRole('heading', { name: 'F1', exact: true }).waitFor();
             assert.equal(await p.locator('h2').first().innerText(), 'F1');
