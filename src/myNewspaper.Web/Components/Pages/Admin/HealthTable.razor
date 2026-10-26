@@ -1,54 +1,70 @@
-@* Shared scraper status table. Sources without an editor display their name as plain text. *@
+@using System.Globalization
+@* One area of the scraper status page (news sources, YouTube channels, TV series, movie releases, sports feeds).
+   Rows without an editor show their name as plain text. Wide on phones: the table scrolls inside its card. *@
 @if (Rows.Count == 0)
 {
-    <p>@Empty</p>
+    <p class="adm-help">@Empty</p>
 }
 else
 {
-    <div class="table-responsive">
-        <table class="table table-sm align-middle">
-            <thead>
-                <tr>
-                    <th>Status</th><th>Name</th><th>@ItemLabel</th>
-                    @if (ShowUpcoming)
-                    {
-                        <th>Upcoming</th>
-                    }
-                    <th>Last refreshed</th><th>Detail</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var row in Rows)
-                {
-                    <tr class="@(row.Enabled ? null : "text-muted")">
-                        <td><StatusBadge Level="row.Level" /></td>
-                        <td>
-                            @if (EditBase is not null)
-                            {
-                                <a href="@EditBase/@row.Id/edit">@row.Name</a>
-                            }
-                            else
-                            {
-                                @row.Name
-                            }
-                        </td>
-                        <td>@row.ItemCount</td>
+    <div class="adm-card adm-card--flush">
+        <div class="adm-table-wrap">
+            <table class="adm-table">
+                <thead>
+                    <tr>
+                        <th scope="col">Name</th>
+                        <th scope="col">Status</th>
+                        <th scope="col" class="num">@ItemLabel</th>
                         @if (ShowUpcoming)
                         {
-                            <td>@row.Upcoming</td>
+                            <th scope="col" class="num">Upcoming</th>
                         }
-                        <td class="text-nowrap">@Dates.Stamp(row.LastSeen)</td>
-                        <td>
-                            @row.Note
-                            @if (!string.IsNullOrWhiteSpace(row.Error))
-                            {
-                                <div class="small text-danger text-break" title="@row.Error">@(row.Error.Length <= 160 ? row.Error : row.Error[..160] + "…")</div>
-                            }
-                        </td>
+                        <th scope="col">Last refreshed</th>
                     </tr>
-                }
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    @foreach (var row in Rows)
+                    {
+                        <tr class="@(!row.Enabled ? "is-off" : row.Level == HealthLevel.Problem ? "is-problem" : null)">
+                            <td>
+                                @if (EditBase is not null)
+                                {
+                                    <a class="adm-row-title" href="@EditBase/@row.Id/edit">@row.Name</a>
+                                }
+                                else
+                                {
+                                    <span class="adm-row-title">@row.Name</span>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(row.Note))
+                                {
+                                    <span class="adm-row-sub">@row.Note</span>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(row.Error))
+                                {
+                                    <span class="adm-row-error" title="@row.Error">@(row.Error.Length <= 160 ? row.Error : row.Error[..160] + "…")</span>
+                                }
+                            </td>
+                            <td>
+                                @if (row.Enabled)
+                                {
+                                    <StatusBadge Level="row.Level" />
+                                }
+                                else
+                                {
+                                    <span class="adm-pill adm-pill--off">Disabled</span>
+                                }
+                            </td>
+                            <td class="num">@row.ItemCount.ToString("N0", CultureInfo.InvariantCulture)</td>
+                            @if (ShowUpcoming)
+                            {
+                                <td class="num">@row.Upcoming</td>
+                            }
+                            <td class="nowrap">@Dates.Stamp(row.LastSeen)</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
     </div>
 }
 

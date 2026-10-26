@@ -5,131 +5,207 @@
 
 <PageTitle>Scraper status</PageTitle>
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h1 class="mb-0">Scraper status</h1>
-    <button class="btn btn-outline-primary" disabled="@loading" @onclick="LoadAsync">Refresh</button>
-</div>
+<AdminContent>
+    <AdminPageHeader Eyebrow="Overview" Title="Scraper status">
+        <Actions>
+            @if (report is not null) { <span class="adm-head__meta">Checked @Dates.Stamp(report.CheckedAt)</span> }
+            <button type="button" class="btn btn-outline-secondary" disabled="@loading" @onclick="LoadAsync"><AdminIcon Name="refresh" />Refresh</button>
+        </Actions>
+    </AdminPageHeader>
 
-@if (report is null)
-{
-    <p><em>Loading…</em></p>
-}
-else
-{
-    @* The headline: is the scraper running at all? A stale scraper makes every row below stale too, so it is said once. *@
-    @if (report.LastRun is null)
+    @if (error is not null)
     {
-        <div class="alert alert-danger" role="alert">The scraper has not written anything to the database yet.</div>
+        <div class="adm-notice adm-notice--bad" role="alert">@error</div>
     }
-    else if (report.Stale)
+    @if (message is not null)
     {
-        <div class="alert alert-danger" role="alert">
-            <p class="mb-1"><strong>The scraper has not run for @ScraperHealth.Age(report.CheckedAt - report.LastRun.Value).</strong></p>
-            <p class="mb-0">
-                Its last write was @Dates.Stamp(report.LastRun). It normally runs every hour, so the public pages are
-                showing old news, videos, games, movie releases and TV episodes. Check that the scraper's job or container is still running.
-            </p>
-        </div>
+        <div class="adm-notice" role="status">@message</div>
+    }
+
+    @if (report is null)
+    {
+        @if (error is null) { <p class="adm-help">Loading…</p> }
     }
     else
     {
-        <div class="alert alert-@(report.Problems > 0 ? "warning" : "success")" role="status">
-            The scraper last ran @ScraperHealth.Age(report.CheckedAt - report.LastRun.Value) ago (@Dates.Stamp(report.LastRun)).
-            @if (report.Problems > 0)
+        @* The headline: is the scraper running at all? A stale scraper makes every row below stale too, so it is said once. *@
+        <section class="adm-card adm-health" aria-label="Scraper health">
+            @if (report.LastRun is null)
             {
-                <span>@report.Problems @(report.Problems == 1 ? "item needs" : "items need") attention below.</span>
+                <span class="adm-health__icon adm-health__icon--bad"><AdminIcon Name="alert" /></span>
+                <div class="adm-health__text">
+                    <h2 class="adm-health__title">The scraper hasn’t written anything yet</h2>
+                    <p class="adm-health__sub">Nothing it reads has reached the database. Check that the scraper’s job or container is running.</p>
+                </div>
+            }
+            else if (report.Stale)
+            {
+                <span class="adm-health__icon adm-health__icon--bad"><AdminIcon Name="alert" /></span>
+                <div class="adm-health__text">
+                    <h2 class="adm-health__title">The scraper hasn’t run for @ScraperHealth.Age(report.CheckedAt - report.LastRun.Value)</h2>
+                    <p class="adm-health__sub">
+                        Its last write was @Dates.Stamp(report.LastRun). It normally runs every hour, so the public pages are showing
+                        old news, videos, games, movie releases and TV episodes. Check that the scraper’s job or container is still running.
+                    </p>
+                </div>
             }
             else
             {
-                <span>Everything it reads is up to date.</span>
+                <span class="adm-health__icon adm-health__icon--ok"><AdminIcon Name="check" /></span>
+                <div class="adm-health__text">
+                    <h2 class="adm-health__title">The scraper is running</h2>
+                    <p class="adm-health__sub">
+                        Last run @ScraperHealth.Age(report.CheckedAt - report.LastRun.Value) ago at @Dates.Stamp(report.LastRun).
+                        It normally runs every hour. Anything older than @ScraperHealth.Age(report.StaleAfter) is flagged.
+                    </p>
+                </div>
+            }
+            @if (issues.Count > 0)
+            {
+                <a class="adm-pill adm-pill--@(issues.Any(i => i.Row.Level == HealthLevel.Problem) ? "bad" : "warn")" href="admin#attention">@issues.Count @(issues.Count == 1 ? "item needs" : "items need") attention ↓</a>
+            }
+        </section>
+
+        <div class="adm-tiles">
+            @foreach (var area in Areas)
+            {
+                var problems = area.Rows.Count(r => r.Enabled && r.Level == HealthLevel.Problem);
+                var warnings = area.Rows.Count(r => r.Enabled && r.Level == HealthLevel.Warning);
+                var ok = area.Rows.Count(r => r.Enabled && r.Level == HealthLevel.Ok);
+                var content = TileContent(area.Label, area.Rows.Count, area.Unit, ok, warnings, problems);
+                @if (area.Href is not null) { <a class="adm-tile" href="@area.Href">@content</a> }
+                else { <div class="adm-tile">@content</div> }
             }
         </div>
-    }
 
-    <p class="text-muted small">
-        Anything the scraper has not refreshed for more than @ScraperHealth.Age(report.StaleAfter) is flagged
-        (Scraper:StaleAfterHours). Checked @Dates.Stamp(report.CheckedAt).
-    </p>
+        @if (issues.Count > 0)
+        {
+            <section class="adm-card" id="attention" aria-labelledby="attention-title">
+                <p class="adm-kicker" id="attention-title">Needs attention</p>
+                @foreach (var issue in issues)
+                {
+                    <div class="adm-issue">
+                        <span><StatusBadge Level="issue.Row.Level" /></span>
+                        <div>
+                            <span class="adm-issue__name">@issue.Row.Name</span>
+                            <span class="adm-issue__meta">@issue.Area · last refreshed @Dates.Stamp(issue.Row.LastSeen)@(string.IsNullOrWhiteSpace(issue.Row.Note) ? "" : " · " + issue.Row.Note)</span>
+                            @if (!string.IsNullOrWhiteSpace(issue.Row.Error))
+                            {
+                                <code class="adm-code">@(issue.Row.Error.Length <= 300 ? issue.Row.Error : issue.Row.Error[..300] + "…")</code>
+                            }
+                        </div>
+                        @if (issue.EditHref is not null)
+                        {
+                            <a class="btn btn-sm btn-outline-secondary" href="@issue.EditHref">Open<span class="adm-sr"> @issue.Row.Name</span></a>
+                        }
+                    </div>
+                }
+            </section>
+        }
 
-    <h2 class="h4 mt-4">News sources</h2>
-    @if (report.Sources.Count == 0)
-    {
-        <p>No sources. <a href="admin/sources/new">Add one.</a></p>
-    }
-    else
-    {
-        <div class="table-responsive">
-            <table class="table table-sm align-middle">
-                <thead>
-                    <tr><th>Status</th><th>Source</th><th>Articles</th><th>Last scraped</th><th>Detail</th></tr>
-                </thead>
-                <tbody>
-                    @foreach (var row in report.Sources)
+        @if (report.UnlinkedVideos > 0 || report.UnlinkedEvents > 0)
+        {
+            <section class="adm-card" aria-labelledby="tasks-title">
+                <p class="adm-kicker" id="tasks-title">Catch-up tasks</p>
+                <div class="adm-tasks">
+                    @if (report.UnlinkedVideos > 0)
                     {
-                        <tr class="@(row.Enabled ? null : "text-muted")">
-                            <td><StatusBadge Level="row.Level" /></td>
-                            <td><a href="admin/sources/@row.Id/edit">@row.Name</a></td>
-                            <td>@row.ItemCount</td>
-                            <td class="text-nowrap">@Dates.Stamp(row.LastSeen)</td>
-                            <td>
-                                @row.Note
-                                @if (row.Error is not null)
-                                {
-                                    <div class="small text-danger text-break" title="@row.Error">@Truncate(row.Error, 160)</div>
-                                }
-                            </td>
-                        </tr>
+                        <div class="adm-task">
+                            <b>@report.UnlinkedVideos.ToString("N0") @(report.UnlinkedVideos == 1 ? "video isn’t" : "videos aren’t") linked to a feed</b>
+                            <span>They still count under their channel (matched by channel ID). Linking creates any missing feed rows.</span>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" disabled="@busy" @onclick="SyncVideosAsync">Link videos to feeds</button>
+                        </div>
                     }
-                </tbody>
-            </table>
+                    @if (report.UnlinkedEvents > 0)
+                    {
+                        <div class="adm-task">
+                            <b>@report.UnlinkedEvents.ToString("N0") @(report.UnlinkedEvents == 1 ? "event doesn’t" : "events don’t") have a feed</b>
+                            <span>@linkableEvents.ToString("N0") can be matched by website. Unlinked events aren’t counted under Sports feeds.</span>
+                            @if (linkableEvents > 0)
+                            {
+                                <button type="button" class="btn btn-sm btn-outline-secondary" disabled="@busy" @onclick="LinkEventsAsync">Link @linkableEvents.ToString("N0") by website</button>
+                            }
+                        </div>
+                    }
+                </div>
+            </section>
+        }
+
+        <div>
+            <div class="adm-section-head"><h2 class="adm-h2">News sources</h2><a href="admin/sources">Manage sources</a></div>
+            <HealthTable Rows="report.Sources" ItemLabel="Articles" EditBase="admin/sources" Empty="No sources yet." />
+        </div>
+        <div>
+            <div class="adm-section-head"><h2 class="adm-h2">YouTube channels</h2><a href="admin/youtube-feeds">Manage feeds</a></div>
+            <HealthTable Rows="report.Channels" ItemLabel="Videos" EditBase="admin/youtube-feeds" Empty="No channels." />
+        </div>
+        <div>
+            <div class="adm-section-head"><h2 class="adm-h2">TV series</h2><a href="admin/tv-series">Manage followed series</a></div>
+            <HealthTable Rows="report.TvSeries" ItemLabel="Episodes" ShowUpcoming="true" Empty="No TV series followed yet." />
+        </div>
+        <div>
+            <div class="adm-section-head"><h2 class="adm-h2">Movie release sources</h2></div>
+            <p class="adm-help">Providers supply theater, digital and streaming dates. Disabling a provider hides all its release types. Physical-disc collection is managed separately by the scraper.</p>
+            <HealthTable Rows="report.MovieSources" ItemLabel="Releases" ShowUpcoming="true" Empty="No movie release sources configured yet." />
+        </div>
+        <div>
+            <div class="adm-section-head"><h2 class="adm-h2">Sports feeds</h2><a href="admin/sports-event-types">Manage event feeds</a></div>
+            <HealthTable Rows="report.EventFeeds" ItemLabel="Games" ShowUpcoming="true" EditBase="admin/sports-event-types" Empty="No event feeds." />
         </div>
     }
-
-    <h2 class="h4 mt-4">YouTube channels</h2>
-    @if (report.UnlinkedVideos > 0)
-    {
-        <p class="small text-muted">
-            @report.UnlinkedVideos @(report.UnlinkedVideos == 1 ? "video is" : "videos are") not linked to a channel row.
-            They still count below (matched by channel id); <a href="admin/youtube-feeds">YouTube feeds</a> can link them.
-        </p>
-    }
-    <HealthTable Rows="report.Channels" ItemLabel="Videos" EditBase="admin/youtube-feeds" Empty="No channels." />
-
-    <h2 class="h4 mt-4">TV series</h2>
-    <p><a href="admin/tv-series">Manage followed series</a></p>
-    <HealthTable Rows="report.TvSeries" ItemLabel="Episodes" ShowUpcoming="true" Empty="No TV series followed yet." />
-
-    <h2 class="h4 mt-4">Movie release sources</h2>
-    <p>Movie providers can supply theater, digital and streaming dates. Disabling a provider hides all its release types. Physical-disc collection is managed separately by the scraper.</p>
-    <HealthTable Rows="report.MovieSources" ItemLabel="Releases" ShowUpcoming="true" Empty="No movie release sources configured yet." />
-
-    <h2 class="h4 mt-4">Sports event feeds</h2>
-    @if (report.UnlinkedEvents > 0)
-    {
-        <p class="small text-muted">
-            @report.UnlinkedEvents @(report.UnlinkedEvents == 1 ? "event is" : "events are") not linked to a feed, so
-            @(report.UnlinkedEvents == 1 ? "it is" : "they are") not counted below.
-            <a href="admin/sports-event-types">Sports event types</a> can link them.
-        </p>
-    }
-    <HealthTable Rows="report.EventFeeds" ItemLabel="Games" ShowUpcoming="true" EditBase="admin/sports-event-types" Empty="No event feeds." />
-}
+</AdminContent>
 
 @code {
+    private sealed record Issue(HealthRow Row, string Area, string? EditHref);
+    private sealed record Area(string Label, string Unit, string? Href, IReadOnlyList<HealthRow> Rows);
+
     private ScraperHealthReport? report;
+    private List<Issue> issues = [];
+    private int linkableEvents;
     private bool loading;
+    private bool busy;
+    private string? error;
+    private string? message;
+
+    private IEnumerable<Area> Areas => report is null ? [] :
+    [
+        new("News sources", "sources", "admin/sources", report.Sources),
+        new("YouTube channels", "channels", "admin/youtube-feeds", report.Channels),
+        new("TV series", "series", "admin/tv-series", report.TvSeries),
+        new("Movie releases", "providers", null, report.MovieSources),
+        new("Sports feeds", "feeds", "admin/sports-event-types", report.EventFeeds),
+    ];
 
     protected override Task OnInitializedAsync() => LoadAsync();
 
     private async Task LoadAsync()
     {
         loading = true;
+        error = null;
         try
         {
             var now = DateTime.UtcNow;
             await using var db = await Factory.CreateDbContextAsync();
             report = await ScraperHealth.GetReportAsync(
                 db, now, Dates.TodayAt(now), ScraperHealth.StaleAfter(Config["Scraper:StaleAfterHours"]));
+            linkableEvents = report.UnlinkedEvents == 0 ? 0 : (await AdminData.PlanSportsEventLinksAsync(db)).Count;
+            issues = new[]
+                {
+                    report.Sources.Select(r => new Issue(r, "News source", $"admin/sources/{r.Id}/edit")),
+                    report.Channels.Select(r => new Issue(r, "YouTube channel", $"admin/youtube-feeds/{r.Id}/edit")),
+                    report.EventFeeds.Select(r => new Issue(r, "Sports feed", $"admin/sports-event-types/{r.Id}/edit")),
+                    report.TvSeries.Select(r => new Issue(r, "TV series", "admin/tv-series")),
+                    report.MovieSources.Select(r => new Issue(r, "Movie releases", null)),
+                }
+                .SelectMany(x => x)
+                .Where(i => i.Row.Enabled && i.Row.Level != HealthLevel.Ok)
+                .OrderBy(i => i.Row.Level == HealthLevel.Problem ? 0 : 1)
+                .ThenBy(i => i.Row.Name, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+        }
+        catch (Exception ex) when (DataFailures.IsReadFailure(ex))
+        {
+            error = "The status couldn’t be read. The database may be busy or restarting; try Refresh in a moment.";
         }
         finally
         {
@@ -137,5 +213,56 @@ else
         }
     }
 
-    private static string Truncate(string text, int max) => text.Length <= max ? text : text[..max] + "…";
+    private async Task SyncVideosAsync()
+    {
+        busy = true;
+        message = null;
+        try
+        {
+            await using var db = await Factory.CreateDbContextAsync();
+            var result = await AdminData.SyncYoutubeFeedsAsync(db);
+            message = $"Created {result.FeedsCreated} {(result.FeedsCreated == 1 ? "feed" : "feeds")} and linked {result.VideosLinked} {(result.VideosLinked == 1 ? "video" : "videos")}.";
+        }
+        catch (Exception ex) when (ex is DbUpdateException || DataFailures.IsReadFailure(ex))
+        {
+            error = "The videos couldn’t be linked. Nothing was changed; try again in a moment.";
+        }
+        finally
+        {
+            busy = false;
+        }
+        await LoadAsync();
+    }
+
+    private async Task LinkEventsAsync()
+    {
+        busy = true;
+        message = null;
+        try
+        {
+            await using var db = await Factory.CreateDbContextAsync();
+            var linked = await AdminData.LinkSportsEventsBySiteAsync(db);
+            message = $"Linked {linked} {(linked == 1 ? "event" : "events")} to {(linked == 1 ? "its feed" : "their feeds")}.";
+        }
+        catch (Exception ex) when (ex is DbUpdateException || DataFailures.IsReadFailure(ex))
+        {
+            error = "The events couldn’t be linked. Nothing was changed; try again in a moment.";
+        }
+        finally
+        {
+            busy = false;
+        }
+        await LoadAsync();
+    }
+
+    private static RenderFragment TileContent(string label, int total, string unit, int ok, int warnings, int problems) => __builder =>
+    {
+        <span class="adm-tile__label">@label</span>
+        <span class="adm-tile__total">@total.ToString("N0")<span class="adm-tile__unit">@unit</span></span>
+        <span class="adm-tile__pills">
+            @if (ok > 0) { <span class="adm-pill adm-pill--ok">@ok OK</span> }
+            @if (warnings > 0) { <span class="adm-pill adm-pill--warn">@warnings Check</span> }
+            @if (problems > 0) { <span class="adm-pill adm-pill--bad">@problems Problem</span> }
+        </span>
+    };
 }

@@ -1,23 +1,32 @@
 @page "/admin/sources"
 @rendermode InteractiveServer
+@using System.Globalization
 @inject IDbContextFactory<WebScraperContext> Factory
+@inject NavigationManager Nav
 
 <PageTitle>Sources</PageTitle>
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h1 class="mb-0">Sources</h1>
-    <a class="btn btn-primary" href="admin/sources/new">Add source</a>
-</div>
+<AdminContent>
+    <AdminPageHeader Eyebrow="News" Title="Sources" Description="Feeds and websites the scraper reads for articles. Turning one off hides its articles from the site; nothing is deleted.">
+        <Actions>
+            <a class="btn btn-primary" href="admin/sources/new"><AdminIcon Name="plus" />Add source</a>
+        </Actions>
+    </AdminPageHeader>
 
-@if (message is not null)
-{
-    <div class="alert alert-@messageKind" role="alert">@message</div>
-}
+    @if (message is not null)
+    {
+        <div class="adm-notice @(messageBad ? "adm-notice--bad" : null)" role="status">@message</div>
+    }
 
-<div class="row mb-3">
-    <div class="col-md-4">
-        <label for="category" class="visually-hidden">Category</label>
-        <select id="category" class="form-select" @bind="categoryFilter" @bind:after="ResetAndLoadAsync">
+    @* Filters live in the address, so Back from an edit page keeps your place and lists can be bookmarked. *@
+    <div class="adm-toolbar">
+        <form class="adm-search" role="search" @onsubmit="Search" @onsubmit:preventDefault>
+            <AdminIcon Name="search" />
+            <label for="source-search" class="adm-sr">Search sources</label>
+            <input id="source-search" type="search" placeholder="Search by name or URL" @bind="searchInput" />
+        </form>
+        <label for="category" class="adm-sr">Category</label>
+        <select id="category" class="form-select" value="@(CategoryIdText ?? "")" @onchange="CategoryChanged">
             <option value="">All categories</option>
             <option value="none">Uncategorized</option>
             @foreach (var category in categories)
@@ -25,166 +34,220 @@
                 <option value="@category.Id">@category.CategoryName</option>
             }
         </select>
-    </div>
-</div>
-
-@if (pendingDelete is { } target)
-{
-    <div class="alert alert-warning" role="alert">
-        @if (target.PageCount == 0)
-        {
-            <p class="mb-2">Delete <strong>@target.Name</strong>? This cannot be undone.</p>
-            <button class="btn btn-danger btn-sm me-2" @onclick="() => ConfirmDeleteAsync(false)">Delete source</button>
-        }
-        else
-        {
-            <p class="mb-2">
-                <strong>@target.Name</strong> has @target.PageCount collected @(target.PageCount == 1 ? "page" : "pages").
-                Deleting the source also permanently deletes them.
-            </p>
-            @if (target.Enabled)
+        <div class="adm-seg" role="group" aria-label="Status">
+            @foreach (var (value, label, count) in StatusChoices)
             {
-                <p class="mb-2 small">
-                    Disabling is safer: the scraper stops reading the source, its pages stay in the database, and the
-                    public feed hides them. You can turn it back on at any time.
-                </p>
-                <button class="btn btn-warning btn-sm me-2" @onclick="DisableInsteadAsync">Disable instead (recommended)</button>
+                <button type="button" aria-pressed="@((Status ?? "") == value ? "true" : "false")" @onclick="() => Go(status: value)">@label<span class="adm-seg__n">@count</span></button>
             }
-            <button class="btn btn-danger btn-sm me-2" @onclick="() => ConfirmDeleteAsync(true)">
-                Delete source and @target.PageCount @(target.PageCount == 1 ? "page" : "pages")
-            </button>
-        }
-        <button class="btn btn-secondary btn-sm" @onclick="CancelDelete">Cancel</button>
+        </div>
     </div>
-}
 
-@if (rows is null)
-{
-    <p><em>Loading…</em></p>
-}
-else if (rows.Count == 0)
-{
-    <p>No sources found. <a href="admin/sources/new">Add one.</a></p>
-}
-else
-{
-    <div class="table-responsive">
-        <table class="table table-sm align-middle">
-            <thead>
-                <tr>
-                    <th>Source</th>
-                    <th>Enabled</th>
-                    <th>Category</th>
-                    <th>Pages</th>
-                    <th>Last scraped</th>
-                    <th>Last error</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
+    @if (pendingDelete is { } target)
+    {
+        <section class="adm-confirm" role="alert" aria-labelledby="confirm-title">
+            <div class="adm-confirm__text">
+                <h2 id="confirm-title">Delete @target.Name?</h2>
+                @if (target.PageCount == 0)
+                {
+                    <p>It has no collected pages. This can’t be undone.</p>
+                }
+                else
+                {
+                    <p>
+                        It has @target.PageCount.ToString("N0", CultureInfo.InvariantCulture) collected @(target.PageCount == 1 ? "page" : "pages"),
+                        and deleting the source deletes them too. @(target.Enabled ? "Disabling is safer: the scraper stops, the pages stay, the site hides them, and you can turn it back on." : "")
+                    </p>
+                }
+            </div>
+            <div class="adm-confirm__actions">
+                @if (target.Enabled && target.PageCount > 0)
+                {
+                    <button type="button" class="btn btn-dark" @onclick="DisableInsteadAsync">Disable instead</button>
+                }
+                <button type="button" class="btn btn-outline-danger" @onclick="() => ConfirmDeleteAsync(target.PageCount > 0)">
+                    @(target.PageCount == 0 ? "Delete source" : $"Delete source and {target.PageCount:N0} {(target.PageCount == 1 ? "page" : "pages")}")
+                </button>
+                <button type="button" class="btn btn-link" @onclick="CancelDelete">Cancel</button>
+            </div>
+        </section>
+    }
+
+    @if (rows is null)
+    {
+        <p class="adm-help">Loading…</p>
+    }
+    else if (rows.Count == 0)
+    {
+        <div class="adm-card">
+            @if (Filtered)
+            {
+                <p>No sources match. <a href="admin/sources">Clear the filters</a>.</p>
+            }
+            else
+            {
+                <p>No sources yet. <a href="admin/sources/new">Add one.</a></p>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="adm-card adm-card--flush adm-has-cards">
+            <div class="adm-table-wrap">
+                <table class="adm-table">
+                    <thead>
+                        <tr>
+                            <th scope="col">Source</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Enabled</th>
+                            <th scope="col" class="num">Pages</th>
+                            <th scope="col">Last scraped</th>
+                            <th scope="col"><span class="adm-sr">Actions</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var row in rows)
+                        {
+                            <tr class="@(row.HasProblem ? "is-problem" : !row.Enabled ? "is-off" : null)">
+                                <td>
+                                    <a class="adm-row-title" href="admin/sources/@row.Id/edit">@row.Name</a>
+                                    <span class="adm-tag">@(row.CategoryName ?? "Uncategorized")</span>
+                                    <span class="adm-row-sub">@row.Url</span>
+                                    @if (row.HasProblem) { <span class="adm-row-error" title="@row.LastError">@Truncate(row.LastError!, 120)</span> }
+                                </td>
+                                <td>@StatusFor(row)</td>
+                                <td><AdminSwitch Checked="row.Enabled" Label="@($"Enabled: {row.Name}")" Disabled="busy" OnChange="_ => ToggleAsync(row.Id)" /></td>
+                                <td class="num"><a href="admin/pages?sourceId=@row.Id">@row.PageCount.ToString("N0", CultureInfo.InvariantCulture)</a></td>
+                                <td class="nowrap">@Dates.Stamp(row.LastScrapedAt)</td>
+                                <td class="adm-actions">
+                                    <a class="btn btn-sm btn-outline-secondary" href="admin/sources/@row.Id/edit">Edit<span class="adm-sr"> @row.Name</span></a>
+                                    @RowMenu(row)
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            <div class="adm-cards">
                 @foreach (var row in rows)
                 {
-                    <tr>
-                        <td>
-                            @if (!string.IsNullOrWhiteSpace(row.Label))
-                            {
-                                <div class="fw-semibold">@row.Label</div>
-                            }
-                            <a href="@row.Url" target="_blank" rel="noopener noreferrer" class="small text-break">@row.Url</a>
-                        </td>
-                        <td>
-                            <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" role="switch"
-                                       aria-label="Enabled: @row.Name"
-                                       checked="@row.Enabled" @onchange="() => ToggleAsync(row.Id)" />
+                    <article class="adm-cardrow @(row.HasProblem ? "is-problem" : null)">
+                        <div class="adm-cardrow__top">
+                            <div class="adm-cardrow__title">
+                                <a class="adm-row-title" href="admin/sources/@row.Id/edit">@row.Name</a>
+                                <span class="adm-row-sub">@row.Url</span>
                             </div>
-                        </td>
-                        <td>@(row.CategoryName ?? "—")</td>
-                        <td><a href="admin/pages?sourceId=@row.Id">@row.PageCount</a></td>
-                        <td class="text-nowrap">@Dates.Stamp(row.LastScrapedAt)</td>
-                        <td>
-                            @if (!string.IsNullOrEmpty(row.LastError))
-                            {
-                                <span class="badge text-bg-danger" title="@row.LastError">Error</span>
-                                <span class="small text-danger">@Truncate(row.LastError, 80)</span>
-                            }
-                        </td>
-                        <td class="text-nowrap text-end">
-                            <a class="btn btn-outline-primary btn-sm" href="admin/sources/@row.Id/edit">Edit</a>
-                            <button class="btn btn-outline-danger btn-sm" @onclick="() => StartDelete(row)">Delete</button>
-                        </td>
-                    </tr>
+                            <AdminSwitch Checked="row.Enabled" Label="@($"Enabled: {row.Name}")" Disabled="busy" OnChange="_ => ToggleAsync(row.Id)" />
+                            @RowMenu(row)
+                        </div>
+                        @if (row.HasProblem) { <span class="adm-row-error">@Truncate(row.LastError!, 120)</span> }
+                        <div class="adm-cardrow__meta">
+                            @StatusFor(row)
+                            <span class="adm-tag">@(row.CategoryName ?? "Uncategorized")</span>
+                            <span>@row.PageCount.ToString("N0", CultureInfo.InvariantCulture) pages · @Dates.Stamp(row.LastScrapedAt)</span>
+                        </div>
+                    </article>
                 }
-            </tbody>
-        </table>
-    </div>
-}
-
-<AdminPager Total="totalRows" PageIndex="pageIndex" PageSize="PageSize" Busy="paging" PageChanged="ChangePageAsync" />
+            </div>
+            <AdminPager Total="totalRows" PageIndex="pageIndex" PageSize="PageSize" Busy="busy" Noun="sources" PageChanged="p => Go(page: p + 1)" />
+        </div>
+    }
+</AdminContent>
 
 @code {
     private const int PageSize = 25;
-    private int pageIndex;
-    private int totalRows;
-    private bool paging;
-    private async Task ChangePageAsync(int value)
-    {
-        if (paging) return;
-        paging = true;
-        try { pageIndex = Math.Max(0, value); pendingDelete = null; await LoadAsync(); }
-        finally { paging = false; }
-    }
 
     private sealed record SourceRow(
         int Id, string Url, string? Label, bool Enabled, DateTime? LastScrapedAt, string? LastError, int PageCount, string? CategoryName)
     {
         public string Name => string.IsNullOrWhiteSpace(Label) ? Url : Label;
+        public bool HasProblem => Enabled && !string.IsNullOrEmpty(LastError);
     }
 
-    private List<SourceRow>? rows;
-    private SourceRow? pendingDelete;
-    private string? message;
-    private string messageKind = "success";
+    [SupplyParameterFromQuery(Name = "q")] private string? Q { get; set; }
+    [SupplyParameterFromQuery(Name = "categoryId")] private string? CategoryIdText { get; set; }
+    [SupplyParameterFromQuery(Name = "status")] private string? Status { get; set; } // enabled | disabled | errors
+    [SupplyParameterFromQuery(Name = "page")] private int? PageNumber { get; set; }
+    [SupplyParameterFromQuery(Name = "deleted")] private string? DeletedName { get; set; }
 
     private List<SourceCategory> categories = [];
-    [SupplyParameterFromQuery(Name = "categoryId")] private string? CategoryIdText { get; set; }
+    private List<SourceRow>? rows;
+    private SourceRow? pendingDelete;
+    private string searchInput = "";
+    private int pageIndex;
+    private int totalRows;
+    private int countAll, countEnabled, countDisabled, countErrors;
+    private bool busy;
+    private string? message;
+    private bool messageBad;
 
-    private int? CategoryIdQuery => int.TryParse(CategoryIdText, out var id) ? id : null;
+    private bool Filtered => !string.IsNullOrWhiteSpace(Q) || !string.IsNullOrEmpty(CategoryIdText) || !string.IsNullOrEmpty(Status);
 
-    private string? categoryFilter;
+    private IEnumerable<(string Value, string Label, int Count)> StatusChoices =>
+    [
+        ("", "All", countAll), ("enabled", "Enabled", countEnabled), ("disabled", "Disabled", countDisabled), ("errors", "Errors", countErrors),
+    ];
 
     protected override async Task OnInitializedAsync()
     {
         await using var db = await Factory.CreateDbContextAsync();
         categories = await db.SourceCategories.AsNoTracking().OrderBy(c => c.CategoryName).ToListAsync();
+        if (!string.IsNullOrWhiteSpace(DeletedName)) message = $"Deleted {DeletedName}.";
+    }
 
-        if (CategoryIdQuery is int id && categories.Any(c => c.Id == id))
-        {
-            categoryFilter = id.ToString();
-        }
-
+    protected override async Task OnParametersSetAsync()
+    {
+        searchInput = Q ?? "";
+        pageIndex = Math.Max(0, (PageNumber ?? 1) - 1);
+        pendingDelete = null;
         await LoadAsync();
     }
 
-    private Task ResetAndLoadAsync() { pageIndex = 0; pendingDelete = null; return LoadAsync(); }
+    // Each filter change replaces the address (no history entry per keystroke); "keep" carries the other filters.
+    private void Go(string? q = null, string? category = null, string? status = null, int? page = null)
+    {
+        var nextQ = (q ?? Q)?.Trim();
+        var nextCategory = category ?? CategoryIdText;
+        var nextStatus = status ?? Status;
+        Nav.NavigateTo(Nav.GetUriWithQueryParameters(new Dictionary<string, object?>
+        {
+            ["q"] = string.IsNullOrWhiteSpace(nextQ) ? null : nextQ,
+            ["categoryId"] = string.IsNullOrEmpty(nextCategory) ? null : nextCategory,
+            ["status"] = string.IsNullOrEmpty(nextStatus) ? null : nextStatus,
+            // A new filter starts again at page 1.
+            ["page"] = page is > 1 ? page : null,
+            ["deleted"] = null,
+        }), replace: true);
+    }
+
+    private void Search() => Go(q: searchInput ?? "");
+
+    private void CategoryChanged(ChangeEventArgs e) => Go(category: e.Value?.ToString() ?? "");
 
     private async Task LoadAsync()
     {
         await using var db = await Factory.CreateDbContextAsync();
-        IQueryable<Source> query = db.Sources;
-        if (categoryFilter == "none")
-        {
-            query = query.Where(s => s.SourceCategoryId == null);
-        }
-        else if (int.TryParse(categoryFilter, out var categoryId))
-        {
-            query = query.Where(s => s.SourceCategoryId == categoryId);
-        }
+        IQueryable<Source> query = db.Sources.AsNoTracking();
+        if (CategoryIdText == "none") query = query.Where(s => s.SourceCategoryId == null);
+        else if (int.TryParse(CategoryIdText, out var categoryId)) query = query.Where(s => s.SourceCategoryId == categoryId);
+        var term = Q?.Trim();
+        if (!string.IsNullOrEmpty(term)) query = query.Where(s => s.Url.Contains(term) || (s.Label != null && s.Label.Contains(term)));
 
+        // Counts for the status buttons, within the search and category.
+        countAll = await query.CountAsync();
+        countEnabled = await query.CountAsync(s => s.Enabled);
+        countDisabled = countAll - countEnabled;
+        countErrors = await query.CountAsync(s => s.Enabled && s.LastError != null && s.LastError != "");
+
+        query = Status switch
+        {
+            "enabled" => query.Where(s => s.Enabled),
+            "disabled" => query.Where(s => !s.Enabled),
+            "errors" => query.Where(s => s.Enabled && s.LastError != null && s.LastError != ""),
+            _ => query,
+        };
         totalRows = await query.CountAsync();
         pageIndex = Math.Min(pageIndex, Math.Max(0, (totalRows - 1) / PageSize));
         rows = await query
-            .AsNoTracking()
             .OrderBy(s => s.Label ?? s.Url).ThenBy(s => s.Id)
             .Skip(pageIndex * PageSize).Take(PageSize)
             .Select(s => new SourceRow(s.Id, s.Url, s.Label, s.Enabled, s.LastScrapedAt, s.LastError, s.Pages.Count,
@@ -194,15 +257,22 @@ else
 
     private async Task ToggleAsync(int id)
     {
-        await using var db = await Factory.CreateDbContextAsync();
-        var source = await db.Sources.FindAsync(id);
-        if (source is not null)
+        busy = true;
+        try
         {
-            source.Enabled = !source.Enabled;
-            await db.SaveChangesAsync();
+            await using var db = await Factory.CreateDbContextAsync();
+            var source = await db.Sources.FindAsync(id);
+            if (source is not null)
+            {
+                source.Enabled = !source.Enabled;
+                await db.SaveChangesAsync();
+            }
+            await LoadAsync();
         }
-
-        await LoadAsync();
+        finally
+        {
+            busy = false;
+        }
     }
 
     private void StartDelete(SourceRow row)
@@ -215,11 +285,7 @@ else
 
     private async Task DisableInsteadAsync()
     {
-        if (pendingDelete is not { } target)
-        {
-            return;
-        }
-
+        if (pendingDelete is not { } target) return;
         await using var db = await Factory.CreateDbContextAsync();
         var source = await db.Sources.FindAsync(target.Id);
         if (source is not null)
@@ -227,8 +293,7 @@ else
             source.Enabled = false;
             await db.SaveChangesAsync();
         }
-
-        messageKind = "success";
+        messageBad = false;
         message = $"Disabled {target.Name}. Its pages were kept.";
         pendingDelete = null;
         await LoadAsync();
@@ -236,28 +301,42 @@ else
 
     private async Task ConfirmDeleteAsync(bool includePages)
     {
-        if (pendingDelete is not { } target)
-        {
-            return;
-        }
-
+        if (pendingDelete is not { } target) return;
         try
         {
             await using var db = await Factory.CreateDbContextAsync();
             var deleted = await AdminData.DeleteSourceAsync(db, target.Id, includePages);
-            messageKind = deleted ? "success" : "warning";
+            messageBad = !deleted;
             message = deleted ? $"Deleted {target.Name}." : $"{target.Name} was already deleted.";
         }
         catch (Exception ex) when (AdminData.IsForeignKeyViolation(ex))
         {
             // Pages were added after this screen loaded.
-            messageKind = "danger";
+            messageBad = true;
             message = $"{target.Name} gained pages since this list loaded, so it was not deleted. Review it and try again.";
         }
-
         pendingDelete = null;
         await LoadAsync();
     }
+
+    private RenderFragment StatusFor(SourceRow row) => __builder =>
+    {
+        if (!row.Enabled) { <span class="adm-pill adm-pill--off">Disabled</span> }
+        else { <StatusBadge Level="@(row.HasProblem ? HealthLevel.Problem : HealthLevel.Ok)" /> }
+    };
+
+    // Row menu: <details>, so it opens without JavaScript; Delete lives here, out of the way.
+    private RenderFragment RowMenu(SourceRow row) => __builder =>
+    {
+        <details class="adm-menu">
+            <summary aria-label="@($"More actions for {row.Name}")"><AdminIcon Name="more" /></summary>
+            <div class="adm-menu__list">
+                <a href="admin/pages?sourceId=@row.Id">View pages</a>
+                <button type="button" @onclick="() => ToggleAsync(row.Id)">@(row.Enabled ? "Disable" : "Enable")</button>
+                <button type="button" class="danger" @onclick="() => StartDelete(row)">Delete…</button>
+            </div>
+        </details>
+    };
 
     private static string Truncate(string text, int max) => text.Length <= max ? text : text[..max] + "…";
 }
