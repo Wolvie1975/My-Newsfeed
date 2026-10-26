@@ -9,12 +9,13 @@ public class VideosTests
     [Theory]
     [InlineData(null, "abc_DEF-12", "https://i.ytimg.com/vi/abc_DEF-12/mqdefault.jpg")]
     [InlineData("", "abc", "https://i.ytimg.com/vi/abc/mqdefault.jpg")]
-    [InlineData("http://i.ytimg.com/vi/x/hq.jpg", "x", "https://i.ytimg.com/vi/x/hq.jpg")]
+    [InlineData("http://i.ytimg.com/vi/x/hq720_custom_1.jpg", "x", "https://i.ytimg.com/vi/x/mqdefault.jpg")]
+    [InlineData("http://i.ytimg.com/vi/x/hq.jpg", "a/../b", "https://i.ytimg.com/vi/x/hq.jpg")]
     [InlineData("javascript:alert(1)", "x", "https://i.ytimg.com/vi/x/mqdefault.jpg")]
     [InlineData(null, "a/../b", null)]
     [InlineData(null, "", null)]
     [InlineData(null, null, null)]
-    public void Thumbnails_use_the_stored_picture_else_youtubes_standard_one(string? stored, string? id, string? expected) =>
+    public void Thumbnails_use_youtubes_standard_picture_else_the_stored_one(string? stored, string? id, string? expected) =>
         Assert.Equal(expected, VideosText.Thumbnail(stored, id));
 
     [Theory]

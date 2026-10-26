@@ -68,7 +68,7 @@ else
                     @foreach (var (video, index) in featured.Select((v, i) => (v, i)))
                     {
                         var href = FeedQuery.SafeHref(video.Url);
-                        var picture = VideosText.Thumbnail(video.ThumbnailUrl, video.VideoId);
+                        var picture = VideosText.Thumbnail(video.ThumbnailUrl, video.VideoId, "hqdefault");
                         <article class="yt-slide" data-yt-slide hidden="@(index > 0)" aria-roledescription="slide" aria-label="@($"{index + 1} of {featured.Count}")">
                             <a class="yt-slide__thumb" href="@href" target="_blank" rel="noopener noreferrer" tabindex="-1" aria-hidden="true">
                                 @if (picture is not null) { <img src="@picture" alt="" loading="@(index == 0 ? "eager" : "lazy")" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()" /> }
