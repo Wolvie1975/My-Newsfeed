@@ -3099,8 +3099,8 @@ a.tvc-row__show:hover {
     }
 }
 /* Below 1280px a third of the page is too narrow for a thumbnail beside the headline (titles wrapped a word or two
-   per line on iPads): the three stories under the lead show their picture above the headline instead. Entertainment's
-   posters stay beside; the more specific rule below keeps them. */
+   per line on iPads): the three stories under the lead show their picture above the headline instead, Entertainment's
+   small posters included (the prefix outranks the poster rule further down). */
 @media (min-width: 744px) and (max-width: 1279px) {
     .pub .paper-support .article {
         grid-template-columns: minmax(0, 1fr);
@@ -3110,6 +3110,9 @@ a.tvc-row__show:hover {
         width: 100%;
         height: auto;
         aspect-ratio: 16 / 9;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .news-front--posters .paper-support .article {
+        grid-template-columns: minmax(0, 1fr);
     }
 }
 
