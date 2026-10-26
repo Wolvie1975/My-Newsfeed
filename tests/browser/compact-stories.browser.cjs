@@ -13,7 +13,7 @@ const base = process.env.BASE_URL || 'http://localhost:5295',
             await p.route('**/public*.css', (r) =>
                 r.fulfill({ contentType: 'text/css', body: fs.readFileSync(process.env.PREVIEW_CSS, 'utf8') }),
             );
-        // Sports and Entertainment have their own front pages (section-hubs); these routes use the compact story rows.
+        // Sports and Entertainment have their own front pages (section-hubs); these routes use the newspaper feed (rows from 744px, picture cards on phones).
         for (const route of ['news', 'sports/news', 'entertainment/news'])
             for (const width of [320, 390, 430, 768, 1440])
                 for (const theme of ['light', 'dark']) {
@@ -87,13 +87,15 @@ const base = process.env.BASE_URL || 'http://localhost:5295',
         await row
             .locator('.src__name')
             .evaluate((n) => (n.textContent = 'The Hollywood Reporter — Film and Television Coverage'));
+        // Picture cards (as on F1 News): a long name wraps in its own column and the actions stay beside it.
         assert(
-            await row.evaluate(
-                (n) =>
-                    n.querySelector('.article-actions').getBoundingClientRect().top >=
-                    n.querySelector('.article-publisher').getBoundingClientRect().bottom,
-            ),
-            'long source wraps actions',
+            await row.evaluate((n) => {
+                const name = n.querySelector('.src__name').getBoundingClientRect();
+                return [...n.querySelectorAll('.share-button,.save')].every(
+                    (b) => b.getBoundingClientRect().left >= name.right - 1,
+                );
+            }),
+            'long source clear of the actions',
         );
         assert(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
         await row.screenshot({ path: root + 'long-publisher.png' });
@@ -109,19 +111,21 @@ const base = process.env.BASE_URL || 'http://localhost:5295',
             await more.click();
             await p.waitForFunction((n) => document.querySelectorAll('.feed .article').length > n, before);
             const last = p.locator('.feed > .article').last();
+            // Stories added by Load more are the same picture cards on phones.
             assert(
-                await last.evaluate(
-                    (n) =>
-                        getComputedStyle(n.querySelector('.thumb')).display === 'none' &&
-                        Math.abs(
-                            n.querySelector('.src').getBoundingClientRect().left - n.getBoundingClientRect().left,
-                        ) < 2,
-                ),
+                await last.evaluate((n) => {
+                    const t = n.querySelector('.thumb');
+                    return (
+                        getComputedStyle(t).display !== 'none' &&
+                        Math.abs(t.getBoundingClientRect().width - n.getBoundingClientRect().width) < 3
+                    );
+                }),
+                'loaded story is a picture card',
             );
         }
         assert.deepEqual(errors, []);
         console.log(
-            '50 route/width/theme checks passed; mobile More stories images hidden, full-width headlines/dates, 44px actions, short/long publisher footers, screenshots, share/focus and loaded-story layout passed.',
+            '50 route/width/theme checks passed; phone picture cards (as on F1 News), 44px actions, short/long publisher footers, screenshots, share/focus and loaded-story layout passed.',
         );
     } finally {
         await b.close();
