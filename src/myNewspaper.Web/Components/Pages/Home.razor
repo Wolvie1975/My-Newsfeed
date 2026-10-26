@@ -56,7 +56,10 @@
                 {
                     <li>
                         <a href="scoreboard">
-                            <span class="bs-live__score">@game.AwayName@(game.AwayScore is { } a ? " " + a.ToString("0") : ""), @game.HomeName@(game.HomeScore is { } h ? " " + h.ToString("0") : "")</span>
+                            @* Live: "Steelers 13, Saints 10". Not started: "Kings at Rangers" ("vs" at a neutral site). *@
+                            <span class="bs-live__score">@(game.Active || game.AwayScore is not null
+                                ? $"{game.AwayName}{(game.AwayScore is { } a ? " " + a.ToString("0") : "")}, {game.HomeName}{(game.HomeScore is { } h ? " " + h.ToString("0") : "")}"
+                                : $"{game.AwayName} {(game.NeutralSite == true ? "vs" : "at")} {game.HomeName}")</span>
                             <span class="bs-live__clock">@ScoreboardPanel.CompetitionLabel(game.Sport, game.League) · @(game.Active ? game.StatusText ?? game.DisplayClock ?? "Live" : game.StartsAtUtc is { } start ? Dates.Time(start) : "Time TBD")</span>
                         </a>
                     </li>
