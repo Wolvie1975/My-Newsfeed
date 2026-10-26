@@ -1142,6 +1142,10 @@
 .adm .adm-login__card .adm-brand:hover {
     color: var(--adm-text);
 }
+/* Yellow is for the dark sidebar; on the white card the tag takes the accent so it stays readable. */
+.adm-login__card .adm-brand__tag {
+    color: var(--adm-accent);
+}
 .adm .adm-login h1 {
     margin: 0;
     font-family: var(--adm-serif);
