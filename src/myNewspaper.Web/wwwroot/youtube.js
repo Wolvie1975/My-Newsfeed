@@ -45,7 +45,8 @@
 
     function init() {
         document.querySelectorAll('[data-yt-carousel]').forEach((carousel) => {
-            if (state.has(carousel)) return;
+            // A single featured video (a one-channel category) is rendered without controls: nothing to rotate.
+            if (state.has(carousel) || !carousel.querySelector('[data-yt-toggle]')) return;
             state.set(carousel, { index: 0, ticks: 0, playing: false });
             carousel.querySelectorAll('[data-yt-controls], [data-yt-tabs], [data-yt-position]').forEach((n) => {
                 n.hidden = false;
