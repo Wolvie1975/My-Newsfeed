@@ -3647,3 +3647,60 @@ a.tvc-row__show:hover {
         grid-template-columns: repeat(4, minmax(0, 1fr));
     }
 }
+@media (max-width: 699px) {
+    /* The lead card's text sits inside the card (the older lead rules are more specific). */
+    .pub .paper-feed .paper-top .paper-lead {
+        border: 1px solid var(--border);
+        background: var(--surface);
+    }
+    .pub .paper-feed .paper-lead .article--lead {
+        display: block;
+    }
+    .pub .paper-feed .paper-lead .article--lead .body {
+        padding: 12px 16px 4px;
+    }
+}
+@media (min-width: 1024px) {
+    /* Source picker and count in one line with the feed note, under the category tabs. */
+    .pub .news-front-filters {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin: 0;
+    }
+    .pub .news-front-filters .catselect {
+        flex: 0 1 280px;
+        margin: 0;
+    }
+    .pub .news-front-filters .count--toolbar {
+        margin-left: auto;
+    }
+}
+.pub #local-weather .weather-reading {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.pub #local-weather .weather-temperature {
+    white-space: nowrap;
+}
+@media (max-width: 1023px) {
+    .pub #local-weather .weather-temperature {
+        font-size: 28px;
+    }
+    .pub #local-weather .weather-reading svg {
+        flex: none;
+        width: 32px;
+        height: 32px;
+    }
+}
+:root:is([data-color-scheme], :not([data-color-scheme])) .pub .set-main .settings-scheme {
+    min-width: 0;
+}
+.pub .set-main .settings-scheme > span:last-child {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+:root:is([data-color-scheme], :not([data-color-scheme])) .pub .video-front .video--featured {
+    grid-row: auto;
+}
