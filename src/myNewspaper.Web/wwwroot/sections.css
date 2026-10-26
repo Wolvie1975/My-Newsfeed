@@ -2702,6 +2702,7 @@ a.tvc-row__show:hover {
 .pub .f1-banner summary {
     display: inline-flex;
     align-items: center;
+    gap: 4px;
     min-height: 44px;
     color: #ffffff;
     font-size: 14px;
