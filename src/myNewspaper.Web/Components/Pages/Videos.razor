@@ -77,7 +77,7 @@ else
         <div class="yt-top">
             <section class="yt-feature" data-yt-carousel aria-roledescription="carousel" aria-labelledby="yt-feature-label">
                 <div class="yt-feature__head">
-                    <h2 id="yt-feature-label" class="yt-feature__label">Featured@if (featured.Count > 1) {<span data-yt-position hidden> · <span data-yt-index>1</span> of @featured.Count</span>}</h2>
+                    <h2 id="yt-feature-label" class="yt-feature__label">Featured<span data-yt-position hidden> · <span data-yt-index>1</span> of @featured.Count</span></h2>
                     @* One featured video (a single-channel category) needs no arrows, Play or tabs. *@
                     @if (featured.Count > 1) {
                     <div class="yt-feature__controls" data-yt-controls hidden>
