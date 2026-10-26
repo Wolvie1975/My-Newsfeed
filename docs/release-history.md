@@ -6,10 +6,28 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The latest recorded web release is `mynewspaper-web:header-20261025`
-(image `b2bc2db84360`), deployed October 25, 2026 (Central). Its rollback image is
-`mynewsfeed-web:before-mynewspaper-header-20261025`. Deployment checks passed then;
+The latest recorded web release is `mynewspaper-web:entertainment-20261026`
+(image `bbd88ca31a96`), deployed October 25, 2026 (Central). Its rollback image is
+`mynewsfeed-web:before-mynewspaper-entertainment-20261026`. Deployment checks passed then;
 this is a dated observation, not live hosting status.
+
+## Entertainment pages to concept boards — deployed October 25, 2026 (Central)
+
+Batch 2 of the concept rebuild. Entertainment (new EntertainmentFront: On screen, lead, headline grid, box office /
+Tonight on TV / Friday in theaters), Movies (Sunday–Saturday release calendar with week paging and Looking ahead),
+TV & Streaming (week of episodes by day, tracked series with next air day), Digital releases (source pills and an
+empty state offering other sources), Box office (view pills; agate results table with Predicted and New) and the
+Where to watch frame (blue search panel, white-on-grey browse toggle; rows and results unchanged). Styles live in
+`sections.css`. Sports keeps its hub until batch 3; the two box office forecast views have no board and keep their
+cards.
+
+Deployed `mynewspaper-web:entertainment-20261026` (`bbd88ca31a96`), healthy; rollback image
+`mynewsfeed-web:before-mynewspaper-entertainment-20261026`; runtime configuration preserved. 726 .NET tests; lint
+and format clean. Preview suite: failures were the Where to watch overflow at 320px (fixed: border-box panel), old
+hub/compact-story expectations (updated) and intermittent home load timeouts (passed on rerun). Seven-page matrix at
+317 (large-text stand-in)/320/390/430/768/1024/1440, light/dark, JavaScript off at 390/1440: 126 views without
+overflow or script errors on preview and live; nine Entertainment and Where to watch checks passed live. Real device
+not re-checked. Evidence: `/tmp/mynewspaper-broadsheet-deploy/b2`.
 
 ## Broadsheet follow-ups and concept header — deployed October 25, 2026 (Central)
 

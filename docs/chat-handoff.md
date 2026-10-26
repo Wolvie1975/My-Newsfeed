@@ -17,7 +17,7 @@ Digital releases, Box office, Where to watch; (3) Sports, Scoreboard, Standings,
 Local, YouTube, Saved, Settings. Match each page to its desktop and phone boards side by side, including large
 system text (the user's phone behaves like about 317px). The desktop header keeps a light/dark icon and an Admin
 link that the concepts omit; the user may want them removed. Details in [release history](release-history.md).
-Committed locally on `develop`. Pending: the user is testing the header; batch 2 has not started.
+Committed locally on `develop`. Batch 2 (Entertainment pages) deployed as `entertainment-20261026`; see release history. Pending: the user is testing batch 2; batch 3 (Sports pages) has not started.
 
 ## Broadsheet redesign deployed — October 25, 2026 (Central)
 
