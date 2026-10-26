@@ -524,6 +524,17 @@
     flex: 0 1 240px;
     width: auto;
 }
+/* A toolbar that is an add form: labelled fields side by side, the button lined up with the fields. */
+.adm-toolbar--form {
+    align-items: flex-end;
+}
+.adm-toolbar--form .adm-field {
+    flex: 1 1 200px;
+    min-width: 0;
+}
+.adm-toolbar--form .adm-field--grow {
+    flex: 2 1 260px;
+}
 .adm-search {
     flex: 1 1 260px;
     display: flex;
