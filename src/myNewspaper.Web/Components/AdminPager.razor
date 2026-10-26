@@ -1,11 +1,13 @@
+@using System.Globalization
+@* Previous / Next for admin lists, with "26–50 of 1,234 pages". Hidden when everything fits on one page. *@
 @if (Total > PageSize)
 {
-    <nav class="d-flex flex-wrap justify-content-between align-items-center gap-2 my-3" aria-label="List pages">
-        <span class="small text-muted">@((PageIndex * PageSize) + 1)–@(Math.Min((PageIndex + 1) * PageSize, Total)) of @Total</span>
-        <div class="d-flex gap-2">
-            <button type="button" class="btn btn-outline-primary" disabled="@(Busy || PageIndex == 0)" @onclick="() => PageChanged.InvokeAsync(PageIndex - 1)">Previous</button>
-            <button type="button" class="btn btn-outline-primary" disabled="@(Busy || (PageIndex + 1) * PageSize >= Total)" @onclick="() => PageChanged.InvokeAsync(PageIndex + 1)">Next</button>
-        </div>
+    <nav class="d-flex flex-wrap justify-content-between align-items-center gap-2 px-3 py-3" aria-label="List pages">
+        <span class="adm-help">@((PageIndex * PageSize) + 1)–@(Math.Min((PageIndex + 1) * PageSize, Total)) of @Total.ToString("N0", CultureInfo.InvariantCulture)@(string.IsNullOrEmpty(Noun) ? "" : " " + Noun)</span>
+        <span class="d-flex gap-2">
+            <button type="button" class="btn btn-sm btn-outline-secondary" disabled="@(Busy || PageIndex == 0)" @onclick="() => PageChanged.InvokeAsync(PageIndex - 1)">Previous</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" disabled="@(Busy || (PageIndex + 1) * PageSize >= Total)" @onclick="() => PageChanged.InvokeAsync(PageIndex + 1)">Next</button>
+        </span>
     </nav>
 }
 @code {
@@ -13,5 +15,6 @@
     [Parameter] public int PageIndex { get; set; }
     [Parameter] public int PageSize { get; set; } = 25;
     [Parameter] public bool Busy { get; set; }
+    [Parameter] public string Noun { get; set; } = "";
     [Parameter] public EventCallback<int> PageChanged { get; set; }
 }

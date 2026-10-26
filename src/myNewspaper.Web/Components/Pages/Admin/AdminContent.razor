@@ -1,0 +1,23 @@
+@* Wrap each interactive admin page in this. The layout renders statically on the server and each page runs in its own
+   interactive circuit, so a boundary in MainLayout would never see errors thrown by a page's event handlers. Local
+   try/catch blocks for expected cases (unique and foreign-key violations) stay in the pages. *@
+<ErrorBoundary @ref="boundary">
+    <ChildContent>@ChildContent</ChildContent>
+    <ErrorContent>
+        <div class="adm-confirm" role="alert">
+            <div class="adm-confirm__text">
+                <h2>Something went wrong</h2>
+                <p>The database may be busy or restarting. Nothing was changed by the failed action.</p>
+            </div>
+            <div class="adm-confirm__actions">
+                <button type="button" class="btn btn-dark" @onclick="Recover">Try again</button>
+            </div>
+        </div>
+    </ErrorContent>
+</ErrorBoundary>
+
+@code {
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    private ErrorBoundary? boundary;
+    private void Recover() => boundary?.Recover();
+}
