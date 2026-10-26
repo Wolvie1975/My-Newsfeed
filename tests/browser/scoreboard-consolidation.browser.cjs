@@ -36,7 +36,7 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
                 await page.selectOption('#scoreboard-show', follow);
                 if (!js) await page.getByRole('button', { name: 'Apply', exact: true }).click();
                 await page.waitForURL((url) => url.searchParams.get('show') === follow);
-                await page.getByRole('link', { name: '← Previous day', exact: true }).click();
+                await page.locator('.scoreboard-prev').click();
                 await page.waitForURL((url) => url.searchParams.has('day'));
                 assert.equal(new URL(page.url()).searchParams.get('show'), follow);
                 assert.equal(await page.locator('#scoreboard-show').inputValue(), follow);

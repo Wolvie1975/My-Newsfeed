@@ -30,7 +30,7 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
             // Old team links override an incompatible league and canonicalize date links.
             await page.goto(base + '/scoreboard?competition=baseball%7Cmlb&follow=' + team.slice(2) + '&status=final');
             assert.equal(await show.inputValue(), team);
-            const href = await page.getByRole('link', { name: '← Previous day', exact: true }).getAttribute('href');
+            const href = await page.locator('.scoreboard-prev').getAttribute('href');
             const dateUrl = new URL(href, base + '/');
             assert.equal(dateUrl.searchParams.get('show'), team);
             assert.equal(dateUrl.searchParams.get('status'), 'final');

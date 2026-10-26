@@ -2904,3 +2904,20 @@ a.tvc-row__show:hover {
         text-align: right;
     }
 }
+/* Records like "14-0-1" keep one line; very narrow phones (and large text) get one score card per row. */
+.pub .rk-row {
+    grid-template-columns: 28px minmax(0, 1fr) auto 52px;
+}
+.pub .rk-row__rec {
+    white-space: nowrap;
+}
+@media (min-width: 1024px) {
+    .pub .rk-row {
+        grid-template-columns: 34px minmax(0, 1fr) auto 56px;
+    }
+}
+@media (max-width: 359px) {
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .spf-scores .scoreboard-games {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}

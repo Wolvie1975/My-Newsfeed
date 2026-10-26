@@ -22,7 +22,8 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
                             date = await p.locator('.scoreboard-date').boundingBox();
                         assert(Math.abs(prev.y - next.y) < 1);
                         assert(Math.abs(prev.width - next.width) < 1);
-                        assert(date.y + date.height <= prev.y);
+                        // One row as in the concept: ← previous day, the date, next day →.
+                        assert(prev.x + prev.width <= date.x && date.x + date.width <= next.x);
                         assert(prev.height >= 44 && next.height >= 44);
                     }
                     assert(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth));

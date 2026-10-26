@@ -116,15 +116,11 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
         await nojs.selectOption('#scoreboard-show', choice);
         await nojs.getByRole('button', { name: 'Apply', exact: true }).click();
         await nojs.waitForURL(/show=/);
-        const previous = nojs.getByRole('link', { name: '← Previous day', exact: true });
+        const previous = nojs.locator('.scoreboard-prev');
         await previous.click();
         await nojs.waitForURL(/day=/);
-        await nojs.getByRole('link', { name: '← Previous day', exact: true }).waitFor({ state: 'detached' });
-        assert.equal(
-            await nojs.getByRole('link', { name: '← Previous day', exact: true }).count(),
-            0,
-            'Yesterday is the earliest browsable day',
-        );
+        await nojs.locator('.scoreboard-prev').waitFor({ state: 'detached' });
+        assert.equal(await nojs.locator('.scoreboard-prev').count(), 0, 'Yesterday is the earliest browsable day');
         const box = nojs.locator('[data-box-score]').first();
         if (await box.count()) {
             const response = await nojs.request.get(new URL(await box.getAttribute('href'), base + '/').href);
