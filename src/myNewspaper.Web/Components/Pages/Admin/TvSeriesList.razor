@@ -2,10 +2,13 @@
 @rendermode InteractiveServer
 @inject IDbContextFactory<WebScraperContext> Factory
 
-<PageTitle>Tracked TV series</PageTitle>
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h1>Tracked TV series</h1><a class="btn btn-primary" href="admin/tv-series/new">Add series</a>
-</div>
+<PageTitle>TV series</PageTitle>
+<AdminContent>
+    <AdminPageHeader Eyebrow="Television" Title="TV series">
+        <Actions>
+            <a class="btn btn-primary" href="admin/tv-series/new"><AdminIcon Name="plus" />Add series</a>
+        </Actions>
+    </AdminPageHeader>
 <p>Follow series to collect their episode schedules. Removing a series from the followed list stops collection and hides its episodes; history is retained. The scraper imports added series on its next run.</p>
 @if (error is not null) { <div class="alert alert-danger" role="alert">@error</div> }
 @if (rows is null) { <p>Loading…</p> }
@@ -20,16 +23,18 @@ else
             <tr class="@(row.Enabled ? null : "text-muted")">
                 <td><a href="https://www.tvmaze.com/shows/@row.TvmazeShowId" target="_blank" rel="noopener noreferrer">@(row.Series?.Title ?? row.ExpectedTitle)</a><div class="small">TVmaze @row.TvmazeShowId</div></td>
                 <td>@(row.Series?.WebChannelName ?? row.Series?.NetworkName ?? "Pending import")</td>
-                <td>@(row.Enabled ? "Yes" : "No")</td><td>@(row.EpisodeCount?.ToString() ?? "—")</td>
+                <td><AdminSwitch Checked="row.Enabled" Disabled="busy" Label="@($"Following: {row.Series?.Title ?? row.ExpectedTitle}")" OnChange="_ => ToggleAsync(row)" /></td><td>@(row.EpisodeCount?.ToString() ?? "—")</td>
                 <td>@Dates.Stamp(row.LastSuccessAt)</td>
                 <td class="small text-break">@row.LastError @if (row.LastSuccessAt is null && row.Enabled) { <span>Awaiting first import</span> }</td>
-                <td><button class="btn btn-sm @(row.Enabled ? "btn-outline-danger" : "btn-outline-primary")" disabled="@busy" @onclick="() => ToggleAsync(row)">@(row.Enabled ? "Stop following" : "Follow again")</button></td>
+                <td class="adm-help">@(row.Enabled ? "Following" : "Stopped: history kept")</td>
             </tr>
         }
         </tbody>
     </table></div>
 }
 <AdminPager Total="totalRows" PageIndex="pageIndex" PageSize="PageSize" Busy="paging" PageChanged="ChangePageAsync" />
+
+</AdminContent>
 
 @code {
     private const int PageSize = 25;

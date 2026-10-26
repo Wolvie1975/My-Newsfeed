@@ -8,7 +8,10 @@
 
 <PageTitle>Follow a league or team</PageTitle>
 
-<h1>Follow a league or team</h1>
+<AdminContent>
+    <AdminPageHeader Eyebrow="Sports" Title="Follow a league or team">
+        <Crumbs><a href="admin/results">Results follows</a><span aria-hidden="true">/</span>Follow</Crumbs>
+    </AdminPageHeader>
 
 <div style="max-width: 44rem;">
     <div class="mb-3">
@@ -76,6 +79,8 @@
 
     <a class="btn btn-secondary mt-2" href="admin/results">Back to follows</a>
 </div>
+
+</AdminContent>
 
 @code {
     private const int Shown = 100;
@@ -154,7 +159,17 @@
 
         // Fetch its games straight away so the results page fills without waiting for the next background run. The
         // buttons stay disabled meanwhile: a new league backfills a week, about eight requests.
-        await Sync.SyncNowAsync(follow.Id);
+        // The follow is saved either way; if this first fetch fails (ESPN or the network), the background sync retries it.
+        try
+        {
+            await Sync.SyncNowAsync(follow.Id);
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or System.Text.Json.JsonException
+            or DbUpdateException || DataFailures.IsReadFailure(ex))
+        {
+            Nav.NavigateTo("admin/results?syncPending=1");
+            return;
+        }
         Nav.NavigateTo("admin/results");
     }
 }

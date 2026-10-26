@@ -1,7 +1,13 @@
 @page "/admin/tv-series/new"
 @rendermode InteractiveServer
 <PageTitle>Follow a TV series</PageTitle>
+<AdminContent>
+    <AdminPageHeader Eyebrow="Television" Title="Follow a TV series">
+        <Crumbs><a href="admin/tv-series">TV series</a><span aria-hidden="true">/</span>Follow</Crumbs>
+    </AdminPageHeader>
 <SeriesFollowForm InitialQuery="@InitialQuery" InitialYear="@InitialYear" />
+</AdminContent>
+
 @code {
     [SupplyParameterFromQuery(Name="q")]public string? InitialQuery {get;set;}
     [SupplyParameterFromQuery(Name="year")]public string? InitialYear {get;set;}

@@ -5,7 +5,10 @@
 
 <PageTitle>Edit YouTube video</PageTitle>
 
-<h1>Edit YouTube video</h1>
+<AdminContent>
+    <AdminPageHeader Eyebrow="Videos" Title="Edit YouTube video">
+        <Crumbs><a href="admin/youtube-videos">YouTube videos</a><span aria-hidden="true">/</span>Edit</Crumbs>
+    </AdminPageHeader>
 
 @if (notFound)
 {
@@ -17,7 +20,7 @@ else if (existing is null)
 }
 else
 {
-    <EditForm Model="form" OnValidSubmit="SaveAsync" style="max-width: 44rem;">
+    <EditForm Model="form" OnValidSubmit="SaveAsync" class="adm-card" style="max-width: 46rem;">
         @if (error is not null) { <div class="alert alert-danger" role="alert">@error</div> }
         @if (FeedQuery.SafeHref(existing.ThumbnailUrl) is { } thumb)
         {
@@ -89,6 +92,8 @@ else
         <a class="btn btn-secondary" href="admin/youtube-videos">Cancel</a>
     </EditForm>
 }
+
+</AdminContent>
 
 @code {
     [Parameter] public int Id { get; set; }

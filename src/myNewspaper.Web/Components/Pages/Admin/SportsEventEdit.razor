@@ -3,9 +3,12 @@
 @inject IDbContextFactory<WebScraperContext> Factory
 @inject NavigationManager Nav
 
-<PageTitle>Edit sports event</PageTitle>
+<PageTitle>Edit event</PageTitle>
 
-<h1>Edit sports event</h1>
+<AdminContent>
+    <AdminPageHeader Eyebrow="Sports" Title="Edit event">
+        <Crumbs><a href="admin/sports-events">Events</a><span aria-hidden="true">/</span>Edit</Crumbs>
+    </AdminPageHeader>
 
 @if (notFound)
 {
@@ -17,7 +20,7 @@ else if (existing is null)
 }
 else
 {
-    <EditForm Model="form" OnValidSubmit="SaveAsync" style="max-width: 44rem;">
+    <EditForm Model="form" OnValidSubmit="SaveAsync" class="adm-card" style="max-width: 46rem;">
         @if (error is not null) { <div class="alert alert-danger" role="alert">@error</div> }
         <dl class="row small">
             <dt class="col-sm-3">Game</dt>
@@ -73,6 +76,8 @@ else
         <a class="btn btn-secondary" href="admin/sports-events">Cancel</a>
     </EditForm>
 }
+
+</AdminContent>
 
 @code {
     [Parameter] public int Id { get; set; }

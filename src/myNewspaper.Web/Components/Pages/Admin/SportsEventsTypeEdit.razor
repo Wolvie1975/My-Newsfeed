@@ -4,9 +4,12 @@
 @inject IDbContextFactory<WebScraperContext> Factory
 @inject NavigationManager Nav
 
-<PageTitle>@(IsNew ? "Add sports event type" : "Edit sports event type")</PageTitle>
+<PageTitle>@(IsNew ? "Add event feed" : "Edit event feed")</PageTitle>
 
-<h1>@(IsNew ? "Add sports event type" : "Edit sports event type")</h1>
+<AdminContent>
+    <AdminPageHeader Eyebrow="Sports" Title="@(IsNew ? "Add event feed" : "Edit event feed")">
+        <Crumbs><a href="admin/sports-event-types">Event feeds</a><span aria-hidden="true">/</span>@(IsNew ? "New" : "Edit")</Crumbs>
+    </AdminPageHeader>
 
 @if (notFound)
 {
@@ -18,7 +21,7 @@ else if (form is null)
 }
 else
 {
-    <EditForm Model="form" OnValidSubmit="SaveAsync" style="max-width: 44rem;">
+    <EditForm Model="form" OnValidSubmit="SaveAsync" class="adm-card" style="max-width: 46rem;">
         <DataAnnotationsValidator />
         <ValidationSummary />
 
@@ -75,6 +78,8 @@ else
         <a class="btn btn-secondary" href="admin/sports-event-types">Cancel</a>
     </EditForm>
 }
+
+</AdminContent>
 
 @code {
     [Parameter] public int? Id { get; set; }

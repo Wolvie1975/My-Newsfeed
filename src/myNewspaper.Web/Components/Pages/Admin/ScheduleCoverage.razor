@@ -3,7 +3,8 @@
 @inject IDbContextFactory<WebScraperContext> Factory
 
 <PageTitle>Schedule coverage</PageTitle>
-<h1>Schedule and results coverage</h1>
+<AdminContent>
+    <AdminPageHeader Eyebrow="Overview" Title="Schedule coverage" />
 <p>Check that enabled schedule feeds have a matching results follow. Disabled follows stay disabled.</p>
 <p><a href="admin/results">Manage results follows</a> · <a href="admin/sports-event-types">Manage schedule feeds</a></p>
 <button class="btn btn-outline-primary" disabled="@loading" @onclick="LoadAsync">Refresh</button>
@@ -19,6 +20,8 @@ else
     }
     </tbody></table></div>
 }
+</AdminContent>
+
 @code {
     private IReadOnlyList<CoverageRow>? rows;
     private bool loading;

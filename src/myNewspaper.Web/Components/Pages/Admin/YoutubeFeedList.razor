@@ -4,10 +4,12 @@
 
 <PageTitle>YouTube feeds</PageTitle>
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h1 class="mb-0">YouTube feeds</h1>
-    <a class="btn btn-primary" href="admin/youtube-feeds/new">Add feed</a>
-</div>
+<AdminContent>
+    <AdminPageHeader Eyebrow="Videos" Title="YouTube feeds">
+        <Actions>
+            <a class="btn btn-primary" href="admin/youtube-feeds/new"><AdminIcon Name="plus" />Add feed</a>
+        </Actions>
+    </AdminPageHeader>
 
 @if (message is not null)
 {
@@ -109,6 +111,8 @@ else
 }
 
 <AdminPager Total="totalRows" PageIndex="pageIndex" PageSize="PageSize" Busy="paging" PageChanged="ChangePageAsync" />
+
+</AdminContent>
 
 @code {
     private const int PageSize = 25;

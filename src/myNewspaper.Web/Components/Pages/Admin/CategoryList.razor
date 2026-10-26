@@ -4,7 +4,8 @@
 
 <PageTitle>Categories</PageTitle>
 
-<h1>Source categories</h1>
+<AdminContent>
+    <AdminPageHeader Eyebrow="News" Title="Categories" />
 <p>Choose where each category appears. Enabled sources make it available in that hub automatically.</p>
 
 @if (message is not null)
@@ -104,6 +105,8 @@ else
         </table>
     </div>
 }
+
+</AdminContent>
 
 @code {
     private const int MaxNameLength = 100;

@@ -3,7 +3,8 @@
 @inject TvmazeClient Tvmaze
 @inject NavigationManager Nav
 
-<h1>Follow a TV series</h1>
+@* In admin, the page header already names the page. *@
+@if (Public) { <h1>Follow a TV series</h1> }
 <p>Search TVmaze and choose the correct series by its premiere year and network. Episode collection starts on the scraper’s next run.</p>
 @if(!string.IsNullOrWhiteSpace(InitialQuery)){<p class="alert alert-info">From Where to watch: <strong>@QueryText.Term(InitialQuery)</strong>@if(!string.IsNullOrWhiteSpace(InitialYear)){<span> (@QueryText.Term(InitialYear))</span>}. Confirm the correct series below before following.</p>}
 @if(success is not null){<p class="alert alert-success" role="status">@success</p>}

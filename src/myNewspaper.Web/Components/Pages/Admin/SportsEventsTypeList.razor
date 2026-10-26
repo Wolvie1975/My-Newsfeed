@@ -2,12 +2,14 @@
 @rendermode InteractiveServer
 @inject IDbContextFactory<WebScraperContext> Factory
 
-<PageTitle>Sports event types</PageTitle>
+<PageTitle>Event feeds</PageTitle>
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h1 class="mb-0">Sports event types</h1>
-    <a class="btn btn-primary" href="admin/sports-event-types/new">Add type</a>
-</div>
+<AdminContent>
+    <AdminPageHeader Eyebrow="Sports" Title="Event feeds">
+        <Actions>
+            <a class="btn btn-primary" href="admin/sports-event-types/new"><AdminIcon Name="plus" />Add feed</a>
+        </Actions>
+    </AdminPageHeader>
 
 <p class="text-muted">
     Each type is one events calendar feed the scraper reads. A feed can cover several sports, so a type
@@ -105,8 +107,8 @@ else
                         <td class="text-nowrap">@Dates.Stamp(row.DateAdded)</td>
                         <td class="text-nowrap text-end">
                             <a class="btn btn-outline-primary btn-sm" href="admin/sports-event-types/@row.Id/edit">Edit</a>
-                            @if (row.ProviderKey is null) { <button class="btn btn-outline-danger btn-sm" @onclick="() => StartDelete(row)">Delete</button> }
-                            else { <span class="small text-muted ms-2">Disable in Edit</span> }
+                            @if (row.CanDelete) { <button class="btn btn-outline-danger btn-sm" @onclick="() => StartDelete(row)">Delete</button> }
+                            else { <span class="adm-help ms-2" title="Shared event attribution: disable it in Edit instead.">Disable in Edit</span> }
                         </td>
                     </tr>
                 }
@@ -116,6 +118,8 @@ else
 }
 
 <AdminPager Total="totalRows" PageIndex="pageIndex" PageSize="PageSize" Busy="paging" PageChanged="ChangePageAsync" />
+
+</AdminContent>
 
 @code {
     private const int PageSize = 25;
@@ -130,7 +134,11 @@ else
         finally { paging = false; }
     }
 
-    private sealed record TypeRow(int Id, string RssUrl, string EventsTypeName, string? SchoolName, DateTime DateAdded, int EventCount, bool Enabled, DateTime? LastSuccessAt, string? ProviderKey);
+    private sealed record TypeRow(int Id, string RssUrl, string EventsTypeName, string? SchoolName, DateTime DateAdded, int EventCount, bool Enabled, DateTime? LastSuccessAt, string? ProviderKey, bool HasSharedEvents = false)
+    {
+        // Feeds from a provider, or with events shared with other feeds, can only be disabled (AdminData refuses to delete them).
+        public bool CanDelete => ProviderKey is null && !HasSharedEvents;
+    }
 
     private List<TypeRow>? rows;
     private TypeRow? pendingDelete;
@@ -151,7 +159,7 @@ else
             .AsNoTracking()
             .OrderBy(t => t.EventsTypeName).ThenBy(t => t.Id)
             .Skip(pageIndex * PageSize).Take(PageSize)
-            .Select(t => new TypeRow(t.Id, t.RssUrl, t.EventsTypeName, t.SchoolName, t.DateAdded, db.SportsEvents.Count(e => e.SportsEventsTypeId == t.Id || e.EventSources.Any(s => s.SportsEventsTypeId == t.Id)), t.Enabled, t.LastSuccessAt, t.ProviderKey))
+            .Select(t => new TypeRow(t.Id, t.RssUrl, t.EventsTypeName, t.SchoolName, t.DateAdded, db.SportsEvents.Count(e => e.SportsEventsTypeId == t.Id || e.EventSources.Any(s => s.SportsEventsTypeId == t.Id)), t.Enabled, t.LastSuccessAt, t.ProviderKey, db.SportsEventSources.Any(s => s.SportsEventsTypeId == t.Id)))
             .ToListAsync();
 
         unlinkedEvents = await db.SportsEvents.CountAsync(e => e.SportsEventsTypeId == null);
@@ -195,6 +203,12 @@ else
             var deleted = await AdminData.DeleteSportsEventsTypeAsync(db, target.Id, includeEvents);
             messageKind = deleted ? "success" : "warning";
             message = deleted ? $"Deleted {target.EventsTypeName}." : $"{target.EventsTypeName} was already deleted.";
+        }
+        catch (InvalidOperationException ex)
+        {
+            // Shared attribution appeared after the list loaded; AdminData refuses the delete and says why.
+            messageKind = "danger";
+            message = ex.Message;
         }
         catch (Exception ex) when (AdminData.IsForeignKeyViolation(ex))
         {

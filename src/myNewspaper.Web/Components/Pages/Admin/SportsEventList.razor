@@ -2,9 +2,10 @@
 @rendermode InteractiveServer
 @inject IDbContextFactory<WebScraperContext> Factory
 
-<PageTitle>Sports events</PageTitle>
+<PageTitle>Events</PageTitle>
 
-<h1>Sports events</h1>
+<AdminContent>
+    <AdminPageHeader Eyebrow="Sports" Title="Events" />
 
 @if (message is not null)
 {
@@ -131,14 +132,10 @@ else
         </table>
     </div>
 
-    <div class="d-flex justify-content-between align-items-center">
-        <span class="text-muted small">Showing @(pageIndex * PageSize + 1)–@(pageIndex * PageSize + rows.Count) of @total</span>
-        <div>
-            <button class="btn btn-outline-secondary btn-sm me-1" disabled="@(pageIndex == 0)" @onclick="() => GoToAsync(pageIndex - 1)">Previous</button>
-            <button class="btn btn-outline-secondary btn-sm" disabled="@((pageIndex + 1) * PageSize >= total)" @onclick="() => GoToAsync(pageIndex + 1)">Next</button>
-        </div>
-    </div>
+    <AdminPager Total="total" PageIndex="pageIndex" PageSize="PageSize" Noun="events" PageChanged="GoToAsync" />
 }
+
+</AdminContent>
 
 @code {
     private const int PageSize = 25;
