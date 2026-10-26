@@ -15,6 +15,7 @@ const base = process.env.BASE_URL || 'http://localhost:5295',
             ['entertainment/news', 'Entertainment headlines', 'entertainment-news'],
             ['entertainment/news/tv-film', 'Entertainment headlines', 'tv-film-news'],
         ]) {
+            await p.setViewportSize({ width: 390, height: 900 });
             await p.goto(base + '/' + route);
             assert.equal(await p.locator('h1').innerText(), title);
             assert.equal(
@@ -74,7 +75,11 @@ const base = process.env.BASE_URL || 'http://localhost:5295',
                     assert.equal(await p.locator('html').getAttribute('data-theme'), theme);
                     assert(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
                     assert(!(await p.locator('#blazor-error-ui').isVisible()));
-                    assert(await p.locator('#hub-category').evaluate((n) => n.getBoundingClientRect().height >= 44));
+                    // Desktop shows topic pills instead of the dropdown.
+                    if (width < 1024)
+                        assert(
+                            await p.locator('#hub-category').evaluate((n) => n.getBoundingClientRect().height >= 44),
+                        );
                     if (width < 768) {
                         await p.locator('.mobile-nav > summary').click();
                         const group = p.locator('[aria-labelledby="mobile-entertainment-heading"]');

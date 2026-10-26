@@ -17,6 +17,7 @@ const sections = [
         p.on('pageerror', (e) => errors.push(e.message));
         const movedSources = new Set();
         for (const [route, title, , selector] of sections) {
+            await p.setViewportSize({ width: 390, height: 900 });
             await p.goto(base + '/' + route);
             assert.equal(await p.locator('h1').innerText(), title);
             assert.equal(

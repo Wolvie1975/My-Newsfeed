@@ -65,7 +65,7 @@ const base = process.env.BASE_URL || 'http://localhost:5295',
                                     const a = n.getBoundingClientRect(),
                                         t = n.querySelector('.thumb').getBoundingClientRect();
                                     return wide
-                                        ? Math.round(t.width) === 96
+                                        ? [96, 72].includes(Math.round(t.width)) // 72px posters on Entertainment headlines
                                         : Math.abs(t.width - a.width) < 1 && t.height === 200;
                                 }, width >= 1024),
                                 'large More stories image ' + route,

@@ -74,13 +74,12 @@ const base = process.env.BASE_URL || 'http://localhost:5295',
             await p.goto(base + '/' + route);
             await p.locator('.ef-main > .ef-more').click();
             await p.waitForURL('**/' + route + '/news');
-            await p.locator('#hub-category').waitFor();
+            await p.locator('#hub-category').waitFor({ state: 'attached' });
             await p.locator('#source').waitFor();
             assert(await p.locator('#source').count());
             assert.equal(await p.locator('.front-agenda,[data-scoreboard]').count(), 0);
-            await p
-                .getByRole('link', { name: '← ' + (route === 'sports' ? 'Sports' : 'Entertainment') + ' overview' })
-                .click();
+            // Back to the section front through its first tab (the separate overview link was dropped).
+            await p.locator('.section-tabs a[href="' + route + '"]').click();
             await p.waitForURL('**/' + route);
             await p.reload();
             assert.equal(await p.locator('h1').innerText(), route === 'sports' ? 'Sports' : 'Entertainment');
