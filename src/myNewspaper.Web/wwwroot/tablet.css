@@ -33,8 +33,22 @@
     .pub .bs-title__name {
         font-size: 52px;
     }
+    /* At a glance: the weather title above its four periods, New tonight on its own row below. */
     .pub .bs-glance {
-        grid-template-columns: minmax(0, 2fr) minmax(220px, 1fr);
+        grid-template-columns: minmax(0, 1fr);
+    }
+    .pub .bs-glance__weather {
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 10px 24px;
+        padding-right: 0;
+    }
+    .pub .bs-glance__title {
+        grid-column: 1 / -1;
+    }
+    .pub .bs-glance__tonight {
+        padding: 12px 0 0;
+        border-top: 1px solid var(--row-border);
+        border-left: 0;
     }
 
     /* ---------- Home: three ruled columns become main + side; the left column moves below ---------- */
@@ -62,6 +76,28 @@
         padding: 24px 0 0;
         border-top: 1px solid var(--row-border);
         border-left: 0;
+    }
+
+    /* "More from today": headlines and videos across, the side column's TV and release lists side by side under
+       them (at 240px their poster rows were a word wide), then the left column. */
+    .pub .bs-more > .bs-col.bs-col--main {
+        grid-column: 1 / -1;
+        padding-right: 0;
+    }
+    .pub .bs-more > .bs-col.bs-col--side {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-column: 1 / -1;
+        grid-row: 2;
+        align-items: start;
+        gap: 28px 24px;
+        margin-top: 24px;
+        padding: 24px 0 0;
+        border-top: 1px solid var(--row-border);
+        border-left: 0;
+    }
+    .pub .bs-more > .bs-col.bs-col--left {
+        grid-row: 3;
     }
 
     /* ---------- Sports front: the same treatment (upcoming games move below) ---------- */
@@ -94,9 +130,8 @@
     }
 
     /* ---------- Two-column section fronts: a slimmer side column ---------- */
-    /* Entertainment, Movies, TV, College, Local, Saved, YouTube. */
-    .pub .ef-cols,
-    .pub .yt-top {
+    /* Entertainment, Movies, TV, College, Local and Saved. */
+    .pub .ef-cols {
         grid-template-columns: minmax(0, 3fr) minmax(240px, 2fr);
     }
     .pub .mv-cols,
@@ -106,12 +141,10 @@
     .pub .sv-lists {
         grid-template-columns: minmax(0, 2fr) minmax(240px, 1fr);
     }
-    .pub .ef-main,
-    .pub .yt-feature {
+    .pub .ef-main {
         padding-right: 20px;
     }
-    .pub .ef-side,
-    .pub .yt-latest {
+    .pub .ef-side {
         padding-left: 20px;
     }
     .pub .ef-lead__title {
@@ -127,5 +160,37 @@
     }
     .pub .tvc-row {
         grid-template-columns: 56px minmax(0, 1fr) 110px;
+    }
+
+    /* ---------- YouTube: featured video full width, Latest videos in two columns below ---------- */
+    /* Beside the carousel the Latest column left titles a few words wide. */
+    .pub .yt-top {
+        grid-template-columns: minmax(0, 1fr);
+    }
+    .pub .yt-feature {
+        padding-right: 0;
+        border-right: 0;
+    }
+    .pub .yt-latest {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        column-gap: 24px;
+        margin-top: 24px;
+        padding: 24px 0 0;
+        border-top: 1px solid var(--row-border);
+    }
+    .pub .yt-latest .ef-label {
+        grid-column: 1 / -1;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .video-front .videos {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    /* ---------- Local: four forecast cards across with a smaller temperature ---------- */
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub #local-weather .weather-period {
+        padding: 14px;
+    }
+    .pub #local-weather .weather-temperature {
+        font-size: 38px;
     }
 }

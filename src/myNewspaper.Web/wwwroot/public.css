@@ -1,8 +1,7 @@
 /* myNewspaper public feed. Ported from the approved design (mynewsfeed-redesign.html).
  *
- * - >= 1024px  desktop: search, category chips, lead card, 3-column grid
- * - 768-1023   tablet:  2-column grid, lead card stacked
- * - < 768      mobile:  compact list rows, sideways-scrolling chips, first article expanded
+ * - >= 744px   desktop (iPad portrait up): search, category chips, lead card, 3-column grid
+ * - < 744      mobile:  compact list rows, sideways-scrolling chips, first article expanded
  * - Light and dark themes through the tokens below; data-theme is set on <html> by theme-init.js.
  *
  * Everything is scoped under .pub because the admin area still uses Bootstrap on the same document.

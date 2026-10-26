@@ -1,5 +1,5 @@
 /* Section pages rebuilt to the approved concept boards (October 2026). Loaded after broadsheet.css.
-   Phones: white cards on the grey ground. From 1024px: ruled newspaper columns on the paper. */
+   Phones: white cards on the grey ground. From 744px (iPad portrait): ruled newspaper columns on the paper. */
 
 /* ---------- Shared pieces ---------- */
 .pub .ef-head {
@@ -1453,7 +1453,7 @@ a.tvc-row__show:hover {
 
 /* ---------- Where to watch (frame only; the approved rows and results are unchanged) ---------- */
 /* Search sits in a blue panel with a visible label and a yellow button, as on the homepage ear. Phones stack the
-   field and button; from 1024px the panel sits beside the title and the browse bar runs under both. */
+   field and button; from 744px the panel sits beside the title and the browse bar runs under both. */
 :root:is([data-color-scheme], :not([data-color-scheme])) .pub .watch-page .watch-controls {
     display: flex;
     flex-direction: column;
@@ -3874,7 +3874,7 @@ a.tvc-row__show:hover {
     display: flex;
     margin-left: auto;
 }
-/* Tabs: one bar per featured video (the titles show from 1024px). */
+/* Tabs: one bar per featured video (the titles show from 744px). */
 .pub .yt-tabs {
     display: grid;
     grid-template-columns: repeat(5, minmax(0, 1fr));
