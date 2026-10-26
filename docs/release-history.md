@@ -6,10 +6,23 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The latest recorded web release is `mynewspaper-web:schemes-20261026`
-(image `3da3702d48ef`), deployed October 26, 2026 (Central). Its rollback image is
-`mynewsfeed-web:before-mynewspaper-schemes-20261026`. Deployment checks passed then;
+The latest recorded web release is `mynewspaper-web:city-20261026`
+(image `f77d0b3924b5`), deployed October 26, 2026 (Central). Its rollback image is
+`mynewsfeed-web:before-mynewspaper-city-20261026`. Deployment checks passed then;
 this is a dated observation, not live hosting status.
+
+## St. Louis CITY SC home kit colours — deployed October 26, 2026 (Central)
+
+At the user's request the CITY scheme drops the Tina Turner gold for the regular kit: River Blue navy `#001837`
+header, City Red `#dd004a` buttons, chips and marks, navy highlight (so the Search button stands out on the red
+Where to watch panel), links `#b8003f` light / `#ff8fb1` dark. Kit hex values are approximations (the club does not
+publish them). Navy leads because a red header with navy would nearly duplicate Cardinals. Renamed "St. Louis CITY
+SC".
+
+Deployed `mynewspaper-web:city-20261026` (`f77d0b3924b5`), healthy; rollback
+`mynewsfeed-web:before-mynewspaper-city-20261026`. Preview: contrast passed for City on all 17 pages, light/dark,
+390/1440; home at 320/390/430 light/dark has no overflow or script errors. Live: contrast on /, /settings and /watch
+passed. Real device not re-checked.
 
 ## Desert Sunset and St. Patrick's Day colours — deployed October 26, 2026 (Central)
 
