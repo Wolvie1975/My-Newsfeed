@@ -8,7 +8,7 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
             const p = await b.newPage({ javaScriptEnabled: js });
             const errors = [];
             p.on('pageerror', (e) => errors.push(e.message));
-            for (const width of [320, 375, 390, 430, 767, 768, 1440])
+            for (const width of [320, 375, 390, 430, 743, 744, 768, 1440])
                 for (const theme of ['light', 'dark']) {
                     await p.setViewportSize({ width, height: 1000 });
                     await p.emulateMedia({ colorScheme: theme });
@@ -16,7 +16,7 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
                     if (js) assert.equal(await p.locator('html').getAttribute('data-theme'), theme);
                     assert(await p.getByRole('combobox', { name: 'Show', exact: true }).count());
                     assert.equal(await p.getByRole('button', { name: 'Apply', exact: true }).count(), js ? 0 : 1);
-                    if (width < 768) {
+                    if (width < 744) {
                         const prev = await p.locator('.scoreboard-prev').boundingBox(),
                             next = await p.locator('.scoreboard-next').boundingBox(),
                             date = await p.locator('.scoreboard-date').boundingBox();

@@ -6,10 +6,33 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The latest recorded web release is `mynewspaper-web:newschemes-20261026`
-(image `d49280da3892`), deployed October 26, 2026 (Central). Its rollback image is
-`mynewsfeed-web:before-mynewspaper-newschemes-20261026`. Deployment checks passed then;
+The latest recorded web release is `mynewspaper-web:ipad-20261026`
+(image `77fa07e55a61`), deployed October 26, 2026 (Central). Its rollback image is
+`mynewsfeed-web:before-mynewspaper-ipad-20261026`. Deployment checks passed then;
 this is a dated observation, not live hosting status.
+
+## iPad portrait gets the desktop page layout — deployed October 26, 2026 (Central)
+
+From the user's plan (`ipad-portrait-desktop-layout.md`), reviewed and amended. Page-layout media queries in
+public.css, sections.css and broadsheet.css moved from 1024/1023px to 744/743px, and public.css's and
+broadsheet.css's 768/767 splits moved to 744/743 too, so iPad mini (744) is not half phone, half desktop. The header
+keeps the phone bar and Menu sheet below 1024px (broadsheet.css 1374/1594/1722/1745/1752 and public.css 903/2524
+stay at 1024): seven section links and the actions do not fit one row on an iPad. New `tablet.css` (744–1023,
+loaded last) tightens the desktop design: 24px page padding; home masthead title across the top with Where to watch
+and Coming up beneath; weather title above its periods with New tonight below; front columns main + side with Today &
+Tonight below; "More from today" side lists side by side under the headlines; Sports front lead + standings with
+upcoming below (standings records nowrap); slimmer side columns on section fronts; YouTube Latest videos in two
+columns under the featured video and More videos three across; Local forecast temperature 38px. The plan's
+`(pointer: coarse)` 44px rule for all buttons was left out (it would also change phones). The service worker needed
+no change (it caches only the offline page and icons; stylesheets are fingerprinted).
+
+Deployed `mynewspaper-web:ipad-20261026` (`77fa07e55a61`), healthy; rollback
+`mynewsfeed-web:before-mynewspaper-ipad-20261026`. New check `tablet-layout.browser.cjs`: 17 pages at
+430/743/744/768/820/834/1023/1024/1440 light/dark — no sideways scroll, no script errors, desktop columns from 744,
+Menu bar below 1024 — passed on preview and live. Nine checks updated from a 1024 (or 768) desktop threshold to 744;
+home-columns gained a tablet branch. Preview: the suite up to scheme-contrast ran (the run was stopped to deploy at
+the user's request); five threshold failures were fixed and passed. Live: the remaining 25 checks passed after
+scoreboard-mobile's threshold update. Screens reviewed at 744 and 820. Real iPad not checked.
 
 ## Coastal, Olive Grove and Golden Hour schemes — deployed October 26, 2026 (Central)
 
