@@ -6,10 +6,24 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The latest recorded web release is `mynewspaper-web:placeholder-20261026`
-(image `6dfa28d14b5f`), deployed October 26, 2026 (Central). Its rollback image is
-`mynewsfeed-web:before-mynewspaper-placeholder-20261026`. Deployment checks passed then;
+The latest recorded web release is `mynewspaper-web:labels-20261026`
+(image `cef2c981f245`), deployed October 26, 2026 (Central). Its rollback image is
+`mynewsfeed-web:before-mynewspaper-labels-20261026`. Deployment checks passed then;
 this is a dated observation, not live hosting status.
+
+## "Headlines" and "Competitions" labels — deployed October 26, 2026 (Central)
+
+At the user's request the Sports and Entertainment section tabs and the phone menu's Sports and Entertainment groups
+say "Headlines" (was "All headlines", "Sports headlines", "Entertainment headlines"). The events page is now
+"Competitions": page title, heading, phone menu link and its Sports tab (was "Schedule"). Unchanged: the headline
+pages' own headings, the "All sports/entertainment headlines →" links on the fronts, the Sports front's
+"Schedule →" link beside Upcoming games and the admin menu. entertainment-news and sports-news now choose TV/Film and
+F1 by name (the new Box Office topic follows TV/Film).
+
+Deployed `mynewspaper-web:labels-20261026` (`cef2c981f245`), healthy; rollback
+`mynewsfeed-web:before-mynewspaper-labels-20261026`. Preview: sports-news, entertainment-news, section-hubs,
+section-select, scoreboard-consolidation, mixed-search-nav and branding passed. Live: sports-news, entertainment-news
+and section-select passed.
 
 ## Headline categories tidied (data only) — October 26, 2026 (Central)
 
