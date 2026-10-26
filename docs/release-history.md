@@ -6,10 +6,28 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The latest recorded web release is `mynewspaper-web:youtube-20261026`
-(image `9ba81c595479`), deployed October 26, 2026 (Central). Its rollback image is
-`mynewsfeed-web:before-mynewspaper-youtube-20261026`. Deployment checks passed then;
+The latest recorded web release is `mynewspaper-web:contrast-20261026`
+(image `59d3b6f825c9`), deployed October 26, 2026 (Central). Its rollback image is
+`mynewsfeed-web:before-mynewspaper-contrast-20261026`. Deployment checks passed then;
 this is a dated observation, not live hosting status.
+
+## Readable text under every colour scheme — deployed October 26, 2026 (Central)
+
+The user found dark text on Halloween's purple Search button. New check `tests/browser/scheme-contrast.browser.cjs`
+audits every visible text element against the colour actually behind it (WCAG AA: 4.5:1, or 3:1 for large text;
+text over pictures and visually hidden labels skipped) for all 13 schemes, light and dark, at 390 and 1440px.
+`PAGES` picks pages (default `/,/watch,/sports,/settings`); `REPORT=1` lists every failure. Live before the fix: 27
+failures. Fixes: the Where to watch Search button uses `--selection-fg` (Ribbon now defines `#141b2b` for its gold);
+the ear title and label use `--btn-fg` (dark on City's gold); Kansas dark `--pill-bg` `#344c70` → `#2c4264` (muted
+toggle text and streaming badges); the F1 banner's gold kicker and pale-blue place line apply only on Ribbon, other
+schemes use `--header-fg`.
+
+Deployed `mynewspaper-web:contrast-20261026` (`59d3b6f825c9`), healthy; rollback
+`mynewsfeed-web:before-mynewspaper-contrast-20261026`. Audit passed on preview for 17 pages (home, watch, sports,
+settings, news, local, entertainment, movies, tv, box office, YouTube, saved, scoreboard, standings, rankings,
+college, F1) and on live for home, watch, F1 and sports. Where to watch checked at 320/390/430 under Halloween light
+and dark, City light and Kansas dark: readable, no horizontal overflow. Built in the light resource mode. Real device
+not re-checked. Evidence: `/tmp/mynewspaper-broadsheet-deploy/b5`.
 
 ## YouTube v2 and section headlines — deployed October 26, 2026 (Central)
 
