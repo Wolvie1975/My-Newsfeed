@@ -39,7 +39,7 @@ async function mockSaved(p) {
                 assert(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
                 assert(!(await p.locator('#blazor-error-ui').isVisible()));
                 // Broadsheet: Opinion heads the side column on desktop; on phones it follows the headlines.
-                if (width >= 1024)
+                if (width >= 744)
                     assert.equal(
                         await p
                             .locator('.bs-front .bs-col--side > [data-home-section]')

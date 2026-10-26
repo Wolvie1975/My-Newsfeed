@@ -67,7 +67,7 @@ const base = process.env.BASE_URL || 'http://localhost:5295',
                                     return wide
                                         ? [96, 72].includes(Math.round(t.width)) // 72px posters on Entertainment headlines
                                         : Math.abs(t.width - a.width) < 1 && t.height === 200;
-                                }, width >= 1024),
+                                }, width >= 744),
                                 'large More stories image ' + route,
                             );
                     }

@@ -22,7 +22,7 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
                 // the first card on phones — above the lead story.
                 const lead = await page.locator('[data-home-section="lead"]').boundingBox();
                 assert(box.y + box.height <= lead.y + 1);
-                if (width >= 1024) assert(box.x < lead.x);
+                if (width >= 744) assert(box.x < lead.x);
                 assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
                 const input = page.getByLabel('Movie or TV title', { exact: true });
                 assert.equal(await input.getAttribute('maxlength'), '120');

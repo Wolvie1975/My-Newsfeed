@@ -76,7 +76,7 @@ const base = process.env.BASE_URL || 'http://localhost:5295',
                     assert(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
                     assert(!(await p.locator('#blazor-error-ui').isVisible()));
                     // Desktop shows topic pills instead of the dropdown.
-                    if (width < 1024)
+                    if (width < 744)
                         assert(
                             await p.locator('#hub-category').evaluate((n) => n.getBoundingClientRect().height >= 44),
                         );

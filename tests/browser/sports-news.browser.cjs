@@ -98,7 +98,7 @@ const sections = [
                         assert(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
                         await p.locator('.mobile-nav > summary').click();
                         await p.waitForTimeout(250);
-                    } else if (width >= 1024) {
+                    } else if (width >= 744) {
                         // Desktop: the Sports link in the masthead row marks the section.
                         assert.equal(
                             await p.locator('.site-nav--inline a[href="sports"]').getAttribute('aria-current'),

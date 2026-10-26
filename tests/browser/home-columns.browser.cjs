@@ -54,19 +54,27 @@ const phoneOrder = [
                             `${a.key} overlaps ${b.key} at ${width}`,
                         );
                     }
-                if (width >= 1024) {
-                    // Masthead: Watch ear left, title centre, live ear right, above the front columns.
+                if (width >= 744) {
                     const watch = await box('[data-home-section="watch"]');
                     const title = await box('.bs-title');
                     const live = await box('.bs-live');
-                    assert(watch.x < title.x && title.x < live.x, 'masthead order');
                     const lead = await box('[data-home-section="lead"]');
                     const tonight = await box('[data-home-section="sports"]');
                     const opinion = await box('[data-home-section="opinion"]');
                     assert(watch.y + watch.height < lead.y && watch.y + watch.height < tonight.y);
-                    // Three columns: Today & Tonight | lead and headlines | Opinion.
-                    assert(tonight.x < lead.x && lead.x < opinion.x, 'front columns');
-                    assert(Math.abs(tonight.y - lead.y) < 40 && Math.abs(lead.y - opinion.y) < 40, 'front row');
+                    if (width >= 1024) {
+                        // Masthead: Watch ear left, title centre, live ear right, above the front columns.
+                        assert(watch.x < title.x && title.x < live.x, 'masthead order');
+                        // Three columns: Today & Tonight | lead and headlines | Opinion.
+                        assert(tonight.x < lead.x && lead.x < opinion.x, 'front columns');
+                        assert(Math.abs(tonight.y - lead.y) < 40 && Math.abs(lead.y - opinion.y) < 40, 'front row');
+                    } else {
+                        // iPad portrait (tablet.css): title across the top, the ears side by side beneath it; lead
+                        // and Opinion side by side with Today & Tonight below them.
+                        assert(title.y + title.height <= watch.y && watch.x < live.x, 'tablet masthead');
+                        assert(lead.x < opinion.x && Math.abs(lead.y - opinion.y) < 40, 'tablet front row');
+                        assert(tonight.y > lead.y + lead.height, 'Today & Tonight below the lead');
+                    }
                     assert(await page.locator('.bs-band').isVisible());
                     const band = await box('.bs-band');
                     const scoreboard = await box('[data-home-section="scoreboard"]');
