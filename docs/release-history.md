@@ -6,10 +6,24 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The latest recorded web release is `mynewspaper-web:saved-20261026`
-(image `22fa89151c9c`), deployed October 26, 2026 (Central). Its rollback image is
-`mynewsfeed-web:before-mynewspaper-saved-20261026`. Deployment checks passed then;
+The latest recorded web release is `mynewspaper-web:share-20261026`
+(image `2d3a6f80ab61`), deployed October 26, 2026 (Central). Its rollback image is
+`mynewsfeed-web:before-mynewspaper-share-20261026`. Deployment checks passed then;
 this is a dated observation, not live hosting status.
+
+## Share buttons after in-site navigation — deployed October 26, 2026 (Central)
+
+The user reported share icons appearing only after a refresh. Cause: share buttons are rendered `hidden` and revealed
+by public.js; between pages with the same layout (reproduced Entertainment headlines → Headlines: 13 of 13 hidden),
+Blazor's enhanced navigation updates the existing markup in place, restoring `hidden`. No nodes are added, so the
+MutationObserver that reveals new buttons never fired. public.js now also re-syncs share buttons, save states and theme
+toggles on Blazor's `enhancedload`. entertainment-news gained a check for that navigation (failed on the old live
+build, passes now).
+
+Deployed `mynewspaper-web:share-20261026` (`2d3a6f80ab61`), healthy; rollback
+`mynewsfeed-web:before-mynewspaper-share-20261026`. Preview: a ten-step walk through News, Sports, Entertainment, Home,
+YouTube and Saved left no share button hidden; entertainment-news, video-share, shared-saved and theme-mode passed.
+Live: entertainment-news and video-share passed.
 
 ## Saved page tidy-up — deployed October 26, 2026 (Central)
 
