@@ -1,6 +1,7 @@
 @page "/admin/youtube-feeds/new"
 @page "/admin/youtube-feeds/{Id:int}/edit"
 @rendermode InteractiveServer
+@using System.Globalization
 @inject IDbContextFactory<WebScraperContext> Factory
 @inject NavigationManager Nav
 
@@ -51,6 +52,18 @@ else
             <div class="form-text">The channel's Atom feed, the address the scraper's <code>--youtube-feed</code> option takes.</div>
         </div>
 
+        <div class="mb-3">
+            <label for="feed-category" class="form-label">Category</label>
+            <InputSelect id="feed-category" class="form-select" @bind-Value="form.CategoryId">
+                <option value="">No category (shown under Other)</option>
+                @foreach (var category in categories)
+                {
+                    <option value="@category.Id">@category.CategoryName</option>
+                }
+            </InputSelect>
+            <div class="form-text">The YouTube page's category tabs. Categories themselves are added by the scraper.</div>
+        </div>
+
         @if (!IsNew && existing is not null)
         {
             <dl class="row small text-muted">
@@ -82,7 +95,12 @@ else
 
         [StringLength(2048)]
         public string? Url { get; set; }
+
+        // Bound to a <select>, so it is text; "" means no category.
+        public string CategoryId { get; set; } = "";
     }
+
+    private IReadOnlyList<YoutubeCategory> categories = [];
 
     private FeedForm? form;
     private YoutubeVideoFeed? existing;
@@ -96,13 +114,14 @@ else
 
     protected override async Task OnParametersSetAsync()
     {
+        await using var db = await Factory.CreateDbContextAsync();
+        categories = await db.YoutubeCategories.AsNoTracking().OrderBy(c => c.CategoryName).ToListAsync();
         if (IsNew)
         {
             form = new FeedForm();
             return;
         }
 
-        await using var db = await Factory.CreateDbContextAsync();
         existing = await db.YoutubeVideoFeeds.AsNoTracking().FirstOrDefaultAsync(f => f.Id == Id);
         if (existing is null)
         {
@@ -112,7 +131,11 @@ else
 
         videoCount = await db.YouTubeVideos.CountAsync(v => v.YoutubeVideoFeedId == Id);
         channelLocked = videoCount > 0;
-        form = new FeedForm { ChannelId = existing.ChannelId, ChannelName = existing.ChannelName, Url = existing.Url };
+        form = new FeedForm
+        {
+            ChannelId = existing.ChannelId, ChannelName = existing.ChannelName, Url = existing.Url,
+            CategoryId = existing.YoutubeCategoryId?.ToString(CultureInfo.InvariantCulture) ?? "",
+        };
     }
 
     private async Task SaveAsync()
@@ -126,6 +149,9 @@ else
         var channelId = form.ChannelId.Trim();
         var name = string.IsNullOrWhiteSpace(form.ChannelName) ? null : form.ChannelName.Trim();
         var url = string.IsNullOrWhiteSpace(form.Url) ? AdminData.YoutubeFeedUrl(channelId) : form.Url.Trim();
+        // Only a category that still exists; anything else saves as no category.
+        int? categoryId = int.TryParse(form.CategoryId, NumberStyles.None, CultureInfo.InvariantCulture, out var picked)
+            && categories.Any(c => c.Id == picked) ? picked : null;
 
         if (!Uri.TryCreate(url, UriKind.Absolute, out var uri)
             || (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
@@ -140,7 +166,7 @@ else
             await using var db = await Factory.CreateDbContextAsync();
             if (IsNew)
             {
-                db.YoutubeVideoFeeds.Add(new YoutubeVideoFeed { ChannelId = channelId, ChannelName = name, Url = url });
+                db.YoutubeVideoFeeds.Add(new YoutubeVideoFeed { ChannelId = channelId, ChannelName = name, Url = url, YoutubeCategoryId = categoryId });
             }
             else
             {
@@ -158,6 +184,7 @@ else
 
                 feed.ChannelName = name;
                 feed.Url = url;
+                feed.YoutubeCategoryId = categoryId;
             }
 
             await db.SaveChangesAsync();

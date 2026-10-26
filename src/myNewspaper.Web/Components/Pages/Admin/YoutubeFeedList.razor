@@ -70,6 +70,7 @@ else
                 <tr>
                     <th>Channel</th>
                     <th>Feed address</th>
+                    <th>Category</th>
                     <th>Videos</th>
                     <th>Added</th>
                     <th></th>
@@ -93,6 +94,7 @@ else
                                 <span class="small text-break">@row.Url</span>
                             }
                         </td>
+                        <td>@(row.Category ?? "Other")</td>
                         <td><a href="admin/youtube-videos?feedId=@row.Id">@row.VideoCount</a></td>
                         <td class="text-nowrap">@Dates.Stamp(row.DateAdded)</td>
                         <td class="text-nowrap text-end">
@@ -121,7 +123,7 @@ else
         finally { paging = false; }
     }
 
-    private sealed record FeedRow(int Id, string ChannelId, string? ChannelName, string Url, DateTime DateAdded, int VideoCount)
+    private sealed record FeedRow(int Id, string ChannelId, string? ChannelName, string Url, DateTime DateAdded, int VideoCount, string? Category = null)
     {
         public string Name => string.IsNullOrWhiteSpace(ChannelName) ? ChannelId : ChannelName;
     }
@@ -145,7 +147,8 @@ else
             .AsNoTracking()
             .OrderBy(f => f.ChannelName ?? f.ChannelId).ThenBy(f => f.Id)
             .Skip(pageIndex * PageSize).Take(PageSize)
-            .Select(f => new FeedRow(f.Id, f.ChannelId, f.ChannelName, f.Url, f.DateAdded, f.YouTubeVideos.Count))
+            .Select(f => new FeedRow(f.Id, f.ChannelId, f.ChannelName, f.Url, f.DateAdded, f.YouTubeVideos.Count,
+                f.YoutubeCategory != null ? f.YoutubeCategory.CategoryName : null))
             .ToListAsync();
 
         unlinkedVideos = await db.YouTubeVideos.CountAsync(v => v.YoutubeVideoFeedId == null);

@@ -12,13 +12,33 @@
 
 <PageHeading Title="YouTube" Eyebrow="From your channels" Description="" />
 
+@if (categories.Count > 0)
+{
+    @* Channel categories (from the scraper) as pills on desktop; phones use the Category dropdown below. *@
+    <nav class="sec-pills sec-pills--desktop yt-cats" aria-label="Category">
+        <a href="@CategoryHref(null)" aria-current="@(selectedCategory is null ? "page" : null)">All</a>
+        @foreach (var c in categories)
+        { <a href="@CategoryHref(c)" aria-current="@(selectedCategory == c ? "page" : null)">@c.Name</a> }
+    </nav>
+}
 <div class="filters filters--videos">
-    @if (channels.Count > 1)
+    @if (channels.Count > 1 || categories.Count > 0)
     {
         <form class="catselect" method="get" action="videos">
             @if (!string.IsNullOrWhiteSpace(Q))
             {
                 <input type="hidden" name="q" value="@Q" />
+            }
+            @if (categories.Count > 0)
+            {
+                <label class="sr-only yt-category-select" for="category">Category</label>
+                <select class="yt-category-select" id="category" name="category" onchange="this.form.channel && (this.form.channel.value = ''); this.form.requestSubmit()">
+                    <option value="">All categories</option>
+                    @foreach (var c in categories)
+                    {
+                        <option value="@c.Slug" selected="@(selectedCategory == c)">@c.Name</option>
+                    }
+                </select>
             }
             <label class="sr-only" for="channel">Channel</label>
             <select id="channel" name="channel" onchange="this.form.requestSubmit()">
@@ -33,14 +53,14 @@
     }
     @if (listing is not null)
     {
-        <p class="count count--toolbar" aria-live="polite">@(selectedChannel ?? "All channels") · @listing.Total @(listing.Total == 1 ? "video" : "videos")@(lastUpdated is { } updated ? " · updated " + Dates.Time(updated) : "")</p>
+        <p class="count count--toolbar" aria-live="polite">@(selectedChannel ?? selectedCategory?.Name ?? "All channels") · @listing.Total @(listing.Total == 1 ? "video" : "videos")@(lastUpdated is { } updated ? " · updated " + Dates.Time(updated) : "")</p>
     }
 </div>
 
 @if (listing is null || listing.Items.Count == 0)
 {
     <p class="empty">
-        @if (!string.IsNullOrWhiteSpace(Channel) || !string.IsNullOrWhiteSpace(Q))
+        @if (!string.IsNullOrWhiteSpace(Channel) || !string.IsNullOrWhiteSpace(Q) || selectedCategory is not null)
         {
             <span>No videos match. <a href="videos">Clear filters</a></span>
         }
@@ -57,12 +77,15 @@ else
         <div class="yt-top">
             <section class="yt-feature" data-yt-carousel aria-roledescription="carousel" aria-labelledby="yt-feature-label">
                 <div class="yt-feature__head">
-                    <h2 id="yt-feature-label" class="yt-feature__label">Featured<span data-yt-position hidden> · <span data-yt-index>1</span> of @featured.Count</span></h2>
+                    <h2 id="yt-feature-label" class="yt-feature__label">Featured@if (featured.Count > 1) {<span data-yt-position hidden> · <span data-yt-index>1</span> of @featured.Count</span>}</h2>
+                    @* One featured video (a single-channel category) needs no arrows, Play or tabs. *@
+                    @if (featured.Count > 1) {
                     <div class="yt-feature__controls" data-yt-controls hidden>
                         <button type="button" class="yt-btn" data-yt-step="-1" aria-label="Previous featured video"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
                         <button type="button" class="yt-btn" data-yt-toggle aria-pressed="false" aria-label="Play rotation"><svg class="yt-icon-play" viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15a1 1 0 0 0 1.5.86l12-7.5a1 1 0 0 0 0-1.72l-12-7.5A1 1 0 0 0 7 4.5z"/></svg><svg class="yt-icon-pause" viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M7 4h4v16H7zM13 4h4v16h-4z"/></svg></button>
                         <button type="button" class="yt-btn" data-yt-step="1" aria-label="Next featured video"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
                     </div>
+                    }
                 </div>
                 <div class="yt-feature__slides" data-yt-live aria-live="polite">
                     @foreach (var (video, index) in featured.Select((v, i) => (v, i)))
@@ -75,18 +98,20 @@ else
                                 <span class="play"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15a1 1 0 0 0 1.5.86l12-7.5a1 1 0 0 0 0-1.72l-12-7.5A1 1 0 0 0 7 4.5z"></path></svg></span>
                                 <span class="yt-progress"><span data-yt-bar></span></span>
                             </a>
-                            <p class="yt-kicker">@video.ChannelName</p>
+                            <p class="yt-kicker">@Kicker(video)</p>
                             <h3 class="yt-slide__title">@if (href is not null) { <a href="@href" target="_blank" rel="noopener noreferrer">@video.Title</a> } else { @video.Title }</h3>
                             @Meta(video)
                         </article>
                     }
                 </div>
+                @if (featured.Count > 1) {
                 <div class="yt-tabs" data-yt-tabs hidden>
                     @foreach (var (video, index) in featured.Select((v, i) => (v, i)))
                     {
                         <button type="button" class="yt-tab" data-yt-pick="@index" aria-current="@(index == 0 ? "true" : "false")" aria-label="@($"Show featured video {index + 1}: {video.Title}")"><span class="yt-tab__bar"></span><span class="yt-tab__title">@video.Title</span></button>
                     }
                 </div>
+                }
             </section>
             <section class="yt-latest" aria-labelledby="yt-latest-label">
                 <h2 id="yt-latest-label" class="ef-label">Latest videos</h2>
@@ -99,7 +124,7 @@ else
                             @if (picture is not null) { <img src="@picture" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()" /> }
                         </a>
                         <div class="yt-row__body">
-                            <p class="yt-kicker">@video.ChannelName</p>
+                            <p class="yt-kicker">@Kicker(video)</p>
                             <h3 class="yt-row__title">@if (href is not null) { <a href="@href" target="_blank" rel="noopener noreferrer">@video.Title</a> } else { @video.Title }</h3>
                             @Meta(video)
                         </div>
@@ -127,9 +152,17 @@ else
     [SupplyParameterFromQuery(Name = "page")] private string? PageText { get; set; }
     private int page;
     private int offset;
-    private string PageHref(int target) => "videos?page=" + target + (string.IsNullOrWhiteSpace(Q) ? "" : "&q=" + Uri.EscapeDataString(Q)) + (string.IsNullOrWhiteSpace(Channel) ? "" : "&channel=" + Uri.EscapeDataString(Channel));
+    private string PageHref(int target) => "videos?page=" + target + (selectedCategory is null ? "" : "&category=" + selectedCategory.Slug) + (string.IsNullOrWhiteSpace(Q) ? "" : "&q=" + Uri.EscapeDataString(Q)) + (string.IsNullOrWhiteSpace(Channel) ? "" : "&channel=" + Uri.EscapeDataString(Channel));
     [SupplyParameterFromQuery(Name = "channel")] private string? Channel { get; set; }
     [SupplyParameterFromQuery(Name = "q")] private string? Q { get; set; }
+    [SupplyParameterFromQuery(Name = "category")] private string? CategoryQuery { get; set; }
+    private IReadOnlyList<VideoCategory> categories = [];
+    private VideoCategory? selectedCategory;
+    // A category tab keeps the search and starts again from all of its channels.
+    private string CategoryHref(VideoCategory? c) => "videos" + (c is null && string.IsNullOrWhiteSpace(Q) ? ""
+        : "?" + string.Join("&", new[] { c is null ? null : "category=" + c.Slug, string.IsNullOrWhiteSpace(Q) ? null : "q=" + Uri.EscapeDataString(Q) }.Where(x => x is not null)));
+    // In "All" the category leads the channel name ("Tech · Marques Brownlee"); inside a category it would repeat.
+    private string Kicker(VideoItem v) => selectedCategory is null && !string.IsNullOrWhiteSpace(v.Category) ? $"{v.Category} · {v.ChannelName}" : v.ChannelName;
 
     private IReadOnlyList<VideoChannel> channels = [];
     private IReadOnlyList<VideoItem> featured = [];
@@ -142,14 +175,19 @@ else
     protected override async Task OnParametersSetAsync()
     {
         await using var db = await Factory.CreateDbContextAsync();
-        channels = await VideosQuery.GetChannelsAsync(db);
+        categories = await VideosQuery.GetCategoriesAsync(db);
+        var wanted = CategoryQuery?.Trim().ToLowerInvariant();
+        selectedCategory = categories.FirstOrDefault(c => c.Slug == wanted);
+        channels = await VideosQuery.GetChannelsAsync(db, selectedCategory);
+        // A channel from another category (an old link) is dropped rather than showing an empty page.
+        var channel = channels.Any(IsSelected) ? Channel : null;
         page = int.TryParse(PageText, out var requested) ? Math.Clamp(requested, 1, 1000000) : 1;
         offset = (page - 1) * 50;
-        listing = await VideosQuery.GetVideosAsync(db, Channel, Q, limit: 50, offset: offset);
+        listing = await VideosQuery.GetVideosAsync(db, channel, Q, limit: 50, offset: offset, category: selectedCategory);
         if (offset >= listing.Total && page > 1)
         {
             page = Math.Max(1, (listing.Total + 49) / 50); offset = (page - 1) * 50;
-            listing = await VideosQuery.GetVideosAsync(db, Channel, Q, limit: 50, offset: offset);
+            listing = await VideosQuery.GetVideosAsync(db, channel, Q, limit: 50, offset: offset, category: selectedCategory);
         }
         lastUpdated = await VideosQuery.GetLastUpdatedAsync(db);
         selectedChannel = channels.FirstOrDefault(IsSelected)?.Name;
@@ -191,7 +229,7 @@ else
                                     }
                                 </h3>
 
-                                <p class="video-channel">@video.ChannelName</p>
+                                <p class="video-channel">@Kicker(video)</p>
                                 <p class="vmeta">
                                     <time datetime="@video.PublishedAt.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'")" title="@Dates.PublishedFull(video.PublishedAt)">@Dates.Published(video.PublishedAt)</time>
                                     @if (views is not null)

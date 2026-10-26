@@ -96,6 +96,60 @@ public class VideosTests
             YoutubeVideoFeed = feed,
         };
 
+    [Theory]
+    [InlineData("News & Politics", "news-politics")]
+    [InlineData("Video Games", "video-games")]
+    [InlineData("  Tech ", "tech")]
+    [InlineData("Sports", "sports")]
+    public void Category_slugs_are_lower_case_words_joined_by_hyphens(string name, string slug) =>
+        Assert.Equal(slug, VideosQuery.Slug(name));
+
+    [Fact]
+    public async Task Category_tabs_filter_videos_and_channels_keep_uncategorized_under_other_and_hide_empty_ones()
+    {
+        await using var db = Create();
+        await using var tx = await db.Database.BeginTransactionAsync();
+        var token = Tag();
+        var tech = new YoutubeCategory { CategoryName = $"Zz {token} Tech", DateAdded = DateTime.UtcNow };
+        var empty = new YoutubeCategory { CategoryName = $"Zz {token} Empty", DateAdded = DateTime.UtcNow };
+        db.YoutubeCategories.AddRange(tech, empty);
+        YoutubeVideoFeed Feed(string channel, YoutubeCategory? category) => new()
+        {
+            ChannelId = $"UC{token}{channel}",
+            ChannelName = $"Feed {channel}",
+            Url = $"https://{token}{channel}.test.invalid/feed",
+            DateAdded = DateTime.UtcNow,
+            YoutubeCategory = category,
+        };
+        var techFeed = Feed("A", tech);
+        var loose = Feed("B", null);
+        db.YouTubeVideos.AddRange(
+            Video(token, "A", "tech one", new DateTime(2026, 3, 1), feed: techFeed),
+            Video(token, "A", "tech two", new DateTime(2026, 2, 1), feed: techFeed),
+            Video(token, "B", "loose", new DateTime(2026, 1, 1), feed: loose),
+            Video(token, "C", "no feed", new DateTime(2026, 1, 2)));
+        await db.SaveChangesAsync();
+
+        var tabs = await VideosQuery.GetCategoriesAsync(db);
+        var techTab = Assert.Single(tabs, c => c.Name == tech.CategoryName);
+        Assert.Equal(VideosQuery.Slug(tech.CategoryName), techTab.Slug);
+        Assert.DoesNotContain(tabs, c => c.Name == empty.CategoryName);
+        Assert.Equal(VideosQuery.Other, tabs[^1]);
+
+        var inTech = await VideosQuery.GetVideosAsync(db, null, token, category: techTab);
+        Assert.Equal(new[] { "tech one", "tech two" }, inTech.Items.Select(i => i.Title.Split(' ', 3)[2]));
+        Assert.All(inTech.Items, i => Assert.Equal(tech.CategoryName, i.Category));
+        // Uncategorized channels and videos without a channel row stay visible: under Other and under All.
+        var other = await VideosQuery.GetVideosAsync(db, null, token, category: VideosQuery.Other);
+        Assert.Equal(new[] { "no feed", "loose" }, other.Items.Select(i => i.Title.Split(' ', 3)[2]));
+        Assert.All(other.Items, i => Assert.Null(i.Category));
+        Assert.Equal(4, (await VideosQuery.GetVideosAsync(db, null, token)).Total);
+
+        var techChannels = await VideosQuery.GetChannelsAsync(db, techTab);
+        Assert.Contains(techChannels, c => c.ChannelId == $"UC{token}A");
+        Assert.DoesNotContain(techChannels, c => c.ChannelId == $"UC{token}B");
+    }
+
     [Fact]
     public async Task Videos_come_newest_first_and_can_be_filtered_by_channel_and_search()
     {

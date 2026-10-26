@@ -25,6 +25,13 @@ public partial class YoutubeVideoFeed
 
     public DateTime DateAdded { get; set; }
 
+    /// <summary>The channel's category; null until one is assigned (shown under "Other").</summary>
+    public int? YoutubeCategoryId { get; set; }
+
+    [ForeignKey("YoutubeCategoryId")]
+    [InverseProperty("YoutubeVideoFeeds")]
+    public virtual YoutubeCategory? YoutubeCategory { get; set; }
+
     [InverseProperty("YoutubeVideoFeed")]
     public virtual ICollection<YouTubeVideo> YouTubeVideos { get; set; } = new List<YouTubeVideo>();
 }

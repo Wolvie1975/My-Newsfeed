@@ -26,6 +26,8 @@ public partial class WebScraperContext : DbContext
 
     public virtual DbSet<YoutubeVideoFeed> YoutubeVideoFeeds { get; set; }
 
+    public virtual DbSet<YoutubeCategory> YoutubeCategories { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Page>(entity =>

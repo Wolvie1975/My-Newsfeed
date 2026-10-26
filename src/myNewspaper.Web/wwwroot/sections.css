@@ -3287,6 +3287,11 @@ a.tvc-row__show:hover {
     width: 100%;
     min-height: 44px;
 }
+/* Phones: Category above Channel, one under the other. */
+.pub .filters--videos .catselect {
+    display: grid;
+    gap: 10px;
+}
 .pub .video-front .count--inline {
     display: none;
 }
@@ -3363,6 +3368,13 @@ a.tvc-row__show:hover {
 @media (min-width: 744px) {
     .pub .page-heading:has(+ .filters--videos) {
         margin-bottom: 0;
+    }
+    /* Desktop: category pills under the heading (as on Sports and Entertainment headlines); the dropdown is for phones. */
+    .pub .yt-cats {
+        margin: 0 0 16px;
+    }
+    .pub .yt-category-select {
+        display: none;
     }
     .pub .filters--videos {
         display: flex;

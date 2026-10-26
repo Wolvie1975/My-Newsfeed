@@ -1,5 +1,6 @@
 using System.Globalization;
 using Microsoft.EntityFrameworkCore;
+using myNewspaper.Web.Data.Models;
 
 namespace myNewspaper.Web.Data;
 
@@ -12,9 +13,13 @@ public sealed record VideoItem(
     string Url,
     DateTime PublishedAt,
     string? ThumbnailUrl,
-    long? ViewCount);
+    long? ViewCount,
+    string? Category = null);
 
 public sealed record VideoChannel(string ChannelId, string Name);
+
+/// <param name="Slug">The address form of the name ("news-politics"); "other" for channels without a category.</param>
+public sealed record VideoCategory(string Slug, string Name);
 
 /// <param name="Total">Every video matching the filters (the list itself is capped).</param>
 public sealed record VideosPage(IReadOnlyList<VideoItem> Items, int Total);
@@ -31,10 +36,56 @@ public static class VideosQuery
         : !string.IsNullOrWhiteSpace(videoName) ? videoName.Trim()
         : channelId;
 
-    /// <summary>The channels that have videos, alphabetically by their displayed name.</summary>
-    public static async Task<IReadOnlyList<VideoChannel>> GetChannelsAsync(WebScraperContext db)
+    /// <summary>The tab for channels the scraper has not given a category yet.</summary>
+    public static readonly VideoCategory Other = new("other", "Other");
+
+    /// <summary>"News & Politics" → "news-politics": lower-case letters and digits joined by single hyphens.</summary>
+    public static string Slug(string name)
     {
-        var rows = await db.YouTubeVideos.AsNoTracking()
+        var parts = new List<string>();
+        var current = new System.Text.StringBuilder();
+        foreach (var c in name.Trim().ToLowerInvariant())
+        {
+            if (char.IsAsciiLetterOrDigit(c)) current.Append(c);
+            else if (current.Length > 0) { parts.Add(current.ToString()); current.Clear(); }
+        }
+        if (current.Length > 0) parts.Add(current.ToString());
+        return string.Join('-', parts);
+    }
+
+    /// <summary>
+    /// The YouTube category tabs: categories with at least one video, alphabetically, then "Other" when some videos
+    /// have no category (a channel the scraper added but nobody has categorized yet). Never an empty tab.
+    /// </summary>
+    public static async Task<IReadOnlyList<VideoCategory>> GetCategoriesAsync(WebScraperContext db)
+    {
+        var names = await db.YoutubeCategories.AsNoTracking()
+            .Where(c => c.YoutubeVideoFeeds.Any(f => f.YouTubeVideos.Count > 0))
+            .Select(c => c.CategoryName)
+            .ToListAsync();
+        var list = names.Select(n => new VideoCategory(Slug(n), n.Trim()))
+            .Where(c => c.Slug.Length > 0 && c.Slug != Other.Slug)
+            .DistinctBy(c => c.Slug)
+            .OrderBy(c => c.Name, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        if (await Uncategorized(db.YouTubeVideos.AsNoTracking()).AnyAsync()) list.Add(Other);
+        return list;
+    }
+
+    private static IQueryable<YouTubeVideo> Uncategorized(IQueryable<YouTubeVideo> videos) =>
+        videos.Where(v => v.YoutubeVideoFeed == null || v.YoutubeVideoFeed.YoutubeCategoryId == null);
+
+    /// <summary>Keeps the videos in one tab; an unknown or empty tab keeps everything.</summary>
+    private static IQueryable<YouTubeVideo> InCategory(IQueryable<YouTubeVideo> videos, VideoCategory? category) =>
+        category is null ? videos
+        : category == Other ? Uncategorized(videos)
+        : videos.Where(v => v.YoutubeVideoFeed != null && v.YoutubeVideoFeed.YoutubeCategory != null
+            && v.YoutubeVideoFeed.YoutubeCategory.CategoryName == category.Name);
+
+    /// <summary>The channels that have videos (optionally in one category tab), alphabetically by their displayed name.</summary>
+    public static async Task<IReadOnlyList<VideoChannel>> GetChannelsAsync(WebScraperContext db, VideoCategory? category = null)
+    {
+        var rows = await InCategory(db.YouTubeVideos.AsNoTracking(), category)
             .GroupBy(v => v.ChannelId)
             .Select(g => new
             {
@@ -54,11 +105,12 @@ public static class VideosQuery
     public static async Task<DateTime?> GetLastUpdatedAsync(WebScraperContext db) =>
         await db.YouTubeVideos.AsNoTracking().MaxAsync(v => (DateTime?)v.LastSeenAt);
 
-    /// <summary>Newest first. Filters by channel id and by a search over the title and channel name.</summary>
+    /// <summary>Newest first. Filters by category tab, channel id and a search over the title and channel name.</summary>
     public static async Task<VideosPage> GetVideosAsync(
-        WebScraperContext db, string? channelId, string? search, int limit = Limit, int offset = 0)
+        WebScraperContext db, string? channelId, string? search, int limit = Limit, int offset = 0,
+        VideoCategory? category = null)
     {
-        var query = db.YouTubeVideos.AsNoTracking().AsQueryable();
+        var query = InCategory(db.YouTubeVideos.AsNoTracking(), category);
 
         if (!string.IsNullOrWhiteSpace(channelId))
         {
@@ -91,12 +143,14 @@ public static class VideosQuery
                 v.ThumbnailUrl,
                 v.ViewCount,
                 FeedName = v.YoutubeVideoFeed != null ? v.YoutubeVideoFeed.ChannelName : null,
+                Category = v.YoutubeVideoFeed != null && v.YoutubeVideoFeed.YoutubeCategory != null
+                    ? v.YoutubeVideoFeed.YoutubeCategory.CategoryName : null,
             })
             .ToListAsync();
 
         var items = rows.Select(r => new VideoItem(
             r.Id, r.VideoId, r.ChannelId, Name(r.FeedName, r.ChannelName, r.ChannelId), r.Title, r.Url, r.PublishedAt,
-            r.ThumbnailUrl, r.ViewCount)).ToList();
+            r.ThumbnailUrl, r.ViewCount, r.Category?.Trim())).ToList();
         return new VideosPage(items, total);
     }
 
