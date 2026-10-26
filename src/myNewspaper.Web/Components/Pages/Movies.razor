@@ -5,84 +5,110 @@
 @inject NavigationManager Navigation
 
 <PageTitle>Movies · myNewspaper</PageTitle>
-<PageHeading Section="entertainment" Title="Movies" Eyebrow="THE RELEASE CALENDAR" Description="Find your next movie night. US releases in theaters, on streaming, and at home." />
-<p class="updated">@(string.IsNullOrWhiteSpace(Q) ? $"Showing releases from today through the end of {Dates.Today:MMMM yyyy}." : $"Searching all collected release dates for “{QueryText.Term(Q)}”.")</p>
-<MovieViewSelect Selected="@Type" Search="@Q" />
-<p class="updated">All enabled providers · US release calendar, including dates awaiting confirmation.</p>
-<div class="movies-summary">
-    <p class="count">@listing.Total @(listing.Total == 1 ? "release" : "releases")</p>
-</div>
-@if (listing.Updated is { } updated)
-{
-    <p class="updated">Releases last updated @Dates.PublishedFull(updated)</p>
-}
-@if (Type == "theatrical")
-{
-    <a class="nf-btn nf-btn--secondary theater-site-link" href="https://www.amctheatres.com/" target="_blank" rel="noopener noreferrer">
-        <img src="images/brands/amc-theatres.svg" alt="" width="44" height="44" />
-        <span>Visit AMC Theatres <span aria-hidden="true">↗</span></span>
-    </a>
-}
-@if (listing.Items.Count == 0)
-{
-    <section class="movies-empty">
-        <span class="movies-empty__icon" aria-hidden="true">▷</span>
-        <h2>@(Type is null ? "Your next movie night is coming" : "No releases in this view")</h2>
-        <p>@(Type is null ? "No releases are scheduled from today through the end of this month." : "Try another release view or browse other releases this month.")</p>
-        @if (Type is not null) { <a class="nf-btn nf-btn--secondary" href="movies">Browse all releases</a> }
-    </section>
-}
-else
-{
-    @foreach (var group in listing.Items.GroupBy(x => x.Date))
+<PageHeading Section="entertainment" Title="Movies" Eyebrow="The release calendar" Description="" />
+
+@* Release calendar as in the approved concept: a week of US releases, one column per day on desktop and one row per
+   day on phones, with the next releases "Looking ahead". A search lists every collected date for the title instead. *@
+<div class="mv-filters">
+    <nav class="sec-pills sec-pills--desktop" aria-label="Release type">
+        <a href="@ViewHref(null)" aria-current="@(Type is null ? "page" : null)">All releases</a>
+        <a href="@ViewHref("theatrical")" aria-current="@(Type == "theatrical" ? "page" : null)">In theaters</a>
+        <a href="@ViewHref("subscription")" aria-current="@(Type == "subscription" ? "page" : null)">Subscription streaming</a>
+        <a href="movies/digital">Digital rental / purchase</a>
+    </nav>
+    <div class="mv-select"><MovieViewSelect Selected="@Type" Search="@Q" /></div>
+    @if (Type == "theatrical")
     {
-        <section class="movies-day">
-            <h2>@(group.Key is { } day ? FeedDates.LongDate(day) : "Date to be announced")</h2>
-            <ul class="movie-grid">
-                @foreach (var movie in group)
+        <a class="nf-btn nf-btn--secondary theater-site-link" href="https://www.amctheatres.com/" target="_blank" rel="noopener noreferrer">
+            <img src="images/brands/amc-theatres.svg" alt="" width="44" height="44" />
+            <span>Visit AMC Theatres <span aria-hidden="true">↗</span></span>
+        </a>
+    }
+    <span class="mv-updated">US releases@(listing.Updated is { } updated ? " · updated " + Dates.Time(updated) : "")</span>
+</div>
+
+<div class="mv-cols">
+    @if (!string.IsNullOrWhiteSpace(Q))
+    {
+        <section class="mv-week" aria-labelledby="mv-week-title">
+            <div class="ef-head"><h2 id="mv-week-title">Releases for “@QueryText.Term(Q)”</h2><a href="@ViewHref(Type)">Back to this week <span aria-hidden="true">→</span></a></div>
+            @if (listing.Items.Count == 0) { <p class="ef-empty">No collected release dates match this title.</p> }
+            <ul class="mv-list">
+                @foreach (var movie in listing.Items)
                 {
-                    <li class="movie-card">
-                        <MoviePoster Url="@movie.Poster" Title="@movie.Title" Class="movie-poster" />
-                        <div class="movie-body">
-                            <p class="movie-kind">@(MoviesQuery.Types.GetValueOrDefault(movie.Type, movie.Type))</p>
-                            <h3>@movie.Title</h3>
-                            <p class="movie-meta">@string.Join(" · ", new[] { movie.Year?.ToString(), movie.Certification, movie.Runtime is { } runtime ? $"{runtime} min" : null }.Where(x => !string.IsNullOrWhiteSpace(x)))</p>
-                            @if (movie.DateStatus == "estimated") { <p class="movie-meta">Estimated release date</p> }
-                            @if (movie.Platform is not null) { <p class="movie-platform">@movie.Platform</p> }
-                            @if (movie.Format is not null) { <p class="movie-meta">@movie.Format</p> }
-                            @if (movie.ReRelease) { <p class="movie-meta">Re-release</p> }
-                            @if (!string.IsNullOrWhiteSpace(movie.Description)) { <p class="movie-description">@movie.Description</p> }
-                            @if (FeedQuery.SafeHref(movie.SourceUrl) is { } href)
-                            {
-                                <a class="movie-source" href="@href" target="_blank" rel="noopener noreferrer">Details at @movie.Source ↗</a>
-                            }
-                            <MovieCommerceAction Item="movie" />
-                            <a href="@($"watch?kind=movie&q={Uri.EscapeDataString(movie.Title)}")">Find streaming options →</a>
-                        </div>
-                    </li>
+                    <li><span class="mv-list__date">@(movie.Date is { } date ? date.ToString("ddd, MMM d, yyyy", Us) : "Date to be announced")</span>@Release(movie)</li>
                 }
             </ul>
         </section>
     }
-    @if (listing.Total > 50 || page > 1)
+    else
     {
-        <nav class="tv-week" aria-label="Movie pages">
-            @if (page > 1) { <a class="nf-btn nf-btn--secondary" href="@PageHref(page - 1)">← Previous</a> }
-            <span>Page @(page) · @listing.Total releases</span>
-            @if (offset + listing.Items.Count < listing.Total) { <a class="nf-btn nf-btn--secondary" href="@PageHref(page + 1)">Next releases →</a> }
-        </nav>
+        <section class="mv-week" aria-labelledby="mv-week-title">
+            <div class="ef-head">
+                <h2 id="mv-week-title">@(weekStart == CurrentWeekStart ? "This week" : weekStart == CurrentWeekStart.AddDays(7) ? "Next week" : "Week of " + weekStart.ToString("MMM d", Us)) <span class="mv-range">· @RangeLabel</span></h2>
+                <span class="mv-pager">
+                    @if (weekStart > CurrentWeekStart) { <a href="@WeekHref(weekStart.AddDays(-7))"><span aria-hidden="true">←</span> Previous week</a> }
+                    <a href="@WeekHref(weekStart.AddDays(7))">Next week <span aria-hidden="true">→</span></a>
+                </span>
+            </div>
+            <ol class="mv-days">
+                @for (var offset = 0; offset < 7; offset++)
+                {
+                    var day = weekStart.AddDays(offset);
+                    var releases = listing.Items.Where(m => m.Date == day).ToList();
+                    <li class="mv-day @(day == today ? "mv-day--today" : null)">
+                        <h3 class="mv-day__label"><span class="mv-day__dow">@day.ToString("ddd", Us)</span> <span class="mv-day__num">@day.Day</span></h3>
+                        @if (releases.Count == 0) { <p class="mv-day__none">No releases</p> }
+                        else
+                        {
+                            <ul class="mv-day__list">
+                                @foreach (var movie in releases) { <li>@Release(movie)</li> }
+                            </ul>
+                        }
+                    </li>
+                }
+            </ol>
+            <p class="ef-note">@listing.Total @(listing.Total == 1 ? "release" : "releases") this week across enabled providers, including dates awaiting confirmation.</p>
+        </section>
     }
-}
+
+    <aside class="mv-ahead" aria-labelledby="mv-ahead-title">
+        <h2 id="mv-ahead-title" class="ef-label">Looking ahead</h2>
+        @if (ahead.Count == 0) { <p class="ef-empty">No later releases are listed yet.</p> }
+        @foreach (var movie in ahead)
+        {
+            <a class="ef-tv__item" href="@WatchHref(movie)">
+                <MoviePoster Url="@movie.Poster" Title="@movie.Title" Class="ef-poster" />
+                <span><b>@movie.Title</b><span class="ef-where">@(movie.Date?.ToString("ddd, MMM d", Us)) · @Where(movie)</span></span>
+            </a>
+        }
+        <a class="ef-more" href="watch">Find streaming options in Where to watch <span aria-hidden="true">→</span></a>
+    </aside>
+</div>
 
 @code {
-    [SupplyParameterFromQuery(Name = "page")] private string? PageText { get; set; }
+    private static readonly System.Globalization.CultureInfo Us = System.Globalization.CultureInfo.InvariantCulture;
+
     [SupplyParameterFromQuery(Name = "type")] private string? TypeText { get; set; }
-    private string? Type => TypeText is "theatrical" or "subscription" ? TypeText : null;
+    [SupplyParameterFromQuery(Name = "week")] private string? WeekText { get; set; }
     [SupplyParameterFromQuery(Name = "q")] private string? Q { get; set; }
-    private int page;
-    private int offset;
-    private string PageHref(int target) => "movies?page=" + target + (string.IsNullOrWhiteSpace(Q) ? "" : "&q=" + Uri.EscapeDataString(Q)) + (Type is null ? "" : "&type=" + Uri.EscapeDataString(Type));
+    private string? Type => TypeText is "theatrical" or "subscription" ? TypeText : null;
+
+    private DateOnly today, weekStart;
+    private DateOnly CurrentWeekStart => today.AddDays(-(int)today.DayOfWeek);
+    private string RangeLabel => weekStart.Month == weekStart.AddDays(6).Month
+        ? $"{weekStart.ToString("MMM d", Us)}–{weekStart.AddDays(6).Day}"
+        : $"{weekStart.ToString("MMM d", Us)} – {weekStart.AddDays(6).ToString("MMM d", Us)}";
     private MoviesPage listing = new([], 0, [], null);
+    private IReadOnlyList<MovieReleaseItem> ahead = [];
+
+    private string ViewHref(string? type) => "movies" + (type is null ? "" : "?type=" + type);
+    private string WeekHref(DateOnly start) => "movies?" + (Type is null ? "" : "type=" + Type + "&") +
+        (start == CurrentWeekStart ? "" : "week=" + start.ToString("yyyy-MM-dd", Us));
+
+    private static string WatchHref(MovieReleaseItem movie) => $"watch?kind=movie&q={Uri.EscapeDataString(movie.Title)}";
+    private static string Where(MovieReleaseItem movie) => movie.Platform ?? MoviesQuery.Types.GetValueOrDefault(movie.Type, movie.Type);
+
     protected override async Task OnParametersSetAsync()
     {
         if (TypeText == "digital")
@@ -90,14 +116,34 @@ else
             Navigation.NavigateTo("movies/digital", forceLoad: true);
             return;
         }
+        today = Dates.Today;
+        // Weeks run Sunday to Saturday; an unparseable or past week falls back to the current one.
+        weekStart = DateOnly.TryParseExact(WeekText, "yyyy-MM-dd", Us, System.Globalization.DateTimeStyles.None, out var requested)
+            && requested >= CurrentWeekStart
+            ? requested.AddDays(-(int)requested.DayOfWeek)
+            : CurrentWeekStart;
         await using var db = await Factory.CreateDbContextAsync();
-        page = int.TryParse(PageText, out var requested) ? Math.Clamp(requested, 1, 1000000) : 1;
-        offset = (page - 1) * 50;
-        listing = await MoviesQuery.GetAsync(db, Dates.Today, QueryText.Term(Q), Type, null, string.IsNullOrWhiteSpace(Q) ? "month" : "all", offset: offset, take: 50);
-        if (offset >= listing.Total && page > 1)
-        {
-            page = Math.Max(1, (listing.Total + 49) / 50); offset = (page - 1) * 50;
-            listing = await MoviesQuery.GetAsync(db, Dates.Today, QueryText.Term(Q), Type, null, string.IsNullOrWhiteSpace(Q) ? "month" : "all", offset: offset, take: 50);
-        }
+        listing = string.IsNullOrWhiteSpace(Q)
+            ? await MoviesQuery.GetAsync(db, weekStart, null, Type, null, null, take: 200, through: weekStart.AddDays(6))
+            : await MoviesQuery.GetAsync(db, today, QueryText.Term(Q), Type, null, "all", take: 100);
+        ahead = (await MoviesQuery.GetAsync(db, weekStart.AddDays(7), null, Type, null, null, take: 6)).Items
+            .Where(m => m.Date is not null).ToList();
     }
+
+    /// <summary>One release: poster, title (to Where to watch) and where it is showing, with a tickets or rent link.</summary>
+    private RenderFragment Release(MovieReleaseItem movie) => __builder =>
+    {
+        var action = MovieCommerceQuery.Resolve(movie.Title, movie.Type, movie.MovieActionUrl, movie.MovieActionLabel, movie.MovieActionKind);
+        <div class="mv-release">
+            <MoviePoster Url="@movie.Poster" Title="@movie.Title" Class="ef-poster" />
+            <span class="mv-release__text">
+                <a class="mv-release__title" href="@WatchHref(movie)">@movie.Title</a>
+                <span class="mv-release__where">@Where(movie)@(movie.DateStatus == "estimated" ? " · estimated" : "")</span>
+                @if (action is not null)
+                {
+                    <a class="movie-commerce-action mv-release__action" href="@action.Url" target="_blank" rel="noopener noreferrer" aria-label="@(action.Label + " · " + movie.Title)">@action.Label <span aria-hidden="true">↗</span></a>
+                }
+            </span>
+        </div>
+    };
 }

@@ -1,0 +1,270 @@
+@using myNewspaper.Web.Components.Feed
+@inject IDbContextFactory<WebScraperContext> Factory
+@inject FeedDates Dates
+@inject ILogger<EntertainmentFront> Log
+
+@* Entertainment front page as in the approved concept: On screen, then the lead story and latest headlines beside
+   the weekend box office, tonight's TV and Friday's theater releases. Phones get the same sections as cards. *@
+<div class="ef">
+    <section class="ef-screen" aria-labelledby="ef-screen-title">
+        <div class="ef-head"><h2 id="ef-screen-title">On screen</h2><a href="movies">All releases <span aria-hidden="true">→</span></a></div>
+        @if (agendaUnavailable)
+        {
+            <p class="updated" role="status">Schedules are temporarily unavailable. Please try again.</p>
+        }
+        else if (onScreen.Count == 0)
+        {
+            <p class="ef-empty">No movie or tracked TV highlights are listed yet.</p>
+        }
+        else
+        {
+            <ul class="ef-screen__list">
+                @foreach (var item in onScreen)
+                {
+                    <li>
+                        <a class="ef-screen__item" href="@item.Href">
+                            <MoviePoster Url="@item.Poster" Title="@item.Title" Class="ef-poster" />
+                            <span class="ef-screen__text">
+                                <span class="ef-when @(item.Tonight ? "ef-when--tonight" : null)">@item.When</span>
+                                <b class="ef-screen__title">@item.Title</b>
+                                <span class="ef-where">@item.Where</span>
+                            </span>
+                        </a>
+                    </li>
+                }
+            </ul>
+        }
+    </section>
+
+    <div class="ef-cols">
+        <div class="ef-main">
+            @if (newsUnavailable)
+            {
+                <p class="updated" role="status">Headlines are temporarily unavailable. Please try again.</p>
+            }
+            else if (stories.Count == 0)
+            {
+                <p class="ef-empty">No recent stories are available yet.</p>
+            }
+            else
+            {
+                var lead = stories[0];
+                var leadHref = FeedQuery.SafeHref(lead.Url);
+                var leadImage = FeedQuery.SafeHref(lead.ImageUrl);
+                var leadTitle = Title(lead);
+                var leadSummary = FeedText.StripEmoji(FeedQuery.Excerpt(lead.Description));
+                var leadSource = FeedText.SourceName(lead.SourceLabel, lead.SourceUrl);
+                <article class="ef-lead" data-news-url="@leadHref" data-news-source="@leadSource">
+                    @if (leadHref is not null && leadImage is not null)
+                    {
+                        <a class="ef-lead__image" href="@leadHref" target="_blank" rel="noopener noreferrer" tabindex="-1" aria-hidden="true">
+                            <img src="@leadImage" alt="" fetchpriority="high" referrerpolicy="no-referrer" onerror="this.parentElement.remove()" />
+                        </a>
+                    }
+                    <p class="ef-kicker">@(lead.CategoryName ?? "Entertainment") <span aria-hidden="true">·</span> @leadSource</p>
+                    <h2 class="ef-lead__title">
+                        @if (leadHref is not null) { <a href="@leadHref" target="_blank" rel="noopener noreferrer">@leadTitle</a> }
+                        else { @leadTitle }
+                    </h2>
+                    @if (!string.IsNullOrWhiteSpace(leadSummary)) { <p class="ef-lead__summary">@leadSummary</p> }
+                    <div class="ef-meta">
+                        <span class="ef-meta__when">@When(lead)</span>
+                        <ShareButton Url="@lead.Url" Title="@leadTitle" />
+                        <SaveButton Item="lead" Title="@leadTitle" Source="@leadSource" Summary="@leadSummary" />
+                    </div>
+                </article>
+
+                @if (stories.Count > 1)
+                {
+                    <h3 class="ef-label">Latest headlines</h3>
+                    <ul class="ef-headlines">
+                        @foreach (var item in stories.Skip(1))
+                        {
+                            var href = FeedQuery.SafeHref(item.Url);
+                            var title = Title(item);
+                            var source = FeedText.SourceName(item.SourceLabel, item.SourceUrl);
+                            var summary = FeedText.StripEmoji(FeedQuery.Excerpt(item.Description));
+                            <li data-news-url="@href" data-news-source="@source">
+                                @if (!string.IsNullOrWhiteSpace(item.CategoryName)) { <span class="ef-headlines__kicker">@item.CategoryName</span> }
+                                @if (href is not null) { <a class="ef-headlines__title" href="@href" target="_blank" rel="noopener noreferrer">@title</a> }
+                                else { <span class="ef-headlines__title">@title</span> }
+                                <div class="ef-meta">
+                                    <span class="ef-meta__when">@source@(item.Undated ? "" : " · " + Dates.Published(item.Date))</span>
+                                    <ShareButton Url="@item.Url" Title="@title" />
+                                    <SaveButton Item="item" Title="@title" Source="@source" Summary="@summary" />
+                                </div>
+                            </li>
+                        }
+                    </ul>
+                }
+            }
+            <a class="ef-more" href="entertainment/news">All entertainment headlines <span aria-hidden="true">→</span></a>
+        </div>
+
+        <aside class="ef-side">
+            <section class="ef-box" aria-labelledby="ef-box-title">
+                <div class="ef-head">
+                    <h2 id="ef-box-title">@(showResults ? "Weekend box office" : "Next weekend")</h2>
+                    <a href="box-office">Box office <span aria-hidden="true">→</span></a>
+                </div>
+                @if (boxOfficeUnavailable)
+                {
+                    <p class="updated" role="status">Box office is temporarily unavailable. Please try again.</p>
+                }
+                else if (showResults)
+                {
+                    <p class="ef-note">@BoxOfficeChartQuery.WeekendLabel(weekend) · @(boxOffice.Any(m => m.ResultStatus == "final") ? "reported" : "estimates") · The Numbers</p>
+                    @if (boxOffice.Count == 0)
+                    {
+                        <p class="ef-empty">Results for this weekend have not been published yet.</p>
+                    }
+                    else
+                    {
+                        <table class="ef-table">
+                            <thead><tr><th scope="col">#</th><th scope="col">Film</th><th scope="col">Weekend</th><th scope="col" class="ef-table__total">Total</th></tr></thead>
+                            <tbody>
+                                @foreach (var movie in boxOffice)
+                                {
+                                    <tr>
+                                        <td class="ef-table__rank">@movie.Rank</td>
+                                        <th scope="row">@if (movie.MovieUrl is { } url) { <a href="@url" target="_blank" rel="noopener noreferrer">@movie.Title</a> } else { @movie.Title }</th>
+                                        <td>@BoxOfficeChartQuery.Compact(movie.WeekendGross)</td>
+                                        <td class="ef-table__total">@BoxOfficeChartQuery.Compact(movie.TotalDomesticGross)</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                }
+                else
+                {
+                    var preview = forecasts.Movies.Where(f => f.Kind == BoxOfficeForecastQuery.Preview).Take(5).ToList();
+                    @if (preview.Count == 0)
+                    {
+                        <p class="ef-empty">Predictions for next weekend have not been published yet.</p>
+                    }
+                    else
+                    {
+                        <p class="ef-note">@BoxOfficeChartQuery.WeekendLabel(preview[0].TargetDate) · predictions · Boxoffice Pro</p>
+                        <table class="ef-table">
+                            <thead><tr><th scope="col">#</th><th scope="col">Film</th><th scope="col">Predicted</th></tr></thead>
+                            <tbody>
+                                @foreach (var (movie, index) in preview.Select((m, i) => (m, i + 1)))
+                                {
+                                    <tr>
+                                        <td class="ef-table__rank">@(movie.PredictedRank ?? index)</td>
+                                        <th scope="row">@movie.Title</th>
+                                        <td>@BoxOfficeForecastQuery.Range(movie.Low, movie.High)</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                }
+                <p class="ef-links"><a href="box-office/weekend-preview">Weekend predictions <span aria-hidden="true">→</span></a><a href="box-office/movie-forecasts">Forecasts <span aria-hidden="true">→</span></a></p>
+            </section>
+
+            <section class="ef-tv" aria-labelledby="ef-tv-title">
+                <h2 id="ef-tv-title" class="ef-label">Tonight on TV</h2>
+                @if (episodes.Count == 0)
+                {
+                    <p class="ef-empty">No tracked episodes are listed tonight.</p>
+                }
+                @foreach (var episode in episodes.Take(4))
+                {
+                    <a class="ef-tv__item" href="tv">
+                        <MoviePoster Url="@episode.Poster" Title="@episode.SeriesTitle" Class="ef-poster" />
+                        <span><b>@episode.SeriesTitle</b><span class="ef-where">@EpisodeLine(episode)</span></span>
+                    </a>
+                }
+                <a class="ef-more" href="tv">Track a series <span aria-hidden="true">→</span></a>
+            </section>
+
+            @if (theaterFriday is { } friday)
+            {
+                <section class="ef-theaters" aria-labelledby="ef-theaters-title">
+                    <h2 id="ef-theaters-title" class="ef-label">Friday in theaters</h2>
+                    @if (theatrical.Count == 0)
+                    {
+                        <p class="ef-empty">No theater releases announced for @(friday == Dates.TodayAt(nowUtc) ? "today" : "this Friday") yet.</p>
+                    }
+                    @foreach (var movie in theatrical)
+                    {
+                        <a class="ef-tv__item" href="movies?type=theatrical">
+                            <MoviePoster Url="@movie.Poster" Title="@movie.Title" Class="ef-poster" />
+                            <span><b>@movie.Title</b>@if (movie.Certification is { } rating) { <span class="ef-where">@rating</span> }</span>
+                        </a>
+                    }
+                </section>
+            }
+        </aside>
+    </div>
+</div>
+
+@code {
+    private sealed record ScreenItem(string Title, string? Poster, string When, string Where, string Href, bool Tonight);
+
+    private DateTime nowUtc;
+    private IReadOnlyList<FeedItem> stories = [];
+    private IReadOnlyList<ScreenItem> onScreen = [];
+    private IReadOnlyList<TvEpisodeItem> episodes = [];
+    private IReadOnlyList<MovieReleaseItem> theatrical = [];
+    private DateOnly? theaterFriday;
+    private IReadOnlyList<BoxOfficeMovie> boxOffice = [];
+    private BoxOfficeForecastSnapshot forecasts = new([], []);
+    private bool showResults, newsUnavailable, agendaUnavailable, boxOfficeUnavailable;
+    private DateOnly weekend;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        nowUtc = DateTime.UtcNow;
+        var today = Dates.TodayAt(nowUtc);
+        newsUnavailable = agendaUnavailable = boxOfficeUnavailable = false;
+        await using var db = await Factory.CreateDbContextAsync();
+
+        try { stories = await FeedQuery.GetHomeNewsAsync(db, 7, "entertainment"); }
+        catch (Exception ex) when (DataFailures.IsReadFailure(ex))
+        { newsUnavailable = true; stories = []; Log.LogError(ex, "Could not read entertainment headlines."); }
+
+        // On screen: tonight's tracked episodes first, then the next releases, four in all.
+        try
+        {
+            episodes = await TvQuery.GetOnDateAsync(db, Dates, today);
+            var movies = (await MoviesQuery.GetAsync(db, today, null, null, null, null, take: 4)).Items;
+            onScreen = episodes.Take(2)
+                .Select(e => new ScreenItem(e.SeriesTitle, e.Poster,
+                    "Tonight" + (e.StartsUtc is { } start ? " · " + Dates.Time(start) : ""), EpisodeWhere(e), "tv", true))
+                .Concat(movies.Select(m => new ScreenItem(m.Title, m.Poster,
+                    m.Date?.ToString("ddd, MMM d", System.Globalization.CultureInfo.InvariantCulture) ?? "Date to be announced",
+                    m.Platform ?? MoviesQuery.Types.GetValueOrDefault(m.Type, m.Type), "movies", false)))
+                .Take(4).ToList();
+            theaterFriday = MoviesQuery.HomeTheatricalFriday(today);
+            theatrical = await MoviesQuery.GetFridayTheatricalAsync(db, today);
+        }
+        catch (Exception ex) when (DataFailures.IsReadFailure(ex))
+        { agendaUnavailable = true; onScreen = []; episodes = []; theatrical = []; Log.LogError(ex, "Could not read entertainment schedules."); }
+
+        showResults = HomeBoxOfficeSchedule.ShowResults(today);
+        weekend = HomeBoxOfficeSchedule.ResultsWeekend(today);
+        try
+        {
+            if (showResults) boxOffice = (await BoxOfficeChartQuery.GetAsync(db, weekend)).Take(5).ToList();
+            else forecasts = await BoxOfficeForecastQuery.GetAsync(db, today);
+        }
+        catch (Exception ex) when (DataFailures.IsReadFailure(ex))
+        { boxOfficeUnavailable = true; boxOffice = []; Log.LogError(ex, "Could not read entertainment box office."); }
+    }
+
+    private static string Title(FeedItem item) => FeedText.StripEmoji(item.Title) is { Length: > 0 } title ? title : item.Title;
+
+    private string When(FeedItem item) => item.Undated ? "" : $"{Dates.Published(item.Date)} · {Dates.Time(item.Date)}";
+
+    private static string EpisodeWhere(TvEpisodeItem episode) =>
+        string.Join(" · ", new[] { episode.Platform, EpisodeCode(episode) }.Where(part => !string.IsNullOrEmpty(part)));
+
+    private string EpisodeLine(TvEpisodeItem episode) =>
+        string.Join(" · ", new[] { EpisodeWhere(episode), episode.StartsUtc is { } start ? Dates.Time(start) : null }.Where(part => !string.IsNullOrEmpty(part)));
+
+    private static string? EpisodeCode(TvEpisodeItem episode) =>
+        episode.Season is { } season ? $"S{season:00}" + (episode.Number is { } number ? $" E{number:00}" : "") : null;
+}

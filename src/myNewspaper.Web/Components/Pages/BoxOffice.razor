@@ -8,59 +8,66 @@
 @inject ILogger<BoxOffice> Log
 
 <PageTitle>@Title · myNewspaper</PageTitle>
-<PageHeading Section="entertainment" Title="Domestic box office" Eyebrow="RESULTS &amp; FORECASTS" Description="Reported weekend totals from The Numbers and upcoming predictions from Boxoffice Pro." />
-<form class="catselect" method="get" action="box-office">
-    <label class="sr-only" for="box-office-view">Box office section</label>
-    <select id="box-office-view" name="view" onchange="this.form.requestSubmit()">
-        <option value="results" selected="@(view == "results")">Weekend results — Top 10</option>
-        <option value="weekend-preview" selected="@(view == "weekend-preview")">Upcoming weekend preview — Predictions</option>
-        <option value="movie-forecasts" selected="@(view == "movie-forecasts")">Upcoming movie forecasts — Predictions</option>
-    </select>
-    <noscript><button class="nf-btn nf-btn--secondary" type="submit">Apply</button></noscript>
-</form>
+<PageHeading Section="entertainment" Title="Box office" Eyebrow="Results &amp; forecasts" Description="" />
+
+@* Box office as in the approved concept: three views as pills (a segmented control on phones); results are an agate
+   table on desktop and two-line rows on phones. *@
+<nav class="sec-pills bo-views" aria-label="Box office section">
+    <a href="box-office" aria-current="@(view == "results" ? "page" : null)"><span class="bo-views__long">Weekend results · Top 10</span><span class="bo-views__short">Results</span></a>
+    <a href="box-office/weekend-preview" aria-current="@(view == "weekend-preview" ? "page" : null)"><span class="bo-views__long">Next weekend · predictions</span><span class="bo-views__short">Next weekend</span></a>
+    <a href="box-office/movie-forecasts" aria-current="@(view == "movie-forecasts" ? "page" : null)"><span class="bo-views__long">Upcoming movie forecasts</span><span class="bo-views__short">Forecasts</span></a>
+</nav>
 @if (view == "results")
 {
-    <h2>Weekend results — Top 10</h2>
+    <section class="bo-results" aria-labelledby="bo-title">
     @if (failed)
     {
+        <h2 id="bo-title" class="sr-only">Weekend results</h2>
         <p class="empty" role="status">Box-office totals are temporarily unavailable. <a href="box-office">Try again</a></p>
     }
     else if (movies.Count == 0)
     {
+        <h2 id="bo-title" class="sr-only">Weekend results</h2>
         <p class="empty">No weekend box-office chart is available yet. <a href="box-office">Check again</a></p>
     }
     else
     {
         var friday = movies[0].WeekendStart;
-        <h3 class="boxoffice-weekend">@BoxOfficeChartQuery.WeekendLabel(friday)</h3>
+        var reported = movies.Any(m => m.ResultStatus == "final");
+        <div class="bo-head">
+            <h2 id="bo-title">@BoxOfficeChartQuery.WeekendLabel(friday) <span class="bo-head__scope">· domestic</span></h2>
+            <span class="mv-updated">@(reported ? "Reported" : "Estimates") from @if (movies[0].SourceUrl is { } source) { <a href="@source" target="_blank" rel="noopener noreferrer">The Numbers</a> } else { <span>The Numbers</span> }@(predictions.Count > 0 ? " · predictions from Boxoffice Pro" : "") · checked @Dates.Time(movies.Min(m => m.FetchedAt))</span>
+        </div>
         @if (BoxOfficeChartQuery.IsStale(friday, Dates.Today))
         { <p class="standing-status" role="status">This chart may be out of date; showing the last available weekend.</p> }
-        <ol class="boxoffice-chart" aria-label="Domestic weekend box-office top ten">
-            @foreach (var movie in movies)
-            {
-                <li class="boxoffice-movie" @key="movie.Rank">
-                    <span class="boxoffice-rank" aria-label="@($"Rank {movie.Rank}")">@movie.Rank</span>
-                    <MoviePoster Url="@movie.PosterUrl" Title="@movie.Title" Class="boxoffice-poster" />
-                    <div class="boxoffice-movie-body">
-                        <h3>@if (movie.MovieUrl is { } url) { <a href="@url" target="_blank" rel="noopener noreferrer">@movie.Title</a> } else { @movie.Title }</h3>
-                        <dl class="boxoffice-stats">
-                            <div><dt>Weekend · @BoxOfficeChartQuery.StatusLabel(movie.ResultStatus)</dt><dd>@BoxOfficeChartQuery.Money(movie.WeekendGross)</dd></div>
-                            <div><dt>Total domestic</dt><dd>@BoxOfficeChartQuery.Money(movie.TotalDomesticGross)</dd></div>
-                            <div><dt>Weekly change</dt><dd>@BoxOfficeChartQuery.Change(movie.WeeklyChangePercent)</dd></div>
-                            @if (predictions.TryGetValue(BoxOfficeForecastQuery.TitleKey(movie.Title), out var predicted))
-                            {
-                                <div class="boxoffice-predicted"><dt>Predicted</dt><dd>@BoxOfficeForecastQuery.Range(predicted.Low, predicted.High)</dd></div>
-                            }
-                        </dl>
-                        <BoxOfficeResultEvidence Movie="movie" />
-                    </div>
-                </li>
-            }
-        </ol>
-        <p class="updated">Source: @if (movies[0].SourceUrl is { } source) { <a href="@source" target="_blank" rel="noopener noreferrer">The Numbers</a> } else { <span>The Numbers</span> } · Last checked @Dates.PublishedFull(movies.Min(m => m.FetchedAt))</p>
-        <p class="updated">Final means provider-reported actuals; totals may still be revised. — means weekly change is unavailable or the movie is new.</p>
+        <table class="bo-table" aria-label="Domestic weekend box-office top ten">
+            <thead>
+                <tr><th scope="col">#</th><th scope="col">Film</th><th scope="col">Weekend</th><th scope="col">Predicted</th><th scope="col">Change</th><th scope="col">Total domestic</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var movie in movies)
+                {
+                    var isNew = movie.WeeklyChangePercent is null && movie.TotalDomesticGross == movie.WeekendGross;
+                    var change = BoxOfficeChartQuery.Change(movie.WeeklyChangePercent);
+                    predictions.TryGetValue(BoxOfficeForecastQuery.TitleKey(movie.Title), out var predicted);
+                    <tr @key="movie.Rank">
+                        <td class="bo-table__rank" aria-label="@($"Rank {movie.Rank}")">@movie.Rank</td>
+                        <th scope="row" class="bo-table__film">
+                            @if (movie.MovieUrl is { } url) { <a href="@url" target="_blank" rel="noopener noreferrer">@movie.Title</a> } else { @movie.Title }
+                            @if (isNew) { <span class="bo-new">New</span> }
+                            <span class="bo-table__total-inline">Total @BoxOfficeChartQuery.Compact(movie.TotalDomesticGross)</span>
+                        </th>
+                        <td class="bo-table__weekend" title="@BoxOfficeChartQuery.Money(movie.WeekendGross)">@BoxOfficeChartQuery.Compact(movie.WeekendGross)<span class="sr-only"> · @BoxOfficeChartQuery.StatusLabel(movie.ResultStatus)</span></td>
+                        <td class="bo-table__predicted">@(predicted is null ? "—" : BoxOfficeForecastQuery.Range(predicted.Low, predicted.High))</td>
+                        <td class="bo-table__change @(change.StartsWith('+') ? "bo-up" : change.StartsWith('-') ? "bo-down" : null)">@change</td>
+                        <td class="bo-table__total" title="@BoxOfficeChartQuery.Money(movie.TotalDomesticGross)">@BoxOfficeChartQuery.Compact(movie.TotalDomesticGross)</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <p class="ef-note">Weekend figures are estimates until finals are reported; totals may still be revised. — means the change is unavailable or the film is new.</p>
     }
-
+    </section>
 }
 else
 {

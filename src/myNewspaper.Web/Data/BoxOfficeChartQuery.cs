@@ -19,6 +19,13 @@ public static class BoxOfficeChartQuery
         _ => "Reported totals"
     };
     public static string Money(long value) => value.ToString("C0", Us);
+    /// <summary>Short money for agate tables: "$19.5M", "$718K", "$950".</summary>
+    public static string Compact(long value) => value switch
+    {
+        >= 1_000_000 => "$" + (value / 1_000_000m).ToString("0.#", Us) + "M",
+        >= 1_000 => "$" + (value / 1_000m).ToString("0", Us) + "K",
+        _ => value.ToString("C0", Us),
+    };
     public static string Change(decimal? value) => value is { } change ? change.ToString("+0.##;-0.##;0", Us) + "%" : "—";
     public static bool IsStale(DateOnly friday, DateOnly today) => today.DayNumber - friday.DayNumber > 10;
     public static string WeekendLabel(DateOnly friday) => friday.Year != friday.AddDays(2).Year

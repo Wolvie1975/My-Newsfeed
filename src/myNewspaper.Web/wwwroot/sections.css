@@ -1,0 +1,1615 @@
+/* Section pages rebuilt to the approved concept boards (October 2026). Loaded after broadsheet.css.
+   Phones: white cards on the grey ground. From 1024px: ruled newspaper columns on the paper. */
+
+/* ---------- Shared pieces ---------- */
+.pub .ef-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+.pub .ef-head h2 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 800;
+}
+.pub .ef-head a,
+.pub .ef-more,
+.pub .ef-links a {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    min-height: 44px;
+    color: var(--accent);
+    font-size: 14px;
+    font-weight: 700;
+    text-decoration: none;
+}
+.pub .ef-label {
+    margin: 0;
+    padding-bottom: 4px;
+    border-bottom: 2px solid var(--text);
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+.pub .ef-empty,
+.pub .ef-note {
+    margin: 4px 0 0;
+    color: var(--text-2);
+    font-size: 13px;
+}
+.pub .ef-poster {
+    position: relative;
+    flex: none;
+    width: 44px;
+    aspect-ratio: 2 / 3;
+    overflow: hidden;
+    border-radius: 6px;
+    background: var(--ph-bg, #2b3a55);
+}
+.pub .ef-poster img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.pub .ef-when {
+    display: block;
+    color: var(--accent);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+.pub .ef-when--tonight {
+    color: var(--live, #b0001e);
+}
+:root[data-theme='dark'] .pub .ef-when--tonight {
+    color: #ff8a99;
+}
+.pub .ef-where {
+    display: block;
+    color: var(--text-2);
+    font-size: 12px;
+}
+.pub .ef-meta {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+.pub .ef-meta__when {
+    flex: 1 1 auto;
+    min-width: 0;
+    color: var(--text-2);
+    font-size: 12px;
+}
+
+/* ---------- Entertainment front ---------- */
+.pub .ef {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+.pub .ef-screen,
+.pub .ef-lead,
+.pub .ef-headlines,
+.pub .ef-box,
+.pub .ef-tv,
+.pub .ef-theaters {
+    padding: 12px 16px;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: var(--surface);
+}
+.pub .ef-screen__list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+.pub .ef-screen__item,
+.pub .ef-tv__item {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr);
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0;
+    border-top: 1px solid var(--row-border);
+    color: var(--text);
+    text-decoration: none;
+}
+.pub .ef-screen__title,
+.pub .ef-tv__item b {
+    display: block;
+    font-size: 15px;
+}
+.pub .ef-cols,
+.pub .ef-main,
+.pub .ef-side {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+.pub .ef-lead {
+    padding: 0 0 6px;
+    overflow: hidden;
+}
+.pub .ef-lead > :not(.ef-lead__image) {
+    margin-left: 16px;
+    margin-right: 16px;
+}
+.pub .ef-lead__image {
+    display: block;
+    height: 170px;
+    margin-bottom: 12px;
+    background: var(--ph-bg, #1c3355);
+}
+.pub .ef-lead__image img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.pub .ef-kicker {
+    margin: 12px 0 0;
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 700;
+}
+.pub .ef-lead__image + .ef-kicker {
+    margin-top: 0;
+}
+.pub .ef-lead__title {
+    margin: 6px 0 4px;
+    font-family: var(--font-serif);
+    font-size: 24px;
+    font-weight: 800;
+    line-height: 1.12;
+}
+.pub .ef-lead__title a,
+.pub .ef-headlines__title,
+.pub .ef-table a {
+    color: var(--text);
+    text-decoration: none;
+}
+.pub .ef-lead__title a:hover,
+.pub .ef-headlines__title:hover,
+.pub .ef-table a:hover {
+    color: var(--accent);
+    text-decoration: underline;
+}
+.pub .ef-lead__summary {
+    display: none;
+}
+.pub .ef-main > .ef-label {
+    display: none;
+}
+.pub .ef-headlines {
+    margin: 0;
+    padding: 4px 16px;
+    list-style: none;
+}
+.pub .ef-headlines li {
+    padding: 8px 0 0;
+    border-bottom: 1px solid var(--row-border);
+}
+.pub .ef-headlines li:last-child {
+    border-bottom: 0;
+}
+.pub .ef-headlines__kicker {
+    display: none;
+}
+.pub .ef-headlines__title {
+    display: block;
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.35;
+}
+.pub .ef-main > .ef-more {
+    align-self: flex-start;
+}
+.pub .ef-table {
+    width: 100%;
+    margin-top: 4px;
+    border-collapse: collapse;
+    font-size: 15px;
+    font-variant-numeric: tabular-nums;
+}
+.pub .ef-table thead {
+    display: none;
+}
+.pub .ef-table th,
+.pub .ef-table td {
+    padding: 9px 0;
+    border-top: 1px solid var(--row-border);
+    text-align: right;
+    vertical-align: baseline;
+}
+.pub .ef-table th[scope='row'] {
+    padding-right: 8px;
+    font-weight: 500;
+    text-align: left;
+}
+.pub .ef-table__rank {
+    width: 26px;
+    padding-right: 6px;
+    color: var(--accent);
+    font-family: var(--font-serif);
+    font-size: 18px;
+    font-weight: 800;
+    text-align: left !important;
+}
+.pub .ef-table__total {
+    display: none;
+}
+.pub .ef-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 16px;
+    margin: 0;
+}
+.pub .ef-tv .ef-label,
+.pub .ef-theaters .ef-label {
+    margin-bottom: 4px;
+    padding: 0;
+    border: 0;
+    font-size: 18px;
+    letter-spacing: 0;
+    text-transform: none;
+}
+/* On phones tonight's episodes already lead On screen. */
+@media (max-width: 1023px) {
+    .pub .ef-tv {
+        display: none;
+    }
+}
+
+/* Desktop: On screen across the top, then the lead and headlines beside a ruled side column. */
+@media (min-width: 1024px) {
+    .pub .ef {
+        gap: 0;
+    }
+    .pub .ef-screen,
+    .pub .ef-lead,
+    .pub .ef-headlines,
+    .pub .ef-box,
+    .pub .ef-tv,
+    .pub .ef-theaters {
+        padding: 0;
+        border: 0;
+        border-radius: 0;
+        background: none;
+    }
+    .pub .ef-screen {
+        padding: 2px 0 18px;
+        border-bottom: 1px solid var(--text);
+    }
+    .pub .ef-screen .ef-head h2 {
+        font-family: var(--font-serif);
+        font-size: 26px;
+        font-weight: 700;
+    }
+    .pub .ef-screen__list {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 18px;
+        margin-top: 4px;
+    }
+    .pub .ef-screen__item {
+        grid-template-columns: 64px minmax(0, 1fr);
+        padding: 0;
+        border: 0;
+    }
+    .pub .ef-screen__item .ef-poster {
+        width: 64px;
+    }
+    .pub .ef-screen__item .ef-when {
+        font-size: 12px;
+    }
+    .pub .ef-screen__title {
+        margin-top: 2px;
+        font-size: 17px;
+    }
+    .pub .ef-screen__item .ef-where {
+        margin-top: 2px;
+        font-size: 13px;
+    }
+    .pub .ef-cols {
+        display: grid;
+        grid-template-columns: minmax(0, 2fr) minmax(300px, 1fr);
+        gap: 0;
+        padding-top: 20px;
+    }
+    .pub .ef-main {
+        gap: 0;
+        padding-right: 28px;
+        border-right: 1px solid var(--row-border);
+    }
+    .pub .ef-side {
+        gap: 26px;
+        padding-left: 28px;
+    }
+    .pub .ef-lead > :not(.ef-lead__image) {
+        margin-left: 0;
+        margin-right: 0;
+    }
+    .pub .ef-lead__image {
+        height: 300px;
+        margin: 0;
+    }
+    .pub .ef-kicker,
+    .pub .ef-lead__image + .ef-kicker {
+        margin-top: 12px;
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+    }
+    .pub .ef-lead__title {
+        margin: 6px 0 8px;
+        font-size: 40px;
+        line-height: 1.08;
+    }
+    .pub .ef-lead__summary {
+        display: block;
+        margin: 0;
+        color: var(--text-2);
+        font-family: var(--font-serif);
+        font-size: 19px;
+        line-height: 1.5;
+    }
+    .pub .ef-lead .ef-meta {
+        margin-top: 8px;
+    }
+    .pub .ef-lead .ef-meta__when {
+        font-size: 13px;
+    }
+    .pub .ef-main > .ef-label {
+        display: block;
+        margin-top: 20px;
+    }
+    .pub .ef-headlines {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        column-gap: 24px;
+        padding: 0;
+    }
+    .pub .ef-headlines li,
+    .pub .ef-headlines li:last-child {
+        padding: 12px 0 4px;
+        border-bottom: 1px solid var(--row-border);
+    }
+    .pub .ef-headlines__kicker {
+        display: block;
+        color: var(--accent);
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+    .pub .ef-headlines__title {
+        margin-top: 3px;
+        font-family: var(--font-serif);
+        font-size: 19px;
+        font-weight: 700;
+        line-height: 1.22;
+    }
+    .pub .ef-main > .ef-more {
+        margin-top: 8px;
+    }
+    .pub .ef-box .ef-head h2 {
+        font-family: var(--font-serif);
+        font-size: 28px;
+    }
+    .pub .ef-box .ef-note {
+        margin: 0 0 8px;
+        font-size: 12px;
+    }
+    .pub .ef-table {
+        font-size: 14px;
+    }
+    .pub .ef-table thead {
+        display: table-header-group;
+    }
+    .pub .ef-table thead th {
+        padding: 4px 0;
+        border-top: 0;
+        border-bottom: 2px solid var(--text);
+        color: var(--text-2);
+        font-size: 11px;
+        font-weight: 800;
+        text-transform: uppercase;
+    }
+    .pub .ef-table thead th:nth-child(2) {
+        text-align: left;
+    }
+    .pub .ef-table tbody th,
+    .pub .ef-table tbody td {
+        padding: 8px 0;
+        border-top: 0;
+        border-bottom: 1px dotted var(--row-border);
+    }
+    .pub .ef-table tbody th {
+        font-weight: 600;
+    }
+    .pub .ef-table__rank {
+        font-family: inherit;
+        font-size: 14px;
+        color: var(--text);
+    }
+    .pub .ef-table__total {
+        display: table-cell;
+        padding-left: 10px !important;
+        color: var(--text-2);
+    }
+    .pub .ef-tv .ef-label,
+    .pub .ef-theaters .ef-label {
+        padding-bottom: 4px;
+        border-bottom: 2px solid var(--text);
+        font-size: 12px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+    }
+    .pub .ef-tv__item {
+        grid-template-columns: 60px minmax(0, 1fr);
+        padding: 8px 0;
+        border: 0;
+    }
+    .pub .ef-tv__item .ef-poster {
+        width: 60px;
+    }
+    .pub .ef-tv__item b {
+        font-size: 16px;
+    }
+    .pub .ef-tv__item .ef-where {
+        margin-top: 2px;
+        font-size: 13px;
+    }
+}
+
+/* ---------- Section page headings (all section pages) ---------- */
+/* The concepts show the eyebrow on phones too, in small capitals above the serif title. */
+.pub .page-heading .page-eyebrow {
+    display: block;
+    margin: 0;
+    font-size: 11px;
+    text-transform: uppercase;
+}
+@media (min-width: 1024px) {
+    .pub .page-heading .page-eyebrow {
+        font-size: 12px;
+    }
+    .pub .ef-table thead th:first-child {
+        text-align: left;
+    }
+}
+
+/* ---------- Filter pills (Movies, Digital releases, Box office) ---------- */
+/* Desktop: rounded pills, the current one filled. Phones: a segmented control, or hidden in favour of the page's
+   dropdown when there are more than three choices (--desktop). */
+.pub .sec-pills {
+    display: grid;
+    grid-auto-columns: minmax(0, 1fr);
+    grid-auto-flow: column;
+    padding: 4px;
+    border-radius: 12px;
+    background: var(--pill-bg);
+}
+.pub .sec-pills a {
+    display: grid;
+    place-items: center;
+    min-height: 44px;
+    padding: 0 6px;
+    border-radius: 9px;
+    color: var(--text-2);
+    font-size: 13px;
+    font-weight: 600;
+    text-align: center;
+    text-decoration: none;
+}
+.pub .sec-pills a[aria-current='page'] {
+    background: var(--surface);
+    color: var(--text);
+    font-weight: 800;
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.12);
+}
+.pub .sec-pills--desktop {
+    display: none;
+}
+@media (min-width: 1024px) {
+    .pub .sec-pills,
+    .pub .sec-pills--desktop {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 0;
+        background: none;
+    }
+    .pub .sec-pills a {
+        display: flex;
+        min-height: 44px;
+        padding: 0 14px;
+        border: 1px solid var(--row-border);
+        border-radius: 999px;
+        color: var(--text);
+        font-size: 14px;
+        font-weight: 700;
+    }
+    .pub .sec-pills a[aria-current='page'] {
+        border-color: var(--text);
+        background: var(--text);
+        color: var(--surface);
+        box-shadow: none;
+    }
+}
+
+/* ---------- Movies: the release calendar ---------- */
+.pub .mv-filters {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.pub .mv-select .catselect {
+    margin: 0;
+}
+.pub .mv-select select {
+    width: 100%;
+    min-height: 44px;
+}
+.pub .mv-updated,
+.pub .mv-range {
+    color: var(--text-2);
+    font-size: 13px;
+    font-weight: 400;
+}
+.pub .mv-cols {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-top: 14px;
+}
+.pub .mv-week,
+.pub .mv-ahead {
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: var(--surface);
+}
+.pub .mv-week .ef-head {
+    flex-wrap: wrap;
+}
+.pub .mv-pager {
+    display: flex;
+    gap: 14px;
+}
+.pub .mv-pager a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    color: var(--accent);
+    font-size: 14px;
+    font-weight: 700;
+    text-decoration: none;
+}
+.pub .mv-days,
+.pub .mv-day__list,
+.pub .mv-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+.pub .mv-day {
+    display: grid;
+    grid-template-columns: 54px minmax(0, 1fr);
+    gap: 10px;
+    align-items: start;
+    min-height: 48px;
+    padding: 8px 0;
+    border-top: 1px solid var(--row-border);
+}
+.pub .mv-day__label {
+    margin: 0;
+    padding-top: 4px;
+    color: var(--text-2);
+    font-size: 13px;
+    font-weight: 800;
+}
+.pub .mv-day--today .mv-day__label {
+    color: var(--accent);
+}
+.pub .mv-day__none {
+    margin: 0;
+    padding-top: 4px;
+    color: var(--text-3, var(--text-2));
+    font-size: 13px;
+}
+.pub .mv-day__list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.pub .mv-release {
+    display: grid;
+    grid-template-columns: 40px minmax(0, 1fr);
+    gap: 10px;
+    align-items: start;
+}
+.pub .mv-release .ef-poster {
+    width: 40px;
+}
+.pub .mv-release__title {
+    display: block;
+    color: var(--text);
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.25;
+    text-decoration: none;
+}
+.pub .mv-release__title:hover {
+    color: var(--accent);
+    text-decoration: underline;
+}
+.pub .mv-release__where {
+    display: block;
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 700;
+}
+.pub .mv-release__action {
+    display: inline-flex;
+    align-items: center;
+    min-height: 32px;
+    color: var(--text-2);
+    font-size: 12px;
+    font-weight: 600;
+}
+.pub .mv-list li {
+    display: grid;
+    gap: 6px;
+    padding: 10px 0;
+    border-top: 1px solid var(--row-border);
+}
+.pub .mv-list__date {
+    color: var(--text-2);
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+.pub .mv-ahead .ef-label {
+    padding: 0;
+    border: 0;
+    font-size: 18px;
+    letter-spacing: 0;
+    text-transform: none;
+}
+
+@media (min-width: 1024px) {
+    .pub .mv-filters {
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px 18px;
+        padding: 0 0 16px;
+        border-bottom: 1px solid var(--text);
+    }
+    .pub .mv-select {
+        display: none;
+    }
+    .pub .mv-updated {
+        margin-left: auto;
+    }
+    .pub .mv-cols {
+        display: grid;
+        grid-template-columns: minmax(0, 3fr) minmax(280px, 1fr);
+        gap: 0;
+        margin-top: 0;
+        padding-top: 20px;
+    }
+    .pub .mv-week,
+    .pub .mv-ahead {
+        padding: 0;
+        border: 0;
+        border-radius: 0;
+        background: none;
+    }
+    .pub .mv-week {
+        padding-right: 28px;
+        border-right: 1px solid var(--row-border);
+    }
+    .pub .mv-ahead {
+        padding-left: 28px;
+    }
+    .pub .mv-week .ef-head {
+        margin-bottom: 12px;
+    }
+    .pub .mv-week .ef-head h2 {
+        font-family: var(--font-serif);
+        font-size: 30px;
+    }
+    .pub .mv-pager a {
+        padding: 0 14px;
+        border: 1px solid var(--field-border, var(--row-border));
+        border-radius: 10px;
+        color: var(--text);
+    }
+    .pub .mv-days {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        border-top: 2px solid var(--text);
+    }
+    .pub .mv-day {
+        display: block;
+        min-height: 240px;
+        padding: 10px 8px;
+        border-top: 0;
+        border-right: 1px solid var(--row-border);
+        border-bottom: 1px solid var(--row-border);
+    }
+    .pub .mv-day:last-child {
+        border-right: 0;
+    }
+    .pub .mv-day--today {
+        background: color-mix(in srgb, var(--accent) 5%, var(--surface));
+    }
+    .pub .mv-day__label {
+        display: flex;
+        flex-direction: column;
+        padding: 0;
+    }
+    .pub .mv-day__dow {
+        font-size: 11px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+    .pub .mv-day__num {
+        color: var(--text);
+        font-family: var(--font-serif);
+        font-size: 26px;
+        line-height: 1.1;
+    }
+    .pub .mv-day__list {
+        gap: 12px;
+        margin-top: 8px;
+    }
+    .pub .mv-release {
+        grid-template-columns: 32px minmax(0, 1fr);
+        gap: 8px;
+    }
+    .pub .mv-release .ef-poster {
+        width: 32px;
+    }
+    .pub .mv-release__action {
+        min-height: 0;
+        margin-top: 2px;
+        font-size: 11px;
+        line-height: 1.25;
+    }
+    .pub .mv-release__title {
+        font-size: 13px;
+        line-height: 1.2;
+    }
+    .pub .mv-release__where {
+        font-size: 11px;
+    }
+    .pub .mv-ahead .ef-label {
+        padding-bottom: 4px;
+        border-bottom: 2px solid var(--text);
+        font-size: 12px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+    }
+    .pub .mv-ahead .ef-tv__item {
+        grid-template-columns: 48px minmax(0, 1fr);
+        border-top: 0;
+        border-bottom: 1px dotted var(--row-border);
+    }
+    .pub .mv-ahead .ef-poster {
+        width: 48px;
+    }
+}
+:root:is([data-color-scheme], :not([data-color-scheme])) .pub .mv-release__action {
+    display: block;
+    width: auto;
+    padding: 0;
+    border: 0;
+    background: none;
+    text-align: left;
+    text-decoration: none;
+}
+
+/* ---------- TV & Streaming: the episode calendar ---------- */
+.pub .tvc-jump {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+.pub .tvc-jump a {
+    white-space: nowrap;
+    display: grid;
+    place-items: center;
+    min-height: 44px;
+    border: 1px solid var(--field-border, var(--row-border));
+    border-radius: 10px;
+    background: var(--surface);
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 700;
+    text-decoration: none;
+}
+.pub .tvc-cols {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-top: 14px;
+}
+.pub .tvc-week > .ef-head {
+    display: none;
+}
+.pub .tvc-week {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.pub .tvc-day,
+.pub .tvc-tracked {
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: var(--surface);
+}
+.pub .tvc-day .ef-label {
+    padding: 0;
+    border: 0;
+    font-size: 15px;
+    letter-spacing: 0;
+    text-transform: none;
+}
+.pub .tvc-list,
+.pub .tvc-tracked__list,
+.pub .tvc-batch ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+.pub .tvc-row {
+    display: grid;
+    grid-template-columns: 52px minmax(0, 1fr);
+    gap: 12px;
+    align-items: start;
+    padding: 10px 0;
+    border-top: 1px solid var(--row-border);
+}
+.pub .tvc-row .ef-poster {
+    width: 52px;
+}
+.pub .tvc-row__net {
+    display: block;
+    color: var(--accent);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+.pub .tvc-row__show {
+    display: block;
+    color: var(--text);
+    font-size: 16px;
+    font-weight: 700;
+    text-decoration: none;
+}
+a.tvc-row__show:hover {
+    color: var(--accent);
+    text-decoration: underline;
+}
+.pub .tvc-row__time {
+    display: none;
+}
+.pub .tvc-batch summary {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    color: var(--accent);
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+}
+.pub .tvc-batch li {
+    padding: 4px 0;
+    font-size: 13px;
+}
+.pub .tvc-tracked .ef-label {
+    padding: 0;
+    border: 0;
+    font-size: 18px;
+    letter-spacing: 0;
+    text-transform: none;
+}
+.pub .tvc-tracked__list a {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    min-height: 44px;
+    border-bottom: 1px dotted var(--row-border);
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+}
+.pub .tvc-tracked__list a[aria-current] {
+    color: var(--accent);
+}
+.pub .tvc-tracked__next {
+    flex: none;
+    color: var(--text-2);
+    font-size: 12px;
+    font-weight: 400;
+}
+.pub .tvc-cta {
+    display: grid;
+    place-items: center;
+    min-height: 48px;
+    margin-top: 14px;
+    border-radius: 12px;
+    background: var(--btn-bg, var(--accent));
+    color: var(--btn-fg, #ffffff);
+    font-size: 15px;
+    font-weight: 800;
+    text-decoration: none;
+}
+
+@media (min-width: 1024px) {
+    .pub .tvc-jump {
+        display: none;
+    }
+    .pub .tvc-cols {
+        display: grid;
+        grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+        gap: 0;
+        margin-top: 0;
+    }
+    .pub .tvc-week {
+        gap: 0;
+        padding-right: 28px;
+        border-right: 1px solid var(--row-border);
+    }
+    .pub .tvc-week > .ef-head {
+        display: flex;
+        flex-wrap: wrap;
+    }
+    .pub .tvc-week > .ef-head h2 {
+        font-family: var(--font-serif);
+        font-size: 30px;
+    }
+    .pub .tvc-day,
+    .pub .tvc-tracked {
+        padding: 0;
+        border: 0;
+        border-radius: 0;
+        background: none;
+    }
+    .pub .tvc-day .ef-label,
+    .pub .tvc-tracked .ef-label {
+        margin-top: 18px;
+        padding-bottom: 4px;
+        border-bottom: 2px solid var(--text);
+        font-size: 12px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+    }
+    .pub .tvc-tracked {
+        padding-left: 28px;
+    }
+    .pub .tvc-tracked .ef-label {
+        margin-top: 0;
+    }
+    .pub .tvc-row {
+        grid-template-columns: 64px minmax(0, 1fr) 150px;
+        gap: 14px;
+        padding: 12px 0;
+        border-top: 0;
+        border-bottom: 1px dotted var(--row-border);
+    }
+    .pub .tvc-row .ef-poster {
+        width: 64px;
+    }
+    .pub .tvc-row__net {
+        font-size: 12px;
+    }
+    .pub .tvc-row__net-time {
+        display: none;
+    }
+    .pub .tvc-row__show {
+        margin-top: 2px;
+        font-family: var(--font-serif);
+        font-size: 21px;
+    }
+    .pub .tvc-row .ef-where {
+        font-size: 13px;
+    }
+    .pub .tvc-row__time {
+        display: block;
+        align-self: center;
+        font-size: 14px;
+        font-weight: 700;
+        text-align: right;
+    }
+    .pub .tvc-row__time--date {
+        color: var(--text-2);
+    }
+    .pub .tvc-attribution {
+        margin-top: 12px;
+        font-size: 12px;
+    }
+}
+/* The whole episode row is the link to its TVmaze page; a batch's title list stays usable above it. */
+.pub .tvc-row {
+    position: relative;
+}
+.pub a.tvc-row__show::after {
+    position: absolute;
+    inset: 0;
+    content: '';
+}
+.pub .tvc-batch {
+    position: relative;
+    z-index: 1;
+}
+
+/* ---------- Digital releases ---------- */
+.pub .dg-bar {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.pub .dg-bar__label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+}
+.pub .dg-empty,
+.pub .dg-list {
+    margin-top: 14px;
+    padding: 18px;
+    border: 2px dashed var(--field-border, var(--row-border));
+    border-radius: 16px;
+    background: var(--surface);
+}
+.pub .dg-list {
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+}
+.pub .dg-empty h2 {
+    margin: 0;
+    font-family: var(--font-serif);
+    font-size: 22px;
+    font-weight: 800;
+    line-height: 1.2;
+}
+.pub .dg-empty > p:not(.ef-note) {
+    margin: 8px 0 14px;
+    color: var(--text-2);
+    font-size: 15px;
+}
+.pub .dg-empty__actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.pub .dg-btn {
+    display: grid;
+    place-items: center;
+    min-height: 48px;
+    padding: 0 18px;
+    border: 1px solid var(--field-border, var(--row-border));
+    border-radius: 12px;
+    color: var(--text);
+    font-size: 15px;
+    font-weight: 700;
+    text-decoration: none;
+}
+.pub .dg-btn--primary {
+    border-color: var(--btn-bg, var(--accent));
+    background: var(--btn-bg, var(--accent));
+    color: var(--btn-fg, #ffffff);
+    font-weight: 800;
+}
+.pub .dg-btn--outline {
+    border: 2px solid var(--accent);
+    color: var(--accent);
+    font-weight: 800;
+}
+.pub .dg-day .ef-label {
+    margin-top: 12px;
+    padding: 0;
+    border: 0;
+    font-size: 15px;
+    letter-spacing: 0;
+    text-transform: none;
+}
+.pub .dg-day__list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+.pub .dg-item {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr);
+    gap: 12px;
+    align-items: start;
+    padding: 10px 0;
+    border-top: 1px solid var(--row-border);
+}
+.pub .dg-item__title {
+    display: block;
+    font-size: 15px;
+}
+.pub .dg-item__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 14px;
+}
+.pub .dg-item__links a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    color: var(--accent);
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+@media (min-width: 1024px) {
+    .pub .dg-bar {
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px 18px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid var(--text);
+    }
+    .pub .dg-bar__label {
+        position: static;
+        width: auto;
+        height: auto;
+        overflow: visible;
+        clip: auto;
+        color: var(--text-2);
+        font-size: 13px;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+    .pub .dg-bar .mv-updated {
+        margin-left: auto;
+    }
+    .pub .dg-empty {
+        max-width: 760px;
+        margin-top: 28px;
+        padding: 32px;
+    }
+    .pub .dg-empty h2 {
+        font-size: 30px;
+    }
+    .pub .dg-empty__actions {
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    .pub .dg-list {
+        margin-top: 20px;
+        padding: 0;
+        border: 0;
+        border-radius: 0;
+        background: none;
+    }
+    .pub .dg-list > .ef-head h2 {
+        font-family: var(--font-serif);
+        font-size: 30px;
+    }
+    .pub .dg-day .ef-label {
+        margin-top: 18px;
+        padding-bottom: 4px;
+        border-bottom: 2px solid var(--text);
+        font-size: 12px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+    }
+    .pub .dg-day__list {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        column-gap: 28px;
+    }
+    .pub .dg-item {
+        grid-template-columns: 56px minmax(0, 1fr);
+        padding: 12px 0;
+        border-top: 0;
+        border-bottom: 1px dotted var(--row-border);
+    }
+    .pub .dg-item .ef-poster {
+        width: 56px;
+    }
+    .pub .dg-item__title {
+        font-family: var(--font-serif);
+        font-size: 19px;
+    }
+}
+:root:is([data-color-scheme], :not([data-color-scheme])) .pub .dg-item__links .movie-commerce-action {
+    width: auto;
+    padding: 0;
+    border: 0;
+    background: none;
+}
+
+/* ---------- Box office ---------- */
+.pub .bo-views__long {
+    display: none;
+}
+.pub .bo-results {
+    margin-top: 14px;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: var(--surface);
+}
+.pub .bo-head h2 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 800;
+}
+.pub .bo-head__scope {
+    display: none;
+}
+.pub .bo-head .mv-updated {
+    display: block;
+    margin-top: 2px;
+    font-size: 12px;
+}
+.pub .bo-table {
+    width: 100%;
+    margin-top: 6px;
+    border-collapse: collapse;
+    font-variant-numeric: tabular-nums;
+}
+.pub .bo-table thead,
+.pub .bo-table__predicted,
+.pub .bo-table__total {
+    display: none;
+}
+.pub .bo-table tr {
+    display: grid;
+    grid-template-columns: 28px minmax(0, 1fr) auto;
+    grid-template-rows: auto auto;
+    column-gap: 8px;
+    padding: 10px 0;
+    border-top: 1px solid var(--row-border);
+}
+.pub .bo-table th,
+.pub .bo-table td {
+    padding: 0;
+    text-align: left;
+}
+.pub .bo-table__rank {
+    grid-row: span 2;
+    color: var(--accent);
+    font-family: var(--font-serif);
+    font-size: 22px;
+    font-weight: 800;
+}
+.pub .bo-table__film {
+    font-size: 15px;
+    font-weight: 700;
+}
+.pub .bo-table__film a {
+    color: var(--text);
+    text-decoration: none;
+}
+.pub .bo-table__film a:hover {
+    color: var(--accent);
+    text-decoration: underline;
+}
+.pub .bo-table__total-inline {
+    display: block;
+    color: var(--text-2);
+    font-size: 12px;
+    font-weight: 400;
+}
+.pub .bo-table__weekend {
+    font-size: 15px;
+    font-weight: 700;
+    text-align: right !important;
+}
+.pub .bo-table__change {
+    grid-column: 3;
+    grid-row: 2;
+    align-self: end;
+    color: var(--text-2);
+    font-size: 12px;
+    text-align: right !important;
+}
+.pub .bo-up {
+    color: var(--win, #15803d);
+}
+.pub .bo-down {
+    color: var(--live, #b0001e);
+}
+:root[data-theme='dark'] .pub .bo-up {
+    color: #6ee7a0;
+}
+:root[data-theme='dark'] .pub .bo-down {
+    color: #ff8a99;
+}
+.pub .bo-new {
+    margin-left: 4px;
+    color: var(--live, #b0001e);
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+:root[data-theme='dark'] .pub .bo-new {
+    color: #ff8a99;
+}
+
+@media (min-width: 1024px) {
+    .pub .bo-views {
+        padding-bottom: 16px;
+        border-bottom: 1px solid var(--text);
+    }
+    .pub .bo-views__long {
+        display: inline;
+    }
+    .pub .bo-views__short {
+        display: none;
+    }
+    .pub .bo-results {
+        margin-top: 0;
+        padding: 18px 0 0;
+        border: 0;
+        border-radius: 0;
+        background: none;
+    }
+    .pub .bo-head {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 6px 18px;
+    }
+    .pub .bo-head h2 {
+        font-family: var(--font-serif);
+        font-size: 32px;
+    }
+    .pub .bo-head__scope {
+        display: inline;
+    }
+    .pub .bo-head .mv-updated {
+        display: inline;
+        margin: 0;
+        font-size: 13px;
+    }
+    .pub .bo-table {
+        margin-top: 12px;
+        font-size: 15px;
+    }
+    .pub .bo-table thead {
+        display: table-header-group;
+    }
+    .pub .bo-table tr {
+        display: table-row;
+        padding: 0;
+        border: 0;
+    }
+    .pub .bo-table th,
+    .pub .bo-table td,
+    .pub .bo-table__predicted,
+    .pub .bo-table__total {
+        display: table-cell;
+        padding: 12px 6px;
+        border-bottom: 1px dotted var(--row-border);
+        text-align: right;
+        vertical-align: baseline;
+    }
+    .pub .bo-table thead th {
+        padding: 6px;
+        border-bottom: 2px solid var(--text);
+        color: var(--text-2);
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+    }
+    .pub .bo-table thead th:nth-child(-n + 2),
+    .pub .bo-table__film {
+        text-align: left !important;
+    }
+    .pub .bo-table thead th:first-child {
+        width: 40px;
+        text-align: left !important;
+    }
+    .pub .bo-table__film a {
+        font-family: var(--font-serif);
+        font-size: 19px;
+    }
+    .pub .bo-table__total-inline {
+        display: none;
+    }
+    .pub .bo-table__change {
+        font-size: 15px;
+    }
+    .pub .bo-table__predicted {
+        color: var(--text-2);
+    }
+}
+@media (min-width: 1024px) {
+    .pub .sec-pills {
+        border-radius: 0;
+    }
+}
+
+/* ---------- Where to watch (frame only; the approved rows and results are unchanged) ---------- */
+/* Search sits in a blue panel with a visible label and a yellow button, as on the homepage ear. Phones stack the
+   field and button; from 1024px the panel sits beside the title and the browse bar runs under both. */
+:root:is([data-color-scheme], :not([data-color-scheme])) .pub .watch-page .watch-controls {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+    margin: 14px 0 18px;
+    padding: 0;
+    border: 0;
+    background: none;
+}
+:root:is([data-color-scheme], :not([data-color-scheme])) .pub .watch-page .watch-search {
+    padding: 16px;
+    border-radius: 16px;
+    background: var(--header-bg, #0051ba);
+    color: #ffffff;
+}
+.pub .watch-page .watch-search label.sr-only {
+    position: static;
+    display: block;
+    width: auto;
+    height: auto;
+    margin: 0 0 10px;
+    overflow: visible;
+    clip: auto;
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: 800;
+    white-space: normal;
+}
+:root:is([data-color-scheme], :not([data-color-scheme])) .pub .watch-page .watch-search-row {
+    flex-direction: column;
+    gap: 10px;
+}
+:root:is([data-color-scheme], :not([data-color-scheme])) .pub .watch-page .watch-search input {
+    min-height: 54px;
+    padding: 0 16px;
+    border: 0;
+    border-radius: 12px;
+    background: #ffffff;
+    color: #141b2b;
+    font-size: 17px;
+}
+:root:is([data-color-scheme], :not([data-color-scheme])) .pub .watch-page .watch-search button {
+    min-height: 50px;
+    border: 0;
+    border-radius: 12px;
+    background: #ffd34d;
+    color: #141b2b;
+    font-size: 16px;
+    font-weight: 800;
+}
+:root:is([data-color-scheme], :not([data-color-scheme])) .pub .watch-page .watch-toggle {
+    display: grid;
+    grid-auto-columns: minmax(0, 1fr);
+    grid-auto-flow: column;
+    width: 100%;
+    padding: 4px;
+    border: 0;
+    border-radius: 12px;
+    background: var(--pill-bg);
+}
+:root:is([data-color-scheme], :not([data-color-scheme])) .pub .watch-page .watch-toggle a {
+    padding: 0 8px;
+}
+:root:is([data-color-scheme], :not([data-color-scheme])) .pub .watch-page .watch-toggle a[aria-current='page'] {
+    background: var(--surface);
+    color: var(--text);
+    font-weight: 800;
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.12);
+}
+.pub .watch-page .watch-mine {
+    justify-content: space-between;
+    min-height: 48px;
+    padding: 0 14px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface);
+}
+.pub .watch-page .watch-services-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    color: var(--accent);
+    font-weight: 700;
+}
+.pub .watch-row__head h2 {
+    font-size: 18px;
+    font-weight: 800;
+}
+
+@media (min-width: 1024px) {
+    .pub .watch-page {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+        align-items: end;
+    }
+    .pub .watch-page > * {
+        grid-column: 1 / -1;
+    }
+    .pub .watch-page > .page-heading {
+        grid-column: 1;
+        grid-row: 1;
+        margin: 0;
+        padding: 0 0 22px;
+        border: 0;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .watch-page .watch-controls {
+        display: contents;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .watch-page .watch-search {
+        grid-column: 2;
+        grid-row: 1;
+        margin: 0 0 22px 40px;
+        padding: 20px;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .watch-page .watch-search-row {
+        flex-direction: row;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .watch-page .watch-search input {
+        flex: 1 1 auto;
+        min-height: 58px;
+        font-size: 18px;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .watch-page .watch-search button {
+        min-height: 58px;
+        padding: 0 26px;
+    }
+    .pub .watch-page .watch-filters,
+    .pub .watch-page .watch-mine {
+        grid-row: 2;
+        align-self: stretch;
+        padding: 14px 0;
+        border: 0;
+        border-top: 4px double var(--text);
+        border-bottom: 1px solid var(--text);
+        border-radius: 0;
+        background: none;
+    }
+    .pub .watch-page .watch-filters {
+        grid-column: 1;
+    }
+    .pub .watch-page .watch-mine {
+        grid-column: 2;
+        justify-content: flex-end;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .watch-page .watch-toggle {
+        display: inline-flex;
+        width: auto;
+        border-radius: 10px;
+    }
+    .pub .watch-page .watch-rows,
+    .pub .watch-page .watch-results-bar {
+        margin-top: 22px;
+    }
+    .pub .watch-row__head h2 {
+        font-family: var(--font-serif);
+        font-size: 28px;
+    }
+}

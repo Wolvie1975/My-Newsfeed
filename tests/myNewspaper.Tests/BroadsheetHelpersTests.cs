@@ -40,4 +40,13 @@ public class BroadsheetHelpersTests
     [InlineData("Your Mother, Your Mother, Your Mother", "YOUR MOTHER YOUR MOTHER YOUR MOTHER")]
     public void Prediction_titles_match_reported_titles_ignoring_case_and_punctuation(string reported, string predicted) =>
         Assert.Equal(BoxOfficeForecastQuery.TitleKey(reported), BoxOfficeForecastQuery.TitleKey(predicted));
+
+    [Theory]
+    [InlineData(19_500_000, "$19.5M")]
+    [InlineData(24_000_000, "$24M")]
+    [InlineData(153_681_000, "$153.7M")]
+    [InlineData(718_000, "$718K")]
+    [InlineData(950, "$950")]
+    public void Compact_money_reads_like_an_agate_table(long value, string expected) =>
+        Assert.Equal(expected, BoxOfficeChartQuery.Compact(value));
 }

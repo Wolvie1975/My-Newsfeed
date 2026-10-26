@@ -37,7 +37,10 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
             await page.goto(base + '/movies');
             assert(!(await page.locator('.movie-kind').allTextContents()).includes('On disc'));
             await page.goto(base + '/movies/digital?source=dvdsreleasedates');
-            assert.equal(await page.locator('#digital-source').inputValue(), 'dvdsreleasedates');
+            assert.equal(
+                await page.locator('.dg-sources a[aria-current="page"]').getAttribute('data-source'),
+                'dvdsreleasedates',
+            );
             assert(
                 await page
                     .getByText('This provider supplies theater and digital release dates too.', { exact: false })

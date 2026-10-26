@@ -10,9 +10,10 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
         // Which providers are enabled is admin data; read it from the page, then check canonicalization against it.
         await page.goto(base + '/movies/digital');
         const fallback = new URL(page.url()).searchParams.get('source');
+        // The enabled sources are the source pills.
         const options = await page
-            .locator('#digital-source option')
-            .evaluateAll((o) => o.map((x) => ({ value: x.value, label: x.textContent.trim() })));
+            .locator('.dg-sources a')
+            .evaluateAll((o) => o.map((x) => ({ value: x.dataset.source, label: x.textContent.trim() })));
         const enabled = options.map((o) => o.value);
         assert(enabled.includes(fallback), `default provider ${fallback} should be an enabled option`);
         assert.equal(enabled.length, new Set(enabled).size);
@@ -20,9 +21,9 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
             await page.goto(base + '/movies/digital' + (source ? '?source=' + source : ''));
             const selected = enabled.includes(source) ? source : fallback;
             await page.waitForURL((u) => u.searchParams.get('source') === selected);
-            assert.equal(await page.locator('#digital-source').inputValue(), selected);
-            const name = options.find((o) => o.value === selected).label;
-            assert(await page.getByRole('heading', { name, exact: true }).isVisible());
+            const current = page.locator('.dg-sources a[aria-current="page"]');
+            assert.equal(await current.getAttribute('data-source'), selected);
+            assert.equal((await current.textContent()).trim(), options.find((o) => o.value === selected).label);
             for (const width of [390, 1440]) {
                 await page.setViewportSize({ width, height: 900 });
                 assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
