@@ -6,10 +6,26 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The latest recorded web release is `mynewspaper-web:swap-20261026`
-(image `ae76fe97094d`), deployed October 26, 2026 (Central). Its rollback image is
-`mynewsfeed-web:before-mynewspaper-swap-20261026`. Deployment checks passed then;
+The latest recorded web release is `mynewspaper-web:placeholder-20261026`
+(image `6dfa28d14b5f`), deployed October 26, 2026 (Central). Its rollback image is
+`mynewsfeed-web:before-mynewspaper-placeholder-20261026`. Deployment checks passed then;
 this is a dated observation, not live hosting status.
+
+## Story placeholders and support stories on tablets — deployed October 26, 2026 (Central)
+
+At the user's request the story placeholder (a fixed light-blue `img/branded-article-v2.svg` with the old logo) is
+replaced: `.thumb`, the home lead image and the Opinion card thumb show the current page mark (`img/placeholder-mark.svg`,
+the "n" and fold cut out) as a CSS mask in `--ph-fg` at 45% on `--ph-bg`, so it follows every scheme in light and dark.
+The old SVGs (`branded-article-v1/v2`, `default-article`) are no longer referenced but were left in place. Found while
+checking: the three stories under the Headlines lead (also Sports and Entertainment headlines) put a 96px thumbnail
+beside the title in a third of the page, leaving titles a word or two wide on iPads; from 744 to 1279px the picture
+now sits above the title (Entertainment's 72px posters too).
+
+Deployed `mynewspaper-web:placeholder-20261026` (`6dfa28d14b5f`), healthy; rollback
+`mynewsfeed-web:before-mynewspaper-placeholder-20261026`. Preview (pictures blocked to show placeholders): Ribbon light,
+Halloween dark and Coastal light reviewed; compact-stories, frontpages, entertainment-news, sports-news, section-hubs,
+home-opinion, home-columns, publisher-layout and tablet-layout (/, /news, /sports/news, /entertainment/news) passed.
+Live: placeholder-mark.svg served; compact-stories and frontpages passed. Real device not re-checked.
 
 ## Forecast and Where to watch swapped on the home masthead — deployed October 26, 2026 (Central)
 
