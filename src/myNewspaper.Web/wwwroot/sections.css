@@ -3707,3 +3707,13 @@ a.tvc-row__show:hover {
 :root:is([data-color-scheme], :not([data-color-scheme])) .pub .video-front .video--featured {
     grid-row: auto;
 }
+/* Side by side, both lists start on the same line (the stacked layout spaced the second one down). */
+@media (min-width: 1024px) {
+    .pub .sv-lists .saved-section,
+    .pub .sv-lists .saved-section + .saved-section {
+        margin: 0;
+    }
+    .pub .sv-lists .saved-head {
+        margin-top: 0;
+    }
+}
