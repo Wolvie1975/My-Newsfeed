@@ -6,10 +6,31 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The latest recorded web release is `mynewspaper-web:top25-20261027`
-(image `a917e2807bd8`), deployed October 27, 2026 (Central). Its rollback image is
-`mynewsfeed-web:before-mynewspaper-top25-20261027`. Deployment checks passed then;
+The latest recorded web release is `mynewspaper-web:toppills-20261027`
+(image `130057f4f448`), deployed October 27, 2026 (Central). Its rollback image is
+`mynewsfeed-web:before-mynewspaper-toppills-20261027`. Deployment checks passed then;
 this is a dated observation, not live hosting status.
+
+## Homepage Top 25 sport pills on desktop — deployed October 27, 2026 (Central)
+
+At 1024px and wider the homepage Top 25 card shows one pill per sport instead of the "Sport and poll" dropdown. Pills use
+the source's short sport name (today Football, Soccer, Volleyball; Men's and Women's Basketball appear when the card
+lists them), falling back to the full poll name when two polls share a sport. Phones and iPad portrait (below 1024px)
+keep the dropdown, at the user's request. Pill clicks swap the card in place like the dropdown; without JavaScript they
+are plain links. The pills are slightly tighter than page pills so three fit one row in the 256px column at 1024px.
+Commit `2b64eb2`.
+
+Deployed `mynewspaper-web:toppills-20261027` (`130057f4f448`) through Compose, healthy; rollback
+`mynewsfeed-web:before-mynewspaper-toppills-20261027` (`a917e2807bd8`). Compose settings regenerated from and matched the
+live container. Predeploy: solution build with no warnings, 735 .NET tests (new pill-label test), lint clean
+(format:check flags only the earlier `tv-series-delete.browser.cjs`); home-top25 (pills at 1440, dropdown at 390 and
+820, both switching in place, no-JS pill links), home-opinion, home-columns, home-watch-search, personal-features and
+personal-layout passed; at 320/390/430/820/1024/1440 light/dark: pills only at 1024 and 1440, one row, 44px tall, page
+kept its scroll position on a pill click, no overflow or script errors. Live: /healthz, 12 public routes and the
+homepage fragments returned 200 (/results and /movies/digital after their usual redirects), unauthenticated /admin
+redirected to login; home-top25, home-opinion, home-columns and personal-layout passed; the same six-width light/dark
+sweep passed; screenshots reviewed. Noted, not changed: at 1024px the existing Top 25 table breaks long school names
+mid-word ("Nebr aska"), as it did before this release. Real device not checked.
 
 ## Homepage Top 25 poll switch in place — deployed October 27, 2026 (Central)
 
