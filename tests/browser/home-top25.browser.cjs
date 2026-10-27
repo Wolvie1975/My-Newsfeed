@@ -15,9 +15,21 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
             .locator('select option')
             .evaluateAll((ns) => ns.map((n) => ({ value: n.value, text: n.textContent })));
         assert(options.length, 'Production ranking sources expected');
+        // Switching polls swaps only this card: no reload, and the page stays where it is.
+        await card.scrollIntoViewIfNeeded();
+        await page.evaluate(() => (window.__top25NoReload = true));
         for (const option of options) {
+            const scrollBefore = await page.evaluate(() => scrollY);
             await card.locator('select').selectOption(option.value);
             await page.waitForURL((u) => u.searchParams.get('rankingSourceId') === option.value);
+            await page.waitForFunction(
+                (value) =>
+                    document.querySelector('[data-home-section="rankings"] select')?.value === value &&
+                    !document.querySelector('[data-home-section="rankings"][aria-busy]'),
+                option.value,
+            );
+            assert.equal(await page.evaluate(() => window.__top25NoReload), true, 'Poll switch reloaded the page');
+            assert(Math.abs((await page.evaluate(() => scrollY)) - scrollBefore) <= 1, 'Poll switch moved the page');
             assert.equal(await card.locator('select').inputValue(), option.value);
             assert.equal(await card.locator('.d-more').getAttribute('href'), 'rankings?sourceId=' + option.value);
             const ranks = await card.locator('tbody tr td:first-child').allTextContents();
@@ -82,7 +94,7 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
         await plain.close();
         assert.equal((await page.request.get(base + '/healthz')).status(), 200);
         console.log(
-            'Homepage Top 25: available source selection, matching full-page link, ranks 1–25, expanded desktop/scrolling mobile table, no standalone F1, responsive widths, no-JS Apply, no JS errors, health 200 passed.',
+            'Homepage Top 25: in-place poll switch (no reload, scroll kept), available source selection, matching full-page link, ranks 1–25, expanded desktop/scrolling mobile table, no standalone F1, responsive widths, no-JS Apply, no JS errors, health 200 passed.',
         );
     } finally {
         await browser.close();

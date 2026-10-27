@@ -30,6 +30,26 @@ public static class PublicEndpoints
             return new RazorComponentResult<HomeLeadStory>(new { Snapshot = snapshot });
         });
 
+        // Homepage Top 25 poll picker; only the rankings card is swapped, so the page keeps its scroll position.
+        app.MapGet("/home/rankings", async (HttpContext http, IDbContextFactory<WebScraperContext> factory, ILoggerFactory loggers,
+            FeedDates dates, string? rankingSourceId) =>
+        {
+            http.Response.Headers.CacheControl = "no-store";
+            var log = loggers.CreateLogger("myNewspaper.Web.HomeRankings");
+            RankingsPage data;
+            try
+            {
+                await using var db = await factory.CreateDbContextAsync();
+                data = await RankingsQuery.GetAsync(db, StandingsQuery.ParseSourceId(rankingSourceId), log, dates.TodayAt(DateTime.UtcNow));
+            }
+            catch (Exception ex) when (DataFailures.IsReadFailure(ex))
+            {
+                log.LogError(ex, "Could not read home rankings.");
+                data = new([], null, null, [], "Rankings are temporarily unavailable.");
+            }
+            return new RazorComponentResult<HomeRankings>(new { Data = data });
+        });
+
         // Native navigation selects work with JavaScript disabled; never redirect off-site.
         app.MapGet("/navigate", (string? to) =>
         {
