@@ -88,4 +88,19 @@ Not done yet (next batch):
 - The full list pattern (toolbar, status pills, switches, ⋯ menu, phone cards) on Categories, Pages, YouTube feeds,
   YouTube videos, Event feeds, Events and Results follows; they use the restyled Bootstrap tables meanwhile.
 - The editor pattern (save bar, health aside) on the page, feed, video and event editors.
-- Phone menu red dot; Escape closing the ⋯ menu (Tab-away leaves it open).
+- Phone menu red dot; Tab-away still leaves a ⋯ menu open.
+
+## TV series Delete (October 27, 2026, local on `develop`, not deployed)
+
+- TV series rows have a ⋯ menu with **Delete…** and a confirm panel (Stop following instead / Delete series /
+  Cancel). Delete removes only the `TvTrackedSeries` row via `TvQuery.RemoveAsync`; series and episodes stay as history
+  and reattach if the show is added again. A row the scraper holds a lease on is not deleted ("importing right now").
+  Note docs/entertainment.md still prefers stopping over deleting; re-seeding with `--configure-tv` may re-add a deleted
+  seeded show.
+- Shared fixes: ⋯ button and menu items 44px; ⋯ menus close on choosing an item, outside click or Escape (`public.js`);
+  `.table-responsive` contains `.visually-hidden` labels and makes room for a ⋯ menu opened on the bottom row.
+- Verified locally: 734 .NET tests (incl. `Remove_drops_tracking_but_not_while_the_scraper_holds_a_lease`);
+  `tests/browser/tv-series-delete.browser.cjs` (needs `ADMIN_PASSWORD` and `TV_FIXTURE_TITLE`, a throwaway followed
+  series) at 320/390/430/744/1024/1440 light and dark; `admin-layout` and `section-hubs` suites; screenshots reviewed.
+  `mixed-search-nav` failed only on Where to watch title search, unavailable locally (no provider key in this container).
+  The local database is shared with the running scraper. Not checked on a real device or against the live build.

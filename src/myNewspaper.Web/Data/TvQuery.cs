@@ -83,4 +83,16 @@ public static class TvQuery
 
     public static Task<int> SetEnabledAsync(WebScraperContext db, int trackingId, bool enabled) =>
         db.TvTrackedSeries.Where(t => t.Id == trackingId).ExecuteUpdateAsync(s => s.SetProperty(t => t.Enabled, enabled));
+
+    // Removes only the tracking row: the scraper-owned series and episodes stay as history and reattach if the show is
+    // followed again. A row the scraper holds a lease on is left alone so an import in progress can't recreate state.
+    public static async Task<TvRemoveResult> RemoveAsync(WebScraperContext db, int trackingId, DateTime nowUtc)
+    {
+        var removed = await db.TvTrackedSeries.Where(t => t.Id == trackingId && (t.LeaseUntil == null || t.LeaseUntil < nowUtc))
+            .ExecuteDeleteAsync();
+        if (removed > 0) return TvRemoveResult.Removed;
+        return await db.TvTrackedSeries.AnyAsync(t => t.Id == trackingId) ? TvRemoveResult.Importing : TvRemoveResult.Missing;
+    }
 }
+
+public enum TvRemoveResult { Removed, Missing, Importing }

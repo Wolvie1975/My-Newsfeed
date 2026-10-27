@@ -7,15 +7,17 @@
         '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 10.5 6.8-4M8.6 13.5l6.8 4"/></svg>';
     const root = document.documentElement;
 
-    // Close the section menu on selection, outside clicks, or Escape.
+    // Close the section menu and admin row menus (⋯) on selection, outside clicks, or Escape.
+    const OPEN_MENUS = '[data-mobile-nav][open], .adm-menu[open]';
     document.addEventListener('click', (event) => {
-        document.querySelectorAll('[data-mobile-nav][open]').forEach((menu) => {
-            if (!menu.contains(event.target) || event.target.closest('a')) menu.open = false;
+        document.querySelectorAll(OPEN_MENUS).forEach((menu) => {
+            const chosen = event.target.closest(menu.matches('.adm-menu') ? '.adm-menu__list :is(a, button)' : 'a');
+            if (!menu.contains(event.target) || (chosen && menu.contains(chosen))) menu.open = false;
         });
     });
     document.addEventListener('keydown', (event) => {
         if (event.key !== 'Escape') return;
-        document.querySelectorAll('[data-mobile-nav][open]').forEach((menu) => {
+        document.querySelectorAll(OPEN_MENUS).forEach((menu) => {
             const hadFocus = menu.contains(document.activeElement);
             menu.open = false;
             if (hadFocus) menu.querySelector('summary').focus();

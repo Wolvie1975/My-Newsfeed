@@ -688,8 +688,8 @@
 }
 .adm-menu > summary {
     list-style: none;
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
     border-radius: 10px;
     display: grid;
     place-items: center;
@@ -720,7 +720,7 @@
     display: flex;
     align-items: center;
     width: 100%;
-    min-height: 40px;
+    min-height: 44px;
     padding: 0 12px;
     border: 0;
     border-radius: 8px;
@@ -1067,9 +1067,15 @@
     border-color: var(--adm-accent);
 }
 .adm .table-responsive {
+    /* Contains absolutely positioned children (.visually-hidden labels) so they can't widen the page on phones. */
+    position: relative;
     background: var(--adm-surface);
     border: 1px solid var(--adm-border);
     border-radius: 14px;
+}
+/* The wrapper scrolls, so it clips a ⋯ menu opened on the bottom row; while one is open, make room below it. */
+.adm .table-responsive:has(.adm-menu[open]) {
+    padding-bottom: 64px;
 }
 .adm .table {
     margin: 0;

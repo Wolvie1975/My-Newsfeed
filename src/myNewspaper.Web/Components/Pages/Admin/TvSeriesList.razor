@@ -9,24 +9,54 @@
             <a class="btn btn-primary" href="admin/tv-series/new"><AdminIcon Name="plus" />Add series</a>
         </Actions>
     </AdminPageHeader>
-<p>Follow series to collect their episode schedules. Removing a series from the followed list stops collection and hides its episodes; history is retained. The scraper imports added series on its next run.</p>
+<p>Follow series to collect their episode schedules. Switching Following off stops collection and hides its episodes; Delete also takes the series off this list. Either way, episode history is retained. The scraper imports added series on its next run.</p>
 @if (error is not null) { <div class="alert alert-danger" role="alert">@error</div> }
+@if (message is not null) { <div class="alert alert-success" role="status">@message</div> }
+@if (pendingDelete is { } target)
+{
+    <section class="adm-confirm" role="alert" aria-labelledby="confirm-title">
+        <div class="adm-confirm__text">
+            <h2 id="confirm-title">Delete @TitleOf(target)?</h2>
+            <p>
+                It comes off this list and the scraper stops collecting it. Collected episodes stay in the database but aren’t shown;
+                adding the series again brings them back. @(target.Enabled ? "Stopping keeps it on this list so you can turn it back on." : "")
+            </p>
+        </div>
+        <div class="adm-confirm__actions">
+            @if (target.Enabled)
+            {
+                <button type="button" class="btn btn-dark" disabled="@busy" @onclick="StopInsteadAsync">Stop following instead</button>
+            }
+            <button type="button" class="btn btn-outline-danger" disabled="@busy" @onclick="ConfirmDeleteAsync">Delete series</button>
+            <button type="button" class="btn btn-link" @onclick="() => pendingDelete = null">Cancel</button>
+        </div>
+    </section>
+}
 @if (rows is null) { <p>Loading…</p> }
 else if (rows.Count == 0) { <p>No series followed yet. <a href="admin/tv-series/new">Add a series.</a></p> }
 else
 {
     <div class="table-responsive"><table class="table table-sm align-middle">
-        <thead><tr><th>Series</th><th>Network / platform</th><th>Following</th><th>Episodes</th><th>Last success</th><th>Detail</th><th></th></tr></thead>
+        <thead><tr><th>Series</th><th>Network / platform</th><th>Following</th><th>Episodes</th><th>Last success</th><th>Detail</th><th></th><th><span class="visually-hidden">Actions</span></th></tr></thead>
         <tbody>
         @foreach (var row in rows)
         {
             <tr class="@(row.Enabled ? null : "text-muted")">
-                <td><a href="https://www.tvmaze.com/shows/@row.TvmazeShowId" target="_blank" rel="noopener noreferrer">@(row.Series?.Title ?? row.ExpectedTitle)</a><div class="small">TVmaze @row.TvmazeShowId</div></td>
+                <td><a href="https://www.tvmaze.com/shows/@row.TvmazeShowId" target="_blank" rel="noopener noreferrer">@TitleOf(row)</a><div class="small">TVmaze @row.TvmazeShowId</div></td>
                 <td>@(row.Series?.WebChannelName ?? row.Series?.NetworkName ?? "Pending import")</td>
-                <td><AdminSwitch Checked="row.Enabled" Disabled="busy" Label="@($"Following: {row.Series?.Title ?? row.ExpectedTitle}")" OnChange="_ => ToggleAsync(row)" /></td><td>@(row.EpisodeCount?.ToString() ?? "—")</td>
+                <td><AdminSwitch Checked="row.Enabled" Disabled="busy" Label="@($"Following: {TitleOf(row)}")" OnChange="_ => ToggleAsync(row)" /></td><td>@(row.EpisodeCount?.ToString() ?? "—")</td>
                 <td>@Dates.Stamp(row.LastSuccessAt)</td>
                 <td class="small text-break">@row.LastError @if (row.LastSuccessAt is null && row.Enabled) { <span>Awaiting first import</span> }</td>
                 <td class="adm-help">@(row.Enabled ? "Following" : "Stopped: history kept")</td>
+                <td>
+                    @* <details>, so it opens without JavaScript; Delete lives here, out of the way. *@
+                    <details class="adm-menu">
+                        <summary aria-label="@($"More actions for {TitleOf(row)}")"><AdminIcon Name="more" /></summary>
+                        <div class="adm-menu__list">
+                            <button type="button" class="danger" @onclick="() => StartDelete(row)">Delete…</button>
+                        </div>
+                    </details>
+                </td>
             </tr>
         }
         </tbody>
@@ -52,6 +82,9 @@ else
     private List<TvTrackedSeries>? rows;
     private bool busy;
     private string? error;
+    private string? message;
+    private TvTrackedSeries? pendingDelete;
+    private static string TitleOf(TvTrackedSeries row) => row.Series?.Title ?? row.ExpectedTitle;
     protected override Task OnInitializedAsync() => LoadAsync();
     private async Task LoadAsync()
     {
@@ -62,9 +95,36 @@ else
     }
     private async Task ToggleAsync(TvTrackedSeries row)
     {
-        busy = true; error = null;
+        busy = true; error = null; message = null;
         try { await using var db = await Factory.CreateDbContextAsync(); await TvQuery.SetEnabledAsync(db, row.Id, !row.Enabled); await LoadAsync(); }
         catch (DbUpdateException) { error = "Could not update tracking. Please try again."; }
+        finally { busy = false; }
+    }
+    private void StartDelete(TvTrackedSeries row) { error = null; message = null; pendingDelete = row; }
+    private async Task StopInsteadAsync()
+    {
+        if (pendingDelete is not { } target) return;
+        pendingDelete = null;
+        await ToggleAsync(target);
+        if (error is null) message = $"Stopped following {TitleOf(target)}. Its history was kept.";
+    }
+    private async Task ConfirmDeleteAsync()
+    {
+        if (pendingDelete is not { } target) return;
+        busy = true; error = null;
+        try
+        {
+            await using var db = await Factory.CreateDbContextAsync();
+            switch (await TvQuery.RemoveAsync(db, target.Id, DateTime.UtcNow))
+            {
+                case TvRemoveResult.Removed: message = $"Deleted {TitleOf(target)}."; break;
+                case TvRemoveResult.Missing: message = $"{TitleOf(target)} was already deleted."; break;
+                default: error = $"The scraper is importing {TitleOf(target)} right now, so it was not deleted. Try again in a few minutes."; break;
+            }
+            pendingDelete = null;
+            await LoadAsync();
+        }
+        catch (System.Data.Common.DbException) { error = "Could not delete the series. Please try again."; }
         finally { busy = false; }
     }
 }

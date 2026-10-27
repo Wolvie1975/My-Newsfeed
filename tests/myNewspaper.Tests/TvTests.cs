@@ -106,6 +106,24 @@ public class TvTests
     }
 
     [Fact]
+    public async Task Remove_drops_tracking_but_not_while_the_scraper_holds_a_lease()
+    {
+        await using var db = Create();
+        await using var tx = await db.Database.BeginTransactionAsync();
+        var id = Random.Shared.Next(1_900_000_000, 2_000_000_000);
+        await TvQuery.FollowAsync(db, id, "Removable series");
+        var tracking = await db.TvTrackedSeries.SingleAsync(t => t.TvmazeShowId == id);
+        var now = DateTime.UtcNow;
+        await db.TvTrackedSeries.Where(t => t.Id == tracking.Id).ExecuteUpdateAsync(s => s.SetProperty(t => t.LeaseUntil, now.AddMinutes(5)));
+        Assert.Equal(TvRemoveResult.Importing, await TvQuery.RemoveAsync(db, tracking.Id, now));
+        Assert.Equal(TvRemoveResult.Removed, await TvQuery.RemoveAsync(db, tracking.Id, now.AddMinutes(10)));
+        Assert.False(await db.TvTrackedSeries.AnyAsync(t => t.TvmazeShowId == id));
+        Assert.Equal(TvRemoveResult.Missing, await TvQuery.RemoveAsync(db, tracking.Id, now));
+        var dates = FeedDates.Create("America/Chicago");
+        Assert.DoesNotContain((await TvQuery.GetAsync(db, dates, dates.Today, null)).Shows, s => s.Id == id);
+    }
+
+    [Fact]
     public async Task Search_keeps_same_named_shows_distinct_and_handles_rate_limits()
     {
         using var http = new HttpClient(new Handler(HttpStatusCode.OK, """
