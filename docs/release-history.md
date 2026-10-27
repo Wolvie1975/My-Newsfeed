@@ -6,10 +6,35 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The latest recorded web release is `mynewspaper-web:toppills-20261027`
-(image `130057f4f448`), deployed October 27, 2026 (Central). Its rollback image is
-`mynewsfeed-web:before-mynewspaper-toppills-20261027`. Deployment checks passed then;
+The latest recorded web release is `mynewspaper-web:scoreboardsport-20261027`
+(image `ba61e366cef2`), deployed October 27, 2026 (Central). Its rollback image is
+`mynewsfeed-web:before-mynewspaper-scoreboardsport-20261027`. Deployment checks passed then;
 this is a dated observation, not live hosting status.
+
+## Homepage scoreboard Sport dropdown — deployed October 27, 2026 (Central)
+
+The homepage scoreboard box gets a Sport dropdown at every width (no pills): All sports, then only the leagues with games
+today (leagues only, no conferences or teams). It is hidden when fewer than two leagues have games. Choosing a league
+swaps the box in place (no reload, scroll kept), shows up to six of that league's games, points "See all games" at the
+full scoreboard filtered to it, and is kept in the address (`?scoreboardShow=c:{sport}|{league}`) for bookmarks,
+refresh and the five-minute auto-refresh; unknown values fall back to All sports. It is independent of profiles and of
+the "only my teams" setting (which filters only Today & Tonight). Without JavaScript, the dropdown and Apply load the
+filtered page. The full `/scoreboard` page is unchanged. Deployed from the working tree, then committed as `f29b393`.
+
+Deployed `mynewspaper-web:scoreboardsport-20261027` (`ba61e366cef2`) through Compose, healthy; rollback
+`mynewsfeed-web:before-mynewspaper-scoreboardsport-20261027` (`130057f4f448`). Compose settings regenerated from and
+matched the live container. Predeploy: solution build with no warnings, 735 .NET tests, lint clean (format:check flags
+only the earlier `tv-series-delete.browser.cjs`); new home-scoreboard-sport check (MLB and NHL that day) and
+home-columns, home-opinion, home-top25, home-watch-search, personal-features, personal-layout, scoreboard,
+scoreboard-consolidation, scoreboard-mobile, scoreboard-show and tablet-layout passed; screenshots at 320/390/430/820/
+1024/1440 light/dark reviewed (dropdown at least 44px, inside the box, no overflow). home-top25 needed a one-line fix
+for the page's second dropdown. Live: /healthz, 13 public routes and fragments returned 200, unauthenticated /admin
+redirected to login; home-scoreboard-sport, home-columns, personal-layout and all four scoreboard checks passed.
+**Open:** home-top25 failed intermittently against the live build (about 4 of 80 runs, always on the first pill's
+scroll check within two seconds of load). It never reproduced in 45 instrumented runs or 24 further runs, and pill
+clicks never moved the card in direct measurement. The test now waits for the page to settle, also checks the card's
+on-screen position, and reports the values, so a recurrence will show whether anything visible moved. Real device not
+checked.
 
 ## Homepage Top 25 sport pills on desktop — deployed October 27, 2026 (Central)
 
