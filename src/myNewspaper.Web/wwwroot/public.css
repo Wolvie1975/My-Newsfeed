@@ -6202,6 +6202,20 @@
 .pub .d-scoreboard .scoreboard-note span {
     display: none;
 }
+/* Homepage sport filter; padded like the notes above it. */
+.pub .d-scoreboard .scoreboard-home-filter {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin: 8px 0 12px;
+    padding: 0 16px;
+}
+.pub .d-scoreboard .scoreboard-home-filter select {
+    max-width: 100%;
+    min-width: 0;
+    min-height: 44px;
+}
 .pub .d-scoreboard .scoreboard-games {
     grid-template-columns: minmax(0, 1fr);
     gap: 0;

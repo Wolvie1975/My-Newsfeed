@@ -75,7 +75,7 @@ public static class PublicEndpoints
             return Results.LocalRedirect(QueryHelpers.AddQueryString("/sports/news/f1", query));
         });
 
-        app.MapGet("/scoreboard/fragment", (HttpContext http, string? day, string? competition, bool? compact, int? follow, string? status, string? show) =>
+        app.MapGet("/scoreboard/fragment", (HttpContext http, string? day, string? competition, bool? compact, int? follow, string? status, string? show, string? scoreboardShow) =>
         {
             http.Response.Headers.CacheControl = "no-store";
             return new RazorComponentResult<ScoreboardPanel>(new Dictionary<string, object?>
@@ -86,6 +86,7 @@ public static class PublicEndpoints
                 ["Follow"] = follow,
                 ["Status"] = status,
                 ["Show"] = show,
+                ["CompactShow"] = scoreboardShow,
             });
         });
 

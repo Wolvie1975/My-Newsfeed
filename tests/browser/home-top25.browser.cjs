@@ -25,7 +25,9 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
             (await pills.allTextContents()).every((t) => !t.includes('—')),
             'Pills use short sport names',
         );
-        // Switching polls swaps only this card: no reload, and the page stays where it is.
+        // Switching polls swaps only this card: no reload, and the page stays where it is. Let late content above the
+        // card (images, weather, lead story) finish first, and measure the card on screen, which is what a jump moves.
+        await page.waitForLoadState('networkidle');
         await card.scrollIntoViewIfNeeded();
         await page.evaluate(() => (window.__top25NoReload = true));
         for (const option of options) {
@@ -33,6 +35,7 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
             const pill = card.locator(`.d-rankings__pills a[data-ranking-source="${option.value}"]`);
             await pill.scrollIntoViewIfNeeded();
             const scrollBefore = await page.evaluate(() => scrollY);
+            const topBefore = (await card.boundingBox()).y;
             await pill.click();
             await page.waitForURL((u) => u.searchParams.get('rankingSourceId') === option.value);
             await page.waitForFunction(
@@ -44,7 +47,11 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
                 option.value,
             );
             assert.equal(await page.evaluate(() => window.__top25NoReload), true, 'Poll switch reloaded the page');
-            assert(Math.abs((await page.evaluate(() => scrollY)) - scrollBefore) <= 1, 'Poll switch moved the page');
+            const scrollAfter = await page.evaluate(() => scrollY);
+            const topAfter = (await card.boundingBox()).y;
+            const moved = `scrollY ${scrollBefore}->${scrollAfter}, card top ${Math.round(topBefore)}->${Math.round(topAfter)}`;
+            assert(Math.abs(scrollAfter - scrollBefore) <= 1, 'Poll switch moved the page: ' + moved);
+            assert(Math.abs(topAfter - topBefore) <= 1, 'Poll switch moved the card on screen: ' + moved);
             assert.equal(await card.locator('.d-rankings__pills a[aria-current="page"]').count(), 1);
             assert.equal(
                 await page.evaluate(() => document.activeElement?.dataset.rankingSource),
@@ -127,7 +134,7 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
                 'Dropdown switch moved the page',
             );
         }
-        await page.locator('select').focus();
+        await page.locator('#home-ranking-source').focus();
         assert.deepEqual(errors, []);
         await card.screenshot({ path: process.env.TOP25_SCREENSHOT || 'test-results/home-top25.png' });
         const plain = await browser.newContext({ javaScriptEnabled: false, viewport: { width: 390, height: 900 } });

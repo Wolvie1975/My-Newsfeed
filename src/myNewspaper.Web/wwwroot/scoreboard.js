@@ -85,6 +85,42 @@
             pending = false;
         }
     }
+    // Homepage sport filter: swap the box in place, so the page keeps its scroll position. Without JavaScript, or if
+    // the fragment can't load, the form's normal GET navigation still works.
+    document.addEventListener('submit', async (event) => {
+        const form = event.target;
+        const panel = form.matches?.('.scoreboard-home-filter') && form.closest('[data-scoreboard]');
+        if (!panel) return;
+        event.preventDefault();
+        const value = new FormData(form).get('scoreboardShow') || '';
+        const mine = ++generation; // A refresh already in flight must not overwrite this choice.
+        const box = panel.closest('[data-home-section]') || panel;
+        box.setAttribute('aria-busy', 'true');
+        try {
+            const query = new URLSearchParams({ compact: 'true', scoreboardShow: value });
+            const response = await fetch('/scoreboard/fragment?' + query, {
+                cache: 'no-store',
+                signal: AbortSignal.timeout(15000),
+            });
+            if (!response.ok) throw new Error('Read failed');
+            const doc = new DOMParser().parseFromString(await response.text(), 'text/html');
+            const next = doc.querySelector('[data-scoreboard]');
+            if (!next || next.querySelector('.scoreboard-read-status')?.textContent.trim())
+                throw new Error('Unavailable');
+            if (mine !== generation || !panel.isConnected) return;
+            panel.replaceWith(next);
+            apply();
+            const url = new URL(location.href);
+            if (value) url.searchParams.set('scoreboardShow', value);
+            else url.searchParams.delete('scoreboardShow');
+            history.replaceState(history.state, '', url);
+            next.querySelector('#home-scoreboard-show')?.focus({ preventScroll: true });
+        } catch (_) {
+            if (mine === generation) form.submit(); // Fall back to a full load.
+        } finally {
+            box.removeAttribute('aria-busy');
+        }
+    });
     document.addEventListener('click', (event) => {
         const button = event.target.closest('[data-scoreboard-team]');
         if (!button) return;

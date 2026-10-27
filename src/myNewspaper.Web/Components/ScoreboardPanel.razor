@@ -50,6 +50,18 @@
     <p class="scoreboard-read-status updated" role="status">@(snapshot.Available ? "" : "Scores are temporarily unavailable. Please retry.")</p>
     @if (snapshot.Available)
     {
+        @if (Compact && homeLeagues.Count > 1)
+        {
+            @* Homepage sport filter: only leagues with games today. Not tied to profiles or "only my teams". *@
+            <form method="get" action="" class="catselect scoreboard-home-filter">
+                <label for="home-scoreboard-show">Sport</label>
+                <select id="home-scoreboard-show" name="scoreboardShow" onchange="this.form.requestSubmit()">
+                    <option value="">All sports</option>
+                    @foreach (var league in homeLeagues) { <option value="@league.Value" selected="@(league.Value == homeShow)">@league.Label</option> }
+                </select>
+                <noscript><button class="nf-btn nf-btn--secondary" type="submit">Apply</button></noscript>
+            </form>
+        }
         @if (snapshot.Coverage.Where(c => string.IsNullOrEmpty(selection.Competition) || c.Key == selection.Competition).Any(c => c.Availability is "error" or "partial" || c.LastSuccessAt == null)) {
             <p class="updated">Some coverage is delayed or unavailable. Showing the latest stored scores.</p>
         }
@@ -77,13 +89,18 @@
                 }
             </div>
         }
-        @if (Compact && snapshot.Games.Count > visibleGames.Count) { <p class="updated">Showing @visibleGames.Count of @snapshot.Games.Count games. <a href="scoreboard">See all games →</a></p> }
+        @if (Compact && homeGames.Count > visibleGames.Count) { <p class="updated">Showing @visibleGames.Count of @homeGames.Count games. <a href="@(homeShow.Length == 0 ? "scoreboard" : "scoreboard?show=" + Uri.EscapeDataString(homeShow))">See all games →</a></p> }
     }
     @if (!Compact) { <p class="updated scoreboard-note">Sampled clocks stay fixed between updates. Coverage excludes F1 and unsupported leagues.</p> }
 </div>
 
 @code {
     [Parameter] public bool Compact { get; set; }
+    // Homepage box only ("c:{sport}|{league}"); its own query name keeps it apart from the full page's filters.
+    [Parameter] public string? CompactShow { get; set; }
+    private IReadOnlyList<(string Value, string Label)> homeLeagues = [];
+    private string homeShow = "";
+    private IReadOnlyList<ScoreboardGame> homeGames = [];
     [Parameter, SupplyParameterFromQuery(Name="day")] public string? Day { get; set; }
     [Parameter, SupplyParameterFromQuery(Name="show")] public string? Show { get; set; }
     private ScoreboardSelection selection = new("");
@@ -121,7 +138,15 @@
             hasMls = hasChampionship = false;
             Log.LogWarning(ex, "Optional scoreboard records and season links unavailable");
         }
-        visibleGames = Compact ? snapshot.Games.Take(6).ToList() : snapshot.Games;
+        if (Compact)
+        {
+            // Today's leagues come from the unfiltered read, so the list stays complete after choosing one.
+            homeLeagues = snapshot.Games.Select(g => (Value: "c:" + g.Sport + "|" + g.League, Label: CompetitionLabel(g.Sport, g.League)))
+                .Distinct().OrderBy(l => l.Label, StringComparer.CurrentCultureIgnoreCase).ToList();
+            homeShow = homeLeagues.Any(l => l.Value == CompactShow) ? CompactShow! : "";
+            homeGames = homeShow.Length == 0 ? snapshot.Games : snapshot.Games.Where(g => "c:" + g.Sport + "|" + g.League == homeShow).ToList();
+        }
+        visibleGames = Compact ? homeGames.Take(6).ToList() : snapshot.Games;
         boxLabels = await BoxScores.AvailableAsync(visibleGames.Where(g => g.Provider == "espn" && g.HasBoxScore).Select(g => new BoxIdentity(g.Sport, g.League, g.EventId)));
     }
 
