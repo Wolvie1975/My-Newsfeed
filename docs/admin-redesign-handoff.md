@@ -90,7 +90,7 @@ Not done yet (next batch):
 - The editor pattern (save bar, health aside) on the page, feed, video and event editors.
 - Phone menu red dot; Tab-away still leaves a ⋯ menu open.
 
-## TV series Delete (October 27, 2026, local on `develop`, not deployed)
+## TV series Delete (October 27, 2026, deployed as `tvdelete-20261027`)
 
 - TV series rows have a ⋯ menu with **Delete…** and a confirm panel (Stop following instead / Delete series /
   Cancel). Delete removes only the `TvTrackedSeries` row via `TvQuery.RemoveAsync`; series and episodes stay as history

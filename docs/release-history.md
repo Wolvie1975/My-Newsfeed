@@ -6,10 +6,28 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The latest recorded web release is `mynewspaper-web:admin-20261026`
-(image `3d007990c29e`), deployed October 26, 2026 (Central). Its rollback image is
-`mynewsfeed-web:before-mynewspaper-admin-20261026`. Deployment checks passed then;
+The latest recorded web release is `mynewspaper-web:tvdelete-20261027`
+(image `b9f58d6f8006`), deployed October 27, 2026 (Central). Its rollback image is
+`mynewsfeed-web:before-mynewspaper-tvdelete-20261027`. Deployment checks passed then;
 this is a dated observation, not live hosting status.
+
+## TV series Delete — deployed October 27, 2026 (Central)
+
+Admin TV series rows get a ⋯ menu with Delete… and a confirm panel (Stop following instead / Delete series / Cancel);
+Delete removes only the tracking row, keeping series and episode history, and skips a row the scraper has leased.
+Shared admin fixes: 44px ⋯ targets, menus close on choice/outside click/Escape, scrolling tables contain hidden labels
+and make room for a bottom-row menu. Details in docs/admin-redesign-handoff.md. Also includes the Categories tidy-up
+(`fa03f75`), which was already live as `mynewspaper-web:admincats-20261026` (`27612cfd928c`, unrecorded until now).
+
+Deployed `mynewspaper-web:tvdelete-20261027` (`b9f58d6f8006`) through Compose, healthy; rollback
+`mynewsfeed-web:before-mynewspaper-tvdelete-20261027` (`27612cfd928c`). The dev container had been rebuilt, so the
+Docker CLI/Compose were reinstalled and the lost `/tmp` override was regenerated from the live container's own settings
+(nine app settings identical to live; port 8085, dev-bridge, `mynewsfeed_mynewsfeed-keys`, restart policy and health check
+matched). Predeploy: 734 .NET tests; tv-series-delete at 320/390/430/744/1024/1440 light/dark, admin-layout (all widths)
+and section-hubs passed; mixed-search-nav failed only on Where to watch title search (no provider key locally). Live:
+/healthz and 13 public routes, admin sign-in redirect, tv-series-delete at all six widths light/dark, admin-layout at
+390/1440 light/dark passed; screenshots reviewed; logs showed only the usual HTTPS-port warning. The checks deleted only
+their own throwaway series. Real device not checked.
 
 ## Admin redesign, phases 1–4 — deployed October 26, 2026 (Central)
 
