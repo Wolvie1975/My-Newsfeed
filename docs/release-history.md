@@ -6,10 +6,30 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The latest recorded web release is `mynewspaper-web:tvdelete-20261027`
-(image `b9f58d6f8006`), deployed October 27, 2026 (Central). Its rollback image is
-`mynewsfeed-web:before-mynewspaper-tvdelete-20261027`. Deployment checks passed then;
+The latest recorded web release is `mynewspaper-web:top25-20261027`
+(image `a917e2807bd8`), deployed October 27, 2026 (Central). Its rollback image is
+`mynewsfeed-web:before-mynewspaper-top25-20261027`. Deployment checks passed then;
 this is a dated observation, not live hosting status.
+
+## Homepage Top 25 poll switch in place — deployed October 27, 2026 (Central)
+
+Choosing a poll in the homepage Top 25 card used to submit its GET form and reload the whole page, jumping back to the
+top. A new `/home/rankings?rankingSourceId=` fragment endpoint returns only the card, and `home-rankings.js` swaps it in
+place, updates the address with `replaceState` (bookmarks and refresh keep the poll) and keeps focus on the picker. The
+GET form stays as the no-JavaScript and failure fallback. The back button no longer steps through polls. Commit `00b5b9c`.
+
+Deployed `mynewspaper-web:top25-20261027` (`a917e2807bd8`) through Compose, healthy; rollback
+`mynewsfeed-web:before-mynewspaper-top25-20261027` (`b9f58d6f8006`). The previous session's private Compose override was
+gone, so it was regenerated from the live container's own settings (nine app settings identical to live; port 8085,
+dev-bridge, `mynewsfeed_mynewsfeed-keys`, restart policy and health check matched). Predeploy: solution build with no
+warnings, 734 .NET tests, lint clean (format:check flags only the earlier `tv-series-delete.browser.cjs`); home-top25
+(now asserting no reload and unchanged scroll), home-opinion, home-columns, home-watch-search, personal-features and
+personal-layout passed; at 320/390/430 light/dark the poll switch kept the exact scroll position with no overflow or
+script errors, and with the new script blocked the old reload-to-top reproduced (3300px to 0). Live: /healthz and 12
+public routes plus the three homepage fragments returned 200, unauthenticated /admin redirected to login; home-top25,
+home-opinion and home-columns passed; the 320/390/430 light/dark switch check passed; screenshots reviewed (team logos
+finish loading a moment after the swap, as on a full load); logs showed only the usual startup warnings. Tablet and
+desktop were covered by home-top25's width sweep only; real device not checked.
 
 ## TV series Delete — deployed October 27, 2026 (Central)
 
