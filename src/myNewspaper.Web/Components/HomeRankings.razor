@@ -8,6 +8,11 @@
     <div class="d-rankings__body">
         @if (Data.Sources.Count > 0)
         {
+            @* Sports as pills on desktop (1024px and up); phones and iPad portrait keep the dropdown below. *@
+            <nav class="sec-pills sec-pills--desktop d-rankings__pills" aria-label="Sport">
+                @foreach (var source in Data.Sources)
+                { <a href="@($"?rankingSourceId={source.Id}")" data-ranking-source="@source.Id" aria-current="@(source.Id == Data.Selected?.Id ? "page" : null)">@PillLabel(source)</a> }
+            </nav>
             <form class="catselect" method="get" action="">
                 <label for="home-ranking-source">Sport and poll</label>
                 <select id="home-ranking-source" name="rankingSourceId" onchange="this.form.requestSubmit()">
@@ -59,4 +64,8 @@
     [Parameter] public RankingsPage Data { get; set; } = new([], null, null, []);
     private IEnumerable<myNewspaper.Web.Data.Models.SportsRankingTeam> RankedTeams =>
         Data.Teams.Where(t => t.Rank is >= 1 and <= 25).OrderBy(t => t.Rank).ThenBy(t => t.TeamName);
+
+    // The short sport name, unless two polls share a sport; then the full name tells them apart.
+    private string PillLabel(myNewspaper.Web.Data.Models.SportsRankingSource source) =>
+        !string.IsNullOrWhiteSpace(source.Sport) && Data.Sources.Count(s => s.Sport == source.Sport) == 1 ? source.Sport : source.DisplayName;
 }

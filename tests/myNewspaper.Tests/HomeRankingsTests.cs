@@ -35,6 +35,22 @@ public class HomeRankingsTests
     }
 
     [Fact]
+    public async Task Desktop_pills_use_short_sport_names_unless_two_polls_share_a_sport()
+    {
+        var football = new SportsRankingSource { Id = 1, Sport = "Football", DisplayName = "Football — AP Top 25" };
+        var soccer = new SportsRankingSource { Id = 4, Sport = "Soccer", DisplayName = "Women's Soccer — United Soccer Coaches" };
+        var html = await Render(new([football, soccer], football, null, []));
+        Assert.Contains("d-rankings__pills", html);
+        Assert.Contains("href=\"?rankingSourceId=1\" data-ranking-source=\"1\" aria-current=\"page\">Football</a>", html);
+        Assert.Contains("href=\"?rankingSourceId=4\" data-ranking-source=\"4\">Soccer</a>", html);
+
+        var coaches = new SportsRankingSource { Id = 6, Sport = "Football", DisplayName = "Football — Coaches Poll" };
+        html = await Render(new([football, coaches], football, null, []));
+        Assert.Contains(">Football &#x2014; AP Top 25</a>", html);
+        Assert.Contains(">Football &#x2014; Coaches Poll</a>", html);
+    }
+
+    [Fact]
     public async Task Empty_and_error_states_do_not_fabricate_rankings()
     {
         Assert.Contains("No ranking sources", await Render(new([], null, null, [])));

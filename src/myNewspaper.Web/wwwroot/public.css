@@ -5599,6 +5599,25 @@
     max-width: 100%;
     min-width: 0;
 }
+/* Sports as pills on desktop only: phones and iPad portrait (below 1024px) keep the dropdown. */
+.pub .d-rankings .d-rankings__pills {
+    display: none;
+}
+@media (min-width: 1024px) {
+    .pub .d-rankings .d-rankings__pills {
+        display: flex;
+        gap: 6px;
+        margin-bottom: 12px;
+    }
+    /* Slightly tighter than page pills, so three sports fit one row in the 256px column at 1024px. */
+    .pub .d-rankings .d-rankings__pills a {
+        padding: 0 11px;
+        font-size: 13px;
+    }
+    .pub .d-rankings__body .catselect {
+        display: none;
+    }
+}
 .pub .d-rankings__table {
     max-height: 440px;
     overflow: auto;

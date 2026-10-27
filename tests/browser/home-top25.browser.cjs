@@ -15,21 +15,42 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
             .locator('select option')
             .evaluateAll((ns) => ns.map((n) => ({ value: n.value, text: n.textContent })));
         assert(options.length, 'Production ranking sources expected');
+        // Desktop (1024px and up): one pill per sport, short names, and the dropdown hidden.
+        await page.setViewportSize({ width: 1440, height: 900 });
+        const pills = card.locator('.d-rankings__pills a');
+        assert.equal(await pills.count(), options.length);
+        assert(await card.locator('.d-rankings__pills').isVisible());
+        assert(!(await card.locator('select').isVisible()));
+        assert(
+            (await pills.allTextContents()).every((t) => !t.includes('—')),
+            'Pills use short sport names',
+        );
         // Switching polls swaps only this card: no reload, and the page stays where it is.
         await card.scrollIntoViewIfNeeded();
         await page.evaluate(() => (window.__top25NoReload = true));
         for (const option of options) {
+            // Bring the pill into view first, so the click itself doesn't scroll.
+            const pill = card.locator(`.d-rankings__pills a[data-ranking-source="${option.value}"]`);
+            await pill.scrollIntoViewIfNeeded();
             const scrollBefore = await page.evaluate(() => scrollY);
-            await card.locator('select').selectOption(option.value);
+            await pill.click();
             await page.waitForURL((u) => u.searchParams.get('rankingSourceId') === option.value);
             await page.waitForFunction(
                 (value) =>
-                    document.querySelector('[data-home-section="rankings"] select')?.value === value &&
+                    document
+                        .querySelector(`[data-home-section="rankings"] a[data-ranking-source="${value}"]`)
+                        ?.getAttribute('aria-current') === 'page' &&
                     !document.querySelector('[data-home-section="rankings"][aria-busy]'),
                 option.value,
             );
             assert.equal(await page.evaluate(() => window.__top25NoReload), true, 'Poll switch reloaded the page');
             assert(Math.abs((await page.evaluate(() => scrollY)) - scrollBefore) <= 1, 'Poll switch moved the page');
+            assert.equal(await card.locator('.d-rankings__pills a[aria-current="page"]').count(), 1);
+            assert.equal(
+                await page.evaluate(() => document.activeElement?.dataset.rankingSource),
+                option.value,
+                'Focus stays on the chosen pill',
+            );
             assert.equal(await card.locator('select').inputValue(), option.value);
             assert.equal(await card.locator('.d-more').getAttribute('href'), 'rankings?sourceId=' + option.value);
             const ranks = await card.locator('tbody tr td:first-child').allTextContents();
@@ -81,6 +102,31 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
                 } else assert((await table.boundingBox()).height <= 441);
             }
         }
+        // Phones and iPad portrait keep the dropdown, which also switches in place.
+        for (const width of [390, 820]) {
+            await page.setViewportSize({ width, height: 900 });
+            await page.waitForTimeout(250);
+            assert(!(await card.locator('.d-rankings__pills').isVisible()), `No pills at ${width}px`);
+            assert(await card.locator('select').isVisible(), `Dropdown at ${width}px`);
+            await card.locator('select').scrollIntoViewIfNeeded();
+            const value =
+                options[0].value === (await card.locator('select').inputValue())
+                    ? options.at(-1).value
+                    : options[0].value;
+            const scrollBefore = await page.evaluate(() => scrollY);
+            await card.locator('select').selectOption(value);
+            await page.waitForFunction(
+                (v) =>
+                    document.querySelector('[data-home-section="rankings"] select')?.value === v &&
+                    !document.querySelector('[data-home-section="rankings"][aria-busy]'),
+                value,
+            );
+            assert.equal(await page.evaluate(() => window.__top25NoReload), true, 'Dropdown switch reloaded the page');
+            assert(
+                Math.abs((await page.evaluate(() => scrollY)) - scrollBefore) <= 1,
+                'Dropdown switch moved the page',
+            );
+        }
         await page.locator('select').focus();
         assert.deepEqual(errors, []);
         await card.screenshot({ path: process.env.TOP25_SCREENSHOT || 'test-results/home-top25.png' });
@@ -91,10 +137,18 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
         await p.locator('[data-home-section="rankings"]').getByRole('button', { name: 'Apply' }).click();
         assert.equal(new URL(p.url()).searchParams.get('rankingSourceId'), options.at(-1).value);
         assert.equal(await p.locator('#home-ranking-source').inputValue(), options.at(-1).value);
+        // Without JavaScript, desktop pills are plain links to the same address.
+        await p.setViewportSize({ width: 1440, height: 900 });
+        await p.locator(`.d-rankings__pills a[data-ranking-source="${options[0].value}"]`).click();
+        await p.waitForURL((u) => u.searchParams.get('rankingSourceId') === options[0].value);
+        assert.equal(
+            await p.locator('.d-rankings__pills a[aria-current="page"]').getAttribute('data-ranking-source'),
+            options[0].value,
+        );
         await plain.close();
         assert.equal((await page.request.get(base + '/healthz')).status(), 200);
         console.log(
-            'Homepage Top 25: in-place poll switch (no reload, scroll kept), available source selection, matching full-page link, ranks 1–25, expanded desktop/scrolling mobile table, no standalone F1, responsive widths, no-JS Apply, no JS errors, health 200 passed.',
+            'Homepage Top 25: desktop sport pills (short names, none on phone/iPad), in-place switch by pill and dropdown (no reload, scroll kept), available source selection, matching full-page link, ranks 1–25, expanded desktop/scrolling mobile table, no standalone F1, responsive widths, no-JS Apply, no JS errors, health 200 passed.',
         );
     } finally {
         await browser.close();
