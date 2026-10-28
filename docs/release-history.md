@@ -6,10 +6,32 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The latest recorded web release is `mynewspaper-web:profiles-requests-20261028`
-(image `d3a35f20d238`), deployed October 28, 2026 (Central). Its rollback image is
-`mynewsfeed-web:before-mynewspaper-profiles-requests-20261028`. Deployment checks passed then;
+The latest recorded web release is `mynewspaper-web:profiles-picker-20261028`
+(image `1b52180fbe9c`), deployed October 28, 2026 (Central). Its rollback image is
+`mynewsfeed-web:before-mynewspaper-profiles-picker-20261028`. Deployment checks passed then;
 this is a dated observation, not live hosting status.
+
+## Edition picker built, profiles still off — deployed October 28, 2026 (Central)
+
+Stage U1's code, deployed ahead of switch-on: the edition picker (`/editions`, counts-only previews, PIN pad), the
+first-PIN page (`/editions/{id}/new-pin`), `profiles.js` (PIN pad and the scripts' gate redirect), the header's
+edition chip and the phone menu's Switch edition, and `db/021_seed_first_profiles.sql` (not run). `Profiles:Enabled`
+stays `false`, so readers see no change: none of the new markup renders without an open profile, and `profiles.js`
+only wraps `fetch` to watch for the gate's 401. Commit `fb9d61e`.
+
+Deployed `mynewspaper-web:profiles-picker-20261028` (`1b52180fbe9c`) through Compose with `--pull`, healthy; rollback
+`mynewsfeed-web:before-mynewspaper-profiles-picker-20261028` (`d3a35f20d238`, the A2 release). The container's
+environment, sorted and hashed, is identical to the previous container's. Predeploy: 925 .NET tests (including the
+picker never printing a followed show or channel name, and the first-PIN page); `editions.browser.cjs` locally with
+`Profiles__Enabled=true` at 320, 390, 430, 744, 820, 1024 and 1440px in light and dark (gate, PIN pad as sheet and
+dialog, wrong PIN, lockout, no-JavaScript form, edition chip, phone menu, script gate, sign-out, sideways scroll,
+contrast, 44px targets; screenshots reviewed); with profiles off locally, `personal-layout`, `tablet-layout`,
+`scheme-contrast`, `theme-mode`, `shared-saved` and `branding` passed (`mixed-search-nav` needs the streaming-catalog
+key, which the local run doesn't have). `021` dry-run in a rolled-back transaction. Live: `/`, `/tv`, `/videos`,
+`/saved`, `/entertainment`, `/settings` 200 with no chip or alert markup for a reader; `/editions`, `/profiles` and
+`/api/me` 404; `/admin/profiles` redirects to login; `personal-layout`, `branding` and `theme-mode` passed on the live
+build (`editions` skipped itself, as profiles are off). Logs showed no errors. Mobile checks of the picker on the live
+build wait for switch-on, when it first becomes reachable. Not checked: a real device.
 
 ## Admin requests and the header alert, profiles still off — deployed October 28, 2026 (Central)
 
