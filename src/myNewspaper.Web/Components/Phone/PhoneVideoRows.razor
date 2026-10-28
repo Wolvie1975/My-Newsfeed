@@ -1,0 +1,13 @@
+@using myNewspaper.Web.Components.Feed
+@inject FeedDates Dates
+<div class="mx-video-list">
+@foreach (var video in Items) {
+    <article class="mx-video-row">
+        <div><span class="mx-item-meta">@video.ChannelName · @Dates.Published(video.PublishedAt)</span>
+            <h3>@if (FeedQuery.SafeHref(video.Url) is { } url) { <a href="@url" target="_blank" rel="noopener noreferrer">@video.Title</a> } else { @video.Title }</h3>
+        </div>
+        <div class="mx-actions"><VideoSaveButton Item="video" /><ShareButton Url="@video.Url" Title="@video.Title" Kind="video" /></div>
+    </article>
+}
+</div>
+@code { [Parameter] public IEnumerable<VideoItem> Items { get; set; } = []; }

@@ -345,7 +345,7 @@ Each release is independent: a page that hasn't been converted keeps its current
   320/390/430px in light/dark, plus MLS/Championship/Premier League data checks, no-JS and retained desktop tables.
   Live verification is recorded in release history. Evidence: `/tmp/soccer-points/`. Included in the scheme-ribbon local check-in.
 - [ ] 4. **Entertainment**, **Movies**, **TV & Streaming**, **Digital releases**, **Box office**.
-- [ ] 5. **Where to watch**, **Local**, **YouTube**.
+- [x] 5. **Where to watch**, **Local**, **YouTube** — deployed October 28, 2026 as `phone-life-20261028` (`7176ce3f5fa0`); see the working record below.
 - [ ] 6. Ribbon-only pages: both All headlines pages, **Saved**, **Settings**.
 
 ## Follow-up — Home lead restricted to Top Headlines (deployed October 28, 2026)
@@ -390,3 +390,64 @@ Kansas/City Home contrast passed at 390/1440px in both themes. The same 16-schem
 search, controls, the seven other ribbon routes, tablet/desktop visibility and no-JS Home. Live Kansas
 light, City dark and Coastal light screenshots inspected. Temporary test profile deleted. Deployment
 and rollback recorded in release history; evidence `/tmp/ribbon-deploy/`. Real devices remain unverified.
+
+
+## Release 5 working record — October 28, 2026
+
+Status: implemented and deployed from `develop` after `bb368cc`; source and deployment records are
+included in the release 5 local check-in. The user requested Markdown updates throughout implementation and deployment. Release 4
+remains pending; release 5 was taken next as requested.
+
+- [x] Watch: scheme ribbon with search/Browse, numbered trending-movie rail and folds for Trending TV,
+  new movies and services. Existing search/provider results, sort, paging and detail modal retained.
+- [x] Local: scheme ribbon, one weather request/controller shared across layouts, labelled first forecast
+  period and next-three tiles, top three news stories, folds for more news/full outlook/event calendars.
+  Location/reset, official/stale/error labels, honest feed coverage and cursor pagination retained.
+- [x] YouTube: scheme ribbon with a combined category/channel select retaining query context, dark
+  featured video, Watch later/Share, short Latest list and folds from real categories/channels.
+- [x] Short fold previews link to complete phone lists (`local?view=news`, `videos?view=all`). Empty
+  groups are omitted; Saved's existing video view and pagination remain accessible.
+- [x] Local mobile/interaction and tablet/desktop verification, screenshot review, build/lint/formatting.
+- [x] Deploy with runtime/keys preserved, retain rollback, repeat live checks and record evidence.
+
+Implementation checkpoints found and corrected string-parameter bindings and short headline touch targets.
+Screenshot review also caught Watch shelves narrowed by the display:contents wrapper; wrapper-aware grid
+rules restore the original full-width shelves, with an assertion at 744/1024/1440px. Each page reuses its
+existing data; no second query, schema migration or collector change was introduced.
+
+Local verification: `phone-life` passed 320/390/430px × Kansas/Monochrome/Cardinals × light/dark, including
+contrast, overflow, unique IDs, 44px targets, 64px summaries, native exclusive/keyboard folds, weather
+focal/tiles/full outlook, mocked save/unsave, sharing/Escape/focus, Watch modal/search/sort, category/query/
+reload, complete lists and empty video search. No-JavaScript disclosures/selectors passed at all three
+phone widths in the default fallback rendering. Retained 744/1024/1440px layouts passed in both themes.
+After the wrapper correction, targeted Watch checks reconfirmed full-width shelves, same-row title/search,
+arrows and phone layout in both themes. Build passed with zero warnings/errors, plus lint, changed-code
+formatting and `git diff --check`. The full .NET suite was not rerun for this UI-only change.
+
+Existing local suites passed: `video-share`, `youtube-categories`, `location-weather`, `weather-icons`,
+`watch-featured`, `watch-sort`, `watch-results`, `watch-paging`, and `watch`. `phone-local-weather` passed
+320/390/430px light/dark with single/stale/empty/503 forecasts, no invented extra tiles and one request
+across phone/desktop resizing. Representative phone, wider-layout and no-JavaScript screenshots reviewed.
+Local evidence: `/tmp/release5/`; the preview is stopped.
+
+Deployed `mynewspaper-web:phone-life-20261028`, image
+`sha256:7176ce3f5fa02019ab52f8ee66e89e6f4cdf5506f3199ff097b88ce7ea0a2a3c`.
+Rollback: `mynewsfeed-web:before-mynewspaper-phone-life-20261028` (`c1e3fa5259c3`). Environment values,
+entrypoint, ports, persistent keys/mounts, restart policy, health check and network verified preserved.
+Container healthy; `/healthz` 200 Healthy. Profiles remain enabled.
+
+Live `phone-life` passed the same three-width/three-scheme/light-dark matrix with profiles on, including
+all phone links/buttons/input/select targets, native/keyboard/no-JS controls, mocked save/unsave, share,
+Watch modal/search/sort, category/query/reload, complete lists, empty videos and retained 744/1024/1440px
+layouts. Real weather API returned 200 and populated four forecast periods. Authenticated main-route
+checks passed; recent application logs had no error markers and regular-season phase checks ran.
+Phone screenshots across all required widths/themes, the wider Watch layout and real forecast were
+inspected. The temporary profile and two orphaned headless test-device records were removed;
+Jason and Jacob remain.
+Live evidence: `/tmp/release5-deploy/`.
+
+Limits: no real device or VoiceOver/TalkBack check. Live browser weather fixtures and mocked Saved API
+isolate test data; the real forecast was separately verified. Geolocation permission/fallback flows were
+verified on the secure local preview, not repeated over the container's plain-HTTP live address.
+User subsequently requested a local commit before starting release 6. Release 5 source, tests and
+deployment records are included in that check-in on `develop`. No push performed.

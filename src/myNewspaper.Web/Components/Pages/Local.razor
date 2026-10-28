@@ -4,11 +4,17 @@
 @inject IDbContextFactory<WebScraperContext> Factory
 @inject ILogger<Local> Logger
 <PageTitle>Kansas City · myNewspaper</PageTitle>
+<div class="mx-life-layout">
+<div class="mx-desktop">
 <PageHeading Title="Kansas City" Eyebrow="Closer to home" Description="" />
 @* Layout as in the approved concept: the forecast across the top, then local news beside things to do. *@
 <SectionSelect Id="local-section" Label="Section" Current="local" Choices="@(new NavigationChoice[] { new("local", "Overview"), new("local#local-news", "News"), new("local#local-weather", "Weather"), new("local#local-events", "Events") })" />
-<section class="local-panel" id="local-weather" data-local-weather>
+</div>
+<div class="mx-phone"><PhoneRibbon Title="Kansas City" Kicker="Closer to home · local news & weather"><SectionSelect Id="local-section-m" Label="Section" Current="@(LocalSection == "events" ? "local?section=events#local-more-m" : "local")" Choices="@(new NavigationChoice[] { new("local", "Overview"), new("local#local-news-m", "News"), new("local#local-weather", "Weather"), new("local?section=events#local-more-m", "Events") })" AlwaysSelect="true" /></PhoneRibbon></div>
+<section class="local-panel mx-local-weather" id="local-weather" data-local-weather>
     <div class="d-card__head"><h2 data-weather-title>Kansas City forecast</h2><a data-weather-link href="https://forecast.weather.gov/MapClick.php?lat=39.0997&amp;lon=-94.5786" target="_blank" rel="noopener noreferrer">National Weather Service ↗</a></div>
+    <div class="mx-phone mx-weather-feature" data-weather-feature></div>
+    <div class="mx-phone mx-tiles" data-weather-tiles></div>
     <div class="weather-location-controls">
         <button type="button" class="nf-btn nf-btn--secondary" data-weather-locate hidden>Use my location</button>
         <button type="button" class="nf-btn nf-btn--secondary" data-weather-reset hidden>Use Kansas City</button>
@@ -18,7 +24,8 @@
     <div class="weather-grid" data-weather-periods></div>
     <noscript><p>Use the National Weather Service link to view the forecast.</p></noscript>
 </section>
-<div class="lc-cols">
+<PhoneLocalNews Data="feed" Dedicated="dedicated" Error="@error" After="@After" Section="@LocalSection" Expanded="@(ViewQuery == "news")" />
+<div class="mx-desktop"><div class="lc-cols">
     <section id="local-news" class="lc-news"><h2 class="ef-label">Kansas City news</h2>
         <p class="ef-note">@(dedicated ? "From enabled Kansas City News publishers." : "Stories mentioning Kansas City in the collected news feed. These are keyword matches, including sports; this is not a complete local news service.")</p>
         @if (error is not null) { <p class="empty" role="status">@error</p> }
@@ -41,7 +48,12 @@
         </div>
     </aside>
 </div>
+</div>
+</div>
+
 @code {
+    [SupplyParameterFromQuery(Name="view")] private string? ViewQuery {get;set;}
+    [SupplyParameterFromQuery(Name="section")] private string? LocalSection {get;set;}
     [SupplyParameterFromQuery(Name="after")] private string? After {get;set;}
     private FeedPage feed = new([],0,0,null);
     private bool dedicated;

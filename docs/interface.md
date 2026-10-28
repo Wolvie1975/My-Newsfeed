@@ -422,6 +422,33 @@ The open profile's teams render without JavaScript; browser-only preferences app
 are off. Missing data does not create empty data folds or invented ranks, records, games or point gaps. See
 [the mobile refresh handoff](mobile-refresh-handoff.md) and [release verification](release-history.md).
 
+## Folded phone Watch, Local and YouTube
+
+Release 5 deployed October 28, 2026 as `phone-life-20261028`; verification is maintained in the mobile handoff/release history.
+Below 744px these pages use scheme-colored title ribbons, one dark focal block and native exclusive folds.
+The first available fold starts open; selectors and disclosures retain a no-JavaScript path. The existing
+layouts remain from 744px. These views reuse their page's loaded data rather than querying it twice.
+
+Where to watch has search and a Browse select in the ribbon, a numbered trending-movie shelf that scrolls
+inside the dark block, and folds for Trending TV, new movies and selected services. Search/provider results,
+sort, paging and title-detail dialogs remain shared with the wider layout. Service selection remains in the
+URL and is retained by the phone search/Browse forms. Service management links to Settings.
+
+Local uses one weather controller/request for both layouts. Phones highlight the first **forecast period**
+with its real name, temperature, summary and wind, then up to three following periods. The full outlook is
+in Forecast; stale/error messages and official attribution stay visible. Geolocation is explicit, rounded
+and limited to the current tab; Kansas City reset and unavailable-location fallbacks are retained. A single
+period produces no invented tiles. The news list shows three stories and a short More local news preview;
+All local stories opens the complete loaded phone list (`local?view=news`) and retains cursor pagination.
+Things to do links to the existing external community calendars. Coverage labels distinguish dedicated
+Kansas City publishers from keyword-matched general feed stories.
+
+YouTube uses one Channel dropdown that also includes real category choices. It retains category and title
+query context, features one video with play/Watch later/Share, lists three latest videos, then folds short
+previews by collected category (or channel for uncategorized items). All matching videos opens a complete
+filtered phone list (`videos?view=all`) with the existing paging. Watch later links to Saved's video view.
+Unsafe video/story URLs remain plain text; thumbnails and metadata keep their existing fallbacks.
+
 ## Dedicated F1 sports section
 
 Open Sports → F1 for Schedule, Results, Standings and News tabs. Schedule offers upcoming

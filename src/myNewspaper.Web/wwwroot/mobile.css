@@ -984,3 +984,256 @@ span.mx-stepper__btn {
 .mx-block [data-phone-team-section] .mx-tiles {
     grid-template-columns: repeat(2, minmax(0, 1fr));
 }
+
+/* Release 5: Watch, Local and YouTube. Layout overrides stay below the phone breakpoint. */
+.mx-watch-rail {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 154px;
+    gap: 12px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    counter-reset: watch-rank;
+    margin: 16px 0 0;
+    padding: 0 0 12px;
+    list-style: none;
+}
+.pub .mx-watch-rail .watch-card {
+    counter-increment: watch-rank;
+    scroll-snap-align: start;
+    border-color: var(--mx-block-line);
+    background: var(--mx-block-tile);
+}
+.mx-watch-rail .watch-card::before {
+    content: counter(watch-rank);
+    display: block;
+    padding: 6px 10px;
+    font: 800 36px/1 var(--mx-serif);
+    color: var(--mx-block-accent);
+}
+.pub .mx-watch-rail .watch-card > a,
+.pub .mx-watch-rail .watch-card h3 {
+    color: var(--mx-block-fg);
+}
+.pub .mx-watch-rail .watch-card p {
+    color: var(--mx-block-2);
+    font-size: 13px;
+}
+.pub .mx-watch-rail .watch-card h3 {
+    font-size: 16px;
+    line-height: 1.3;
+    margin: 0 0 8px;
+}
+.mx-watch-options,
+.mx-local-pages,
+.mx-video-pages {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 16px;
+    padding: 12px 16px;
+}
+.pub .mx-watch-options a,
+.pub .mx-local-pages a,
+.pub .mx-video-pages a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+}
+.mx-video-play {
+    position: relative;
+    display: grid;
+    place-items: center;
+    aspect-ratio: 16 / 9;
+    margin: 12px 0;
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--mx-block-tile);
+}
+.mx-video-play img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.mx-video-play > span {
+    position: absolute;
+    display: grid;
+    place-items: center;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: #141b2b;
+    color: #ffffff;
+    font-size: 24px;
+}
+.pub .mx-video-feature .mx-block__title a {
+    color: var(--mx-block-fg);
+}
+.mx-video-row,
+.mx-local-story {
+    padding: 12px 0;
+    border-bottom: 1px solid var(--row-border);
+}
+.pub .mx-video-row h3,
+.pub .mx-local-story h3 {
+    font-size: 17px;
+    line-height: 1.35;
+    margin: 4px 0 8px;
+    overflow-wrap: anywhere;
+}
+.pub .mx-item-meta {
+    color: var(--text-3);
+    font-size: 12px;
+}
+.mx-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.pub .mx-actions button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-width: 44px;
+    min-height: 44px;
+    width: auto;
+    height: auto;
+    padding: 6px 10px;
+    margin: 0;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--text);
+}
+.pub .mx-actions button[hidden] {
+    display: none;
+}
+.mx-weather-feature__temperature {
+    margin: 4px 0;
+    font: 800 80px/1 var(--mx-serif);
+}
+.mx-weather-feature__summary {
+    font-size: 20px;
+    font-weight: 700;
+}
+.mx-local-forecast {
+    display: grid;
+    gap: 12px;
+}
+.pub .mx-local-forecast .weather-period {
+    margin: 0;
+    padding: 12px 0;
+    border: 0;
+    border-bottom: 1px solid var(--row-border);
+    border-radius: 0;
+    background: transparent;
+    color: var(--text);
+    box-shadow: none;
+}
+.pub .mx-local-forecast .weather-temperature {
+    font-family: var(--mx-serif);
+    font-size: 32px;
+}
+@media (max-width: 743px) {
+    .pub .page > .mx-life-layout,
+    .pub .watch-page:has([data-phone-watch-ribbon]) {
+        margin: -12px -20px -40px;
+        padding-bottom: 24px;
+        background: var(--surface);
+    }
+    .pub
+        .watch-page:has([data-phone-watch-ribbon])
+        > :is(.watch-results-bar, .watch-grid, .watch-results, .watch-tabs, p) {
+        margin-left: 16px;
+        margin-right: 16px;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub #local-weather.mx-local-weather {
+        margin: 0;
+        padding: 20px 16px;
+        border: 0;
+        border-radius: 0;
+        background: var(--mx-block-bg);
+        color: var(--mx-block-fg);
+    }
+    .pub #local-weather.mx-local-weather .d-card__head {
+        flex-wrap: wrap;
+    }
+    .pub #local-weather.mx-local-weather .d-card__head h2,
+    .pub #local-weather.mx-local-weather .d-card__head a,
+    .pub #local-weather.mx-local-weather > .updated {
+        color: var(--mx-block-2);
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub #local-weather.mx-local-weather .weather-grid {
+        display: none;
+    }
+    .pub #local-weather.mx-local-weather .mx-tiles {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        margin-bottom: 16px;
+    }
+    .pub #local-weather.mx-local-weather .mx-tiles:empty {
+        display: none;
+    }
+    .pub #local-weather.mx-local-weather .weather-location-controls button {
+        min-height: 44px;
+        border-color: var(--mx-block-line);
+        background: var(--mx-block-tile);
+        color: var(--mx-block-fg);
+    }
+    .pub .mx-watch-feature + .mx-folds .watch-row__head {
+        flex-wrap: wrap;
+    }
+}
+/* Combined utility classes must not reveal phone-only content at larger widths. */
+.mx-phone.mx-tiles,
+.mx-phone.mx-video-pages {
+    display: none;
+}
+@media (max-width: 743px) {
+    .mx-phone.mx-video-pages {
+        display: flex;
+    }
+}
+.pub .mx-watch-rail .watch-card > a {
+    height: auto;
+}
+.pub .mx-watch-rail .watch-card a > div {
+    padding: 10px;
+}
+.pub .mx-watch-rail .watch-card p {
+    margin: 0 0 6px;
+}
+.pub .mx-watch-rail .watch-match,
+.mx-local-weather .mx-tile__sub {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    overflow: hidden;
+}
+/* Short titles remain a full touch target, just like multiline headlines. */
+.pub [data-phone-life] :is(.mx-top__title, .mx-video-row h3, .mx-local-story h3, .mx-block__title) > a {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+}
+@media (max-width: 743px) {
+    .pub .watch-page:has([data-phone-watch-ribbon]) > .watch-credits {
+        margin-left: 16px;
+        margin-right: 16px;
+    }
+}
+/* The retained Watch layout uses a grid whose original direct children now sit in a display:contents wrapper. */
+@media (min-width: 744px) {
+    .pub .watch-page > .mx-desktop > * {
+        grid-column: 1 / -1;
+    }
+    .pub .watch-page > .mx-desktop > .page-heading {
+        grid-column: 1;
+        grid-row: 1;
+        margin: 0;
+        padding: 0 0 22px;
+        border: 0;
+    }
+}

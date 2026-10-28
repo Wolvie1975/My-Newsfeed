@@ -11,6 +11,8 @@
    More videos. Without JavaScript the first featured video shows and the carousel controls stay hidden. Filters are
    plain links and a GET form, so every view has a shareable URL. *@
 
+<div class="mx-life-layout">
+<div class="mx-desktop">
 <PageHeading Title="YouTube" Eyebrow="From your channels" Description="" />
 
 @if (categories.Count > 0)
@@ -149,11 +151,25 @@ else
     }
 }
 
+</div>
+<PhoneVideos Items="@(listing?.Items ?? [])" Total="@(listing?.Total ?? 0)" Featured="@featured.FirstOrDefault()" Choices="PhoneChoices" Current="@PhoneCurrent" Expanded="@(ViewQuery == "all")" Q="@Q" Category="@selectedCategory?.Slug" Channel="@Channel" />
+@if (listing is not null && (listing.Total > 50 || page > 1)) {
+<nav class="mx-phone mx-video-pages" aria-label="Phone video pages">@if (page > 1) { <a href="@PageHref(page - 1)">← Newer videos</a> } @if (offset + listing.Items.Count < listing.Total) { <a href="@PageHref(page + 1)">More videos →</a> }<span>Showing @(offset + listing.Items.Count) of @listing.Total</span></nav>
+}
+
+</div>
+
 @code {
     [SupplyParameterFromQuery(Name = "page")] private string? PageText { get; set; }
+    [SupplyParameterFromQuery(Name = "view")] private string? ViewQuery { get; set; }
+    private string ChannelHref(VideoChannel c) => CategoryHref(selectedCategory) + (CategoryHref(selectedCategory).Contains('?') ? "&" : "?") + "channel=" + Uri.EscapeDataString(c.ChannelId);
+    private string PhoneCurrent => channels.FirstOrDefault(IsSelected) is { } c ? ChannelHref(c) : CategoryHref(selectedCategory);
+    private IReadOnlyList<NavigationChoice> PhoneChoices => new[] { new NavigationChoice(CategoryHref(null), "All channels") }
+        .Concat(categories.Select(c => new NavigationChoice(CategoryHref(c), "Category: " + c.Name)))
+        .Concat(channels.Select(c => new NavigationChoice(ChannelHref(c), c.Name))).ToList();
     private int page;
     private int offset;
-    private string PageHref(int target) => "videos?page=" + target + (selectedCategory is null ? "" : "&category=" + selectedCategory.Slug) + (string.IsNullOrWhiteSpace(Q) ? "" : "&q=" + Uri.EscapeDataString(Q)) + (string.IsNullOrWhiteSpace(Channel) ? "" : "&channel=" + Uri.EscapeDataString(Channel));
+    private string PageHref(int target) => "videos?page=" + target + (ViewQuery == "all" ? "&view=all" : "") + (selectedCategory is null ? "" : "&category=" + selectedCategory.Slug) + (string.IsNullOrWhiteSpace(Q) ? "" : "&q=" + Uri.EscapeDataString(Q)) + (string.IsNullOrWhiteSpace(Channel) ? "" : "&channel=" + Uri.EscapeDataString(Channel));
     [SupplyParameterFromQuery(Name = "channel")] private string? Channel { get; set; }
     [SupplyParameterFromQuery(Name = "q")] private string? Q { get; set; }
     [SupplyParameterFromQuery(Name = "category")] private string? CategoryQuery { get; set; }

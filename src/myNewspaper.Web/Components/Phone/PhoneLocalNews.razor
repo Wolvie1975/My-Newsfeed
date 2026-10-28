@@ -1,0 +1,42 @@
+@using myNewspaper.Web.Components.Feed
+<div class="mx-phone" data-phone-life="local">
+    <section class="mx-sport-list" id="local-news-m">
+        <div class="mx-head"><h2>Kansas City news</h2></div>
+        <p class="mx-note">@(Dedicated ? "From enabled Kansas City News publishers." : "Stories mentioning Kansas City in the collected feed. These keyword matches include sports and are not a complete local news service.")</p>
+        @if (Error is not null) { <p class="mx-note" role="status">@Error</p> }
+        else if (Data.Items.Count == 0) { <p class="mx-note">No matching stories available. Check back after the next collection.</p> }
+        else {
+            <ol class="mx-top">@foreach (var (item, index) in (Expanded ? Data.Items : Data.Items.Take(3)).Select((v, i) => (v, i))) {
+                <li class="mx-top__item"><span class="mx-top__n">@(index + 1)</span><div class="mx-top__body"><span class="mx-top__meta mx-c-local">@FeedText.SourceName(item.SourceLabel, item.SourceUrl)</span><h3 class="mx-top__title"><StoryLink Item="item" /></h3></div><SaveButton Item="item" Title="@FeedText.StripEmoji(item.Title)" Source="@FeedText.SourceName(item.SourceLabel, item.SourceUrl)" /></li>
+            }</ol>
+        }
+    </section>
+    <div id="local-more-m">
+    <FoldGroup Name="local-more-m" Heading="More nearby">
+        @if (Data.Items.Count > 3 && !Expanded) {
+            <Fold Title="More local news" Gist="@string.Join(" · ", Data.Items.Skip(3).Take(2).Select(v => v.Title))" Open="@(Section != "events")" Color="mx-c-local" AllHref="local?view=news#local-news-m" AllText="All local stories">
+                @foreach (var item in Data.Items.Skip(3).Take(3)) { <article class="mx-local-story"><h3><StoryLink Item="item" /></h3><span class="mx-item-meta">@FeedText.SourceName(item.SourceLabel, item.SourceUrl)</span><SaveButton Item="item" Title="@FeedText.StripEmoji(item.Title)" Source="@FeedText.SourceName(item.SourceLabel, item.SourceUrl)" /></article> }
+            </Fold>
+        }
+        <Fold Title="Forecast" Gist="Full National Weather Service outlook" Open="@((Data.Items.Count <= 3 || Expanded) && Section != "events")" Color="mx-c-world">
+            <div class="mx-local-forecast" data-phone-forecast><p>Forecast loads here when JavaScript is on. <a href="https://forecast.weather.gov/MapClick.php?lat=39.0997&amp;lon=-94.5786" target="_blank" rel="noopener noreferrer">Open the official Kansas City forecast ↗</a></p></div>
+        </Fold>
+        <Fold Title="Things to do" Gist="Visit KC and the city calendar" Open="@(Section == "events")" Color="mx-c-tech">
+            <p>Browse community calendars for current event details.</p>
+            <a class="mx-fold__row" href="https://www.visitkc.com/visitors/events" target="_blank" rel="noopener noreferrer"><b>Visit KC events ↗</b></a>
+            <a class="mx-fold__row" href="https://www.kcmo.gov/i-want-to/city-calendar" target="_blank" rel="noopener noreferrer"><b>City of Kansas City calendar ↗</b></a>
+        </Fold>
+    </FoldGroup>
+    </div>
+    @if (After is not null || Data.Next is not null) {
+        <nav class="mx-local-pages" aria-label="Phone local news pages">@if (After is not null) { <a href="local#local-news-m">Newest stories</a> } @if (Data.Next is { } next) { <a href="@($"local?after={Uri.EscapeDataString(next.ToToken())}#local-news-m")">Older stories →</a> }</nav>
+    }
+</div>
+@code {
+    [Parameter] public bool Expanded { get; set; }
+    [Parameter] public FeedPage Data { get; set; } = new([], 0, 0, null);
+    [Parameter] public bool Dedicated { get; set; }
+    [Parameter] public string? Error { get; set; }
+    [Parameter] public string? After { get; set; }
+    [Parameter] public string? Section { get; set; }
+}

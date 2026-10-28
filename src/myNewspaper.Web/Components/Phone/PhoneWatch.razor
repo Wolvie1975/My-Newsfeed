@@ -1,0 +1,42 @@
+@using myNewspaper.Web.Watching
+<div class="mx-phone" data-phone-life="watch">
+    <section class="mx-block mx-watch-feature" aria-labelledby="watch-feature-m">
+        <span class="mx-block__kicker">Movies · trending this week</span>
+        <h2 id="watch-feature-m" class="mx-block__title">Trending movies</h2>
+        <p class="mx-block__note">Popular on TMDB · US viewing options</p>
+        @if (Movies.Failed) { <p role="status">Trending movies are temporarily unavailable. Try title search above.</p> }
+        else if (Movies.Items.Count == 0) { <p>No trending movies with US viewing options right now. Try title search above.</p> }
+        else { <ol class="mx-watch-rail" aria-label="Trending movies, ranked"><!-- The shelf alone scrolls, never the page. -->
+            @foreach (var title in Movies.Items) { <WatchPosterCard Title="title" Nested="true" /> }
+        </ol> }
+    </section>
+    <FoldGroup Name="watch-more-m" Heading="More to watch">
+        @if (Tv.Items.Count > 0 || Tv.Failed) {
+            <Fold Title="Trending TV" Gist="@Gist(Tv)" Open="true" Color="mx-c-tech">
+                <WatchRow Id="watch-tv-m" Heading="Trending TV this week" Subtitle="Series people are watching now" Listing="Tv" SeeAll="@Browse("tv", "popular")" />
+            </Fold>
+        }
+        @if (NewMovies.Items.Count > 0 || NewMovies.Failed) {
+            <Fold Title="New movies you can watch" Gist="@Gist(NewMovies)" Open="@(!HasTv)" Color="mx-c-us">
+                <WatchRow Id="watch-new-m" Heading="New movies" Subtitle="Released in the last 60 days with US viewing options" Listing="NewMovies" SeeAll="@Browse("movie", "newest")" />
+            </Fold>
+        }
+        <Fold Title="Your services" Gist="@(SelectedCount > 0 ? $"{SelectedCount} selected · manage your choices" : "Choose the services you use")" Open="@(!HasTv && NewMovies.Items.Count == 0 && !NewMovies.Failed)" Color="mx-c-local">
+            @if (SelectedCount > 0) {
+                <WatchRow Id="watch-services-m" Heading="Popular on your services" Subtitle="Movies and TV on your selected services" Listing="Services" SeeAll="@($"watch?kind=movie&only=1&services={Selection}")" Empty="Nothing popular on your services right now." />
+            }
+            <a class="mx-more" href="settings#my-services">@(SelectedCount > 0 ? "Manage services" : "Choose your services") →</a>
+        </Fold>
+    </FoldGroup>
+</div>
+@code {
+    [Parameter] public WatchListing Movies { get; set; } = new([], 0);
+    [Parameter] public WatchListing Tv { get; set; } = new([], 0);
+    [Parameter] public WatchListing NewMovies { get; set; } = new([], 0);
+    [Parameter] public WatchListing Services { get; set; } = new([], 0);
+    [Parameter] public int SelectedCount { get; set; }
+    [Parameter] public string Selection { get; set; } = "";
+    private bool HasTv => Tv.Items.Count > 0 || Tv.Failed;
+    private string Browse(string kind, string sort) => $"watch?kind={kind}&services={Selection}&sort={sort}";
+    private static string Gist(WatchListing row) => row.Failed ? "Temporarily unavailable" : string.Join(" · ", row.Items.Take(2).Select(t => t.Name));
+}

@@ -259,6 +259,12 @@
                 (point?.lat ?? 39.0997) +
                 '&lon=' +
                 (point?.lon ?? -94.5786);
+        const feature = host.querySelector('[data-weather-feature]'),
+            tiles = host.querySelector('[data-weather-tiles]'),
+            forecast = document.querySelector('[data-phone-forecast]');
+        feature?.replaceChildren();
+        tiles?.replaceChildren();
+        if (forecast) forecast.textContent = 'Loading the National Weather Service forecast…';
         periods.replaceChildren();
         status.textContent = 'Loading the National Weather Service forecast…';
         try {
@@ -284,6 +290,27 @@
                 );
                 periods.append(card);
             });
+            // One request feeds both layouts. The first forecast period is labelled honestly, not current conditions.
+            if (feature) {
+                const first = data.periods[0];
+                feature.append(
+                    node('h3', txt(first.name), 'mx-block__kicker'),
+                    node('p', `${first.temperature}°${txt(first.unit)}`, 'mx-weather-feature__temperature'),
+                    node('p', txt(first.summary), 'mx-weather-feature__summary'),
+                    node('p', 'Wind ' + txt(first.wind), 'mx-block__note'),
+                );
+            }
+            if (tiles)
+                data.periods.slice(1, 4).forEach((p) => {
+                    const tile = node('article', '', 'mx-tile');
+                    tile.append(
+                        node('h3', txt(p.name), 'mx-tile__label'),
+                        node('b', `${p.temperature}°${txt(p.unit)}`, 'mx-tile__value'),
+                        node('p', txt(p.summary), 'mx-tile__sub'),
+                    );
+                    tiles.append(tile);
+                });
+            if (forecast) forecast.replaceChildren(...[...periods.children].map((card) => card.cloneNode(true)));
             const date = new Date(data.updated);
             status.textContent =
                 (data.stale ? 'Last available forecast · may be out of date. ' : '') +
@@ -300,6 +327,7 @@
             }
             status.textContent =
                 'Forecast temporarily unavailable. Open the National Weather Service link for current conditions.';
+            if (forecast) forecast.textContent = status.textContent;
         }
     }
     function schedule() {

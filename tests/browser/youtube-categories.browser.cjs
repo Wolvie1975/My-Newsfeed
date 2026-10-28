@@ -50,9 +50,9 @@ const total = async (p) => Number((await p.locator('.filters--videos .count').in
         await p.setViewportSize({ width: 390, height: 900 });
         await p.goto(base + '/videos');
         assert(await p.locator('.yt-cats').isHidden());
-        assert(await p.locator('select#category').isVisible());
+        assert(await p.locator('#video-channel-m').isVisible());
         const slug = new URL(base + '/' + tabs[1].href).searchParams.get('category');
-        await p.selectOption('select#category', slug);
+        await p.selectOption('#video-channel-m', '/videos?category=' + slug);
         await p.waitForURL('**/videos?**category=' + slug + '**');
         for (const width of [320, 390, 430, 744, 1440]) {
             await p.setViewportSize({ width, height: 900 });
@@ -60,7 +60,7 @@ const total = async (p) => Number((await p.locator('.filters--videos .count').in
             assert(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'overflow ' + width);
             assert(
                 await p
-                    .locator('.yt-cats a, select#category')
+                    .locator('.yt-cats a, select#category, #video-channel-m')
                     .evaluateAll((ns) =>
                         ns
                             .filter((n) => n.getClientRects().length)

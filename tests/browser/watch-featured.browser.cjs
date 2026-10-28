@@ -10,7 +10,7 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
                 const errors = [];
                 page.on('pageerror', (e) => errors.push(e.message));
                 await page.goto(base + '/watch?services=8,9,337');
-                const rows = await page.locator('[data-watch-row]').evaluateAll((ns) =>
+                const rows = await page.locator('.mx-desktop [data-watch-row]').evaluateAll((ns) =>
                     ns.map((n) => ({
                         h: n.querySelector('h2').textContent,
                         c: n.querySelectorAll('.watch-shelf > li').length,
@@ -40,29 +40,45 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
                 );
                 assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'overflow');
                 assert.equal(await page.locator('#watch-sort').count(), 0);
-                const arrow = page.locator('[data-watch-row]').first().locator('[data-watch-scroll="1"]');
+                const arrow = page.locator('.mx-desktop [data-watch-row]').first().locator('[data-watch-scroll="1"]');
                 assert.equal(await arrow.isVisible(), width >= 768);
                 if (width >= 768) {
                     await arrow.click();
-                    await page.waitForFunction(() => document.querySelector('.watch-shelf').scrollLeft > 50);
+                    await page.waitForFunction(
+                        () => document.querySelector('.mx-desktop .watch-shelf').scrollLeft > 50,
+                    );
                     assert(
-                        await page.locator('[data-watch-row]').first().locator('[data-watch-scroll="-1"]').isEnabled(),
+                        await page
+                            .locator('.mx-desktop [data-watch-row]')
+                            .first()
+                            .locator('[data-watch-scroll="-1"]')
+                            .isEnabled(),
                     );
                 }
-                await page.locator('#watch-row-tv-heading').locator('..').getByRole('link').click();
+                if (width < 744) {
+                    const rail = page.locator('.mx-watch-rail');
+                    assert((await rail.locator('li').count()) > 0);
+                    await rail.evaluate((e) => (e.scrollLeft = 100));
+                    assert((await rail.evaluate((e) => e.scrollLeft)) > 0);
+                    await page.locator('#watch-tv-m-heading').locator('..').getByRole('link').click();
+                } else await page.locator('#watch-row-tv-heading').locator('..').getByRole('link').click();
                 await page.waitForURL(
                     (u) => u.searchParams.get('kind') === 'tv' && u.searchParams.get('sort') === 'popular',
                 );
                 await page.locator('.watch-grid .watch-card').first().waitFor();
-                await page.getByRole('link', { name: 'Featured', exact: true }).click();
-                await page.locator('[data-watch-row]').first().waitFor();
+                if (width < 744) await page.locator('#watch-browse-m').selectOption('featured');
+                else await page.getByRole('link', { name: 'Featured', exact: true }).click();
+                await page
+                    .locator(width < 744 ? '.mx-watch-rail' : '.mx-desktop [data-watch-row]')
+                    .first()
+                    .waitFor();
                 assert.deepEqual(errors, []);
                 await page.close();
             }
         const plain = await browser.newPage({ javaScriptEnabled: false, viewport: { width: 390, height: 900 } });
         await plain.goto(base + '/watch');
         assert.equal(await plain.locator('#watch-row-services').count(), 0);
-        assert.equal(await plain.locator('[data-watch-row]').count(), 3);
+        assert.equal(await plain.locator('.mx-desktop [data-watch-row]').count(), 3);
         assert.equal(await plain.locator('[data-watch-scroll]').first().isVisible(), false);
         console.log(
             'Featured rows: order, 12-title limit, mixed services row, phone/desktop light/dark, arrows on wider screens, See all into the grid, Featured toggle and no-JavaScript rows passed.',

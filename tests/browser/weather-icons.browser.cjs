@@ -29,8 +29,14 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
             for (const width of [390, 768, 1440]) {
                 await page.setViewportSize({ width, height: 1000 });
                 await page.reload();
-                await page.waitForSelector('.weather-icon');
-                const cards = page.locator('.weather-period');
+                if (width < 744)
+                    await page.getByText('Forecast', { exact: true }).locator('xpath=ancestor::summary').click();
+                const host = width < 744 ? '[data-phone-forecast]' : '#local-weather';
+                await page
+                    .locator(host + ' .weather-icon')
+                    .first()
+                    .waitFor();
+                const cards = page.locator(host + ' .weather-period');
                 assert.equal(await cards.count(), 4);
                 for (const [index, kind] of ['sun', 'moon', 'storm', 'temperature'].entries()) {
                     const icon = cards.nth(index).locator('svg');

@@ -6,10 +6,49 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The latest recorded web release is `mynewspaper-web:scheme-ribbons-20261028`
-(image `c1e3fa5259c3`), deployed October 28, 2026 (Central), with household profiles enabled.
-Rollback: `mynewsfeed-web:before-mynewspaper-scheme-ribbons-20261028` (`79a593092535`).
+The latest recorded web release is `mynewspaper-web:phone-life-20261028`
+(image `7176ce3f5fa0`), deployed October 28, 2026 (Central), with household profiles enabled.
+Rollback: `mynewsfeed-web:before-mynewspaper-phone-life-20261028` (`c1e3fa5259c3`).
 This is a dated deployment record, not live hosting status.
+
+## Phone refresh, release 5: Where to watch, Local and YouTube — deployed October 28, 2026 (Central)
+
+Below 744px, Watch gains a scheme ribbon with search/Browse, numbered trending-movie shelf and folds
+for Trending TV, new movies and services. Search/provider results, sorting, paging and detail dialogs remain.
+Local highlights the labelled first forecast period, wind and next three periods, then three news stories
+and folds for further news/full forecast/event links. One request populates both layouts; location/reset,
+NWS attribution, stale/error fallbacks and feed coverage context remain. YouTube features one video with
+Watch later/Share, three latest videos and short category/channel folds. Its combined native selector keeps
+category/query context. Complete phone news/video lists preserve access to all loaded rows and pagination.
+Native disclosures are exclusive, and controls retain no-JavaScript fallbacks. Wider layouts are retained,
+including corrected full-width Watch shelves through the new display:contents wrapper.
+
+Deployed `mynewspaper-web:phone-life-20261028`, image
+`sha256:7176ce3f5fa02019ab52f8ee66e89e6f4cdf5506f3199ff097b88ce7ea0a2a3c`.
+Rollback retained as `mynewsfeed-web:before-mynewspaper-phone-life-20261028` (`c1e3fa5259c3`).
+Runtime environment values, entrypoint, ports, keys/mounts, restart policy, health check and network
+verified preserved. No database migration or collector changes. Source/docs included in the release 5 local check-in on `develop`.
+
+Predeploy: solution build (zero warnings/errors), production publish/static-asset guard, lint and
+changed-code formatting passed. `phone-life` passed 320/390/430px in Kansas/Monochrome/Cardinals,
+light/dark: contrast, overflow, unique IDs, 44px targets, native/keyboard folds, weather, save/share,
+Watch modal/search/sort, category/query/reload, complete lists and empty video search. No-JavaScript
+controls passed at each phone width in default fallback rendering. Retained 744/1024/1440px layouts
+passed, with a final targeted Watch width/alignment/arrow check after the wrapper correction.
+Existing share/category/location/weather-icon/Watch featured/sort/results/paging/detail suites passed.
+`phone-local-weather` checked single/stale/empty/503 forecasts and one request across layout resizing.
+No full .NET test-suite rerun for this UI-only change. Local evidence: `/tmp/release5/`.
+
+Live: the same phone widths, three schemes and light/dark matrix passed with profiles enabled, including
+contrast/touch targets, folds/keyboard/no-JS, save/unsave through an isolated mocked Saved API, sharing,
+modal/search/sort, category/query/reload, complete lists, empty videos and retained wider layouts.
+Weather fixtures isolate the matrix; a separate real forecast returned 200 and populated all four periods.
+Authenticated main routes passed; `/healthz` 200 Healthy and container healthy. Recent application logs
+had zero error markers and included league-phase checks. Representative screenshots across all phone
+widths/themes, wider Watch and the real weather rendering reviewed. Temporary profile deleted.
+Two orphaned headless test-device records were removed; Jason and Jacob remain. Live evidence: `/tmp/release5-deploy/`.
+Limits: no real device or VoiceOver/TalkBack; geolocation was checked on the local secure preview,
+not over the live container's plain-HTTP test address. Release 4 remains pending.
 
 ## Scheme-colored phone ribbons — deployed October 28, 2026 (Central)
 

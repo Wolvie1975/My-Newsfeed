@@ -68,7 +68,7 @@ const data = (location) => ({
             });
             await page.goto(base + '/local');
             await page.getByRole('heading', { name: 'Kansas City forecast', exact: true }).waitFor();
-            await page.locator('.weather-period').waitFor();
+            await page.locator('#local-weather .weather-period').waitFor();
             assert(
                 requests.every((u) => !u.searchParams.has('lat')),
                 'No automatic location request',
@@ -82,7 +82,7 @@ const data = (location) => ({
                     ),
                 );
                 assert((await page.locator('[data-weather-link]').getAttribute('href')).includes('lat=40.71'));
-                assert.equal(await page.locator('.weather-temperature').innerText(), '55°F');
+                assert.equal(await page.locator('#local-weather .weather-temperature').innerText(), '55°F');
                 for (const width of [390, 1440]) {
                     await page.setViewportSize({ width, height: 950 });
                     assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));

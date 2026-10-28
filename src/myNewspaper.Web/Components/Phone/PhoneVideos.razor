@@ -1,0 +1,64 @@
+@using myNewspaper.Web.Components.Feed
+@inject FeedDates Dates
+<div class="mx-phone" data-phone-life="videos">
+    <PhoneRibbon Title="YouTube" Kicker="@($"From your channels · {Total} {(Total == 1 ? "video" : "videos")}")">
+        <SectionSelect Id="video-channel-m" Label="Channel" Current="@Current" Choices="Choices" AlwaysSelect="true" />
+    </PhoneRibbon>
+    @if (Items.Count == 0) {
+        <p class="mx-note">No videos match this view. <a class="mx-more" href="videos">All videos →</a></p>
+    }
+    else {
+        @if (!Expanded && Lead is { } lead) {
+            <section class="mx-block mx-video-feature" aria-labelledby="video-feature-m">
+                <span class="mx-block__kicker">Featured · @lead.ChannelName</span>
+                @if (FeedQuery.SafeHref(lead.Url) is { } href) {
+                    <a class="mx-video-play" href="@href" target="_blank" rel="noopener noreferrer" aria-label="@($"Play {lead.Title} on YouTube")">
+                        @if (VideosText.Thumbnail(lead.ThumbnailUrl, lead.VideoId, "hqdefault") is { } picture) { <img src="@picture" alt="" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()" /> }
+                        <span aria-hidden="true">▶</span>
+                    </a>
+                }
+                <h2 id="video-feature-m" class="mx-block__title">@if (FeedQuery.SafeHref(lead.Url) is { } url) { <a href="@url" target="_blank" rel="noopener noreferrer">@lead.Title</a> } else { @lead.Title }</h2>
+                <p class="mx-block__note">@Dates.Published(lead.PublishedAt)@if (VideosText.Views(lead.ViewCount) is { } views) { <span> · @views</span> }</p>
+                <div class="mx-block__actions"><VideoSaveButton Item="lead" /><ShareButton Url="@lead.Url" Title="@lead.Title" Kind="video" /></div>
+            </section>
+        }
+        @if (Expanded) {
+            <section class="mx-sport-list"><div class="mx-head"><h2>All matching videos</h2></div><PhoneVideoRows Items="Items" /></section>
+        }
+        else if (Latest.Count > 0) {
+            <section class="mx-sport-list"><div class="mx-head"><h2>Latest</h2></div><PhoneVideoRows Items="Latest" /></section>
+        }
+        @if (!Expanded) {
+        <FoldGroup Name="videos-more-m" Heading="By category & channel">
+            @foreach (var (group, index) in Groups.Select((g, i) => (g, i))) {
+                <Fold Title="@group.Key" Gist="@string.Join(" · ", group.Take(2).Select(v => v.Title))" Open="@(index == 0)" Color="mx-c-tech" AllHref="@GroupHref(group.First())" AllText="All matching videos">
+                    <PhoneVideoRows Items="@group.Take(3)" />
+                </Fold>
+            }
+            <Fold Title="Watch later" Gist="Your saved videos" Open="@(Groups.Count == 0)" Color="mx-c-local"><a class="mx-more" href="saved?list=video">Open saved videos →</a></Fold>
+        </FoldGroup>
+        }
+    }
+</div>
+@code {
+    [Parameter] public bool Expanded { get; set; }
+    [Parameter] public string? Q { get; set; }
+    [Parameter] public string? Category { get; set; }
+    [Parameter] public string? Channel { get; set; }
+    private string GroupHref(VideoItem video) {
+        var category = string.IsNullOrWhiteSpace(video.Category) ? Category : VideosQuery.Slug(video.Category);
+        var channel = string.IsNullOrWhiteSpace(video.Category) ? video.ChannelId : Channel;
+        return "videos?view=all" + (string.IsNullOrWhiteSpace(category) ? "" : "&category=" + Uri.EscapeDataString(category))
+            + (string.IsNullOrWhiteSpace(channel) ? "" : "&channel=" + Uri.EscapeDataString(channel))
+            + (string.IsNullOrWhiteSpace(Q) ? "" : "&q=" + Uri.EscapeDataString(Q));
+    }
+    [Parameter] public IReadOnlyList<VideoItem> Items { get; set; } = [];
+    [Parameter] public VideoItem? Featured { get; set; }
+    [Parameter] public int Total { get; set; }
+    [Parameter] public IReadOnlyList<NavigationChoice> Choices { get; set; } = [];
+    [Parameter] public string Current { get; set; } = "videos";
+    private VideoItem? Lead => Featured ?? Items.FirstOrDefault();
+    private IReadOnlyList<VideoItem> Latest => Items.Where(v => v != Lead).Take(3).ToList();
+    private IReadOnlyList<IGrouping<string, VideoItem>> Groups => Items.Where(v => v != Lead).Skip(3)
+        .GroupBy(v => string.IsNullOrWhiteSpace(v.Category) ? v.ChannelName : v.Category).ToList();
+}
