@@ -1,0 +1,431 @@
+@page "/admin/requests"
+@rendermode InteractiveServer
+@using System.Globalization
+@using myNewspaper.Web.Requests
+@inject IDbContextFactory<WebScraperContext> Factory
+@inject RequestChecks Checks
+@inject TimeProvider Clock
+@inject NavigationManager Nav
+@inject ILogger<RequestList> Log
+
+<PageTitle>Requests</PageTitle>
+
+@* Admin · Requests (profiles handoff 5.3): YouTube channels and news sources people asked for. Nothing is collected
+   until the admin fills in the feed details and approves. The checker's findings are shown here and never to the
+   requester, who only sees Waiting, Added or Declined (with the reason). *@
+<AdminContent>
+    <AdminPageHeader Eyebrow="Household" Title="Requests" Description="YouTube channels and news sources people have asked for. Nothing is collected until you add the feed details and approve it. TV shows are added by each person directly.">
+        <Actions>
+            <div class="adm-seg" role="group" aria-label="Show">
+                @foreach (var (value, label, count) in StatusChoices)
+                {
+                    <a href="@StatusHref(value)" aria-current="@(StatusKey == value ? "page" : null)">@label<span class="adm-seg__n">@count</span></a>
+                }
+            </div>
+        </Actions>
+    </AdminPageHeader>
+
+    @if (message is not null)
+    {
+        <div class="adm-notice @(messageBad ? "adm-notice--bad" : null)" role="status">@message</div>
+    }
+
+    @if (rows is null)
+    {
+        <p class="adm-help">Loading…</p>
+    }
+    else if (rows.Count == 0 && selected is null)
+    {
+        <div class="adm-card">
+            <p class="adm-help mb-0">
+                @(StatusKey switch
+                {
+                    RequestStore.Waiting => "Nothing is waiting. When someone asks for a YouTube channel or a news source, it shows up here.",
+                    RequestStore.Added => "Nothing has been added from a request yet.",
+                    RequestStore.Declined => "No requests have been declined.",
+                    _ => "Nobody has asked for anything yet.",
+                })
+            </p>
+        </div>
+    }
+    else
+    {
+        <div class="adm-req @(Id is null ? "adm-req--auto" : "adm-req--picked")">
+            <section class="adm-req__queue" aria-label="@($"{StatusName} requests")">
+                @foreach (var item in rows)
+                {
+                    <a class="adm-req__item" href="@ItemHref(item.Id)" aria-current="@(selected?.Id == item.Id ? "true" : null)" @key="item.Id">
+                        <span class="adm-req__top">
+                            <span class="adm-tag">@KindName(item.Kind)</span>
+                            @if (StatusKey != RequestStore.Waiting) { <span class="adm-pill @StatusPill(item.Status)">@StatusLabel(item.Status)</span> }
+                            <span class="adm-help">@When(item.CreatedAt)</span>
+                        </span>
+                        <b class="adm-req__name">@item.Name</b>
+                        <span class="adm-req__who"><ProfileTile Name="@item.ProfileName" Color="@item.ProfileColor" />Requested by @item.ProfileName</span>
+                        @if (item.Note is { Length: > 0 } note) { <span class="adm-req__note">“@note”</span> }
+                    </a>
+                }
+            </section>
+
+            @if (selected is { } r)
+            {
+                <section class="adm-card adm-req__editor" aria-labelledby="req-title">
+                    @if (Id is not null)
+                    {
+                        <a class="adm-req__back" href="@StatusHref(StatusKey)"><AdminIcon Name="back" />All @StatusName.ToLowerInvariant() requests</a>
+                    }
+                    <span class="adm-head__eyebrow">@KindName(r.Kind) · requested by @r.ProfileName · @Dates.Stamp(r.CreatedAt)</span>
+                    <h2 id="req-title" class="adm-req__title">@r.Name</h2>
+                    <p class="adm-help">
+                        @if (SafeLink(r.Link) is { } link)
+                        {
+                            <text>Link given: </text><a href="@link" target="_blank" rel="noopener noreferrer nofollow">@ShortLink(link)</a>
+                        }
+                        else if (r.Link is { Length: > 0 })
+                        {
+                            <text>Link given: @r.Link</text>
+                        }
+                        else
+                        {
+                            <text>No link given.</text>
+                        }
+                        @if (r.Note is { Length: > 0 } note) { <text> · Note: “@note”</text> }
+                    </p>
+
+                    @if (r.Status == RequestStore.Waiting)
+                    {
+                        <p class="adm-req__check" role="status">
+                            <span class="adm-pill @(r.CheckOk switch { true => "adm-pill--ok", false => "adm-pill--warn", _ => "adm-pill--off" })">
+                                @(r.CheckOk switch { true => "Checked", false => "Needs details", _ => "Checking…" })
+                            </span>
+                            <span>@(r.CheckSummary ?? "The checker hasn’t looked at this one yet.")</span>
+                            <button type="button" class="btn btn-link" disabled="@busy" @onclick="CheckAgainAsync">Check again</button>
+                        </p>
+                    }
+
+                    @if (r.Status != RequestStore.Waiting)
+                    {
+                        <dl class="adm-dl">
+                            <dt>Status</dt>
+                            <dd><span class="adm-pill @StatusPill(r.Status)">@StatusLabel(r.Status)</span> @(r.DecidedAt is { } at ? Dates.Stamp(at) : "")</dd>
+                            @if (r.Status == RequestStore.Declined)
+                            {
+                                <dt>Reason given</dt>
+                                <dd>@(r.AdminReply ?? "None")</dd>
+                            }
+                            @if (r.CheckSummary is { } summary)
+                            {
+                                <dt>Checker</dt>
+                                <dd>@summary</dd>
+                            }
+                        </dl>
+                    }
+                    else if (r.Kind == RequestStore.Youtube && r.AlreadyCollected)
+                    {
+                        <div class="adm-notice" role="note">
+                            This channel is already collected (@r.ResolvedChannelId). Approving only follows it for @r.ProfileName; nothing new is collected.
+                        </div>
+                        <div class="adm-req__actions">
+                            <button type="button" class="btn btn-primary" disabled="@busy" @onclick="ApproveCollectedAsync">Approve and follow for @r.ProfileName</button>
+                        </div>
+                    }
+                    else if (r.Kind == RequestStore.Youtube)
+                    {
+                        <div class="adm-field">
+                            <label class="adm-label" for="req-channel">Channel ID</label>
+                            <input id="req-channel" class="form-control" type="text" autocomplete="off" spellcheck="false" placeholder="UC…" @bind="channelId" @bind:event="oninput" aria-describedby="req-channel-d" />
+                            <span id="req-channel-d" class="adm-help">Starts with UC. On the channel page: About → Share channel → Copy channel ID.</span>
+                        </div>
+                        <div class="adm-req__pair">
+                            <div class="adm-field">
+                                <label class="adm-label" for="req-cname">Display name</label>
+                                <input id="req-cname" class="form-control" type="text" maxlength="200" @bind="displayName" />
+                            </div>
+                            <div class="adm-field">
+                                <label class="adm-label" for="req-ycat">YouTube category</label>
+                                <select id="req-ycat" class="form-select" @bind="categoryId">
+                                    <option value="">No category (shown under Other)</option>
+                                    @foreach (var c in youtubeCategories) { <option value="@c.Id">@c.CategoryName</option> }
+                                </select>
+                            </div>
+                        </div>
+                        <div class="adm-field">
+                            <span class="adm-label">Feed address</span>
+                            <code class="adm-req__code">@(RequestChecks.IsChannelId(channelId.Trim()) ? RequestChecks.FeedUrl(channelId.Trim()) : "Fills in from the channel ID")</code>
+                        </div>
+                        <div class="adm-req__test">
+                            <button type="button" class="btn btn-outline-secondary" disabled="@(busy || !RequestChecks.IsChannelId(channelId.Trim()))" @onclick="() => TestAsync(RequestChecks.FeedUrl(channelId.Trim()))">Test feed</button>
+                            <TestResult Result="test" />
+                        </div>
+                        <div class="adm-toggle-row">
+                            <span>
+                                <span id="req-follow-l" class="adm-label d-block">Follow it for @r.ProfileName</span>
+                                <span id="req-follow-d" class="adm-help d-block">Others in the house can follow it from their Settings.</span>
+                            </span>
+                            <AdminSwitch Checked="follow" LabelledBy="req-follow-l" DescribedBy="req-follow-d" OnChange="v => follow = v" />
+                        </div>
+                        <div class="adm-req__actions">
+                            <button type="button" class="btn btn-primary" disabled="@(busy || !RequestChecks.IsChannelId(channelId.Trim()))" @onclick="ApproveYoutubeAsync">Add channel and approve</button>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="adm-field">
+                            <label class="adm-label" for="req-url">Feed or website URL</label>
+                            <div class="adm-req__row">
+                                <input id="req-url" class="form-control" type="url" autocomplete="off" spellcheck="false" maxlength="2048" @bind="feedUrl" @bind:event="oninput" aria-describedby="req-url-d" />
+                                <button type="button" class="btn btn-outline-secondary" disabled="@(busy || string.IsNullOrWhiteSpace(feedUrl))" @onclick="FindFeedsAsync">Find feeds</button>
+                            </div>
+                            <span id="req-url-d" class="adm-help">Find feeds checks the site for RSS or Atom links. Each URL can only be a source once.</span>
+                        </div>
+                        @if (foundFeeds.Count > 0)
+                        {
+                            <fieldset class="adm-field">
+                                <legend class="adm-label">Feeds found</legend>
+                                <div class="adm-req__feeds">
+                                    @foreach (var url in foundFeeds)
+                                    {
+                                        <label class="adm-choice"><input type="radio" name="found-feed" checked="@(feedUrl == url)" @onchange="() => PickFeed(url)" /> <span class="adm-req__url">@url</span></label>
+                                    }
+                                </div>
+                            </fieldset>
+                        }
+                        <div class="adm-req__pair">
+                            <div class="adm-field">
+                                <label class="adm-label" for="req-sname">Display name</label>
+                                <input id="req-sname" class="form-control" type="text" maxlength="200" @bind="displayName" />
+                            </div>
+                            <div class="adm-field">
+                                <label class="adm-label" for="req-scat">Category</label>
+                                <select id="req-scat" class="form-select" @bind="categoryId" aria-describedby="req-scat-d">
+                                    <option value="">Uncategorized</option>
+                                    @foreach (var c in sourceCategories) { <option value="@c.Id">@c.CategoryName</option> }
+                                </select>
+                                <span id="req-scat-d" class="adm-help">@HubHelp</span>
+                            </div>
+                        </div>
+                        <div class="adm-req__test">
+                            <button type="button" class="btn btn-outline-secondary" disabled="@(busy || string.IsNullOrWhiteSpace(feedUrl))" @onclick="() => TestAsync(feedUrl)">Test feed</button>
+                            <TestResult Result="test" />
+                        </div>
+                        <p class="adm-help">News sources aren’t followed: once added, the source appears for everyone in its section.</p>
+                        <div class="adm-req__actions">
+                            <button type="button" class="btn btn-primary" disabled="@(busy || string.IsNullOrWhiteSpace(feedUrl))" @onclick="ApproveNewsAsync">Add source and approve</button>
+                        </div>
+                    }
+
+                    @if (r.Status == RequestStore.Waiting)
+                    {
+                        <form id="decline" class="adm-req__decline" @onsubmit="DeclineAsync" @onsubmit:preventDefault>
+                            <label class="adm-label" for="req-reason">Reason for declining</label>
+                            <div class="adm-req__row">
+                                <input id="req-reason" class="form-control" type="text" maxlength="500" placeholder="@($"Optional, shown to {r.ProfileName}")" @bind="reason" />
+                                <button type="submit" class="btn btn-outline-danger" disabled="@busy">Decline</button>
+                            </div>
+                        </form>
+                    }
+                </section>
+            }
+        </div>
+    }
+</AdminContent>
+
+@code {
+    [SupplyParameterFromQuery(Name = "status")] private string? Status { get; set; }
+    [SupplyParameterFromQuery(Name = "id")] private int? Id { get; set; }
+
+    private IReadOnlyList<AdminRequestRow>? rows;
+    private AdminRequestRow? selected;
+    private AdminRequestCounts counts = new(0, 0, 0, 0);
+    private IReadOnlyList<YoutubeCategory> youtubeCategories = [];
+    private IReadOnlyList<SourceCategory> sourceCategories = [];
+    private int? loadedFor;
+    private bool busy;
+    private string? message;
+    private bool messageBad;
+
+    // The selected request's form.
+    private string channelId = "";
+    private string displayName = "";
+    private string categoryId = "";
+    private string feedUrl = "";
+    private bool follow = true;
+    private string? reason;
+    private IReadOnlyList<string> foundFeeds = [];
+    private CheckResult? test;
+
+    private string StatusKey => Status is RequestStore.Added or RequestStore.Declined or "all" ? Status : RequestStore.Waiting;
+    private string StatusName => StatusKey switch { "all" => "All", _ => StatusLabel(StatusKey) };
+
+    private IEnumerable<(string Value, string Label, int Count)> StatusChoices =>
+    [
+        (RequestStore.Waiting, "Waiting", counts.Waiting),
+        (RequestStore.Added, "Added", counts.Added),
+        (RequestStore.Declined, "Declined", counts.Declined),
+        ("all", "All", counts.All),
+    ];
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadAsync(resetForm: loadedFor != Id || Id is null);
+    }
+
+    private async Task LoadAsync(bool resetForm)
+    {
+        await using var db = await Factory.CreateDbContextAsync();
+        if (youtubeCategories.Count == 0)
+        {
+            youtubeCategories = await db.YoutubeCategories.AsNoTracking().OrderBy(c => c.CategoryName).ToListAsync();
+            sourceCategories = await db.SourceCategories.AsNoTracking().OrderBy(c => c.CategoryName).ToListAsync();
+        }
+        counts = await RequestStore.CountsAsync(db);
+        rows = await RequestStore.ListAsync(db, StatusKey == "all" ? null : StatusKey);
+        // A request picked from a link (the header alert, Manage profile) opens even when it isn't in this filter.
+        var picked = Id is { } id ? rows.FirstOrDefault(r => r.Id == id) ?? (await RequestStore.ListAsync(db, id: id)).FirstOrDefault() : rows.FirstOrDefault();
+        if (resetForm || picked?.Id != selected?.Id) Fill(picked);
+        selected = picked;
+        loadedFor = Id;
+    }
+
+    private void Fill(AdminRequestRow? r)
+    {
+        test = null;
+        reason = null;
+        follow = true;
+        categoryId = "";
+        channelId = r?.ResolvedChannelId ?? "";
+        displayName = r?.Name ?? "";
+        foundFeeds = r?.ResolvedFeedUrls ?? [];
+        feedUrl = foundFeeds.FirstOrDefault() ?? r?.Link ?? "";
+    }
+
+    private string StatusHref(string value) => value == RequestStore.Waiting ? "admin/requests" : $"admin/requests?status={value}";
+
+    private string ItemHref(int id) => StatusKey == RequestStore.Waiting ? $"admin/requests?id={id}" : $"admin/requests?status={StatusKey}&id={id}";
+
+    private static string KindName(string kind) => kind == RequestStore.Youtube ? "YouTube" : "News source";
+
+    private static string StatusLabel(string status) => status switch
+    {
+        RequestStore.Added => "Added",
+        RequestStore.Declined => "Declined",
+        _ => "Waiting",
+    };
+
+    private static string StatusPill(string status) => status switch
+    {
+        RequestStore.Added => "adm-pill--ok",
+        RequestStore.Declined => "adm-pill--off",
+        _ => "adm-pill--warn",
+    };
+
+    private string When(DateTime utc)
+    {
+        var age = Clock.GetUtcNow().UtcDateTime - utc;
+        if (age < TimeSpan.FromMinutes(1)) return "Just now";
+        if (age < TimeSpan.FromHours(1)) return $"{(int)age.TotalMinutes} min ago";
+        if (age < TimeSpan.FromHours(24)) return $"{(int)age.TotalHours} h ago";
+        return Dates.Published(utc);
+    }
+
+    /// <summary>Only http and https links are clickable; anything else is shown as text.</summary>
+    private static string? SafeLink(string? link)
+    {
+        if (string.IsNullOrWhiteSpace(link)) return null;
+        var value = link.Contains("://", StringComparison.Ordinal) ? link : "https://" + link;
+        return Uri.TryCreate(value, UriKind.Absolute, out var uri) && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps) ? uri.AbsoluteUri : null;
+    }
+
+    private static string ShortLink(string link) =>
+        Uri.TryCreate(link, UriKind.Absolute, out var uri) ? (uri.Host.StartsWith("www.", StringComparison.OrdinalIgnoreCase) ? uri.Host[4..] : uri.Host) + uri.PathAndQuery.TrimEnd('/') : link;
+
+    private string HubHelp => sourceCategories.FirstOrDefault(c => c.Id.ToString(CultureInfo.InvariantCulture) == categoryId) is { } c
+        ? $"{c.CategoryName} appears in the {char.ToUpperInvariant(c.NewsHub[0])}{c.NewsHub[1..]} hub for everyone."
+        : "Uncategorized sources appear in Headlines under All categories.";
+
+    private int? CategoryId => int.TryParse(categoryId, NumberStyles.None, CultureInfo.InvariantCulture, out var id) ? id : null;
+
+    private void PickFeed(string url)
+    {
+        feedUrl = url;
+        test = null;
+    }
+
+    private async Task Run(Func<WebScraperContext, Task> work)
+    {
+        if (busy) return;
+        busy = true;
+        message = null;
+        try
+        {
+            await using var db = await Factory.CreateDbContextAsync();
+            await work(db);
+        }
+        catch (ArgumentException ex) { message = ex.Message; messageBad = true; }
+        catch (Exception ex) when (DataFailures.IsReadFailure(ex))
+        {
+            Log.LogError(ex, "A request action failed.");
+            message = "That didn’t work because the database couldn’t be reached. Try again.";
+            messageBad = true;
+        }
+        finally { busy = false; }
+    }
+
+    private async Task Decided(ApproveOutcome outcome, string done)
+    {
+        (message, messageBad) = outcome switch
+        {
+            ApproveOutcome.Approved => (done, false),
+            ApproveOutcome.NotWaiting => ("That request was already answered.", true),
+            ApproveOutcome.AlreadyCollected => ("That channel is already collected. Approve and follow it instead.", true),
+            ApproveOutcome.NotCollected => ("That channel isn’t collected yet. Add it with its channel ID.", true),
+            _ => ("That request no longer exists.", true),
+        };
+        await LoadAsync(resetForm: true);
+    }
+
+    private Task ApproveYoutubeAsync() => Run(async db =>
+    {
+        var r = selected!;
+        var outcome = await RequestStore.ApproveYoutubeAsync(db, r.Id, channelId, displayName, CategoryId, follow, Clock.GetUtcNow().UtcDateTime);
+        await Decided(outcome, follow ? $"Added {r.Name} and followed it for {r.ProfileName}." : $"Added {r.Name}.");
+    });
+
+    private Task ApproveCollectedAsync() => Run(async db =>
+    {
+        var r = selected!;
+        var outcome = await RequestStore.ApproveCollectedYoutubeAsync(db, r.Id, r.ResolvedChannelId, Clock.GetUtcNow().UtcDateTime);
+        await Decided(outcome, $"Approved. {r.ProfileName} now follows {r.Name}.");
+    });
+
+    private Task ApproveNewsAsync() => Run(async db =>
+    {
+        var r = selected!;
+        var outcome = await RequestStore.ApproveNewsAsync(db, r.Id, feedUrl, displayName, CategoryId, Clock.GetUtcNow().UtcDateTime);
+        await Decided(outcome, $"Added {r.Name} as a news source.");
+    });
+
+    private Task DeclineAsync() => Run(async db =>
+    {
+        var r = selected!;
+        var outcome = await RequestStore.DeclineAsync(db, r.Id, reason, Clock.GetUtcNow().UtcDateTime);
+        await Decided(outcome, string.IsNullOrWhiteSpace(reason) ? $"Declined {r.Name}." : $"Declined {r.Name}. {r.ProfileName} will see your reason.");
+    });
+
+    private Task CheckAgainAsync() => Run(async db =>
+    {
+        await RequestStore.CheckAsync(db, Checks, selected!.Id);
+        await LoadAsync(resetForm: true);
+    });
+
+    private Task FindFeedsAsync() => Run(async db =>
+    {
+        test = null;
+        var result = await Checks.CheckNewsAsync(db, feedUrl);
+        foundFeeds = result.FeedUrls ?? [];
+        if (foundFeeds.Count > 0) feedUrl = foundFeeds[0];
+        (message, messageBad) = (result.Summary, !result.Ok);
+    });
+
+    private Task TestAsync(string url) => Run(async _ => test = await Checks.TestFeedAsync(url));
+}

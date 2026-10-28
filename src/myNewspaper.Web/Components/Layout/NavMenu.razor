@@ -55,6 +55,10 @@
             <AdminIcon Name="profiles" /><span class="adm-nav__text">Profiles</span>
             @if (lockedProfiles > 0) { <span class="adm-nav__count" aria-label="@($"{lockedProfiles} locked")">@lockedProfiles</span> }
         </NavLink>
+        <NavLink class="adm-nav__link" href="admin/requests">
+            <AdminIcon Name="requests" /><span class="adm-nav__text">Requests</span>
+            @if (waitingRequests > 0) { <span class="adm-nav__count" aria-label="@($"{waitingRequests} waiting")">@waitingRequests</span> }
+        </NavLink>
     </div>
 </nav>
 
@@ -70,6 +74,7 @@
     [CascadingParameter] private Task<AuthenticationState>? AuthState { get; set; }
     private AdminNavCounts counts = AdminNavCounts.None;
     private int lockedProfiles;
+    private int waitingRequests;
 
     protected override async Task OnInitializedAsync()
     {
@@ -90,10 +95,11 @@
         {
             await using var db = await Factory.CreateDbContextAsync();
             lockedProfiles = await db.Profiles.CountAsync(p => p.LockedAt != null);
+            waitingRequests = await db.ContentRequests.CountAsync(r => r.Status == "waiting");
         }
         catch (Exception ex) when (DataFailures.IsReadFailure(ex))
         {
-            lockedProfiles = 0;
+            lockedProfiles = waitingRequests = 0;
         }
     }
 }

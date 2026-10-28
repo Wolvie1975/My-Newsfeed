@@ -325,6 +325,32 @@ public class ProfileDataTests
     }
 
     [Fact]
+    public async Task Approving_a_news_request_adds_one_enabled_source_and_reuses_an_existing_one()
+    {
+        await using var db = Create();
+        await using var tx = await db.Database.BeginTransactionAsync();
+        var tag = Tag();
+        var a = await NewProfile(db);
+        var category = await db.SourceCategories.OrderBy(c => c.Id).Select(c => (int?)c.Id).FirstOrDefaultAsync();
+        var url = $"https://{tag}.test.invalid/feed";
+        var first = await RequestStore.SubmitAsync(db, a.Id, RequestStore.News, "Local paper", url, null);
+        await Assert.ThrowsAsync<ArgumentException>(() => RequestStore.ApproveNewsAsync(db, first.Id, "ftp://example.com/feed", null, null, Now));
+        Assert.Equal(ApproveOutcome.Approved, await RequestStore.ApproveNewsAsync(db, first.Id, url, "Local paper", category, Now));
+        var source = await db.Sources.SingleAsync(s => s.Url == url);
+        Assert.True(source.Enabled);
+        Assert.Equal(("Local paper", category), (source.Label, source.SourceCategoryId));
+        var row = Assert.Single(await RequestStore.ListAsync(db, id: first.Id));
+        Assert.Equal(RequestStore.Added, row.Status);
+        Assert.Equal(ApproveOutcome.NotWaiting, await RequestStore.ApproveNewsAsync(db, first.Id, url, null, null, Now));
+
+        // A second request for the same feed points at the same source instead of adding another.
+        var second = await RequestStore.SubmitAsync(db, a.Id, RequestStore.News, "Same paper", url, null);
+        Assert.Equal(ApproveOutcome.Approved, await RequestStore.ApproveNewsAsync(db, second.Id, url, null, null, Now));
+        Assert.Equal(1, await db.Sources.CountAsync(s => s.Url == url));
+        Assert.Equal(source.Id, await db.ContentRequests.Where(r => r.Id == second.Id).Select(r => r.SourceId).SingleAsync());
+    }
+
+    [Fact]
     public async Task The_alert_counts_new_waiting_requests_and_every_lock_and_mark_seen_clears_only_requests()
     {
         await using var db = Create();

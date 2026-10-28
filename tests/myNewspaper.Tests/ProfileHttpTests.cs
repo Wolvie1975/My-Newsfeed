@@ -268,12 +268,12 @@ public class ProfileHttpTests
             }
 
             // The admin pages render the same limited view: name, color, lock, devices and requests only.
-            foreach (var path in new[] { "/admin/profiles", $"/admin/profiles/{a.Id}", "/admin/profiles/base" })
+            foreach (var path in new[] { "/admin/profiles", $"/admin/profiles/{a.Id}", "/admin/profiles/base", "/admin/requests?status=all" })
             {
                 var response = await client.SendAsync(Page(path));
                 Assert.Equal(HttpStatusCode.OK, response.StatusCode);
                 var html = await response.Content.ReadAsStringAsync();
-                Assert.Contains(path == "/admin/profiles/base" ? "Base edition" : a.Name, html);
+                Assert.Contains(path switch { "/admin/profiles/base" => "Base edition", "/admin/requests?status=all" => "Requests", _ => a.Name }, html);
                 Assert.DoesNotContain(marker, html);
                 Assert.DoesNotContain("Open as", html);
             }
@@ -282,5 +282,25 @@ public class ProfileHttpTests
             Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync("/api/me")).StatusCode);
         }
         finally { await app.CleanUpAsync(a); }
+    }
+
+    [Fact]
+    public async Task Only_the_signed_in_admin_gets_the_requests_alert_in_the_site_header()
+    {
+        await using var app = new ProfileApp(enabled: false);
+        var client = app.Browser();
+        var reader = await (await client.SendAsync(Page("/saved"))).Content.ReadAsStringAsync();
+        Assert.Contains("saved-link", reader);
+        Assert.DoesNotContain("data-admin-alert", reader);
+
+        await PostFormAsync(client, "/account/login", new()
+        {
+            ["password"] = ProfileApp.AdminPassword,
+            ["returnUrl"] = "/admin",
+            ["__RequestVerificationToken"] = await TokenFromLoginPageAsync(client),
+        });
+        var admin = await (await client.SendAsync(Page("/saved"))).Content.ReadAsStringAsync();
+        Assert.Contains("data-admin-alert-toggle", admin);
+        Assert.Contains("href=\"admin/requests\"", admin);
     }
 }

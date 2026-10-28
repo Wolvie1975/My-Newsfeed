@@ -24,7 +24,7 @@ public sealed partial class RequestChecks(IHttpClientFactory clients)
 {
     public const string ClientName = "request-checker";
     private const int MaxRedirects = 5;
-    private const int MaxBytes = 2_000_000;
+    public const int MaxBytes = 5_000_000;   // a YouTube channel page is about 2.6 MB
 
     [GeneratedRegex(@"^UC[A-Za-z0-9_-]{22}\z")]
     private static partial Regex ChannelIdPattern();
@@ -167,7 +167,7 @@ public sealed partial class RequestChecks(IHttpClientFactory clients)
         }
     }
 
-    /// <summary>GET with every redirect target checked like the first address, at most 2 MB.</summary>
+    /// <summary>GET with every redirect target checked like the first address, at most 5 MB.</summary>
     public async Task<FetchResult> FetchAsync(Uri url, CancellationToken ct = default)
     {
         var client = clients.CreateClient(ClientName);

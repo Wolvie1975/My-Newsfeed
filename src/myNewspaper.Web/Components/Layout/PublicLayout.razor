@@ -79,6 +79,8 @@
                 <span class="saved-link__label">Saved</span>
                 <span class="saved-link__count" data-saved-count hidden></span>
             </a>
+            @* Admin only: requests waiting and locked profiles, with a quick-look panel. *@
+            <AuthorizeView><Authorized><AdminAlert /></Authorized></AuthorizeView>
             <a class="settings-link" href="settings" aria-current="@(onTeams ? "page" : null)">Settings</a>
             @* Label and pressed state are kept in sync by public.js. *@
             <button class="theme-toggle" type="button" aria-label="Switch to dark mode" aria-pressed="false" data-theme-toggle>

@@ -134,7 +134,7 @@
                                     <td>@StatusPill(row)</td>
                                     <td>@(row.HasPin ? "Set" : "Not set yet")</td>
                                     <td class="num">@row.Devices</td>
-                                    <td class="num">@row.WaitingRequests</td>
+                                    <td class="num">@if (row.WaitingRequests > 0) { <a href="admin/requests">@row.WaitingRequests</a> } else { @row.WaitingRequests }</td>
                                     <td>@OrderButtons(row, index)</td>
                                     <td class="adm-actions">
                                         <a class="btn btn-sm btn-outline-secondary" href="@($"admin/profiles/{row.Id}")">Manage<span class="adm-sr"> @row.Name</span></a>

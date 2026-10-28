@@ -171,8 +171,17 @@ public class RequestCheckTests
     [Fact]
     public async Task Oversized_responses_are_refused()
     {
-        var checks = new RequestChecks(new Clients(new Fake(_ => Ok(new string('a', 2_000_001)))));
+        var checks = new RequestChecks(new Clients(new Fake(_ => Ok(new string('a', RequestChecks.MaxBytes + 1)))));
         await Assert.ThrowsAsync<HttpRequestException>(() => checks.FetchAsync(new Uri("https://example.com/")));
+    }
+
+    [Fact]
+    public async Task A_youtube_sized_channel_page_is_read()
+    {
+        // YouTube's channel pages are about 2.6 MB, with the canonical link well past the first megabyte.
+        var page = new string(' ', 2_600_000) + "<link rel=\"canonical\" href=\"https://www.youtube.com/channel/UCXuqSBlHAE6Xw-yeJA0Tunw\">";
+        var checks = new RequestChecks(new Clients(new Fake(_ => Ok(page))));
+        Assert.Equal("UCXuqSBlHAE6Xw-yeJA0Tunw", await checks.ResolveChannelAsync("https://www.youtube.com/@LinusTechTips"));
     }
 
     private static HttpResponseMessage Ok(string body) => new(HttpStatusCode.OK) { Content = new StringContent(body, Encoding.UTF8, "text/html") };

@@ -19,7 +19,7 @@ public sealed record AdminRequestCounts(int Waiting, int Added, int Declined, in
 public sealed record LockedProfileAlert(int ProfileId, string Name, string Color, DateTime LockedAt, string? Device);
 
 /// <summary>The admin's quick look (5.4): locked profiles first, then waiting requests, and the header count.</summary>
-public sealed record RequestSummary(int Count, IReadOnlyList<LockedProfileAlert> Locked, IReadOnlyList<AdminRequestRow> Waiting);
+public sealed record RequestSummary(int Count, IReadOnlyList<LockedProfileAlert> Locked, IReadOnlyList<AdminRequestRow> Waiting, DateTime? SeenAt);
 
 public enum ApproveOutcome { Approved, NotFound, NotWaiting, AlreadyCollected, NotCollected }
 
@@ -271,7 +271,8 @@ public static class RequestStore
             .Select(p => new LockedProfileAlert(p.Id, p.Name, p.Color, p.LockedAt!.Value,
                 db.ProfileDevices.Where(d => d.Id == p.LockedByDeviceId).Select(d => d.Label).FirstOrDefault()))
             .ToListAsync(ct);
-        return new(await AlertCountAsync(db, ct), locked, await ListAsync(db, Waiting, take: 20, ct: ct));
+        var seen = (await ProfileStore.GetHouseholdAsync(db, ct)).RequestsSeenAt;
+        return new(await AlertCountAsync(db, ct), locked, await ListAsync(db, Waiting, take: 20, ct: ct), seen);
     }
 
     public static async Task MarkSeenAsync(WebScraperContext db, DateTime nowUtc, CancellationToken ct = default) =>

@@ -125,7 +125,7 @@
                             {
                                 <li>
                                     <span class="adm-tag">@(r.Kind == RequestStore.Youtube ? "YouTube" : "News")</span>
-                                    <b>@r.Name</b>
+                                    <a href="@($"admin/requests?status=all&id={r.Id}")"><b>@r.Name</b></a>
                                     <span class="adm-pill @(r.Status == RequestStore.Waiting ? "adm-pill--warn" : r.Status == RequestStore.Added ? "adm-pill--ok" : "adm-pill--off")">@Capitalize(r.Status)</span>
                                     <span class="adm-help">@Dates.Stamp(r.CreatedAt)</span>
                                 </li>

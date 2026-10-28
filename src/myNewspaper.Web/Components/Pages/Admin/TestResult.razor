@@ -1,0 +1,17 @@
+@using myNewspaper.Web.Requests
+@* The outcome of Test feed on Admin · Requests: the entry count and newest title, or why it failed. *@
+@if (Result is { } r)
+{
+    <span class="adm-req__result @(r.Ok ? "is-ok" : "is-bad")" role="status">
+        <b>@(r.Ok ? "Feed works." : "Feed didn’t work.")</b>
+        @(r.Ok ? $" {r.Entries} recent {(r.Entries == 1 ? "item" : "items")}{(r.NewestTitle is { } t ? $", newest: “{t}”" : "")}." : $" {r.Summary}")
+    </span>
+}
+else
+{
+    <span class="adm-req__result" role="status"></span>
+}
+
+@code {
+    [Parameter] public CheckResult? Result { get; set; }
+}

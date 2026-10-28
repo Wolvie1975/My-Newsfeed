@@ -563,6 +563,7 @@
 }
 .adm-seg {
     display: flex;
+    flex-wrap: wrap;
     padding: 3px;
     border-radius: 10px;
     background: var(--adm-row);
@@ -1510,6 +1511,181 @@
 .adm-find {
     max-width: 24rem;
     min-height: 44px;
+}
+/* Admin · Requests: the queue beside the selected request; on phones one or the other. */
+.adm-req {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+    align-items: start;
+}
+.adm-req__queue {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+}
+.adm .adm-req__item {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 12px 14px;
+    border: 1px solid var(--adm-border);
+    border-radius: 12px;
+    background: var(--adm-surface);
+    color: var(--adm-text);
+    text-decoration: none;
+}
+.adm .adm-req__item:hover {
+    border-color: var(--adm-accent);
+    text-decoration: none;
+}
+.adm-req__item[aria-current] {
+    border-color: var(--adm-accent);
+    box-shadow: inset 0 0 0 1px var(--adm-accent);
+}
+.adm-req__top,
+.adm-req__who {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 8px;
+}
+.adm-req__top .adm-help {
+    margin: 0 0 0 auto;
+}
+.adm-req__name {
+    font-size: 16px;
+    overflow-wrap: anywhere;
+}
+.adm-req__who {
+    font-size: 13px;
+    color: var(--adm-text-2);
+}
+.adm-req__who .adm-avatar {
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    font-size: 14px;
+}
+.adm-req__note {
+    font-size: 13px;
+    color: var(--adm-text-2);
+    overflow-wrap: anywhere;
+}
+.adm-req__editor {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    min-width: 0;
+}
+.adm-req__editor > * {
+    margin: 0;
+}
+.adm .adm-req__back {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    min-height: 44px;
+    align-self: flex-start;
+    font-weight: 700;
+}
+.adm-req__title {
+    font-family: var(--adm-serif);
+    font-size: 28px;
+    font-weight: 800;
+    overflow-wrap: anywhere;
+}
+.adm-req__editor .adm-help {
+    overflow-wrap: anywhere;
+}
+.adm-req__check {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 10px;
+    font-size: 14px;
+}
+.adm-req__check .btn-link {
+    min-height: 44px;
+    padding: 0;
+}
+.adm-req__pair {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+    gap: 0 16px;
+}
+.adm-req__row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.adm-req__row > .form-control {
+    flex: 1 1 14rem;
+    min-width: 0;
+}
+.adm-req__code {
+    display: block;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: var(--adm-row);
+    color: var(--adm-text);
+    font-size: 13px;
+    overflow-wrap: anywhere;
+}
+.adm-req__feeds {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.adm-req__url {
+    min-width: 0;
+    font-size: 13px;
+    overflow-wrap: anywhere;
+}
+.adm-req__test {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 12px;
+}
+.adm-req__result {
+    flex: 1 1 14rem;
+    font-size: 14px;
+    overflow-wrap: anywhere;
+}
+.adm-req__result.is-ok b {
+    color: var(--adm-ok-fg);
+}
+.adm-req__result.is-bad b {
+    color: var(--adm-bad-fg);
+}
+.adm-req__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.adm-req__decline {
+    padding-top: 14px;
+    border-top: 1px solid var(--adm-border);
+}
+.adm-req .btn {
+    min-height: 44px;
+}
+@media (max-width: 1023px) {
+    /* Phones and tablets: the list until a request is picked, then just that request with a way back. */
+    .adm-req--auto .adm-req__editor,
+    .adm-req--picked .adm-req__queue {
+        display: none;
+    }
+}
+@media (min-width: 1024px) {
+    .adm-req {
+        grid-template-columns: minmax(260px, 340px) minmax(0, 1fr);
+    }
+    .adm .adm-req__back {
+        display: none;
+    }
 }
 .adm-group[open] > .adm-choices {
     padding-bottom: 12px;

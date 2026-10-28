@@ -67,6 +67,14 @@ else
             <div class="form-text">The YouTube page's category tabs. Categories themselves are added by the scraper.</div>
         </div>
 
+        <div class="adm-toggle-row mb-3">
+            <span>
+                <span id="household-pick-l" class="adm-label d-block">Suggest to everyone</span>
+                <span id="household-pick-d" class="adm-help d-block">A household pick: anyone who doesn’t follow it sees it as a one-tap suggestion in their Settings.</span>
+            </span>
+            <AdminSwitch Checked="form.IsHouseholdPick" LabelledBy="household-pick-l" DescribedBy="household-pick-d" OnChange="v => form.IsHouseholdPick = v" />
+        </div>
+
         @if (!IsNew && existing is not null)
         {
             <dl class="row small text-muted">
@@ -103,6 +111,8 @@ else
 
         // Bound to a <select>, so it is text; "" means no category.
         public string CategoryId { get; set; } = "";
+
+        public bool IsHouseholdPick { get; set; }
     }
 
     private IReadOnlyList<YoutubeCategory> categories = [];
@@ -140,6 +150,7 @@ else
         {
             ChannelId = existing.ChannelId, ChannelName = existing.ChannelName, Url = existing.Url,
             CategoryId = existing.YoutubeCategoryId?.ToString(CultureInfo.InvariantCulture) ?? "",
+            IsHouseholdPick = existing.IsHouseholdPick,
         };
     }
 
@@ -171,7 +182,10 @@ else
             await using var db = await Factory.CreateDbContextAsync();
             if (IsNew)
             {
-                db.YoutubeVideoFeeds.Add(new YoutubeVideoFeed { ChannelId = channelId, ChannelName = name, Url = url, YoutubeCategoryId = categoryId });
+                db.YoutubeVideoFeeds.Add(new YoutubeVideoFeed
+                {
+                    ChannelId = channelId, ChannelName = name, Url = url, YoutubeCategoryId = categoryId, IsHouseholdPick = form.IsHouseholdPick,
+                });
             }
             else
             {
@@ -190,6 +204,7 @@ else
                 feed.ChannelName = name;
                 feed.Url = url;
                 feed.YoutubeCategoryId = categoryId;
+                feed.IsHouseholdPick = form.IsHouseholdPick;
             }
 
             await db.SaveChangesAsync();

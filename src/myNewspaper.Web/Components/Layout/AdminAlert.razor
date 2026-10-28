@@ -1,0 +1,72 @@
+@using Microsoft.Extensions.Caching.Memory
+@using myNewspaper.Web.Requests
+@inject IDbContextFactory<WebScraperContext> Factory
+@inject IMemoryCache Cache
+@inject IConfiguration Config
+@inject FeedDates Dates
+@inject ILogger<AdminAlert> Log
+
+@* The admin's Requests alert in the public header (profiles handoff 5.4). PublicLayout renders it only inside
+   AuthorizeView, so readers never get it. The count is two cheap COUNTs; the panel's list loads from
+   /admin/api/requests/summary when it's opened (admin-alert.js). Without JavaScript it's a link to Admin · Requests. *@
+<div class="admin-alert" data-admin-alert>
+    <a class="admin-alert__button" href="admin/requests" aria-haspopup="dialog" aria-expanded="false" aria-controls="admin-alert-panel"
+       aria-label="@Label" data-admin-alert-toggle>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 13h5l2 3h4l2-3h5"></path><path d="M5 5h14l2 8v6H3v-6z"></path></svg>
+        <span class="admin-alert__label" aria-hidden="true">Requests</span>
+        <span class="admin-alert__count" aria-hidden="true" data-admin-alert-count hidden="@(count == 0)">@count</span>
+        @if (scraperProblem) { <span class="admin-alert__dot" aria-hidden="true"></span> }
+    </a>
+    <section id="admin-alert-panel" class="admin-alert__panel" role="dialog" aria-labelledby="admin-alert-title" hidden data-admin-alert-panel>
+        <header class="admin-alert__head">
+            <div>
+                <span class="admin-alert__eyebrow">Admin</span>
+                <h2 id="admin-alert-title" class="admin-alert__title" tabindex="-1">Requests</h2>
+            </div>
+            <button type="button" class="admin-alert__link" data-admin-alert-seen>Mark all seen</button>
+            <button type="button" class="admin-alert__close" aria-label="Close" data-admin-alert-close>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg>
+            </button>
+        </header>
+        <p class="admin-alert__status" role="status" data-admin-alert-status>Loading…</p>
+        <ul class="admin-alert__list" data-admin-alert-list></ul>
+        <footer class="admin-alert__foot">
+            @if (scraperProblem) { <span>Also: a scraper problem · <a href="admin">Status</a></span> }
+            <a class="admin-alert__all" href="admin/requests">All requests in Admin</a>
+        </footer>
+    </section>
+</div>
+
+@code {
+    private int count;
+    private bool scraperProblem;
+
+    private string Label => count switch
+    {
+        0 => "Requests",
+        1 => "Requests, 1 needs attention",
+        _ => $"Requests, {count} need attention",
+    } + (scraperProblem ? ", and a scraper problem" : "");
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            await using var db = await Factory.CreateDbContextAsync();
+            count = await RequestStore.AlertCountAsync(db);
+            // The scraper report is heavier than a COUNT, so the dot is cached for a few minutes.
+            scraperProblem = await Cache.GetOrCreateAsync("admin-alert:scraper", async entry =>
+            {
+                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5);
+                var now = DateTime.UtcNow;
+                var report = await ScraperHealth.GetReportAsync(db, now, Dates.TodayAt(now), ScraperHealth.StaleAfter(Config["Scraper:StaleAfterHours"]));
+                return AdminNavCounts.From(report).Total > 0;
+            });
+        }
+        catch (Exception ex) when (DataFailures.IsReadFailure(ex))
+        {
+            // The header still renders; the link opens Admin · Requests, which shows the real error.
+            Log.LogWarning(ex, "Could not count admin alerts.");
+        }
+    }
+}

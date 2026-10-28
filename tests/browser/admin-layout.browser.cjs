@@ -32,6 +32,7 @@ const extras = [
     '/admin/tv-series/new',
     '/admin/profiles',
     '/admin/profiles/base',
+    '/admin/requests',
 ];
 const widths = (process.env.WIDTHS || '320,390,430,744,820,1024,1440').split(',').map(Number);
 

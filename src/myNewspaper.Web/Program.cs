@@ -101,7 +101,8 @@ builder.Services.AddHttpClient(RequestChecks.ClientName, client =>
     .ConfigurePrimaryHttpMessageHandler(SsrfGuard.CreateHandler);
 builder.Services.AddSingleton<RequestChecks>();
 builder.Services.AddSingleton<RequestBacklog>();
-// Built but not started yet: the request checker starts at stage A2 and the household channel rollout at U3.
+// The request checker fills in details for the admin; the household channel rollout is built but starts at U3.
+builder.Services.AddHostedService<RequestCheckerService>();
 
 // Game results from ESPN's public scoreboard data: a background sync stores followed leagues' and teams' games; pages
 // only read the database.
