@@ -72,10 +72,7 @@
                 {
                     <li>
                         <a href="scoreboard">
-                            @* Live: "Steelers 13, Saints 10". Not started: "Kings at Rangers" ("vs" at a neutral site). *@
-                            <span class="bs-live__score">@(game.Active || game.AwayScore is not null
-                                ? $"{game.AwayName}{(game.AwayScore is { } a ? " " + a.ToString("0") : "")}, {game.HomeName}{(game.HomeScore is { } h ? " " + h.ToString("0") : "")}"
-                                : $"{game.AwayName} {(game.NeutralSite == true ? "vs" : "at")} {game.HomeName}")</span>
+                            <span class="bs-live__score">@LiveLine(game)</span>
                             <span class="bs-live__clock">@ScoreboardPanel.CompetitionLabel(game.Sport, game.League) · @(game.Active ? game.StatusText ?? game.DisplayClock ?? "Live" : game.StartsAtUtc is { } start ? Dates.Time(start) : "Time TBD")</span>
                         </a>
                     </li>
@@ -384,6 +381,15 @@
 </div>
 
 @code {
+    // Masthead Live now line, away @ home: "Bruins 3 @ Hurricanes 1"; before the start "Kings @ Rangers"; "vs" at a
+    // neutral site, where neither team is home.
+    public static string LiveLine(ScoreboardGame game)
+    {
+        var scored = game.Active || game.AwayScore is not null;
+        string Team(string name, decimal? score) => scored && score is { } s ? $"{name} {s:0}" : name;
+        return Team(game.AwayName, game.AwayScore) + (game.NeutralSite == true ? " vs " : " @ ") + Team(game.HomeName, game.HomeScore);
+    }
+
     [SupplyParameterFromQuery(Name = "rankingSourceId")] private string? RankingSourceId { get; set; }
     [SupplyParameterFromQuery(Name = "scoreboardShow")] private string? ScoreboardShow { get; set; }
     private RankingsPage homeRankings = new([], null, null, []);
