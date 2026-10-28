@@ -5,7 +5,7 @@
 // and dark: no sideways scroll, readable text.
 //
 // It needs Profiles:Enabled=true and the admin password: it adds two throwaway profiles, marks one as the household
-// admin, and deletes both at the end (which clears the mark), even if a check fails.
+// admin, and deletes both at the end, even if a check fails; then it marks the profile that was the admin before.
 const { chromium } = require('playwright');
 const assert = require('node:assert/strict');
 const { audit } = require('./contrast-audit.cjs');
@@ -46,6 +46,7 @@ const legacy = {
         await page.waitForTimeout(400);
     };
     const added = [];
+    let previousAdmin = null;
     try {
         await admin.goto(base + '/login?returnUrl=%2Fadmin%2Fprofiles');
         await admin.locator('#password').fill(password);
@@ -65,6 +66,17 @@ const legacy = {
             added.push({ ...person, id: Number(href.match(/(\d+)$/)[1]) });
         }
         const [cy, di] = added;
+        // Note which profile is the household admin now, so it can be put back at the end.
+        for (const href of await admin
+            .locator('.adm-table a.adm-row-title')
+            .evaluateAll((links) => links.map((l) => l.getAttribute('href')))) {
+            await admin.goto(base + '/' + href.replace(/^\//, ''));
+            await settle(admin);
+            if ((await admin.locator('[aria-labelledby="admin-l"]').getAttribute('aria-checked')) === 'true') {
+                previousAdmin = href;
+                break;
+            }
+        }
         // Cy is the household admin.
         await admin.goto(base + '/admin/profiles/' + cy.id);
         await settle(admin);
@@ -220,6 +232,19 @@ const legacy = {
                 await admin.waitForURL('**/admin/profiles?deleted=*');
             } catch (e) {
                 console.error(`Could not delete ${person.name}; remove it in Admin · Profiles. ${e.message}`);
+            }
+        }
+        // Deleting Cy cleared the household admin; mark the one that was marked before.
+        if (previousAdmin) {
+            try {
+                await admin.goto(base + '/' + previousAdmin.replace(/^\//, ''));
+                await settle(admin);
+                if ((await admin.locator('[aria-labelledby="admin-l"]').getAttribute('aria-checked')) !== 'true') {
+                    await admin.locator('[aria-labelledby="admin-l"]').click();
+                    await admin.getByText('now show the Admin sign in link').waitFor();
+                }
+            } catch (e) {
+                console.error(`Could not mark the household admin again; do it on Manage profile. ${e.message}`);
             }
         }
         await browser.close();

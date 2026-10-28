@@ -6,12 +6,38 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The latest recorded web release is `mynewspaper-web:profile-settings-20261028`
-(image `6d0b593a9586`), deployed October 28, 2026 (Central), with **household profiles switched on**
-(`Profiles__Enabled=true`). Its rollback image is `mynewsfeed-web:before-mynewspaper-profile-settings-20261028`
-(the standings highlight build); turning profiles off again rolls back the profiles themselves. Deployment checks
-passed then;
+The latest recorded web release is `mynewspaper-web:make-it-yours-20261028`
+(image `6b769189dc48`), deployed October 28, 2026 (Central), with **household profiles switched on**
+(`Profiles__Enabled=true`). Its rollback image is `mynewsfeed-web:before-mynewspaper-make-it-yours-20261028`
+(the U2 settings build); turning profiles off again rolls back the profiles themselves. Deployment checks passed then;
 this is a dated observation, not live hosting status.
+
+## Settings: your profile, TV shows, YouTube channels and requests — deployed October 28, 2026 (Central)
+
+Stage U3. Settings gains **Your profile** (name, color, Change PIN, this device's picker, sign out), **What's yours
+and what's shared**, **TV shows** (follow from a TVmaze search and unfollow, for the open profile; the last unfollow
+stops collection, history kept), **YouTube channels** (household channel switches in a collapsible list, your other
+channels, household picks) and **Requests** (the form and Your requests with the admin's reply). All are plain forms
+to `/me/*`, which the gate covers and antiforgery protects, coming back with fixed message codes (no names in the
+address). **Track this show** (`/tv/track`) now follows for the open profile; before this, a show added there since
+switch-on reached nobody's calendar. The household channel rollout service now runs every 15 minutes, and saving a
+feed in admin triggers it. `TvQuery.FollowAsync` re-enables a tracked show in SQL. Commit `200b540`.
+
+Deployed `mynewspaper-web:make-it-yours-20261028` (`6b769189dc48`) through Compose with `--pull`, healthy; rollback
+`mynewsfeed-web:before-mynewspaper-make-it-yours-20261028` (`6d0b593a9586`). Environment identical (sorted hash).
+Predeploy: 930 .NET tests (another profile's requested channel can't be followed or listed and answers like an
+unknown ID; the last unfollow stops collection and following again restarts it; `/me` forms need an open edition and
+antiforgery and redirect with codes; `/me` is 404 with profiles off); locally with profiles on,
+`settings-sections.browser.cjs` at 320, 390, 430, 744, 820, 1024 and 1440px in light and dark (name and color, the
+device picker, Change PIN wrong then right, follow and unfollow from Settings and from Track this show using a show the
+household already tracks, household channel off and on, a request listed as Waiting, sideways scroll, contrast, 44px
+targets; screenshots reviewed), plus `profile-settings` and `editions`; with profiles off, `personal-layout`,
+`settings-order`, `theme-mode` and `personal-features` passed and `/tv/track` still renders the old form
+(`track-series` needs the streaming-catalog key). Live: `settings-sections`, `profile-settings` and `editions` passed
+at the same widths and themes. The profile-settings check had cleared the household admin mark (it marks its own
+throwaway profile); Jason was marked again, and the check now restores the previous mark itself (verified live).
+Throwaway profiles, their request, and the device rows the checks created were removed; tracked TV series (10 enabled),
+follows and the 32 rollouts are unchanged. Not checked: a real device.
 
 ## Settings saved to each profile, and the household admin's sign-in link — deployed October 28, 2026 (Central)
 
