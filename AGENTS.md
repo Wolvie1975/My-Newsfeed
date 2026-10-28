@@ -24,3 +24,10 @@ features and fixes, including data/query changes that affect rendered content.
 
 See [the maintained mobile acceptance checklist](docs/interface.md#required-mobile-verification)
 and [the deployment runbook](DEPLOY.md). Preserve existing local changes.
+
+## Commits, not pushes
+
+User direction, October 28, 2026 (America/Chicago): when asked to commit, commit
+locally on `develop` and stop. Don't push, don't create a feature branch first,
+and don't ask about or offer pushing; the user pushes to GitHub themselves.
+Report the commit hashes and say they're local.
