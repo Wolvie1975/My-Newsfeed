@@ -7,9 +7,29 @@ verify an image still exists before using it. Runtime configuration and persiste
 keys were preserved by the documented releases unless otherwise stated.
 
 The latest recorded web release is `mynewspaper-web:profiles-picker-20261028`
-(image `1b52180fbe9c`), deployed October 28, 2026 (Central). Its rollback image is
-`mynewsfeed-web:before-mynewspaper-profiles-picker-20261028`. Deployment checks passed then;
+(image `1b52180fbe9c`), deployed October 28, 2026 (Central), with **household profiles switched on**
+(`Profiles__Enabled=true`). Its rollback image is `mynewsfeed-web:before-mynewspaper-profiles-picker-20261028`;
+turning profiles off again is the quicker rollback. Deployment checks passed then;
 this is a dated observation, not live hosting status.
+
+## Household profiles switched on — October 28, 2026 (Central)
+
+Stage U1's switch-on, on the same image as the entry below (`mynewspaper-web:profiles-picker-20261028`,
+`1b52180fbe9c`). The admin created the first profile (Jason, with its PIN) in Admin · Profiles and confirmed a fresh
+`WebScraper` backup. `db/021_seed_first_profiles.sql` ran and then ran again with no further changes: the profile
+follows all 10 enabled TV series and all 32 YouTube channels, 32 channels are recorded as rolled out, and its Saved
+list is identical to the shared list (6 articles); `MyDailyFeedSavedList` is kept for rollback. The private override
+gained `Profiles__Enabled: "true"` and the container was recreated: healthy, and every other setting identical
+(sorted hash with that one line left out). Every public page now redirects a device without an open profile to
+`/editions?returnUrl=…` and scripts get 401 `{ "gate": "/editions" }`; `/healthz` and the admin sign-in are unchanged.
+`editions.browser.cjs` passed on the live build at 320, 390, 430, 744, 820, 1024 and 1440px in light and dark (gate and
+return, PIN pad as bottom sheet and dialog, wrong PIN, lockout, no-JavaScript form, edition chip, phone menu, script
+gate, sign-out, sideways scroll, contrast, 44px targets); screenshots reviewed. Its two throwaway profiles were deleted,
+and the device rows the checks and probes created (15 from the browser, 12 from `curl`) were removed; one profile and
+two unrelated devices remain. Rollback: remove the `Profiles__Enabled` line and recreate the container (or run the
+previous image), and the shared Saved list and household TV/YouTube views come back. Not checked: the admin opening
+Jason's edition with its PIN (the admin does this), a real device. The existing public browser checks now land on the
+picker and need a test profile before they can run against this site again.
 
 ## Edition picker built, profiles still off — deployed October 28, 2026 (Central)
 
