@@ -6,11 +6,35 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The latest recorded web release is `mynewspaper-web:standings-highlight-20261028`
-(image `0035a6d8fb4d`), deployed October 28, 2026 (Central), with **household profiles switched on**
-(`Profiles__Enabled=true`). Its rollback image is `mynewsfeed-web:before-mynewspaper-standings-highlight-20261028`
-(the U1 picker build); turning profiles off again rolls back the profiles themselves. Deployment checks passed then;
+The latest recorded web release is `mynewspaper-web:profile-settings-20261028`
+(image `6d0b593a9586`), deployed October 28, 2026 (Central), with **household profiles switched on**
+(`Profiles__Enabled=true`). Its rollback image is `mynewsfeed-web:before-mynewspaper-profile-settings-20261028`
+(the standings highlight build); turning profiles off again rolls back the profiles themselves. Deployment checks
+passed then;
 this is a dated observation, not live hosting status.
+
+## Settings saved to each profile, and the household admin's sign-in link — deployed October 28, 2026 (Central)
+
+Stage U2: light/dark mode, color scheme, home sections, My Teams, services, Settings order and the scoreboard's stars
+are saved to the open profile instead of the browser (`profiles.js`'s `window.myNewspaperPrefs`, PUT
+`/api/me/settings`), so they follow a person to every device. A browser's old settings are imported once, into the
+first profile opened there, and then removed. The profile's theme and scheme are on `<html>` from the server, so pages
+don't flash. Scripts read the site defaults from the page. The picker shows **Your teams**. `db/022` (applied earlier
+the same day) adds the household admin profile: with profiles on, only that profile's pages show **Admin sign in**;
+Jason's profile was marked as the household admin after the deploy. Commits `2871b34` and `0eac3c4` (with
+`9fcb03f`, already live).
+
+Deployed `mynewspaper-web:profile-settings-20261028` (`6d0b593a9586`) through Compose with `--pull`, healthy; rollback
+`mynewsfeed-web:before-mynewspaper-profile-settings-20261028` (`0035a6d8fb4d`). Environment identical (sorted hash).
+Predeploy: 927 .NET tests (scoreboard stars, page-data escaping, damaged stored values); locally with profiles on,
+`profile-settings.browser.cjs` at 320, 390, 430, 744, 820, 1024 and 1440px in light and dark (import once and the old
+keys removed, theme and scheme on `<html>` from the server, the imported hidden home section applied on another
+device, a theme change on one device shown on the other, a second profile on the same device starting clean, the Admin
+sign in link only for the household admin's profile, Settings wording, no sideways scroll, contrast; screenshots
+reviewed) and `editions.browser.cjs`; with profiles off, 14 public checks passed (`watch-services` needs the
+streaming-catalog key, which the local run doesn't have). Live: `profile-settings.browser.cjs` and
+`editions.browser.cjs` passed at the same widths and themes; their throwaway profiles and the device rows the checks
+created were removed. Not checked: a real device.
 
 ## Standings My Teams highlight — deployed October 28, 2026 (Central)
 
