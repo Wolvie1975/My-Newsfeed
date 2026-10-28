@@ -6,10 +6,31 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The latest recorded web release is `mynewspaper-web:scoreboardsport-20261027`
-(image `ba61e366cef2`), deployed October 27, 2026 (Central). Its rollback image is
-`mynewsfeed-web:before-mynewspaper-scoreboardsport-20261027`. Deployment checks passed then;
+The latest recorded web release is `mynewspaper-web:sportsfix-20261028`
+(image `3da6a580017e`), deployed October 28, 2026 (Central). Its rollback image is
+`mynewsfeed-web:before-mynewspaper-sportsfix-20261028`. Deployment checks passed then;
 this is a dated observation, not live hosting status.
+
+## Scoreboard Sport dropdown limited to the homepage — deployed October 28, 2026 (Central)
+
+Fixes a regression from the previous release, reported from a phone: the Sports page's "Today's scores" box shares the
+compact scoreboard component, so it also showed the new Sport dropdown, unstyled (running to the edge, with its focus
+outline overlapping the game cards) and without the parameter that keeps a choice across refresh. The previous release
+was verified on the homepage only. The box now shows the filter only when the page opts in (`SportFilter`); the
+homepage does, and the five-minute refresh sends `sportFilter=true` only from a panel that has it. The Sports page is
+back to its earlier layout. Commit `f71a7a0`.
+
+Deployed `mynewspaper-web:sportsfix-20261028` (`3da6a580017e`) through Compose, healthy; rollback
+`mynewsfeed-web:before-mynewspaper-sportsfix-20261028` (`ba61e366cef2`). Compose settings regenerated from and matched
+the live container. Predeploy: solution build with no warnings, 735 .NET tests, lint clean (format:check flags only the
+earlier `tv-series-delete.browser.cjs`); home-scoreboard-sport now also asserts /sports has no filter, ignores
+`?scoreboardShow=` and stays unfiltered after its own refresh (it failed against the previous live build and passed on
+the fix); scoreboard, scoreboard-consolidation, scoreboard-mobile, scoreboard-show, home-top25 and home-columns passed;
+/sports at 320/390/1440 light/dark showed no filter and no overflow. One local home-top25 run timed out loading the page
+on the dev server; three reruns passed. Live: /healthz, 13 routes including /sports returned 200, unauthenticated
+/admin redirected to login; the dropdown renders on / and not on /sports; home-scoreboard-sport, all four scoreboard
+checks, home-top25 and home-columns passed; /sports at 320/390/430 light/dark showed no filter and no overflow;
+screenshots reviewed. Real device not rechecked.
 
 ## Homepage scoreboard Sport dropdown — deployed October 27, 2026 (Central)
 
