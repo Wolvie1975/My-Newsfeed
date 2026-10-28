@@ -2357,6 +2357,27 @@ a.tvc-row__show:hover {
     :root:is([data-color-scheme], :not([data-color-scheme])) .pub .standings-view .standings-table tbody th {
         font-size: 15px;
     }
+    /* My Teams rows keep their fill on the ruled paper: the reset above would otherwise leave the selection text color
+       (dark in Daily Ribbon) on no background, which vanishes in dark mode. */
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .standings-view
+        .standings-table
+        tbody
+        tr.sports-selected
+        > * {
+        background: var(--selection-bg);
+        color: var(--selection-fg);
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .standings-view
+        .standings-table
+        tbody
+        tr.sports-selected
+        a {
+        color: inherit;
+    }
     :root:is([data-color-scheme], :not([data-color-scheme])) .pub .standings-view .standing-highlight > * {
         background: color-mix(in srgb, var(--selection-bg, #ffd34d) 20%, var(--surface));
     }
