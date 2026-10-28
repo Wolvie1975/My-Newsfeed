@@ -6,10 +6,26 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The latest recorded web release is `mynewspaper-web:sportsfix-20261028`
-(image `3da6a580017e`), deployed October 28, 2026 (Central). Its rollback image is
-`mynewsfeed-web:before-mynewspaper-sportsfix-20261028`. Deployment checks passed then;
+The latest recorded web release is `mynewspaper-web:liveat-20261028`
+(image `31950bbc9fa1`), deployed October 28, 2026 (Central). Its rollback image is
+`mynewsfeed-web:before-mynewspaper-liveat-20261028`. Deployment checks passed then;
 this is a dated observation, not live hosting status.
+
+## Homepage Live now: "@" between away and home — deployed October 28, 2026 (Central)
+
+The desktop masthead's Live now box read "Boston Bruins 3, Carolina Hurricanes 1", which doesn't say which team is
+home. It now reads away @ home: "Boston Bruins 3 @ Carolina Hurricanes 1" while live, and "Kings @ Rangers" before the
+start (previously "at"). Neutral-site games keep "vs", since neither team is home. The line moved into
+`Home.LiveLine` with four unit tests. Commit `90078a7`.
+
+Deployed `mynewspaper-web:liveat-20261028` (`31950bbc9fa1`) through Compose, healthy; rollback
+`mynewsfeed-web:before-mynewspaper-liveat-20261028` (`3da6a580017e`). Compose settings regenerated from and matched the
+live container. Predeploy: solution build with no warnings, 739 .NET tests, lint clean (format:check flags only the
+earlier `tv-series-delete.browser.cjs`); home-columns and tablet-layout passed; the box at 1440 light and 820 dark
+reviewed. Live: /healthz and 12 public routes returned 200, unauthenticated /admin redirected to login; the live box
+read "Columbus Blue Jackets 3 @ Philadelphia Flyers 1", "Milwaukee Brewers 1 @ Tampa Bay Rays 1" and "Boston Bruins 1 @
+Carolina Hurricanes 1"; home-columns, home-scoreboard-sport and home-top25 passed; the box at 820/1024/1440 had no
+overflow and wraps long names cleanly. The box shows only from 744px, so phones are unaffected. Real device not checked.
 
 ## Scoreboard Sport dropdown limited to the homepage — deployed October 28, 2026 (Central)
 
