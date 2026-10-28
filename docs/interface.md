@@ -451,7 +451,7 @@ Unsafe video/story URLs remain plain text; thumbnails and metadata keep their ex
 
 ## Phone ribbons on All headlines, Saved and Settings
 
-Release 6 (October 28, 2026); verification is maintained in the mobile handoff/release history. Below 744px
+Release 6 deployed October 28, 2026 as `phone-tools-20261028`; verification is maintained in the mobile handoff/release history. Below 744px
 these pages keep their existing lists and forms under a scheme-colored title ribbon with one native select;
 nothing is folded or rendered twice. The existing layouts remain from 744px.
 

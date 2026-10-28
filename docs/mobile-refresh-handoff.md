@@ -346,7 +346,7 @@ Each release is independent: a page that hasn't been converted keeps its current
   Live verification is recorded in release history. Evidence: `/tmp/soccer-points/`. Included in the scheme-ribbon local check-in.
 - [ ] 4. **Entertainment**, **Movies**, **TV & Streaming**, **Digital releases**, **Box office**.
 - [x] 5. **Where to watch**, **Local**, **YouTube** — deployed October 28, 2026 as `phone-life-20261028` (`7176ce3f5fa0`); see the working record below.
-- [ ] 6. Ribbon-only pages: both All headlines pages, **Saved**, **Settings** — in progress after local release 5 commit `40f84ec`.
+- [x] 6. Ribbon-only pages: both All headlines pages, **Saved**, **Settings** — ✅ Done October 28, 2026: commit `63748dc`, deployed as `phone-tools-20261028` (`ce1907bbd201`); see the working record below.
 
 ## Follow-up — Home lead restricted to Top Headlines (deployed October 28, 2026)
 
@@ -453,9 +453,9 @@ User subsequently requested a local commit before starting release 6. Release 5 
 deployment records are included in that check-in on `develop`. No push performed.
 
 
-## Release 6 working record — October 28, 2026
+## Release 6 working record — October 28, 2026 — ✅ Done
 
-Status: started after release 5 local commit `40f84ec` on `develop`. Not deployed or committed.
+Status: committed locally as `63748dc` on `develop` (not pushed) and deployed as `phone-tools-20261028`.
 The user requested continued Markdown updates. Release 4 remains pending.
 
 - [x] Review Sports/Entertainment headline routes, Saved rendering/counts and Settings anchors/forms.
@@ -474,10 +474,11 @@ The user requested continued Markdown updates. Release 4 remains pending.
   `h1`s now) and two release 5 leftovers, `watch-later` (phone copy of the save button) and `section-select`
   (Local's links moved into the ribbon select), were updated to the visible copy; all four pass. 955 .NET
   tests pass; eslint, prettier and `git diff --check` clean.
-- [ ] Finalize implementation and verification details here and in interface documentation.
-  `docs/interface.md` section drafted; release history waits for the deployment.
+- [x] Finalize implementation and verification details here and in interface documentation.
+  `docs/interface.md` ("Phone ribbons on All headlines, Saved and Settings") and `docs/release-history.md`.
+- [x] Deploy with runtime/keys preserved, retain rollback, repeat live checks and record evidence.
 
-Verification so far (local, profiles off, port 5296): new `tests/browser/phone-tools.browser.cjs` passes
+Local verification (profiles off, port 5296): new `tests/browser/phone-tools.browser.cjs` passes
 at 320/390/430px × Kansas/Monochrome/Cardinals × light/dark on `/sports/news`, `/entertainment/news`,
 `/saved` and `/settings`: ribbon shown and desktop heading hidden, contrast audit, no overflow, unique IDs,
 44px ribbon/feature targets, exactly one feature (the first article), counted Show options, Settings index
@@ -486,20 +487,24 @@ Section select, Load more adds no feature, feature Share/Escape, removing the fe
 feature and updates counts, Show → Videos, Jump to scrolls to My Teams. Empty Saved (zero counts, no
 feature) and an unreachable Saved API (503) keep the ribbon. No-JS Go paths for Section, Show and Jump to
 (the redirect keeps `#my-services`). At 744/1024/1440px light/dark: no ribbon, headings/tabs/index visible,
-no phone feature styling, contrast and overflow pass. Screenshots reviewed (`r6d` in the session scratchpad).
+no phone feature styling, contrast and overflow pass. Screenshots reviewed; evidence `/tmp/release6/local/`.
 
 Found and fixed during verification: at 320px the 44px ribbon title split "Entertainme / nt"
 (titles now 36px below 360px; the check asserts no word splits); the headlines ribbon `h1` showed a focus
 ring because Blazor focuses the first `h1` after navigation (`.mx-ribbon h1:focus` now has no outline, as
 the other headings do); `FeedArticles`' new parameter had taken `LeadFirst`'s doc comment.
 
-The live build remains release 5 (`phone-life-20261028`, `7176ce3f5fa0`). No deployment or new commit
-has been requested for release 6. Real-device and VoiceOver/TalkBack checks are unavailable.
+Deployed `mynewspaper-web:phone-tools-20261028` (`ce1907bbd201`) from `/tmp/release5-deploy/override.json`
+with only the image tag changed. Rollback: `mynewsfeed-web:before-mynewspaper-phone-tools-20261028`
+(`7176ce3f5fa0`). Environment hash unchanged; container healthy, `/healthz` 200. Live `phone-tools` (profiles
+on, throwaway profile) passed the same matrix, including the profile-only Jump to anchors; the profile was
+deleted and two headless test-device records without a profile were removed (Jason and Jacob remain). Live
+screenshots reviewed; evidence `/tmp/release6/deploy/`. Real-device and VoiceOver/TalkBack checks are
+unavailable.
 
 Implementation checkpoint: shared headline cards accept a phone-feature flag only for the first initial
 article, so Load more cannot introduce extra dark leads. Saved retains one DOM list and adds counts to
 the native Show options; the first item is chosen after filtering/grouping and moves when removed.
 Its render signature now includes the selected filter. Settings Jump to uses the current page hash with
 JavaScript and the existing local `/navigate` redirect without it. Profile-only anchors are conditional.
-Dark-card foreground/button overrides are scoped to phone widths. Build passed with zero warnings/errors;
-initial browser/contrast checks are underway. No release 6 deployment or commit has been performed.
+Dark-card foreground/button overrides are scoped to phone widths. Build passed with zero warnings/errors.

@@ -6,10 +6,42 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The latest recorded web release is `mynewspaper-web:phone-life-20261028`
-(image `7176ce3f5fa0`), deployed October 28, 2026 (Central), with household profiles enabled.
-Rollback: `mynewsfeed-web:before-mynewspaper-phone-life-20261028` (`c1e3fa5259c3`).
+The latest recorded web release is `mynewspaper-web:phone-tools-20261028`
+(image `ce1907bbd201`), deployed October 28, 2026 (Central), with household profiles enabled.
+Rollback: `mynewsfeed-web:before-mynewspaper-phone-tools-20261028` (`7176ce3f5fa0`).
 This is a dated deployment record, not live hosting status.
+
+## Phone refresh, release 6: All headlines, Saved and Settings — deployed October 28, 2026 (Central)
+
+Below 744px, the Sports and Entertainment headlines pages, Saved and Settings keep their existing lists and
+forms under a scheme ribbon with one native select: Section, a counted Show (All/Articles/Videos) and Jump to.
+Each select has a no-JavaScript Go path; Jump to uses the local `/navigate` redirect, which keeps the
+`#section`. The first article or saved item takes the dark feature styling; Load more adds none, and
+removing the featured saved item moves it on. Profile-only Settings anchors appear only with a profile open.
+Ribbon titles step down to 36px below 360px so long titles wrap between words, and the ribbon `h1` shows
+no focus ring after navigation. Wider layouts are unchanged. Commit `63748dc` on `develop` (local).
+
+Deployed `mynewspaper-web:phone-tools-20261028`, image
+`sha256:ce1907bbd20102f4002a4dd6c3e5fc4a02fda273a1028c3f6c6f511c93a5f69b`.
+Rollback retained as `mynewsfeed-web:before-mynewspaper-phone-tools-20261028` (`7176ce3f5fa0`).
+Runtime environment hash unchanged; container healthy, `/healthz` 200. No database migration or collector
+changes.
+
+Predeploy (local, profiles off): build with zero warnings/errors, 955 .NET tests, eslint, prettier and
+`git diff --check` passed. New `phone-tools` passed 320/390/430px × Kansas/Monochrome/Cardinals ×
+light/dark: ribbon and hidden desktop heading, contrast, overflow, unique IDs, 44px targets, one first-item
+feature, no split title words or title focus ring, counted Show options, Settings anchors; Section select,
+Load more, feature Share/Escape, Saved removal/Show → Videos, Jump to scrolling; empty and unreachable (503)
+Saved; no-JS Go paths at each phone width; retained 744/1024/1440px layouts in both themes. Full browser
+suite: 40 passed, 10 skipped (profiles-only), 15 failed. 11 are the known local-only ones without a
+streaming-catalog key (watch*, active-tv, us-options, mixed-search-nav, track-series, phone-life's Watch
+rail). `sports-news`, `entertainment-news`, `watch-later` and `section-select` were updated to the visible
+copy and then passed. Local evidence: `/tmp/release6/local/`.
+
+Live (profiles on, throwaway profile): `phone-tools` passed the same matrix, including the profile-only
+Jump to anchors. The throwaway profile was deleted and two headless test-device records without a profile
+were removed; Jason and Jacob remain. Live screenshots reviewed. Evidence: `/tmp/release6/deploy/`.
+Not checked: a real device, VoiceOver/TalkBack.
 
 ## Phone refresh, release 5: Where to watch, Local and YouTube — deployed October 28, 2026 (Central)
 
