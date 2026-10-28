@@ -1,0 +1,173 @@
+@page "/editions"
+@layout PickerLayout
+@using myNewspaper.Web.Endpoints
+@using myNewspaper.Web.Profiles
+@using myNewspaper.Web.Saved
+@inject IDbContextFactory<WebScraperContext> Factory
+@inject SharedArticles Saved
+@inject FeedDates Dates
+@inject ProfileContext Reader
+@inject TimeProvider Clock
+
+<PageTitle>Pick your edition · myNewspaper</PageTitle>
+
+@* The edition picker (profiles handoff 6.1). The gate sends every device without an open profile here; the middleware
+   returns 404 for it while profiles are switched off. One column per visible profile, with counts only, never a show
+   or channel name. Each column is a plain form that posts the PIN, so it works without JavaScript; editions.js turns the
+   PIN field into a dialog with a number pad. *@
+<header class="picker__mast">
+    <span class="picker__date">@Dates.TodayLabel(now) · @Year</span>
+    <span class="picker__brand">
+        <svg class="picker__mark" viewBox="0 0 64 64" width="56" height="56" aria-hidden="true">
+            <rect class="bs-mark-tile" width="64" height="64" rx="14" />
+            <path class="bs-mark-page" d="M15 11h25l10 10v32H15z" />
+            <path class="bs-mark-fold" d="M40 11v10h10z" />
+            <path class="bs-mark-n" d="M21 27H28V31.2C30 28.6 32.6 27 35.6 27C40 27 42.5 29.9 42.5 34.6V44.5H45V47H35.5V44.5H37.5V35.3C37.5 32.8 36.4 31.6 34.3 31.6C31.9 31.6 29.6 33.2 28 35.6V44.5H30V47H20.5V44.5H23V29.5H21Z" />
+        </svg>
+        myNewspaper
+    </span>
+    <h1 class="picker__title">Today’s editions — pick yours</h1>
+</header>
+
+@if (page.Editions.Count == 0)
+{
+    <p class="picker__empty">There are no editions yet. The admin adds them in Manage profiles.</p>
+}
+else
+{
+    <div class="picker__grid">
+        @foreach (var e in page.Editions)
+        {
+            var title = $"{e.Name}’s edition";
+            var error = Profile == e.Id ? Error : null;
+            <article class="edition" style="--ed: @e.Color" aria-labelledby="@($"ed-{e.Id}")">
+                <div class="edition__head">
+                    <span class="edition__tile" aria-hidden="true">@Initial(e.Name)</span>
+                    <span class="edition__names">
+                        <span class="edition__kicker">@Kicker(e.LastReadAt)</span>
+                        <h2 id="@($"ed-{e.Id}")" class="edition__title">@title</h2>
+                    </span>
+                </div>
+                @if (page.Lead is { } lead)
+                {
+                    <p class="edition__lead">@lead</p>
+                }
+                <ul class="edition__lines">
+                    <li><b>New for you</b><span>@NewForYou(e)</span></li>
+                    <li><b>Saved</b><span>@(e.Saved switch { 0 => "Nothing saved", 1 => "1 article", var n => $"{n} articles" })</span></li>
+                </ul>
+
+                @if (e.Locked || error == "locked")
+                {
+                    <p class="edition__note edition__note--locked" role="@(error == "locked" ? "alert" : null)">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></svg>
+                        Locked after too many wrong PINs. The admin has been told and will unlock it.
+                    </p>
+                }
+                else
+                {
+                    <form class="edition__form" method="post" action="@($"profiles/{e.Id}/open")" data-pin-form
+                          data-name="@e.Name" data-color="@e.Color" data-needs-pin="@(e.NeedsPin ? "true" : null)">
+                        <AntiforgeryToken />
+                        <input type="hidden" name="returnUrl" value="@Target" />
+                        @if (!e.NeedsPin)
+                        {
+                            <label class="edition__pin-label" for="@($"pin-{e.Id}")">@e.Name’s PIN</label>
+                            <input id="@($"pin-{e.Id}")" class="edition__pin" name="pin" type="password" inputmode="numeric" pattern="[0-9]{4}"
+                                   maxlength="4" autocomplete="off" required aria-describedby="@(error is null ? null : $"err-{e.Id}")" />
+                        }
+                        @if (error == "wrong-pin")
+                        {
+                            <p id="@($"err-{e.Id}")" class="edition__note edition__note--bad" role="alert">Wrong PIN@(TriesLeft is { } n ? $" · {n} {(n == 1 ? "try" : "tries")} left" : "").</p>
+                        }
+                        <button type="submit" class="edition__open">
+                            @(e.NeedsPin ? $"Choose a PIN for {title}" : $"Read {title}")
+                            @if (!e.NeedsPin)
+                            {
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></svg>
+                            }
+                        </button>
+                    </form>
+                }
+            </article>
+        }
+    </div>
+}
+
+<footer class="picker__foot">
+    @if (Reader.HasProfile)
+    {
+        <form method="post" action="profiles/signout">
+            <AntiforgeryToken />
+            <button type="submit" class="picker__link">Sign this device out of @Reader.Profile!.Name’s edition</button>
+        </form>
+    }
+    <a class="picker__link" href="admin/profiles">Manage profiles</a>
+</footer>
+
+@* The PIN pad. Without JavaScript it's never shown and the forms above post the typed PIN. *@
+<dialog class="pin-sheet" aria-labelledby="pin-title" data-pin-dialog>
+    <div class="pin-sheet__inner">
+        <span class="pin-sheet__grab" aria-hidden="true"></span>
+        <span class="edition__tile pin-sheet__tile" aria-hidden="true" data-pin-tile></span>
+        <h2 id="pin-title" class="pin-sheet__title" data-pin-title>Enter the PIN</h2>
+        <div class="pin-dots" aria-hidden="true" data-pin-dots><span></span><span></span><span></span><span></span></div>
+        <p class="pin-sheet__status" role="status" aria-live="polite" data-pin-status></p>
+        <div class="pin-pad" role="group" aria-label="Number pad">
+            @foreach (var key in new[] { "1", "2", "3", "4", "5", "6", "7", "8", "9", "", "0", "del" })
+            {
+                if (key.Length == 0)
+                {
+                    <span aria-hidden="true"></span>
+                }
+                else if (key == "del")
+                {
+                    <button type="button" class="pin-pad__key pin-pad__key--del" aria-label="Delete" data-pin-key="del">⌫</button>
+                }
+                else
+                {
+                    <button type="button" class="pin-pad__key" data-pin-key="@key">@key</button>
+                }
+            }
+        </div>
+        <button type="button" class="pin-sheet__cancel" data-pin-cancel>Cancel</button>
+    </div>
+</dialog>
+
+@code {
+    [SupplyParameterFromQuery(Name = "returnUrl")] private string? ReturnUrl { get; set; }
+    [SupplyParameterFromQuery(Name = "profile")] private int? Profile { get; set; }
+    [SupplyParameterFromQuery(Name = "error")] private string? Error { get; set; }
+    [SupplyParameterFromQuery(Name = "triesLeft")] private int? TriesLeft { get; set; }
+
+    private PickerPage page = new([], null);
+    private DateTime now;
+
+    private string Target => ProfileEndpoints.SafeReturnUrl(ReturnUrl);
+    private string Year => Dates.TodayAt(now).Year.ToString(System.Globalization.CultureInfo.InvariantCulture);
+
+    protected override async Task OnInitializedAsync()
+    {
+        now = Clock.GetUtcNow().UtcDateTime;
+        await using var db = await Factory.CreateDbContextAsync();
+        page = await PickerPreviewQuery.GetAsync(db, Saved, Dates, now);
+    }
+
+    private static string Initial(string name) => name.Trim() is { Length: > 0 } n ? char.ToUpperInvariant(n[0]).ToString() : "?";
+
+    private string Kicker(DateTime? lastRead)
+    {
+        if (lastRead is not { } read) return "New edition";
+        var day = Dates.TodayAt(read);
+        var today = Dates.TodayAt(now);
+        return day == today ? $"Last read {Dates.Time(read)}" : day == today.AddDays(-1) ? "Last read yesterday" : $"Last read {Dates.Published(read)}";
+    }
+
+    private static string NewForYou(PickerEdition e)
+    {
+        var parts = new List<string>();
+        if (e.EpisodesToday > 0) parts.Add(e.EpisodesToday == 1 ? "1 episode today" : $"{e.EpisodesToday} episodes today");
+        if (e.NewVideos > 0) parts.Add(e.NewVideos == 1 ? "1 video" : $"{e.NewVideos} videos");
+        return parts.Count == 0 ? "Nothing new yet" : string.Join(" · ", parts);
+    }
+}

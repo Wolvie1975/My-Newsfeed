@@ -7708,3 +7708,484 @@
 .pub .watch-results-bar > .watch-results-toolbar {
     flex: 1 1 auto;
 }
+
+/* ---------- Edition picker (/editions) and first PIN ---------- */
+/* A broadsheet masthead over one column per profile. Each column's accent is the profile's color (--ed); profile
+   colors are dark enough for white text, and dark mode lightens the accent where it's used for text. */
+.pub.picker-page {
+    min-height: 100vh;
+    background: var(--surface);
+    color: var(--text);
+}
+.pub .picker {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 28px 16px 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+.pub .picker__mast {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding-bottom: 16px;
+    border-bottom: 4px double var(--text);
+    text-align: center;
+}
+.pub .picker__date {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-2);
+}
+.pub .picker__brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'Newsreader', Georgia, serif;
+    font-size: 40px;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -0.02em;
+}
+.pub .picker__mark {
+    width: 40px;
+    height: 40px;
+    flex: none;
+}
+.pub .picker__title {
+    margin: 4px 0 0;
+    font-family: 'Newsreader', Georgia, serif;
+    font-size: 19px;
+    font-style: italic;
+    font-weight: 500;
+    color: var(--text-2);
+}
+/* The router focuses the h1 on arrival; that's for screen readers, not a visible ring. */
+.pub .picker__title:focus,
+.pub .picker-card__title:focus {
+    outline: none;
+}
+.pub .picker__empty {
+    margin: 0;
+    text-align: center;
+    color: var(--text-2);
+}
+.pub .picker__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+}
+.pub .edition {
+    --ed-text: var(--ed);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 0;
+    padding: 14px;
+    border: 1px solid var(--border);
+    border-top: 5px solid var(--ed);
+    border-radius: 16px;
+    background: var(--surface);
+}
+:root[data-theme='dark'] .pub .edition,
+:root[data-theme='dark'] .pub .picker-card {
+    --ed-text: color-mix(in srgb, var(--ed) 45%, #ffffff);
+}
+.pub .edition__head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.pub .edition__tile {
+    flex: none;
+    width: 48px;
+    height: 48px;
+    display: grid;
+    place-items: center;
+    border-radius: 13px;
+    background: var(--ed);
+    color: #ffffff;
+    font-family: 'Newsreader', Georgia, serif;
+    font-size: 26px;
+    font-weight: 800;
+    line-height: 1;
+}
+.pub .edition__names {
+    min-width: 0;
+}
+.pub .edition__kicker {
+    display: block;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ed-text);
+}
+.pub .edition__title {
+    margin: 0;
+    font-family: 'Newsreader', Georgia, serif;
+    font-size: 24px;
+    font-weight: 800;
+    line-height: 1.05;
+    overflow-wrap: anywhere;
+}
+.pub .edition__lead {
+    margin: 0;
+    font-family: 'Newsreader', Georgia, serif;
+    font-size: 19px;
+    font-weight: 700;
+    line-height: 1.22;
+    overflow-wrap: anywhere;
+}
+.pub .edition__lines {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+.pub .edition__lines li {
+    display: flex;
+    gap: 10px;
+    padding: 8px 0;
+    border-top: 1px dotted var(--field-border);
+    font-size: 14px;
+    line-height: 1.35;
+}
+.pub .edition__lines b {
+    flex: none;
+    width: 96px;
+    padding-top: 2px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-2);
+}
+.pub .edition__form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: auto;
+}
+.pub .edition__pin-label,
+.pub .picker-card__form label {
+    font-size: 14px;
+    font-weight: 700;
+}
+.pub .edition__pin {
+    width: 100%;
+    max-width: 12rem;
+    min-height: 48px;
+    padding: 0 14px;
+    border: 1px solid var(--field-border);
+    border-radius: 10px;
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
+    font-size: 20px;
+    letter-spacing: 0.4em;
+}
+/* With the PIN pad available, the column is just its button. */
+.pub .picker.has-pad .edition__pin-label,
+.pub .picker.has-pad .edition__pin {
+    display: none;
+}
+.pub .edition__open {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 48px;
+    padding: 0 14px;
+    border: 2px solid var(--ed);
+    border-radius: 10px;
+    background: var(--ed);
+    color: #ffffff;
+    font: inherit;
+    font-size: 15px;
+    font-weight: 800;
+    text-align: center;
+}
+.pub .edition__open:hover {
+    text-decoration: none;
+    filter: brightness(1.1);
+    color: #ffffff;
+}
+.pub .edition__open:focus-visible {
+    outline: 3px solid var(--accent);
+    outline-offset: 2px;
+}
+.pub .edition__note {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin: 0;
+    padding: 10px 12px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.35;
+}
+.pub .edition__note svg {
+    flex: none;
+    margin-top: 2px;
+}
+.pub .edition__note--locked {
+    margin-top: auto;
+    background: var(--pill-bg);
+    color: var(--pill-fg);
+}
+.pub .edition__note--bad {
+    background: color-mix(in srgb, #b0001e 12%, var(--surface));
+    color: var(--text);
+}
+.pub .picker__foot {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding-top: 8px;
+    border-top: 1px solid var(--text);
+}
+.pub .picker__foot form {
+    margin: 0;
+}
+.pub .picker__link {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--accent);
+    font: inherit;
+    font-size: 15px;
+    font-weight: 700;
+    text-align: left;
+}
+.pub .picker-card {
+    --ed: #0051ba;
+    --ed-text: var(--ed);
+    max-width: 30rem;
+    width: 100%;
+    margin: 0 auto;
+    padding: 20px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+}
+.pub .picker-card p {
+    margin: 0;
+    color: var(--text-2);
+}
+.pub .picker-card__title {
+    margin: 0;
+    font-family: 'Newsreader', Georgia, serif;
+    font-size: 28px;
+    font-weight: 800;
+    line-height: 1.1;
+}
+.pub .picker-card__form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.pub .picker-card__form .edition__open {
+    margin-top: 8px;
+}
+
+/* The PIN pad: a bottom sheet on phones, a centred dialog from 744px. */
+.pub .pin-sheet {
+    --ed: #0051ba;
+    width: 100%;
+    max-width: 100%;
+    max-height: 100%;
+    margin: auto 0 0;
+    padding: 0;
+    border: 0;
+    border-radius: 22px 22px 0 0;
+    background: var(--surface);
+    color: var(--text);
+}
+.pub .pin-sheet::backdrop {
+    background: rgba(20, 27, 43, 0.5);
+}
+.pub .pin-sheet__inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 20px 24px;
+}
+.pub .pin-sheet__grab {
+    width: 40px;
+    height: 5px;
+    border-radius: 999px;
+    background: var(--field-border);
+}
+.pub .pin-sheet__title {
+    margin: 0;
+    font-family: 'Newsreader', Georgia, serif;
+    font-size: 26px;
+    font-weight: 800;
+    text-align: center;
+}
+.pub .pin-dots {
+    display: flex;
+    gap: 14px;
+}
+.pub .pin-dots span {
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--ed);
+    border-radius: 999px;
+}
+.pub .pin-dots span.is-on {
+    background: var(--ed);
+}
+:root[data-theme='dark'] .pub .pin-dots span {
+    border-color: #ffffff;
+}
+:root[data-theme='dark'] .pub .pin-dots span.is-on {
+    background: #ffffff;
+}
+.pub .pin-dots.is-wrong {
+    animation: pin-shake 0.4s;
+}
+@keyframes pin-shake {
+    20%,
+    60% {
+        transform: translateX(-8px);
+    }
+    40%,
+    80% {
+        transform: translateX(8px);
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .pub .pin-dots.is-wrong {
+        animation: none;
+    }
+}
+.pub .pin-sheet__status {
+    min-height: 1.4em;
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    text-align: center;
+}
+.pub .pin-pad {
+    display: grid;
+    grid-template-columns: repeat(3, 76px);
+    gap: 10px;
+}
+.pub .pin-pad__key {
+    height: 60px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--bg);
+    color: var(--text);
+    font: inherit;
+    font-size: 24px;
+    font-weight: 700;
+}
+.pub .pin-pad__key:disabled {
+    opacity: 0.5;
+}
+.pub .pin-pad__key--del {
+    border-color: transparent;
+    background: transparent;
+}
+.pub .pin-sheet__cancel {
+    min-height: 44px;
+    padding: 0 16px;
+    border: 0;
+    background: transparent;
+    color: var(--accent);
+    font: inherit;
+    font-size: 15px;
+    font-weight: 700;
+}
+@media (min-width: 744px) {
+    .pub .picker {
+        padding: 36px 48px 56px;
+        gap: 24px;
+    }
+    .pub .picker__brand {
+        gap: 16px;
+        font-size: 64px;
+    }
+    .pub .picker__mark {
+        width: 56px;
+        height: 56px;
+    }
+    .pub .picker__title {
+        font-size: 24px;
+    }
+    .pub .picker__grid {
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+        gap: 20px;
+    }
+    .pub .picker__foot {
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 4px 28px;
+    }
+    .pub .pin-sheet {
+        width: 400px;
+        margin: auto;
+        border-radius: 20px;
+    }
+    .pub .pin-sheet__grab {
+        display: none;
+    }
+    .pub .pin-sheet__inner {
+        padding: 24px;
+    }
+}
+
+/* Profiles on: the open edition in the header, linking back to the picker. Phones use the menu's Switch edition. */
+.pub .edition-chip {
+    display: none;
+}
+@media (min-width: 744px) {
+    .pub .edition-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        min-height: 44px;
+        padding: 0 12px 0 5px;
+        border: 1px solid var(--header-line);
+        border-radius: 999px;
+        color: inherit;
+        font-size: 14px;
+        font-weight: 700;
+    }
+    .pub .edition-chip:hover {
+        text-decoration: none;
+        background: rgba(255, 255, 255, 0.08);
+    }
+    .pub .edition-chip__tile {
+        width: 32px;
+        height: 32px;
+        display: grid;
+        place-items: center;
+        border-radius: 999px;
+        background: var(--ed);
+        color: #ffffff;
+        font-family: 'Newsreader', Georgia, serif;
+        font-size: 17px;
+        font-weight: 800;
+    }
+    .pub .edition-chip__name {
+        max-width: 8rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+}

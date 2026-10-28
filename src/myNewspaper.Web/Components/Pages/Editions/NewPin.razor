@@ -1,0 +1,56 @@
+@page "/editions/{Id:int}/new-pin"
+@layout PickerLayout
+@using myNewspaper.Web.Endpoints
+@inject IDbContextFactory<WebScraperContext> Factory
+
+<PageTitle>Choose a PIN · myNewspaper</PageTitle>
+
+@* First PIN for a profile that has none (profiles handoff 2.3): only the one 021 seeds if the admin hasn't created a
+   profile first. Every other profile gets its PIN from setup or from the admin, so this page turns them away. *@
+<section class="picker-card" aria-labelledby="new-pin-title">
+    @if (profile is null)
+    {
+        <h1 id="new-pin-title" class="picker-card__title">This edition already has a PIN</h1>
+        <p>Pick your edition and enter its PIN. If you’ve forgotten it, the admin can reset it.</p>
+        <a class="edition__open" href="@($"editions?returnUrl={Uri.EscapeDataString(Target)}")">Back to the editions</a>
+    }
+    else
+    {
+        <span class="edition__tile" style="--ed: @profile.Color" aria-hidden="true">@Initial(profile.Name)</span>
+        <h1 id="new-pin-title" class="picker-card__title">Choose a PIN for @profile.Name’s edition</h1>
+        <p>Four digits you’ll enter each time you open it. It’s a household lock, not a password: don’t reuse a bank or phone PIN.</p>
+        @if (Error is { Length: > 0 } error)
+        {
+            <p id="new-pin-error" class="edition__note edition__note--bad" role="alert">@error</p>
+        }
+        <form class="picker-card__form" method="post" action="@($"profiles/{Id}/new-pin")">
+            <AntiforgeryToken />
+            <input type="hidden" name="returnUrl" value="@Target" />
+            <label for="new-pin">PIN</label>
+            <input id="new-pin" class="edition__pin" name="pin" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4"
+                   autocomplete="new-password" required aria-describedby="@(Error is { Length: > 0 } ? "new-pin-error" : null)" />
+            <label for="new-pin-confirm">Same PIN again</label>
+            <input id="new-pin-confirm" class="edition__pin" name="pinConfirm" type="password" inputmode="numeric" pattern="[0-9]{4}"
+                   maxlength="4" autocomplete="new-password" required />
+            <button type="submit" class="edition__open">Set PIN and open</button>
+        </form>
+    }
+</section>
+
+@code {
+    [Parameter] public int Id { get; set; }
+    [SupplyParameterFromQuery(Name = "returnUrl")] private string? ReturnUrl { get; set; }
+    [SupplyParameterFromQuery(Name = "error")] private string? Error { get; set; }
+
+    private myNewspaper.Web.Data.Models.Profile? profile;
+
+    private string Target => ProfileEndpoints.SafeReturnUrl(ReturnUrl);
+
+    protected override async Task OnInitializedAsync()
+    {
+        await using var db = await Factory.CreateDbContextAsync();
+        profile = await db.Profiles.AsNoTracking().SingleOrDefaultAsync(p => p.Id == Id && !p.Hidden && p.PinHash == null);
+    }
+
+    private static string Initial(string name) => name.Trim() is { Length: > 0 } n ? char.ToUpperInvariant(n[0]).ToString() : "?";
+}

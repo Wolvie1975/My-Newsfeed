@@ -1,5 +1,6 @@
 @inherits LayoutComponentBase
 @inject NavigationManager Nav
+@inject myNewspaper.Web.Profiles.ProfileContext Reader
 
 @{
     var path = Nav.ToBaseRelativePath(Nav.Uri);
@@ -82,6 +83,14 @@
             @* Admin only: requests waiting and locked profiles, with a quick-look panel. *@
             <AuthorizeView><Authorized><AdminAlert /></Authorized></AuthorizeView>
             <a class="settings-link" href="settings" aria-current="@(onTeams ? "page" : null)">Settings</a>
+            @* With profiles on: whose edition this is, and the way back to the picker. *@
+            @if (Reader.Profile is { } me)
+            {
+                <a class="edition-chip" href="editions" style="--ed: @me.Color" aria-label="@($"{me.Name}’s edition · switch edition")">
+                    <span class="edition-chip__tile" aria-hidden="true">@(me.Name.Trim() is { Length: > 0 } n ? char.ToUpperInvariant(n[0]).ToString() : "?")</span>
+                    <span class="edition-chip__name" aria-hidden="true">@me.Name</span>
+                </a>
+            }
             @* Label and pressed state are kept in sync by public.js. *@
             <button class="theme-toggle" type="button" aria-label="Switch to dark mode" aria-pressed="false" data-theme-toggle>
                 <svg class="icon-moon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"></path></svg>
@@ -138,6 +147,7 @@
                         <div class="mobile-subnav">
                             <a href="saved" aria-current="@(onSaved ? "page" : null)">Saved</a>
                             <a href="settings" aria-current="@(onTeams ? "page" : null)">Settings</a>
+                            @if (Reader.Profile is { } reading) { <a href="editions">Switch edition (@reading.Name’s)</a> }
                             <button class="mobile-nav__theme" type="button" aria-label="Switch to dark mode" aria-pressed="false" data-theme-toggle><span class="when-light">Dark mode</span><span class="when-dark">Light mode</span></button>
                             <AuthorizeView><Authorized><a href="admin">Administration</a></Authorized><NotAuthorized><a href="login">Admin sign in</a></NotAuthorized></AuthorizeView>
                         </div>

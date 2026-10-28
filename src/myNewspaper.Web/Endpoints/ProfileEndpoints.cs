@@ -107,7 +107,7 @@ public static class ProfileEndpoints
             case OpenOutcome.Locked:
                 return json ? Results.Json(new { locked = true }, statusCode: StatusCodes.Status423Locked) : PickerWith(id, "locked", returnUrl);
             case OpenOutcome.NeedsPin:
-                var href = $"/profiles/{id}/new-pin?returnUrl={Uri.EscapeDataString(target)}";
+                var href = $"{ProfileGate.PickerPath}/{id}/new-pin?returnUrl={Uri.EscapeDataString(target)}";
                 return json ? Results.Json(new { needsPin = true, href }, statusCode: StatusCodes.Status409Conflict) : Results.LocalRedirect(href);
             case OpenOutcome.NoDevice:
                 // The middleware identifies the device on /profiles/* POSTs, so this only happens with cookies blocked.
@@ -135,7 +135,7 @@ public static class ProfileEndpoints
         string? error = !ProfileRules.IsValidPin(pin) ? "A PIN is 4 digits." : pin != pinConfirm ? "The two PINs don't match." : null;
         if (error is not null)
             return WantsJson(http.Request) ? Results.BadRequest(new { error })
-                : Results.LocalRedirect($"/profiles/{id}/new-pin?error={Uri.EscapeDataString(error)}&returnUrl={Uri.EscapeDataString(SafeReturnUrl(returnUrl))}");
+                : Results.LocalRedirect($"{ProfileGate.PickerPath}/{id}/new-pin?error={Uri.EscapeDataString(error)}&returnUrl={Uri.EscapeDataString(SafeReturnUrl(returnUrl))}");
         await using var db = await factory.CreateDbContextAsync(http.RequestAborted);
         var result = await ProfileStore.SetFirstPinAsync(db, pins, reader.Device.Id, id, pin, http.RequestAborted);
         return Outcome(http, result, id, returnUrl, cookies, reader.Device.Id, clock.GetUtcNow().UtcDateTime);

@@ -285,6 +285,86 @@ public class ProfileHttpTests
     }
 
     [Fact]
+    public async Task The_picker_shows_each_edition_with_counts_and_never_a_show_or_channel_name()
+    {
+        await using var app = new ProfileApp(enabled: true);
+        var a = await app.AddProfileAsync();
+        var client = app.Browser();
+        var names = new List<string>();
+        try
+        {
+            await using (var db = app.Db())
+            {
+                // Give A every followed thing the database has, so any name the picker printed would be one of these.
+                foreach (var t in await db.TvTrackedSeries.Where(t => t.Enabled).Select(t => new { t.Id, Title = t.Series != null ? t.Series.Title : t.ExpectedTitle }).ToListAsync())
+                {
+                    db.ProfileTvFollows.Add(new ProfileTvFollow { ProfileId = a.Id, TvTrackedSeriesId = t.Id });
+                    names.Add(t.Title);
+                }
+                foreach (var f in await db.YoutubeVideoFeeds.Select(f => new { f.Id, f.ChannelName }).ToListAsync())
+                {
+                    db.ProfileChannelFollows.Add(new ProfileChannelFollow { ProfileId = a.Id, YoutubeVideoFeedId = f.Id });
+                    if (f.ChannelName is { Length: > 3 }) names.Add(f.ChannelName);
+                }
+                await db.SaveChangesAsync();
+            }
+
+            var html = System.Net.WebUtility.HtmlDecode(await (await client.SendAsync(Page("/editions"))).Content.ReadAsStringAsync());
+            Assert.Contains($"{a.Name}’s edition", html);
+            Assert.Contains($"action=\"profiles/{a.Id}/open\"", html);
+            Assert.DoesNotContain("standard edition", html, StringComparison.OrdinalIgnoreCase);
+            foreach (var name in names.Where(n => n.Length > 3).Distinct())
+                Assert.DoesNotContain(name, html);
+        }
+        finally { await app.CleanUpAsync(a); }
+    }
+
+    [Fact]
+    public async Task A_profile_without_a_pin_chooses_one_on_its_own_page_and_others_are_turned_away()
+    {
+        await using var app = new ProfileApp(enabled: true);
+        var withPin = await app.AddProfileAsync();
+        Profile noPin;
+        await using (var db = app.Db())
+        {
+            noPin = new Profile { Name = "zz " + Guid.NewGuid().ToString("N")[..10], Color = "#0F766E", Settings = "{}", CreatedAt = DateTime.UtcNow };
+            db.Profiles.Add(noPin);
+            await db.SaveChangesAsync();
+        }
+        var client = app.Browser();
+        try
+        {
+            await client.SendAsync(Page("/"));
+            var open = await OpenAsync(client, noPin, "", json: false);
+            Assert.Equal($"/editions/{noPin.Id}/new-pin?returnUrl=%2Ftv", open.Headers.Location!.OriginalString);
+            var page = await (await client.SendAsync(Page(open.Headers.Location.OriginalString))).Content.ReadAsStringAsync();
+            Assert.Contains($"action=\"profiles/{noPin.Id}/new-pin\"", page);
+            var other = await (await client.SendAsync(Page($"/editions/{withPin.Id}/new-pin"))).Content.ReadAsStringAsync();
+            Assert.Contains("already has a PIN", System.Net.WebUtility.HtmlDecode(other));
+            Assert.DoesNotContain("new-pin\"", other);
+
+            var mismatch = await PostFormAsync(client, $"/profiles/{noPin.Id}/new-pin", new()
+            {
+                ["pin"] = "2580",
+                ["pinConfirm"] = "2581",
+                ["returnUrl"] = "/tv",
+                ["__RequestVerificationToken"] = await TokenFromLoginPageAsync(client),
+            });
+            Assert.StartsWith($"/editions/{noPin.Id}/new-pin?error=", mismatch.Headers.Location!.OriginalString);
+            var set = await PostFormAsync(client, $"/profiles/{noPin.Id}/new-pin", new()
+            {
+                ["pin"] = "2580",
+                ["pinConfirm"] = "2580",
+                ["returnUrl"] = "/tv",
+                ["__RequestVerificationToken"] = await TokenFromLoginPageAsync(client),
+            });
+            Assert.Equal("/tv", set.Headers.Location!.OriginalString);
+            Assert.Equal(HttpStatusCode.OK, (await client.SendAsync(Page("/tv"))).StatusCode);
+        }
+        finally { await app.CleanUpAsync(withPin, noPin); }
+    }
+
+    [Fact]
     public async Task Only_the_signed_in_admin_gets_the_requests_alert_in_the_site_header()
     {
         await using var app = new ProfileApp(enabled: false);
