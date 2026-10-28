@@ -101,6 +101,17 @@ const name = 'zz browser ' + Date.now().toString(36);
         await sw.click();
         await p.waitForTimeout(300);
         assert(await save.isDisabled(), 'base edition clean again');
+        // Services list only what's chosen plus search matches; skipped where the catalog has no key.
+        const find = p.locator('#service-find');
+        if (await find.count()) {
+            const before = await p.locator('.adm-field').filter({ has: find }).locator('.adm-choice').count();
+            await find.fill('net');
+            await p.waitForTimeout(400);
+            const after = await p.locator('.adm-field').filter({ has: find }).locator('.adm-choice').count();
+            assert(after > before && after <= before + 24, `service search lists matches (${before} → ${after})`);
+            await find.fill('');
+            await p.waitForTimeout(400);
+        } else console.log('Note: no service catalog here; service search not checked.');
 
         const pages = ['/admin/profiles', manage, '/admin/profiles/base'];
         for (const theme of ['light', 'dark'])

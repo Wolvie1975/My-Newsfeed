@@ -1504,6 +1504,13 @@
     font-weight: 700;
     cursor: pointer;
 }
+.adm-choices + .adm-label {
+    margin-top: 12px;
+}
+.adm-find {
+    max-width: 24rem;
+    min-height: 44px;
+}
 .adm-group[open] > .adm-choices {
     padding-bottom: 12px;
 }

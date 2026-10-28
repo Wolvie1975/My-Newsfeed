@@ -100,15 +100,23 @@
                     }
                     else
                     {
+                        @* The catalog has a few hundred services, so only the chosen ones and search matches are listed. *@
+                        var matches = ServiceMatches();
                         <div class="adm-choices">
-                            @foreach (var service in serviceChoices)
+                            @foreach (var service in serviceChoices.Where(s => services.Contains(s.Id)).Concat(matches))
                             {
-                                <label class="adm-choice">
+                                <label class="adm-choice" @key="service.Id">
                                     <input type="checkbox" checked="@services.Contains(service.Id)" disabled="@(!services.Contains(service.Id) && services.Count >= SiteDefaults.MaxServices)"
                                            @onchange="e => SetService(service.Id, e.Value is true)" /> <span>@service.Name</span>
                                 </label>
                             }
                         </div>
+                        <label class="adm-label" for="service-find">Find a service</label>
+                        <input id="service-find" class="form-control adm-find" type="search" autocomplete="off" placeholder="Netflix, Peacock, Tubi…" @bind="serviceQuery" @bind:event="oninput" aria-describedby="service-find-d" />
+                        <p id="service-find-d" class="adm-help" role="status">
+                            @(string.IsNullOrWhiteSpace(serviceQuery) ? $"Type to search {serviceChoices.Count} services."
+                              : matches.Count == 0 ? "No services match." : $"{matches.Count} match{(matches.Count == 1 ? "" : "es")}{(matches.Count == MaxMatches ? " shown; type more to narrow it" : "")}.")
+                        </p>
                     }
                 </fieldset>
 
@@ -149,6 +157,8 @@
     private List<int> services = [];
     private HashSet<string> teams = [];
     private IReadOnlyList<WatchCatalog.Service> serviceChoices = [];
+    private const int MaxMatches = 24;
+    private string? serviceQuery;
     private IReadOnlyList<SportsTeamChoice> teamChoices = SportsTeamPreferences.GetChoices();
     private string? teamError;
     // Groups with a chosen team start open. Fixed at load, so unchecking the last team doesn't snap a group shut.
@@ -213,6 +223,10 @@
         if (!on) services.Remove(id);
         else if (!services.Contains(id) && services.Count < SiteDefaults.MaxServices) services.Add(id);
     }
+
+    /// <summary>Unchosen services whose name contains the search text, which is empty until something is typed.</summary>
+    private List<WatchCatalog.Service> ServiceMatches() => string.IsNullOrWhiteSpace(serviceQuery) ? []
+        : [.. serviceChoices.Where(s => !services.Contains(s.Id) && s.Name.Contains(serviceQuery.Trim(), StringComparison.OrdinalIgnoreCase)).Take(MaxMatches)];
 
     private void SetTeam(string key, bool on)
     {

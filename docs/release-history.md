@@ -6,10 +6,33 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The latest recorded web release is `mynewspaper-web:profiles-20261028`
-(image `6897db98b04b`), deployed October 28, 2026 (Central). Its rollback image is
-`mynewsfeed-web:before-mynewspaper-profiles-20261028`. Deployment checks passed then;
+The latest recorded web release is `mynewspaper-web:profiles-admin-20261028`
+(image `0b3b7503c1b7`), deployed October 28, 2026 (Central). Its rollback image is
+`mynewsfeed-web:before-mynewspaper-profiles-admin-20261028`. Deployment checks passed then;
 this is a dated observation, not live hosting status.
+
+## Admin profiles pages, profiles still off — deployed October 28, 2026 (Central)
+
+Stage A1 of the household profiles plan: Admin · Profiles (`/admin/profiles`: add with name, color and PIN, lock
+banners with Unlock and Reset PIN, picker order, hide, delete, sign out devices, household picker and forget-devices
+settings), Manage profile (`/admin/profiles/{id}`) and the base edition editor (`/admin/profiles/base`), with
+**Household → Profiles** in the admin menu. Every admin switch gained a 44px tap area; the TV series delete text now
+says anyone following it will lose it. `Profiles:Enabled` stays `false`, so readers see no change. Commits `e08b87a`
+and the services-search fix below.
+
+Deployed `mynewspaper-web:profiles-admin-20261028` through Compose with `--pull`, healthy; rollback
+`mynewsfeed-web:before-mynewspaper-profiles-admin-20261028` (`6897db98b04b`, the foundation release). The six app
+settings all match the private override generated from the previous container; port 8085 unchanged; the image
+environment is identical to the previous image's. The first A1 image (`6c763348a189`) showed all 338 streaming
+services on the live base edition, making it 20,331px tall on a phone (the local run has no catalog key, so this
+wasn't visible before). The editor now lists only chosen services plus a search showing up to 24 matches; rebuilt as
+`0b3b7503c1b7` (3,457px at 390px) and redeployed. Predeploy: 920 .NET tests, Prettier clean. Live: `/`, `/tv`,
+`/videos`, `/saved`, `/entertainment`, `/settings` 200; `/profiles` and `/profiles/pick` 404; `/admin/profiles*`
+redirect to login; `/admin/api/profiles` 401. `admin-profiles.browser.cjs` passed on the final build at 320, 390, 430,
+744, 820, 1024 and 1440px in light and dark (no sideways scroll, contrast, 44px targets, add with PIN checks, Reset
+PIN, save bars, service search, phone cards and ⋯ menu, delete; its throwaway profile was deleted), with screenshots
+reviewed. `admin-layout.browser.cjs` passed on 23 admin pages at the same widths and themes on the first A1 image.
+Not checked: the lock banner with a real lock (PINs can't be tried while profiles are off) and a real device.
 
 ## Household profiles foundation, switched off — deployed October 28, 2026 (Central)
 
