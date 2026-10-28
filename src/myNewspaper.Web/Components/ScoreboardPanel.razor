@@ -5,7 +5,7 @@
 @inject IDbContextFactory<WebScraperContext> Factory
 @inject myNewspaper.Web.Scores.LeaguePhases RecordPhases
 
-<div data-scoreboard data-scoreboard-compact="@Compact.ToString().ToLowerInvariant()">
+<div data-scoreboard data-scoreboard-compact="@Compact.ToString().ToLowerInvariant()" data-scoreboard-sport-filter="@(SportFilter ? "true" : null)">
     <p class="updated scoreboard-note">Scores update approximately every 10 minutes. <span>Checks every five minutes while visible.</span></p>
     @if (!Compact)
     {
@@ -50,7 +50,7 @@
     <p class="scoreboard-read-status updated" role="status">@(snapshot.Available ? "" : "Scores are temporarily unavailable. Please retry.")</p>
     @if (snapshot.Available)
     {
-        @if (Compact && homeLeagues.Count > 1)
+        @if (Compact && SportFilter && homeLeagues.Count > 1)
         {
             @* Homepage sport filter: only leagues with games today. Not tied to profiles or "only my teams". *@
             <form method="get" action="" class="catselect scoreboard-home-filter">
@@ -96,7 +96,9 @@
 
 @code {
     [Parameter] public bool Compact { get; set; }
-    // Homepage box only ("c:{sport}|{league}"); its own query name keeps it apart from the full page's filters.
+    // Homepage box only: the Sports page uses the same compact box without the Sport filter.
+    [Parameter] public bool SportFilter { get; set; }
+    // "c:{sport}|{league}"; its own query name keeps it apart from the full page's filters.
     [Parameter] public string? CompactShow { get; set; }
     private IReadOnlyList<(string Value, string Label)> homeLeagues = [];
     private string homeShow = "";
@@ -143,7 +145,7 @@
             // Today's leagues come from the unfiltered read, so the list stays complete after choosing one.
             homeLeagues = snapshot.Games.Select(g => (Value: "c:" + g.Sport + "|" + g.League, Label: CompetitionLabel(g.Sport, g.League)))
                 .Distinct().OrderBy(l => l.Label, StringComparer.CurrentCultureIgnoreCase).ToList();
-            homeShow = homeLeagues.Any(l => l.Value == CompactShow) ? CompactShow! : "";
+            homeShow = SportFilter && homeLeagues.Any(l => l.Value == CompactShow) ? CompactShow! : "";
             homeGames = homeShow.Length == 0 ? snapshot.Games : snapshot.Games.Where(g => "c:" + g.Sport + "|" + g.League == homeShow).ToList();
         }
         visibleGames = Compact ? homeGames.Take(6).ToList() : snapshot.Games;

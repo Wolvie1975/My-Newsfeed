@@ -43,6 +43,7 @@
             for (const panel of panels) {
                 const query = new URLSearchParams(location.search);
                 query.set('compact', panel.dataset.scoreboardCompact);
+                if (panel.dataset.scoreboardSportFilter) query.set('sportFilter', 'true');
                 try {
                     const response = await fetch('/scoreboard/fragment?' + query, {
                         cache: 'no-store',
@@ -97,7 +98,7 @@
         const box = panel.closest('[data-home-section]') || panel;
         box.setAttribute('aria-busy', 'true');
         try {
-            const query = new URLSearchParams({ compact: 'true', scoreboardShow: value });
+            const query = new URLSearchParams({ compact: 'true', sportFilter: 'true', scoreboardShow: value });
             const response = await fetch('/scoreboard/fragment?' + query, {
                 cache: 'no-store',
                 signal: AbortSignal.timeout(15000),

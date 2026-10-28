@@ -10,12 +10,40 @@ const shots = process.env.SCREENSHOT_DIR || 'test-results/';
         const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
         const errors = [];
         page.on('pageerror', (e) => errors.push(e.message));
+
+        // The Sports page shares the compact box but has no Sport filter, ignores the homepage's parameter, and stays
+        // unfiltered after its own refresh.
+        const sports = await browser.newPage({ viewport: { width: 390, height: 900 } });
+        await sports.goto(base + '/sports?scoreboardShow=' + encodeURIComponent('c:hockey|nhl'));
+        const sportsBox = sports.locator('[data-scoreboard]').first();
+        await sportsBox.waitFor();
+        assert.equal(
+            await sports.locator('#home-scoreboard-show, .scoreboard-home-filter').count(),
+            0,
+            'No Sport filter on /sports',
+        );
+        assert.equal(await sportsBox.getAttribute('data-scoreboard-sport-filter'), null);
+        const sportsLeagues = new Set(
+            (await sportsBox.locator('.scoreboard-competition').allTextContents()).map((t) => t.trim()),
+        );
+        const sportsRefresh = sports.waitForResponse((r) => r.url().includes('/scoreboard/fragment'));
+        await sports.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+        assert(
+            !new URL((await sportsRefresh).url()).searchParams.has('sportFilter'),
+            'Sports refresh asks for no filter',
+        );
+        await sports.waitForTimeout(500);
+        assert.equal(await sports.locator('.scoreboard-home-filter').count(), 0, 'Refresh adds no filter on /sports');
+        await sports.close();
+
         await page.goto(base + '/');
         const box = page.locator('[data-home-section="scoreboard"]');
         await box.waitFor();
         const select = box.locator('#home-scoreboard-show');
         if (!(await select.count())) {
-            console.log('SKIP fewer than two leagues have games today, so the Sport dropdown is not shown.');
+            console.log(
+                `SKIP fewer than two leagues have games today, so the Sport dropdown is not shown (the /sports check passed; leagues there: ${[...sportsLeagues].join(', ') || 'none'}).`,
+            );
             return;
         }
         const options = await select
