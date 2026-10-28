@@ -6,11 +6,31 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The latest recorded web release is `mynewspaper-web:phone-fronts-20261028`
-(image `e1ea2d9dc6c1`), deployed October 28, 2026 (Central), with **household profiles switched on**
-(`Profiles__Enabled=true`). Its rollback image is `mynewsfeed-web:before-mynewspaper-phone-fronts-20261028`
-(the release 1 Headlines build, `6818b90cff80`). Deployment checks are recorded below; this is a dated observation, not live hosting
+The latest recorded web release is `mynewspaper-web:top-headlines-lead-20261028`
+(image `0949497c41b3`), deployed October 28, 2026 (Central), with **household profiles switched on**
+(`Profiles__Enabled=true`). Its rollback image is `mynewsfeed-web:before-mynewspaper-top-headlines-lead-20261028`
+(the release 2 phone fronts build, `e1ea2d9dc6c1`). Deployment checks are recorded below; this is a dated observation, not live hosting
 status.
+
+## Home lead uses Top Headlines only — deployed October 28, 2026 (Central)
+
+Home's main story on desktop and phones now comes only from **Top Headlines**, rather than all non-Opinion
+Headlines categories. The existing hourly publisher rotation and newest-story ordering remain; an empty category
+does not fall back to another category. The lead refresh endpoint and edition-picker preview share the same query.
+
+Deployed `mynewspaper-web:top-headlines-lead-20261028` (`0949497c41b3`) through Compose. Rollback:
+`mynewsfeed-web:before-mynewspaper-top-headlines-lead-20261028` (`e1ea2d9dc6c1`). Runtime environment, ports,
+mounts, restart policy, health check and networks preserved. No schema or collector changes.
+
+Predeploy: 934 .NET tests passed, including mixed categories, empty Top Headlines and hourly publisher rotation;
+production publish and static-asset guard passed. Local profiles-off Home checks at 320/390/430/768/1440px in
+light/dark confirmed Top Headlines attribution, identical phone/desktop story links, Share opening/closing,
+reload keeping the selected story and no overflow. All six phone screenshots reviewed; no-JavaScript phone
+and `/home/lead` passed. Live, with profiles on, the same widths/themes passed: Top Headlines attribution,
+matching desktop/phone story, Share, reload, overflow, no-JavaScript phone, refresh endpoint and health (200).
+All six phone screenshots reviewed. Temporary profile and two orphaned headless test-device rows deleted;
+Jason and Jacob remain. Real-device verification unavailable.
+Evidence: `/tmp/home-top-headlines/` (live/build evidence under `deploy/`).
 
 ## Phone refresh, release 2: Home, Sports and Scoreboard — deployed October 28, 2026 (Central)
 

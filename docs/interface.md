@@ -126,6 +126,11 @@ Results supports today/yesterday; its earlier today-only revision is superseded.
 Subnavigation distinguishes all releases, theaters, subscription streaming and digital
 rental/purchase. Movie type selections survive paging. Digital has its own mobile
 section label and current-page marker; selected-provider scope remains explicit.
+Home's main **Top story**, on desktop and phones, uses only the **Top Headlines** category from enabled
+Headlines sources. It rotates publishers hourly, using each publisher's newest dated story (undated stories last).
+If that category has no eligible stories, it does not substitute another category. The `/home/lead` refresh and
+edition-picker lead preview use the same selection.
+
 Home's Latest news shows the newest story from up to ten randomly selected enabled
 sources with articles. Selection stays stable within the latest successful news scrape's
 UTC hour and rotates when that timestamp advances to another hour. Selected stories

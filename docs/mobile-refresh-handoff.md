@@ -324,6 +324,23 @@ Each release is independent: a page that hasn't been converted keeps its current
 - [ ] 5. **Where to watch**, **Local**, **YouTube**.
 - [ ] 6. Ribbon-only pages: both All headlines pages, **Saved**, **Settings**.
 
+## Follow-up — Home lead restricted to Top Headlines (deployed October 28, 2026)
+
+Deployed as `top-headlines-lead-20261028` (image `0949497c41b3`): `HomeLeadQuery.Snapshot` restricts candidates to **Top Headlines**
+before publisher grouping and hourly selection. Desktop and phone Home share this snapshot, as do `/home/lead` and
+the edition-picker preview. No fallback to other categories; hourly publisher rotation is retained.
+
+Verification: 934 .NET tests passed, including three new lead-selection tests (mixed categories, empty Top Headlines,
+and newest-per-publisher/hourly rotation). Local browser checks with profiles off passed at 320/390/430/768/1440px
+in light/dark: desktop source is Top Headlines, phone and desktop link to the same story, reload preserves selection,
+Share opens/closes, and no sideways overflow. All six phone screenshots reviewed. No-JavaScript phone and the
+`/home/lead` endpoint also passed. Evidence: `/tmp/home-top-headlines/` and `/tmp/home-top-headlines-tests.log`.
+The same widths/themes and flows passed live with profiles on, including the no-JavaScript phone and refresh
+endpoint; all six phone screenshots reviewed. The temporary profile was deleted. Live evidence:
+`/tmp/home-top-headlines/deploy/`. Runtime settings and keys preserved; rollback is
+`mynewsfeed-web:before-mynewspaper-top-headlines-lead-20261028` (`e1ea2d9dc6c1`). See release history.
+Not checked: a real device.
+
 ## Open questions
 
 - **"Most read"** on Home and Headlines needs read counts the site doesn't collect. Use feed order and call it "Top
