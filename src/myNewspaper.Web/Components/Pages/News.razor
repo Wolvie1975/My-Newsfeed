@@ -16,8 +16,15 @@
 <PageTitle>@Title · myNewspaper</PageTitle>
 @* Phones get the folded front (docs/mobile-refresh-handoff.md) for the plain Headlines view; a search, a source filter
    or a later page keeps this layout on every width. *@
-<div class="@(Phone ? "mx-desktop" : "mx-contents")">
+<div class="@(Phone ? "mx-desktop" : SectionNews ? "mx-tool-page mx-section-news" : "mx-contents")">
+@if (SectionNews) {
+    <div class="mx-phone" data-phone-tools="headlines"><PhoneRibbon Title="@Title" Kicker="@($"{(EntertainmentSection ? "Entertainment" : "Sports")} · Every story, every source")">
+        <SectionSelect Id="hub-section-m" Label="Section" Choices="@(EntertainmentSection ? SectionChoices.Entertainment : SectionChoices.Sports)" Current="@(Hub + "/news")" AlwaysSelect="true" />
+    </PhoneRibbon></div>
+}
+<div class="@(SectionNews ? "mx-desktop" : "mx-contents")">
 <PageHeading Section="@(SectionNews ? (EntertainmentSection ? "entertainment" : "sports") : null)" SectionCurrent="@(SectionNews ? (EntertainmentSection ? "entertainment/news" : "sports/news") : null)" Title="@Title" Eyebrow="@(SectionNews ? (EntertainmentSection ? "Entertainment" : "Sports") + " · Every story, every source" : "The latest stories")" Description="" />
+</div>
 @if (!SectionNews && categories.Count > 0)
 {
     @* Categories as underlined tabs on desktop (as in the approved concept); phones keep the dropdown below. *@
@@ -124,7 +131,7 @@ else
     <div class="news-front @(EntertainmentSection ? "news-front--posters" : null)">
         <div class="news-front__stories">
             <section class="feed paper-feed" aria-label="Articles" data-last-day="@lastDay">
-                <NewspaperFeed Items="feed.Items" Featured="@(After is null)" Total="@(After is null ? feed.Total : null)" />
+                <NewspaperFeed Items="feed.Items" Featured="@(After is null)" PhoneFeatureFirst="SectionNews" Total="@(After is null ? feed.Total : null)" />
             </section>
         </div>
     </div>

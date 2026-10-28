@@ -19,7 +19,7 @@ const sections = [
         for (const [route, title, , selector] of sections) {
             await p.setViewportSize({ width: 390, height: 900 });
             await p.goto(base + '/' + route);
-            assert.equal(await p.locator('h1').innerText(), title);
+            assert.equal(await p.locator('h1:visible').innerText(), title);
             assert.equal(
                 await p.locator('#hub-category').inputValue(),
                 await p.locator('form input[name="category"]').inputValue(),

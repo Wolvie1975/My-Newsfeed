@@ -346,7 +346,7 @@ Each release is independent: a page that hasn't been converted keeps its current
   Live verification is recorded in release history. Evidence: `/tmp/soccer-points/`. Included in the scheme-ribbon local check-in.
 - [ ] 4. **Entertainment**, **Movies**, **TV & Streaming**, **Digital releases**, **Box office**.
 - [x] 5. **Where to watch**, **Local**, **YouTube** — deployed October 28, 2026 as `phone-life-20261028` (`7176ce3f5fa0`); see the working record below.
-- [ ] 6. Ribbon-only pages: both All headlines pages, **Saved**, **Settings**.
+- [ ] 6. Ribbon-only pages: both All headlines pages, **Saved**, **Settings** — in progress after local release 5 commit `40f84ec`.
 
 ## Follow-up — Home lead restricted to Top Headlines (deployed October 28, 2026)
 
@@ -451,3 +451,55 @@ isolate test data; the real forecast was separately verified. Geolocation permis
 verified on the secure local preview, not repeated over the container's plain-HTTP live address.
 User subsequently requested a local commit before starting release 6. Release 5 source, tests and
 deployment records are included in that check-in on `develop`. No push performed.
+
+
+## Release 6 working record — October 28, 2026
+
+Status: started after release 5 local commit `40f84ec` on `develop`. Not deployed or committed.
+The user requested continued Markdown updates. Release 4 remains pending.
+
+- [x] Review Sports/Entertainment headline routes, Saved rendering/counts and Settings anchors/forms.
+- [x] Headlines: scheme-colored phone ribbons with native Section selection; retain Sport/Topic and
+  Source filters, pagination/Load more and article save/share. Highlight the first displayed article.
+- [x] Saved: scheme ribbon with counted Show select; highlight the first displayed saved item without
+  duplicating the list or changing the Saved API. Retain remove/share, empty/error and no-JS messaging.
+- [x] Settings: scheme ribbon with Jump to selection and no-JS Go path; keep the existing sections,
+  forms, ordering and preference persistence. Show only anchors applicable to the open profile.
+- [x] Verify 320/390/430px × light/dark and representative schemes, interactions, saved preferences,
+  no-JS, empty/error states, touch targets, contrast, overflow and unique IDs; inspect screenshots.
+- [x] Verify retained 744/1024/1440px layouts and relevant headline/Saved/Settings regressions.
+  Full local browser suite: 40 passed, 10 skipped (profiles-only), 15 failed. Of the failures, 10 are the
+  known local-only ones without a streaming-catalog key (watch*, active-tv, us-options, mixed-search-nav,
+  track-series; phone-life's Watch rail for the same reason). `sports-news` and `entertainment-news` (two
+  `h1`s now) and two release 5 leftovers, `watch-later` (phone copy of the save button) and `section-select`
+  (Local's links moved into the ribbon select), were updated to the visible copy; all four pass. 955 .NET
+  tests pass; eslint, prettier and `git diff --check` clean.
+- [ ] Finalize implementation and verification details here and in interface documentation.
+  `docs/interface.md` section drafted; release history waits for the deployment.
+
+Verification so far (local, profiles off, port 5296): new `tests/browser/phone-tools.browser.cjs` passes
+at 320/390/430px × Kansas/Monochrome/Cardinals × light/dark on `/sports/news`, `/entertainment/news`,
+`/saved` and `/settings`: ribbon shown and desktop heading hidden, contrast audit, no overflow, unique IDs,
+44px ribbon/feature targets, exactly one feature (the first article), counted Show options, Settings index
+hidden and every Jump to anchor present (profile-only anchors absent with profiles off). Interactions:
+Section select, Load more adds no feature, feature Share/Escape, removing the featured Saved item moves the
+feature and updates counts, Show → Videos, Jump to scrolls to My Teams. Empty Saved (zero counts, no
+feature) and an unreachable Saved API (503) keep the ribbon. No-JS Go paths for Section, Show and Jump to
+(the redirect keeps `#my-services`). At 744/1024/1440px light/dark: no ribbon, headings/tabs/index visible,
+no phone feature styling, contrast and overflow pass. Screenshots reviewed (`r6d` in the session scratchpad).
+
+Found and fixed during verification: at 320px the 44px ribbon title split "Entertainme / nt"
+(titles now 36px below 360px; the check asserts no word splits); the headlines ribbon `h1` showed a focus
+ring because Blazor focuses the first `h1` after navigation (`.mx-ribbon h1:focus` now has no outline, as
+the other headings do); `FeedArticles`' new parameter had taken `LeadFirst`'s doc comment.
+
+The live build remains release 5 (`phone-life-20261028`, `7176ce3f5fa0`). No deployment or new commit
+has been requested for release 6. Real-device and VoiceOver/TalkBack checks are unavailable.
+
+Implementation checkpoint: shared headline cards accept a phone-feature flag only for the first initial
+article, so Load more cannot introduce extra dark leads. Saved retains one DOM list and adds counts to
+the native Show options; the first item is chosen after filtering/grouping and moves when removed.
+Its render signature now includes the selected filter. Settings Jump to uses the current page hash with
+JavaScript and the existing local `/navigate` redirect without it. Profile-only anchors are conditional.
+Dark-card foreground/button overrides are scoped to phone widths. Build passed with zero warnings/errors;
+initial browser/contrast checks are underway. No release 6 deployment or commit has been performed.

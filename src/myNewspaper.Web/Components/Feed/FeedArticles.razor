@@ -31,7 +31,7 @@
         </p>
     }
 
-    <article @key="item.Id" data-article-id="@item.Id" data-news-url="@href" data-news-source="@sourceName" class="article @(isLead ? "article--lead" : "")">
+    <article @key="item.Id" data-article-id="@item.Id" data-news-url="@href" data-news-source="@sourceName" class="article @(isLead ? "article--lead" : "") @(PhoneFeatureFirst && i == 0 ? "mx-list-feature" : null)">
         @* Default image: the placeholder background shows through when there is no image or it fails to load. *@
         <div class="thumb" aria-hidden="true">
             @if (image is not null)
@@ -90,6 +90,9 @@
 
     /// <summary>The first article is the large lead card (only on the first batch).</summary>
     [Parameter] public bool LeadFirst { get; set; }
+
+    /// <summary>Phones: the first article gets the dark feature styling (only on the first batch).</summary>
+    [Parameter] public bool PhoneFeatureFirst { get; set; }
 
     /// <summary>Day (yyyy-MM-dd) of the last article already on the page, so a batch doesn't repeat its heading.</summary>
     [Parameter] public string? PreviousDay { get; set; }

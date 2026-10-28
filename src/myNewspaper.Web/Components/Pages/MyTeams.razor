@@ -6,7 +6,17 @@
 @inject myNewspaper.Web.Profiles.ProfileContext Reader
 
 <PageTitle>Settings · myNewspaper</PageTitle>
-<PageHeading Title="Settings" Eyebrow="Make it yours" Description="Appearance, streaming services and teams. Everything saves as you tap." />
+<div class="mx-tool-page" data-phone-settings>
+<div class="mx-desktop"><PageHeading Title="Settings" Eyebrow="Make it yours" Description="Appearance, streaming services and teams. Everything saves as you tap." /></div>
+<div class="mx-phone" data-phone-tools="settings"><PhoneRibbon Title="Settings" Kicker="@(Reader.HasProfile ? "Make it yours · saved to your edition" : "Make it yours · saved in this browser")">
+<form class="mx-ribbon__field" method="get" action="navigate"><label for="settings-jump-m">Jump to</label><select id="settings-jump-m" name="to" required onchange="location.hash = this.value.slice(this.value.indexOf('#'))">
+<option value="" selected disabled>Choose a section</option>
+@if (Reader.HasProfile) { <option value="/settings#profile">Your profile</option> }
+<option value="/settings#appearance-heading">Light and dark mode</option><option value="/settings#color-scheme-heading">Color scheme</option><option value="/settings#my-services">My services</option><option value="/settings#my-teams-heading">My Teams</option>
+@if (Reader.HasProfile) { <option value="/settings#shows">TV shows</option><option value="/settings#channels">YouTube channels</option><option value="/settings#requests">Requests</option> }
+</select><noscript><button class="nf-btn nf-btn--secondary" type="submit">Go</button></noscript></form>
+</PhoneRibbon></div>
+<div class="mx-tool-content">
 <div class="set-layout">
 @* Section index as in the approved concept (a column on desktop, a row of links on phones). *@
 <nav class="set-index" aria-label="Settings sections">
@@ -95,6 +105,8 @@
 
 </div>
 <MyFollowsSettings Done="@Done" Error="@Error" TvQuery="@TvQuery" />
+</div>
+</div>
 </div>
 </div>
 @code {

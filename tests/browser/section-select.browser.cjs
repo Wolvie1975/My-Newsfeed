@@ -106,9 +106,11 @@ const base = process.env.BASE_URL || 'http://localhost:5295',
         await plain.selectOption('#f1-view-m', '/f1/results');
         await plain.locator('.mx-ribbon form button').click();
         await plain.waitForURL(base + '/f1/results');
+        // Phone Local (release 5) moved its section links into the ribbon select (phone-life covers the folds).
         await plain.goto(base + '/local');
-        await plain.locator('.section-nav--few a[href="local#local-events"]').click();
-        await plain.waitForURL(base + '/local#local-events');
+        await plain.selectOption('#local-section-m', '/local?section=events#local-more-m');
+        await plain.locator('.mx-ribbon button[type=submit]').click();
+        await plain.waitForURL(base + '/local?section=events#local-more-m');
         for (const target of ['https://example.com', '//example.com', '/\\example.com', 'javascript:alert(1)']) {
             const r = await p.request.get(base + '/navigate?to=' + encodeURIComponent(target), { maxRedirects: 0 });
             assert.equal(r.status(), 302);

@@ -108,6 +108,16 @@
     color: inherit;
     overflow-wrap: anywhere;
 }
+/* Blazor focuses the first h1 after navigation; it is not interactive. */
+.pub .mx-ribbon h1:focus {
+    outline: none;
+}
+/* "Entertainment" fits whole on a 320px phone. */
+@media (max-width: 359px) {
+    .pub .mx-ribbon h1 {
+        font-size: 36px;
+    }
+}
 /* SectionSelect's own phone rules (broadsheet.css, sections.css) are as specific, so the ribbon repeats .section-nav. */
 .mx-ribbon__field,
 .pub .mx-ribbon .section-nav .section-select {
@@ -1235,5 +1245,82 @@ span.mx-stepper__btn {
         margin: 0;
         padding: 0 0 22px;
         border: 0;
+    }
+}
+
+/* Release 6: ribbons around shared long lists and Settings tools; no duplicate forms or saved lists. */
+.mx-tool-page,
+.mx-tool-content {
+    display: contents;
+}
+@media (max-width: 743px) {
+    .pub .page > .mx-tool-page {
+        display: block;
+        margin: -12px -20px -40px;
+        padding-bottom: 24px;
+        background: var(--surface);
+    }
+    .pub .mx-tool-content {
+        display: block;
+        padding: 16px;
+    }
+    .pub .page > .mx-section-news {
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+    .mx-section-news > .mx-phone {
+        margin: 0 -16px 16px;
+    }
+    .pub [data-phone-settings] .set-index {
+        display: none;
+    }
+    .pub [data-phone-settings] :is(h2, section[id]) {
+        scroll-margin-top: 80px;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .mx-list-feature {
+        padding: 16px;
+        border: 0;
+        border-radius: 16px;
+        background: var(--mx-block-bg);
+        color: var(--mx-block-fg);
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .mx-list-feature :is(.title, .title a, .more) {
+        color: var(--mx-block-fg);
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .mx-list-feature :is(.title a, .more, .cat) {
+        display: inline-flex;
+        align-items: center;
+        min-height: 44px;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .mx-list-feature .cat {
+        background: transparent;
+        color: var(--mx-block-accent);
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .mx-list-feature
+        :is(.summary, .src, .src__name, time, .publication-unavailable, .pubdate__day, .pubdate__time) {
+        color: var(--mx-block-2);
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .mx-list-feature .src__mark {
+        background: var(--mx-block-tile);
+        color: var(--mx-block-fg);
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .mx-list-feature :is(.save, .share-button) {
+        width: 44px;
+        height: 44px;
+        min-height: 44px;
+        border: 1px solid var(--mx-block-line);
+        border-radius: 8px;
+        background: transparent;
+        color: var(--mx-block-fg);
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .mx-list-feature :is(.save, .share-button):hover {
+        background: var(--mx-block-tile);
+        color: var(--mx-block-fg);
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .mx-list-feature .save[aria-pressed='true'] {
+        color: var(--mx-block-accent);
+        border-color: var(--mx-block-accent);
     }
 }

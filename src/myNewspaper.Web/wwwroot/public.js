@@ -399,7 +399,7 @@
     function renderSavedPage(list) {
         const container = document.querySelector('[data-saved-list]');
         if (!container) return;
-        const signature = JSON.stringify([savedReady, list]);
+        const signature = JSON.stringify([savedReady, list, container.getAttribute('data-saved-filter') || '']);
         if (container.getAttribute('data-rendered') === signature) return;
         container.setAttribute('data-rendered', signature);
 
@@ -411,6 +411,10 @@
             const label = tab.querySelector('[data-saved-tab-count]');
             if (label) label.textContent = savedReady ? ' · ' + count(tab.getAttribute('data-saved-tab')) : '';
         });
+        document.querySelectorAll('[data-saved-option]').forEach((option) => {
+            option.textContent = option.dataset.label + (savedReady ? ' · ' + count(option.dataset.savedOption) : '');
+        });
+        let featured = false;
         [
             {
                 kind: 'article',
@@ -438,7 +442,12 @@
             if (items.length) {
                 const feed = el('div', 'feed');
                 items.forEach((a) => {
-                    feed.appendChild(savedCard(a));
+                    const card = savedCard(a);
+                    if (!featured) {
+                        card.classList.add('mx-list-feature');
+                        featured = true;
+                    }
+                    feed.appendChild(card);
                 });
                 section.appendChild(feed);
             } else if (savedReady) {

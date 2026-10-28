@@ -449,6 +449,27 @@ previews by collected category (or channel for uncategorized items). All matchin
 filtered phone list (`videos?view=all`) with the existing paging. Watch later links to Saved's video view.
 Unsafe video/story URLs remain plain text; thumbnails and metadata keep their existing fallbacks.
 
+## Phone ribbons on All headlines, Saved and Settings
+
+Release 6 (October 28, 2026); verification is maintained in the mobile handoff/release history. Below 744px
+these pages keep their existing lists and forms under a scheme-colored title ribbon with one native select;
+nothing is folded or rendered twice. The existing layouts remain from 744px.
+
+Sports and Entertainment headlines put the Section select in the ribbon. Sport/Topic, Source, pagination and
+Load more are unchanged. The first article of the first page takes the dark feature styling; Load more and
+later pages add no further features.
+
+Saved has a Show select (All, Articles, Videos) whose options carry the same counts as the desktop tabs; it
+loads `saved?list=…`. The first displayed item is featured after filtering and the feature moves on when that
+item is removed. The Saved API, empty/error states and the no-JavaScript message are unchanged.
+
+Settings replaces the section index with a Jump to select. With JavaScript it moves to the section in place;
+without it, Go uses the local `/navigate` redirect, which keeps the `#section`. Your profile, TV shows,
+YouTube channels and Requests are offered only while a profile is open.
+
+Ribbon titles step down from 44px to 36px below 360px, so a long title such as "Entertainment headlines"
+wraps between words.
+
 ## Dedicated F1 sports section
 
 Open Sports → F1 for Schedule, Results, Standings and News tabs. Schedule offers upcoming

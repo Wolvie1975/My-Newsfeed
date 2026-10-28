@@ -2,7 +2,7 @@
 @if (Featured && Items.Count > 0)
 {
     <div class="paper-top">
-        <section class="paper-lead" aria-label="Lead story"><FeedArticles Items="@Items.Take(1).ToArray()" LeadFirst="true" /></section>
+        <section class="paper-lead" aria-label="Lead story"><FeedArticles Items="@Items.Take(1).ToArray()" LeadFirst="true" PhoneFeatureFirst="PhoneFeatureFirst" /></section>
         @if (Items.Count > 1) {
             <section class="paper-latest" aria-label="Latest headlines"><h2 class="paper-label">Latest headlines</h2><FeedArticles Items="@Items.Skip(1).Take(4).ToArray()" /></section>
         }
@@ -13,10 +13,11 @@
 }
 @if (Remaining.Count > 0) {
     <h2 class="paper-label">More stories</h2>
-    <div class="paper-rows"><FeedArticles Items="Remaining" PreviousDay="PreviousDay" Total="Total" /></div>
+    <div class="paper-rows"><FeedArticles Items="Remaining" PhoneFeatureFirst="@(PhoneFeatureFirst && !Featured)" PreviousDay="PreviousDay" Total="Total" /></div>
 }
 @code {
     [Parameter] public IReadOnlyList<FeedItem> Items { get; set; } = [];
+    [Parameter] public bool PhoneFeatureFirst { get; set; }
     [Parameter] public bool Featured { get; set; }
     [Parameter] public string? PreviousDay { get; set; }
     [Parameter] public int? Total { get; set; }
