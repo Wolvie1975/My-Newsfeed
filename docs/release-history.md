@@ -6,10 +6,37 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The latest recorded web release is `mynewspaper-web:profiles-admin-20261028`
-(image `0b3b7503c1b7`), deployed October 28, 2026 (Central). Its rollback image is
-`mynewsfeed-web:before-mynewspaper-profiles-admin-20261028`. Deployment checks passed then;
+The latest recorded web release is `mynewspaper-web:profiles-requests-20261028`
+(image `d3a35f20d238`), deployed October 28, 2026 (Central). Its rollback image is
+`mynewsfeed-web:before-mynewspaper-profiles-requests-20261028`. Deployment checks passed then;
 this is a dated observation, not live hosting status.
+
+## Admin requests and the header alert, profiles still off — deployed October 28, 2026 (Central)
+
+Stage A2 of the household profiles plan: Admin · Requests (`/admin/requests`: Waiting / Added / Declined / All, the
+queue beside the selected request from 1024px, Check again, Test feed, Add channel or source and approve, approve and
+follow for an already-collected channel, Decline with a reason), **Requests** in the admin menu, the admin-only
+Requests alert in the public header (bottom sheet on phones, popover from 744px; locked profiles first with Unlock and
+Reset PIN; Mark all seen), **Suggest to everyone** on the YouTube feed editor, and the request checker now running.
+The checker reads pages up to 5 MB (was 2 MB), because a YouTube channel page is about 2.6 MB and every `@handle` link
+failed before. `Profiles:Enabled` stays `false`; readers see no change apart from one small script, `admin-alert.js`,
+that does nothing without the admin's header markup. Commit `dd8a434`.
+
+Deployed `mynewspaper-web:profiles-requests-20261028` (`d3a35f20d238`) through Compose with `--pull`, healthy; rollback
+`mynewsfeed-web:before-mynewspaper-profiles-requests-20261028` (`0b3b7503c1b7`, the A1 release). The container's
+environment, sorted and hashed, is identical to the previous container's; port 8085 unchanged. Predeploy: 923 .NET
+tests (including news-source approval, a YouTube-sized page, the Requests page in the admin privacy test and the
+admin-only alert), ESLint and Prettier clean for the changed files, `admin-layout.browser.cjs` on 24 pages and
+`admin-profiles.browser.cjs` at 320–1440px in light and dark. Live: `/`, `/tv`, `/videos`, `/saved`, `/entertainment`,
+`/settings` 200 with no alert markup for an anonymous visitor; `/profiles` 404; `/admin/requests` redirects to login;
+`/admin/api/requests/summary` 401. With seeded rows (a throwaway profile with five waiting requests and one declined,
+and a locked profile; deleted afterwards), `admin-requests.browser.cjs` passed on the live build at 320, 390, 430,
+744, 820, 1024 and 1440px in light and dark: no sideways scroll, contrast, 44px targets, queue and editor layout, the
+live checker resolving `youtube.com/@LinusTechTips`, Test feed (15 videos), Decline, the already-collected approve,
+the header alert as sheet and popover, Escape, Unlock and Mark all seen, and no alert for a reader.
+`admin-profiles.browser.cjs` passed again on the live build. Screenshots reviewed. The checks pressed Mark all seen,
+which set the household's seen time; no real requests existed. Not checked: Add channel / Add source and approve in a
+browser (they'd add a real feed or source; the .NET tests cover both in rolled-back transactions) and a real device.
 
 ## Admin profiles pages, profiles still off — deployed October 28, 2026 (Central)
 
