@@ -4,15 +4,16 @@ using myNewspaper.Web.Saved;
 
 namespace myNewspaper.Web.Profiles;
 
-/// <summary>One column on the edition picker. Numbers only: never a show or channel name (handoff 4.3 and 6.1).</summary>
+/// <summary>One column on the edition picker: counts and team games, never a show or channel name (handoff 4.3 and 6.1).</summary>
 public sealed record PickerEdition(int Id, string Name, string Color, bool Locked, bool NeedsPin, DateTime? LastReadAt,
-    int EpisodesToday, int NewVideos, int Saved);
+    int EpisodesToday, int NewVideos, int Saved, string? Teams = null);
 
 public sealed record PickerPage(IReadOnlyList<PickerEdition> Editions, string? Lead);
 
 /// <summary>
 /// The edition picker's previews. Other people's columns are visible to anyone at the picker, so this returns counts and
 /// never selects a show, channel or saved-article title; a template change can't leak one because the names aren't here.
+/// Team games are allowed (4.3): the Your teams line is today's first game for one of the profile's teams.
 /// </summary>
 public static class PickerPreviewQuery
 {
@@ -23,11 +24,12 @@ public static class PickerPreviewQuery
         CancellationToken ct = default)
     {
         var profiles = await db.Profiles.AsNoTracking().Where(p => !p.Hidden).OrderBy(p => p.SortOrder).ThenBy(p => p.Id)
-            .Select(p => new { p.Id, p.Name, p.Color, Locked = p.LockedAt != null, NeedsPin = p.PinHash == null, p.LastReadAt })
+            .Select(p => new { p.Id, p.Name, p.Color, Locked = p.LockedAt != null, NeedsPin = p.PinHash == null, p.LastReadAt, p.Settings })
             .ToListAsync(ct);
         var today = dates.TodayAt(nowUtc);
         var day = ResultsWindow.ForDay(today, dates.Zone);
         var editions = new List<PickerEdition>(profiles.Count);
+        IReadOnlyList<TonightItem>? games = null;
         foreach (var p in profiles)
         {
             var viewer = Viewer.ForProfile(p.Id);
@@ -38,7 +40,15 @@ public static class PickerPreviewQuery
             var since = p.LastReadAt is { } read && nowUtc - read < NewVideoWindow ? read : nowUtc - NewVideoWindow;
             var videos = await FollowQuery.Videos(db, viewer).CountAsync(v => v.PublishedAt > since, ct);
             var savedCount = (await saved.Read(p.Id, ct)).Count;
-            editions.Add(new(p.Id, p.Name, p.Color, p.Locked, p.NeedsPin, p.LastReadAt, episodes, videos, savedCount));
+            string? teamLine = null;
+            if (ProfileSettings.Parse(p.Settings)[ProfileSettings.Teams] is System.Text.Json.Nodes.JsonArray chosen && chosen.Count > 0)
+            {
+                var keys = chosen.Select(t => t?.GetValue<string>()).OfType<string>().ToHashSet(StringComparer.Ordinal);
+                games ??= TodayTonight.Build(await EventsQuery.GetOnDateAsync(db, today), dates);
+                teamLine = games.FirstOrDefault(g => (g.HomeTeam is { } h && keys.Contains(h)) || (g.AwayTeam is { } a && keys.Contains(a)))
+                    is { } game ? $"{game.Title} · {game.TimeLabel}" : "No games today";
+            }
+            editions.Add(new(p.Id, p.Name, p.Color, p.Locked, p.NeedsPin, p.LastReadAt, episodes, videos, savedCount, teamLine));
         }
         string? lead = null;
         if (editions.Count > 0)

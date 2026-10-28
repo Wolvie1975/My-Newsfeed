@@ -53,6 +53,7 @@ else
                     <p class="edition__lead">@lead</p>
                 }
                 <ul class="edition__lines">
+                    @if (e.Teams is { } teams) { <li><b>Your teams</b><span>@teams</span></li> }
                     <li><b>New for you</b><span>@NewForYou(e)</span></li>
                     <li><b>Saved</b><span>@(e.Saved switch { 0 => "Nothing saved", 1 => "1 article", var n => $"{n} articles" })</span></li>
                 </ul>

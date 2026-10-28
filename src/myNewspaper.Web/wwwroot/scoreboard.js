@@ -7,7 +7,7 @@
         generation = 0;
     function read() {
         try {
-            const values = JSON.parse(localStorage.getItem(key) || '[]');
+            const values = JSON.parse((window.myNewspaperPrefs || localStorage).getItem(key) || '[]');
             selected = new Set(
                 Array.isArray(values)
                     ? values.filter((v) => typeof v === 'string' && v.length < 300).slice(0, 1000)
@@ -128,7 +128,7 @@
         const id = button.dataset.scoreboardTeam;
         selected.has(id) ? selected.delete(id) : selected.add(id);
         try {
-            localStorage.setItem(key, JSON.stringify([...selected]));
+            (window.myNewspaperPrefs || localStorage).setItem(key, JSON.stringify([...selected]));
             apply();
         } catch (_) {
             read();

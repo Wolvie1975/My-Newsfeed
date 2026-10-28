@@ -29,6 +29,150 @@
         return response;
     };
 
+    // ---- settings ---------------------------------------------------------------------------------------------
+    // window.myNewspaperPrefs has localStorage's getItem/setItem/removeItem, so the page scripts keep their keys and
+    // value formats. With a profile open, the keys below read and write that profile's settings (saved to the server
+    // 400 ms after the last change); everything else, and everything when no profile is open, stays in localStorage.
+    const LEGACY = {
+        theme: { setting: 'theme', text: true },
+        'mynewsfeed-color-scheme': { setting: 'colorScheme', text: true },
+        'mynewsfeed-personal-v1': { setting: 'home' },
+        'mynewsfeed-sports-teams-v1': { setting: 'teams' },
+        'mynewsfeed-watch-services-v1': { setting: 'services' },
+        'mynewsfeed-settings-order-v1': { setting: 'settingsOrder' },
+        'mydailyfeed-scoreboard-teams-v1': { setting: 'scoreboardTeams' },
+    };
+    const HOME_KEYS = ['order', 'hidden', 'teamsOnly'];
+    let page = {};
+    try {
+        page = JSON.parse(document.getElementById('mnp-profile')?.textContent || '{}') || {};
+    } catch (_) {}
+    const profile = page.profile && typeof page.profile.settings === 'object' ? page.profile : null;
+    const settings = profile ? profile.settings : {};
+    let patch = {},
+        timer = null,
+        token = null;
+
+    const local = {
+        getItem: (key) => {
+            try {
+                return localStorage.getItem(key);
+            } catch (_) {
+                return null;
+            }
+        },
+        setItem: (key, value) => localStorage.setItem(key, value),
+        removeItem: (key) => {
+            try {
+                localStorage.removeItem(key);
+            } catch (_) {}
+        },
+    };
+
+    // A stored browser value as the profile setting it becomes (the home object keeps only the keys the server knows).
+    function toSetting(map, raw) {
+        if (map.text) return raw;
+        const value = JSON.parse(raw);
+        if (map.setting !== 'home' || !value || typeof value !== 'object') return value;
+        const home = {};
+        HOME_KEYS.forEach((k) => {
+            if (k in value) home[k] = value[k];
+        });
+        return home;
+    }
+
+    async function getToken() {
+        if (!token) {
+            const response = await nativeFetch('/api/me', { credentials: 'same-origin', cache: 'no-store' });
+            if (!response.ok) throw new Error('profile');
+            token = (await response.json()).token;
+        }
+        return token;
+    }
+    async function send(body, path, method, keepalive) {
+        const response = await nativeFetch(path, {
+            method,
+            credentials: 'same-origin',
+            keepalive: !!keepalive,
+            headers: { 'Content-Type': 'application/json', 'X-Saved-CSRF': await getToken() },
+            body: JSON.stringify(body),
+        });
+        if (!response.ok) throw new Error('settings');
+        return response.json();
+    }
+    function flush(keepalive) {
+        clearTimeout(timer);
+        timer = null;
+        const body = patch;
+        patch = {};
+        if (!Object.keys(body).length) return;
+        send(body, '/api/me/settings', 'PUT', keepalive).catch(() => {
+            document.dispatchEvent(new CustomEvent('myNewspaper:settings-failed'));
+        });
+    }
+
+    window.myNewspaperPrefs = profile
+        ? {
+              profile: true,
+              defaults: page.defaults || {},
+              getItem(key) {
+                  const map = LEGACY[key];
+                  if (!map) return local.getItem(key);
+                  const value = settings[map.setting];
+                  if (value === undefined || value === null) return null;
+                  return map.text ? String(value) : JSON.stringify(value);
+              },
+              setItem(key, raw) {
+                  const map = LEGACY[key];
+                  if (!map) return local.setItem(key, raw);
+                  const value = toSetting(map, String(raw));
+                  settings[map.setting] = value;
+                  patch[map.setting] = value;
+                  if (key === 'theme') document.documentElement.setAttribute('data-theme-mode', value);
+                  clearTimeout(timer);
+                  timer = setTimeout(flush, 400);
+              },
+              removeItem(key) {
+                  const map = LEGACY[key];
+                  if (!map) return local.removeItem(key);
+                  delete settings[map.setting];
+                  patch[map.setting] = null;
+                  clearTimeout(timer);
+                  timer = setTimeout(flush, 400);
+              },
+          }
+        : { profile: false, defaults: page.defaults || {}, ...local };
+    window.addEventListener('pagehide', () => flush(true));
+
+    // One-time import: the first time a profile opens in a browser that still has the old keys, they fill whatever
+    // the profile doesn't have yet; then they're removed, so the next person on this device doesn't inherit them.
+    async function importBrowser() {
+        if (!profile || profile.browserImportAt) return;
+        const values = {};
+        Object.entries(LEGACY).forEach(([key, map]) => {
+            const raw = local.getItem(key);
+            if (raw === null) return;
+            try {
+                values[map.setting] = toSetting(map, raw);
+            } catch (_) {}
+        });
+        // Only a browser that has old settings uses up the profile's one import.
+        if (!Object.keys(values).length) return;
+        try {
+            const result = await send(values, '/api/me/import-browser', 'POST');
+            profile.browserImportAt = new Date().toISOString();
+            Object.keys(LEGACY).forEach((key) => local.removeItem(key));
+            const before = JSON.stringify(settings);
+            Object.keys(settings).forEach((k) => delete settings[k]);
+            Object.assign(settings, result.settings || {});
+            // The page was drawn with the profile's old settings; draw it again with the imported ones.
+            if (JSON.stringify(settings) !== before) location.reload();
+        } catch (_) {
+            // Try again on the next page.
+        }
+    }
+    importBrowser();
+
     // ---- PIN pad ------------------------------------------------------------------------------------------------
 
     let form = null;

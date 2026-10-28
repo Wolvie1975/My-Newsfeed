@@ -98,7 +98,8 @@
             </button>
             <AuthorizeView>
                 <Authorized><a class="admin-link" href="admin">Admin</a></Authorized>
-                <NotAuthorized><a class="admin-link" href="login">Admin sign in</a></NotAuthorized>
+                @* Only the household admin's profile is offered the sign-in (db/022); /login itself still works for anyone. *@
+                <NotAuthorized>@if (ShowSignIn) { <a class="admin-link" href="login">Admin sign in</a> }</NotAuthorized>
             </AuthorizeView>
 
             @* Phones and tablets: a native disclosure, so the menu also works without JavaScript. *@
@@ -149,7 +150,7 @@
                             <a href="settings" aria-current="@(onTeams ? "page" : null)">Settings</a>
                             @if (Reader.Profile is { } reading) { <a href="editions">Switch edition (@reading.Name’s)</a> }
                             <button class="mobile-nav__theme" type="button" aria-label="Switch to dark mode" aria-pressed="false" data-theme-toggle><span class="when-light">Dark mode</span><span class="when-dark">Light mode</span></button>
-                            <AuthorizeView><Authorized><a href="admin">Administration</a></Authorized><NotAuthorized><a href="login">Admin sign in</a></NotAuthorized></AuthorizeView>
+                            <AuthorizeView><Authorized><a href="admin">Administration</a></Authorized><NotAuthorized>@if (ShowSignIn) { <a href="login">Admin sign in</a> }</NotAuthorized></AuthorizeView>
                         </div>
                     </div>
                 </nav>
@@ -167,3 +168,8 @@
     <a href="." class="reload">Reload</a>
     <span class="dismiss">🗙</span>
 </div>
+
+@code {
+    // With profiles off there's no one to tell apart, so everyone keeps the link, as before.
+    private bool ShowSignIn => !Reader.Enabled || Reader.IsHouseholdAdmin;
+}

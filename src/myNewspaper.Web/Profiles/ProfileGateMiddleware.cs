@@ -76,11 +76,13 @@ public sealed class ProfileGateMiddleware(RequestDelegate next, IOptions<Profile
 
             context.Device = device;
             context.Profile = profile;
+            context.IsHouseholdAdmin = profile is not null && profile.Id == household.AdminProfileId;
 
             if (!ProfileGate.IsExempt(path) && (device is null
                 || ProfileGate.NeedsPicker(profile?.Id, device.PickerMode, cookies.ReadGate(http), device.Id, now, dates.Zone)))
             {
                 context.Profile = null;
+                context.IsHouseholdAdmin = false;
                 await SendToPickerAsync(http);
                 return;
             }

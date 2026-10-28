@@ -18,8 +18,10 @@ public static class ProfileSettings
     public const string Teams = "teams";
     public const string Services = "services";
     public const string SettingsOrder = "settingsOrder";
+    /// <summary>The scoreboard's starred teams (scoreboard.js), separate from My Teams.</summary>
+    public const string ScoreboardTeams = "scoreboardTeams";
 
-    public static readonly IReadOnlyList<string> Keys = [Theme, ColorScheme, Home, Teams, Services, SettingsOrder];
+    public static readonly IReadOnlyList<string> Keys = [Theme, ColorScheme, Home, Teams, Services, SettingsOrder, ScoreboardTeams];
 
     /// <summary>A stored document. Anything unreadable counts as empty, so an old or damaged row never breaks reading.</summary>
     public static JsonObject Parse(string? json)
@@ -89,6 +91,8 @@ public static class ProfileSettings
         Home => HomeValue(value),
         Teams => new JsonArray([.. Strings(value, key, SiteDefaults.MaxTeams, team =>
             team.Length is > 0 and <= SiteDefaults.MaxTeamKeyLength && !team.Any(char.IsControl)).Select(t => (JsonNode)t)]),
+        ScoreboardTeams => new JsonArray([.. Strings(value, key, SiteDefaults.MaxTeams, team =>
+            team.Length is > 0 and < 300 && !team.Any(char.IsControl)).Select(t => (JsonNode)t)]),
         Services => ServicesValue(value),
         SettingsOrder => new JsonArray([.. Strings(value, key, SiteDefaults.SettingsOrder.Count, SiteDefaults.SettingsOrder.Contains)
             .Select(s => (JsonNode)s)]),

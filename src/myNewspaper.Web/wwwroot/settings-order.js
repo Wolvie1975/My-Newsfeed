@@ -1,7 +1,7 @@
 (function () {
     'use strict';
     const key = 'mynewsfeed-settings-order-v1';
-    const defaults = ['appearance', 'colors', 'services', 'teams'];
+    const defaults = window.myNewspaperPrefs?.defaults?.settingsOrder || ['appearance', 'colors', 'services', 'teams'];
     const labels = {
         appearance: 'Light and dark mode',
         colors: 'Color scheme',
@@ -11,7 +11,7 @@
     function order() {
         let saved = [];
         try {
-            saved = JSON.parse(localStorage.getItem(key) || '[]');
+            saved = JSON.parse((window.myNewspaperPrefs || localStorage).getItem(key) || '[]');
         } catch {}
         if (!Array.isArray(saved)) saved = [];
         return [...new Set(saved.filter((s) => defaults.includes(s))), ...defaults.filter((s) => !saved.includes(s))];
@@ -73,9 +73,13 @@
         }
         const status = document.querySelector('[data-settings-order-status]');
         try {
-            localStorage.setItem(key, JSON.stringify(reset ? defaults : current));
+            (window.myNewspaperPrefs || localStorage).setItem(key, JSON.stringify(reset ? defaults : current));
             render();
-            status.textContent = reset ? 'Default Settings order restored.' : 'Settings order saved in this browser.';
+            status.textContent = reset
+                ? 'Default Settings order restored.'
+                : window.myNewspaperPrefs?.profile
+                  ? 'Settings order saved to your edition.'
+                  : 'Settings order saved in this browser.';
             if (move) {
                 const target = document.querySelector(`[data-settings-move="${move.dataset.settingsMove}"]`);
                 if (target && !target.disabled) target.focus();

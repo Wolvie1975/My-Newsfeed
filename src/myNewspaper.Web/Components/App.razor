@@ -1,5 +1,7 @@
+@inject myNewspaper.Web.Profiles.ProfileContext Reader
 <!DOCTYPE html>
-<html lang="en">
+@* With a profile open, its light/dark mode and color scheme are on <html> before first paint (theme-init.js reads them). *@
+<html lang="en" data-theme-mode="@myNewspaper.Web.Profiles.ProfilePageData.ThemeMode(Reader)" data-color-scheme="@myNewspaper.Web.Profiles.ProfilePageData.ColorScheme(Reader)">
 
 <head>
     <meta charset="utf-8" />
@@ -27,6 +29,8 @@
 
 <body>
     <Routes />
+    @* Site defaults and the open profile's settings for profiles.js; escaped by System.Text.Json, never concatenated. *@
+    <script id="mnp-profile" type="application/json">@((MarkupString)myNewspaper.Web.Profiles.ProfilePageData.Json(Reader))</script>
     <ReconnectModal />
     <script src="@Assets["_framework/blazor.web.js"]"></script>
     <script src="@Assets["profiles.js"]" defer></script>

@@ -16,6 +16,9 @@ public sealed class ProfileContext(IOptions<ProfilesOptions> options)
     public bool HasProfile => Profile is not null;
     public int Id => Profile?.Id ?? throw new InvalidOperationException("No profile selected.");
 
+    /// <summary>The open profile is the household admin's (Manage profile), so its pages show "Admin sign in".</summary>
+    public bool IsHouseholdAdmin { get; internal set; }
+
     /// <summary>Who public TV and YouTube reads are for. With profiles on and none open, nothing is shown.</summary>
     public Viewer Viewer => !Enabled ? Viewer.Household : Profile is { } p ? Viewer.ForProfile(p.Id) : Viewer.Nobody;
 

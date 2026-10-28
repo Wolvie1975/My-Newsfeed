@@ -3,6 +3,7 @@
 @layout PublicLayout
 @inject IDbContextFactory<WebScraperContext> Factory
 @inject ILogger<MyTeams> Log
+@inject myNewspaper.Web.Profiles.ProfileContext Reader
 
 <PageTitle>Settings · myNewspaper</PageTitle>
 <PageHeading Title="Settings" Eyebrow="Make it yours" Description="Appearance, streaming services and teams. Everything saves as you tap." />
@@ -15,11 +16,11 @@
     <a href="settings#my-teams-heading">My Teams</a>
 </nav>
 <div class="set-main">
-<details class="settings-arrange"><summary>Arrange Settings sections</summary><p>Move sections up or down. Changes save in this browser.</p><div data-settings-order-controls></div><button type="button" data-settings-order-reset class="nf-btn nf-btn--secondary">Restore default Settings order</button><p role="status" data-settings-order-status></p><noscript><p>Enable JavaScript to arrange Settings sections.</p></noscript></details>
+<details class="settings-arrange"><summary>Arrange Settings sections</summary><p>Move sections up or down. @SavesTo</p><div data-settings-order-controls></div><button type="button" data-settings-order-reset class="nf-btn nf-btn--secondary">Restore default Settings order</button><p role="status" data-settings-order-status></p><noscript><p>Enable JavaScript to arrange Settings sections.</p></noscript></details>
 <div data-settings-sections>
 <section data-settings-section="appearance" aria-labelledby="appearance-heading">
     <h2 id="appearance-heading">Light and dark mode</h2>
-    <p class="updated">Automatic mode follows sunrise and sunset in Kansas City, Missouri. Changes save in this browser.</p>
+    <p class="updated">Automatic mode follows sunrise and sunset in Kansas City, Missouri. @SavesTo</p>
     <fieldset class="settings-schemes">
         <legend class="sr-only">Choose when to use light and dark mode</legend>
         <label class="settings-scheme"><input type="radio" name="theme-mode" value="system" data-theme-mode /> <span>Follow device</span></label>
@@ -33,7 +34,7 @@
 </section>
 <section data-settings-section="colors" aria-labelledby="color-scheme-heading">
     <h2 id="color-scheme-heading">Color scheme</h2>
-    <p class="updated">Changes save automatically in this browser on this device. Light and dark mode work with every scheme.</p>
+    <p class="updated">@SavesTo Light and dark mode work with every scheme.</p>
     <fieldset class="settings-schemes">
         <legend class="sr-only">Choose a color scheme</legend>
         @foreach (var scheme in schemes)
@@ -53,7 +54,7 @@
 <section data-settings-section="teams" aria-labelledby="my-teams-heading">
 <h2 id="my-teams-heading">My Teams</h2>
 <p>Choose professional teams and Big 12 schools to highlight in schedules, results and standings. Full tables remain visible.</p>
-<p class="updated">Selections save automatically in this browser on this device. Selecting a Big 12 school highlights it across sports.</p>
+<p class="updated">@SavesTo Selecting a Big 12 school highlights it across sports.</p>
 @if (error is not null) { <p role="status" class="empty">@error</p> }
 <noscript><p class="empty">Enable JavaScript to save team selections and display highlights.</p></noscript>
     <div data-sports-preferences>
@@ -88,6 +89,9 @@
 </div>
 </div>
 @code {
+    // With a profile open, choices follow the person to every device; otherwise they stay in this browser.
+    private string SavesTo => Reader.HasProfile ? $"Changes save to {Reader.Profile!.Name}’s edition." : "Changes save in this browser.";
+
     [SupplyParameterFromQuery(Name="service")]public int[]? ChosenServices {get;set;}
     [SupplyParameterFromQuery(Name="services")]public string? Services {get;set;}
     private string ServiceSelection=>string.Join(",",new[]{Services??"",string.Join(",",ChosenServices??[])});

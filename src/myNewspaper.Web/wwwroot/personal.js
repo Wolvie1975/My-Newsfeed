@@ -1,9 +1,10 @@
-/* Personal homepage, teams and weather. Copies stay on this device; no account or server writes. */
+/* Personal homepage, teams and weather. Saved to the open profile (profiles.js), or in this browser without one. */
 (function () {
     'use strict';
     const PREFS = 'mynewsfeed-personal-v1',
         TEAMS = 'mynewsfeed-sports-teams-v1';
-    const defaults = [
+    // The site defaults the page carries (SiteDefaults.HomeOrder); the list below is only a fallback.
+    const defaults = window.myNewspaperPrefs?.defaults?.homeOrder || [
         'lead',
         'watch',
         'opinion',
@@ -23,15 +24,15 @@
         pending = false,
         weatherController;
     try {
-        localStorage.setItem('mynewsfeed-personal-probe', '1');
-        localStorage.removeItem('mynewsfeed-personal-probe');
+        (window.myNewspaperPrefs || localStorage).setItem('mynewsfeed-personal-probe', '1');
+        (window.myNewspaperPrefs || localStorage).removeItem('mynewsfeed-personal-probe');
     } catch (_) {
         storage = false;
     }
     const txt = (value) => (typeof value === 'string' ? value.slice(0, 2048) : '');
     function load(key, fallback) {
         try {
-            return JSON.parse(localStorage.getItem(key)) ?? fallback;
+            return JSON.parse((window.myNewspaperPrefs || localStorage).getItem(key)) ?? fallback;
         } catch (_) {
             return fallback;
         }
@@ -71,9 +72,11 @@
     }
     function save(key, value, message) {
         try {
-            localStorage.setItem(key, JSON.stringify(value));
+            (window.myNewspaperPrefs || localStorage).setItem(key, JSON.stringify(value));
             sync();
-            announce(message || 'Saved in this browser.');
+            announce(
+                message || (window.myNewspaperPrefs?.profile ? 'Saved to your edition.' : 'Saved in this browser.'),
+            );
             return true;
         } catch (_) {
             announce('Could not save. Browser storage is full or blocked. Your previous choices are unchanged.');

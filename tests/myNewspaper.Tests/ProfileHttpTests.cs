@@ -236,7 +236,8 @@ public class ProfileHttpTests
             {
                 await ProfileStore.PatchSettingsAsync(db, a.Id, new System.Text.Json.Nodes.JsonObject { ["teams"] = new System.Text.Json.Nodes.JsonArray(marker) });
                 var feed = await db.YoutubeVideoFeeds.OrderBy(f => f.Id).FirstOrDefaultAsync();
-                if (feed is not null) db.ProfileChannelFollows.Add(new ProfileChannelFollow { ProfileId = a.Id, YoutubeVideoFeedId = feed.Id });
+                if (feed is not null && !await db.ProfileChannelFollows.AnyAsync(f => f.ProfileId == a.Id && f.YoutubeVideoFeedId == feed.Id))
+                    db.ProfileChannelFollows.Add(new ProfileChannelFollow { ProfileId = a.Id, YoutubeVideoFeedId = feed.Id });
                 await db.SaveChangesAsync();
             }
 
@@ -301,9 +302,15 @@ public class ProfileHttpTests
                     db.ProfileTvFollows.Add(new ProfileTvFollow { ProfileId = a.Id, TvTrackedSeriesId = t.Id });
                     names.Add(t.Title);
                 }
-                foreach (var f in await db.YoutubeVideoFeeds.Select(f => new { f.Id, f.ChannelName }).ToListAsync())
+                // New profiles already follow the household channels; add the rest.
+                foreach (var f in await db.YoutubeVideoFeeds.Select(f => new
                 {
-                    db.ProfileChannelFollows.Add(new ProfileChannelFollow { ProfileId = a.Id, YoutubeVideoFeedId = f.Id });
+                    f.Id,
+                    f.ChannelName,
+                    Followed = db.ProfileChannelFollows.Any(c => c.ProfileId == a.Id && c.YoutubeVideoFeedId == f.Id)
+                }).ToListAsync())
+                {
+                    if (!f.Followed) db.ProfileChannelFollows.Add(new ProfileChannelFollow { ProfileId = a.Id, YoutubeVideoFeedId = f.Id });
                     if (f.ChannelName is { Length: > 3 }) names.Add(f.ChannelName);
                 }
                 await db.SaveChangesAsync();

@@ -259,9 +259,10 @@ public class ProfileDataTests
         // With profiles on and nobody open, nothing at all.
         Assert.Empty((await TvQuery.GetAsync(db, Viewer.Nobody, dates, dates.Today, null)).Shows);
         Assert.Equal(0, (await VideosQuery.GetVideosAsync(db, Viewer.Nobody, null, null)).Total);
+        // B starts with the household channels (rolled out at switch-on), but never with A's show or channel.
         var follows = await FollowQuery.ForProfile(db, b.Id);
-        Assert.Empty(follows.TvTrackedSeriesIds);
-        Assert.Empty(follows.YoutubeVideoFeedIds);
+        Assert.DoesNotContain(tracked.Id, follows.TvTrackedSeriesIds);
+        Assert.DoesNotContain(feed.Id, follows.YoutubeVideoFeedIds);
     }
 
     [Fact]

@@ -161,6 +161,21 @@ public static class ProfileAdmin
             .SetProperty(h => h.ForgetDevicesDays, settings.ForgetDevicesDays), ct);
     }
 
+    /// <summary>The household admin's profile (db/022), or null. Only its pages show the "Admin sign in" link.</summary>
+    public static async Task<int?> GetAdminProfileAsync(WebScraperContext db, CancellationToken ct = default) =>
+        (await ProfileStore.GetHouseholdAsync(db, ct)).AdminProfileId;
+
+    /// <summary>Marks or unmarks a profile as the household admin's; marking one unmarks any other. False if it doesn't exist.</summary>
+    public static async Task<bool> SetAdminProfileAsync(WebScraperContext db, int profileId, bool isAdmin, CancellationToken ct = default)
+    {
+        if (!await db.Profiles.AnyAsync(p => p.Id == profileId, ct)) return false;
+        await EnsureHouseholdAsync(db, ct);
+        var household = db.Household.Where(h => h.Id == 1);
+        if (isAdmin) await household.ExecuteUpdateAsync(s => s.SetProperty(h => h.AdminProfileId, profileId), ct);
+        else await household.Where(h => h.AdminProfileId == profileId).ExecuteUpdateAsync(s => s.SetProperty(h => h.AdminProfileId, (int?)null), ct);
+        return true;
+    }
+
     /// <summary>The base edition. It's never read for an existing profile, only copied into new ones (decision 12).</summary>
     public static async Task<JsonObject> GetBaseEditionAsync(WebScraperContext db, CancellationToken ct = default) =>
         ProfileSettings.Parse((await ProfileStore.GetHouseholdAsync(db, ct)).BaseSettings);

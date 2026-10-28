@@ -93,5 +93,6 @@ public class Household
     [MaxLength(16)] public string DefaultPickerMode { get; set; } = "every-visit";
     public int? ForgetDevicesDays { get; set; }                       // null = never
     public DateTime? RequestsSeenAt { get; set; }                     // admin's "Mark all seen"
+    public int? AdminProfileId { get; set; }                          // db/022: only this profile sees "Admin sign in"
     public string BaseSettings { get; set; } = "{}";                  // same shape as Profile.Settings
 }

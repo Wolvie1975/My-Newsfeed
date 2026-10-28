@@ -115,7 +115,7 @@
             const url = new URL(location.href);
             let ids = [];
             try {
-                ids = JSON.parse(localStorage.getItem(key) || '[]');
+                ids = JSON.parse((window.myNewspaperPrefs || localStorage).getItem(key) || '[]');
             } catch {}
             if (!Array.isArray(ids)) ids = [];
             if (!url.searchParams.has('service') && !url.searchParams.has('services'))
@@ -129,7 +129,7 @@
         const url = new URL(location.href);
         if (url.searchParams.has('service') || url.searchParams.has('services')) return;
         try {
-            const ids = JSON.parse(localStorage.getItem(key) || '[]');
+            const ids = JSON.parse((window.myNewspaperPrefs || localStorage).getItem(key) || '[]');
             if (Array.isArray(ids)) {
                 const valid = [...new Set(ids.filter((n) => Number.isInteger(n) && n > 0))].slice(0, 20);
                 if (valid.length) {
@@ -155,8 +155,10 @@
             if (form.hasAttribute('data-watch-settings'))
                 form.querySelector('[data-watch-settings-link]').href = 'watch?services=' + ids.join(',');
             try {
-                localStorage.setItem(key, JSON.stringify(ids));
-                status.textContent = 'Services saved in this browser.';
+                (window.myNewspaperPrefs || localStorage).setItem(key, JSON.stringify(ids));
+                status.textContent = window.myNewspaperPrefs?.profile
+                    ? 'Services saved to your edition.'
+                    : 'Services saved in this browser.';
             } catch {
                 status.textContent = 'Selections will apply, but could not be remembered in this browser.';
             }

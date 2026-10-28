@@ -82,7 +82,7 @@
         if (persist) {
             themeMode = theme;
             try {
-                localStorage.setItem('theme', theme);
+                (window.myNewspaperPrefs || localStorage).setItem('theme', theme);
                 themeSaveFailed = false;
             } catch (e) {
                 themeSaveFailed = true;
@@ -107,7 +107,7 @@
         if (!['system', 'sun', 'light', 'dark'].includes(choice)) return;
         themeMode = choice;
         try {
-            localStorage.setItem('theme', choice);
+            (window.myNewspaperPrefs || localStorage).setItem('theme', choice);
             themeSaveFailed = false;
         } catch (e) {
             themeSaveFailed = true;
@@ -208,13 +208,13 @@
     async function importLegacy() {
         let legacy, receipt;
         try {
-            receipt = JSON.parse(localStorage.getItem(IMPORT_KEY) || 'null');
+            receipt = JSON.parse((window.myNewspaperPrefs || localStorage).getItem(IMPORT_KEY) || 'null');
             if (receipt && receipt.done) return;
-            legacy = JSON.parse(localStorage.getItem(SAVED_KEY) || '[]');
+            legacy = JSON.parse((window.myNewspaperPrefs || localStorage).getItem(SAVED_KEY) || '[]');
             if (!Array.isArray(legacy) || !legacy.length) return;
             if (!receipt || !receipt.id) {
                 receipt = { id: importId(), done: false };
-                localStorage.setItem(IMPORT_KEY, JSON.stringify(receipt));
+                (window.myNewspaperPrefs || localStorage).setItem(IMPORT_KEY, JSON.stringify(receipt));
             }
         } catch (_) {
             return;
@@ -244,7 +244,10 @@
         // Keep the old list as a backup. The server receipt prevents replay after removal,
         // even if this final browser write fails or two tabs migrate simultaneously.
         try {
-            localStorage.setItem(IMPORT_KEY, JSON.stringify({ id: receipt.id, done: true }));
+            (window.myNewspaperPrefs || localStorage).setItem(
+                IMPORT_KEY,
+                JSON.stringify({ id: receipt.id, done: true }),
+            );
         } catch (_) {}
     }
     function refreshSaved() {
@@ -297,7 +300,9 @@
             savedAt: new Date().toISOString(),
             read: (function () {
                 try {
-                    const p = JSON.parse(localStorage.getItem('mynewsfeed-personal-v1') || '{}');
+                    const p = JSON.parse(
+                        (window.myNewspaperPrefs || localStorage).getItem('mynewsfeed-personal-v1') || '{}',
+                    );
                     return Array.isArray(p.read) && p.read.includes(button.getAttribute('data-url'));
                 } catch (_) {
                     return false;
@@ -815,14 +820,14 @@
     );
 })();
 
-// Personal sports highlights are stored only in this browser.
+// Personal sports highlights: the open profile's teams (profiles.js), or this browser's without one.
 (function () {
     'use strict';
     const key = 'mynewsfeed-sports-teams-v1';
     let selected = new Set();
     function read() {
         try {
-            const values = JSON.parse(localStorage.getItem(key) || '[]');
+            const values = JSON.parse((window.myNewspaperPrefs || localStorage).getItem(key) || '[]');
             selected = new Set(
                 Array.isArray(values)
                     ? values
@@ -863,7 +868,7 @@
     }
     function save() {
         try {
-            localStorage.setItem(key, JSON.stringify(Array.from(selected)));
+            (window.myNewspaperPrefs || localStorage).setItem(key, JSON.stringify(Array.from(selected)));
             sync();
         } catch (_) {
             read();
@@ -932,7 +937,7 @@
     'use strict';
     const root = document.documentElement;
     const key = 'mynewsfeed-color-scheme';
-    const choices = [
+    const choices = window.myNewspaperPrefs?.defaults?.colorSchemes || [
         'ribbon',
         'monochrome',
         'kansas',
@@ -953,7 +958,7 @@
     function read() {
         let value;
         try {
-            value = localStorage.getItem(key);
+            value = (window.myNewspaperPrefs || localStorage).getItem(key);
         } catch (e) {}
         return choices.includes(value) ? value : 'ribbon';
     }
@@ -969,7 +974,7 @@
         applied = e.target.value;
         let saved = true;
         try {
-            localStorage.setItem(key, applied);
+            (window.myNewspaperPrefs || localStorage).setItem(key, applied);
         } catch (err) {
             saved = false;
         }
