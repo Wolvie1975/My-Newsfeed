@@ -1,3 +1,4 @@
+// Folded phone layouts are covered by phone-fronts.browser.cjs; these checks exercise the retained tablet/desktop controls.
 const assert = require('node:assert/strict'),
     { chromium } = require('playwright');
 const base = process.env.BASE_URL || 'http://localhost:5295';
@@ -16,7 +17,7 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
         assert.equal(target.searchParams.get('status'), 'final');
         for (const js of [true, false]) {
             const page = await browser.newPage({ javaScriptEnabled: js });
-            for (const width of [320, 390, 768, 1440]) {
+            for (const width of [768, 1440]) {
                 await page.setViewportSize({ width, height: 1000 });
                 await page.goto(base + '/results');
                 assert.equal(new URL(page.url()).pathname, '/scoreboard');

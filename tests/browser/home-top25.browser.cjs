@@ -1,3 +1,4 @@
+// Folded phone layouts are covered by phone-fronts.browser.cjs; these checks exercise the retained tablet/desktop controls.
 const { chromium } = require('playwright');
 const assert = require('node:assert/strict');
 const base = process.env.BASE_URL || 'http://localhost:5295';
@@ -9,7 +10,7 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
         page.on('pageerror', (e) => errors.push(e.message));
         await page.goto(base + '/');
         assert.equal(await page.locator('[data-home-section="f1"]').count(), 0);
-        const card = page.locator('[data-home-section="rankings"]');
+        const card = page.locator('section[data-home-section="rankings"]');
         await card.waitFor();
         const options = await card
             .locator('select option')
@@ -95,7 +96,7 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
                     );
             }
         }
-        for (const width of [390, 768, 1024, 1440, 1920]) {
+        for (const width of [768, 1024, 1440, 1920]) {
             await page.setViewportSize({ width, height: 900 });
             await page.waitForTimeout(250);
             assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
@@ -110,7 +111,7 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
             }
         }
         // Phones and iPad portrait keep the dropdown, which also switches in place.
-        for (const width of [390, 820]) {
+        for (const width of [820]) {
             await page.setViewportSize({ width, height: 900 });
             await page.waitForTimeout(250);
             assert(!(await card.locator('.d-rankings__pills').isVisible()), `No pills at ${width}px`);
@@ -137,11 +138,11 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
         await page.locator('#home-ranking-source').focus();
         assert.deepEqual(errors, []);
         await card.screenshot({ path: process.env.TOP25_SCREENSHOT || 'test-results/home-top25.png' });
-        const plain = await browser.newContext({ javaScriptEnabled: false, viewport: { width: 390, height: 900 } });
+        const plain = await browser.newContext({ javaScriptEnabled: false, viewport: { width: 820, height: 900 } });
         const p = await plain.newPage();
         await p.goto(base + '/');
         await p.locator('#home-ranking-source').selectOption(options.at(-1).value);
-        await p.locator('[data-home-section="rankings"]').getByRole('button', { name: 'Apply' }).click();
+        await p.locator('section[data-home-section="rankings"]').getByRole('button', { name: 'Apply' }).click();
         assert.equal(new URL(p.url()).searchParams.get('rankingSourceId'), options.at(-1).value);
         assert.equal(await p.locator('#home-ranking-source').inputValue(), options.at(-1).value);
         // Without JavaScript, desktop pills are plain links to the same address.

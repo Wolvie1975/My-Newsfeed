@@ -5,7 +5,9 @@
 @inject IDbContextFactory<WebScraperContext> Factory
 @inject myNewspaper.Web.Scores.LeaguePhases RecordPhases
 
-<div data-scoreboard data-scoreboard-compact="@Compact.ToString().ToLowerInvariant()" data-scoreboard-sport-filter="@(SportFilter ? "true" : null)">
+<div data-scoreboard data-scoreboard-compact="@Compact.ToString().ToLowerInvariant()" data-scoreboard-sport-filter="@(SportFilter ? "true" : null)" data-scoreboard-phone="@(PhoneFront ? "true" : null)">
+    @* The phone front (docs/mobile-refresh-handoff.md) lives inside the panel, so each refresh replaces both copies. *@
+    <div class="@(PhoneFront ? "mx-desktop" : "mx-contents")">
     <p class="updated scoreboard-note">Scores update approximately every 10 minutes. <span>Checks every five minutes while visible.</span></p>
     @if (!Compact)
     {
@@ -24,20 +26,7 @@
             <input type="hidden" name="day" value="@selectedDay.ToString("yyyy-MM-dd")" />
             <label for="scoreboard-show">Show</label>
             <select id="scoreboard-show" name="show" onchange="this.form.requestSubmit()">
-                <option value="">All sports</option>
-                <optgroup label="Leagues">
-                    @foreach (var c in snapshot.Coverage.DistinctBy(c => c.Key).OrderBy(c => c.Sport).ThenBy(c => c.League)) {
-                        <option value="@("c:" + c.Key)" selected="@(selection.Value == "c:" + c.Key)">@CompetitionLabel(c.Sport, c.League)</option>
-                    }
-                </optgroup>
-                @foreach (var kind in new[] { "conference", "team" }) {
-                    var choices = (snapshot.Follows ?? []).Where(f => f.Kind == kind).ToList();
-                    @if (choices.Count > 0) {
-                        <optgroup label="@(kind == "conference" ? "Conferences" : "Teams")">
-                            @foreach (var f in choices) { <option value="@("f:" + f.Id)" selected="@(selection.Value == "f:" + f.Id)">@f.Label</option> }
-                        </optgroup>
-                    }
-                }
+                @ShowOptions
             </select>
             <label for="scoreboard-status">Games</label>
             <select id="scoreboard-status" name="status" onchange="this.form.requestSubmit()">
@@ -92,10 +81,109 @@
         @if (Compact && homeGames.Count > visibleGames.Count) { <p class="updated">Showing @visibleGames.Count of @homeGames.Count games. <a href="@(homeShow.Length == 0 ? "scoreboard" : "scoreboard?show=" + Uri.EscapeDataString(homeShow))">See all games →</a></p> }
     }
     @if (!Compact) { <p class="updated scoreboard-note">Sampled clocks stay fixed between updates. Coverage excludes F1 and unsupported leagues.</p> }
+    </div>
+    @if (PhoneFront)
+    {
+        var games = snapshot.Available ? visibleGames : [];
+        var live = games.Where(g => g.Active).ToList();
+        var upcoming = games.Where(g => g.Status == "upcoming").OrderBy(g => g.StartsAtUtc ?? DateTime.MaxValue).ToList();
+        var leagues = games.GroupBy(g => (g.Sport, g.League)).Select(g => g.ToList()).ToList();
+        // The league with the most live games starts open (ties: the first listed).
+        var opened = leagues.OrderByDescending(g => g.Count(x => x.Active)).FirstOrDefault();
+        <div class="mx-phone">
+            <PhoneRibbon Kicker="@PhoneKicker(games.Count, live.Count, upcoming.Count)" Title="Scoreboard">
+                <Extra>
+                    <nav class="mx-stepper" aria-label="Scoreboard dates">
+                        @if (selectedDay > today.AddDays(-1))
+                        {
+                            <a class="mx-stepper__btn" href="@Href(selectedDay.AddDays(-1))" aria-label="@($"Previous day, {selectedDay.AddDays(-1).ToString("dddd", System.Globalization.CultureInfo.InvariantCulture)}")">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6" /></svg>
+                            </a>
+                        }
+                        else { <span class="mx-stepper__btn" aria-hidden="true"></span> }
+                        <span class="mx-stepper__day">@DayLabel(selectedDay)@if (selectedDay != today) { <a href="@Href(today)">Back to today</a> }</span>
+                        @if (selectedDay < today.AddDays(7))
+                        {
+                            <a class="mx-stepper__btn" href="@Href(selectedDay.AddDays(1))" aria-label="@($"Next day, {selectedDay.AddDays(1).ToString("dddd", System.Globalization.CultureInfo.InvariantCulture)}")">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
+                            </a>
+                        }
+                        else { <span class="mx-stepper__btn" aria-hidden="true"></span> }
+                    </nav>
+                </Extra>
+                <ChildContent>
+                    @* One Sport select; the All / Final choice goes (Final games stay in each league's fold). *@
+                    <form method="get" action="scoreboard" class="mx-ribbon__field">
+                        <input type="hidden" name="day" value="@selectedDay.ToString("yyyy-MM-dd")" />
+                        <label for="scoreboard-show-m">Sport</label>
+                        <select id="scoreboard-show-m" name="show" onchange="this.form.requestSubmit()">@ShowOptions</select>
+                        <noscript><button class="nf-btn nf-btn--secondary" type="submit">Go</button></noscript>
+                    </form>
+                </ChildContent>
+            </PhoneRibbon>
+
+            @if (!snapshot.Available)
+            {
+                <p class="mx-empty">Scores are temporarily unavailable. Please retry.</p>
+            }
+            @if (live.Count > 0)
+            {
+                <section class="mx-block" aria-labelledby="scoreboard-live-m">
+                    <h2 class="mx-live" id="scoreboard-live-m">Live now</h2>
+                    <PhoneScoreTiles Games="@live.Take(4).ToList()" />
+                    @if (live.Count > 4) { <p class="mx-block__note">@(live.Count - 4) more live in the leagues below.</p> }
+                </section>
+            }
+            @if (upcoming.Count > 0)
+            {
+                <PhoneTimeline Heading="Up next" Sub="@($"Times in {Dates.ZoneLabel ?? "local time"}")" Items="@upcoming.Take(5).Select(UpNext).ToList()"
+                               MoreText="Full schedule" MoreHref="events" />
+            }
+            @if (leagues.Count > 0)
+            {
+                <FoldGroup Name="scoreboard-leagues" Heading="By league" Foot="Choose your teams" FootHref="settings#my-teams-heading">
+                    @foreach (var league in leagues)
+                    {
+                        var first = league[0];
+                        var label = CompetitionLabel(first.Sport, first.League);
+                        var show = "c:" + first.Sport + "|" + first.League;
+                        <Fold Title="@label" Gist="@LeagueGist(league)" Color="@PhoneColors.ForSport(first.Sport)" Open="@(league == opened)"
+                              Key="@show" AllHref="@(selection.Value == show ? null : $"scoreboard?day={selectedDay:yyyy-MM-dd}&show={Uri.EscapeDataString(show)}")" AllText="@($"Only {label}")">
+                            @foreach (var game in league)
+                            {
+                                var href = FeedQuery.SafeHref(game.SourceUrl);
+                                var score = PhoneText.Score(game);
+                                @if (href is not null)
+                                {
+                                    <a class="mx-fold__row" href="@href" target="_blank" rel="noopener noreferrer">
+                                        <span><b>@PhoneText.Matchup(game)</b><small>@RowStatus(game)</small></span>
+                                        @if (score is not null) { <span class="mx-fold__value">@score</span> }
+                                    </a>
+                                }
+                                else
+                                {
+                                    <div class="mx-fold__row">
+                                        <span><b>@PhoneText.Matchup(game)</b><small>@RowStatus(game)</small></span>
+                                        @if (score is not null) { <span class="mx-fold__value">@score</span> }
+                                    </div>
+                                }
+                            }
+                        </Fold>
+                    }
+                </FoldGroup>
+            }
+            else if (snapshot.Available)
+            {
+                <p class="mx-empty">@(snapshot.Coverage.Count == 0 ? "No scoreboard coverage is currently enabled." : "No games are stored for this day and sport yet. Coverage may still be updating.")</p>
+            }
+        </div>
+    }
 </div>
 
 @code {
     [Parameter] public bool Compact { get; set; }
+    /// <summary>The full Scoreboard page: also render the folded phone front (only shown below 744px).</summary>
+    [Parameter] public bool PhoneFront { get; set; }
     // Homepage box only: the Sports page uses the same compact box without the Sport filter.
     [Parameter] public bool SportFilter { get; set; }
     // "c:{sport}|{league}"; its own query name keeps it apart from the full page's filters.
@@ -150,6 +238,65 @@
         }
         visibleGames = Compact ? homeGames.Take(6).ToList() : snapshot.Games;
         boxLabels = await BoxScores.AvailableAsync(visibleGames.Where(g => g.Provider == "espn" && g.HasBoxScore).Select(g => new BoxIdentity(g.Sport, g.League, g.EventId)));
+    }
+
+    /// <summary>The Show choices, shared by the desktop filter and the phone ribbon's Sport select.</summary>
+    private RenderFragment ShowOptions => __builder =>
+    {
+        <option value="">All sports</option>
+        <optgroup label="Leagues">
+            @foreach (var c in snapshot.Coverage.DistinctBy(c => c.Key).OrderBy(c => c.Sport).ThenBy(c => c.League)) {
+                <option value="@("c:" + c.Key)" selected="@(selection.Value == "c:" + c.Key)">@CompetitionLabel(c.Sport, c.League)</option>
+            }
+        </optgroup>
+        @foreach (var kind in new[] { "conference", "team" }) {
+            var choices = (snapshot.Follows ?? []).Where(f => f.Kind == kind).ToList();
+            @if (choices.Count > 0) {
+                <optgroup label="@(kind == "conference" ? "Conferences" : "Teams")">
+                    @foreach (var f in choices) { <option value="@("f:" + f.Id)" selected="@(selection.Value == "f:" + f.Id)">@f.Label</option> }
+                </optgroup>
+            }
+        }
+    };
+
+    private string DayLabel(DateOnly day)
+    {
+        var date = day.ToString("ddd, MMM d", System.Globalization.CultureInfo.InvariantCulture);
+        return day == today ? "Today · " + date : day == today.AddDays(-1) ? "Yesterday · " + date : day == today.AddDays(1) ? "Tomorrow · " + date : date;
+    }
+
+    private string PhoneKicker(int games, int live, int upcoming)
+    {
+        if (!snapshot.Available) return "Scores unavailable";
+        if (selectedDay != today) return $"{games} {(games == 1 ? "game" : "games")} · {DayLabel(selectedDay)}";
+        if (live > 0) return $"{live} live now · {upcoming} more today";
+        if (upcoming > 0) return $"{upcoming} {(upcoming == 1 ? "game" : "games")} still to come today";
+        return games > 0 ? $"{games} {(games == 1 ? "game" : "games")} today" : "No games stored today";
+    }
+
+    /// <summary>"5 games · 4 live · Leeds United at Sunderland 11:30 AM".</summary>
+    private string LeagueGist(IReadOnlyList<ScoreboardGame> games)
+    {
+        var parts = new List<string> { $"{games.Count} {(games.Count == 1 ? "game" : "games")}" };
+        var live = games.Count(g => g.Active);
+        if (live > 0) parts.Add($"{live} live");
+        if (games.Where(g => g.Status == "upcoming").OrderBy(g => g.StartsAtUtc ?? DateTime.MaxValue).FirstOrDefault() is { } next)
+            parts.Add($"{PhoneText.Matchup(next)} {PhoneText.Clock(next, Dates)}");
+        else if (live == 0 && games.Count(g => g.Status == "final") is > 0 and var finals)
+            parts.Add(finals == games.Count ? "all final" : $"{finals} final");
+        return string.Join(" · ", parts);
+    }
+
+    /// <summary>A fold row's subline: the live clock, "Final", or the start time and network.</summary>
+    private string RowStatus(ScoreboardGame game) => game.Status == "upcoming"
+        ? string.Join(" · ", new[] { PhoneText.Clock(game, Dates), PhoneText.Network(game.Broadcasts) }.Where(p => !string.IsNullOrEmpty(p)))
+        : PhoneText.Clock(game, Dates);
+
+    private Phone.TimelineItem UpNext(ScoreboardGame game)
+    {
+        var href = FeedQuery.SafeHref(game.SourceUrl);
+        return new(PhoneText.Clock(game, Dates), PhoneText.Matchup(game), CompetitionLabel(game.Sport, game.League),
+            PhoneText.Network(game.Broadcasts), href ?? "scoreboard", PhoneColors.ForSport(game.Sport), External: href is not null);
     }
 
     private RenderFragment GameCard(ScoreboardGame game) => __builder =>

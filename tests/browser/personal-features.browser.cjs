@@ -37,8 +37,13 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
         await page.goto(base + '/');
         await setHomePrefs({ hidden: ['videos'] });
         await page.reload();
-        assert(await page.locator('[data-home-section="videos"]').isHidden());
-        assert(await page.locator('[data-home-grid]').evaluate((e) => e.classList.contains('is-customized')));
+        assert(await page.locator('[data-home-section="videos"]').first().isHidden());
+        assert(
+            await page
+                .locator('[data-home-grid]')
+                .first()
+                .evaluate((e) => e.classList.contains('is-customized')),
+        );
         await page.goto(base + '/news');
         assert.equal(
             await page.locator('[data-news-read], [data-news-mute], .reading-actions, .reading-preferences').count(),

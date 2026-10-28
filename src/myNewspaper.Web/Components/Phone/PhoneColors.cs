@@ -13,6 +13,17 @@ public static class PhoneColors
         _ => "mx-c-world",
     };
 
+    /// <summary>The .mx-c-* color for a sport (a scoreboard sport or a Today &amp; Tonight kind); the league is shown beside it.</summary>
+    public static string ForSport(string? sport) => (sport ?? "").ToLowerInvariant() switch
+    {
+        var s when s.Contains("soccer") || s.Contains("nwsl") || s.Contains("mls") || s.Contains("league") => "mx-c-local",
+        var s when s.Contains("volleyball") => "mx-c-tech",
+        var s when s.Contains("football") || s.Contains("nfl") => "mx-c-business",
+        var s when s.Contains("basketball") => "mx-c-us",
+        var s when s.Contains("baseball") || s.Contains("softball") => "mx-c-gain",
+        _ => "mx-c-world",
+    };
+
     /// <summary>Folds list local news first and opinion last, as in the approved design.</summary>
     public static int Order(string? name) => ForCategory(name) switch
     {

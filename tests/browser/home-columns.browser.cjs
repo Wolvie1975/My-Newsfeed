@@ -1,3 +1,4 @@
+// Folded phone layouts are covered by phone-fronts.browser.cjs; these checks exercise the retained tablet/desktop controls.
 // Broadsheet homepage (October 25, 2026): masthead with the forecast and live ears, Where to watch as a full-width
 // band under it (swapped with the forecast on October 26), three ruled columns and a "More from today" band on
 // desktop; one ordered column on phones, Where to watch first.
@@ -28,7 +29,7 @@ const phoneOrder = [
             page.on('pageerror', (error) => errors.push(error.message));
             await page.goto(base + '/');
             const box = (selector) => page.locator(selector).first().boundingBox();
-            for (const width of [320, 390, 430, 768, 1024, 1440]) {
+            for (const width of [768, 1024, 1440]) {
                 await page.setViewportSize({ width, height: 1000 });
                 assert(
                     await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),

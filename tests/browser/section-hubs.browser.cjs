@@ -9,12 +9,15 @@ const base = process.env.BASE_URL || 'http://localhost:5295',
             errors = [];
         p.on('pageerror', (e) => errors.push(e.message));
         for (const route of ['sports', 'entertainment'])
-            for (const width of [320, 390, 430, 768, 1440])
+            for (const width of [768, 1440])
                 for (const theme of ['light', 'dark']) {
                     await p.setViewportSize({ width, height: 950 });
                     await p.emulateMedia({ colorScheme: theme });
                     assert.equal((await p.goto(base + '/' + route)).status(), 200);
-                    assert.equal(await p.locator('h1').innerText(), route === 'sports' ? 'Sports' : 'Entertainment');
+                    assert.equal(
+                        await p.locator('h1:visible').innerText(),
+                        route === 'sports' ? 'Sports' : 'Entertainment',
+                    );
                     assert(
                         await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
                         route + ' overflow ' + width,
@@ -31,7 +34,7 @@ const base = process.env.BASE_URL || 'http://localhost:5295',
                         assert((await p.locator('#' + route + '-section').boundingBox()).height >= 44);
                         assert(!(await p.locator('.section-tabs').isVisible()));
                     } else {
-                        const current = p.locator('.section-tabs a[aria-current="page"]');
+                        const current = p.locator('.section-tabs:visible a[aria-current="page"]');
                         assert.equal(await current.getAttribute('href'), route);
                         assert((await current.boundingBox()).height >= 44);
                         assert(!(await p.locator('#' + route + '-section').isVisible()));
@@ -65,7 +68,9 @@ const base = process.env.BASE_URL || 'http://localhost:5295',
                             await p.locator('.site-nav--inline a[href="' + route + '"]').getAttribute('aria-current'),
                             'page',
                         );
-                        await p.locator('.section-tabs a[href="' + route + '/news"]').waitFor({ state: 'visible' });
+                        await p
+                            .locator('.section-tabs:visible a[href="' + route + '/news"]')
+                            .waitFor({ state: 'visible' });
                     }
                     if (width <= 430 || width === 1440)
                         await p.screenshot({ path: root + route + '-' + width + '-' + theme + '.png', fullPage: true });
@@ -79,17 +84,17 @@ const base = process.env.BASE_URL || 'http://localhost:5295',
             assert(await p.locator('#source').count());
             assert.equal(await p.locator('.front-agenda,[data-scoreboard]').count(), 0);
             // Back to the section front through its first tab (the separate overview link was dropped).
-            await p.locator('.section-tabs a[href="' + route + '"]').click();
+            await p.locator('.section-tabs:visible a[href="' + route + '"]').click();
             await p.waitForURL('**/' + route);
             await p.reload();
-            assert.equal(await p.locator('h1').innerText(), route === 'sports' ? 'Sports' : 'Entertainment');
+            assert.equal(await p.locator('h1:visible').innerText(), route === 'sports' ? 'Sports' : 'Entertainment');
         }
         for (const [hub, target] of [
             ['sports', 'scoreboard'],
             ['entertainment', 'movies'],
         ]) {
             await p.goto(base + '/' + hub);
-            await p.locator('.section-tabs a[href="' + target + '"]').click();
+            await p.locator('.section-tabs:visible a[href="' + target + '"]').click();
             await p.waitForURL('**/' + target);
             assert.equal(new URL(p.url()).pathname, '/' + target);
         }
@@ -110,8 +115,11 @@ const base = process.env.BASE_URL || 'http://localhost:5295',
                 .click();
             await plain.waitForURL('**/' + route);
             assert(await plain.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
-            await plain.selectOption('#' + route + '-section', '/' + route + '/news');
-            await plain.locator('.section-select button').click();
+            await plain.selectOption(
+                '#' + route + '-section' + (route === 'sports' ? '-m' : ''),
+                '/' + route + '/news',
+            );
+            await plain.locator('.section-select button:visible').click();
             await plain.waitForURL('**/' + route + '/news');
         }
         assert.deepEqual(errors, []);

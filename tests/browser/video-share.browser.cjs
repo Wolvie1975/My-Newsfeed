@@ -31,7 +31,8 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
             const page = await context.newPage();
             const errors = [];
             page.on('pageerror', (e) => errors.push(e.message));
-            for (const route of ['/', '/videos', '/saved', '/news']) {
+            // The folded phone Home links to videos; sharing is exercised on the video page.
+            for (const route of mobile ? ['/videos', '/saved', '/news'] : ['/', '/videos', '/saved', '/news']) {
                 if (route === '/saved')
                     await page.route('**/api/saved', (r) =>
                         r.fulfill({

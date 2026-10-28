@@ -57,11 +57,18 @@
         display: none !important;
     }
     /* Edge to edge: cancel the page's phone padding (public.css: 12px 20px 40px). */
-    .pub .page > .mx-phone {
+    /* The Scoreboard's phone copy sits inside its panel, so the five-minute refresh replaces both copies together. */
+    .pub .page > .mx-phone,
+    .pub .page > [data-scoreboard] > .mx-phone {
         margin: -12px -20px -40px;
         padding-bottom: 24px;
         background: var(--surface);
     }
+}
+
+/* A Home section hidden in Settings (personal.js sets [hidden]) stays hidden whatever its display. */
+.mx-phone [hidden] {
+    display: none !important;
 }
 
 /* ---------------------------------------------------------------- Ribbon */
@@ -102,17 +109,22 @@
     color: inherit;
     overflow-wrap: anywhere;
 }
+/* SectionSelect's own phone rules (broadsheet.css, sections.css) are as specific, so the ribbon repeats .section-nav. */
 .mx-ribbon__field,
-.pub .mx-ribbon .section-select {
+.pub .mx-ribbon .section-nav .section-select {
     display: flex;
+    flex-direction: row;
     align-items: center;
+    max-width: none;
     gap: 10px;
     margin: 0;
 }
-.pub .mx-ribbon .section-tabs {
+/* SectionSelect's desktop tabs */
+.pub .mx-ribbon .section-nav .section-tabs {
     display: none;
-} /* SectionSelect's desktop tabs */
-.pub .mx-ribbon label {
+}
+.pub .mx-ribbon label,
+.pub .mx-ribbon .section-nav .section-select label {
     flex: none;
     margin: 0;
     font-size: 13px;
@@ -120,7 +132,8 @@
     color: var(--mx-ribbon-kicker);
 }
 .pub .mx-ribbon select,
-.pub .mx-ribbon input {
+.pub .mx-ribbon input,
+.pub .mx-ribbon .section-nav .section-select select {
     flex: 1 1 auto;
     min-width: 0;
     width: 100%;
@@ -129,6 +142,7 @@
     font: inherit;
     font-size: 16px;
     font-weight: 700; /* 16px stops iOS zooming on focus */
+    text-align: left;
     color: #141b2b;
     background: #ffffff;
     border: 2px solid #141b2b;
@@ -390,6 +404,9 @@
     color: var(--text-3);
 }
 .mx-timeline__tag {
+    max-width: 84px;
+    text-align: right;
+    overflow-wrap: anywhere;
     font-size: 12px;
     font-weight: 800;
     color: var(--text-2);
@@ -595,4 +612,221 @@
 .mx-c-ink {
     --dot: var(--text);
     --edge: var(--text);
+}
+
+/* ---------------------------------------------------------------- Release 2: Home, Sports, Scoreboard */
+/* Live scores: dark cards on a light band, lighter cards (two across, bigger scores) inside the dark block. */
+.mx-scores {
+    display: grid;
+    grid-template-columns: repeat(var(--mx-score-cols, 3), minmax(0, 1fr));
+    gap: 8px;
+    margin: 6px 0 4px;
+}
+.mx-block .mx-scores {
+    --mx-score-cols: 2;
+    margin: 0;
+}
+.pub .mx-score {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+    min-height: 44px;
+    padding: 10px;
+    border-radius: 12px;
+    background: var(--mx-block-bg);
+    color: var(--mx-block-fg);
+    text-decoration: none;
+}
+.pub .mx-block .mx-score {
+    padding: 12px;
+    background: var(--mx-block-tile);
+}
+.mx-score__top {
+    display: flex;
+    justify-content: space-between;
+    gap: 6px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--mx-block-3);
+}
+.mx-score__top > span:first-child {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.mx-score__clock {
+    flex: none;
+    color: var(--mx-block-accent);
+}
+.mx-score__team {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 600;
+}
+.mx-score__team > span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.mx-score__team b {
+    font-family: var(--mx-serif);
+    font-size: 16px;
+}
+.mx-block .mx-score__team {
+    font-size: 15px;
+}
+.mx-block .mx-score__team b {
+    font-size: 22px;
+}
+/* "Live now" with a red dot (the word carries the meaning). */
+.pub .mx-live {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 12px 0 6px;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--mx-us);
+}
+.mx-live::before {
+    content: '';
+    flex: none;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: currentColor;
+    box-shadow: 0 0 0 4px color-mix(in srgb, currentColor 18%, transparent);
+}
+.pub .mx-block .mx-live {
+    margin: 0;
+    color: #ff8a98;
+}
+.pub .mx-subhead {
+    margin: 14px 0 0;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-2);
+}
+.mx-block__note {
+    margin: 0;
+    font-size: 13px;
+    color: var(--mx-block-2);
+}
+.mx-empty {
+    margin: 0;
+    padding: 20px 16px;
+    font-size: 15px;
+    color: var(--text-2);
+}
+
+/* Home: today's weather as one line of four inside the ribbon. */
+.pub .mx-weather {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+    color: var(--mx-ribbon-fg);
+    text-decoration: none;
+}
+.mx-weather__period {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+    padding: 8px;
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--mx-ribbon-fg) 9%, transparent);
+}
+.mx-weather__name,
+.mx-weather__summary {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.mx-weather__name {
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: var(--mx-ribbon-kicker);
+}
+.mx-weather__temp {
+    font-family: var(--mx-serif);
+    font-size: 22px;
+    font-weight: 800;
+    line-height: 1.1;
+}
+.mx-weather__summary {
+    font-size: 11px;
+}
+
+/* Home: the Where to watch search in place of a select. */
+.mx-ribbon__search {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 0;
+}
+.mx-ribbon__search > div {
+    display: flex;
+    gap: 8px;
+}
+.pub .mx-ribbon__search button {
+    flex: none;
+    min-height: 48px;
+    padding: 0 16px;
+    border: 0;
+    border-radius: 10px;
+    background: #141b2b;
+    color: #ffffff;
+    font: inherit;
+    font-size: 15px;
+    font-weight: 800;
+}
+
+/* Scoreboard: previous day · date · next day, 48px buttons. */
+.mx-stepper {
+    display: grid;
+    grid-template-columns: 48px minmax(0, 1fr) 48px;
+    align-items: center;
+    gap: 8px;
+}
+.pub .mx-stepper__btn {
+    display: grid;
+    place-items: center;
+    min-height: 48px;
+    border: 2px solid #141b2b;
+    border-radius: 10px;
+    background: #ffffff;
+    color: #141b2b;
+}
+span.mx-stepper__btn {
+    visibility: hidden;
+}
+.mx-stepper__day {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    font-size: 16px;
+    font-weight: 800;
+}
+.pub .mx-stepper__day a {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    margin: -10px 0;
+    font-size: 13px;
+    color: var(--mx-ribbon-kicker);
+    text-decoration: underline;
 }

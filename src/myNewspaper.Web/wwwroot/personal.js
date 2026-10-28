@@ -107,11 +107,12 @@
                 'is-customized',
                 p.hidden.length > 0 || JSON.stringify(p.order) !== JSON.stringify(defaults),
             );
-            // The broadsheet layout fixes where each section sits; saved preferences only hide sections.
+            // The broadsheet layout fixes where each section sits; saved preferences only hide sections. Phones have a
+            // second copy of the page (the folded front, its own [data-home-grid]), so every match is hidden.
             defaults.forEach((key) => {
-                const section = grid.querySelector(`[data-home-section="${key}"]`);
-                if (section)
+                document.querySelectorAll(`[data-home-grid] [data-home-section="${key}"]`).forEach((section) => {
                     section.hidden = p.hidden.includes(key) || (key === 'digital' && p.hidden.includes('movies'));
+                });
             });
             grid.querySelectorAll('[data-home-f1]').forEach((section) => (section.hidden = p.hidden.includes('f1')));
             const empty = document.querySelector('[data-home-empty]');

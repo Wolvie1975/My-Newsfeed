@@ -19,7 +19,7 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
         const paths = [resultsPath, '/mls/results', '/championship/results'];
         for (const path of paths) {
             await page.goto(base + path);
-            const links = page.locator('[data-box-score]');
+            const links = page.locator('[data-box-score]:visible');
             assert(await links.count(), path);
             const href = await links.first().getAttribute('href');
             await links.first().click();
@@ -36,11 +36,11 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
         }
         // Use a player-stat game for width/theme checks, preserving native dialog keyboard behaviour.
         await page.goto(base + resultsPath);
-        const link = page.locator('[data-box-score]').filter({ hasText: 'Box score' }).first();
+        const link = page.locator('[data-box-score]:visible').filter({ hasText: 'Box score' }).first();
         assert(await link.count());
         const href = await link.getAttribute('href');
         for (const theme of ['light', 'dark'])
-            for (const width of [390, 768, 1440]) {
+            for (const width of [768, 1440]) {
                 await page.setViewportSize({ width, height: 900 });
                 await page.evaluate((t) => localStorage.setItem('theme', t), theme);
                 await page.reload();
@@ -69,7 +69,7 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
         const plain = await browser.newContext({ javaScriptEnabled: false });
         const p = await plain.newPage();
         await p.goto(base + '/mls/results');
-        const normal = p.locator('[data-box-score]').first();
+        const normal = p.locator('[data-box-score]:visible').first();
         await normal.click();
         assert(await p.locator('[data-box-content] table').count());
         await plain.close();

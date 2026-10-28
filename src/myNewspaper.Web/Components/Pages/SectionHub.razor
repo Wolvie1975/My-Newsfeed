@@ -9,7 +9,8 @@
     <PageHeading Section="entertainment" Title="Entertainment" Eyebrow="Stories, releases and what to watch next" Description="" />
     <EntertainmentFront />
 } else {
-    <PageHeading Section="sports" Title="Sports" Eyebrow="Your daily overview" Description="" />
+    @* Phones: SportsFront's ribbon replaces this heading. *@
+    <div class="mx-desktop"><PageHeading Section="sports" Title="Sports" Eyebrow="Your daily overview" Description="" /></div>
     <SportsFront />
 }
 

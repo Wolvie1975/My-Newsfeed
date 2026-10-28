@@ -12,19 +12,19 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
             for (const width of [360, 390, 1440]) {
                 await page.setViewportSize({ width, height: 950 });
                 await page.goto(base + '/');
-                const card = page.locator('[data-home-section="watch"]');
+                const card = page.locator('[data-home-section="watch"]:visible');
                 await card.waitFor();
                 assert.equal(await page.locator('.personal-links a[href="watch"]').count(), 0);
                 const box = await card.boundingBox();
-                const sports = await page.locator('[data-home-section="sports"]').boundingBox();
+                const sports = await page.locator('[data-home-section="sports"]:visible').boundingBox();
                 assert(box.y + box.height <= sports.y + 1);
                 // Broadsheet: Where to watch comes before the lead story — a full-width band under the masthead from
                 // 744px (October 26), the first card on phones.
-                const lead = await page.locator('[data-home-section="lead"]').boundingBox();
+                const lead = await page.locator('[data-home-section="lead"]:visible').boundingBox();
                 assert(box.y + box.height <= lead.y + 1);
                 if (width >= 744) assert(box.width >= lead.width);
                 assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
-                const input = page.getByLabel('Movie or TV title', { exact: true });
+                const input = card.locator('input[name="q"]');
                 assert.equal(await input.getAttribute('maxlength'), '120');
                 assert(await input.evaluate((n) => n.required));
                 await input.fill('Law & Order');

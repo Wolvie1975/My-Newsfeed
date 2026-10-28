@@ -3,9 +3,11 @@
 @inject FeedDates Dates
 @inject IConfiguration Config
 @inject ILogger<SportsFront> Log
+@inject ScoreboardRepository Scoreboard
 
 @* Sports front page as in the approved concept: today's scores across the top, then upcoming games, the lead story and
    headlines, and a side column of Big 12 football standings and the AP Top 25. Phones get the same sections as cards. *@
+<div class="mx-desktop">
 <div class="ef spf">
     <section class="spf-scores" aria-labelledby="spf-scores-title">
         <div class="ef-head"><h2 id="spf-scores-title">Today’s scores</h2><a href="scoreboard">Full scoreboard <span aria-hidden="true">→</span></a></div>
@@ -139,6 +141,133 @@
         </aside>
     </div>
 </div>
+</div>
+
+@* Phones: the folded Sports front (docs/mobile-refresh-handoff.md), from the same data. *@
+<div class="mx-phone">
+    <PhoneRibbon Kicker="@($"{Dates.TodayLabel(nowUtc)}{(live.Count > 0 ? $" · {live.Count} live now" : "")}")" Title="Sports">
+        <SectionSelect Id="sports-section-m" Label="Section" Choices="@SectionChoices.Sports" MatchPrefix="true" AlwaysSelect="true" />
+    </PhoneRibbon>
+
+    @if (stories.Count > 0)
+    {
+        var lead = stories[0];
+        <article class="mx-block" aria-label="Lead story">
+            @if (FeedQuery.SafeHref(lead.ImageUrl) is { } image)
+            {
+                <div class="mx-block__media"><img src="@image" alt="" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()" /></div>
+            }
+            <span class="mx-block__kicker">@string.Join(" · ", new[] { lead.CategoryName ?? "Sports", Source(lead), lead.Undated ? null : Dates.Time(lead.Date) }.Where(p => !string.IsNullOrEmpty(p)))</span>
+            <h2 class="mx-block__title"><StoryLink Item="lead" /></h2>
+            <div class="mx-block__actions">
+                <SaveButton Item="lead" Title="@Title(lead)" Source="@Source(lead)" Summary="@FeedText.StripEmoji(FeedQuery.Excerpt(lead.Description))" Labelled="true" />
+                <ShareButton Url="@lead.Url" Title="@Title(lead)" Labelled="true" />
+            </div>
+        </article>
+    }
+    else if (newsUnavailable)
+    {
+        <p class="mx-empty" role="status">Headlines are temporarily unavailable. Please try again.</p>
+    }
+
+    @if (live.Count > 0 || upcoming.Count > 0)
+    {
+        <PhoneTimeline Heading="Today’s games" Sub="@(board.Count > 0 ? $"{board.Count} {(board.Count == 1 ? "game" : "games")}" : null)"
+                       Items="@upcoming.Take(5).Select(UpNext).ToList()" MoreText="Full scoreboard and schedule" MoreHref="scoreboard">
+            @if (live.Count > 0)
+            {
+                <h3 class="mx-live">Live now</h3>
+                <PhoneScoreTiles Games="@live.Take(3).ToList()" />
+            }
+            @if (live.Count > 0 && upcoming.Count > 0) { <h3 class="mx-subhead">Up next</h3> }
+        </PhoneTimeline>
+    }
+
+    @if (stories.Count > 1)
+    {
+        <section class="mx-section" aria-labelledby="sports-top-m">
+            <div class="mx-head"><h2 id="sports-top-m">Top sports headlines</h2><a href="sports/news">All headlines →</a></div>
+            <ol class="mx-top">
+                @foreach (var (item, i) in stories.Skip(1).Take(3).Select((s, i) => (s, i)))
+                {
+                    <li class="@PhoneColors.ForSport(item.CategoryName)">
+                        <span class="mx-top__n" aria-hidden="true">@(i + 1)</span>
+                        <span><span class="mx-top__title"><StoryLink Item="item" /></span><span class="mx-top__meta">@string.Join(" · ", new[] { Source(item), item.CategoryName }.Where(p => !string.IsNullOrEmpty(p)))</span></span>
+                        <SaveButton Item="item" Title="@Title(item)" Source="@Source(item)" Summary="@FeedText.StripEmoji(FeedQuery.Excerpt(item.Description))" />
+                    </li>
+                }
+            </ol>
+        </section>
+    }
+
+    <FoldGroup Name="sports-more" Heading="More in Sports" Foot="Choose your teams" FootHref="settings#my-teams-heading">
+        @{ var first = true; }
+        @if (standingsGroup is { } table && standingsSource is { } standingsTable && table.Teams.Count > 0)
+        {
+            var columns = table.Columns.Take(3).ToList();
+            var leader = table.Teams[0];
+            <Fold Title="@($"{standingsTable.DisplayName} standings")" Color="mx-c-world" Open="@first" AllHref="@($"standings?sourceId={standingsTable.Id}")" AllText="All standings"
+                  Gist="@($"{leader.Row.TeamName} leads{(columns.Count > 0 ? " at " + StandingsQuery.StatisticValue(leader, columns[0].Name) : "")}")">
+                @foreach (var team in table.Teams.Take(5))
+                {
+                    <div class="mx-fold__row">
+                        <span><b>@team.Row.TeamName</b><small>@string.Join(" · ", columns.Skip(1).Select((c, i) => $"{ColumnLabel(columns, i + 1)} {StandingsQuery.StatisticValue(team, c.Name)}"))</small></span>
+                        @if (columns.Count > 0) { <span class="mx-fold__value">@StandingsQuery.StatisticValue(team, columns[0].Name)</span> }
+                    </div>
+                }
+            </Fold>
+            first = false;
+        }
+        @if (rankings.Teams.Count > 0)
+        {
+            var top = rankings.Teams[0];
+            var riser = rankings.Teams.Where(t => t.PreviousRank > t.Rank).OrderByDescending(t => t.PreviousRank - t.Rank).FirstOrDefault();
+            <Fold Title="@(rankings.Poll?.PollName ?? "Top 25")" Color="mx-c-world" Open="@first" AllHref="rankings" AllText="All rankings"
+                  Gist="@($"{top.TeamName} No. {top.Rank}{(riser is null ? "" : $" · {riser.TeamName} up {riser.PreviousRank - riser.Rank} to No. {riser.Rank}")}")">
+                @foreach (var team in rankings.Teams.Take(5))
+                {
+                    <div class="mx-fold__row">
+                        <span><b>@team.TeamName</b><small>@string.Join(" · ", new[] { team.Record, MoveWords(team), team.IsBig12 == true ? "Big 12" : null }.Where(p => !string.IsNullOrEmpty(p)))</small></span>
+                        <span class="mx-fold__value">@team.Rank</span>
+                    </div>
+                }
+            </Fold>
+            first = false;
+        }
+        @if (f1Race is { } race)
+        {
+            var grandPrix = F1Query.Sessions(race).Last();
+            var leaderDriver = f1.Drivers.FirstOrDefault();
+            <Fold Title="F1" Color="mx-c-us" Open="@first" AllHref="f1" AllText="F1 schedule and standings"
+                  Gist="@($"{race.RaceName} {race.RaceDate.ToString("MMM d", System.Globalization.CultureInfo.InvariantCulture)}{(leaderDriver is null ? "" : $" · {leaderDriver.FamilyName} leads")}")">
+                <div class="mx-fold__row">
+                    <span><b>@race.RaceName</b><small>@race.CircuitName · @race.RaceDate.ToString("ddd, MMM d", System.Globalization.CultureInfo.InvariantCulture)</small></span>
+                    @if (grandPrix.StartsUtc is { } starts) { <span class="mx-fold__value">@Dates.Time(starts)</span> }
+                </div>
+                @foreach (var driver in f1.Drivers.Take(2))
+                {
+                    <div class="mx-fold__row">
+                        <span><b>@driver.GivenName @driver.FamilyName</b><small>@driver.Wins @(driver.Wins == 1 ? "win" : "wins")</small></span>
+                        <span class="mx-fold__value">@F1Query.Points(driver.Points)</span>
+                    </div>
+                }
+            </Fold>
+            first = false;
+        }
+        @if (stories.Count > 4)
+        {
+            <Fold Title="More headlines" Color="mx-c-ink" Open="@first" AllHref="sports/news" AllText="All sports headlines"
+                  Gist="@string.Join(" · ", stories.Skip(4).Take(2).Select(Title))">
+                @foreach (var item in stories.Skip(4))
+                {
+                    <a class="mx-fold__row" href="@(FeedQuery.SafeHref(item.Url) ?? "sports/news")" target="_blank" rel="noopener noreferrer">
+                        <span><b>@Title(item)</b><small>@Source(item)</small></span>
+                    </a>
+                }
+            </Fold>
+        }
+    </FoldGroup>
+</div>
 
 @code {
     private IReadOnlyList<FeedItem> stories = [];
@@ -147,10 +276,15 @@
     private StandingGroup? standingsGroup;
     private RankingsPage rankings = new([], null, null, []);
     private bool newsUnavailable;
+    private DateTime nowUtc;
+    private IReadOnlyList<myNewspaper.Web.Data.ScoreboardGame> board = [];
+    private IReadOnlyList<myNewspaper.Web.Data.ScoreboardGame> live = [];
+    private F1Page f1 = F1Page.Empty;
+    private myNewspaper.Web.Data.Models.F1Race? f1Race;
 
     protected override async Task OnParametersSetAsync()
     {
-        var nowUtc = DateTime.UtcNow;
+        nowUtc = DateTime.UtcNow;
         var today = Dates.TodayAt(nowUtc);
         newsUnavailable = false;
         await using var db = await Factory.CreateDbContextAsync();
@@ -186,7 +320,29 @@
         try { rankings = await RankingsQuery.GetAsync(db, null, Log, today); }
         catch (Exception ex) when (DataFailures.IsReadFailure(ex))
         { rankings = new([], null, null, []); Log.LogError(ex, "Could not read sports front rankings."); }
+
+        // Phones: live scores for the Today's games band, and the next F1 round for its fold. The scoreboard read
+        // reports its own failures; F1 just drops its fold.
+        board = (await Scoreboard.ReadAsync(today, carryOver: true)).Games;
+        live = board.Where(g => g.Active).ToList();
+        try
+        {
+            f1 = await F1Query.GetAsync(db, "standings");
+            f1Race = f1.Races.FirstOrDefault(r => F1Query.Upcoming(r, Dates, today));
+        }
+        catch (Exception ex) when (DataFailures.IsReadFailure(ex))
+        { f1 = F1Page.Empty; f1Race = null; Log.LogError(ex, "Could not read sports front F1."); }
     }
+
+    private static string Source(FeedItem item) => FeedText.SourceName(item.SourceLabel, item.SourceUrl);
+
+    private TimelineItem UpNext(TonightItem item) => new(item.StartsUtc is { } starts ? Dates.Time(starts) : item.TimeLabel,
+        PhoneText.Matchup(item), item.Kind, item.Tv, item.Url ?? "events", PhoneColors.ForSport(item.Kind), External: item.Url is not null);
+
+    private static string? MoveWords(myNewspaper.Web.Data.Models.SportsRankingTeam team) =>
+        team.PreviouslyUnranked ? "new"
+        : team.PreviousRank is { } previous && team.Rank is { } rank && previous != rank
+            ? previous > rank ? $"up {previous - rank}" : $"down {rank - previous}" : null;
 
     /// <summary>College tables repeat "W-L" for conference and overall records; the compact table names them.</summary>
     private static string ColumnLabel(IReadOnlyList<StandingColumn> columns, int index)

@@ -1833,12 +1833,17 @@ a.tvc-row__show:hover {
         align-items: center;
         column-gap: 20px;
     }
-    :root:is([data-color-scheme], :not([data-color-scheme])) .pub [data-scoreboard-compact='false'] > * {
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        [data-scoreboard-compact='false']
+        > :is(.mx-desktop, .mx-contents)
+        > * {
         grid-column: 1 / -1;
     }
     :root:is([data-color-scheme], :not([data-color-scheme]))
         .pub
         [data-scoreboard-compact='false']
+        > :is(.mx-desktop, .mx-contents)
         > .scoreboard-dates {
         grid-column: 1;
         display: flex;
@@ -1849,6 +1854,7 @@ a.tvc-row__show:hover {
     :root:is([data-color-scheme], :not([data-color-scheme]))
         .pub
         [data-scoreboard-compact='false']
+        > :is(.mx-desktop, .mx-contents)
         > .scoreboard-filter {
         grid-column: 2;
         justify-content: flex-end;

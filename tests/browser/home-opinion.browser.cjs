@@ -1,3 +1,4 @@
+// Folded phone layouts are covered by phone-fronts.browser.cjs; these checks exercise the retained tablet/desktop controls.
 const assert = require('node:assert/strict'),
     { chromium } = require('playwright');
 const base = process.env.BASE_URL || 'http://localhost:5295',
@@ -24,7 +25,7 @@ async function mockSaved(p) {
         await mockSaved(p);
         const errors = [];
         p.on('pageerror', (e) => errors.push(e.message));
-        for (const width of [320, 390, 430, 768, 1440])
+        for (const width of [768, 1440])
             for (const theme of ['light', 'dark']) {
                 await p.setViewportSize({ width, height: 1000 });
                 await p.emulateMedia({ colorScheme: theme });
@@ -85,7 +86,7 @@ async function mockSaved(p) {
         await p.evaluate(() => localStorage.setItem('mynewsfeed-personal-v1', JSON.stringify({ hidden: ['opinion'] })));
         await p.reload();
         assert(await p.locator('[data-home-opinion]').evaluate((n) => n.hidden));
-        const plain = await b.newPage({ javaScriptEnabled: false, viewport: { width: 320, height: 1000 } });
+        const plain = await b.newPage({ javaScriptEnabled: false, viewport: { width: 820, height: 1000 } });
         await plain.goto(base + '/');
         const readOnly = plain.locator('[data-home-opinion]');
         assert.equal(await readOnly.locator('[data-opinion-article]').count(), 1);
@@ -93,7 +94,7 @@ async function mockSaved(p) {
         assert.equal(new URL(plain.url()).pathname, '/news');
         assert.equal(await plain.locator('#category option:checked').innerText(), 'Opinion');
         assert((await plain.locator('#source option').count()) > 1);
-        const rotating = await b.newPage({ viewport: { width: 390, height: 1000 } });
+        const rotating = await b.newPage({ viewport: { width: 820, height: 1000 } });
         await mockSaved(rotating);
         await rotating.clock.install();
         let requests = 0;

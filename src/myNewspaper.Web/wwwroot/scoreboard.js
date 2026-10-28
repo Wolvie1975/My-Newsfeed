@@ -44,6 +44,7 @@
                 const query = new URLSearchParams(location.search);
                 query.set('compact', panel.dataset.scoreboardCompact);
                 if (panel.dataset.scoreboardSportFilter) query.set('sportFilter', 'true');
+                if (panel.dataset.scoreboardPhone) query.set('phone', 'true');
                 try {
                     const response = await fetch('/scoreboard/fragment?' + query, {
                         cache: 'no-store',
@@ -67,6 +68,14 @@
                             .filter((game) => game.querySelector('.scoreboard-info')?.open)
                             .map((game) => game.dataset.scoreboardKey),
                     );
+                    // The phone front's folds stay as the reader left them.
+                    const folds = [...panel.querySelectorAll('.mx-fold[data-fold-key]')];
+                    if (folds.length) {
+                        const open = folds.filter((fold) => fold.open).map((fold) => fold.dataset.foldKey);
+                        next.querySelectorAll('.mx-fold[data-fold-key]').forEach((fold) => {
+                            fold.open = open.includes(fold.dataset.foldKey);
+                        });
+                    }
                     next.querySelectorAll('[data-scoreboard-key]').forEach((game) => {
                         const info = game.querySelector('.scoreboard-info');
                         if (info && expanded.has(game.dataset.scoreboardKey)) info.open = true;

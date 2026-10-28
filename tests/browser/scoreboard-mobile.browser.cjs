@@ -1,3 +1,4 @@
+// Folded phone layouts are covered by phone-fronts.browser.cjs; these checks exercise the retained tablet/desktop controls.
 const assert = require('node:assert/strict'),
     { chromium } = require('playwright');
 const base = process.env.BASE_URL || 'http://localhost:5295';
@@ -8,7 +9,7 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
             const p = await b.newPage({ javaScriptEnabled: js });
             const errors = [];
             p.on('pageerror', (e) => errors.push(e.message));
-            for (const width of [320, 375, 390, 430, 743, 744, 768, 1440])
+            for (const width of [744, 768, 1440])
                 for (const theme of ['light', 'dark']) {
                     await p.setViewportSize({ width, height: 1000 });
                     await p.emulateMedia({ colorScheme: theme });
@@ -37,8 +38,8 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
                         );
                         await p.reload();
                     }
-                    const today = await p.locator('[data-home-section="sports"]').boundingBox(),
-                        scores = await p.locator('[data-home-section="scoreboard"]').boundingBox();
+                    const today = await p.locator('section[data-home-section="sports"]').boundingBox(),
+                        scores = await p.locator('section[data-home-section="scoreboard"]').boundingBox();
                     assert(today.y <= scores.y, 'Today & Tonight must precede Scoreboard');
                     assert(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
                 }

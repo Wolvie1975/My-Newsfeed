@@ -7,6 +7,7 @@
 @inject ILogger<Home> Log
 @inject ScoreboardRepository Scoreboard
 @inject LocalWeather Weather
+@using myNewspaper.Web.Components.Feed
 
 <PageTitle>Home · myNewspaper</PageTitle>
 
@@ -21,6 +22,7 @@
 
 <p class="empty" data-home-empty hidden>All home sections are hidden. <button type="button" data-home-reset class="nf-btn nf-btn--secondary">Restore default homepage</button></p>
 <p class="updated" data-personal-status role="status"></p>
+<div class="mx-desktop">
 <div class="bs-home" data-home-grid>
 
     <div class="bs-masthead">
@@ -380,6 +382,186 @@
         </div>
     </div>
 </div>
+</div>
+
+@* Phones: the folded front (docs/mobile-refresh-handoff.md), from the same data. Its sections carry the same
+   data-home-section keys, so a section hidden in Settings disappears here too. *@
+<div class="mx-phone" data-home-grid>
+    <PhoneRibbon Kicker="@($"{Dates.TodayAt(nowUtc).ToString("ddd, MMM d", System.Globalization.CultureInfo.InvariantCulture)} · Kansas City edition")" Title="@Dates.Greeting(nowUtc)">
+        <Extra>
+            @if (weather is { Periods.Count: > 0 } forecast)
+            {
+                <a class="mx-weather" href="local">
+                    <span class="sr-only">Kansas City weather:</span>
+                    @foreach (var period in forecast.Periods.Take(4))
+                    {
+                        <span class="mx-weather__period"><span class="mx-weather__name">@ShortPeriod(period.Name)</span><b class="mx-weather__temp">@period.Temperature°</b><span class="mx-weather__summary">@period.Summary</span></span>
+                    }
+                </a>
+            }
+        </Extra>
+        <ChildContent>
+            <form method="get" action="watch" class="mx-ribbon__search" role="search" aria-label="Where to watch search" data-home-section="watch">
+                <label for="home-watch-query-m">Where to watch</label>
+                <div>
+                    <input id="home-watch-query-m" name="q" type="search" maxlength="120" placeholder="Movie or TV show…" required />
+                    <button type="submit">Search</button>
+                </div>
+            </form>
+        </ChildContent>
+    </PhoneRibbon>
+
+    @if (lead.Article is { } top)
+    {
+        <article class="mx-block" aria-label="Top story" data-home-section="lead">
+            @if (FeedQuery.SafeHref(top.ImageUrl) is { } image)
+            {
+                <div class="mx-block__media"><img src="@image" alt="" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()" /></div>
+            }
+            <span class="mx-block__kicker">@string.Join(" · ", new[] { "Top story", Source(top), top.Undated ? null : Dates.Time(top.Date) }.Where(p => !string.IsNullOrEmpty(p)))</span>
+            <h2 class="mx-block__title"><StoryLink Item="top" /></h2>
+            <div class="mx-block__actions">
+                <SaveButton Item="top" Title="@Title(top)" Source="@Source(top)" Summary="@FeedText.StripEmoji(FeedQuery.Excerpt(top.Description))" Labelled="true" />
+                <ShareButton Url="@top.Url" Title="@Title(top)" Labelled="true" />
+            </div>
+        </article>
+    }
+
+    @{ var upNext = tonight.Where(i => i.StartsUtc is null || i.StartsUtc > nowUtc).Take(6).ToList(); }
+    @if (liveGames.Count > 0 || upNext.Count > 0)
+    {
+        <div data-home-section="sports">
+            <PhoneTimeline Heading="Today &amp; Tonight" Sub="@(tonight.Count > 0 ? $"{tonight.Count} {(tonight.Count == 1 ? "game" : "games")}" : null)"
+                           Items="@upNext.Select(UpNext).ToList()" MoreText="All games and schedules" MoreHref="events">
+                @if (liveGames.Count > 0)
+                {
+                    <h3 class="mx-live">Live now</h3>
+                    <PhoneScoreTiles Games="liveGames" />
+                }
+                @if (liveGames.Count > 0 && upNext.Count > 0) { <h3 class="mx-subhead">Up next</h3> }
+            </PhoneTimeline>
+        </div>
+    }
+
+    @if (headlineStories.Count > 0)
+    {
+        <section class="mx-section" aria-labelledby="home-headlines-m" data-home-section="news">
+            <div class="mx-head"><h2 id="home-headlines-m">Headlines</h2><a href="news">View all →</a></div>
+            <ol class="mx-top">
+                @foreach (var (item, i) in headlineStories.Take(3).Select((s, i) => (s, i)))
+                {
+                    <li class="@PhoneColors.ForCategory(item.CategoryName)">
+                        <span class="mx-top__n" aria-hidden="true">@(i + 1)</span>
+                        <span><span class="mx-top__title"><StoryLink Item="item" /></span><span class="mx-top__meta">@string.Join(" · ", new[] { Source(item), item.CategoryName }.Where(p => !string.IsNullOrEmpty(p)))</span></span>
+                        <SaveButton Item="item" Title="@Title(item)" Source="@Source(item)" Summary="@FeedText.StripEmoji(FeedQuery.Excerpt(item.Description))" />
+                    </li>
+                }
+            </ol>
+        </section>
+    }
+
+    <FoldGroup Name="home-more" Heading="More today" Foot="Choose what’s on your home page" FootHref="settings">
+        @if (sportsStories.Count > 0)
+        {
+            <Fold Title="Sports" Section="sports-news" Color="mx-c-business" Open="true" AllHref="sports/news" AllText="All sports headlines"
+                  Gist="@string.Join(" · ", sportsStories.Take(2).Select(Title))">
+                @foreach (var item in sportsStories.Take(3)) { @StoryRow(item) }
+            </Fold>
+        }
+        @if (boardGames.Count > 0)
+        {
+            var liveNow = boardGames.Where(g => g.Active).ToList();
+            var shown = liveNow.Concat(boardGames.Where(g => g.Status == "upcoming")).Concat(boardGames.Where(g => !g.Active && g.Status != "upcoming")).Take(4);
+            <Fold Title="Scoreboard" Section="scoreboard" Color="mx-c-us" AllHref="scoreboard" AllText="Every score"
+                  Gist="@(liveNow.FirstOrDefault() is { } first ? $"{liveNow.Count} live now · {PhoneText.Matchup(first)} {PhoneText.Score(first)}" : $"{boardGames.Count} {(boardGames.Count == 1 ? "game" : "games")} today")">
+                @foreach (var game in shown)
+                {
+                    <a class="mx-fold__row" href="scoreboard">
+                        <span><b>@PhoneText.Matchup(game)</b><small>@ScoreboardPanel.CompetitionLabel(game.Sport, game.League) · @PhoneText.Clock(game, Dates)</small></span>
+                        @if (PhoneText.Score(game) is { } score) { <span class="mx-fold__value">@score</span> }
+                    </a>
+                }
+            </Fold>
+        }
+        @if (homeRankings.Teams.Count > 0)
+        {
+            var poll = homeRankings.Poll?.PollName ?? "Top 25";
+            var big12 = homeRankings.Teams.FirstOrDefault(t => t.IsBig12 == true);
+            <Fold Title="Top 25" Section="rankings" Color="mx-c-world" AllHref="rankings" AllText="All 25"
+                  Gist="@($"{homeRankings.Teams[0].TeamName} No. {homeRankings.Teams[0].Rank}{(big12 is null || big12 == homeRankings.Teams[0] ? "" : $" · {big12.TeamName} No. {big12.Rank}")}")">
+                @foreach (var team in homeRankings.Teams.Take(3))
+                {
+                    <a class="mx-fold__row" href="rankings">
+                        <span><b>@team.TeamName</b><small>@string.Join(" · ", new[] { poll, team.Record, team.IsBig12 == true ? "Big 12" : null }.Where(p => !string.IsNullOrEmpty(p)))</small></span>
+                        <span class="mx-fold__value">@team.Rank</span>
+                    </a>
+                }
+            </Fold>
+        }
+        @if (entertainmentStories.Count > 0)
+        {
+            <Fold Title="Entertainment" Section="entertainment-news" Color="mx-c-tech" AllHref="entertainment/news" AllText="All entertainment headlines"
+                  Gist="@string.Join(" · ", entertainmentStories.Take(2).Select(Title))">
+                @foreach (var item in entertainmentStories.Take(3)) { @StoryRow(item) }
+            </Fold>
+        }
+        @if (homeBoxOffice.Count > 0)
+        {
+            <Fold Title="Box office" Section="forecasts" Color="mx-c-tech" AllHref="box-office" AllText="Box office"
+                  Gist="@($"{homeBoxOffice[0].Title}, {Money(homeBoxOffice[0].WeekendGross)}")">
+                @foreach (var movie in homeBoxOffice.Take(3))
+                {
+                    <a class="mx-fold__row" href="box-office"><span><b>@movie.Title</b><small>No. @movie.Rank · weekend</small></span><span class="mx-fold__value">@Money(movie.WeekendGross)</span></a>
+                }
+            </Fold>
+        }
+        else if (homeForecasts.Movies.Where(m => m.Kind == BoxOfficeForecastQuery.Preview).ToList() is { Count: > 0 } previews)
+        {
+            <Fold Title="Box office" Section="forecasts" Color="mx-c-tech" AllHref="box-office" AllText="Forecasts"
+                  Gist="@($"This weekend: {previews[0].Title}, {Money(previews[0].Low)}–{Money(previews[0].High)}")">
+                @foreach (var movie in previews.Take(3))
+                {
+                    <a class="mx-fold__row" href="box-office"><span><b>@movie.Title</b><small>Forecast · this weekend</small></span><span class="mx-fold__value">@Money(movie.Low)–@Money(movie.High)</span></a>
+                }
+            </Fold>
+        }
+        @if (videos.Count > 0)
+        {
+            <Fold Title="Videos" Section="videos" Color="mx-c-local" AllHref="videos" AllText="YouTube"
+                  Gist="@($"{videos.Count} new from {videos.Select(v => v.ChannelId).Distinct().Count()} channels")">
+                @foreach (var video in videos.Take(3))
+                {
+                    <a class="mx-fold__row" href="@(FeedQuery.SafeHref(video.Url) ?? "videos")" target="_blank" rel="noopener noreferrer">
+                        <span><b>@video.Title</b><small>@video.ChannelName</small></span>
+                    </a>
+                }
+            </Fold>
+        }
+        @{
+            var screens = episodes.Take(2).Select(e => (Title: e.SeriesTitle, Sub: string.Join(" · ", new[] { "Tonight", e.StartsUtc is { } t ? Dates.Time(t) : null, e.Platform }.Where(p => !string.IsNullOrEmpty(p))), Href: "tv"))
+                .Concat((ShowTheatrical ? movies : []).Take(1).Select(m => (Title: m.Title, Sub: "Friday · In theaters", Href: "movies?type=theatrical")))
+                .Concat(digitalMovies.Take(1).Select(m => (Title: m.Title, Sub: string.Join(" · ", new[] { m.Date?.ToString("ddd, MMM d", System.Globalization.CultureInfo.InvariantCulture), "Digital" }.Where(p => !string.IsNullOrEmpty(p))), Href: "movies/digital")))
+                .ToList();
+        }
+        @if (screens.Count > 0)
+        {
+            <Fold Title="Coming to screens" Section="tv" Color="mx-c-us" AllHref="tv" AllText="TV and releases"
+                  Gist="@string.Join(" · ", screens.Take(2).Select(s => s.Title))">
+                @foreach (var screen in screens)
+                {
+                    <a class="mx-fold__row" href="@screen.Href"><span><b>@screen.Title</b><small>@screen.Sub</small></span></a>
+                }
+            </Fold>
+        }
+        @if (opinion.Article is { } column)
+        {
+            <Fold Title="Opinion" Section="opinion" Color="mx-c-ink" AllHref="@(opinion.CategoryId is { } id ? $"news?category={id}" : "news")" AllText="All opinion"
+                  Gist="@($"{Source(column)} · {Title(column)}")">
+                @StoryRow(column)
+            </Fold>
+        }
+    </FoldGroup>
+</div>
 
 @code {
     // Masthead Live now line, away @ home: "Bruins 3 @ Hurricanes 1"; before the start "Kings @ Rangers"; "vs" at a
@@ -484,6 +666,7 @@
 
         // Masthead ear: what is live, otherwise what starts next. The scoreboard read reports failures itself.
         var board = await Scoreboard.ReadAsync(Dates.TodayAt(nowUtc), carryOver: true);
+        boardGames = board.Games;
         liveGames = board.Games.Where(g => g.Active).Take(3).ToList();
         upcomingGames = board.Games.Where(g => g.Status == "upcoming").Take(3).ToList();
 
@@ -497,6 +680,36 @@
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or OperationCanceledException or System.Text.Json.JsonException or InvalidOperationException)
         { Log.LogWarning(ex, "Home forecast unavailable."); }
     }
+
+    private IReadOnlyList<ScoreboardGame> boardGames = [];
+
+    private static string Title(FeedItem item) => FeedText.StripEmoji(item.Title) is { Length: > 0 } t ? t : item.Title;
+    private static string Source(FeedItem item) => FeedText.SourceName(item.SourceLabel, item.SourceUrl);
+
+    private RenderFragment StoryRow(FeedItem item) => __builder =>
+    {
+        <a class="mx-fold__row" href="@(FeedQuery.SafeHref(item.Url) ?? "news")" target="_blank" rel="noopener noreferrer">
+            <span><b>@Title(item)</b><small>@string.Join(" · ", new[] { Source(item), item.CategoryName }.Where(p => !string.IsNullOrEmpty(p)))</small></span>
+        </a>
+    };
+
+    private myNewspaper.Web.Components.Phone.TimelineItem UpNext(TonightItem item) => new(
+        item.StartsUtc is { } starts ? Dates.Time(starts) : item.TimeLabel, PhoneText.Matchup(item), item.Kind, item.Tv,
+        item.Url ?? "events", PhoneColors.ForSport(item.Kind), External: item.Url is not null);
+
+    /// <summary>"This Afternoon" reads as "Today", "Thursday Night" as "Thu night", so four fit across a phone.</summary>
+    private static string ShortPeriod(string name) => name switch
+    {
+        "This Afternoon" or "This Morning" or "Today" => "Today",
+        _ when name.EndsWith(" Night", StringComparison.Ordinal) && name.Length > 9 => name[..3] + " night",
+        "Monday" or "Tuesday" or "Wednesday" or "Thursday" or "Friday" or "Saturday" or "Sunday" => name[..3],
+        _ => name,
+    };
+
+    /// <summary>"$19.5M", "$850K".</summary>
+    private static string Money(long dollars) => dollars >= 1_000_000
+        ? "$" + (dollars / 1_000_000m).ToString(dollars >= 100_000_000 ? "0" : "0.0", System.Globalization.CultureInfo.InvariantCulture) + "M"
+        : "$" + (dollars / 1_000m).ToString("0", System.Globalization.CultureInfo.InvariantCulture) + "K";
 
     private const int HomeNewsCount = 15;
     private const int HomeShelfCount = 4;

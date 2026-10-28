@@ -1,0 +1,20 @@
+@using myNewspaper.Web.Data
+@inject FeedDates Dates
+@* Live games as small score cards: dark cards on a light band, or lighter ones inside the dark block. *@
+<div class="mx-scores">
+    @foreach (var game in Games)
+    {
+        var href = FeedQuery.SafeHref(game.SourceUrl) ?? "scoreboard";
+        var external = FeedQuery.SafeHref(game.SourceUrl) is not null;
+        <a class="mx-score" href="@href" target="@(external ? "_blank" : null)" rel="@(external ? "noopener noreferrer" : null)"
+           aria-label="@($"{ScoreboardPanel.CompetitionLabel(game.Sport, game.League)}, {PhoneText.Clock(game, Dates)}: {game.AwayName} {ScoreboardGame.Score(game.AwayScore)}, {game.HomeName} {ScoreboardGame.Score(game.HomeScore)}")">
+            <span class="mx-score__top" aria-hidden="true"><span>@ScoreboardPanel.CompetitionLabel(game.Sport, game.League)</span><span class="mx-score__clock">@PhoneText.Clock(game, Dates)</span></span>
+            <span class="mx-score__team" aria-hidden="true"><span>@game.AwayName</span><b>@ScoreboardGame.Score(game.AwayScore)</b></span>
+            <span class="mx-score__team" aria-hidden="true"><span>@game.HomeName</span><b>@ScoreboardGame.Score(game.HomeScore)</b></span>
+        </a>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<ScoreboardGame> Games { get; set; } = [];
+}

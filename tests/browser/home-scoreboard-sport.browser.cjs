@@ -1,3 +1,4 @@
+// Folded phone layouts are covered by phone-fronts.browser.cjs; these checks exercise the retained tablet/desktop controls.
 // Homepage scoreboard box: the Sport dropdown lists today's leagues, filters in place without moving the page, survives
 // the five-minute refresh and bookmarks, and works without JavaScript.
 const { chromium } = require('playwright');
@@ -13,7 +14,7 @@ const shots = process.env.SCREENSHOT_DIR || 'test-results/';
 
         // The Sports page shares the compact box but has no Sport filter, ignores the homepage's parameter, and stays
         // unfiltered after its own refresh.
-        const sports = await browser.newPage({ viewport: { width: 390, height: 900 } });
+        const sports = await browser.newPage({ viewport: { width: 820, height: 900 } });
         await sports.goto(base + '/sports?scoreboardShow=' + encodeURIComponent('c:hockey|nhl'));
         const sportsBox = sports.locator('[data-scoreboard]').first();
         await sportsBox.waitFor();
@@ -37,7 +38,7 @@ const shots = process.env.SCREENSHOT_DIR || 'test-results/';
         await sports.close();
 
         await page.goto(base + '/');
-        const box = page.locator('[data-home-section="scoreboard"]');
+        const box = page.locator('section[data-home-section="scoreboard"]');
         await box.waitFor();
         const select = box.locator('#home-scoreboard-show');
         if (!(await select.count())) {
@@ -122,12 +123,12 @@ const shots = process.env.SCREENSHOT_DIR || 'test-results/';
 
         // Phones, light and dark: the dropdown fits, with no sideways scrolling.
         for (const scheme of ['light', 'dark'])
-            for (const width of [320, 390, 430]) {
+            for (const width of [744, 820]) {
                 const context = await browser.newContext({ viewport: { width, height: 900 }, colorScheme: scheme });
                 const p = await context.newPage();
                 p.on('pageerror', (e) => errors.push(e.message));
                 await p.goto(base + '/?scoreboardShow=' + encodeURIComponent(kept.value));
-                const b = p.locator('[data-home-section="scoreboard"]');
+                const b = p.locator('section[data-home-section="scoreboard"]');
                 await b.scrollIntoViewIfNeeded();
                 const s = await b.locator('#home-scoreboard-show').boundingBox();
                 const card = await b.boundingBox();
@@ -145,11 +146,11 @@ const shots = process.env.SCREENSHOT_DIR || 'test-results/';
             }
 
         // Without JavaScript, the dropdown and Apply load the filtered page.
-        const plain = await browser.newContext({ javaScriptEnabled: false, viewport: { width: 390, height: 900 } });
+        const plain = await browser.newContext({ javaScriptEnabled: false, viewport: { width: 820, height: 900 } });
         const p = await plain.newPage();
         await p.goto(base + '/');
         await p.locator('#home-scoreboard-show').selectOption(kept.value);
-        await p.locator('[data-home-section="scoreboard"]').getByRole('button', { name: 'Apply' }).click();
+        await p.locator('section[data-home-section="scoreboard"]').getByRole('button', { name: 'Apply' }).click();
         assert.equal(new URL(p.url()).searchParams.get('scoreboardShow'), kept.value);
         assert.equal(await p.locator('#home-scoreboard-show').inputValue(), kept.value);
         await plain.close();

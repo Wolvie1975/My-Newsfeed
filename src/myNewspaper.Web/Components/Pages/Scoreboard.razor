@@ -1,5 +1,6 @@
 @page "/scoreboard"
 @layout PublicLayout
 <PageTitle>Scoreboard · myNewspaper</PageTitle>
-<PageHeading Section="sports" Title="Scoreboard" Eyebrow="Around the leagues" Description="" />
-<ScoreboardPanel />
+@* Phones: the panel's own ribbon replaces this heading (docs/mobile-refresh-handoff.md). *@
+<div class="mx-desktop"><PageHeading Section="sports" Title="Scoreboard" Eyebrow="Around the leagues" Description="" /></div>
+<ScoreboardPanel PhoneFront="true" />

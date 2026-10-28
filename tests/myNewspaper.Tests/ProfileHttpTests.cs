@@ -321,8 +321,11 @@ public class ProfileHttpTests
             Assert.Contains($"{a.Name}’s edition", html);
             Assert.Contains($"action=\"profiles/{a.Id}/open\"", html);
             Assert.DoesNotContain("standard edition", html, StringComparison.OrdinalIgnoreCase);
+            // Each edition shows today's lead headline, which can happen to contain a channel's name ("Android").
+            var withoutHeadlines = System.Text.RegularExpressions.Regex.Replace(html, "<p class=\"edition__lead\">.*?</p>", "",
+                System.Text.RegularExpressions.RegexOptions.Singleline);
             foreach (var name in names.Where(n => n.Length > 3).Distinct())
-                Assert.DoesNotContain(name, html);
+                Assert.DoesNotContain(name, withoutHeadlines);
         }
         finally { await app.CleanUpAsync(a); }
     }
