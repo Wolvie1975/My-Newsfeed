@@ -1,0 +1,377 @@
+@page "/admin/profiles"
+@rendermode InteractiveServer
+@using Microsoft.Extensions.Caching.Memory
+@using Microsoft.Extensions.Options
+@using myNewspaper.Web.Profiles
+@inject IDbContextFactory<WebScraperContext> Factory
+@inject ProfilePins Pins
+@inject IMemoryCache Cache
+@inject TimeProvider Clock
+@inject IOptions<ProfilesOptions> ProfilesSwitch
+
+<PageTitle>Profiles</PageTitle>
+
+@* What the admin sees of each profile is limited on purpose (profiles handoff, decision 3): who it is, its lock and
+   picker state, its devices and its requests. Never its teams, services, follows, Saved list or reading times. *@
+<AdminContent>
+    <AdminPageHeader Eyebrow="Household" Title="Profiles" Description="Everyone who reads myNewspaper, the devices that remember them, and how the edition picker behaves.">
+        <Actions>
+            <button type="button" class="btn btn-primary" @onclick="StartAdd"><AdminIcon Name="plus" />Add profile</button>
+        </Actions>
+    </AdminPageHeader>
+
+    @if (!ProfilesSwitch.Value.Enabled)
+    {
+        <div class="adm-notice" role="note">Profiles are switched off, so readers don’t see the edition picker yet. Everything set here takes effect when profiles are turned on.</div>
+    }
+    @if (message is not null)
+    {
+        <div class="adm-notice @(messageBad ? "adm-notice--bad" : null)" role="status">@message</div>
+    }
+
+    @if (adding is not null)
+    {
+        <form class="adm-form" @onsubmit="AddAsync" @onsubmit:preventDefault aria-labelledby="add-title">
+            <div class="adm-form__body">
+                <h2 class="adm-kicker" id="add-title">Add a profile</h2>
+                @if (addError is not null) { <div class="alert alert-danger" role="alert">@addError</div> }
+                <div class="adm-field">
+                    <label for="add-name">Name on the edition picker</label>
+                    <input id="add-name" class="form-control" maxlength="@ProfileRules.MaxNameLength" autocomplete="off" @bind="adding.Name" />
+                </div>
+                <ProfileColorPicker Name="add-color" Value="@adding.Color" ValueChanged="c => adding.Color = c" />
+                <PinFields Prefix="add" @bind-Pin="adding.Pin" @bind-Confirm="adding.Confirm"
+                           Help="Four digits. You set it now and tell the person; they can change it later in Settings." />
+                <p class="adm-help">The new profile starts from the <a href="admin/profiles/base">base edition</a>, with every household channel turned on.</p>
+            </div>
+            <div class="adm-savebar">
+                <button type="button" class="btn btn-link" @onclick="() => adding = null">Cancel</button>
+                <button type="submit" class="btn btn-primary" disabled="@busy">Add profile</button>
+            </div>
+        </form>
+    }
+
+    @if (rows is not null)
+    {
+        @foreach (var row in rows.Where(r => r.LockedAt is not null))
+        {
+            <section class="adm-confirm" role="alert" aria-labelledby="@($"lock-{row.Id}")">
+                <div class="adm-confirm__text">
+                    <h2 id="@($"lock-{row.Id}")">@row.Name is locked</h2>
+                    <p>@ProfileRules.MaxWrongPins wrong PINs@(row.LockedByDevice is { } device ? $" from “{device}”" : "") at @Dates.Stamp(row.LockedAt). It stays locked until you unlock it or reset the PIN.</p>
+                </div>
+                <div class="adm-confirm__actions">
+                    <button type="button" class="btn btn-dark" disabled="@busy" @onclick="() => UnlockAsync(row)">Unlock</button>
+                    <a class="btn btn-outline-secondary" href="@($"admin/profiles/{row.Id}#pin")">Reset @(row.Name)’s PIN</a>
+                </div>
+            </section>
+        }
+    }
+
+    @if (pendingDelete is { } target)
+    {
+        <section class="adm-confirm" role="alert" aria-labelledby="confirm-title">
+            <div class="adm-confirm__text">
+                <h2 id="confirm-title">Delete @target.Name?</h2>
+                <p>Their settings, Saved list, follows and requests will be deleted. This can’t be undone. @(target.Hidden ? "" : "Hiding keeps everything and takes them off the edition picker.")</p>
+            </div>
+            <div class="adm-confirm__actions">
+                @if (!target.Hidden)
+                {
+                    <button type="button" class="btn btn-dark" disabled="@busy" @onclick="() => HideInsteadAsync(target)">Hide instead</button>
+                }
+                <button type="button" class="btn btn-outline-danger" disabled="@busy" @onclick="() => ConfirmDeleteAsync(target)">Delete profile</button>
+                <button type="button" class="btn btn-link" @onclick="() => pendingDelete = null">Cancel</button>
+            </div>
+        </section>
+    }
+
+    @if (rows is null)
+    {
+        <p class="adm-help">Loading…</p>
+    }
+    else
+    {
+        <div class="adm-tiles">
+            @Tile("Profiles", totals.Profiles, rows.Count(r => r.Hidden) is var hidden and > 0 ? $"{hidden} hidden from the picker" : "All on the picker")
+            @Tile("Remembered devices", totals.Devices, "Signed in to a profile")
+            @Tile("Locked", totals.Locked, totals.Locked == 0 ? "None" : "Unlock or reset above")
+            @Tile("Waiting requests", totals.WaitingRequests, "Channels and news sources")
+        </div>
+
+        @if (rows.Count == 0)
+        {
+            <div class="adm-card"><p>No profiles yet. <button type="button" class="btn btn-link p-0 align-baseline" @onclick="StartAdd">Add the first one</button>, starting with your own.</p></div>
+        }
+        else
+        {
+            <div class="adm-card adm-card--flush adm-has-cards">
+                <div class="adm-table-wrap">
+                    <table class="adm-table">
+                        <thead>
+                            <tr>
+                                <th scope="col">Profile</th>
+                                <th scope="col">Status</th>
+                                <th scope="col">PIN</th>
+                                <th scope="col" class="num">Devices</th>
+                                <th scope="col" class="num">Waiting requests</th>
+                                <th scope="col">Picker order</th>
+                                <th scope="col"><span class="adm-sr">Actions</span></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (var i = 0; i < rows.Count; i++)
+                            {
+                                var row = rows[i];
+                                var index = i;
+                                <tr class="@(row.LockedAt is not null ? "is-problem" : row.Hidden ? "is-off" : null)">
+                                    <td>
+                                        <span class="adm-profile">
+                                            <ProfileTile Name="@row.Name" Color="@row.Color" />
+                                            <a class="adm-row-title" href="@($"admin/profiles/{row.Id}")">@row.Name</a>
+                                        </span>
+                                    </td>
+                                    <td>@StatusPill(row)</td>
+                                    <td>@(row.HasPin ? "Set" : "Not set yet")</td>
+                                    <td class="num">@row.Devices</td>
+                                    <td class="num">@row.WaitingRequests</td>
+                                    <td>@OrderButtons(row, index)</td>
+                                    <td class="adm-actions">
+                                        <a class="btn btn-sm btn-outline-secondary" href="@($"admin/profiles/{row.Id}")">Manage<span class="adm-sr"> @row.Name</span></a>
+                                        @RowMenu(row)
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                <div class="adm-cards">
+                    @for (var i = 0; i < rows.Count; i++)
+                    {
+                        var row = rows[i];
+                        var index = i;
+                        <article class="adm-cardrow @(row.LockedAt is not null ? "is-problem" : null)">
+                            <div class="adm-cardrow__top">
+                                <ProfileTile Name="@row.Name" Color="@row.Color" />
+                                <div class="adm-cardrow__title">
+                                    <a class="adm-row-title" href="@($"admin/profiles/{row.Id}")">@row.Name</a>
+                                </div>
+                                @RowMenu(row)
+                            </div>
+                            <div class="adm-cardrow__meta">
+                                @StatusPill(row)
+                                <span>PIN @(row.HasPin ? "set" : "not set yet") · @row.Devices @(row.Devices == 1 ? "device" : "devices") · @row.WaitingRequests waiting</span>
+                            </div>
+                            <div class="adm-cardrow__meta">@OrderButtons(row, index)</div>
+                        </article>
+                    }
+                </div>
+            </div>
+            <p class="adm-help">The order here is the order on the edition picker. The ⋯ menu has Unlock, Sign out all devices, Hide from picker and Delete.</p>
+        }
+
+        <div class="adm-cols">
+            <section class="adm-card adm-col-wide" aria-labelledby="household-title">
+                <h2 class="adm-kicker" id="household-title">Household settings</h2>
+                <div class="adm-field">
+                    <label for="picker-mode">New devices show the edition picker</label>
+                    <select id="picker-mode" class="form-select" value="@household.DefaultPickerMode" disabled="@busy" @onchange="PickerModeChanged" aria-describedby="picker-help">
+                        @foreach (var (value, label) in PickerModes)
+                        {
+                            <option value="@value">@label</option>
+                        }
+                    </select>
+                    <span id="picker-help" class="adm-help">Each profile can change this for its own devices in Settings.</span>
+                </div>
+                <div class="adm-toggle-row">
+                    <span>
+                        <span id="forget-l" class="adm-label d-block">Forget devices after 90 days unused</span>
+                        <span id="forget-d" class="adm-help d-block">They see the edition picker again on their next visit.</span>
+                    </span>
+                    <AdminSwitch Checked="household.ForgetDevicesDays is not null" Disabled="busy" LabelledBy="forget-l" DescribedBy="forget-d" OnChange="ForgetChanged" />
+                </div>
+                <p class="adm-help mb-0"><AdminIcon Name="lock" /> @ProfileRules.MaxWrongPins wrong PINs lock a profile until you unlock it or reset its PIN. Locks show at the top of this page.</p>
+            </section>
+            <aside class="adm-col-side">
+                <section class="adm-card" aria-labelledby="base-title">
+                    <h2 class="adm-kicker" id="base-title">Base edition</h2>
+                    <p class="adm-help">New profiles start with these settings: the household’s teams, services and home page. Changing them doesn’t change existing profiles.</p>
+                    <a class="btn btn-sm btn-outline-secondary" href="admin/profiles/base">Edit the base edition</a>
+                </section>
+            </aside>
+        </div>
+    }
+</AdminContent>
+
+@code {
+    private sealed class NewProfile
+    {
+        public string Name { get; set; } = "";
+        public string Color { get; set; } = SiteDefaults.ProfileColors[0].Hex;
+        public string Pin { get; set; } = "";
+        public string Confirm { get; set; } = "";
+    }
+
+    private static readonly (string Value, string Label)[] PickerModes =
+    [
+        (ProfileGate.EveryVisit, "Every visit"), (ProfileGate.Daily, "Once a day"), (ProfileGate.UntilSignOut, "Only after signing out"),
+    ];
+
+    private const int ForgetAfterDays = 90;
+
+    private IReadOnlyList<AdminProfileRow>? rows;
+    private AdminProfileTotals totals = new(0, 0, 0, 0);
+    private HouseholdSettings household = new(ProfileGate.EveryVisit, null);
+    private NewProfile? adding;
+    private string? addError;
+    private AdminProfileRow? pendingDelete;
+    private bool busy;
+    private string? message;
+    private bool messageBad;
+
+    [SupplyParameterFromQuery(Name = "deleted")] private string? DeletedName { get; set; }
+
+    protected override Task OnInitializedAsync()
+    {
+        if (!string.IsNullOrWhiteSpace(DeletedName)) Say($"Deleted {DeletedName}.");
+        return LoadAsync();
+    }
+
+    private DateTime Now => Clock.GetUtcNow().UtcDateTime;
+
+    private async Task LoadAsync()
+    {
+        await using var db = await Factory.CreateDbContextAsync();
+        rows = await ProfileAdmin.ListAsync(db);
+        totals = await ProfileAdmin.TotalsAsync(db);
+        household = await ProfileAdmin.GetHouseholdAsync(db);
+    }
+
+    private void Say(string text, bool bad = false) { message = text; messageBad = bad; }
+
+    private void StartAdd()
+    {
+        adding = new NewProfile();
+        addError = null;
+        message = null;
+    }
+
+    private async Task AddAsync()
+    {
+        if (adding is null || busy) return;
+        addError = null;
+        if (adding.Pin != adding.Confirm) { addError = "The two PINs don’t match."; return; }
+        busy = true;
+        try
+        {
+            await using var db = await Factory.CreateDbContextAsync();
+            var profile = await ProfileStore.CreateAsync(db, Pins, adding.Name, adding.Color, adding.Pin, null);
+            adding = null;
+            Say($"Added {profile.Name}. Tell them their PIN; they can change it in Settings.");
+            await LoadAsync();
+        }
+        catch (ArgumentException ex) { addError = ex.Message; }
+        finally { busy = false; }
+    }
+
+    private async Task Run(Func<WebScraperContext, Task<string>> action)
+    {
+        if (busy) return;
+        busy = true;
+        message = null;
+        try
+        {
+            await using var db = await Factory.CreateDbContextAsync();
+            if (await action(db) is { Length: > 0 } text) Say(text);
+            await LoadAsync();
+        }
+        catch (ArgumentException ex) { Say(ex.Message, bad: true); }
+        finally { busy = false; }
+    }
+
+    private Task UnlockAsync(AdminProfileRow row) => Run(async db =>
+        await ProfileAdmin.UnlockAsync(db, row.Id) ? $"Unlocked {row.Name}. Their PIN is unchanged." : $"{row.Name} no longer exists.");
+
+    private Task SignOutAllAsync(AdminProfileRow row) => Run(async db =>
+    {
+        var count = await ProfileAdmin.SignOutEverywhereAsync(db, row.Id, Now);
+        return count == 0 ? $"{row.Name} wasn’t signed in on any device." : $"Signed {row.Name} out of {count} {(count == 1 ? "device" : "devices")}.";
+    });
+
+    private Task SetHiddenAsync(AdminProfileRow row, bool hidden) => Run(async db =>
+        !await ProfileAdmin.UpdateAsync(db, row.Id, row.Name, row.Color, hidden, Now) ? $"{row.Name} no longer exists."
+        : hidden ? $"Hid {row.Name} from the edition picker and signed out their devices. Nothing was deleted." : $"{row.Name} is back on the edition picker.");
+
+    private Task HideInsteadAsync(AdminProfileRow row)
+    {
+        pendingDelete = null;
+        return SetHiddenAsync(row, true);
+    }
+
+    private void StartDelete(AdminProfileRow row) { message = null; pendingDelete = row; }
+
+    private Task ConfirmDeleteAsync(AdminProfileRow row)
+    {
+        pendingDelete = null;
+        return Run(async db => await ProfileAdmin.DeleteAsync(db, row.Id) ? $"Deleted {row.Name}." : $"{row.Name} was already deleted.");
+    }
+
+    private Task MoveAsync(int index, int by) => Run(async db =>
+    {
+        var ids = rows!.Select(r => r.Id).ToList();
+        var target = index + by;
+        if (target < 0 || target >= ids.Count) return "";
+        (ids[index], ids[target]) = (ids[target], ids[index]);
+        await ProfileAdmin.ReorderAsync(db, ids);
+        return $"Moved {rows![index].Name} {(by < 0 ? "up" : "down")} on the edition picker.";
+    });
+
+    private Task SaveHouseholdAsync(HouseholdSettings next) => Run(async db =>
+    {
+        await ProfileAdmin.SaveHouseholdAsync(db, next);
+        ProfileGateMiddleware.ForgetHousehold(Cache);
+        return "Household settings saved.";
+    });
+
+    private Task PickerModeChanged(ChangeEventArgs e) => SaveHouseholdAsync(household with { DefaultPickerMode = e.Value?.ToString() ?? "" });
+
+    private Task ForgetChanged(bool on) => SaveHouseholdAsync(household with { ForgetDevicesDays = on ? ForgetAfterDays : null });
+
+    private static RenderFragment StatusPill(AdminProfileRow row) => __builder =>
+    {
+        if (row.LockedAt is not null) { <span class="adm-pill adm-pill--bad">Locked</span> }
+        else if (row.Hidden) { <span class="adm-pill adm-pill--off">Hidden</span> }
+        else { <span class="adm-pill adm-pill--ok">Active</span> }
+    };
+
+    private RenderFragment OrderButtons(AdminProfileRow row, int index) => __builder =>
+    {
+        <span class="adm-order">
+            <button type="button" class="btn btn-sm btn-outline-secondary" disabled="@(busy || index == 0)" aria-label="@($"Move {row.Name} up")" @onclick="() => MoveAsync(index, -1)"><AdminIcon Name="up" /></button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" disabled="@(busy || index == rows!.Count - 1)" aria-label="@($"Move {row.Name} down")" @onclick="() => MoveAsync(index, 1)"><AdminIcon Name="down" /></button>
+        </span>
+    };
+
+    private RenderFragment RowMenu(AdminProfileRow row) => __builder =>
+    {
+        <details class="adm-menu">
+            <summary aria-label="@($"More actions for {row.Name}")"><AdminIcon Name="more" /></summary>
+            <div class="adm-menu__list">
+                @if (row.LockedAt is not null) { <button type="button" @onclick="() => UnlockAsync(row)">Unlock</button> }
+                <a href="@($"admin/profiles/{row.Id}#pin")">Reset PIN</a>
+                <button type="button" @onclick="() => SignOutAllAsync(row)">Sign out all devices</button>
+                <button type="button" @onclick="() => SetHiddenAsync(row, !row.Hidden)">@(row.Hidden ? "Show on picker" : "Hide from picker")</button>
+                <button type="button" class="danger" @onclick="() => StartDelete(row)">Delete…</button>
+            </div>
+        </details>
+    };
+
+    private static RenderFragment Tile(string label, int value, string note) => __builder =>
+    {
+        <div class="adm-tile">
+            <span class="adm-tile__label">@label</span>
+            <span class="adm-tile__total">@value.ToString("N0")</span>
+            <span class="adm-help">@note</span>
+        </div>
+    };
+}

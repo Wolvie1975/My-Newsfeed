@@ -49,6 +49,13 @@
             @if (counts.TvSeries > 0) { <span class="adm-nav__count" aria-label="@($"{counts.TvSeries} with problems")">@counts.TvSeries</span> }
         </NavLink>
     </div>
+    <div class="adm-nav__group">
+        <span class="adm-nav__label">Household</span>
+        <NavLink class="adm-nav__link" href="admin/profiles">
+            <AdminIcon Name="profiles" /><span class="adm-nav__text">Profiles</span>
+            @if (lockedProfiles > 0) { <span class="adm-nav__count" aria-label="@($"{lockedProfiles} locked")">@lockedProfiles</span> }
+        </NavLink>
+    </div>
 </nav>
 
 <div class="adm-side__foot">
@@ -62,6 +69,7 @@
 @code {
     [CascadingParameter] private Task<AuthenticationState>? AuthState { get; set; }
     private AdminNavCounts counts = AdminNavCounts.None;
+    private int lockedProfiles;
 
     protected override async Task OnInitializedAsync()
     {
@@ -77,6 +85,15 @@
         catch (Exception ex) when (DataFailures.IsReadFailure(ex))
         {
             counts = AdminNavCounts.None; // the menu still renders; the status page shows the real error
+        }
+        try
+        {
+            await using var db = await Factory.CreateDbContextAsync();
+            lockedProfiles = await db.Profiles.CountAsync(p => p.LockedAt != null);
+        }
+        catch (Exception ex) when (DataFailures.IsReadFailure(ex))
+        {
+            lockedProfiles = 0;
         }
     }
 }

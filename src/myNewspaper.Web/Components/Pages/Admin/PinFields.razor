@@ -1,0 +1,29 @@
+@using myNewspaper.Web.Profiles
+@* A new 4-digit PIN, entered twice. Digits only, never autofilled, never shown back. *@
+<div class="adm-pin">
+    <div class="adm-field">
+        <label for="@($"{Prefix}-pin")">@Label</label>
+        <input id="@($"{Prefix}-pin")" class="form-control" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="@PinLength"
+               autocomplete="new-password" value="@Pin" @oninput="e => PinChanged.InvokeAsync(Digits(e.Value))" aria-describedby="@($"{Prefix}-pin-help")" />
+    </div>
+    <div class="adm-field">
+        <label for="@($"{Prefix}-confirm")">The same PIN again</label>
+        <input id="@($"{Prefix}-confirm")" class="form-control" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="@PinLength"
+               autocomplete="new-password" value="@Confirm" @oninput="e => ConfirmChanged.InvokeAsync(Digits(e.Value))" />
+    </div>
+    <span id="@($"{Prefix}-pin-help")" class="adm-help">@Help</span>
+</div>
+
+@code {
+    private const int PinLength = 4;
+
+    [Parameter, EditorRequired] public string Prefix { get; set; } = "";
+    [Parameter] public string Label { get; set; } = "PIN";
+    [Parameter] public string? Help { get; set; }
+    [Parameter] public string Pin { get; set; } = "";
+    [Parameter] public EventCallback<string> PinChanged { get; set; }
+    [Parameter] public string Confirm { get; set; } = "";
+    [Parameter] public EventCallback<string> ConfirmChanged { get; set; }
+
+    private static string Digits(object? value) => new string((value?.ToString() ?? "").Where(char.IsAsciiDigit).Take(PinLength).ToArray());
+}

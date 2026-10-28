@@ -1,0 +1,25 @@
+@using myNewspaper.Web.Profiles
+@* The six profile colors as radio buttons. A color stored before the list changed still shows, as a seventh choice. *@
+<fieldset class="adm-field">
+    <legend class="adm-label">Color</legend>
+    <div class="adm-swatches">
+        @foreach (var (hex, name) in Choices)
+        {
+            <label class="adm-swatch">
+                <input type="radio" name="@Name" value="@hex" checked="@string.Equals(hex, Value, StringComparison.OrdinalIgnoreCase)" @onchange="() => ValueChanged.InvokeAsync(hex)" />
+                <span class="adm-swatch__dot" style="background: @hex" aria-hidden="true"></span>
+                <span>@name</span>
+            </label>
+        }
+    </div>
+</fieldset>
+
+@code {
+    [Parameter, EditorRequired] public string Name { get; set; } = "";
+    [Parameter] public string? Value { get; set; }
+    [Parameter] public EventCallback<string> ValueChanged { get; set; }
+
+    private IEnumerable<(string Hex, string Name)> Choices =>
+        Value is not null && !SiteDefaults.ProfileColors.Any(c => string.Equals(c.Hex, Value, StringComparison.OrdinalIgnoreCase))
+            ? SiteDefaults.ProfileColors.Append((Value, "Current color")) : SiteDefaults.ProfileColors;
+}

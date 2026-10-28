@@ -25,7 +25,14 @@ const lists = [
     '/admin/results',
     '/admin/tv-series',
 ];
-const extras = ['/admin/sources/new', '/admin/youtube-feeds/new', '/admin/results/new', '/admin/tv-series/new'];
+const extras = [
+    '/admin/sources/new',
+    '/admin/youtube-feeds/new',
+    '/admin/results/new',
+    '/admin/tv-series/new',
+    '/admin/profiles',
+    '/admin/profiles/base',
+];
 const widths = (process.env.WIDTHS || '320,390,430,744,820,1024,1440').split(',').map(Number);
 
 (async () => {

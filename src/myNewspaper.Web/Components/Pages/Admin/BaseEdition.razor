@@ -1,0 +1,252 @@
+@page "/admin/profiles/base"
+@rendermode InteractiveServer
+@using System.Text.Json.Nodes
+@using myNewspaper.Web.Profiles
+@using myNewspaper.Web.Watching
+@inject IDbContextFactory<WebScraperContext> Factory
+@inject WatchCatalog Catalog
+@inject ILogger<BaseEdition> Log
+
+<PageTitle>Base edition</PageTitle>
+
+@* The base edition (decision 12): one settings document every new profile copies once. It holds household facts
+   (local teams, the services the house pays for), not anyone's tastes, and it's never read for an existing profile.
+   Values left at the site default aren't stored, so an untouched editor keeps the document empty. *@
+<AdminContent>
+    <AdminPageHeader Eyebrow="Household" Title="Base edition" Description="New profiles start with these settings. Changing them doesn’t change existing profiles.">
+        <Crumbs><a href="admin/profiles">Profiles</a><span aria-hidden="true">/</span>Base edition</Crumbs>
+        <Badge>
+            @if (loaded is not null && loaded.Count == 0) { <span class="adm-pill adm-pill--off">Site defaults</span> }
+        </Badge>
+    </AdminPageHeader>
+
+    @if (message is not null)
+    {
+        <div class="adm-notice @(messageBad ? "adm-notice--bad" : null)" role="status">@message</div>
+    }
+
+    @if (confirmReset)
+    {
+        <section class="adm-confirm" role="alert" aria-labelledby="reset-title">
+            <div class="adm-confirm__text">
+                <h2 id="reset-title">Reset the base edition to site defaults?</h2>
+                <p>New profiles will start like a fresh browser does today: no teams, no services, every home section on. Existing profiles don’t change.</p>
+            </div>
+            <div class="adm-confirm__actions">
+                <button type="button" class="btn btn-outline-danger" disabled="@busy" @onclick="ResetAsync">Reset to site defaults</button>
+                <button type="button" class="btn btn-link" @onclick="() => confirmReset = false">Cancel</button>
+            </div>
+        </section>
+    }
+
+    @if (loaded is null)
+    {
+        <p class="adm-help">Loading…</p>
+    }
+    else
+    {
+        <form class="adm-form" @onsubmit="SaveAsync" @onsubmit:preventDefault>
+            <div class="adm-form__body">
+                <section aria-labelledby="home-title">
+                    <h2 class="adm-kicker" id="home-title">Home page</h2>
+                    <p class="adm-help">Sections that are off are hidden. Leave them all on so new people can find everything.</p>
+                    <div class="adm-toggle-row">
+                        <span>
+                            <span id="teams-only-l" class="adm-label d-block">Only my teams</span>
+                            <span id="teams-only-d" class="adm-help d-block">Today &amp; Tonight shows only the chosen teams’ games. Off, teams are highlighted, never filtered.</span>
+                        </span>
+                        <AdminSwitch Checked="teamsOnly" LabelledBy="teams-only-l" DescribedBy="teams-only-d" OnChange="v => teamsOnly = v" />
+                    </div>
+                    @foreach (var key in SiteDefaults.HideableHomeSections)
+                    {
+                        var label = $"home-{key}";
+                        <div class="adm-toggle-row">
+                            <span id="@label" class="adm-label">@SiteDefaults.HomeSectionNames[key]</span>
+                            <AdminSwitch Checked="!hidden.Contains(key)" LabelledBy="@label" OnChange="on => SetShown(key, on)" />
+                        </div>
+                    }
+                </section>
+
+                <fieldset class="adm-field">
+                    <legend class="adm-kicker">Light and dark mode</legend>
+                    <div class="adm-choices">
+                        @foreach (var (key, name) in SiteDefaults.ThemeChoices)
+                        {
+                            <label class="adm-choice"><input type="radio" name="theme" checked="@(theme == key)" @onchange="() => theme = key" /> <span>@name</span></label>
+                        }
+                    </div>
+                </fieldset>
+
+                <fieldset class="adm-field">
+                    <legend class="adm-kicker">Color scheme</legend>
+                    <div class="adm-choices">
+                        @foreach (var choice in SiteDefaults.ColorSchemeChoices)
+                        {
+                            <label class="adm-choice">
+                                <input type="radio" name="scheme" checked="@(scheme == choice.Key)" @onchange="() => scheme = choice.Key" />
+                                <span class="adm-choice__swatch" style="@($"--a:{choice.Primary};--b:{choice.Secondary}")" aria-hidden="true"></span>
+                                <span>@choice.Name</span>
+                            </label>
+                        }
+                    </div>
+                </fieldset>
+
+                <fieldset class="adm-field">
+                    <legend class="adm-kicker">My services</legend>
+                    <p class="adm-help">The services the household subscribes to, up to @SiteDefaults.MaxServices. Where to watch puts these first. @services.Count chosen.</p>
+                    @if (serviceChoices.Count == 0)
+                    {
+                        <p class="adm-help" role="status">Service choices are temporarily unavailable. @(services.Count > 0 ? "The ones already chosen are kept." : "")</p>
+                    }
+                    else
+                    {
+                        <div class="adm-choices">
+                            @foreach (var service in serviceChoices)
+                            {
+                                <label class="adm-choice">
+                                    <input type="checkbox" checked="@services.Contains(service.Id)" disabled="@(!services.Contains(service.Id) && services.Count >= SiteDefaults.MaxServices)"
+                                           @onchange="e => SetService(service.Id, e.Value is true)" /> <span>@service.Name</span>
+                                </label>
+                            }
+                        </div>
+                    }
+                </fieldset>
+
+                <fieldset class="adm-field">
+                    <legend class="adm-kicker">My Teams</legend>
+                    <p class="adm-help">The household’s local teams and schools, highlighted in schedules, results and standings. @teams.Count chosen.</p>
+                    @if (teamError is not null) { <p class="adm-help" role="status">@teamError</p> }
+                    @foreach (var group in teamChoices.GroupBy(c => c.Group))
+                    {
+                        var chosen = group.Count(t => teams.Contains(t.Key));
+                        <details class="adm-group" open="@openGroups.Contains(group.Key)">
+                            <summary>@group.Key <span class="adm-help">@(chosen > 0 ? $"{chosen} chosen · " : "")@group.Count() teams</span></summary>
+                            <div class="adm-choices">
+                                @foreach (var team in group)
+                                {
+                                    <label class="adm-choice"><input type="checkbox" checked="@teams.Contains(team.Key)" @onchange="e => SetTeam(team.Key, e.Value is true)" /> <span>@team.Name</span></label>
+                                }
+                            </div>
+                        </details>
+                    }
+                </fieldset>
+            </div>
+            <div class="adm-savebar">
+                <span class="adm-savebar__state @(Dirty ? null : "is-clean")" role="status">@(Dirty ? "Unsaved changes" : "No unsaved changes")</span>
+                <button type="button" class="btn btn-link" disabled="@(busy || loaded.Count == 0)" @onclick="() => confirmReset = true">Reset to site defaults</button>
+                <button type="submit" class="btn btn-primary" disabled="@(busy || !Dirty)">Save base edition</button>
+            </div>
+        </form>
+    }
+</AdminContent>
+
+@code {
+    private JsonObject? loaded;
+    private string theme = SiteDefaults.Theme;
+    private string scheme = SiteDefaults.ColorScheme;
+    private bool teamsOnly;
+    private HashSet<string> hidden = [];
+    private List<int> services = [];
+    private HashSet<string> teams = [];
+    private IReadOnlyList<WatchCatalog.Service> serviceChoices = [];
+    private IReadOnlyList<SportsTeamChoice> teamChoices = SportsTeamPreferences.GetChoices();
+    private string? teamError;
+    // Groups with a chosen team start open. Fixed at load, so unchecking the last team doesn't snap a group shut.
+    private HashSet<string> openGroups = [];
+    private bool busy, confirmReset;
+    private string? message;
+    private bool messageBad;
+
+    protected override async Task OnInitializedAsync()
+    {
+        serviceChoices = await Catalog.Services();
+        await using var db = await Factory.CreateDbContextAsync();
+        try { teamChoices = await SportsTeamPreferences.GetChoicesAsync(db); }
+        catch (Exception ex) when (DataFailures.IsReadFailure(ex))
+        {
+            Log.LogError(ex, "Could not read team choices for the base edition.");
+            teamError = "Professional teams are temporarily unavailable; Big 12 schools are listed. Reload to try again.";
+        }
+        Show(await ProfileAdmin.GetBaseEditionAsync(db));
+        openGroups = [.. teamChoices.Where(t => teams.Contains(t.Key)).Select(t => t.Group)];
+    }
+
+    private void Show(JsonObject document)
+    {
+        // A stored value that no longer passes validation counts as the site default.
+        loaded = ProfileSettings.FillMissing([], document);
+        theme = loaded[ProfileSettings.Theme]?.GetValue<string>() ?? SiteDefaults.Theme;
+        scheme = loaded[ProfileSettings.ColorScheme]?.GetValue<string>() ?? SiteDefaults.ColorScheme;
+        var home = loaded[ProfileSettings.Home] as JsonObject;
+        teamsOnly = home?["teamsOnly"]?.GetValue<bool>() == true;
+        hidden = [.. (home?["hidden"] as JsonArray ?? []).Select(n => n!.GetValue<string>())];
+        services = [.. (loaded[ProfileSettings.Services] as JsonArray ?? []).Select(n => n!.GetValue<int>())];
+        teams = [.. (loaded[ProfileSettings.Teams] as JsonArray ?? []).Select(n => n!.GetValue<string>())];
+    }
+
+    /// <summary>The document as edited. Keys this page doesn't edit (home order, Settings order) are kept as they were.</summary>
+    private JsonObject Build()
+    {
+        var doc = loaded!.DeepClone().AsObject();
+        void Put(string key, JsonNode? value) { if (value is null) doc.Remove(key); else doc[key] = value; }
+        Put(ProfileSettings.Theme, theme == SiteDefaults.Theme ? null : JsonValue.Create(theme));
+        Put(ProfileSettings.ColorScheme, scheme == SiteDefaults.ColorScheme ? null : JsonValue.Create(scheme));
+        var home = (doc[ProfileSettings.Home] as JsonObject)?.DeepClone().AsObject() ?? [];
+        if (teamsOnly) home["teamsOnly"] = true; else home.Remove("teamsOnly");
+        if (hidden.Count > 0) home["hidden"] = new JsonArray([.. SiteDefaults.HideableHomeSections.Where(hidden.Contains).Select(k => (JsonNode)k)]);
+        else home.Remove("hidden");
+        Put(ProfileSettings.Home, home.Count == 0 ? null : home);
+        Put(ProfileSettings.Services, services.Count == 0 ? null : new JsonArray([.. services.Select(id => (JsonNode)id)]));
+        Put(ProfileSettings.Teams, teams.Count == 0 ? null : new JsonArray([.. teams.Order(StringComparer.Ordinal).Select(t => (JsonNode)t)]));
+        return doc;
+    }
+
+    private bool Dirty => loaded is not null && !JsonNode.DeepEquals(Build(), loaded);
+
+    private void SetShown(string key, bool on)
+    {
+        if (on) hidden.Remove(key); else hidden.Add(key);
+    }
+
+    private void SetService(int id, bool on)
+    {
+        if (!on) services.Remove(id);
+        else if (!services.Contains(id) && services.Count < SiteDefaults.MaxServices) services.Add(id);
+    }
+
+    private void SetTeam(string key, bool on)
+    {
+        if (on) teams.Add(key); else teams.Remove(key);
+    }
+
+    private async Task SaveAsync()
+    {
+        if (busy || !Dirty) return;
+        busy = true;
+        message = null;
+        try
+        {
+            await using var db = await Factory.CreateDbContextAsync();
+            Show(await ProfileAdmin.SaveBaseEditionAsync(db, Build()));
+            message = "Saved. Profiles created from now on start with these settings.";
+            messageBad = false;
+        }
+        catch (ArgumentException ex) { message = ex.Message; messageBad = true; }
+        finally { busy = false; }
+    }
+
+    private async Task ResetAsync()
+    {
+        if (busy) return;
+        busy = true;
+        confirmReset = false;
+        try
+        {
+            await using var db = await Factory.CreateDbContextAsync();
+            Show(await ProfileAdmin.SaveBaseEditionAsync(db, []));
+            message = "The base edition is back to site defaults.";
+            messageBad = false;
+        }
+        finally { busy = false; }
+    }
+}

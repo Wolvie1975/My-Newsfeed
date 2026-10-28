@@ -1,0 +1,367 @@
+@page "/admin/profiles/{Id:int}"
+@rendermode InteractiveServer
+@using myNewspaper.Web.Profiles
+@using myNewspaper.Web.Requests
+@inject IDbContextFactory<WebScraperContext> Factory
+@inject ProfilePins Pins
+@inject TimeProvider Clock
+@inject NavigationManager Nav
+
+<PageTitle>@(profile is null ? "Manage profile" : $"Manage {profile.Name}")</PageTitle>
+
+@* Decision 3: the admin manages who a profile is, its PIN, picker visibility and devices, and sees its requests. Its
+   teams, services, follows, Saved list, settings and reading times are never shown, and there's no "open as". *@
+<AdminContent>
+    @if (notFound)
+    {
+        <AdminPageHeader Eyebrow="Manage profile" Title="Profile not found" />
+        <div class="adm-card"><p>That profile no longer exists. <a href="admin/profiles">Back to profiles</a></p></div>
+    }
+    else if (profile is null || form is null)
+    {
+        <p class="adm-help">Loading…</p>
+    }
+    else
+    {
+        <AdminPageHeader Eyebrow="Manage profile" Title="@profile.Name">
+            <Crumbs><a href="admin/profiles">Profiles</a><span aria-hidden="true">/</span>@profile.Name</Crumbs>
+            <Badge>
+                @if (profile.LockedAt is not null) { <span class="adm-pill adm-pill--bad">Locked</span> }
+                else if (profile.Hidden) { <span class="adm-pill adm-pill--off">Hidden</span> }
+                else { <span class="adm-pill adm-pill--ok">Active</span> }
+            </Badge>
+            <Actions><span class="adm-head__meta">Created @Dates.Stamp(profile.CreatedAt)</span></Actions>
+        </AdminPageHeader>
+
+        @if (message is not null)
+        {
+            <div class="adm-notice @(messageBad ? "adm-notice--bad" : null)" role="status">@message</div>
+        }
+
+        @if (profile.LockedAt is not null)
+        {
+            <section class="adm-confirm" role="alert" aria-labelledby="lock-title">
+                <div class="adm-confirm__text">
+                    <h2 id="lock-title">@profile.Name is locked</h2>
+                    <p>@ProfileRules.MaxWrongPins wrong PINs@(lockDevice is { } d ? $" from “{d}”" : "") at @Dates.Stamp(profile.LockedAt). Unlock keeps the same PIN; resetting sets a new one.</p>
+                </div>
+                <div class="adm-confirm__actions">
+                    <button type="button" class="btn btn-dark" disabled="@busy" @onclick="UnlockAsync">Unlock</button>
+                    <a class="btn btn-outline-secondary" href="@($"admin/profiles/{Id}#pin")">Reset PIN below</a>
+                </div>
+            </section>
+        }
+
+        @if (pendingDelete)
+        {
+            <section class="adm-confirm" role="alert" aria-labelledby="confirm-title">
+                <div class="adm-confirm__text">
+                    <h2 id="confirm-title">Delete @profile.Name?</h2>
+                    <p>Their settings, Saved list, follows and requests will be deleted. This can’t be undone. @(profile.Hidden ? "" : "Hiding keeps everything and takes them off the edition picker.")</p>
+                </div>
+                <div class="adm-confirm__actions">
+                    @if (!profile.Hidden)
+                    {
+                        <button type="button" class="btn btn-dark" disabled="@busy" @onclick="() => SetHiddenAsync(true)">Hide instead</button>
+                    }
+                    <button type="button" class="btn btn-outline-danger" disabled="@busy" @onclick="DeleteAsync">Delete profile</button>
+                    <button type="button" class="btn btn-link" @onclick="() => pendingDelete = false">Cancel</button>
+                </div>
+            </section>
+        }
+
+        <div class="adm-cols">
+            <div class="adm-col-wide adm-stack">
+                <EditForm EditContext="editContext" OnValidSubmit="SaveAsync" class="adm-form">
+                    <div class="adm-form__body">
+                        <h2 class="adm-kicker">Profile</h2>
+                        @if (error is not null) { <div class="alert alert-danger" role="alert">@error</div> }
+                        <div class="adm-profile">
+                            <ProfileTile Name="@(string.IsNullOrWhiteSpace(form.Name) ? profile.Name : form.Name)" Color="@form.Color" Large="true" />
+                            <span class="adm-help">How @profile.Name appears on the edition picker.</span>
+                        </div>
+                        <div class="adm-field">
+                            <label for="name">Name on the edition picker</label>
+                            <InputText id="name" class="form-control" maxlength="@ProfileRules.MaxNameLength" @bind-Value="form.Name" autocomplete="off" />
+                        </div>
+                        <ProfileColorPicker Name="color" Value="@form.Color" ValueChanged="SetColor" />
+                        <div class="adm-toggle-row">
+                            <span>
+                                <span id="show-l" class="adm-label d-block">Show on the edition picker</span>
+                                <span id="show-d" class="adm-help d-block">Turn off to hide @profile.Name without deleting anything. Their devices are signed out.</span>
+                            </span>
+                            <AdminSwitch Checked="form.ShowOnPicker" LabelledBy="show-l" DescribedBy="show-d" OnChange="SetShown" />
+                        </div>
+                    </div>
+                    <div class="adm-savebar">
+                        <span class="adm-savebar__state @(Dirty ? null : "is-clean")" role="status">@SaveState</span>
+                        <a class="btn btn-link" href="admin/profiles">Cancel</a>
+                        <button type="submit" class="btn btn-primary" disabled="@(busy || !Dirty)">Save changes</button>
+                    </div>
+                </EditForm>
+
+                <form id="pin" class="adm-form" @onsubmit="ResetPinAsync" @onsubmit:preventDefault aria-labelledby="pin-title">
+                    <div class="adm-form__body">
+                        <h2 class="adm-kicker" id="pin-title">Reset PIN</h2>
+                        <p class="adm-help">You don’t need the old PIN. The new one replaces it, clears any lock and signs @profile.Name out of every device. Tell them the new PIN; they can change it in Settings. Every profile keeps a PIN.</p>
+                        @if (pinError is not null) { <div class="alert alert-danger" role="alert">@pinError</div> }
+                        <PinFields Prefix="reset" Label="New PIN" @bind-Pin="newPin" @bind-Confirm="newPinConfirm" />
+                    </div>
+                    <div class="adm-savebar adm-savebar--static">
+                        <button type="submit" class="btn btn-primary" disabled="@(busy || newPin.Length == 0)">Set new PIN</button>
+                    </div>
+                </form>
+
+                <section class="adm-card" aria-labelledby="requests-title">
+                    <h2 class="adm-kicker" id="requests-title">Their requests</h2>
+                    @if (requests.Count == 0)
+                    {
+                        <p class="adm-help mb-0">No channel or news source requests.</p>
+                    }
+                    else
+                    {
+                        <ul class="adm-list">
+                            @foreach (var r in requests)
+                            {
+                                <li>
+                                    <span class="adm-tag">@(r.Kind == RequestStore.Youtube ? "YouTube" : "News")</span>
+                                    <b>@r.Name</b>
+                                    <span class="adm-pill @(r.Status == RequestStore.Waiting ? "adm-pill--warn" : r.Status == RequestStore.Added ? "adm-pill--ok" : "adm-pill--off")">@Capitalize(r.Status)</span>
+                                    <span class="adm-help">@Dates.Stamp(r.CreatedAt)</span>
+                                </li>
+                            }
+                        </ul>
+                    }
+                </section>
+            </div>
+
+            <aside class="adm-col-side">
+                <section class="adm-card" aria-labelledby="devices-title">
+                    <div class="adm-section-head">
+                        <h2 class="adm-kicker" id="devices-title">Remembered devices</h2>
+                        @if (openDevices.Count > 0)
+                        {
+                            <button type="button" class="btn btn-sm btn-outline-secondary" disabled="@busy" @onclick="SignOutEverywhereAsync">Sign out everywhere</button>
+                        }
+                    </div>
+                    @if (devices.Count == 0)
+                    {
+                        <p class="adm-help mb-0">@profile.Name isn’t signed in on any device.</p>
+                    }
+                    else
+                    {
+                        <ul class="adm-list">
+                            @foreach (var device in devices)
+                            {
+                                <li class="adm-device">
+                                    @if (renaming == device.Id)
+                                    {
+                                        <form class="adm-device__rename" @onsubmit="() => RenameAsync(device)" @onsubmit:preventDefault>
+                                            <label class="adm-sr" for="@($"label-{device.Id:N}")">Device name</label>
+                                            <input id="@($"label-{device.Id:N}")" class="form-control form-control-sm" maxlength="100" @bind="renameText" />
+                                            <button type="submit" class="btn btn-sm btn-primary" disabled="@busy">Save</button>
+                                            <button type="button" class="btn btn-sm btn-link" @onclick="() => renaming = null">Cancel</button>
+                                        </form>
+                                    }
+                                    else
+                                    {
+                                        <span class="adm-device__name"><b>@device.Label</b> <span class="adm-help">@device.Description</span></span>
+                                        @if (device.CausedLock) { <span class="adm-pill adm-pill--bad">Caused the lock</span> }
+                                        <span class="adm-device__actions">
+                                            <button type="button" class="btn btn-sm btn-link" @onclick="() => StartRename(device)">Rename<span class="adm-sr"> @device.Label</span></button>
+                                            @if (DeviceIsOpen(device))
+                                            {
+                                                <button type="button" class="btn btn-sm btn-outline-secondary" disabled="@busy" @onclick="() => SignOutDeviceAsync(device)">Sign out<span class="adm-sr"> @device.Label</span></button>
+                                            }
+                                        </span>
+                                    }
+                                </li>
+                            }
+                        </ul>
+                    }
+                </section>
+
+                <section class="adm-card" aria-labelledby="remove-title">
+                    <h2 class="adm-kicker" id="remove-title">Remove this profile</h2>
+                    <p class="adm-help">Hiding keeps everything and can be undone. Deleting removes @(profile.Name)’s settings, Saved list, follows and requests.</p>
+                    <div class="adm-panel-actions">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" disabled="@busy" @onclick="() => SetHiddenAsync(!profile.Hidden)">@(profile.Hidden ? "Show on picker" : "Hide from picker")</button>
+                        <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => pendingDelete = true">Delete profile…</button>
+                    </div>
+                </section>
+            </aside>
+        </div>
+    }
+</AdminContent>
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    public sealed class ProfileForm
+    {
+        public string Name { get; set; } = "";
+        public string Color { get; set; } = "";
+        public bool ShowOnPicker { get; set; }
+    }
+
+    // Only what decision 3 allows: no settings, follows, Saved list or reading times.
+    private sealed record ProfileView(int Id, string Name, string Color, bool Hidden, DateTime? LockedAt, DateTime CreatedAt);
+
+    private ProfileView? profile;
+    private ProfileForm? form;
+    private EditContext editContext = default!;
+    private IReadOnlyList<AdminDeviceRow> devices = [];
+    private HashSet<Guid> openDevices = [];
+    private IReadOnlyList<AdminRequestRow> requests = [];
+    private string? lockDevice;
+    private string newPin = "", newPinConfirm = "";
+    private Guid? renaming;
+    private string renameText = "";
+    private bool notFound, pendingDelete, busy;
+    private string? error, pinError, message;
+    private bool messageBad;
+
+    private DateTime Now => Clock.GetUtcNow().UtcDateTime;
+
+    protected override Task OnParametersSetAsync() => LoadAsync(resetForm: true);
+
+    private async Task LoadAsync(bool resetForm)
+    {
+        await using var db = await Factory.CreateDbContextAsync();
+        profile = await db.Profiles.AsNoTracking().Where(p => p.Id == Id)
+            .Select(p => new ProfileView(p.Id, p.Name, p.Color, p.Hidden, p.LockedAt, p.CreatedAt)).SingleOrDefaultAsync();
+        if (profile is null) { notFound = true; return; }
+        devices = await ProfileAdmin.DevicesAsync(db, Id) ?? [];
+        // The lock's device may belong to someone else or nobody; only this profile's devices can be signed out here.
+        openDevices = (await db.ProfileDevices.Where(d => d.ProfileId == Id && d.RevokedAt == null).Select(d => d.Id).ToListAsync()).ToHashSet();
+        lockDevice = devices.FirstOrDefault(d => d.CausedLock)?.Label;
+        requests = await RequestStore.ListAsync(db, profileId: Id);
+        if (resetForm || form is null)
+        {
+            form = new ProfileForm { Name = profile.Name, Color = profile.Color, ShowOnPicker = !profile.Hidden };
+            editContext = new EditContext(form);
+        }
+    }
+
+    private bool DeviceIsOpen(AdminDeviceRow device) => openDevices.Contains(device.Id);
+
+    private void Say(string text, bool bad = false) { message = text; messageBad = bad; }
+
+    private void SetColor(string color)
+    {
+        form!.Color = color;
+        editContext.NotifyFieldChanged(new FieldIdentifier(form, nameof(ProfileForm.Color)));
+    }
+
+    private void SetShown(bool shown)
+    {
+        form!.ShowOnPicker = shown;
+        editContext.NotifyFieldChanged(new FieldIdentifier(form, nameof(ProfileForm.ShowOnPicker)));
+    }
+
+    private bool Dirty => editContext?.IsModified() == true;
+
+    private string SaveState
+    {
+        get
+        {
+            if (!Dirty) return "No unsaved changes";
+            var names = new List<string>();
+            if (editContext.IsModified(new FieldIdentifier(form!, nameof(ProfileForm.Name)))) names.Add("name");
+            if (editContext.IsModified(new FieldIdentifier(form!, nameof(ProfileForm.Color)))) names.Add("color");
+            if (editContext.IsModified(new FieldIdentifier(form!, nameof(ProfileForm.ShowOnPicker)))) names.Add("picker");
+            return names.Count == 0 ? "Unsaved changes" : $"Unsaved {(names.Count == 1 ? "change" : "changes")}: {string.Join(", ", names)}";
+        }
+    }
+
+    private async Task Run(Func<WebScraperContext, Task<string?>> action, bool resetForm = false)
+    {
+        if (busy) return;
+        busy = true;
+        message = null;
+        try
+        {
+            await using var db = await Factory.CreateDbContextAsync();
+            if (await action(db) is { } text) Say(text);
+            await LoadAsync(resetForm);
+        }
+        catch (ArgumentException ex) { Say(ex.Message, bad: true); }
+        finally { busy = false; }
+    }
+
+    private async Task SaveAsync()
+    {
+        if (form is null || busy) return;
+        error = null;
+        busy = true;
+        try
+        {
+            await using var db = await Factory.CreateDbContextAsync();
+            if (!await ProfileAdmin.UpdateAsync(db, Id, form.Name, form.Color, !form.ShowOnPicker, Now)) { notFound = true; return; }
+            Say(form.ShowOnPicker || profile!.Hidden ? "Saved." : $"Saved. {form.Name.Trim()} is hidden from the edition picker and their devices are signed out.");
+            await LoadAsync(resetForm: true);
+        }
+        catch (ArgumentException ex) { error = ex.Message; }
+        finally { busy = false; }
+    }
+
+    private async Task ResetPinAsync()
+    {
+        if (busy) return;
+        pinError = null;
+        if (newPin != newPinConfirm) { pinError = "The two PINs don’t match."; return; }
+        if (!ProfileRules.IsValidPin(newPin)) { pinError = "A PIN is 4 digits."; return; }
+        var name = profile!.Name;
+        await Run(async db =>
+        {
+            if (!await ProfileAdmin.ResetPinAsync(db, Pins, Id, newPin, Now)) { notFound = true; return null; }
+            newPin = newPinConfirm = "";
+            return $"{name}’s PIN is reset and they’re signed out everywhere. Tell them the new PIN.";
+        });
+    }
+
+    private Task UnlockAsync() => Run(async db =>
+        await ProfileAdmin.UnlockAsync(db, Id) ? $"Unlocked {profile!.Name}. Their PIN is unchanged." : null);
+
+    private Task SetHiddenAsync(bool hidden)
+    {
+        pendingDelete = false;
+        var p = profile!;
+        return Run(async db =>
+            !await ProfileAdmin.UpdateAsync(db, Id, p.Name, p.Color, hidden, Now) ? null
+            : hidden ? $"Hid {p.Name} from the edition picker and signed out their devices. Nothing was deleted." : $"{p.Name} is back on the edition picker.",
+            resetForm: true);
+    }
+
+    private Task SignOutDeviceAsync(AdminDeviceRow device) => Run(async db =>
+        await ProfileAdmin.SignOutDeviceAsync(db, Id, device.Id, Now) ? $"Signed out {device.Label}." : $"{device.Label} was already signed out.");
+
+    private Task SignOutEverywhereAsync() => Run(async db =>
+    {
+        var count = await ProfileAdmin.SignOutEverywhereAsync(db, Id, Now);
+        return count == 0 ? $"{profile!.Name} wasn’t signed in on any device." : $"Signed {profile!.Name} out of {count} {(count == 1 ? "device" : "devices")}.";
+    });
+
+    private void StartRename(AdminDeviceRow device)
+    {
+        renaming = device.Id;
+        renameText = device.Label;
+    }
+
+    private Task RenameAsync(AdminDeviceRow device) => Run(async db =>
+    {
+        var renamed = await ProfileAdmin.RenameDeviceAsync(db, Id, device.Id, renameText);
+        renaming = null;
+        return renamed ? $"Renamed the device to {renameText.Trim()}." : "That device is no longer listed.";
+    });
+
+    private async Task DeleteAsync()
+    {
+        var name = profile!.Name;
+        await using var db = await Factory.CreateDbContextAsync();
+        await ProfileAdmin.DeleteAsync(db, Id);
+        Nav.NavigateTo("admin/profiles?deleted=" + Uri.EscapeDataString(name));
+    }
+
+    private static string Capitalize(string text) => text.Length == 0 ? text : char.ToUpperInvariant(text[0]) + text[1..];
+}

@@ -267,6 +267,17 @@ public class ProfileHttpTests
                 Assert.DoesNotContain("TvTrackedSeriesId", body, StringComparison.OrdinalIgnoreCase);
             }
 
+            // The admin pages render the same limited view: name, color, lock, devices and requests only.
+            foreach (var path in new[] { "/admin/profiles", $"/admin/profiles/{a.Id}", "/admin/profiles/base" })
+            {
+                var response = await client.SendAsync(Page(path));
+                Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+                var html = await response.Content.ReadAsStringAsync();
+                Assert.Contains(path == "/admin/profiles/base" ? "Base edition" : a.Name, html);
+                Assert.DoesNotContain(marker, html);
+                Assert.DoesNotContain("Open as", html);
+            }
+
             // Admin can't open a profile without its PIN: the admin cookie gives no profile.
             Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync("/api/me")).StatusCode);
         }
