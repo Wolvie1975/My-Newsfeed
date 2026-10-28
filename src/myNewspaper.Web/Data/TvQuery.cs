@@ -69,8 +69,8 @@ public static class TvQuery
     public static async Task FollowAsync(WebScraperContext db, int providerId, string title)
     {
         if (providerId <= 0 || string.IsNullOrWhiteSpace(title) || title.Length > 500) throw new ArgumentException("Invalid series.");
-        var existing = await db.TvTrackedSeries.SingleOrDefaultAsync(t => t.TvmazeShowId == providerId);
-        if (existing is not null) { existing.Enabled = true; await db.SaveChangesAsync(); return; }
+        // Enabled is set in SQL, like SetEnabledAsync, so a stale tracked copy can't make this a no-op.
+        if (await db.TvTrackedSeries.Where(t => t.TvmazeShowId == providerId).ExecuteUpdateAsync(s => s.SetProperty(t => t.Enabled, true)) > 0) return;
         var series = await db.TvSeries.AsNoTracking().SingleOrDefaultAsync(s => s.TvmazeShowId == providerId);
         var added = new TvTrackedSeries { TvmazeShowId = providerId, ExpectedTitle = title, Enabled = true, SeriesId = series?.Id };
         db.Add(added);

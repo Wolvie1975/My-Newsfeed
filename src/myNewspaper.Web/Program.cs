@@ -101,8 +101,10 @@ builder.Services.AddHttpClient(RequestChecks.ClientName, client =>
     .ConfigurePrimaryHttpMessageHandler(SsrfGuard.CreateHandler);
 builder.Services.AddSingleton<RequestChecks>();
 builder.Services.AddSingleton<RequestBacklog>();
-// The request checker fills in details for the admin; the household channel rollout is built but starts at U3.
+// The request checker fills in details for the admin; the rollout turns new household channels on for everyone.
 builder.Services.AddHostedService<RequestCheckerService>();
+builder.Services.AddSingleton<ChannelRolloutService>();
+builder.Services.AddHostedService(sp => sp.GetRequiredService<ChannelRolloutService>());
 
 // Game results from ESPN's public scoreboard data: a background sync stores followed leagues' and teams' games; pages
 // only read the database.
@@ -156,6 +158,7 @@ app.MapSharedArticles();
 app.MapAccount();
 app.MapPublicEndpoints();
 app.MapProfiles();
+app.MapMe();
 app.MapAdminProfiles();
 app.MapFeed();
 

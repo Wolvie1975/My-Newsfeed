@@ -24,7 +24,8 @@ public static class ProfileGate
 
     /// <summary>The public profile routes, which don't exist while profiles are switched off.</summary>
     public static bool IsProfileRoute(PathString path) =>
-        path.StartsWithSegments(PickerPath) || path.StartsWithSegments("/profiles") || path.StartsWithSegments("/api/me");
+        path.StartsWithSegments(PickerPath) || path.StartsWithSegments("/profiles") || path.StartsWithSegments("/api/me")
+        || path.StartsWithSegments("/me");
 
     /// <summary>A browser asking for a page, as opposed to fetch calls, fragments, probes and bots asking for data.</summary>
     public static bool IsPageRequest(HttpRequest request) =>

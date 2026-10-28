@@ -10,12 +10,20 @@
 <div class="set-layout">
 @* Section index as in the approved concept (a column on desktop, a row of links on phones). *@
 <nav class="set-index" aria-label="Settings sections">
+    @if (Reader.HasProfile) { <a href="settings#profile">Your profile</a> }
     <a href="settings#appearance-heading">Light and dark mode</a>
     <a href="settings#color-scheme-heading">Color scheme</a>
     <a href="settings#my-services">My services</a>
     <a href="settings#my-teams-heading">My Teams</a>
+    @if (Reader.HasProfile)
+    {
+        <a href="settings#shows">TV shows</a>
+        <a href="settings#channels">YouTube channels</a>
+        <a href="settings#requests">Requests</a>
+    }
 </nav>
 <div class="set-main">
+<MyProfileSettings Done="@Done" Error="@Error" TriesLeft="TriesLeft" />
 <details class="settings-arrange"><summary>Arrange Settings sections</summary><p>Move sections up or down. @SavesTo</p><div data-settings-order-controls></div><button type="button" data-settings-order-reset class="nf-btn nf-btn--secondary">Restore default Settings order</button><p role="status" data-settings-order-status></p><noscript><p>Enable JavaScript to arrange Settings sections.</p></noscript></details>
 <div data-settings-sections>
 <section data-settings-section="appearance" aria-labelledby="appearance-heading">
@@ -86,9 +94,15 @@
 </section>
 
 </div>
+<MyFollowsSettings Done="@Done" Error="@Error" TvQuery="@TvQuery" />
 </div>
 </div>
 @code {
+    [SupplyParameterFromQuery(Name = "done")] private string? Done { get; set; }
+    [SupplyParameterFromQuery(Name = "error")] private string? Error { get; set; }
+    [SupplyParameterFromQuery(Name = "triesLeft")] private int? TriesLeft { get; set; }
+    [SupplyParameterFromQuery(Name = "tvq")] private string? TvQuery { get; set; }
+
     // With a profile open, choices follow the person to every device; otherwise they stay in this browser.
     private string SavesTo => Reader.HasProfile ? $"Changes save to {Reader.Profile!.Name}’s edition." : "Changes save in this browser.";
 

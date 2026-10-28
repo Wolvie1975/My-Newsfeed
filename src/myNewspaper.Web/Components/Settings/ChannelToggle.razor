@@ -1,0 +1,13 @@
+@using myNewspaper.Web.Profiles
+@* An on/off switch for one channel, as a form button so it works without JavaScript. *@
+<form method="post" action="@($"me/channels/{Channel.FeedId}")">
+    <AntiforgeryToken />
+    <input type="hidden" name="follow" value="@(Channel.Following ? "off" : "on")" />
+    <button class="set-switch" type="submit" role="switch" aria-checked="@(Channel.Following ? "true" : "false")" aria-label="@Channel.Name">
+        <span aria-hidden="true">@(Channel.Following ? "On" : "Off")</span>
+    </button>
+</form>
+
+@code {
+    [Parameter, EditorRequired] public MyChannel Channel { get; set; } = default!;
+}

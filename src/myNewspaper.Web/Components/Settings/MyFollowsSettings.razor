@@ -1,0 +1,154 @@
+@using myNewspaper.Web.Profiles
+@using myNewspaper.Web.Requests
+@inject IDbContextFactory<WebScraperContext> Factory
+@inject ProfileContext Reader
+@inject FeedDates Dates
+
+@* Settings → Shows & channels and Requests (handoff 4.1, 4.2, 5.1 and 6.3), for the open profile only. Lists only this
+   profile's follows, the household channels everyone has, household picks, and this profile's own requests. *@
+@if (Reader.Profile is not null && page is not null)
+{
+    <section id="shows" data-settings-section="tv" aria-labelledby="shows-heading">
+        <h2 id="shows-heading">TV shows</h2>
+        <p class="updated">Shows you follow are on your TV calendar and in Tonight on TV. Others in the house follow their own.</p>
+        <Message Section="shows" Done="@Done" Error="@Error" />
+        @if (page.Shows.Count == 0)
+        {
+            <p class="updated">You don’t follow any shows yet.</p>
+        }
+        else
+        {
+            <ul class="set-rows" aria-label="Shows you follow">
+                @foreach (var show in page.Shows)
+                {
+                    <li>
+                        <span>@show.Title</span>
+                        <form method="post" action="@($"me/tv/{show.TrackingId}/unfollow")">
+                            <AntiforgeryToken />
+                            <button class="nf-btn nf-btn--secondary" type="submit" aria-label="@($"Unfollow {show.Title}")">Unfollow</button>
+                        </form>
+                    </li>
+                }
+            </ul>
+        }
+        <h3>Add a show</h3>
+        <TvShowSearch Action="settings#shows" Query="@TvQuery" ReturnUrl="/settings" Followed="followedShows" />
+    </section>
+
+    <section id="channels" data-settings-section="channels" aria-labelledby="channels-heading">
+        <h2 id="channels-heading">YouTube channels</h2>
+        <Message Section="channels" Done="@Done" Error="@Error" />
+        <h3>Household channels</h3>
+        <p class="updated">Channels the household collects, on for everyone to start with. Turn off the ones you don’t want.</p>
+        @if (page.Household.Count == 0)
+        {
+            <p class="updated">There are no household channels yet.</p>
+        }
+        else
+        {
+            @* Collapsed, like the team groups, so a long list doesn't bury Requests; it reopens after a switch. *@
+            <details class="sports-team-group" open="@((Done ?? Error)?.StartsWith("channel", StringComparison.Ordinal) == true)">
+                <summary>All household channels <span class="sports-team-group__count">@(page.Household.Count(c => c.Following)) of @(page.Household.Count) on</span></summary>
+                <ul class="set-rows set-rows--group" aria-label="Household channels">
+                    @foreach (var channel in page.Household)
+                    {
+                        <li>
+                            <span>@channel.Name</span>
+                            <ChannelToggle Channel="channel" />
+                        </li>
+                    }
+                </ul>
+            </details>
+        }
+        @if (page.Requested.Count > 0)
+        {
+            <h3>Your other channels</h3>
+            <ul class="set-rows" aria-label="Your other channels">
+                @foreach (var channel in page.Requested)
+                {
+                    <li>
+                        <span>@channel.Name</span>
+                        <ChannelToggle Channel="channel" />
+                    </li>
+                }
+            </ul>
+        }
+        @if (page.Picks.Count > 0)
+        {
+            <h3>Household picks</h3>
+            <p class="updated">Suggested by the admin. Tap one to add it.</p>
+            <div class="set-chips">
+                @foreach (var pick in page.Picks)
+                {
+                    <form method="post" action="@($"me/channels/{pick.FeedId}")">
+                        <AntiforgeryToken />
+                        <input type="hidden" name="follow" value="on" />
+                        <button class="set-chip" type="submit" aria-label="@($"Follow {pick.Name}")">+ @pick.Name</button>
+                    </form>
+                }
+            </div>
+        }
+        <p><a class="set-link" href="settings#requests">Request a channel →</a></p>
+    </section>
+
+    <section id="requests" data-settings-section="requests" aria-labelledby="requests-heading">
+        <h2 id="requests-heading">Requests</h2>
+        <p class="updated">Ask for a YouTube channel or a news source. The admin adds it; a channel is then followed for you, and a news source appears for everyone in its section.</p>
+        <Message Section="requests" Done="@Done" Error="@Error" />
+        <form class="set-form" method="post" action="me/requests">
+            <AntiforgeryToken />
+            <fieldset class="settings-schemes">
+                <legend>What is it?</legend>
+                <label class="settings-scheme"><input type="radio" name="kind" value="@RequestStore.Youtube" checked /> <span>YouTube channel</span></label>
+                <label class="settings-scheme"><input type="radio" name="kind" value="@RequestStore.News" /> <span>News source</span></label>
+            </fieldset>
+            <label for="request-name">Name</label>
+            <input id="request-name" class="set-input" name="name" maxlength="200" required placeholder="For example: Lawrence Journal-World" />
+            <label for="request-link">Link <span class="updated">(optional)</span></label>
+            <input id="request-link" class="set-input" name="link" type="text" inputmode="url" maxlength="2048" placeholder="A channel, video or website address" />
+            <label for="request-note">Note for the admin <span class="updated">(optional)</span></label>
+            <textarea id="request-note" class="set-input" name="note" maxlength="500" rows="2"></textarea>
+            <button class="nf-btn nf-btn--primary" type="submit">Send request</button>
+        </form>
+        <h3>Your requests</h3>
+        @if (requests.Count == 0)
+        {
+            <p class="updated">You haven’t asked for anything yet.</p>
+        }
+        else
+        {
+            <ul class="set-rows" aria-label="Your requests">
+                @foreach (var r in requests)
+                {
+                    <li>
+                        <span>
+                            <b>@r.Name</b>
+                            <span class="updated">@(r.Kind == RequestStore.Youtube ? "YouTube channel" : "News source") · @Dates.Published(r.CreatedAt)</span>
+                            @if (r.AdminReply is { Length: > 0 } reply) { <span class="updated">The admin said: “@reply”</span> }
+                        </span>
+                        <span class="set-status set-status--@r.Status">@(r.Status switch { RequestStore.Added => "Added", RequestStore.Declined => "Declined", _ => "Waiting" })</span>
+                    </li>
+                }
+            </ul>
+        }
+    </section>
+}
+
+@code {
+    [Parameter] public string? Done { get; set; }
+    [Parameter] public string? Error { get; set; }
+    [Parameter] public string? TvQuery { get; set; }
+
+    private MyFollowsPage? page;
+    private IReadOnlySet<int> followedShows = new HashSet<int>();
+    private IReadOnlyList<MyRequest> requests = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Reader.Profile is not { } me) return;
+        await using var db = await Factory.CreateDbContextAsync();
+        page = await MyFollows.GetAsync(db, me.Id);
+        followedShows = page.Shows.Select(s => s.TvmazeShowId).ToHashSet();
+        requests = await RequestStore.MineAsync(db, me.Id);
+    }
+}

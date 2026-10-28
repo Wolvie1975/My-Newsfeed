@@ -166,6 +166,7 @@ public class ProfileHttpTests
         Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync("/api/me")).StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, (await client.PostAsync("/profiles/1/open", new FormUrlEncodedContent([]))).StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, (await client.PostAsync("/api/me/requests", JsonContent.Create(new { }))).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await client.PostAsync("/me/pin", new FormUrlEncodedContent([]))).StatusCode);
         Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/api/saved")).StatusCode);
         Assert.Equal(HttpStatusCode.OK, (await client.SendAsync(Page("/"))).StatusCode);
         // Admin APIs work either way, behind the admin sign-in.
@@ -369,6 +370,46 @@ public class ProfileHttpTests
             Assert.Equal(HttpStatusCode.OK, (await client.SendAsync(Page("/tv"))).StatusCode);
         }
         finally { await app.CleanUpAsync(withPin, noPin); }
+    }
+
+    [Fact]
+    public async Task Settings_forms_need_an_open_edition_and_antiforgery_and_come_back_with_a_code_only()
+    {
+        await using var app = new ProfileApp(enabled: true);
+        var a = await app.AddProfileAsync("1357");
+        var client = app.Browser();
+        try
+        {
+            await client.SendAsync(Page("/"));
+            // No profile open: the gate answers before the form does.
+            var closed = await PostFormAsync(client, "/me/device", new() { ["pickerMode"] = "daily", ["__RequestVerificationToken"] = await TokenFromLoginPageAsync(client) });
+            Assert.Equal(HttpStatusCode.Unauthorized, closed.StatusCode);
+            Assert.Equal(HttpStatusCode.OK, (await OpenAsync(client, a, "1357")).StatusCode);
+
+            Assert.Equal(HttpStatusCode.BadRequest, (await PostFormAsync(client, "/me/device", new() { ["pickerMode"] = "daily" })).StatusCode);
+            var saved = await PostFormAsync(client, "/me/device", new() { ["pickerMode"] = "daily", ["__RequestVerificationToken"] = await TokenFromLoginPageAsync(client) });
+            Assert.Equal("/settings?done=device-saved#profile", saved.Headers.Location!.OriginalString);
+            var wrong = await PostFormAsync(client, "/me/pin", new()
+            {
+                ["currentPin"] = "0000",
+                ["newPin"] = "2468",
+                ["newPinConfirm"] = "2468",
+                ["__RequestVerificationToken"] = await TokenFromLoginPageAsync(client),
+            });
+            Assert.Equal("/settings?error=pin-wrong&triesLeft=4#profile", wrong.Headers.Location!.OriginalString);
+            var request = await PostFormAsync(client, "/me/requests", new()
+            {
+                ["kind"] = "news",
+                ["name"] = "zz paper",
+                ["__RequestVerificationToken"] = await TokenFromLoginPageAsync(client),
+            });
+            Assert.Equal("/settings?done=request-sent#requests", request.Headers.Location!.OriginalString);
+            var settings = System.Net.WebUtility.HtmlDecode(await (await client.SendAsync(Page("/settings?done=request-sent"))).Content.ReadAsStringAsync());
+            Assert.Contains("zz paper", settings);
+            Assert.Contains("Sent. The admin will look at it", settings);
+            Assert.Contains("Your profile", settings);
+        }
+        finally { await app.CleanUpAsync(a); }
     }
 
     [Fact]

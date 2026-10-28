@@ -4,6 +4,7 @@
 @using System.Globalization
 @inject IDbContextFactory<WebScraperContext> Factory
 @inject NavigationManager Nav
+@inject myNewspaper.Web.Profiles.ChannelRolloutService Rollout
 
 <PageTitle>@(IsNew ? "Add YouTube feed" : "Edit YouTube feed")</PageTitle>
 
@@ -208,6 +209,8 @@ else
             }
 
             await db.SaveChangesAsync();
+            // A new feed is a household channel: turn it on for everyone now rather than at the next 15-minute pass.
+            Rollout.Trigger();
             Nav.NavigateTo("admin/youtube-feeds");
         }
         catch (DbUpdateException ex) when (AdminData.IsUniqueViolation(ex))

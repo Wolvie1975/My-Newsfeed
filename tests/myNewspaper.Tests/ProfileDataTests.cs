@@ -352,6 +352,68 @@ public class ProfileDataTests
     }
 
     [Fact]
+    public async Task A_profile_can_follow_household_channels_picks_and_its_own_requests_but_never_anyone_elses()
+    {
+        await using var db = Create();
+        await using var tx = await db.Database.BeginTransactionAsync();
+        var tag = Tag();
+        var a = await NewProfile(db);
+        var b = await NewProfile(db);
+        var request = await RequestStore.SubmitAsync(db, a.Id, RequestStore.Youtube, "A's channel", null, null);
+        var requestedId = $"UC{tag}Q".PadRight(24, 'x');
+        Assert.Equal(ApproveOutcome.Approved, await RequestStore.ApproveYoutubeAsync(db, request.Id, requestedId, $"zz {tag} requested", null, false, Now));
+        var requested = await db.YoutubeVideoFeeds.SingleAsync(f => f.ChannelId == requestedId);
+        var pick = new YoutubeVideoFeed { ChannelId = $"UC{tag}P", ChannelName = $"zz {tag} pick", Url = $"https://{tag}p.test.invalid/feed", IsHouseholdPick = true };
+        db.YoutubeVideoFeeds.Add(pick);
+        await db.SaveChangesAsync();
+        db.ChannelRollouts.Add(new ChannelRollout { YoutubeVideoFeedId = pick.Id });   // keep the rollout from treating the pick as new
+        await db.SaveChangesAsync();
+        await db.ProfileChannelFollows.Where(f => f.YoutubeVideoFeedId == pick.Id).ExecuteDeleteAsync();
+
+        // B can't follow A's requested channel, and never sees it listed; the answer matches an unknown ID.
+        Assert.False(await MyFollows.SetChannelAsync(db, b.Id, requested.Id, follow: true));
+        Assert.False(await MyFollows.SetChannelAsync(db, b.Id, int.MaxValue, follow: true));
+        var bPage = await MyFollows.GetAsync(db, b.Id);
+        Assert.DoesNotContain(bPage.Household.Concat(bPage.Requested).Concat(bPage.Picks), c => c.FeedId == requested.Id);
+        // A can follow its own (approved without the follow), and lists it under its other channels.
+        Assert.True(await MyFollows.SetChannelAsync(db, a.Id, requested.Id, follow: true));
+        Assert.Contains((await MyFollows.GetAsync(db, a.Id)).Requested, c => c.FeedId == requested.Id && c.Following);
+        // Household channels switch off and on.
+        Assert.Contains(bPage.Household, c => c.FeedId == pick.Id && !c.Following);
+        Assert.True(await MyFollows.SetChannelAsync(db, b.Id, pick.Id, follow: true));
+        Assert.True(await MyFollows.SetChannelAsync(db, b.Id, pick.Id, follow: true));   // a double tap is fine
+        Assert.Contains((await MyFollows.GetAsync(db, b.Id)).Household, c => c.FeedId == pick.Id && c.Following);
+        Assert.True(await MyFollows.SetChannelAsync(db, b.Id, pick.Id, follow: false));
+        Assert.False(await db.ProfileChannelFollows.AnyAsync(f => f.ProfileId == b.Id && f.YoutubeVideoFeedId == pick.Id));
+    }
+
+    [Fact]
+    public async Task Unfollowing_a_show_stops_collecting_it_only_when_nobody_follows_it()
+    {
+        await using var db = Create();
+        await using var tx = await db.Database.BeginTransactionAsync();
+        var a = await NewProfile(db);
+        var b = await NewProfile(db);
+        var showId = Random.Shared.Next(1_500_000_000, 2_000_000_000);
+        await MyFollows.FollowShowAsync(db, a.Id, showId, "zz show");
+        await MyFollows.FollowShowAsync(db, b.Id, showId, "zz show");
+        await MyFollows.FollowShowAsync(db, b.Id, showId, "zz show");   // following twice adds one row
+        var tracked = await db.TvTrackedSeries.SingleAsync(t => t.TvmazeShowId == showId);
+        Assert.True(tracked.Enabled);
+        Assert.Equal(2, await db.ProfileTvFollows.CountAsync(f => f.TvTrackedSeriesId == tracked.Id));
+        Assert.Contains((await MyFollows.GetAsync(db, a.Id)).Shows, s => s.TvmazeShowId == showId);
+
+        Assert.True(await MyFollows.UnfollowShowAsync(db, a.Id, tracked.Id));
+        Assert.True(await db.TvTrackedSeries.Where(t => t.Id == tracked.Id).Select(t => t.Enabled).SingleAsync());
+        Assert.False(await MyFollows.UnfollowShowAsync(db, a.Id, tracked.Id));
+        Assert.True(await MyFollows.UnfollowShowAsync(db, b.Id, tracked.Id));
+        Assert.False(await db.TvTrackedSeries.Where(t => t.Id == tracked.Id).Select(t => t.Enabled).SingleAsync());
+        // Following again turns collection back on.
+        await MyFollows.FollowShowAsync(db, a.Id, showId, "zz show");
+        Assert.True(await db.TvTrackedSeries.Where(t => t.Id == tracked.Id).Select(t => t.Enabled).SingleAsync());
+    }
+
+    [Fact]
     public async Task The_alert_counts_new_waiting_requests_and_every_lock_and_mark_seen_clears_only_requests()
     {
         await using var db = Create();

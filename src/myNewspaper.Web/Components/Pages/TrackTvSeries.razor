@@ -1,11 +1,37 @@
 @page "/tv/track"
 @layout PublicLayout
-@rendermode InteractiveServer
+@inject myNewspaper.Web.Profiles.ProfileContext Reader
+@inject IDbContextFactory<WebScraperContext> Factory
 <PageTitle>Track a TV series · myNewspaper</PageTitle>
 <p><a href="watch?kind=tv">← Where to watch</a></p>
-<p class="updated">Add a show to the shared tracked-series list for this site.</p>
-<SeriesFollowForm InitialQuery="@InitialQuery" InitialYear="@InitialYear" Public="true" />
+@if (Reader.HasProfile)
+{
+    @* Profiles on: following adds the show to this profile's TV calendar (handoff 4.1). *@
+    <PageHeading Title="Follow a TV series" Eyebrow="@("TV & Streaming")" Description="Add a show to your TV calendar. Choose the right series by its premiere year and network; episodes appear after the scraper’s next run." />
+    @if (myNewspaper.Web.Components.Settings.SettingsMessages.Done(Done) is { } done) { <p class="set-message is-ok" role="status">@done <a href="settings#shows">Your shows →</a></p> }
+    @if (myNewspaper.Web.Components.Settings.SettingsMessages.Error(Error, null) is { } error) { <p class="set-message is-bad" role="alert">@error</p> }
+    <section id="shows">
+        <TvShowSearch Action="tv/track" Query="@(Query ?? InitialQuery)" ReturnUrl="@ReturnHere" Followed="followed" />
+    </section>
+}
+else
+{
+    <p class="updated">Add a show to the shared tracked-series list for this site.</p>
+    <SeriesFollowForm @rendermode="InteractiveServer" InitialQuery="@InitialQuery" InitialYear="@InitialYear" Public="true" />
+}
 @code {
     [SupplyParameterFromQuery(Name="q")]public string? InitialQuery {get;set;}
     [SupplyParameterFromQuery(Name="year")]public string? InitialYear {get;set;}
+    [SupplyParameterFromQuery(Name="tvq")]public string? Query {get;set;}
+    [SupplyParameterFromQuery(Name="done")]public string? Done {get;set;}
+    [SupplyParameterFromQuery(Name="error")]public string? Error {get;set;}
+    private IReadOnlySet<int> followed = new HashSet<int>();
+    private string ReturnHere => "/tv/track?tvq=" + Uri.EscapeDataString(myNewspaper.Web.Data.QueryText.Term(Query ?? InitialQuery));
+    protected override async Task OnInitializedAsync()
+    {
+        if (Reader.Profile is not { } me) return;
+        await using var db = await Factory.CreateDbContextAsync();
+        followed = (await myNewspaper.Web.Profiles.FollowQuery.TrackedSeries(db, myNewspaper.Web.Profiles.Viewer.ForProfile(me.Id))
+            .Select(t => t.TvmazeShowId).ToListAsync()).ToHashSet();
+    }
 }

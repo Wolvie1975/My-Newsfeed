@@ -1,0 +1,73 @@
+@using myNewspaper.Web.Tv
+@inject TvmazeClient Tvmaze
+
+@* Search TVmaze and follow a show for the open profile (handoff 4.1). Static: the search is a GET form and each
+   result is a POST form to /me/tv/follow, so it works without JavaScript and never runs in a circuit, which couldn't
+   see the open profile. Every result says Follow, whether or not someone else already follows it (decision 8). *@
+<form class="tv-search" method="get" action="@Action" role="search">
+    <label for="tv-query">Find a show</label>
+    <div class="tv-search__row">
+        <input id="tv-query" class="set-input" type="search" name="tvq" value="@Query" maxlength="200" placeholder="For example: Slow Horses" required />
+        <button class="nf-btn nf-btn--secondary" type="submit">Search</button>
+    </div>
+</form>
+@if (error is not null)
+{
+    <p class="updated" role="status">@error</p>
+}
+else if (searched && results.Count == 0)
+{
+    <p class="updated" role="status">No matching shows. Try another title.</p>
+}
+@if (results.Count > 0)
+{
+    <ul class="tv-results" aria-label="Search results">
+        @foreach (var show in results)
+        {
+            <li>
+                <span class="tv-results__name">
+                    <b>@show.Name</b>
+                    <span class="updated">@(show.Premiere ?? "Premiere not announced") · @(show.Platform ?? "Network not announced")</span>
+                </span>
+                @if (Followed.Contains(show.Id))
+                {
+                    <span class="tv-results__state">Following</span>
+                }
+                else
+                {
+                    <form method="post" action="me/tv/follow">
+                        <AntiforgeryToken />
+                        <input type="hidden" name="show" value="@show.Id" />
+                        <input type="hidden" name="returnUrl" value="@ReturnUrl" />
+                        <button class="nf-btn nf-btn--primary" type="submit" aria-label="@($"Follow {show.Name}")">Follow</button>
+                    </form>
+                }
+            </li>
+        }
+    </ul>
+    <p class="updated">Search and show details from <a href="https://www.tvmaze.com/api" target="_blank" rel="noopener noreferrer">TVmaze</a>.</p>
+}
+
+@code {
+    /// <summary>The page the search form submits to (it adds ?tvq=).</summary>
+    [Parameter, EditorRequired] public string Action { get; set; } = "";
+    [Parameter] public string? Query { get; set; }
+    /// <summary>Where Follow comes back to, with its message.</summary>
+    [Parameter, EditorRequired] public string ReturnUrl { get; set; } = "";
+    /// <summary>TVmaze IDs this profile already follows.</summary>
+    [Parameter] public IReadOnlySet<int> Followed { get; set; } = new HashSet<int>();
+
+    private IReadOnlyList<TvmazeShow> results = [];
+    private bool searched;
+    private string? error;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var term = QueryText.Term(Query);
+        if (term.Length == 0) return;
+        var response = await Tvmaze.SearchAsync(term);
+        results = response.Shows;
+        error = response.Error;
+        searched = true;
+    }
+}

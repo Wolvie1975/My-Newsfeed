@@ -1,0 +1,83 @@
+@using myNewspaper.Web.Profiles
+@inject ProfileContext Reader
+
+@* Settings → Profile and "What's yours and what's shared" (handoff 6.3), for the open profile. Plain forms to /me/*;
+   each comes back here with a fixed message. There's no way to turn the PIN off. *@
+@if (Reader.Profile is { } me)
+{
+    <section id="profile" data-settings-section="profile" aria-labelledby="profile-heading">
+        <h2 id="profile-heading">Your profile</h2>
+        <Message Section="profile" Done="@Done" Error="@Error" TriesLeft="TriesLeft" />
+        <form class="set-form" method="post" action="me/profile">
+            <AntiforgeryToken />
+            <label for="profile-name">Name</label>
+            <input id="profile-name" class="set-input" name="name" value="@me.Name" maxlength="@ProfileRules.MaxNameLength" required autocomplete="off" />
+            <fieldset class="set-colors">
+                <legend>Color</legend>
+                @foreach (var (hex, label) in SiteDefaults.ProfileColors)
+                {
+                    <label class="set-color">
+                        <input type="radio" name="color" value="@hex" checked="@string.Equals(me.Color, hex, StringComparison.OrdinalIgnoreCase)" />
+                        <span class="set-color__dot" style="background: @hex" aria-hidden="true"></span>
+                        <span>@label</span>
+                    </label>
+                }
+            </fieldset>
+            <button class="nf-btn nf-btn--primary" type="submit">Save name and color</button>
+        </form>
+
+        <form class="set-form" method="post" action="me/pin" aria-labelledby="pin-heading">
+            <AntiforgeryToken />
+            <h3 id="pin-heading">Change PIN</h3>
+            <p class="updated">A PIN is a household lock, not a password: don’t reuse a bank or phone PIN. Five wrong PINs lock your edition until the admin unlocks it.</p>
+            <div class="set-pins">
+                <span><label for="pin-current">Current PIN</label><input id="pin-current" class="set-input set-input--pin" name="currentPin" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="current-password" required /></span>
+                <span><label for="pin-new">New PIN</label><input id="pin-new" class="set-input set-input--pin" name="newPin" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="new-password" required /></span>
+                <span><label for="pin-confirm">New PIN again</label><input id="pin-confirm" class="set-input set-input--pin" name="newPinConfirm" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="new-password" required /></span>
+            </div>
+            <button class="nf-btn nf-btn--secondary" type="submit">Change PIN</button>
+        </form>
+
+        @if (Reader.Device is { } device)
+        {
+            <form class="set-form" method="post" action="me/device" aria-labelledby="device-heading">
+                <AntiforgeryToken />
+                <h3 id="device-heading">On this device, show the profile picker</h3>
+                <fieldset class="settings-schemes">
+                    <legend class="sr-only">When this device shows the profile picker</legend>
+                    @foreach (var (mode, label) in PickerModes)
+                    {
+                        <label class="settings-scheme"><input type="radio" name="pickerMode" value="@mode" checked="@(device.PickerMode == mode)" /> <span>@label</span></label>
+                    }
+                </fieldset>
+                <p class="updated">Only this device changes. On a phone’s home-screen app, “every visit” means each time the app restarts.</p>
+                <button class="nf-btn nf-btn--secondary" type="submit">Save for this device</button>
+            </form>
+        }
+        <form method="post" action="profiles/signout" class="set-form">
+            <AntiforgeryToken />
+            <button class="nf-btn nf-btn--secondary" type="submit">Sign this device out</button>
+        </form>
+    </section>
+
+    <section data-settings-section="shared" aria-labelledby="shared-heading">
+        <h2 id="shared-heading">What’s yours and what’s shared</h2>
+        <ul class="set-list">
+            <li><b>Yours:</b> your Saved list, the TV shows and YouTube channels you follow, your requests, and every setting on this page. Nobody else in the house sees them, and the admin doesn’t either.</li>
+            <li><b>Shared:</b> the news sources, household YouTube channels and sports everyone reads. The picker shows each edition’s counts and team games, never show or channel names.</li>
+        </ul>
+    </section>
+}
+
+@code {
+    [Parameter] public string? Done { get; set; }
+    [Parameter] public string? Error { get; set; }
+    [Parameter] public int? TriesLeft { get; set; }
+
+    private static readonly (string Mode, string Label)[] PickerModes =
+    [
+        (ProfileGate.EveryVisit, "Every visit"),
+        (ProfileGate.Daily, "Once a day"),
+        (ProfileGate.UntilSignOut, "Only after signing out"),
+    ];
+}
