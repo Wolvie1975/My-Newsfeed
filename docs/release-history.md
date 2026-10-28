@@ -6,10 +6,39 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The latest recorded web release is `mynewspaper-web:liveat-20261028`
-(image `31950bbc9fa1`), deployed October 28, 2026 (Central). Its rollback image is
-`mynewsfeed-web:before-mynewspaper-liveat-20261028`. Deployment checks passed then;
+The latest recorded web release is `mynewspaper-web:profiles-20261028`
+(image `6897db98b04b`), deployed October 28, 2026 (Central). Its rollback image is
+`mynewsfeed-web:before-mynewspaper-profiles-20261028`. Deployment checks passed then;
 this is a dated observation, not live hosting status.
+
+## Household profiles foundation, switched off — deployed October 28, 2026 (Central)
+
+Stages F1 to F3 of the household profiles plan (`new development/profiles-handoff.md`, kept out of the repository),
+behind `Profiles:Enabled`, which stays `false`, so readers see no change. Adds `db/020_profiles.sql` (applied to
+sql2025 / WebScraper earlier on October 28 after a verified copy-only backup, and rerun cleanly), the profile gate,
+PINs, settings validation, the viewer and follow filters on `TvQuery` and `VideosQuery`, per-profile Saved storage,
+the request checker with its SSRF guard and the household channel rollout (both built, neither started), the
+`/profiles/*` and `/api/me*` endpoints (404 while off), and admin APIs under `/admin/api` (admin sign-in required).
+Commit `4798ad8`, on branch `profiles-foundation` (not yet merged into `develop`).
+
+Deployed `mynewspaper-web:profiles-20261028` (`6897db98b04b`) through Compose, healthy; rollback
+`mynewsfeed-web:before-mynewspaper-profiles-20261028` (`31950bbc9fa1`). The dev container had been rebuilt again, so the
+Docker CLI and Compose were reinstalled and the private override was regenerated from the live container's own settings:
+six app settings identical to live; port 8085, dev-bridge, `mynewsfeed_mynewsfeed-keys`, restart policy and health
+check matched. A first build (`530ef8408519`) used a stale cached base image (.NET 10.0.12 instead of 10.0.14) and ran
+briefly; it was rebuilt with `--pull` and replaced. The final image's environment matches the previous release's.
+Predeploy: solution build with no warnings, 920 .NET tests including the new live-database and test-host checks (the
+no-profile route sweep with the switch on, switch-off 404s, antiforgery, PIN lock and reset, the privacy test, admin
+API privacy, rollout and per-profile Saved); the test rows were confirmed gone afterwards. No JavaScript or styles
+changed, so lint and the browser checks weren't rerun. Live: /healthz and 19 public routes returned 200 (the /results
+and /movies/digital redirects unchanged); /editions, /api/me, POST /profiles/1/open and POST /api/me/requests returned
+404; /admin redirected to login; /admin/api/* returned 401 without the sign-in; no device cookie was set. The previous
+image, run alongside without a port and with result syncing off, served byte-identical /tv, /videos, /saved,
+/entertainment and /settings, and the same Saved list. Home and /sports differed only in the host name, the refresh
+countdown and encrypted component state. Logs showed no errors. The scraper's hourly runs since `020` collected 269 of
+270 sources, with YouTube and TV stages succeeding; the one failure is ESPN WNBA standings ("mixed standings seasons"),
+unrelated. Mobile checks don't apply: nothing rendered changed (the compared pages above are identical). Real device not
+checked. The admin password is still the `CHANGE_ME` placeholder.
 
 ## Homepage Live now: "@" between away and home — deployed October 28, 2026 (Central)
 
