@@ -6,11 +6,26 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The latest recorded web release is `mynewspaper-web:profiles-picker-20261028`
-(image `1b52180fbe9c`), deployed October 28, 2026 (Central), with **household profiles switched on**
-(`Profiles__Enabled=true`). Its rollback image is `mynewsfeed-web:before-mynewspaper-profiles-picker-20261028`;
-turning profiles off again is the quicker rollback. Deployment checks passed then;
+The latest recorded web release is `mynewspaper-web:standings-highlight-20261028`
+(image `0035a6d8fb4d`), deployed October 28, 2026 (Central), with **household profiles switched on**
+(`Profiles__Enabled=true`). Its rollback image is `mynewsfeed-web:before-mynewspaper-standings-highlight-20261028`
+(the U1 picker build); turning profiles off again rolls back the profiles themselves. Deployment checks passed then;
 this is a dated observation, not live hosting status.
+
+## Standings My Teams highlight — deployed October 28, 2026 (Central)
+
+From 744px the standings page's ruled-paper reset cleared every cell's background, which also cleared the selected
+team's fill and left the selection text color on the page: a faint edge only in light mode, unreadable dark text in
+dark mode with Daily Ribbon. `sections.css` now keeps the selection fill and text color on selected rows there, as on
+phones. Commit `9fcb03f`. Built from the live code (`edb17a6`, the U1 picker release) plus only that change, in a
+temporary detached worktree, so the not-yet-checked settings work (`2871b34`) was not deployed.
+
+Deployed `mynewspaper-web:standings-highlight-20261028` (`0035a6d8fb4d`) through Compose with `--pull`, healthy;
+rollback `mynewsfeed-web:before-mynewspaper-standings-highlight-20261028` (`1b52180fbe9c`). Environment identical
+(sorted hash), profiles still on. Locally: BYU and Kansas selected in Daily Ribbon, Monochrome, Kansas and Halloween,
+light and dark, at 390 and 1440px: filled rows, text readable, contrast audit clean, screenshots reviewed. Live, with
+a throwaway profile (deleted afterwards, with its devices): 390 and 1440px in light and dark, yellow fill with dark
+text, contrast clean, no sideways scroll. Not checked: a real device.
 
 ## Household profiles switched on — October 28, 2026 (Central)
 
