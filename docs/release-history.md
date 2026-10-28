@@ -6,11 +6,43 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The latest recorded web release is `mynewspaper-web:phone-headlines-20261028`
-(image `6818b90cff80`), deployed October 28, 2026 (Central), with **household profiles switched on**
-(`Profiles__Enabled=true`). Its rollback image is `mynewsfeed-web:before-mynewspaper-phone-headlines-20261028`
-(the U3 settings build, `6b769189dc48`). Deployment checks passed then; this is a dated observation, not live hosting
+The latest recorded web release is `mynewspaper-web:phone-fronts-20261028`
+(image `e1ea2d9dc6c1`), deployed October 28, 2026 (Central), with **household profiles switched on**
+(`Profiles__Enabled=true`). Its rollback image is `mynewsfeed-web:before-mynewspaper-phone-fronts-20261028`
+(the release 1 Headlines build, `6818b90cff80`). Deployment checks are recorded below; this is a dated observation, not live hosting
 status.
+
+## Phone refresh, release 2: Home, Sports and Scoreboard — deployed October 28, 2026 (Central)
+
+Below 744px, Home, Sports and Scoreboard use the folded phone layout: a title ribbon, a dark lead block where
+appropriate, short timelines and headline lists, and exclusive native folds. Home includes weather and Where to
+watch search, respects hidden sections, and links into the other sections. Sports includes headlines, today's games,
+Big 12 standings, AP Top 25 and F1. Its College Sports fold is deferred because the front loads no college schedule.
+Scoreboard includes a date stepper, Sport select, live-game tiles when available, an upcoming timeline and league
+folds; refresh preserves the open fold. Adds PhoneScoreTiles and PhoneText. The new wrapper required the retained
+scoreboard grid's direct-child selectors to follow it; this fixes the tablet overflow found during verification.
+Commit `9e96beb` (committed locally after deployment, at the user's request).
+
+Deployed `mynewspaper-web:phone-fronts-20261028` (`e1ea2d9dc6c1`) through Compose, with the previous image retained
+as `mynewsfeed-web:before-mynewspaper-phone-fronts-20261028` (`6818b90cff80`). Environment, ports, mounts and restart
+policy match the previous container. No schema or collector changes. Health endpoint returns Healthy.
+
+Validation: 931 .NET tests passed; production publish/static-asset guard and JavaScript lint passed. Changed JS/CSS
+and browser checks pass formatting; the repository-wide formatting check flags the existing, unchanged
+`tv-series-delete.browser.cjs`. Local `phone-fronts` passed at 320/390/430px, Kansas/Monochrome/Cardinals in light/dark,
+with screenshot inspection, contrast, overflow, touch targets, duplicate IDs, first/exclusive folds without JavaScript,
+date navigation, Sport/Section selects, open-fold preservation on refresh and a hidden Home section. Retained layouts
+checked at 744/1024/1440px; scoreboard regression also checks 768px. Older browser checks now target the retained
+controls and leave the replaced phone layouts to `phone-fronts`. Live `phone-fronts` passed the same widths, themes,
+schemes and flows with profiles on; screenshots reviewed. Its temporary profile and two orphaned headless test device
+rows were removed; Jason and Jacob remain. Live health is 200, public routes enforce the profile gate and admin
+redirects to sign-in; startup league-phase checks succeeded. All 16 schemes passed contrast on Home, Sports,
+Where to watch and Settings at 390/1440px, light/dark; five JavaScript unit tests passed. The full 60-check browser suite
+finished in two batches (the first shell session ended during the long contrast check): 50 passed, zero failed,
+10 skipped (admin/profile prerequisites or unavailable sport fixtures). The second batch reran contrast and completed
+all remaining checks. Tablet regression passed 17 pages at 430/743/744/768/820/834/1023/1024/1440px, light/dark.
+Not checked: a real device or VoiceOver/TalkBack; no in-progress games were present during the phone checks.
+Evidence: `/tmp/release2/`.
 
 ## Phone refresh, release 1: the folded Headlines front — deployed October 28, 2026 (Central)
 

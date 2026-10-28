@@ -312,7 +312,13 @@ Each release is independent: a page that hasn't been converted keeps its current
 
 - [x] 1. `mobile.css`, the components, the `SectionSelect` parameters, and **Headlines** (the pattern the rest copy).
   Deployed October 28, 2026 as `phone-headlines-20261028` (commit `47ab9ca`); see the release history.
-- [ ] 2. **Home**, **Sports**, **Scoreboard**.
+- [x] 2. **Home**, **Sports**, **Scoreboard**. Commit `9e96beb`, deployed October 28, 2026 as `phone-fronts-20261028`
+  (image `e1ea2d9dc6c1`); see release history. `phone-fronts.browser.cjs` passes locally (profiles off) and live
+  (profiles on, temporary profile deleted) at 320/390/430px, three schemes, light/dark, no-JS folds,
+  date stepper, Sport/Section selects, refresh keeping the open fold, hidden Home section, and retained
+  744/1024/1440px layouts. Screenshots reviewed. 931 .NET tests pass. Tablet scoreboard grid selectors were updated
+  for the new wrapper after verification found overflow. The Sports **College Sports** fold was left out
+  (the Sports front loads no college schedule). Real-device and VoiceOver/TalkBack checks remain unverified.
 - [ ] 3. **Top 25**, **Standings**, **College Sports**, **F1**.
 - [ ] 4. **Entertainment**, **Movies**, **TV & Streaming**, **Digital releases**, **Box office**.
 - [ ] 5. **Where to watch**, **Local**, **YouTube**.
