@@ -13,6 +13,7 @@
 @inject ILogger<College> Log
 
 <PageTitle>College Sports · @selected.Name · myNewspaper</PageTitle>
+<div class="mx-desktop">
 <PageHeading Section="sports" Title="College Sports" Eyebrow="Campus scoreboard" Description="" />
 @* Sports as pills on desktop (as in the approved concept); the dropdown below serves phones. *@
 <nav class="sec-pills sec-pills--desktop cl-sports" aria-label="Sport">
@@ -29,6 +30,17 @@
 </form>
 <SectionSelect Id="college-view" Label="View" Current="@CollegeHub.Href(view, selected)"
     Choices="@(Tabs.Select(tab => new NavigationChoice(CollegeHub.Href(tab.Key, selected), tab.Label)).ToArray())" />
+</div>
+@if (view != "schedule")
+{
+    <div class="mx-phone" data-phone-sports="college-view">
+        <PhoneCollegeRibbon Selected="selected" View="@view" />
+        <nav class="mx-sport-links" aria-label="College views">
+            @foreach (var (tab, label) in Tabs) { <a href="@CollegeHub.Href(tab, selected)" aria-current="@(view == tab ? "page" : null)">@label</a> }
+        </nav>
+    </div>
+}
+<div class="@(view == "schedule" ? "mx-desktop" : "mx-contents")">
 @if (view == "news")
 {
     <Big12News Sport="@selected.Key" />
@@ -126,6 +138,9 @@ else
     }
 }
 
+</div>
+@if (view == "schedule") { <PhoneCollege Selected="selected" Events="events" Poll="phonePoll" Leaders="leaders" Records="records" Error="error" UpdatedAt="updatedAt" Page="pageIndex" /> }
+
 @code {
     [SupplyParameterFromQuery(Name = "sport")] private string? Sport { get; set; }
     [SupplyParameterFromQuery(Name = "day")] private string? Day { get; set; }
@@ -144,6 +159,7 @@ else
     private DateOnly resultDay;
     private IReadOnlyList<myNewspaper.Web.Data.Models.SportsRankingTeam> pollTeams = [];
     private string? pollName;
+    private RankingsPage phonePoll = new([], null, null, []);
     private StandingGroup? leaders;
     private string PageHref(int page) => CollegeHub.Href(view, selected) + "&page=" + page;
     private string DayHref(DateOnly day) => CollegeHub.Href("results", selected) + $"&day={day:yyyy-MM-dd}";
@@ -169,6 +185,7 @@ else
                 pageIndex = Math.Min(pageIndex, Math.Max(0, (events.Total - 1) / EventsQuery.Limit));
                 // Side column: Big 12 schools in the national poll and the conference leaders, when published.
                 var poll = await RankingsQuery.GetAsync(db, null, Log, Dates.Today, selected.StandingsSport);
+                phonePoll = poll;
                 pollName = poll.Poll?.PollName;
                 pollTeams = poll.Teams.Where(t => t.IsBig12 == true).Take(8).ToList();
                 leaders = (await StandingsQuery.GetAsync(db, null, Log, Dates.Today, null, selected.StandingsSport)).Groups.FirstOrDefault();

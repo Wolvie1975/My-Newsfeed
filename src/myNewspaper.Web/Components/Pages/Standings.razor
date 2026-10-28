@@ -6,6 +6,7 @@
 @inject IConfiguration Config
 @inject ILogger<Standings> Log
 
+<div class="@(CollegeSport is null ? "mx-desktop" : "mx-contents")">
 @if (CollegeSport is null)
 {
 <PageTitle>Standings · myNewspaper</PageTitle>
@@ -87,10 +88,15 @@ else
     }
 }
 
+</div>
+@if (CollegeSport is null) { <PhoneStandings Data="page" Games="phoneGames" Poll="phonePoll" RetryHref="@RetryHref" /> }
+
 @code {
     [Parameter] public string? CollegeSport { get; set; }
     private string BasePath => CollegeSport is null ? "standings" : "college/standings";
     [SupplyParameterFromQuery(Name = "sourceId")] private string? SourceId { get; set; }
+    private IReadOnlyList<EventItem> phoneGames = [];
+    private RankingsPage phonePoll = new([], null, null, []);
     private StandingsPage page = new([], null, []);
     private string RetryHref => BasePath + (CollegeSport is not null ? "?sport=" + CollegeHub.Resolve(CollegeSport).Key + "&" : "?") + (page.Selected is { } source ? $"sourceId={source.Id}" : "");
     protected override async Task OnParametersSetAsync()
@@ -99,6 +105,16 @@ else
         {
             await using var db = await Factory.CreateDbContextAsync();
             page = await StandingsQuery.GetAsync(db, StandingsQuery.ParseSourceId(SourceId), Log, Dates.Today, Config.GetSection("Standings:HiddenProviders").Get<string[]>(), CollegeSport);
+            phoneGames = []; phonePoll = new([], null, null, []);
+            if (CollegeSport is null && page.Selected is { } selected)
+            {
+                try
+                {
+                    phoneGames = (await EventsQuery.GetUpcomingAsync(db, Dates.Today, selected.Sport, null, provider: selected.ProviderKey, to: Dates.Today.AddDays(7))).Items;
+                    if (selected.ProviderKey == "big12") phonePoll = await RankingsQuery.GetAsync(db, null, Log, Dates.Today, selected.Sport);
+                }
+                catch (Exception ex) when (DataFailures.IsReadFailure(ex)) { Log.LogWarning(ex, "Supplemental standings schedule/poll unavailable."); }
+            }
         }
         catch (Exception ex) when (DataFailures.IsReadFailure(ex))
         {

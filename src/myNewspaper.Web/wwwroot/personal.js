@@ -124,6 +124,28 @@
         }
         document.querySelectorAll('[data-home-teams-only]').forEach((n) => (n.checked = p.teamsOnly));
     }
+    function renderPhoneTeams(selected) {
+        document.querySelectorAll('[data-phone-team-only]').forEach((row) => {
+            row.hidden = !matchesTeams(row, selected);
+        });
+        document.querySelectorAll('[data-phone-your-team]').forEach((label) => {
+            label.hidden = !matchesTeams(label.closest('[data-sports-teams]'), selected);
+        });
+        document.querySelectorAll('[data-phone-team-section]').forEach((section) => {
+            const count = section.querySelectorAll('[data-phone-team-only]:not([hidden])').length;
+            const wasHidden = section.hidden;
+            section.hidden = count === 0;
+            if (section.matches('details')) {
+                const gist = section.querySelector('.mx-fold__gist');
+                if (gist) gist.textContent = count + (count === 1 ? ' upcoming game' : ' upcoming games');
+                if (wasHidden && count) section.open = true;
+            }
+        });
+        document.querySelectorAll('[data-phone-sports] .mx-folds').forEach((group) => {
+            const folds = [...group.querySelectorAll('.mx-fold:not([hidden])')];
+            if (folds.length && !folds.some((fold) => fold.open)) folds[0].open = true;
+        });
+    }
     function sync() {
         document.querySelectorAll('[data-personal-control]').forEach((n) => (n.hidden = !storage));
         if (!storage) {
@@ -133,6 +155,7 @@
         const p = prefs(),
             selected = teams();
         renderHome(p, selected);
+        renderPhoneTeams(selected);
     }
     document.addEventListener('click', (e) => {
         const p = prefs();
@@ -288,7 +311,8 @@
             weather();
         });
     }
-    const markers = '[data-home-grid], [data-home-preferences], [data-local-weather], [data-personal-control]';
+    const markers =
+        '[data-phone-sports], [data-home-grid], [data-home-preferences], [data-local-weather], [data-personal-control]';
     new MutationObserver((records) => {
         if (
             records.some((r) =>

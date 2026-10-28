@@ -9,8 +9,12 @@
 @inject ILogger<F1> Log
 
 <PageTitle>F1 · @ViewLabel · myNewspaper</PageTitle>
+<div class="mx-desktop">
 <PageHeading Section="sports" Title="F1" Eyebrow="@($"Formula 1{(data.Season is { } year ? " · " + year + " season" : "")}")" Description="" />
 <F1Tabs Current="@view" />
+</div>
+@if (view != "schedule") { <div class="mx-phone"><PhoneF1Ribbon Season="data.Season" View="@view" /></div> }
+<div class="@(view == "schedule" ? "mx-desktop" : "mx-contents")">
 @if (error is not null)
 {
     <p class="empty" role="status">@error</p>
@@ -164,7 +168,7 @@ else
     else
     {
         <h2>Championship standings</h2>
-        <SectionSelect Id="f1-table" Label="Championship table" Current="@(Constructors ? "f1/standings?table=constructors" : "f1/standings")"
+        <SectionSelect Id="f1-table" Label="Championship table" AlwaysSelect="true" Current="@(Constructors ? "f1/standings?table=constructors" : "f1/standings")"
             Choices="@(new NavigationChoice[] { new("f1/standings", "Drivers"), new("f1/standings?table=constructors", "Constructors") })" />
         @if (standingsRound is { } round) { <p class="updated">Championship as of round @round</p> }
         @if (Constructors ? data.Constructors.Count == 0 : data.Drivers.Count == 0)
@@ -195,6 +199,9 @@ else
 }
 <p class="updated f1-credit">Data: <a href="https://github.com/jolpica/jolpica-f1" target="_blank" rel="noopener noreferrer">Jolpica F1</a>. Periodically collected published data; not live timing or an official F1 feed. Confirmed times use @Dates.Zone.Id; date-only sessions retain their calendar date.</p>
 
+</div>
+@if (view == "schedule") { <PhoneF1 Data="data" Championship="championship" Error="@error" FullCalendar="FullCalendar" /> }
+
 @code {
     [SupplyParameterFromQuery(Name = "calendar")] private string? Calendar { get; set; }
     [SupplyParameterFromQuery(Name = "race")] private string? Race { get; set; }
@@ -203,6 +210,7 @@ else
     private bool Constructors => Table == "constructors";
     private string view = "schedule";
     private string ViewLabel => view == "results" ? "Results" : view == "standings" ? "Standings" : "Schedule";
+    private F1Page championship = F1Page.Empty;
     private F1Page data = F1Page.Empty;
     private IReadOnlyList<myNewspaper.Web.Data.Models.F1Race> visibleRaces = [];
     private myNewspaper.Web.Data.Models.F1Race? selectedRace;
@@ -220,7 +228,8 @@ else
             await using var db = await Factory.CreateDbContextAsync();
             data = await F1Query.GetAsync(db, view, Race);
             visibleRaces = data.Races.Where(r => FullCalendar || F1Query.Upcoming(r, Dates, Dates.Today)).ToList();
-            drivers = view == "schedule" ? (await F1Query.GetAsync(db, "standings", null)).Drivers.Take(10).ToList() : [];
+            championship = view == "schedule" ? await F1Query.GetAsync(db, "standings", null) : F1Page.Empty;
+            drivers = championship.Drivers.Take(10).ToList();
             selectedRace = data.Races.FirstOrDefault(r => r.Round == data.Selected?.Round);
             standingsRound = Constructors ? data.Constructors.Select(r => (int?)r.StandingsRound).FirstOrDefault()
                 : data.Drivers.Select(r => (int?)r.StandingsRound).FirstOrDefault();

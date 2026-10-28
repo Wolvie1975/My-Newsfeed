@@ -401,6 +401,27 @@ records until regular season can be confirmed. Games and scores remain visible.
 The explanatory team-record paragraph is omitted from Home; record labels and
 their tooltips remain available. Other sports pages retain the explanation.
 
+## Folded phone sports pages
+
+Below 744px, Top 25, Standings, College Sports and F1 use the phone ribbon, dark focal block and native exclusive
+folds. Poll/League/Sport/View selectors remain plain GET forms with no-JavaScript buttons. From 744px the existing
+tablet/desktop page layouts remain in use.
+
+Top 25 highlights No. 1 and real rank movements, lists 2–10 and folds the rest of the poll. Standings preserves
+provider groups/order, lists each group's first six rows and folds remaining places and available schedule/poll
+context. Soccer highlights published points (PTS), followed by W–D–L, in the leader, My Teams tiles and all rows,
+including folded rows. Missing points remain unknown; they are not calculated or replaced by games played.
+My Teams tiles include the next collected game when present. College's featured game chooses two ranked
+teams with the best combined rank, then the highest-ranked participant, then the earliest scheduled game. Its weekly
+timeline and folds use the selected sport and saved My Teams; other College views keep their content with Sport in
+the ribbon and plain view links. F1 folds driver/constructor standings below its next weekend, top-three championship
+summary and upcoming-round timeline. Weekend timetables and the collected full calendar remain available; date-only
+sessions still say Time TBD. F1's View and championship-table controls are native selects on phones.
+
+The open profile's teams render without JavaScript; browser-only preferences apply with JavaScript while profiles
+are off. Missing data does not create empty data folds or invented ranks, records, games or point gaps. See
+[the mobile refresh handoff](mobile-refresh-handoff.md) and [release verification](release-history.md).
+
 ## Dedicated F1 sports section
 
 Open Sports → F1 for Schedule, Results, Standings and News tabs. Schedule offers upcoming

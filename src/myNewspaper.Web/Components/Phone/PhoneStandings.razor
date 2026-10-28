@@ -1,0 +1,68 @@
+@inject FeedDates Dates
+@inject myNewspaper.Web.Profiles.ProfileContext Reader
+<div class="mx-phone" data-phone-sports="standings">
+    <PhoneRibbon Title="Standings" Kicker="@($"{Data.Selected?.DisplayName ?? "The league picture"}{(Data.Selected?.LatestSeason is { Length: > 0 } season ? $" · {season} season" : "")}")">
+        @if (Data.Sources.Count > 0)
+        {
+            <form class="mx-ribbon__field" method="get" action="standings"><label for="standings-source-m">League</label>
+                <select id="standings-source-m" name="sourceId" onchange="this.form.requestSubmit()">
+                    @foreach (var source in Data.Sources) { <option value="@source.Id" selected="@(source.Id == Data.Selected?.Id)">@source.DisplayName</option> }
+                </select><noscript><button class="nf-btn nf-btn--secondary" type="submit">Go</button></noscript>
+            </form>
+        }
+    </PhoneRibbon>
+    @if (Data.AvailabilityError is { } error) { <p class="mx-note" role="status">@error <a href="@RetryHref">Try again</a></p> }
+    else if (Data.Selected is null) { <p class="mx-note">No standings sources are enabled for this selection.</p> }
+    else if (Data.Groups.Count == 0) { <p class="mx-note">Current-season standings are not available yet.</p> }
+    else
+    {
+        @if (StandingsQuery.Freshness(Data.Selected, DateTime.UtcNow) is { } warning) { <p class="mx-note" role="status">@warning</p> }
+        var group = Data.Groups[0]; var leader = group.Teams.FirstOrDefault(); var yours = PhoneSports.Teams(Reader);
+        @if (leader is not null)
+        {
+            <section class="mx-block" aria-label="First place">
+                <span class="mx-block__kicker">First in provider order · @group.Name</span><h2 class="mx-block__title">@leader.Row.TeamName</h2>
+                @if (Soccer) { <span class="mx-block__kicker">Points</span> }
+                <div class="mx-number mx-number--record">@PhoneSports.Primary(group, leader, Soccer)</div>
+                <p class="mx-block__note">@(Soccer ? PhoneSports.Secondary(group, leader, true) : string.Join(" · ", group.Columns.Skip(1).Select(c => $"{c.Label} {StandingsQuery.StatisticValue(leader, c.Name)}")))</p>
+                <div data-phone-team-section hidden="@(!Data.Groups.SelectMany(g => g.Teams).Any(t => PhoneSports.Yours(yours, t.Row.TeamName)))">
+                    <h3 class="mx-block__kicker">Your teams</h3><div class="mx-tiles">
+                    @foreach (var g in Data.Groups) { @foreach (var team in g.Teams) {
+                        var game = Games.FirstOrDefault(e => TeamNames.Matches(e.SchoolName, team.Row.TeamName) || TeamNames.Matches(e.Opponent, team.Row.TeamName));
+                        <div class="mx-tile" data-phone-team-only data-sports-teams="@SportsTeamPreferences.Keys(team.Row.TeamName)" hidden="@(!PhoneSports.Yours(yours, team.Row.TeamName))">
+                            <span class="mx-tile__label">@team.Row.TeamName · @(team.Row.Rank ?? team.Row.Position)</span><b class="mx-tile__value">@PhoneSports.Primary(g, team, Soccer)@(Soccer ? " pts" : "")</b>
+                            <span class="mx-tile__sub">@(Soccer ? PhoneSports.Secondary(g, team, true) : "Streak " + PhoneSports.Statistic(team, "Streak", "streak"))</span>
+                            @if (game is not null) { <a class="mx-tile__sub mx-touch" href="@(FeedQuery.SafeHref(game.Url) ?? "events")">Next: @PhoneSports.Matchup(game) · @PhoneSports.ShortDate(game.EventDate) · @EventsText.TimeLabel(game, Dates)</a> }
+                        </div>
+                    } }
+                    </div>
+                </div>
+            </section>
+        }
+        @foreach (var g in Data.Groups)
+        { <section class="mx-sport-list"><div class="mx-head"><h2>@g.Name</h2><span>@PhoneSports.PrimaryLabel(g, Soccer)</span></div><PhoneStandingRows Soccer="Soccer" Group="g" Teams="@g.Teams.Take(6)" /></section> }
+        <FoldGroup Name="standings-more" Heading="More from the league">
+            @{ var first = true; }
+            @foreach (var g in Data.Groups.Where(g => g.Teams.Count > 6))
+            { <Fold Title="@(Data.Groups.Count == 1 ? $"Places 7–{g.Teams.Count}" : $"{g.Name} · 7–{g.Teams.Count}")" Gist="@string.Join(" · ", g.Teams.Skip(6).Take(2).Select(t => t.Row.TeamName))" Open="first"><PhoneStandingRows Soccer="Soccer" Group="g" Teams="@g.Teams.Skip(6)" /></Fold> first = false; }
+            @if (Games.Count > 0)
+            {
+                <Fold Title="This week's games" Gist="@($"{Games.Count} upcoming games")" Open="first" Color="mx-c-local">
+                    @foreach (var game in Games) { <a class="mx-fold__row" href="@(FeedQuery.SafeHref(game.Url) ?? "events")"><span><b>@PhoneSports.Matchup(game)</b><small>@PhoneSports.ShortDate(game.EventDate) · @EventsText.TimeLabel(game, Dates) · @game.Tv</small></span></a> }
+                </Fold> first = false;
+            }
+            @if (Poll.Teams.Any(t => t.IsBig12 == true))
+            { <Fold Title="Big 12 in the poll" Gist="@Poll.Poll?.PollName" Open="first" AllHref="@($"rankings?sourceId={Poll.Selected?.Id}")" AllText="Full poll"><PhoneRankRows Teams="@Poll.Teams.Where(t => t.IsBig12 == true)" /></Fold> }
+        </FoldGroup>
+        <p class="mx-note">Published season and provider order · @(Data.Selected.LastSuccessAt is { } refreshed ? $"Refreshed {Dates.PublishedFull(refreshed)}" : "Refresh time unavailable")</p>
+        @if (FeedQuery.SafeHref(Data.Groups.SelectMany(g => g.Teams).Select(t => t.Row.SourceUrl).FirstOrDefault(u => FeedQuery.SafeHref(u) is not null)) is { } sourceUrl) { <a class="mx-more" href="@sourceUrl" target="_blank" rel="noopener noreferrer">View source table ↗</a> }
+        <a class="mx-more" href="settings#teams">Choose your teams →</a>
+    }
+</div>
+@code {
+    private bool Soccer => PhoneSports.IsSoccer(Data.Selected?.ProviderKey, Data.Selected?.Sport);
+    [Parameter] public StandingsPage Data { get; set; } = new([], null, []);
+    [Parameter] public IReadOnlyList<EventItem> Games { get; set; } = [];
+    [Parameter] public RankingsPage Poll { get; set; } = new([], null, null, []);
+    [Parameter] public string RetryHref { get; set; } = "standings";
+}

@@ -1,0 +1,11 @@
+<PhoneRibbon Title="College Sports" Kicker="@($"Big 12 · {Selected.Name} · times are Central")">
+    <form class="mx-ribbon__field" method="get" action="@(View == "schedule" ? "college" : "college/" + View)">
+        <label for="college-sport-m">Sport</label><select id="college-sport-m" name="sport" onchange="this.form.requestSubmit()">
+            @foreach (var sport in CollegeHub.Sports) { <option value="@sport.Key" selected="@(Selected.Key == sport.Key)">@sport.Name</option> }
+        </select><noscript><button class="nf-btn nf-btn--secondary" type="submit">Go</button></noscript>
+    </form>
+</PhoneRibbon>
+@code {
+    [Parameter] public CollegeSport Selected { get; set; } = CollegeHub.Sports[0];
+    [Parameter] public string View { get; set; } = "schedule";
+}

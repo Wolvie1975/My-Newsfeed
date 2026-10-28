@@ -1,0 +1,75 @@
+@using myNewspaper.Web.Data.Models
+@using myNewspaper.Web.Components.F1
+@inject FeedDates Dates
+<div class="mx-phone" data-phone-sports="f1">
+    <PhoneF1Ribbon Season="Data.Season" />
+    @if (Error is not null) { <p class="mx-note" role="status">@Error <a href="f1">Try again</a></p> }
+    else if (Data.Source?.Enabled != true) { <p class="mx-note">F1 data is not enabled.</p> }
+    else
+    {
+        @if (F1Query.Freshness(Data, DateTime.UtcNow) is { } warning) { <p class="mx-note" role="status">@warning</p> }
+        @if (Next is { } race)
+        {
+            var session = Session(race);
+            <section class="mx-block" aria-label="Next race weekend">
+                <span class="mx-block__kicker">@(F1Query.LocalDate(session, Dates) == Dates.Today ? "Race day" : "Next race") · Round @race.Round</span>
+                <h2 class="mx-block__title">@race.RaceName</h2><p class="mx-block__note">@race.CircuitName · @race.Country</p>
+                <div class="mx-race-time">@(session.StartsUtc is { } start ? Dates.Time(start) : "Time TBD")</div>
+                <p class="mx-block__note">@(session.StartsUtc is { } utc ? Dates.Published(utc) : FeedDates.LongDate(session.Date)) · @(Dates.ZoneLabel ?? Dates.Zone.Id)</p>
+                <details class="mx-weekend"><summary>Weekend timetable</summary><ul>
+                    @foreach (var item in F1Query.Sessions(race)) { <li><b>@item.Name</b><span><SessionTime Session="item" /></span></li> }
+                </ul></details>
+                @if (Data.Choices.Any(c => c.Round == race.Round && c.SessionType == "Race")) { <a class="mx-block__cta" href="@($"f1/results?race={race.Round}:Race")">Race results →</a> }
+                @if (FeedQuery.SafeHref(race.RaceUrl) is { } url) { <a class="mx-touch" href="@url" target="_blank" rel="noopener noreferrer">Race reference ↗</a> }
+            </section>
+        }
+        else { <p class="mx-note">@(Data.Races.Count == 0 ? "No race calendar available yet." : "No upcoming race weekends in the collected season.")</p> }
+        @if (Championship.Drivers.Count > 0)
+        {
+            <section class="mx-sport-list"><div class="mx-head"><h2>Championship top 3</h2><span>After round @Championship.Drivers[0].StandingsRound</span></div>
+                <ol class="mx-standing-list">
+                    @foreach (var row in Championship.Drivers.Take(3))
+                    { <li><b>@row.Position</b><span><b>@row.GivenName @row.FamilyName</b><small>@F1Query.Constructors(row.ConstructorsJson) · @(row.Position == 1 ? "Leader" : $"{F1Query.Points(Championship.Drivers[0].Points - row.Points)} behind")</small><span class="mx-meter" aria-hidden="true"><span style="@($"width:{PhoneSports.Percent(row.Points, Championship.Drivers[0].Points)}")"></span></span></span><strong>@F1Query.Points(row.Points)<small>pts</small></strong></li> }
+                </ol>
+            </section>
+        }
+        @if (Upcoming.Count > 0)
+        {
+            <PhoneTimeline Heading="Next up" Sub="Race weekends" Items="@Upcoming.Take(3).Select(r => new TimelineItem(PhoneSports.ShortDate(F1Query.LocalDate(Session(r), Dates)), r.RaceName, $"Round {r.Round} · {r.CircuitName}", Session(r).StartsUtc is { } utc ? Dates.Time(utc) : "TBD", $"f1?calendar=all#phone-f1-round-{r.Round}")).ToList()" />
+        }
+        <FoldGroup Name="f1-more" Heading="More in F1">
+            @{ var first = true; }
+            @if (Championship.Drivers.Count > 0)
+            {
+                <Fold Title="Drivers' standings" Gist="@($"{Championship.Drivers[0].GivenName} {Championship.Drivers[0].FamilyName} leads")" Open="true" AllHref="f1/standings" AllText="Full driver table">
+                    @foreach (var row in Championship.Drivers) { <div class="mx-fold__row"><span><b>@row.Position · @row.GivenName @row.FamilyName</b><small>@F1Query.Constructors(row.ConstructorsJson) · @row.Wins wins</small></span><strong class="mx-fold__value">@F1Query.Points(row.Points)</strong></div> }
+                </Fold> first = false;
+            }
+            @if (Championship.Constructors.Count > 0)
+            {
+                <Fold Title="Constructors' standings" Gist="@($"{Championship.Constructors[0].ConstructorName} leads")" Open="first" Color="mx-c-business" AllHref="f1/standings?table=constructors" AllText="Full constructor table">
+                    @foreach (var row in Championship.Constructors) { <div class="mx-fold__row"><span><b>@row.Position · @row.ConstructorName</b><small>@row.Wins wins</small></span><strong class="mx-fold__value">@F1Query.Points(row.Points)</strong></div> }
+                </Fold> first = false;
+            }
+            @if (Data.Races.Count > 0)
+            {
+                <Fold Title="@(FullCalendar ? "Full calendar" : "More race weekends")" Gist="@($"{Data.Races.Count} rounds in the collected season")" Open="@(first || FullCalendar)" AllHref="@(FullCalendar ? "f1" : "f1?calendar=all")" AllText="@(FullCalendar ? "Upcoming weekends" : "Full calendar")">
+                    @foreach (var row in FullCalendar ? Data.Races : Upcoming.Skip(3))
+                    { <div class="mx-fold__row" id="@($"phone-f1-round-{row.Round}")"><span><b>Round @row.Round · @row.RaceName</b><small><SessionTime Session="@Session(row)" /></small><details class="mx-weekend"><summary>Timetable</summary><ul>@foreach (var item in F1Query.Sessions(row)) { <li><b>@item.Name</b><span><SessionTime Session="item" /></span></li> }</ul></details></span></div> }
+                </Fold>
+            }
+        </FoldGroup>
+        <a class="mx-more" href="sports/news/f1">F1 headlines →</a>
+        @if (Data.FetchedAt is { } stamp) { <p class="mx-note">Snapshot updated @Dates.PublishedFull(stamp)</p> }
+    }
+    <p class="mx-note">Data: <a href="https://github.com/jolpica/jolpica-f1" target="_blank" rel="noopener noreferrer">Jolpica F1</a> · Collected published data, not live timing. Times use @Dates.Zone.Id; date-only sessions retain their calendar date.</p>
+</div>
+@code {
+    [Parameter] public F1Page Data { get; set; } = F1Page.Empty;
+    [Parameter] public F1Page Championship { get; set; } = F1Page.Empty;
+    [Parameter] public string? Error { get; set; }
+    [Parameter] public bool FullCalendar { get; set; }
+    private F1Race? Next => F1Query.HomeWeekendRace(Data, Dates, Dates.Today) ?? Data.Races.FirstOrDefault(r => F1Query.Upcoming(r, Dates, Dates.Today));
+    private IReadOnlyList<F1Race> Upcoming => Data.Races.Where(r => F1Query.Upcoming(r, Dates, Dates.Today) && r != Next).ToList();
+    private static F1Session Session(F1Race race) => new("Grand Prix", race.RaceDate, F1Query.StartsUtc(race.RaceDate, race.RaceTimeUtc));
+}

@@ -6,11 +6,102 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The latest recorded web release is `mynewspaper-web:top-headlines-lead-20261028`
-(image `0949497c41b3`), deployed October 28, 2026 (Central), with **household profiles switched on**
-(`Profiles__Enabled=true`). Its rollback image is `mynewsfeed-web:before-mynewspaper-top-headlines-lead-20261028`
-(the release 2 phone fronts build, `e1ea2d9dc6c1`). Deployment checks are recorded below; this is a dated observation, not live hosting
-status.
+The latest recorded web release is `mynewspaper-web:scheme-ribbons-20261028`
+(image `c1e3fa5259c3`), deployed October 28, 2026 (Central), with household profiles enabled.
+Rollback: `mynewsfeed-web:before-mynewspaper-scheme-ribbons-20261028` (`79a593092535`).
+This is a dated deployment record, not live hosting status.
+
+## Scheme-colored phone ribbons — deployed October 28, 2026 (Central)
+
+Shared phone title bands now follow the selected scheme's secondary color and paired text color.
+Daily Ribbon stays yellow in light mode; dark mode uses a muted blend with the scheme surface and
+its normal text color. The live dot uses the ribbon text color and the search button has a contrasting
+outline. Applies to Home, News and the released sports ribbons; tablet/desktop layouts are retained.
+
+Deployed `mynewspaper-web:scheme-ribbons-20261028`, image
+`sha256:c1e3fa5259c338a2a1b2ed24a88c60d7b79f610d2131119a8ce07af29a24379e`.
+Rollback image retained as `mynewsfeed-web:before-mynewspaper-scheme-ribbons-20261028`
+(`79a593092535`). Environment values, entrypoint, health check, ports, keys/mounts,
+restart policy and network verified preserved. Container healthy; `/healthz` returns 200 Healthy.
+No database or collector changes. Profiles remain enabled, so anonymous content requests require
+an open profile; admin redirects to sign-in.
+
+Build/publish/static-asset guard, lint and changed-code formatting passed. Local checks passed all
+16 schemes in light/dark at 320/390/430px, including contrast over blended weather backgrounds and
+overflow; search, saved preference reload, 44px controls, no-JS and tablet/desktop checks passed.
+Seven other shared-ribbon routes passed phone visibility/overflow checks in both modes.
+Evidence: `/tmp/ribbon-schemes/` and `/tmp/ribbon-deploy/`.
+Live verification passed with profiles enabled: all 16 schemes × light/dark × 320/390/430px, including
+blended ribbon/weather contrast, overflow, saved preference reload and 44px input/button targets.
+Search navigation and seven other shared-ribbon routes passed in both modes at each phone width.
+Phone ribbons stay hidden at 768/1440px; no-JavaScript Home passed at 320px. Live Kansas light,
+City dark and Coastal light screenshots inspected. The temporary test profile and two orphaned
+headless test devices were removed; Jason and Jacob remain.
+Real-device and VoiceOver/TalkBack checks unavailable.
+
+## Phone soccer standings: points, then W–D–L — deployed October 28, 2026 (Central)
+
+Release 3 had promoted the first published column, games played, for soccer. The phone leader, My Teams tiles,
+top-six rows and folded remaining rows now highlight published **points** with **W–D–L** underneath. The column
+label is PTS and the leader explicitly says Points. Applies to NWSL, MLS, Championship, Premier League and Big 12
+soccer, including the College standings fold. Missing points remain unknown rather than being calculated from
+results or substituted with games played. Other sports and desktop table columns/order keep their existing behavior.
+
+Deployed `mynewspaper-web:soccer-points-20261028` (`79a593092535`) through Compose; rollback retained as
+`mynewsfeed-web:before-mynewspaper-soccer-points-20261028` (`df265789b18e`). Environment, ports, persistent keys,
+mounts, restart policy, health check and network preserved. No database or collector changes. Included in the subsequent scheme-ribbon local check-in.
+
+Predeploy: 955 .NET tests passed, including published/missing soccer points, correct W–D–L for College soccer,
+and a seven-team fixture checking the leader, tiles and folded rows. Production publish/static-asset guard and
+JavaScript lint passed. `phone-soccer-standings` compares every phone row against the published desktop table
+for NWSL/MLS/Championship/Premier League, and checks NWSL at 320/390/430px light/dark, personal tiles, folds,
+reload, contrast, overflow, no-JavaScript rendering and unchanged desktop columns at 744/1440px. Representative
+phone screenshots reviewed. The same checks passed live with profiles on, including published values for all four
+professional soccer leagues, six NWSL width/theme cases, 44px targets, personal tiles, folds/reload and no-JS.
+Live phone screenshots reviewed; health is 200 Healthy. Temporary profile and two orphaned headless device rows
+removed; Jason and Jacob remain. Evidence: `/tmp/soccer-points/`.
+Not checked: a real device or VoiceOver/TalkBack.
+
+## Phone refresh, release 3: Top 25, Standings, College Sports and F1 — deployed October 28, 2026 (Central)
+
+Below 744px, the four sports pages adopt the shared ribbon, dark focal block, short lists/timelines and exclusive
+native folds. Top 25 shows No. 1, real rank changes, 2–10 and the remaining/Big 12/new/dropping teams. Unknown
+previous ranks produce no invented movement tiles. Standings preserves provider groups and order, shows each
+group's first six rows, folds the remaining places, and adds My Teams tiles, upcoming games and the matching
+Big 12 poll when available. Only valid records get win bars; missing values remain unknown. College's featured
+game follows the combined-rank/highest-ranked-participant/first-scheduled rule. The overview adds a weekly
+timeline, Your teams, Friday games, standings, poll, further games and Explore links. Other College views keep
+their existing content with a Sport ribbon and plain view links. F1 has its next weekend and timetable, top-three
+points bars/gaps, upcoming rounds, full driver/constructor folds and calendar; Results/Standings retain their
+tables with native phone selectors. The standings snapshot is reused rather than fetched twice for the phone.
+
+College's Friday fold does not assume every sport plays at night; other sports link to their real schedules instead
+of fabricating unqueried data. F1 headlines link to Sports' F1 category rather than an unloaded headlines fold.
+My Teams uses the open profile, including no-JavaScript rendering, or browser preferences with profiles off.
+Empty sections are omitted and availability/freshness/source context remains visible. Desktop/iPad layouts are
+retained from 744px. No schema or collector changes.
+
+Deployed `mynewspaper-web:phone-sports-20261028` (`df265789b18e`) through Compose, healthy; rollback
+`mynewsfeed-web:before-mynewspaper-phone-sports-20261028` (`0949497c41b3`). Environment, ports, persistent keys,
+mounts, restart policy, health check and network match the previous container.
+
+Predeploy: 948 .NET tests passed, including featured-game ranking/fallbacks, unknown/empty records and polls,
+one-game College and date-only F1. Production publish/static-asset guard, JavaScript lint and changed-file formatting
+passed. `phone-sports` passed at 320/390/430px in Kansas/Monochrome/Cardinals, light/dark: contrast, overflow,
+44px targets, 64px fold summaries, unique IDs, one initially open fold, exclusive/keyboard folds and selects without
+JavaScript, JS selectors and reload persistence, My Teams and F1 calendar. Retained layouts checked at
+744/1024/1440px. Scoped tablet checks passed all four pages at 430/743/744/768/820/834/1023/1024/1440px in both
+themes; scoped contrast passed three schemes at 390/1440px. Final-image `section-select` passed all College
+sports/views, F1 selectors and no-JS navigation. `phone-fronts` and `personal-features` passed as regressions.
+Live `phone-sports` passed the same matrix and interactions with profiles on, including no-JavaScript timetable
+opening, native selectors and My Teams, plus retained tablet/desktop layouts. Representative screenshots at each
+phone width and in both themes reviewed. The temporary profile was deleted. The initial image (`ca8534226742`)
+was refined to give Standings' personal tiles two readable columns; the final image's tiles passed all three phone
+widths, light/dark, in preview and live. Final live desktop smoke, no-JavaScript personal tiles and health also passed
+(`final-live.log`); final Standings screenshots reviewed. Both temporary profiles and four orphaned headless device
+rows were removed; Jason and Jacob remain. Startup league-phase checks succeeded. Five JavaScript unit tests
+passed. Evidence: `/tmp/release3/` (live screenshots under `live/`).
+Not checked: a real device or VoiceOver/TalkBack. Included in the subsequent scheme-ribbon local check-in.
 
 ## Home lead uses Top Headlines only — deployed October 28, 2026 (Central)
 

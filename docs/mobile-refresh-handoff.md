@@ -26,7 +26,7 @@ per `tablet.css`) are untouched. All new CSS lives in a new `mobile.css` under a
 
 | Piece | What it is | Used on |
 |---|---|---|
-| **Ribbon** | Yellow band: a live line (red dot + small caps), a 44px serif title, one labelled `<select>` | Every page |
+| **Ribbon** | Scheme-colored band: a live line (matching dot + small caps), a 44px serif title, one labelled `<select>` | Every page |
 | **Dark block** | `#141b2b` band for the page's one focal item: lead story, featured video, game of the week, No. 1, the leader, today's weather | Every folded page |
 | **Timeline** | Times down the left, colored dots on a rule, title + subline, a tag on the right (TV network, source) | Headlines, Sports, Scoreboard, College, F1, TV |
 | **Top list** | Big serif numerals 1–3 (or more), title, colored category dot, Save button | Home, Headlines, Local, Top 25, Box office |
@@ -319,7 +319,31 @@ Each release is independent: a page that hasn't been converted keeps its current
   744/1024/1440px layouts. Screenshots reviewed. 931 .NET tests pass. Tablet scoreboard grid selectors were updated
   for the new wrapper after verification found overflow. The Sports **College Sports** fold was left out
   (the Sports front loads no college schedule). Real-device and VoiceOver/TalkBack checks remain unverified.
-- [ ] 3. **Top 25**, **Standings**, **College Sports**, **F1**.
+- [x] 3. **Top 25**, **Standings**, **College Sports**, **F1**. Deployed October 28, 2026 as
+  `phone-sports-20261028` (image `df265789b18e`); see release history.
+  Uses the shared phone ribbons, dark blocks, native exclusive folds and existing data. Top 25 shows the leader,
+  rank changes, 2–10 and poll folds. Standings retains each provider group/order, with top-six rows, remaining
+  places, My Teams tiles, next games and a matching Big 12 poll. College chooses its featured game by combined
+  ranks (then highest-ranked participant, then first scheduled), with a weekly timeline and personal/schedule/
+  standings/poll folds. Its other views retain their content with Sport in the ribbon and plain view links.
+  F1 shows the next weekend, timetable, championship top three, upcoming rounds, full driver/constructor folds
+  and the collected calendar; Results and Standings retain their tables with native phone selectors. The F1
+  headlines fold is omitted because no headlines are loaded there; a link opens Sports' F1 headlines instead.
+  Friday games are labelled by day rather than assuming every sport plays at night. Other college sports are
+  linked from Explore instead of inventing unqueried schedules. Shared My Teams choices work from the open
+  profile (also without JavaScript) or local browser preferences while profiles are off.
+  948 .NET tests pass. Local and live `phone-sports` pass at 320/390/430px in three schemes, light/dark,
+  including contrast, touch targets, native/keyboard folds, no-JS selectors, saved My Teams and navigation.
+  Retained tablet/desktop layouts, all College views, F1 timetable/calendar, and earlier phone fronts passed
+  regression checks. Representative screenshots reviewed. A final two-column Standings My Teams refinement
+  was checked again at all three phone widths in both themes. Runtime configuration and keys preserved;
+  rollback is `mynewsfeed-web:before-mynewspaper-phone-sports-20261028` (`0949497c41b3`). Evidence:
+  `/tmp/release3/`. Real-device and VoiceOver/TalkBack checks remain unverified. Included in the scheme-ribbon local check-in.
+  Follow-up: soccer standings now highlight **points**, followed by **W–D–L**, across the leader, personal tiles,
+  top-six and folded rows (including College soccer). This replaces the accidental games-played highlight.
+  Deployed as `soccer-points-20261028` (`79a593092535`); 955 .NET tests pass. Local NWSL checks passed at
+  320/390/430px in light/dark, plus MLS/Championship/Premier League data checks, no-JS and retained desktop tables.
+  Live verification is recorded in release history. Evidence: `/tmp/soccer-points/`. Included in the scheme-ribbon local check-in.
 - [ ] 4. **Entertainment**, **Movies**, **TV & Streaming**, **Digital releases**, **Box office**.
 - [ ] 5. **Where to watch**, **Local**, **YouTube**.
 - [ ] 6. Ribbon-only pages: both All headlines pages, **Saved**, **Settings**.
@@ -347,5 +371,22 @@ Not checked: a real device.
   stories" until then, or add a lightweight `MyDailyFeedArticleReads` table later.
 - **Game of the week** (College) and **"Your teams"** (Standings, College) depend on the profile's My Teams; for Guest,
   fall back to the first game / hide the tiles.
-- **Ribbon color per scheme:** yellow is the default for every scheme. If a scheme looks wrong (e.g. one already built
-  around yellow), override `--mx-ribbon-bg` under `:root[data-color-scheme='…']` in `mobile.css`.
+## Scheme-colored phone ribbons — October 28 follow-up
+
+Deployed as `mynewspaper-web:scheme-ribbons-20261028` (`c1e3fa5259c3`); included in the local check-in on `develop`. Shared phone title bands (including Home greeting,
+weather and search) use the selected scheme's secondary selection background and paired foreground.
+Daily Ribbon retains yellow in light mode. Dark mode mixes 25% secondary color with the scheme surface
+and uses the scheme text color. The search button has a contrasting outline; the live dot follows the
+ribbon foreground. Tablet and desktop layouts retain their existing styling.
+
+Verification evidence: `/tmp/ribbon-schemes/`. Build passed with no warnings or errors.
+Browser verification passed: all 16 schemes × light/dark × 320/390/430px on Home, including
+contrast computed against blended weather/ribbon backgrounds and horizontal overflow. Inspected Home
+screenshots for Kansas light, City dark, Coastal light and the 320px no-JavaScript fallback, plus Standings
+dark at 320px. Seven other shared-ribbon routes (News, Sports, Scoreboard, Rankings, Standings, College,
+F1) passed visibility/overflow checks at all three widths in both themes. Saved scheme/theme reload,
+Home search navigation and 44px input/button targets passed. At 768/1440px the phone ribbon stays hidden;
+Kansas/City Home contrast passed at 390/1440px in both themes. The same 16-scheme/phone/theme matrix passed live with profiles enabled, including saved preferences,
+search, controls, the seven other ribbon routes, tablet/desktop visibility and no-JS Home. Live Kansas
+light, City dark and Coastal light screenshots inspected. Temporary test profile deleted. Deployment
+and rollback recorded in release history; evidence `/tmp/ribbon-deploy/`. Real devices remain unverified.

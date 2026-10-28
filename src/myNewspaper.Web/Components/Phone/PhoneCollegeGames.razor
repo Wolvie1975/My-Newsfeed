@@ -1,0 +1,14 @@
+@inject FeedDates Dates
+@inject myNewspaper.Web.Profiles.ProfileContext Reader
+@foreach (var game in Games)
+{
+    var yours = PhoneSports.Yours(PhoneSports.Teams(Reader), game.SchoolName, game.Opponent);
+    <a class="mx-fold__row" href="@(FeedQuery.SafeHref(game.Url) ?? CollegeHub.Href("schedule", CollegeHub.Resolve(game.Sport)))"
+       data-sports-teams="@SportsTeamPreferences.Keys(game.SchoolName, game.Opponent)" data-phone-team-only="@(TeamsOnly ? "true" : null)" hidden="@(TeamsOnly && !yours)">
+        <span><b>@PhoneSports.Matchup(game)</b><small>@PhoneSports.ShortDate(game.EventDate) · @EventsText.TimeLabel(game, Dates) · @game.Tv <span data-phone-your-team hidden="@(!yours)"> · Your team</span></small></span>
+    </a>
+}
+@code {
+    [Parameter] public IEnumerable<EventItem> Games { get; set; } = [];
+    [Parameter] public bool TeamsOnly { get; set; }
+}

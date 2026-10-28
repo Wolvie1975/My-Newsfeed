@@ -1,5 +1,5 @@
 @* One fold: a color edge, a serif name and a one-line gist; opens in place to a few rows and a "See all" link. *@
-<details class="mx-fold @Color" name="@Group.Name" open="@Open" data-fold-key="@Key" data-home-section="@Section">
+<details class="mx-fold @Color" name="@Group.Name" open="@Open" data-fold-key="@Key" data-home-section="@Section" hidden="@Hidden" data-phone-team-section="@(TeamSection ? "true" : null)">
     <summary>
         <span class="mx-fold__text"><span class="mx-fold__name">@Title</span><span class="mx-fold__gist">@Gist</span></span>
     </summary>
@@ -19,6 +19,8 @@
     /// <summary>Keeps the fold open or shut when scoreboard.js swaps in fresh scores.</summary>
     [Parameter] public string? Key { get; set; }
     /// <summary>A Home section key, so a section hidden in Settings hides its fold too (personal.js).</summary>
+    [Parameter] public bool Hidden { get; set; }
+    [Parameter] public bool TeamSection { get; set; }
     [Parameter] public string? Section { get; set; }
     [Parameter] public string? AllHref { get; set; }
     [Parameter] public string AllText { get; set; } = "See all";

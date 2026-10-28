@@ -1,0 +1,52 @@
+@inject FeedDates Dates
+<div class="mx-phone" data-phone-sports="rankings">
+    <PhoneRibbon Title="Top 25" Kicker="@(Data.Poll is { } poll ? $"Poll dated {Dates.Published(poll.PublishedAtUtc)} · Big 12 highlighted" : "National polls")">
+        @if (Data.Sources.Count > 0)
+        {
+            <form class="mx-ribbon__field" method="get" action="rankings">
+                <label for="ranking-source-m">Poll</label><select id="ranking-source-m" name="sourceId" onchange="this.form.requestSubmit()">
+                    @foreach (var source in Data.Sources) { <option value="@source.Id" selected="@(Data.Selected?.Id == source.Id)">@source.DisplayName</option> }
+                </select><noscript><button class="nf-btn nf-btn--secondary" type="submit">Go</button></noscript>
+            </form>
+        }
+    </PhoneRibbon>
+    @if (Data.AvailabilityError is { } error) { <p class="mx-note" role="status">@error <a href="@RetryHref">Try again</a></p> }
+    else if (Data.Selected is null) { <p class="mx-note">No ranking sources are enabled for this selection.</p> }
+    else if (Data.Poll is null || Data.Teams.Count == 0) { <p class="mx-note">Rankings not available yet.</p> }
+    else
+    {
+        @if (RankingsQuery.Freshness(Data.Selected, DateTime.UtcNow) is { } warning) { <p class="mx-note" role="status">@warning</p> }
+        @if (RankingsQuery.OldPoll(Data.Poll, DateTime.UtcNow)) { <p class="mx-note">Latest available poll; published more than two weeks ago.</p> }
+        @if (Data.Teams.FirstOrDefault(t => t.Rank == 1) is { } leader)
+        {
+            <section class="mx-block" aria-label="Number one">
+                <span class="mx-block__kicker">@Data.Poll.PollName · @Data.Poll.SeasonLabel</span>
+                <div class="mx-number">1</div><h2 class="mx-block__title">@leader.TeamName</h2>
+                <p class="mx-block__note">@(leader.Record ?? "Record unavailable") · @RankingsQuery.Movement(leader)</p>
+                @if (Movers.Count > 0)
+                {
+                    <h3 class="mx-block__kicker">Biggest moves</h3><div class="mx-tiles">
+                        @foreach (var team in Movers) { <div class="mx-tile"><span class="mx-tile__label">@team.TeamName</span><b class="mx-tile__value">@PhoneSports.MoveLabel(team)</b><span class="mx-tile__sub">No. @team.Rank</span></div> }
+                    </div>
+                }
+            </section>
+        }
+        <section class="mx-sport-list"><div class="mx-head"><h2>In the Top 10</h2></div><PhoneRankRows Teams="@Data.Teams.Where(t => t.Rank is >= 2 and <= 10)" /></section>
+        <FoldGroup Name="rankings-more" Heading="More from the poll">
+            @{ var rest = Data.Teams.Where(t => t.Rank is null or > 10).ToList(); var big12 = Data.Teams.Where(t => t.IsBig12 == true).ToList(); var fresh = Data.Teams.Where(t => t.PreviouslyUnranked && t.PreviousRank is null).ToList(); var drops = Data.Teams.Where(t => PhoneSports.Movement(t) < 0).OrderBy(t => PhoneSports.Movement(t)).ToList(); }
+            @if (rest.Count > 0) { <Fold Title="11–25" Gist="@Gist(rest)" Open="true"><PhoneRankRows Teams="rest" /></Fold> }
+            @if (big12.Count > 0) { <Fold Title="Big 12 in the poll" Gist="@Gist(big12)" Open="@(rest.Count == 0)" Color="mx-c-us"><PhoneRankRows Teams="big12" /></Fold> }
+            @if (fresh.Count > 0) { <Fold Title="New this week" Gist="@Gist(fresh)" Open="@(rest.Count == 0 && big12.Count == 0)" Color="mx-c-tech"><PhoneRankRows Teams="fresh" /></Fold> }
+            @if (drops.Count > 0) { <Fold Title="Biggest drops" Gist="@Gist(drops)" Open="@(rest.Count == 0 && big12.Count == 0 && fresh.Count == 0)" Color="mx-c-us"><PhoneRankRows Teams="drops" /></Fold> }
+        </FoldGroup>
+        @if (FeedQuery.SafeHref(Data.Poll.SourceUrl) is { } url) { <a class="mx-more" href="@url" target="_blank" rel="noopener noreferrer">View poll source ↗</a> }
+        <p class="mx-note">Data via ESPN · @Data.Poll.PollName</p>
+    }
+</div>
+@code {
+    [Parameter] public RankingsPage Data { get; set; } = new([], null, null, []);
+    [Parameter] public string RetryHref { get; set; } = "rankings";
+    private IReadOnlyList<myNewspaper.Web.Data.Models.SportsRankingTeam> Movers => Data.Teams.Where(t => PhoneSports.Movement(t) > 0).OrderByDescending(t => PhoneSports.Movement(t)).Take(2)
+        .Concat(Data.Teams.Where(t => PhoneSports.Movement(t) < 0).OrderBy(t => PhoneSports.Movement(t)).Take(1)).ToList();
+    private static string Gist(IEnumerable<myNewspaper.Web.Data.Models.SportsRankingTeam> teams) => string.Join(" · ", teams.Take(2).Select(t => $"{t.TeamName} No. {t.Rank}"));
+}

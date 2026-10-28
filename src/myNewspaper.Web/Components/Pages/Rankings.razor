@@ -4,6 +4,7 @@
 @inject FeedDates Dates
 @inject ILogger<Rankings> Log
 
+<div class="@(CollegeSport is null ? "mx-desktop" : "mx-contents")">
 @if (CollegeSport is null)
 {
 <PageTitle>Top 25 · myNewspaper</PageTitle>
@@ -62,6 +63,9 @@ else
         }
     </div>
 }
+
+</div>
+@if (CollegeSport is null) { <PhoneRankings Data="data" RetryHref="@RetryHref" /> }
 
 @code {
     [Parameter] public string? CollegeSport { get; set; }

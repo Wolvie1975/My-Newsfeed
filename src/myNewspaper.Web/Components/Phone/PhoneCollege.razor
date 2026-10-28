@@ -1,0 +1,61 @@
+@using myNewspaper.Web.Data.Models
+@inject FeedDates Dates
+@inject myNewspaper.Web.Profiles.ProfileContext Reader
+<div class="mx-phone" data-phone-sports="college">
+    <PhoneCollegeRibbon Selected="Selected" />
+    @if (Error) { <p class="mx-note" role="status">College sports are temporarily unavailable. <a href="@CollegeHub.Href("schedule", Selected)">Try again</a></p> }
+    else
+    {
+        @if (PhoneSports.Featured(Events.Items, Poll.Teams) is { } game)
+        {
+            <section class="mx-block" aria-label="Game of the week">
+                <span class="mx-block__kicker">Game of the week · @Selected.Name</span><h2 class="mx-block__title">@PhoneSports.Matchup(game)</h2>
+                <p class="mx-block__note">@TeamLine(game.SchoolName) · @TeamLine(game.Opponent)</p>
+                <p class="mx-race-time">@EventsText.TimeLabel(game, Dates)</p>
+                <p class="mx-block__note">@FeedDates.LongDate(game.EventDate) · @(game.Tv ?? "Broadcast to be announced")</p>
+                @if (FeedQuery.SafeHref(game.Url) is { } url) { <a class="mx-block__cta" href="@url" target="_blank" rel="noopener noreferrer">Game details →</a> }
+            </section>
+        }
+        else { <p class="mx-note">No upcoming games are available for this sport in the next seven days.</p> }
+        @if (Events.Items.Count > 0)
+        { <section class="mx-timeline" aria-label="This week's games"><div class="mx-timeline__top"><h2>This week</h2><span>@Selected.Name</span></div><ol>
+            @foreach (var fixture in Events.Items.Take(6)) {
+                var yours = PhoneSports.Yours(PhoneSports.Teams(Reader), fixture.SchoolName, fixture.Opponent);
+                <li class="@(yours ? "mx-c-us" : "mx-c-world")" data-sports-teams="@SportsTeamPreferences.Keys(fixture.SchoolName, fixture.Opponent)">
+                    <a href="@(FeedQuery.SafeHref(fixture.Url) ?? CollegeHub.Href("schedule", Selected))"><span class="mx-timeline__time">@EventsText.TimeLabel(fixture, Dates)</span><span><span class="mx-timeline__title">@PhoneSports.Matchup(fixture)</span><span class="mx-timeline__sub">@PhoneSports.ShortDate(fixture.EventDate)<span data-phone-your-team hidden="@(!yours)"> · Your team</span></span></span><span class="mx-timeline__tag">@PhoneText.Network(fixture.Tv)</span></a>
+                </li>
+            }
+        </ol></section> }
+        <FoldGroup Name="college-more" Heading="More in College Sports">
+            @{ var yourGames = Events.Items.Where(g => PhoneSports.Yours(PhoneSports.Teams(Reader), g.SchoolName, g.Opponent)).ToList(); var friday = Events.Items.Where(g => g.EventDate.DayOfWeek == DayOfWeek.Friday).ToList(); var first = yourGames.Count == 0; }
+            @if (Events.Items.Count > 0)
+            { <Fold Title="Your teams" Gist="@($"{yourGames.Count} upcoming games")" Open="@(yourGames.Count > 0)" Hidden="@(yourGames.Count == 0)" TeamSection="true" Color="mx-c-us" AllHref="settings#teams" AllText="Choose your teams"><PhoneCollegeGames Games="Events.Items" TeamsOnly="true" /></Fold> }
+            @if (friday.Count > 0) { <Fold Title="Friday games" Gist="@PhoneSports.Matchup(friday[0])" Open="first" Color="mx-c-local"><PhoneCollegeGames Games="friday" /></Fold> first = false; }
+            @if (Leaders is { Teams.Count: > 0 } group)
+            { <Fold Title="Big 12 standings" Gist="@($"{group.Teams[0].Row.TeamName} leads · {PhoneSports.Primary(group, group.Teams[0], Selected.StandingsSport == "Soccer")}")" Open="first" AllHref="@CollegeHub.Href("standings", Selected)" AllText="Full standings"><PhoneStandingRows Soccer="@(Selected.StandingsSport == "Soccer")" Group="group" Teams="@group.Teams.Take(6)" /></Fold> first = false; }
+            @if (Poll.Teams.Any(t => t.IsBig12 == true))
+            { <Fold Title="Big 12 in the Top 25" Gist="@Poll.Poll?.PollName" Open="first" AllHref="@CollegeHub.Href("rankings", Selected)" AllText="Full poll"><PhoneRankRows Teams="@Poll.Teams.Where(t => t.IsBig12 == true)" /></Fold> first = false; }
+            @if (Events.Items.Count > 6)
+            { <Fold Title="More games this week" Gist="@($"{Events.Items.Count - 6} more games")" Open="first"><PhoneCollegeGames Games="@Events.Items.Skip(6)" /></Fold> first = false; }
+            <Fold Title="Explore College Sports" Gist="Results, standings, polls and other sports" Open="first">
+                @foreach (var (view, label) in Views) { <a class="mx-fold__row" href="@CollegeHub.Href(view, Selected)"><b>@label</b><span aria-hidden="true">→</span></a> }
+                @foreach (var sport in CollegeHub.Sports.Where(s => s.Key != Selected.Key)) { <a class="mx-fold__row" href="@CollegeHub.Href("schedule", sport)"><b>@sport.Name</b><span aria-hidden="true">→</span></a> }
+            </Fold>
+        </FoldGroup>
+        @if (Events.Total > Events.Items.Count) { <a class="mx-more" href="@(CollegeHub.Href("schedule", Selected) + "&page=" + (Page + 1))">More scheduled games →</a> }
+        @if (Page > 0) { <a class="mx-more" href="@(CollegeHub.Href("schedule", Selected) + "&page=" + (Page - 1))">Earlier games →</a> }
+        <p class="mx-note">Big 12 · next seven days · @(Dates.ZoneLabel ?? Dates.Zone.Id) time@(UpdatedAt is { } stamp ? $" · updated {Dates.PublishedFull(stamp)}" : "")</p>
+    }
+</div>
+@code {
+    [Parameter] public CollegeSport Selected { get; set; } = CollegeHub.Sports[0];
+    [Parameter] public EventsPage Events { get; set; } = new([], 0);
+    [Parameter] public RankingsPage Poll { get; set; } = new([], null, null, []);
+    [Parameter] public StandingGroup? Leaders { get; set; }
+    [Parameter] public TeamRecords Records { get; set; } = TeamRecords.Empty;
+    [Parameter] public bool Error { get; set; }
+    [Parameter] public DateTime? UpdatedAt { get; set; }
+    [Parameter] public int Page { get; set; }
+    public static readonly (string View, string Label)[] Views = [("schedule", "Schedule"), ("results", "Results"), ("standings", "Standings"), ("rankings", "Top 25"), ("news", "Headlines")];
+    private string TeamLine(string? name) => $"{(PhoneSports.Rank(name, Poll.Teams) is { } rank ? $"No. {rank} " : "")}{name}{(Records.Find("big12", Selected.StandingsSport, name) is { } record ? $" {record.Text}" : "")}";
+}

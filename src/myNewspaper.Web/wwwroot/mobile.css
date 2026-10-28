@@ -4,10 +4,11 @@
    schemes and dark mode carry over.
    ===================================================================================================================== */
 .pub {
-    --mx-ribbon-bg: #ffd34d;
-    --mx-ribbon-fg: #141b2b;
-    --mx-ribbon-kicker: #3a2e00;
-    --mx-live: #b0001e;
+    /* Each scheme supplies a contrast-paired secondary color; future schemes inherit this too. */
+    --mx-ribbon-bg: var(--selection-bg);
+    --mx-ribbon-fg: var(--selection-fg);
+    --mx-ribbon-kicker: var(--mx-ribbon-fg);
+    --mx-live: var(--mx-ribbon-fg);
     --mx-block-bg: #141b2b;
     --mx-block-fg: #ffffff;
     --mx-block-2: #c9d6ee;
@@ -25,10 +26,8 @@
     --mx-serif: 'Newsreader', Georgia, serif;
 }
 :root[data-theme='dark'] .pub {
-    --mx-ribbon-bg: #3a2f0a;
-    --mx-ribbon-fg: #fff3c4;
-    --mx-ribbon-kicker: #ffd34d;
-    --mx-live: #ff6b7d;
+    --mx-ribbon-bg: color-mix(in srgb, var(--selection-bg) 25%, var(--surface));
+    --mx-ribbon-fg: var(--text);
     --mx-block-bg: #050b17;
     --mx-block-tile: #111f36;
     --mx-block-line: #3b5278;
@@ -785,7 +784,7 @@
     flex: none;
     min-height: 48px;
     padding: 0 16px;
-    border: 0;
+    border: 2px solid var(--mx-ribbon-fg);
     border-radius: 10px;
     background: #141b2b;
     color: #ffffff;
@@ -829,4 +828,159 @@ span.mx-stepper__btn {
     font-size: 13px;
     color: var(--mx-ribbon-kicker);
     text-decoration: underline;
+}
+
+/* Release 3: poll numerals, league rows, college fixtures and F1 weekend details. */
+.mx-note {
+    padding: 12px 16px;
+    margin: 0;
+    color: var(--text-2);
+    font-size: 13px;
+    overflow-wrap: anywhere;
+}
+.mx-note a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+}
+.mx-sport-list {
+    padding: 18px 16px;
+}
+.mx-number {
+    font-family: var(--mx-serif);
+    font-weight: 800;
+    font-size: 104px;
+    line-height: 1;
+}
+.mx-number--record {
+    font-size: 60px;
+    overflow-wrap: anywhere;
+}
+.mx-race-time {
+    font-family: var(--mx-serif);
+    font-size: 50px;
+    line-height: 1.1;
+    font-weight: 800;
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+.mx-rank-list,
+.mx-standing-list {
+    padding: 0;
+    margin: 0;
+    list-style: none;
+}
+.mx-rank-list li,
+.mx-standing-list li {
+    display: grid;
+    grid-template-columns: 35px minmax(0, 1fr) auto;
+    gap: 10px;
+    align-items: center;
+    min-height: 64px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--row-border);
+}
+.mx-rank-list__rank {
+    font-family: var(--mx-serif);
+    font-size: 32px;
+    color: var(--accent);
+}
+.mx-rank-list small,
+.mx-standing-list small {
+    display: block;
+    font-size: 12px;
+    color: var(--text-3);
+    overflow-wrap: anywhere;
+}
+.mx-rank-list a,
+.mx-standing-list a {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    color: var(--text);
+    font-weight: 700;
+    overflow-wrap: anywhere;
+}
+.mx-rank-list__move {
+    font-size: 13px;
+    white-space: nowrap;
+}
+.mx-ranked-big12 {
+    background: color-mix(in srgb, var(--accent) 9%, transparent);
+}
+.mx-standing-list li > strong {
+    text-align: right;
+    font-family: var(--mx-serif);
+    font-size: 20px;
+}
+.mx-standing-list li > span > b {
+    display: block;
+    overflow-wrap: anywhere;
+}
+.mx-meter {
+    display: block;
+    height: 5px;
+    margin-top: 8px;
+    background: var(--border);
+}
+.mx-meter > span {
+    display: block;
+    height: 100%;
+    background: var(--accent);
+}
+.mx-weekend {
+    font-size: 13px;
+}
+.mx-weekend summary {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    cursor: pointer;
+    font-weight: 700;
+    text-decoration: underline;
+}
+.mx-weekend summary::after {
+    content: ' +';
+    padding-left: 8px;
+}
+.mx-weekend[open] summary::after {
+    content: ' −';
+}
+.mx-weekend ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+.mx-weekend li {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--border);
+}
+.mx-sport-links {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    padding: 12px 16px;
+}
+.mx-sport-links a,
+.mx-touch {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+}
+.mx-sport-links a[aria-current='page'] {
+    font-weight: 800;
+    text-decoration: underline;
+}
+.mx-phone [data-phone-team-only][hidden],
+.mx-phone [data-phone-team-section][hidden],
+.mx-phone [data-phone-your-team][hidden] {
+    display: none !important;
+}
+
+/* Personal team summaries need room for the next fixture even on a 320px phone. */
+.mx-block [data-phone-team-section] .mx-tiles {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
 }

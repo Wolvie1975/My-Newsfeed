@@ -1,0 +1,19 @@
+@using myNewspaper.Web.Data.Models
+<ol class="mx-rank-list" aria-label="@Label">
+    @foreach (var team in Teams)
+    {
+        <li class="@(team.IsBig12 == true ? "mx-ranked-big12" : null)">
+            <b class="mx-rank-list__rank">@(team.Rank?.ToString() ?? "—")</b>
+            <span>
+                @if (FeedQuery.SafeHref(team.TeamUrl) is { } href) { <a href="@href" target="_blank" rel="noopener noreferrer">@team.TeamName</a> }
+                else { <b>@team.TeamName</b> }
+                <small>@(team.Record ?? "Record unavailable")@(team.IsBig12 == true ? " · Big 12" : "")@(team.FirstPlaceVotes is > 0 ? $" · {team.FirstPlaceVotes} first-place votes" : "")</small>
+            </span>
+            <b class="mx-rank-list__move" aria-label="@RankingsQuery.Movement(team)">@PhoneSports.MoveLabel(team)</b>
+        </li>
+    }
+</ol>
+@code {
+    [Parameter] public IEnumerable<SportsRankingTeam> Teams { get; set; } = [];
+    [Parameter] public string Label { get; set; } = "Ranked teams";
+}
