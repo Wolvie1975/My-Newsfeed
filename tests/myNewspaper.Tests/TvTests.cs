@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using myNewspaper.Web.Data;
 using myNewspaper.Web.Data.Models;
+using myNewspaper.Web.Profiles;
 using myNewspaper.Web.Tv;
 
 namespace myNewspaper.Tests;
@@ -56,7 +57,7 @@ public class TvTests
         timed.StartsAtUtc = ResultsWindow.ForDay(today, dates.Zone).EndUtc.AddMinutes(-30);
         db.Add(timed);
         await db.SaveChangesAsync();
-        var calendar = await TvQuery.GetAsync(db, dates, today, id);
+        var calendar = await TvQuery.GetAsync(db, Viewer.Household, dates, today, id);
         Assert.Equal(4, calendar.Total);
         Assert.Equal(4, calendar.Items.Select(e => e.ProviderId).Distinct().Count());
         Assert.All(calendar.Items, e => Assert.Equal(today, e.Date));
@@ -64,7 +65,7 @@ public class TvTests
         Assert.Single(calendar.Items, e => e.Special && e.Number == null);
         db.Add(Episode(7, today.AddDays(1)));
         await db.SaveChangesAsync();
-        var todays = (await TvQuery.GetOnDateAsync(db, dates, today)).Where(e => e.ShowId == id).ToList();
+        var todays = (await TvQuery.GetOnDateAsync(db, Viewer.Household, dates, today)).Where(e => e.ShowId == id).ToList();
         Assert.Equal(4, todays.Count);
         Assert.All(todays, e => Assert.Equal(today, e.Date));
         var tracking = await db.TvTrackedSeries.SingleAsync(t => t.TvmazeShowId == id);
@@ -73,7 +74,7 @@ public class TvTests
         await db.SaveChangesAsync();
         var lease = tracking.LeaseToken;
         await TvQuery.SetEnabledAsync(db, tracking.Id, false);
-        Assert.Empty((await TvQuery.GetAsync(db, dates, today, id)).Items);
+        Assert.Empty((await TvQuery.GetAsync(db, Viewer.Household, dates, today, id)).Items);
         Assert.Equal(7, await db.TvEpisodes.CountAsync(e => e.SeriesId == series.Id));
         db.ChangeTracker.Clear();
         await TvQuery.FollowAsync(db, id, series.Title);
@@ -98,11 +99,11 @@ public class TvTests
         var tracking = await db.TvTrackedSeries.SingleAsync(t => t.TvmazeShowId == id);
         Assert.Null(tracking.SeriesId);
         var dates = FeedDates.Create("America/Chicago");
-        var calendar = await TvQuery.GetAsync(db, dates, dates.Today, id);
+        var calendar = await TvQuery.GetAsync(db, Viewer.Household, dates, dates.Today, id);
         Assert.Empty(calendar.Items);
         Assert.Contains("Pending series", calendar.Unannounced);
         await TvQuery.SetEnabledAsync(db, tracking.Id, false);
-        Assert.DoesNotContain((await TvQuery.GetAsync(db, dates, dates.Today, null)).Shows, s => s.Id == id);
+        Assert.DoesNotContain((await TvQuery.GetAsync(db, Viewer.Household, dates, dates.Today, null)).Shows, s => s.Id == id);
     }
 
     [Fact]
@@ -120,7 +121,7 @@ public class TvTests
         Assert.False(await db.TvTrackedSeries.AnyAsync(t => t.TvmazeShowId == id));
         Assert.Equal(TvRemoveResult.Missing, await TvQuery.RemoveAsync(db, tracking.Id, now));
         var dates = FeedDates.Create("America/Chicago");
-        Assert.DoesNotContain((await TvQuery.GetAsync(db, dates, dates.Today, null)).Shows, s => s.Id == id);
+        Assert.DoesNotContain((await TvQuery.GetAsync(db, Viewer.Household, dates, dates.Today, null)).Shows, s => s.Id == id);
     }
 
     [Fact]

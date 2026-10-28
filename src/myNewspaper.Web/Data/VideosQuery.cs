@@ -1,6 +1,7 @@
 using System.Globalization;
 using Microsoft.EntityFrameworkCore;
 using myNewspaper.Web.Data.Models;
+using myNewspaper.Web.Profiles;
 
 namespace myNewspaper.Web.Data;
 
@@ -57,10 +58,11 @@ public static class VideosQuery
     /// The YouTube category tabs: categories with at least one video, alphabetically, then "Other" when some videos
     /// have no category (a channel the scraper added but nobody has categorized yet). Never an empty tab.
     /// </summary>
-    public static async Task<IReadOnlyList<VideoCategory>> GetCategoriesAsync(WebScraperContext db)
+    public static async Task<IReadOnlyList<VideoCategory>> GetCategoriesAsync(WebScraperContext db, Viewer viewer)
     {
+        var visible = FollowQuery.Videos(db, viewer);
         var names = await db.YoutubeCategories.AsNoTracking()
-            .Where(c => c.YoutubeVideoFeeds.Any(f => f.YouTubeVideos.Count > 0))
+            .Where(c => c.YoutubeVideoFeeds.Any(f => visible.Any(v => v.YoutubeVideoFeedId == f.Id)))
             .Select(c => c.CategoryName)
             .ToListAsync();
         var list = names.Select(n => new VideoCategory(Slug(n), n.Trim()))
@@ -68,7 +70,7 @@ public static class VideosQuery
             .DistinctBy(c => c.Slug)
             .OrderBy(c => c.Name, StringComparer.OrdinalIgnoreCase)
             .ToList();
-        if (await Uncategorized(db.YouTubeVideos.AsNoTracking()).AnyAsync()) list.Add(Other);
+        if (await Uncategorized(visible).AnyAsync()) list.Add(Other);
         return list;
     }
 
@@ -83,9 +85,9 @@ public static class VideosQuery
             && v.YoutubeVideoFeed.YoutubeCategory.CategoryName == category.Name);
 
     /// <summary>The channels that have videos (optionally in one category tab), alphabetically by their displayed name.</summary>
-    public static async Task<IReadOnlyList<VideoChannel>> GetChannelsAsync(WebScraperContext db, VideoCategory? category = null)
+    public static async Task<IReadOnlyList<VideoChannel>> GetChannelsAsync(WebScraperContext db, Viewer viewer, VideoCategory? category = null)
     {
-        var rows = await InCategory(db.YouTubeVideos.AsNoTracking(), category)
+        var rows = await InCategory(FollowQuery.Videos(db, viewer), category)
             .GroupBy(v => v.ChannelId)
             .Select(g => new
             {
@@ -107,10 +109,11 @@ public static class VideosQuery
 
     /// <summary>Newest first. Filters by category tab, channel id and a search over the title and channel name.</summary>
     public static async Task<VideosPage> GetVideosAsync(
-        WebScraperContext db, string? channelId, string? search, int limit = Limit, int offset = 0,
+        WebScraperContext db, Viewer viewer, string? channelId, string? search, int limit = Limit, int offset = 0,
         VideoCategory? category = null)
     {
-        var query = InCategory(db.YouTubeVideos.AsNoTracking(), category);
+        // The follow filter comes first, so an unfollowed channel ID or search looks exactly like an unknown one.
+        var query = InCategory(FollowQuery.Videos(db, viewer), category);
 
         if (!string.IsNullOrWhiteSpace(channelId))
         {
@@ -155,10 +158,10 @@ public static class VideosQuery
     }
 
     /// <summary>Rotate up to ten channels when video collection advances to another UTC hour.</summary>
-    public static async Task<IReadOnlyList<VideoItem>> GetHomeVideosAsync(WebScraperContext db, int take = 10)
+    public static async Task<IReadOnlyList<VideoItem>> GetHomeVideosAsync(WebScraperContext db, Viewer viewer, int take = 10)
     {
         var updated = await GetLastUpdatedAsync(db);
-        var candidates = await GetLatestPerChannelAsync(db);
+        var candidates = await GetLatestPerChannelAsync(db, viewer);
         return SelectHomeVideos(candidates, updated ?? DateTime.UnixEpoch, take);
     }
 
@@ -180,10 +183,11 @@ public static class VideosQuery
     }
 
     /// <summary>Each channel's newest video, newest first: one row per channel, for the home page.</summary>
-    public static async Task<IReadOnlyList<VideoItem>> GetLatestPerChannelAsync(WebScraperContext db)
+    public static async Task<IReadOnlyList<VideoItem>> GetLatestPerChannelAsync(WebScraperContext db, Viewer viewer)
     {
-        var rows = await db.YouTubeVideos.AsNoTracking()
-            .Where(v => v.PublishedAt == db.YouTubeVideos.Where(o => o.ChannelId == v.ChannelId).Max(o => o.PublishedAt))
+        var visible = FollowQuery.Videos(db, viewer);
+        var rows = await visible
+            .Where(v => v.PublishedAt == visible.Where(o => o.ChannelId == v.ChannelId).Max(o => o.PublishedAt))
             .Select(v => new
             {
                 v.Id,

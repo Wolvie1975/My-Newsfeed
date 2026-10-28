@@ -2,6 +2,7 @@
 @layout PublicLayout
 @inject IDbContextFactory<WebScraperContext> Factory
 @inject FeedDates Dates
+@inject myNewspaper.Web.Profiles.ProfileContext Reader
 
 <PageTitle>YouTube · myNewspaper</PageTitle>
 
@@ -175,19 +176,19 @@ else
     protected override async Task OnParametersSetAsync()
     {
         await using var db = await Factory.CreateDbContextAsync();
-        categories = await VideosQuery.GetCategoriesAsync(db);
+        categories = await VideosQuery.GetCategoriesAsync(db, Reader.Viewer);
         var wanted = CategoryQuery?.Trim().ToLowerInvariant();
         selectedCategory = categories.FirstOrDefault(c => c.Slug == wanted);
-        channels = await VideosQuery.GetChannelsAsync(db, selectedCategory);
+        channels = await VideosQuery.GetChannelsAsync(db, Reader.Viewer, selectedCategory);
         // A channel from another category (an old link) is dropped rather than showing an empty page.
         var channel = channels.Any(IsSelected) ? Channel : null;
         page = int.TryParse(PageText, out var requested) ? Math.Clamp(requested, 1, 1000000) : 1;
         offset = (page - 1) * 50;
-        listing = await VideosQuery.GetVideosAsync(db, channel, Q, limit: 50, offset: offset, category: selectedCategory);
+        listing = await VideosQuery.GetVideosAsync(db, Reader.Viewer, channel, Q, limit: 50, offset: offset, category: selectedCategory);
         if (offset >= listing.Total && page > 1)
         {
             page = Math.Max(1, (listing.Total + 49) / 50); offset = (page - 1) * 50;
-            listing = await VideosQuery.GetVideosAsync(db, channel, Q, limit: 50, offset: offset, category: selectedCategory);
+            listing = await VideosQuery.GetVideosAsync(db, Reader.Viewer, channel, Q, limit: 50, offset: offset, category: selectedCategory);
         }
         lastUpdated = await VideosQuery.GetLastUpdatedAsync(db);
         selectedChannel = channels.FirstOrDefault(IsSelected)?.Name;

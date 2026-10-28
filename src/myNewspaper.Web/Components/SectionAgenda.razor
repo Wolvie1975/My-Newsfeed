@@ -1,5 +1,6 @@
 @inject IDbContextFactory<WebScraperContext> Factory
 @inject FeedDates Dates
+@inject myNewspaper.Web.Profiles.ProfileContext Reader
 @inject ILogger<SectionAgenda> Log
 
 @if (unavailable) {
@@ -69,7 +70,7 @@
         var today = Dates.TodayAt(DateTime.UtcNow);
         if (Entertainment) {
             movies = (await MoviesQuery.GetAsync(db, today, null, null, null, null, take: 4)).Items;
-            episodes = await TvQuery.GetOnDateAsync(db, Dates, today);
+            episodes = await TvQuery.GetOnDateAsync(db, Reader.Viewer, Dates, today);
         } else {
             var sport = CategoryName == NewsSections.MensBasketball ? "Men's Basketball" : null;
             if (CategoryName == F1NewsQuery.CategoryName) races = (await F1Query.GetAsync(db, "schedule")).Races.Where(r => r.RaceDate >= today).Take(3).ToArray();

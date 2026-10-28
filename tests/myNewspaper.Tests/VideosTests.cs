@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using myNewspaper.Web.Data;
 using myNewspaper.Web.Data.Models;
+using myNewspaper.Web.Profiles;
 
 namespace myNewspaper.Tests;
 
@@ -130,22 +131,22 @@ public class VideosTests
             Video(token, "C", "no feed", new DateTime(2026, 1, 2)));
         await db.SaveChangesAsync();
 
-        var tabs = await VideosQuery.GetCategoriesAsync(db);
+        var tabs = await VideosQuery.GetCategoriesAsync(db, Viewer.Household);
         var techTab = Assert.Single(tabs, c => c.Name == tech.CategoryName);
         Assert.Equal(VideosQuery.Slug(tech.CategoryName), techTab.Slug);
         Assert.DoesNotContain(tabs, c => c.Name == empty.CategoryName);
         Assert.Equal(VideosQuery.Other, tabs[^1]);
 
-        var inTech = await VideosQuery.GetVideosAsync(db, null, token, category: techTab);
+        var inTech = await VideosQuery.GetVideosAsync(db, Viewer.Household, null, token, category: techTab);
         Assert.Equal(new[] { "tech one", "tech two" }, inTech.Items.Select(i => i.Title.Split(' ', 3)[2]));
         Assert.All(inTech.Items, i => Assert.Equal(tech.CategoryName, i.Category));
         // Uncategorized channels and videos without a channel row stay visible: under Other and under All.
-        var other = await VideosQuery.GetVideosAsync(db, null, token, category: VideosQuery.Other);
+        var other = await VideosQuery.GetVideosAsync(db, Viewer.Household, null, token, category: VideosQuery.Other);
         Assert.Equal(new[] { "no feed", "loose" }, other.Items.Select(i => i.Title.Split(' ', 3)[2]));
         Assert.All(other.Items, i => Assert.Null(i.Category));
-        Assert.Equal(4, (await VideosQuery.GetVideosAsync(db, null, token)).Total);
+        Assert.Equal(4, (await VideosQuery.GetVideosAsync(db, Viewer.Household, null, token)).Total);
 
-        var techChannels = await VideosQuery.GetChannelsAsync(db, techTab);
+        var techChannels = await VideosQuery.GetChannelsAsync(db, Viewer.Household, techTab);
         Assert.Contains(techChannels, c => c.ChannelId == $"UC{token}A");
         Assert.DoesNotContain(techChannels, c => c.ChannelId == $"UC{token}B");
     }
@@ -162,15 +163,15 @@ public class VideosTests
             Video(token, "B", "middle news", new DateTime(2026, 2, 1)));
         await db.SaveChangesAsync();
 
-        var all = await VideosQuery.GetVideosAsync(db, null, token);
+        var all = await VideosQuery.GetVideosAsync(db, Viewer.Household, null, token);
         Assert.Equal(new[] { "new", "middle news", "old" }, all.Items.Select(i => i.Title.Split(' ', 3)[2]));
         Assert.Equal(3, all.Total);
 
-        var one = await VideosQuery.GetVideosAsync(db, $"UC{token}A", token);
+        var one = await VideosQuery.GetVideosAsync(db, Viewer.Household, $"UC{token}A", token);
         Assert.Equal(2, one.Total);
         Assert.All(one.Items, i => Assert.Equal($"UC{token}A", i.ChannelId));
 
-        var found = await VideosQuery.GetVideosAsync(db, null, $"{token} middle");
+        var found = await VideosQuery.GetVideosAsync(db, Viewer.Household, null, $"{token} middle");
         Assert.Single(found.Items);
     }
 
@@ -193,13 +194,13 @@ public class VideosTests
             Video(token, "C", "c", new DateTime(2026, 1, 1)));
         await db.SaveChangesAsync();
 
-        var page = await VideosQuery.GetVideosAsync(db, null, token);
+        var page = await VideosQuery.GetVideosAsync(db, Viewer.Household, null, token);
         var names = page.Items.ToDictionary(i => i.ChannelId, i => i.ChannelName);
         Assert.Equal($"Feed {token}", names[$"UC{token}A"]);
         Assert.Equal($"Own {token}", names[$"UC{token}B"]);
         Assert.Equal($"UC{token}C", names[$"UC{token}C"]);
 
-        var channels = await VideosQuery.GetChannelsAsync(db);
+        var channels = await VideosQuery.GetChannelsAsync(db, Viewer.Household);
         Assert.Contains(channels, c => c.ChannelId == $"UC{token}A" && c.Name == $"Feed {token}");
     }
 
@@ -215,10 +216,10 @@ public class VideosTests
         }
         await db.SaveChangesAsync();
 
-        var page = await VideosQuery.GetVideosAsync(db, null, token, limit: 3);
+        var page = await VideosQuery.GetVideosAsync(db, Viewer.Household, null, token, limit: 3);
         Assert.Equal(3, page.Items.Count);
         Assert.Equal(5, page.Total);
-        var next = await VideosQuery.GetVideosAsync(db, null, token, limit: 3, offset: 3);
+        var next = await VideosQuery.GetVideosAsync(db, Viewer.Household, null, token, limit: 3, offset: 3);
         Assert.Equal(2, next.Items.Count); Assert.Equal(5, next.Total);
         Assert.Equal(5, page.Items.Concat(next.Items).Select(i => i.Id).Distinct().Count());
     }
@@ -244,7 +245,7 @@ public class VideosTests
             Video(token, "C", "c tie two", new DateTime(2031, 2, 1)));
         await db.SaveChangesAsync();
 
-        var latest = (await VideosQuery.GetLatestPerChannelAsync(db)).Where(v => v.ChannelId.StartsWith($"UC{token}")).ToList();
+        var latest = (await VideosQuery.GetLatestPerChannelAsync(db, Viewer.Household)).Where(v => v.ChannelId.StartsWith($"UC{token}")).ToList();
 
         Assert.Equal(new[] { $"UC{token}B", $"UC{token}A", $"UC{token}C" }, latest.Select(v => v.ChannelId));
         Assert.Equal($"zz {token} a new", latest[1].Title);

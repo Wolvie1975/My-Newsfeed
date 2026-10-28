@@ -2,6 +2,7 @@
 @layout PublicLayout
 @inject IDbContextFactory<WebScraperContext> Factory
 @inject FeedDates Dates
+@inject myNewspaper.Web.Profiles.ProfileContext Reader
 
 <PageTitle>TV &amp; Streaming · myNewspaper</PageTitle>
 <PageHeading Section="entertainment" Title="TV &amp; Streaming" Eyebrow="Your episode calendar" Description="" />
@@ -119,7 +120,7 @@
             && parsed.Year <= 9998 && parsed >= today ? parsed : today;
         await using var db = await Factory.CreateDbContextAsync();
         var show = int.TryParse(Show, out var id) && id > 0 ? id : (int?)null;
-        schedule = await TvQuery.GetAsync(db, Dates, start, show);
+        schedule = await TvQuery.GetAsync(db, Reader.Viewer, Dates, start, show);
         showTitle = show is { } selected ? schedule.Shows.FirstOrDefault(s => s.Id == selected)?.Title : null;
     }
 

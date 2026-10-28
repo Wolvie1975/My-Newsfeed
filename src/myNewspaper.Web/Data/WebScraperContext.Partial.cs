@@ -34,6 +34,15 @@ public partial class WebScraperContext
     public DbSet<MovieSourceLink> MovieSourceLinks { get; set; }
     public DbSet<MovieCatalog> MovieCatalogs { get; set; }
 
+    // Profile tables (db/020) are app-owned and mapped by hand, like the Results tables.
+    public DbSet<Profile> Profiles { get; set; }
+    public DbSet<ProfileDevice> ProfileDevices { get; set; }
+    public DbSet<ProfileTvFollow> ProfileTvFollows { get; set; }
+    public DbSet<ProfileChannelFollow> ProfileChannelFollows { get; set; }
+    public DbSet<ChannelRollout> ChannelRollouts { get; set; }
+    public DbSet<ContentRequest> ContentRequests { get; set; }
+    public DbSet<Household> Household { get; set; }
+
     partial void OnModelCreatingPartial(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<F1Source>().HasNoKey().ToView("F1Source", "dbo");
@@ -79,5 +88,24 @@ public partial class WebScraperContext
             entity.Property(e => e.FirstSeenAt).HasDefaultValueSql("(sysutcdatetime())", "DF_ResultGames_FirstSeenAt");
             entity.Property(e => e.LastSeenAt).HasDefaultValueSql("(sysutcdatetime())", "DF_ResultGames_LastSeenAt");
         });
+
+        // Timestamps come from the database defaults; without these EF would insert DateTime.MinValue.
+        modelBuilder.Entity<Profile>().Property(e => e.CreatedAt).HasDefaultValueSql("sysutcdatetime()");
+        modelBuilder.Entity<ProfileDevice>(entity =>
+        {
+            entity.HasOne(e => e.Profile).WithMany().HasForeignKey(e => e.ProfileId).OnDelete(DeleteBehavior.SetNull);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("sysutcdatetime()");
+            entity.Property(e => e.LastSeenAt).HasDefaultValueSql("sysutcdatetime()");
+        });
+        modelBuilder.Entity<ProfileTvFollow>().Property(e => e.FollowedAt).HasDefaultValueSql("sysutcdatetime()");
+        modelBuilder.Entity<ProfileChannelFollow>().Property(e => e.FollowedAt).HasDefaultValueSql("sysutcdatetime()");
+        // Single int keys would otherwise be treated as identity columns and left out of inserts.
+        modelBuilder.Entity<ChannelRollout>(entity =>
+        {
+            entity.Property(e => e.YoutubeVideoFeedId).ValueGeneratedNever();
+            entity.Property(e => e.RolledOutAt).HasDefaultValueSql("sysutcdatetime()");
+        });
+        modelBuilder.Entity<ContentRequest>().Property(e => e.CreatedAt).HasDefaultValueSql("sysutcdatetime()");
+        modelBuilder.Entity<Household>().Property(e => e.Id).ValueGeneratedNever();
     }
 }

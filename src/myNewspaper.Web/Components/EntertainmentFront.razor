@@ -1,6 +1,7 @@
 @using myNewspaper.Web.Components.Feed
 @inject IDbContextFactory<WebScraperContext> Factory
 @inject FeedDates Dates
+@inject myNewspaper.Web.Profiles.ProfileContext Reader
 @inject ILogger<EntertainmentFront> Log
 
 @* Entertainment front page as in the approved concept: On screen, then the lead story and latest headlines beside
@@ -229,7 +230,7 @@
         // On screen: tonight's tracked episodes first, then the next releases, four in all.
         try
         {
-            episodes = await TvQuery.GetOnDateAsync(db, Dates, today);
+            episodes = await TvQuery.GetOnDateAsync(db, Reader.Viewer, Dates, today);
             var movies = (await MoviesQuery.GetAsync(db, today, null, null, null, null, take: 4)).Items;
             onScreen = episodes.Take(2)
                 .Select(e => new ScreenItem(e.SeriesTitle, e.Poster,

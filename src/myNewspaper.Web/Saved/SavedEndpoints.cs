@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Mvc;
+using myNewspaper.Web.Profiles;
 
 namespace myNewspaper.Web.Saved;
 
@@ -22,16 +23,16 @@ public static class SavedEndpoints
             catch (ArgumentException) { return Results.BadRequest(new { error = "Invalid saved content." }); }
             catch (SavedListFullException) { return Results.Conflict(new { error = "Your shared list is full (500 items). Remove some items and try again." }); }
         });
-        api.MapGet("", async (HttpContext http, IAntiforgery antiforgery, SharedArticles saved) =>
-            Results.Ok(new { articles = await saved.Read(http.RequestAborted), token = antiforgery.GetAndStoreTokens(http).RequestToken }));
-        api.MapPost("/add", async (SavedArticle article, SharedArticles saved, HttpContext http) =>
-            Results.Ok(new { articles = await saved.Add(article, http.RequestAborted) }))
+        api.MapGet("", async (HttpContext http, IAntiforgery antiforgery, SharedArticles saved, ProfileContext reader) =>
+            Results.Ok(new { articles = await saved.Read(reader.SavedListProfileId, http.RequestAborted), token = antiforgery.GetAndStoreTokens(http).RequestToken }));
+        api.MapPost("/add", async (SavedArticle article, SharedArticles saved, ProfileContext reader, HttpContext http) =>
+            Results.Ok(new { articles = await saved.Add(reader.SavedListProfileId, article, http.RequestAborted) }))
             .WithMetadata(new RequestSizeLimitAttribute(2_000_000));
-        api.MapPost("/remove", async (SavedRemoval article, SharedArticles saved, HttpContext http) =>
-            Results.Ok(new { articles = await saved.Remove(article.Url, http.RequestAborted) }))
+        api.MapPost("/remove", async (SavedRemoval article, SharedArticles saved, ProfileContext reader, HttpContext http) =>
+            Results.Ok(new { articles = await saved.Remove(reader.SavedListProfileId, article.Url, http.RequestAborted) }))
             .WithMetadata(new RequestSizeLimitAttribute(2_000_000));
-        api.MapPost("/import", async (SavedImport import, SharedArticles saved, HttpContext http) =>
-            Results.Ok(new { articles = await saved.Import(import, http.RequestAborted) }))
+        api.MapPost("/import", async (SavedImport import, SharedArticles saved, ProfileContext reader, HttpContext http) =>
+            Results.Ok(new { articles = await saved.Import(reader.SavedListProfileId, import, http.RequestAborted) }))
             .WithMetadata(new RequestSizeLimitAttribute(2_000_000));
     }
 }

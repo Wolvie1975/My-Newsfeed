@@ -2,6 +2,7 @@
 @layout PublicLayout
 @inject IDbContextFactory<WebScraperContext> Factory
 @inject FeedDates Dates
+@inject myNewspaper.Web.Profiles.ProfileContext Reader
 @inject NavigationManager Nav
 @inject ILogger<Home> Log
 @inject ScoreboardRepository Scoreboard
@@ -455,7 +456,7 @@
             Log.LogError(ex, "Could not read home Opinion spotlight.");
             opinion = new(null,null,nowUtc.Ticks / TimeSpan.TicksPerHour,60000,true);
         }
-        videos = await VideosQuery.GetHomeVideosAsync(db);
+        videos = await VideosQuery.GetHomeVideosAsync(db, Reader.Viewer);
         homeForecasts = new([], []);
         homeBoxOffice = []; homeBoxOfficeFailed = false;
         if (HomeBoxOfficeSchedule.ShowResults(Dates.TodayAt(nowUtc)))
@@ -477,7 +478,7 @@
         movies = await MoviesQuery.GetFridayTheatricalAsync(db, Dates.TodayAt(nowUtc));
         digitalData = await DigitalReleasesQuery.GetAsync(db, Dates.TodayAt(nowUtc), null, take: 5);
         digitalMovies = digitalData.Items;
-        episodes = await TvQuery.GetOnDateAsync(db, Dates, Dates.TodayAt(nowUtc));
+        episodes = await TvQuery.GetOnDateAsync(db, Reader.Viewer, Dates, Dates.TodayAt(nowUtc));
         todays = await HomeEventResults.WithoutFinalResultsAsync(db, todays);
         tonight = TodayTonight.Build(todays, Dates);
 

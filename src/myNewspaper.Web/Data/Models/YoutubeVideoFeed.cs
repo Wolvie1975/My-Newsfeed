@@ -28,6 +28,9 @@ public partial class YoutubeVideoFeed
     /// <summary>The channel's category; null until one is assigned (shown under "Other").</summary>
     public int? YoutubeCategoryId { get; set; }
 
+    /// <summary>Web-owned (db/020): the admin's "Suggest to everyone" flag for profiles.</summary>
+    public bool IsHouseholdPick { get; set; }
+
     [ForeignKey("YoutubeCategoryId")]
     [InverseProperty("YoutubeVideoFeeds")]
     public virtual YoutubeCategory? YoutubeCategory { get; set; }

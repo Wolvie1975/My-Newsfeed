@@ -1,11 +1,16 @@
 using System.Net;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using myNewspaper.Web.Auth;
 using myNewspaper.Web.Components;
 using myNewspaper.Web.Data;
+using myNewspaper.Web.Data.Models;
 using myNewspaper.Web.Endpoints;
+using myNewspaper.Web.Profiles;
+using myNewspaper.Web.Requests;
 using myNewspaper.Web.Saved;
 using myNewspaper.Web.Scores;
 using myNewspaper.Web.Tv;
@@ -44,6 +49,19 @@ builder.Services.AddAuthentication(AdminAuth.Scheme)
         options.LoginPath = "/login";
         options.AccessDeniedPath = "/login";
         options.ExpireTimeSpan = TimeSpan.FromHours(8);
+        // The admin APIs answer with status codes; only pages redirect to the sign-in page.
+        options.Events.OnRedirectToLogin = context => AdminApiStatus(context, StatusCodes.Status401Unauthorized);
+        options.Events.OnRedirectToAccessDenied = context => AdminApiStatus(context, StatusCodes.Status403Forbidden);
+        static Task AdminApiStatus(Microsoft.AspNetCore.Authentication.RedirectContext<Microsoft.AspNetCore.Authentication.Cookies.CookieAuthenticationOptions> context, int status)
+        {
+            if (context.Request.Path.StartsWithSegments("/admin/api"))
+            {
+                context.HttpContext.Features.Get<Microsoft.AspNetCore.Diagnostics.IStatusCodePagesFeature>()?.Enabled = false;
+                context.Response.StatusCode = status;
+            }
+            else context.Response.Redirect(context.RedirectUri);
+            return Task.CompletedTask;
+        }
     });
 builder.Services.AddAuthorization();
 builder.Services.AddCascadingAuthenticationState();
@@ -66,6 +84,24 @@ builder.Services.AddSingleton(sp => FeedDates.Create(sp.GetRequiredService<IConf
 builder.Services.AddDbContextFactory<WebScraperContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddHealthChecks().AddDbContextCheck<WebScraperContext>();
+
+// Household profiles stay off (Profiles:Enabled = false) until switch-on; see new development/profiles-handoff.md.
+builder.Services.Configure<ProfilesOptions>(builder.Configuration.GetSection(ProfilesOptions.Section));
+builder.Services.TryAddSingleton(TimeProvider.System);
+builder.Services.AddScoped<ProfileContext>();
+builder.Services.AddSingleton<ProfileCookies>();
+builder.Services.AddSingleton<PasswordHasher<Profile>>();
+builder.Services.AddSingleton<ProfilePins>();
+// Request links are fetched through a guarded handler: public addresses only, checked at connect time, no redirects.
+builder.Services.AddHttpClient(RequestChecks.ClientName, client =>
+    {
+        client.Timeout = TimeSpan.FromSeconds(10);
+        client.DefaultRequestHeaders.UserAgent.ParseAdd("myNewspaper/1.0 (household feed request check)");
+    })
+    .ConfigurePrimaryHttpMessageHandler(SsrfGuard.CreateHandler);
+builder.Services.AddSingleton<RequestChecks>();
+builder.Services.AddSingleton<RequestBacklog>();
+// Built but not started yet: the request checker starts at stage A2 and the household channel rollout at U3.
 
 // Game results from ESPN's public scoreboard data: a background sync stores followed leagues' and teams' games; pages
 // only read the database.
@@ -110,12 +146,16 @@ app.UseHttpsRedirection();
 
 app.UseAuthentication();
 app.UseAuthorization();
+// After routing (which WebApplication adds first) and authentication, so it can read endpoint metadata.
+app.UseProfileGate();
 app.UseAntiforgery();
 
 app.MapStaticAssets();
 app.MapSharedArticles();
 app.MapAccount();
 app.MapPublicEndpoints();
+app.MapProfiles();
+app.MapAdminProfiles();
 app.MapFeed();
 
 // Used by the container health check: healthy only when the database is reachable.
@@ -125,3 +165,6 @@ app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
 app.Run();
+
+// Lets the integration tests start the app with WebApplicationFactory.
+public partial class Program;

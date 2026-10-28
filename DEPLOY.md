@@ -67,6 +67,7 @@ Keep scraper-owned `sql/` migrations in their separate repository.
 | [016](db/016_add_schedule_status.sql) | Nullable ScheduleStatus; apply before web deployment if scraper has not added it; repeatable |
 | [017](db/017_seed_schedule_result_coverage.sql) | WNBA and Big 12 women's basketball coverage; requires conference schema, preserves existing choices |
 | [019](db/019_news_category_hubs.sql) | Adds saved category Hub assignment, initially places existing sports/entertainment categories; repeatable, preserves later admin changes; apply before deploying dynamic headline hubs |
+| [020](db/020_profiles.sql) | App-owned profile, device, follow, request and household tables, plus web-owned `YoutubeVideoFeed.IsHouseholdPick`; repeatable; back up first and apply before deploying any web build that maps `IsHouseholdPick` |
 
 Feature prerequisites include SELECT access to scraper-owned standings, ranking,
 movie, TV, box-office and Championship result tables. Apply scraper schema/runtime

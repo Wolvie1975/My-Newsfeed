@@ -1,6 +1,7 @@
 using System.Globalization;
 using Microsoft.EntityFrameworkCore;
 using myNewspaper.Web.Data.Models;
+using myNewspaper.Web.Profiles;
 
 namespace myNewspaper.Web.Data;
 
@@ -12,11 +13,12 @@ public sealed record TvSchedule(IReadOnlyList<TvEpisodeItem> Items, int Total, I
 
 public static class TvQuery
 {
-    public static async Task<TvSchedule> GetAsync(WebScraperContext db, FeedDates dates, DateOnly start, int? show, int days = 7, string? search = null)
+    public static async Task<TvSchedule> GetAsync(WebScraperContext db, Viewer viewer, FeedDates dates, DateOnly start, int? show, int days = 7, string? search = null)
     {
         var end = start.AddDays(days);
         var window = new ResultsWindow(ResultsWindow.ForDay(start, dates.Zone).StartUtc, ResultsWindow.ForDay(end, dates.Zone).StartUtc);
-        var enabled = db.TvTrackedSeries.AsNoTracking().Where(t => t.Enabled);
+        // The follow filter comes first, so an unfollowed show ID or search looks exactly like an unknown one.
+        var enabled = FollowQuery.TrackedSeries(db, viewer);
         if (!string.IsNullOrWhiteSpace(search))
         {
             var term = QueryText.Term(search);
@@ -61,8 +63,8 @@ public static class TvQuery
         return new(items, count, shows, unannounced, await enabled.MaxAsync(t => t.LastSuccessAt));
     }
 
-    public static async Task<IReadOnlyList<TvEpisodeItem>> GetOnDateAsync(WebScraperContext db, FeedDates dates, DateOnly day) =>
-        (await GetAsync(db, dates, day, null, days: 1)).Items;
+    public static async Task<IReadOnlyList<TvEpisodeItem>> GetOnDateAsync(WebScraperContext db, Viewer viewer, FeedDates dates, DateOnly day) =>
+        (await GetAsync(db, viewer, dates, day, null, days: 1)).Items;
 
     public static async Task FollowAsync(WebScraperContext db, int providerId, string title)
     {

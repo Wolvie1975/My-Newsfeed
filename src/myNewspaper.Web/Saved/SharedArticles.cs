@@ -43,27 +43,41 @@ public sealed class SharedArticles(IDbContextFactory<WebScraperContext> factory)
         return uri.AbsoluteUri;
     }
 
-    public async Task<IReadOnlyList<SavedArticle>> Read(CancellationToken ct = default)
+    // profileId is the owner: null is the legacy shared list (MyDailyFeedSavedList, Id = 1), used only while profiles
+    // are switched off; otherwise the profile's own row in MyDailyFeedProfileSaved, created on its first save.
+    // SharedArticles is a singleton, so callers pass the current profile instead of it being injected.
+    private static string Select(int? profileId, bool locked) => profileId is null
+        ? $"SELECT Articles FROM dbo.MyDailyFeedSavedList{(locked ? " WITH (UPDLOCK, HOLDLOCK)" : "")} WHERE Id = 1"
+        : $"SELECT Articles FROM dbo.MyDailyFeedProfileSaved{(locked ? " WITH (UPDLOCK, HOLDLOCK)" : "")} WHERE ProfileId = @profile";
+
+    private static void AddProfile(System.Data.Common.DbCommand command, int? profileId)
+    {
+        if (profileId is null) return;
+        var p = command.CreateParameter(); p.ParameterName = "@profile"; p.Value = profileId.Value; command.Parameters.Add(p);
+    }
+
+    public async Task<IReadOnlyList<SavedArticle>> Read(int? profileId, CancellationToken ct = default)
     {
         await using var db = await factory.CreateDbContextAsync(ct);
         await db.Database.OpenConnectionAsync(ct);
         await using var command = db.Database.GetDbConnection().CreateCommand();
-        command.CommandText = "SELECT Articles FROM dbo.MyDailyFeedSavedList WHERE Id = 1";
-        return JsonSerializer.Deserialize<SavedArticle[]>((string)(await command.ExecuteScalarAsync(ct))!, Json)!;
+        command.CommandText = Select(profileId, locked: false);
+        AddProfile(command, profileId);
+        return await command.ExecuteScalarAsync(ct) is string json ? JsonSerializer.Deserialize<SavedArticle[]>(json, Json)! : [];
     }
 
-    public Task<IReadOnlyList<SavedArticle>> Add(SavedArticle article, CancellationToken ct = default) =>
-        Change([Normalize(article) with { SavedAt = DateTimeOffset.UtcNow }], null, null, ct);
-    public Task<IReadOnlyList<SavedArticle>> Remove(string url, CancellationToken ct = default) =>
-        Change([], NormalizeUrl(url), null, ct);
-    public Task<IReadOnlyList<SavedArticle>> Import(SavedImport import, CancellationToken ct = default)
+    public Task<IReadOnlyList<SavedArticle>> Add(int? profileId, SavedArticle article, CancellationToken ct = default) =>
+        Change(profileId, [Normalize(article) with { SavedAt = DateTimeOffset.UtcNow }], null, null, ct);
+    public Task<IReadOnlyList<SavedArticle>> Remove(int? profileId, string url, CancellationToken ct = default) =>
+        Change(profileId, [], NormalizeUrl(url), null, ct);
+    public Task<IReadOnlyList<SavedArticle>> Import(int? profileId, SavedImport import, CancellationToken ct = default)
     {
         if (import.ClientId == Guid.Empty || import.Articles is null || import.Articles.Length > Maximum)
             throw new ArgumentException("Invalid bookmark import.");
-        return Change(import.Articles.Select(Normalize).ToArray(), null, import.ClientId, ct);
+        return Change(profileId, import.Articles.Select(Normalize).ToArray(), null, import.ClientId, ct);
     }
 
-    private async Task<IReadOnlyList<SavedArticle>> Change(SavedArticle[] additions, string? remove, Guid? clientId, CancellationToken ct)
+    private async Task<IReadOnlyList<SavedArticle>> Change(int? profileId, SavedArticle[] additions, string? remove, Guid? clientId, CancellationToken ct)
     {
         await using var db = await factory.CreateDbContextAsync(ct);
         await db.Database.OpenConnectionAsync(ct);
@@ -71,8 +85,11 @@ public sealed class SharedArticles(IDbContextFactory<WebScraperContext> factory)
         await using var transaction = await connection.BeginTransactionAsync(IsolationLevel.Serializable, ct);
         await using var command = connection.CreateCommand();
         command.Transaction = transaction;
-        command.CommandText = "SELECT Articles FROM dbo.MyDailyFeedSavedList WITH (UPDLOCK, HOLDLOCK) WHERE Id = 1";
-        var list = JsonSerializer.Deserialize<List<SavedArticle>>((string)(await command.ExecuteScalarAsync(ct))!, Json)!;
+        command.CommandText = Select(profileId, locked: true);
+        AddProfile(command, profileId);
+        // HOLDLOCK also locks the missing row's key range, so two first saves can't both insert.
+        var stored = await command.ExecuteScalarAsync(ct) as string;
+        var list = stored is null ? new List<SavedArticle>() : JsonSerializer.Deserialize<List<SavedArticle>>(stored, Json)!;
         if (clientId.HasValue)
         {
             command.CommandText = "SELECT COUNT(*) FROM dbo.MyDailyFeedSavedImports WHERE ClientId = @client";
@@ -84,7 +101,9 @@ public sealed class SharedArticles(IDbContextFactory<WebScraperContext> factory)
         foreach (var article in additions) if (seen.Add(article.Url)) list.Add(article);
         if (list.Count > Maximum) throw new SavedListFullException();
         list = list.OrderByDescending(a => a.SavedAt).ThenBy(a => a.Url, StringComparer.Ordinal).ToList();
-        command.CommandText = "UPDATE dbo.MyDailyFeedSavedList SET Articles = @articles WHERE Id = 1";
+        command.CommandText = profileId is null ? "UPDATE dbo.MyDailyFeedSavedList SET Articles = @articles WHERE Id = 1"
+            : stored is null ? "INSERT dbo.MyDailyFeedProfileSaved (ProfileId, Articles) VALUES (@profile, @articles)"
+            : "UPDATE dbo.MyDailyFeedProfileSaved SET Articles = @articles WHERE ProfileId = @profile";
         var data = command.CreateParameter(); data.ParameterName = "@articles"; data.DbType = DbType.String;
         data.Value = JsonSerializer.Serialize(list, Json); command.Parameters.Add(data);
         await command.ExecuteNonQueryAsync(ct);
