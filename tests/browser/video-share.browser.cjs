@@ -51,6 +51,8 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
                 await page.goto(base + route);
                 const button = page
                     .locator(route === '/news' ? '[data-share-open]' : '[data-share-open][data-kind="video"]')
+                    // Phone Headlines has a hidden desktop copy of each story.
+                    .filter({ visible: true })
                     .first();
                 await button.waitFor({ state: 'visible' });
                 const url = await button.getAttribute('data-url');

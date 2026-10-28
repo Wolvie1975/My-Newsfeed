@@ -1,0 +1,15 @@
+@* A run of folds sharing one <details name>, so opening one closes the others without JavaScript. *@
+<section class="mx-folds" aria-labelledby="@($"{Name}-h")">
+    <div class="mx-head"><h2 id="@($"{Name}-h")">@Heading</h2></div>
+    <CascadingValue Value="this" IsFixed="true">@ChildContent</CascadingValue>
+    @if (Foot is not null) { <a class="mx-more" href="@FootHref">@Foot</a> }
+</section>
+
+@code {
+    /// <summary>Shared &lt;details name&gt;; must be unique on the page.</summary>
+    [Parameter, EditorRequired] public string Name { get; set; } = "";
+    [Parameter, EditorRequired] public string Heading { get; set; } = "";
+    [Parameter] public string? Foot { get; set; }
+    [Parameter] public string? FootHref { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

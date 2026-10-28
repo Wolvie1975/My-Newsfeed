@@ -408,6 +408,38 @@ public class FeedQueryTests
     }
 
     [Fact]
+    public async Task Latest_by_category_takes_the_newest_few_visible_pages_of_each_category()
+    {
+        await using var db = Create();
+        await using var tx = await db.Database.BeginTransactionAsync();
+        var token = Guid.NewGuid().ToString("N");
+        var world = new SourceCategory { CategoryName = "World " + token, DateAdded = DateTime.UtcNow };
+        var tech = new SourceCategory { CategoryName = "Tech " + token, DateAdded = DateTime.UtcNow };
+        var empty = new SourceCategory { CategoryName = "Empty " + token, DateAdded = DateTime.UtcNow };
+        var one = new Source { Url = $"https://test.invalid/{token}/one", Enabled = true, SourceCategory = world };
+        var two = new Source { Url = $"https://test.invalid/{token}/two", Enabled = true, SourceCategory = world };
+        var off = new Source { Url = $"https://test.invalid/{token}/off", Enabled = false, SourceCategory = world };
+        var gadgets = new Source { Url = $"https://test.invalid/{token}/gadgets", Enabled = true, SourceCategory = tech };
+        var date = new DateTime(2026, 10, 28, 12, 0, 0);
+        one.Pages.Add(NewPage(token, "W1", date, date));
+        two.Pages.Add(NewPage(token, "W2", date, date.AddMinutes(-1)));
+        one.Pages.Add(NewPage(token, "W3", date, date.AddMinutes(-2)));
+        two.Pages.Add(NewPage(token, "W4", date, date.AddMinutes(-3)));
+        off.Pages.Add(NewPage(token, "Hidden", date, date.AddMinutes(1)));
+        gadgets.Pages.Add(NewPage(token, "Undated", date.AddDays(1)));
+        gadgets.Pages.Add(NewPage(token, "T1", date, date));
+        db.Sources.AddRange(one, two, off, gadgets);
+        db.SourceCategories.Add(empty);
+        await db.SaveChangesAsync();
+
+        var latest = await FeedQuery.GetLatestByCategoryAsync(db, [world.Id, tech.Id, empty.Id, world.Id]);
+        Assert.Equal(["W1", "W2", "W3"], latest[world.Id].Select(i => i.Title.Split(' ')[0]));
+        Assert.Equal(["T1", "Undated"], latest[tech.Id].Select(i => i.Title.Split(' ')[0]));
+        Assert.Empty(latest[empty.Id]);
+        Assert.Equal(world.CategoryName, latest[world.Id][0].CategoryName);
+    }
+
+    [Fact]
     public async Task Feed_cuts_very_long_descriptions_in_the_query()
     {
         await using var db = Create();

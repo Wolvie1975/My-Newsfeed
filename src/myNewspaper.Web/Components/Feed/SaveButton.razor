@@ -16,6 +16,7 @@
             data-date-label="@(Item.Undated ? null : Dates.Published(Item.Date))"
             aria-pressed="false" aria-label="Save for later" title="Save for later">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4.5L5 21V4a1 1 0 0 1 1-1z"></path></svg>
+        @if (Labelled) { <span data-save-label aria-hidden="true">Save</span> }
     </button>
 }
 
@@ -28,4 +29,7 @@
     [Parameter, EditorRequired] public string Source { get; set; } = "";
 
     [Parameter] public string? Summary { get; set; }
+
+    /// <summary>Show "Save"/"Saved" beside the icon (the phone dark block).</summary>
+    [Parameter] public bool Labelled { get; set; }
 }

@@ -155,26 +155,47 @@ public static class FeedQuery
             .ThenByDescending(p => p.Published ?? p.ScrapedAt)
             .ThenByDescending(p => p.Id)
             .Take(take)
-            .Select(p => new FeedItem(
-                p.Id,
-                p.Title,
-                p.Url,
-                p.Description != null && p.Description.Length > DescriptionFetchLimit
-                    ? p.Description.Substring(0, DescriptionFetchLimit)
-                    : p.Description,
-                p.ImageUrl,
-                p.Source.Label,
-                p.Source.Url,
-                p.Source.SourceCategoryId,
-                p.Source.SourceCategory != null ? p.Source.SourceCategory.CategoryName : null,
-                p.Published ?? p.ScrapedAt,
-                p.Published == null))
+            .Select(ToFeedItem)
             .ToListAsync();
 
         var remaining = olderCount - items.Count;
         var next = remaining > 0 && items.Count > 0 ? new FeedCursor(items[^1].Date, items[^1].Id, items[^1].Undated) : null;
         return new FeedPage(items, total, remaining, next);
     }
+
+    /// <summary>
+    /// The newest few articles in each of <paramref name="categoryIds"/>, in feed order, for the phone Headlines folds.
+    /// One small query per category (there are only a handful), with no counts.
+    /// </summary>
+    public static async Task<IReadOnlyDictionary<int, IReadOnlyList<FeedItem>>> GetLatestByCategoryAsync(
+        WebScraperContext db, IEnumerable<int> categoryIds, int take = 3)
+    {
+        var latest = new Dictionary<int, IReadOnlyList<FeedItem>>();
+        foreach (var id in categoryIds.Distinct())
+            latest[id] = await Visible(db).Where(p => p.Source.SourceCategoryId == id)
+                .OrderBy(p => p.Published == null ? 1 : 0)
+                .ThenByDescending(p => p.Published ?? p.ScrapedAt)
+                .ThenByDescending(p => p.Id)
+                .Take(take)
+                .Select(ToFeedItem)
+                .ToListAsync();
+        return latest;
+    }
+
+    private static readonly System.Linq.Expressions.Expression<Func<Models.Page, FeedItem>> ToFeedItem = p => new FeedItem(
+        p.Id,
+        p.Title,
+        p.Url,
+        p.Description != null && p.Description.Length > DescriptionFetchLimit
+            ? p.Description.Substring(0, DescriptionFetchLimit)
+            : p.Description,
+        p.ImageUrl,
+        p.Source.Label,
+        p.Source.Url,
+        p.Source.SourceCategoryId,
+        p.Source.SourceCategory != null ? p.Source.SourceCategory.CategoryName : null,
+        p.Published ?? p.ScrapedAt,
+        p.Published == null);
 
     /// <summary>The newest article per enabled source, ordered by story date.</summary>
     public static async Task<IReadOnlyList<FeedItem>> GetLatestPerSourceAsync(WebScraperContext db, int take = 5, int? categoryId = null, string? hub = null) =>

@@ -1,0 +1,598 @@
+/* =====================================================================================================================
+   Phone refresh (docs/mobile-refresh-handoff.md). Everything is .mx-prefixed and only shows below 744px; desktop and
+   iPad portrait never see it. Uses the public.css tokens (--text, --text-2, --surface, --bg, --border, --accent) so color
+   schemes and dark mode carry over.
+   ===================================================================================================================== */
+.pub {
+    --mx-ribbon-bg: #ffd34d;
+    --mx-ribbon-fg: #141b2b;
+    --mx-ribbon-kicker: #3a2e00;
+    --mx-live: #b0001e;
+    --mx-block-bg: #141b2b;
+    --mx-block-fg: #ffffff;
+    --mx-block-2: #c9d6ee;
+    --mx-block-3: #9fb0d0;
+    --mx-block-tile: #1f2940;
+    --mx-block-line: #4f5d80;
+    --mx-block-accent: #ffd34d;
+    --mx-band: var(--bg);
+    --mx-world: #0051ba;
+    --mx-us: #b0001e;
+    --mx-local: #0f766e;
+    --mx-business: #b45309;
+    --mx-tech: #6d28d9;
+    --mx-gain: #15803d;
+    --mx-serif: 'Newsreader', Georgia, serif;
+}
+:root[data-theme='dark'] .pub {
+    --mx-ribbon-bg: #3a2f0a;
+    --mx-ribbon-fg: #fff3c4;
+    --mx-ribbon-kicker: #ffd34d;
+    --mx-live: #ff6b7d;
+    --mx-block-bg: #050b17;
+    --mx-block-tile: #111f36;
+    --mx-block-line: #3b5278;
+    --mx-world: #8bbcff;
+    --mx-us: #ff8590;
+    --mx-local: #5eead4;
+    --mx-business: #fbbf24;
+    --mx-tech: #c4b5fd;
+    --mx-gain: #4ade80;
+}
+
+/* Phone-only and desktop-only wrappers. The desktop wrapper takes no box of its own, so the page's flex gaps still
+   apply to what's inside it; .mx-contents is the same wrapper on a page whose phone version isn't in use. */
+.mx-phone {
+    display: none;
+}
+.mx-desktop,
+.mx-contents {
+    display: contents;
+}
+@media (max-width: 743px) {
+    .mx-phone {
+        display: block;
+    }
+    .mx-desktop {
+        display: none !important;
+    }
+    /* Edge to edge: cancel the page's phone padding (public.css: 12px 20px 40px). */
+    .pub .page > .mx-phone {
+        margin: -12px -20px -40px;
+        padding-bottom: 24px;
+        background: var(--surface);
+    }
+}
+
+/* ---------------------------------------------------------------- Ribbon */
+.mx-ribbon {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+    background: var(--mx-ribbon-bg);
+    color: var(--mx-ribbon-fg);
+}
+.mx-ribbon__kicker {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--mx-ribbon-kicker);
+}
+.mx-ribbon__kicker::before {
+    content: '';
+    flex: none;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: var(--mx-live);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--mx-live) 18%, transparent);
+}
+.pub .mx-ribbon h1 {
+    margin: 4px 0 0;
+    font-family: var(--mx-serif);
+    font-size: 44px;
+    font-weight: 800;
+    line-height: 0.95;
+    letter-spacing: -0.02em;
+    color: inherit;
+    overflow-wrap: anywhere;
+}
+.mx-ribbon__field,
+.pub .mx-ribbon .section-select {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0;
+}
+.pub .mx-ribbon .section-tabs {
+    display: none;
+} /* SectionSelect's desktop tabs */
+.pub .mx-ribbon label {
+    flex: none;
+    margin: 0;
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--mx-ribbon-kicker);
+}
+.pub .mx-ribbon select,
+.pub .mx-ribbon input {
+    flex: 1 1 auto;
+    min-width: 0;
+    width: 100%;
+    min-height: 48px;
+    padding: 0 12px;
+    font: inherit;
+    font-size: 16px;
+    font-weight: 700; /* 16px stops iOS zooming on focus */
+    color: #141b2b;
+    background: #ffffff;
+    border: 2px solid #141b2b;
+    border-radius: 10px;
+}
+.pub .mx-ribbon .nf-btn {
+    flex: none;
+    min-height: 48px;
+}
+
+/* ---------------------------------------------------------------- Dark block */
+.mx-block {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 18px 16px;
+    background: var(--mx-block-bg);
+    color: var(--mx-block-fg);
+}
+.pub .mx-block a {
+    color: inherit;
+}
+.mx-block__kicker {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--mx-block-accent);
+}
+.pub .mx-block__title {
+    margin: 0;
+    font-family: var(--mx-serif);
+    font-size: 27px;
+    font-weight: 800;
+    line-height: 1.1;
+    color: inherit;
+    overflow-wrap: anywhere;
+}
+.mx-block__quote {
+    margin: 0;
+    font-family: var(--mx-serif);
+    font-style: italic;
+    font-size: 17px;
+    line-height: 1.4;
+    color: var(--mx-block-2);
+}
+.mx-block__media {
+    position: relative;
+    display: grid;
+    place-items: center;
+    height: 200px;
+    border-radius: 14px;
+    overflow: hidden;
+    background: var(--mx-block-tile);
+}
+.mx-block__media img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.mx-block__badge {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    padding: 5px 10px;
+    border-radius: 6px;
+    background: #b0001e;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+.mx-block__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+/* Save and Share keep their public.js hooks; here they're outlined buttons with a word beside the icon. */
+.pub .mx-block__actions button,
+.pub .mx-block__ghost {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: auto;
+    height: auto;
+    min-height: 44px;
+    margin: 0;
+    padding: 0 14px;
+    border: 1px solid var(--mx-block-line);
+    border-radius: 10px;
+    background: transparent;
+    color: var(--mx-block-fg);
+    font: inherit;
+    font-size: 14px;
+    font-weight: 700;
+}
+.pub .mx-block__actions button[hidden] {
+    display: none;
+}
+.pub .mx-block__actions button:hover {
+    background: var(--mx-block-tile);
+    color: var(--mx-block-fg);
+}
+.pub .mx-block__actions .save[aria-pressed='true'] {
+    color: var(--mx-block-accent);
+    border-color: var(--mx-block-accent);
+}
+.mx-block__cta {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 48px;
+    border-radius: 10px;
+    background: var(--mx-block-accent);
+    color: #141b2b !important;
+    font-size: 15px;
+    font-weight: 800;
+    text-decoration: none;
+}
+.mx-big {
+    font-family: var(--mx-serif);
+    font-weight: 800;
+    line-height: 0.85;
+    color: var(--mx-block-accent);
+}
+
+/* Small cards inside the dark block. */
+.mx-tiles {
+    display: grid;
+    grid-template-columns: repeat(var(--mx-tile-cols, 3), minmax(0, 1fr));
+    gap: 8px;
+}
+.mx-tile {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: var(--mx-block-tile);
+    min-width: 0;
+}
+.mx-tile__label {
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: var(--mx-block-3);
+}
+.mx-tile__value {
+    font-family: var(--mx-serif);
+    font-size: 22px;
+    font-weight: 800;
+    line-height: 1;
+}
+.mx-tile__sub {
+    font-size: 12px;
+    color: var(--mx-block-2);
+}
+
+/* ---------------------------------------------------------------- Section heading (double rule) */
+.mx-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 0 0 4px;
+    padding-bottom: 6px;
+    border-bottom: 3px solid var(--text);
+}
+.pub .mx-head h2 {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text);
+}
+.pub .mx-head a {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--accent);
+}
+.mx-section {
+    padding: 20px 16px 4px;
+}
+
+/* ---------------------------------------------------------------- Timeline */
+.mx-timeline {
+    padding: 20px 16px 8px;
+    background: var(--mx-band);
+}
+.mx-timeline__top {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+}
+.pub .mx-timeline__top h2 {
+    margin: 0;
+    font-family: var(--mx-serif);
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--text);
+}
+.mx-timeline__top span {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-2);
+}
+.mx-timeline ol {
+    list-style: none;
+    margin: 14px 0 0 7px;
+    padding: 0 0 0 18px;
+    border-left: 2px solid var(--border);
+}
+.mx-timeline li {
+    position: relative;
+    padding: 8px 0 8px 10px;
+}
+.mx-timeline li::before {
+    content: '';
+    position: absolute;
+    left: -26px;
+    top: 15px;
+    width: 14px;
+    height: 14px;
+    border-radius: 999px;
+    background: var(--dot, var(--mx-world));
+    border: 3px solid var(--mx-band);
+}
+.pub .mx-timeline li > a {
+    display: grid;
+    grid-template-columns: 74px minmax(0, 1fr) auto;
+    gap: 8px;
+    align-items: baseline;
+    min-height: 44px;
+    color: var(--text);
+    text-decoration: none;
+}
+.mx-timeline__time {
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--dot, var(--mx-world));
+}
+.mx-timeline__title {
+    display: block;
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+}
+.mx-timeline__sub {
+    display: block;
+    font-size: 12px;
+    color: var(--text-3);
+}
+.mx-timeline__tag {
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--text-2);
+}
+.pub .mx-more {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 48px;
+    margin: 10px 0 8px;
+    border: 2px solid var(--text);
+    border-radius: 10px;
+    background: var(--surface);
+    color: var(--text);
+    font-size: 15px;
+    font-weight: 800;
+    text-decoration: none;
+}
+
+/* ---------------------------------------------------------------- Top list */
+.mx-top {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+.mx-top li {
+    display: grid;
+    grid-template-columns: 40px minmax(0, 1fr) 44px;
+    gap: 8px;
+    align-items: start;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--row-border);
+}
+.mx-top__n {
+    font-family: var(--mx-serif);
+    font-size: 38px;
+    font-weight: 800;
+    line-height: 0.9;
+    color: var(--accent);
+}
+.pub .mx-top__title {
+    display: block;
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1.3;
+    color: var(--text);
+    overflow-wrap: anywhere;
+}
+.mx-top__meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 4px;
+    font-size: 12px;
+    color: var(--text-3);
+}
+.mx-top__meta::before {
+    content: '';
+    flex: none;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: var(--dot, var(--mx-world));
+}
+.pub .mx-top .save {
+    width: 44px;
+    height: 44px;
+    margin: -6px 0 0;
+}
+
+/* ---------------------------------------------------------------- Fold group (native <details>, one open at a time) */
+.mx-folds {
+    padding: 22px 16px 8px;
+}
+.mx-fold {
+    border-bottom: 1px solid var(--row-border);
+}
+.mx-fold > summary {
+    display: grid;
+    grid-template-columns: 6px minmax(0, 1fr) 24px;
+    gap: 12px;
+    align-items: center;
+    min-height: 64px;
+    padding: 8px 0;
+    cursor: pointer;
+    list-style: none;
+    color: var(--text);
+}
+.mx-fold > summary::-webkit-details-marker {
+    display: none;
+}
+.mx-fold > summary::before {
+    content: '';
+    align-self: stretch;
+    border-radius: 3px;
+    background: var(--edge, var(--mx-world));
+}
+.mx-fold > summary::after {
+    content: '';
+    display: block;
+    width: 20px;
+    height: 20px;
+    justify-self: center;
+    background: var(--text);
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")
+        center / 20px no-repeat;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")
+        center / 20px no-repeat;
+}
+.mx-fold[open] > summary::after {
+    transform: rotate(180deg);
+}
+@media (prefers-reduced-motion: no-preference) {
+    .mx-fold > summary::after {
+        transition: transform 0.15s ease;
+    }
+}
+.mx-fold__text {
+    min-width: 0;
+}
+.mx-fold__name {
+    display: block;
+    font-family: var(--mx-serif);
+    font-size: 20px;
+    font-weight: 800;
+    line-height: 1.1;
+}
+.mx-fold__gist {
+    display: block;
+    font-size: 13px;
+    color: var(--text-2);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.mx-fold__body {
+    margin: 0 0 14px 18px;
+    padding: 4px 0 4px 12px;
+    border-left: 3px solid var(--edge, var(--mx-world));
+}
+.pub .mx-fold__row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+    align-items: baseline;
+    min-height: 44px;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--row-border);
+    color: var(--text);
+    text-decoration: none;
+}
+.mx-fold__row b {
+    display: block;
+    font-size: 15px;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
+}
+.mx-fold__row small {
+    display: block;
+    font-size: 12px;
+    color: var(--text-3);
+}
+.mx-fold__value {
+    font-family: var(--mx-serif);
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--edge, var(--mx-world));
+}
+.pub .mx-fold__all {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--edge, var(--mx-world));
+}
+
+/* Category helpers for --dot / --edge. */
+.mx-c-world {
+    --dot: var(--mx-world);
+    --edge: var(--mx-world);
+}
+.mx-c-us {
+    --dot: var(--mx-us);
+    --edge: var(--mx-us);
+}
+.mx-c-local {
+    --dot: var(--mx-local);
+    --edge: var(--mx-local);
+}
+.mx-c-business {
+    --dot: var(--mx-business);
+    --edge: var(--mx-business);
+}
+.mx-c-tech {
+    --dot: var(--mx-tech);
+    --edge: var(--mx-tech);
+}
+.mx-c-gain {
+    --dot: var(--mx-gain);
+    --edge: var(--mx-gain);
+}
+.mx-c-ink {
+    --dot: var(--text);
+    --edge: var(--text);
+}

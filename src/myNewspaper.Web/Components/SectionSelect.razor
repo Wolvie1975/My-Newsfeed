@@ -1,7 +1,7 @@
 @inject NavigationManager Navigation
 @* One control, three presentations: underlined tabs on desktop; on phones a full-width segmented control when there
    are four or fewer choices, otherwise a native dropdown (which also works without JavaScript via /navigate). *@
-<div class="section-nav @(Choices.Count <= SegmentedLimit ? "section-nav--few" : "section-nav--many")">
+<div class="section-nav @(Choices.Count <= SegmentedLimit && !AlwaysSelect ? "section-nav--few" : "section-nav--many")">
     <nav class="section-tabs" aria-label="@Label">
         @foreach (var choice in Choices) {
             <a href="@choice.Href.TrimStart('/')" aria-current="@(Path(choice.Href) == Selected ? "page" : null)">@choice.Label</a>
@@ -28,6 +28,8 @@
     [Parameter] public string? Current { get; set; }
     /// <summary>When the page path is not itself a choice, select the longest choice it starts with (e.g. /college/standings → College).</summary>
     [Parameter] public bool MatchPrefix { get; set; }
+    /// <summary>Phones: always show the dropdown (the ribbon has no room for pills or segments).</summary>
+    [Parameter] public bool AlwaysSelect { get; set; }
 
     private string Selected
     {

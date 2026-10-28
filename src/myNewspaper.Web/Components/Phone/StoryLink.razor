@@ -1,0 +1,15 @@
+@using myNewspaper.Web.Data
+@* An article title linking out to the story (scraped URLs are checked, as everywhere else); plain text when unsafe. *@
+@if (FeedQuery.SafeHref(Item.Url) is { } href)
+{
+    <a href="@href" target="_blank" rel="noopener noreferrer">@Title</a>
+}
+else
+{
+    @Title
+}
+
+@code {
+    [Parameter, EditorRequired] public FeedItem Item { get; set; } = null!;
+    private string Title => FeedText.StripEmoji(Item.Title) is { Length: > 0 } t ? t : Item.Title;
+}

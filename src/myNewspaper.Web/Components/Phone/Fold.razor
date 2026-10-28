@@ -1,0 +1,22 @@
+@* One fold: a color edge, a serif name and a one-line gist; opens in place to a few rows and a "See all" link. *@
+<details class="mx-fold @Color" name="@Group.Name" open="@Open">
+    <summary>
+        <span class="mx-fold__text"><span class="mx-fold__name">@Title</span><span class="mx-fold__gist">@Gist</span></span>
+    </summary>
+    <div class="mx-fold__body">
+        @ChildContent
+        @if (AllHref is not null) { <a class="mx-fold__all" href="@AllHref">@AllText →</a> }
+    </div>
+</details>
+
+@code {
+    [CascadingParameter] public FoldGroup Group { get; set; } = default!;
+    [Parameter, EditorRequired] public string Title { get; set; } = "";
+    [Parameter, EditorRequired] public string Gist { get; set; } = "";
+    /// <summary>One of the .mx-c-* classes.</summary>
+    [Parameter] public string Color { get; set; } = "mx-c-world";
+    [Parameter] public bool Open { get; set; }
+    [Parameter] public string? AllHref { get; set; }
+    [Parameter] public string AllText { get; set; } = "See all";
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

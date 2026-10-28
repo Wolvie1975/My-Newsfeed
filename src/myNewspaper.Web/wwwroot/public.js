@@ -477,8 +477,8 @@
             const video = button.getAttribute('data-kind') === 'video';
             const label = on ? 'Remove from saved' : video ? 'Watch later' : 'Save for later';
             const caption = button.querySelector('[data-save-label]');
-            if (caption && caption.textContent !== (on ? 'Saved' : 'Watch later'))
-                caption.textContent = on ? 'Saved' : 'Watch later';
+            const words = on ? 'Saved' : video ? 'Watch later' : 'Save';
+            if (caption && caption.textContent !== words) caption.textContent = words;
             if (button.getAttribute('aria-label') !== label) {
                 button.setAttribute('aria-label', label);
                 button.setAttribute('title', label);

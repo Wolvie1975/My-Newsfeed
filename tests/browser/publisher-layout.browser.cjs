@@ -14,6 +14,8 @@ const base = process.env.BASE_URL || 'http://172.18.0.5:8080',
         for (const width of [320, 390, 430, 700, 753, 900, 1024, 1150, 1440])
             for (const theme of ['light', 'dark'])
                 for (const route of ['news', 'sports/news', 'entertainment/news']) {
+                    // Headlines has its own folded phone front (headlines-phone).
+                    if (route === 'news' && width < 744) continue;
                     await p.setViewportSize({ width, height: 950 });
                     await p.emulateMedia({ colorScheme: theme });
                     assert.equal((await p.goto(base + '/' + route)).status(), 200);

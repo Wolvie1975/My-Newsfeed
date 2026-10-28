@@ -14,6 +14,9 @@
 @if (!SectionNews) {
 }
 <PageTitle>@Title · myNewspaper</PageTitle>
+@* Phones get the folded front (docs/mobile-refresh-handoff.md) for the plain Headlines view; a search, a source filter
+   or a later page keeps this layout on every width. *@
+<div class="@(Phone ? "mx-desktop" : "mx-contents")">
 <PageHeading Section="@(SectionNews ? (EntertainmentSection ? "entertainment" : "sports") : null)" SectionCurrent="@(SectionNews ? (EntertainmentSection ? "entertainment/news" : "sports/news") : null)" Title="@Title" Eyebrow="@(SectionNews ? (EntertainmentSection ? "Entertainment" : "Sports") + " · Every story, every source" : "The latest stories")" Description="" />
 @if (!SectionNews && categories.Count > 0)
 {
@@ -135,6 +138,93 @@ else
         <span class="sr-only" role="status" data-load-status></span>
     </div>
 }
+</div>
+
+@if (Phone && feed is { } front)
+{
+    var lead = front.Items[0];
+    var top = front.Items.Skip(1).Take(3).ToArray();
+    var latest = front.Items.Skip(4).Take(3).ToArray();
+    var shown = front.Items.Take(7).ToArray();
+    var folds = foldCategories.Where(c => latestByCategory.TryGetValue(c.Id, out var items) && items.Count > 0).ToArray();
+    <div class="mx-phone">
+        <PhoneRibbon Kicker="@RibbonKicker(front)" Title="@PhoneTitle">
+            <form class="mx-ribbon__field" method="get" action="news">
+                <label for="category-m">Category</label>
+                <select id="category-m" name="category" onchange="this.form.requestSubmit()">
+                    <option value="all" selected="@(Category is null)">All categories</option>
+                    @foreach (var category in categories)
+                    { <option value="@category.Id" selected="@(Category == category.Id)">@category.Name</option> }
+                </select>
+                <noscript><button class="nf-btn nf-btn--secondary" type="submit">Go</button></noscript>
+            </form>
+        </PhoneRibbon>
+
+        <article class="mx-block" aria-label="Lead story">
+            @if (FeedQuery.SafeHref(lead.ImageUrl) is { } image)
+            {
+                <div class="mx-block__media">
+                    <img src="@image" alt="" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()" />
+                    @if (!lead.Undated && DateTime.UtcNow - lead.Date < TimeSpan.FromHours(1)) { <span class="mx-block__badge">Just in</span> }
+                </div>
+            }
+            <span class="mx-block__kicker">@Meta(lead, withCategory: true)</span>
+            <h2 class="mx-block__title"><StoryLink Item="lead" /></h2>
+            @if (FeedText.StripEmoji(FeedQuery.Excerpt(lead.Description, 160)) is { Length: > 0 } standfirst)
+            { <p class="mx-block__quote">@standfirst</p> }
+            <div class="mx-block__actions">
+                <SaveButton Item="lead" Title="@StoryTitle(lead)" Source="@SourceName(lead)" Summary="@FeedText.StripEmoji(FeedQuery.Excerpt(lead.Description))" Labelled="true" />
+                <ShareButton Url="@lead.Url" Title="@StoryTitle(lead)" Labelled="true" />
+            </div>
+        </article>
+
+        @if (top.Length > 0)
+        {
+            @* "Top stories" in feed order: the site doesn't count reads, so it can't say "most read" (handoff open question). *@
+            <section class="mx-section" aria-labelledby="top-stories-h">
+                <div class="mx-head"><h2 id="top-stories-h">Top stories</h2></div>
+                <ol class="mx-top">
+                    @for (var i = 0; i < top.Length; i++)
+                    {
+                        var item = top[i];
+                        <li class="@PhoneColors.ForCategory(item.CategoryName)">
+                            <span class="mx-top__n" aria-hidden="true">@(i + 1)</span>
+                            <span><span class="mx-top__title"><StoryLink Item="item" /></span><span class="mx-top__meta">@Meta(item, withCategory: true)</span></span>
+                            <SaveButton Item="item" Title="@StoryTitle(item)" Source="@SourceName(item)" Summary="@FeedText.StripEmoji(FeedQuery.Excerpt(item.Description))" />
+                        </li>
+                    }
+                </ol>
+            </section>
+        }
+
+        @if (latest.Length > 0)
+        {
+            <PhoneTimeline Heading="Latest" Items="@latest.Select(Timeline).ToArray()"
+                           MoreText="@(front.Total > shown.Length ? "More stories" : null)"
+                           MoreHref="@Href(Category, new FeedCursor(shown[^1].Date, shown[^1].Id, shown[^1].Undated).ToToken())" />
+        }
+
+        @if (folds.Length > 0)
+        {
+            <FoldGroup Name="headlines-more" Heading="By category">
+                @for (var i = 0; i < folds.Length; i++)
+                {
+                    var category = folds[i];
+                    var items = latestByCategory[category.Id];
+                    <Fold Title="@FoldName(category.Name)" Gist="@string.Join(" · ", items.Take(2).Select(StoryTitle))"
+                          Color="@PhoneColors.ForCategory(category.Name)" Open="@(i == 0)" AllHref="@($"news?category={category.Id}")" AllText="@category.Name">
+                        @foreach (var item in items)
+                        {
+                            <a class="mx-fold__row" href="@(FeedQuery.SafeHref(item.Url) ?? $"news?category={category.Id}")" target="_blank" rel="noopener noreferrer">
+                                <span><b>@StoryTitle(item)</b><small>@Meta(item, withCategory: false)</small></span>
+                            </a>
+                        }
+                    </Fold>
+                }
+            </FoldGroup>
+        }
+    </div>
+}
 
 @code {
     private string CurrentPath => Nav.ToBaseRelativePath(Nav.Uri).Split('?')[0].TrimEnd('/');
@@ -161,6 +251,8 @@ else
     private FeedCursor? After => FeedCursor.Parse(AfterQuery);
 
     private IReadOnlyList<FeedCategory> categories = [];
+    private IReadOnlyList<FeedCategory> foldCategories = [];
+    private IReadOnlyDictionary<int, IReadOnlyList<FeedItem>> latestByCategory = new Dictionary<int, IReadOnlyList<FeedItem>>();
     private FeedPage? feed;
     private string? lastDay;
     private DateTime? lastUpdated;
@@ -206,7 +298,49 @@ else
             db, Category, Q, After, After is null ? FeedQuery.FirstBatch : FeedQuery.MoreBatch, Source, headlinesOnly: !SectionNews);
         lastDay = feed.Items.Count > 0 ? Dates.DayKey(feed.Items[^1]) : null;
         lastUpdated = SectionNews && Category == null ? null : await FeedQuery.GetLastUpdatedAsync(db, headlinesOnly: !SectionNews, categoryId: Category);
+        // The phone folds: every other headline category, local news first and opinion last.
+        foldCategories = Phone
+            ? categories.Where(c => c.Id != Category).OrderBy(c => PhoneColors.Order(c.Name)).ThenBy(c => c.Name).ToList()
+            : [];
+        latestByCategory = foldCategories.Count > 0
+            ? await FeedQuery.GetLatestByCategoryAsync(db, foldCategories.Select(c => c.Id))
+            : new Dictionary<int, IReadOnlyList<FeedItem>>();
     }
+
+    /// <summary>The folded phone front is for the plain Headlines view only.</summary>
+    private bool Phone => !SectionNews && After is null && string.IsNullOrWhiteSpace(Q) && Source is null && feed is { Items.Count: > 0 };
+
+    private string PhoneTitle => categories.FirstOrDefault(c => c.Id == Category) is { } c && c.Name != "Top Headlines" ? c.Name : "The day so far";
+
+    private string RibbonKicker(FeedPage page)
+    {
+        var parts = new List<string>();
+        if (lastUpdated is { } updated)
+        {
+            var minutes = (int)Math.Max(0, (DateTime.UtcNow - updated).TotalMinutes);
+            parts.Add(minutes < 1 ? "Updated just now" : minutes < 60 ? $"Updated {minutes} min ago"
+                : minutes < 24 * 60 ? $"Updated {minutes / 60} hr ago" : $"Updated {Dates.Published(updated)}");
+        }
+        parts.Add($"{page.Total} {(page.Total == 1 ? "story" : "stories")}");
+        if (sources.Count > 0) parts.Add($"{sources.Count} {(sources.Count == 1 ? "source" : "sources")}");
+        return string.Join(" · ", parts);
+    }
+
+    private static string StoryTitle(FeedItem item) => FeedText.StripEmoji(item.Title) is { Length: > 0 } t ? t : item.Title;
+    private static string SourceName(FeedItem item) => FeedText.SourceName(item.SourceLabel, item.SourceUrl);
+
+    /// <summary>"World · The Guardian · 9:41 AM"; undated stories leave the time out.</summary>
+    private string Meta(FeedItem item, bool withCategory) => string.Join(" · ", new[]
+    {
+        withCategory ? item.CategoryName : null, SourceName(item), item.Undated ? null : Dates.Time(item.Date),
+    }.Where(p => !string.IsNullOrEmpty(p)));
+
+    private TimelineItem Timeline(FeedItem item) => new(item.Undated ? "" : Dates.Time(item.Date), StoryTitle(item),
+        string.Join(" · ", new[] { SourceName(item), item.CategoryName }.Where(p => !string.IsNullOrEmpty(p))), null,
+        FeedQuery.SafeHref(item.Url) ?? "news", PhoneColors.ForCategory(item.CategoryName), External: FeedQuery.SafeHref(item.Url) is not null);
+
+    /// <summary>"Kansas City News" reads as "Kansas City" on its fold; the See all link keeps the full name.</summary>
+    private static string FoldName(string name) => name.EndsWith(" News", StringComparison.Ordinal) ? name[..^5] : name;
 
     /// <summary>A link that keeps the current search and switches category and position.</summary>
     private string Href(int? category, string? after) => BasePath + FeedQuery.QueryString(category, Q, after, Source, allCategories: category is null);

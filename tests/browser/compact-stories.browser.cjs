@@ -17,6 +17,8 @@ const base = process.env.BASE_URL || 'http://localhost:5295',
         for (const route of ['news', 'sports/news', 'entertainment/news'])
             for (const width of [320, 390, 430, 768, 1440])
                 for (const theme of ['light', 'dark']) {
+                    // Headlines has its own folded phone front (headlines-phone); the cards stay on the other two.
+                    if (route === 'news' && width < 744) continue;
                     await p.setViewportSize({ width, height: 950 });
                     await p.emulateMedia({ colorScheme: theme });
                     assert.equal((await p.goto(base + '/' + route)).status(), 200);
@@ -71,7 +73,7 @@ const base = process.env.BASE_URL || 'http://localhost:5295',
                         await p.screenshot({ path: root + 'news-' + width + '-' + theme + '.png' });
                 }
         await p.setViewportSize({ width: 320, height: 950 });
-        await p.goto(base + '/news');
+        await p.goto(base + '/sports/news');
         const row = p.locator('.paper-rows .article').first();
         await row.locator('.src__name').evaluate((n) => (n.textContent = 'CBS News'));
         assert(

@@ -1,0 +1,19 @@
+@* The phone title band (docs/mobile-refresh-handoff.md): a live line, the page title, and one select passed in as child
+   content so each page keeps its own form. *@
+<header class="mx-ribbon">
+    <div>
+        <span class="mx-ribbon__kicker">@Kicker</span>
+        <h1>@Title</h1>
+    </div>
+    @Extra
+    @ChildContent
+</header>
+
+@code {
+    [Parameter, EditorRequired] public string Kicker { get; set; } = "";
+    [Parameter, EditorRequired] public string Title { get; set; } = "";
+    /// <summary>Optional row between the title and the select (date stepper, search box).</summary>
+    [Parameter] public RenderFragment? Extra { get; set; }
+    /// <summary>The one select, wrapped in &lt;div class="mx-ribbon__field"&gt; (or a form with that class) with its label.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

@@ -11,6 +11,8 @@ const base = process.env.BASE_URL || 'http://localhost:5295',
         for (const route of ['news', 'sports/news', 'entertainment/news', 'videos'])
             for (const width of [320, 390, 430, 768, 1440])
                 for (const theme of ['light', 'dark']) {
+                    // Headlines has its own folded phone front (headlines-phone).
+                    if (route === 'news' && width < 744) continue;
                     await p.setViewportSize({ width, height: 1000 });
                     await p.emulateMedia({ colorScheme: theme });
                     const r = await p.goto(base + '/' + route);
@@ -94,13 +96,16 @@ const base = process.env.BASE_URL || 'http://localhost:5295',
         for (const route of ['news', 'sports/news', 'entertainment/news', 'videos']) {
             await plain.goto(base + '/' + route);
             assert(await plain.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
-            const form = plain.locator('form.catselect').first();
+            // Phone Headlines puts its Category select in the ribbon; the desktop copy is hidden.
+            const form = plain.locator('form.catselect, form.mx-ribbon__field').filter({ visible: true }).first();
             if (await form.count()) {
                 await form.locator('button').click();
                 await plain.waitForLoadState();
             }
-            if (await plain.locator('[data-load-more]').count()) {
-                await plain.locator('[data-load-more]').click();
+            // Phone Headlines pages on with the timeline's "More stories" link.
+            const more = plain.locator('[data-load-more], .mx-timeline .mx-more').filter({ visible: true }).first();
+            if (await more.count()) {
+                await more.click();
                 await plain.waitForURL((u) => u.searchParams.has('after'));
                 assert((await plain.locator('.feed .article').count()) > 0);
             }

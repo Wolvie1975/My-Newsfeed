@@ -1,0 +1,27 @@
+@* Times down the left, colored dots on a rule, a title and subline, and a tag on the right. *@
+<section class="mx-timeline" aria-label="@Heading">
+    <div class="mx-timeline__top"><h2>@Heading</h2>@if (Sub is not null) { <span>@Sub</span> }</div>
+    @ChildContent
+    <ol>
+        @foreach (var i in Items) {
+            <li class="@i.Color">
+                <a href="@i.Href" target="@(i.External ? "_blank" : null)" rel="@(i.External ? "noopener noreferrer" : null)">
+                    <span class="mx-timeline__time">@i.Time</span>
+                    <span><span class="mx-timeline__title">@i.Title</span>@if (i.Sub is not null) { <span class="mx-timeline__sub">@i.Sub</span> }</span>
+                    <span class="mx-timeline__tag">@i.Tag</span>
+                </a>
+            </li>
+        }
+    </ol>
+    @if (MoreText is not null) { <a class="mx-more" href="@MoreHref">@MoreText →</a> }
+</section>
+
+@code {
+    [Parameter, EditorRequired] public string Heading { get; set; } = "";
+    [Parameter] public string? Sub { get; set; }
+    [Parameter, EditorRequired] public IReadOnlyList<TimelineItem> Items { get; set; } = [];
+    [Parameter] public string? MoreText { get; set; }
+    [Parameter] public string? MoreHref { get; set; }
+    /// <summary>Optional content above the list (Sports puts live score tiles here).</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}
