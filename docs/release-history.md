@@ -6,11 +6,39 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The latest recorded web release is `mynewspaper-web:make-it-yours-20261028`
-(image `6b769189dc48`), deployed October 28, 2026 (Central), with **household profiles switched on**
-(`Profiles__Enabled=true`). Its rollback image is `mynewsfeed-web:before-mynewspaper-make-it-yours-20261028`
-(the U2 settings build); turning profiles off again rolls back the profiles themselves. Deployment checks passed then;
-this is a dated observation, not live hosting status.
+The latest recorded web release is `mynewspaper-web:phone-headlines-20261028`
+(image `6818b90cff80`), deployed October 28, 2026 (Central), with **household profiles switched on**
+(`Profiles__Enabled=true`). Its rollback image is `mynewsfeed-web:before-mynewspaper-phone-headlines-20261028`
+(the U3 settings build, `6b769189dc48`). Deployment checks passed then; this is a dated observation, not live hosting
+status.
+
+## Phone refresh, release 1: the folded Headlines front — deployed October 28, 2026 (Central)
+
+First release of [the mobile refresh](mobile-refresh-handoff.md). Below 744px, `/news` shows the approved folded front:
+a yellow ribbon ("Updated … · N stories · N sources", **The day so far** or the category's name, one **Category**
+select with a no-JavaScript Go button), the lead story in a dark block with labelled Save and Share ("Just in" on an
+image when it is under an hour old), **Top stories** (feed order; the site doesn't count reads, so not "most read"), a
+**Latest** timeline with **More stories**, and **By category**: one fold per other headline category with its three
+newest stories, local first and opinion last, the first one open, one open at a time (native `<details name>`). A
+search, a source filter or a later page keeps the old layout on every width; iPad and desktop are unchanged. Adds
+`mobile.css` (`.mx-` prefix), `Components/Phone`, `SectionSelect`'s `AlwaysSelect` (not yet used), labelled Save/Share
+buttons and `FeedQuery.GetLatestByCategoryAsync`. Commit `47ab9ca`.
+
+Deployed `mynewspaper-web:phone-headlines-20261028` (`6818b90cff80`) through Compose with `--pull`, healthy; rollback
+`mynewsfeed-web:before-mynewspaper-phone-headlines-20261028` (`6b769189dc48`). Environment identical (sorted hash).
+Predeploy: 931 .NET tests (the new per-category query: newest three, enabled sources only, undated last, empty
+categories empty); locally with profiles off and on, `headlines-phone.browser.cjs` at 320, 390 and 430px in light and
+dark under the kansas, monochrome and cardinals schemes (no sideways scroll, the select inside the edge at 16px, no
+repeated ids, fold summaries 64px and every other target 44px, first fold open, the dark block distinct from the page,
+contrast), with JavaScript off (opening one fold closes the other, Enter and Space toggle), the Category select
+(title follows; no fold for the open category), More stories and a search falling back to the old layout, and 744,
+1024 and 1440px unchanged; screenshots reviewed against the canvas. With profiles off the full browser suite ran:
+`compact-stories`, `frontpages`, `publisher-layout` and `video-share` had tested the old phone cards on `/news` and now
+leave that to `headlines-phone` (the cards are still checked on Sports and Entertainment headlines) and pass; the other
+failures were the Watch checks, `active-tv`, `us-options`, `mixed-search-nav` and `track-series`, which need the
+streaming-catalog key locally. Live: `headlines-phone` passed with a throwaway profile at the same widths, themes and
+schemes (screenshots reviewed); the profile was deleted and the 4 headless device rows removed (Jason and Jacob
+remain). Not checked: a real device, VoiceOver/TalkBack, and the other pages' live layout (unchanged code).
 
 ## Settings: your profile, TV shows, YouTube channels and requests — deployed October 28, 2026 (Central)
 

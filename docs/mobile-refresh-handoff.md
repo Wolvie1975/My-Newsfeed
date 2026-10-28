@@ -310,7 +310,8 @@ Record widths, themes and outcomes in the release notes, as AGENTS.md requires.
 
 Each release is independent: a page that hasn't been converted keeps its current phone layout.
 
-- [ ] 1. `mobile.css`, the components, the `SectionSelect` parameters, and **Headlines** (the pattern the rest copy).
+- [x] 1. `mobile.css`, the components, the `SectionSelect` parameters, and **Headlines** (the pattern the rest copy).
+  Deployed October 28, 2026 as `phone-headlines-20261028` (commit `47ab9ca`); see the release history.
 - [ ] 2. **Home**, **Sports**, **Scoreboard**.
 - [ ] 3. **Top 25**, **Standings**, **College Sports**, **F1**.
 - [ ] 4. **Entertainment**, **Movies**, **TV & Streaming**, **Digital releases**, **Box office**.
