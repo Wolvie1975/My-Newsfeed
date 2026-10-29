@@ -98,7 +98,7 @@ else
 @* Phones: the folded view (docs/mobile-refresh-handoff.md), from the same data; the dark block holds the next release
    or the empty state. *@
 <div class="mx-phone">
-    <PhoneRibbon Kicker="@(data?.Selected?.LastScrapedAt is { } lastChecked ? $"Coming home · checked {Dates.Time(lastChecked)}" : "Coming home")" Title="Digital releases">
+    <PhoneRibbon Kicker="@(data?.Selected?.LastScrapedAt is { } lastChecked ? $"Coming home · checked {Dates.Time(lastChecked)}" : "Coming home")" Title="Digital releases" Section="entertainment">
         @if (data is { Sources.Count: > 0 })
         {
             <form class="mx-ribbon__field" method="get" action="movies/digital">

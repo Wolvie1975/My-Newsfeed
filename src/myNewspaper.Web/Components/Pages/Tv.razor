@@ -104,7 +104,7 @@
 
 @* Phones: the folded episode calendar (docs/mobile-refresh-handoff.md), from the same schedule. *@
 <div class="mx-phone">
-    <PhoneRibbon Kicker="@(showTitle is not null ? $"Showing {showTitle} only" : $"Your episode calendar · {schedule.Shows.Count} tracked")" Title="TV &amp; Streaming">
+    <PhoneRibbon Kicker="@(showTitle is not null ? $"Showing {showTitle} only" : $"Your episode calendar · {schedule.Shows.Count} tracked")" Title="TV &amp; Streaming" Section="entertainment">
         @* Weeks start today; the calendar has no past weeks. *@
         <form class="mx-ribbon__field" method="get" action="navigate">
             <label for="tv-week-m">Week</label>

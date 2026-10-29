@@ -94,7 +94,7 @@
 {
     var featured = listing.Items.FirstOrDefault(m => m.Date >= today) ?? listing.Items.FirstOrDefault();
     <div class="mx-phone">
-        <PhoneRibbon Kicker="@($"The release calendar · {WeekName.ToLowerInvariant()}")" Title="Movies">
+        <PhoneRibbon Kicker="@($"The release calendar · {WeekName.ToLowerInvariant()}")" Title="Movies" Section="entertainment">
             <form class="mx-ribbon__field" method="get" action="movies">
                 <label for="movie-view-m">Release type</label>
                 <select id="movie-view-m" name="type" onchange="this.form.requestSubmit()">

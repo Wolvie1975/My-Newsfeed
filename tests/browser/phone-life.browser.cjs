@@ -225,6 +225,7 @@ const PERSONAL = 'mynewsfeed-personal-v1';
                 await p.locator('#watch-browse-m').selectOption('movie');
                 await p.locator('.mx-ribbon__field button').click();
                 assert.equal(new URL(p.url()).searchParams.get('services'), '8');
+                assert.equal(await p.locator('.mx-ribbon #entertainment-section-m').inputValue(), '/watch', 'Watch Section dropdown');
                 assert(await p.locator('.watch-grid').isVisible());
                 await ctx.close();
             }

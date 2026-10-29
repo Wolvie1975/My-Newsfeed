@@ -29,7 +29,7 @@ else if(Selected.Length>0){<span class="updated">@Selected.Length @(Selected.Len
 </section>
 </div>
 <div class="mx-phone" data-phone-watch-ribbon>
-<PhoneRibbon Title="Where to watch" Kicker="@($"Movies & TV · {Selected.Length} services chosen")">
+<PhoneRibbon Title="Where to watch" Section="entertainment" Kicker="@($"Movies & TV · {Selected.Length} services chosen")">
 <Extra>
 <form method="get" action="watch" class="mx-ribbon__search" role="search">
 <label for="watch-query-m">Movie or TV title</label><div><input id="watch-query-m" name="q" value="@WatchCatalog.Term(Q)" maxlength="120" placeholder="Movie or TV show…" type="search" /><button type="submit">Search</button></div>

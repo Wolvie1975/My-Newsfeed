@@ -189,6 +189,11 @@ const routes = [
             assert((await p.locator('.mx-phone .mx-top li').count()) <= 3, 'Entertainment top list has at most three');
             await p.locator('#entertainment-section-m').selectOption('/movies');
             await p.waitForURL((u) => u.pathname === '/movies');
+            // Each Entertainment page's ribbon keeps the Section dropdown above its own select.
+            for (const [path, current] of [['/tv', '/tv'], ['/movies/digital', '/movies/digital'], ['/box-office/weekend-preview', '/box-office'], ['/movies', '/movies']]) {
+                await p.goto(base + path, { waitUntil: 'networkidle' });
+                assert.equal(await p.locator('.mx-ribbon #entertainment-section-m').inputValue(), current, path + ' Section dropdown');
+            }
             // Movies: seven days, today marked, each day's count in words; the week's releases are listed.
             const days = p.locator('.mx-days a');
             assert.equal(await days.count(), 7);
@@ -254,21 +259,22 @@ const routes = [
                     assert(await folds.nth(1).evaluate((e) => e.open), path + ' no-JS fold');
                 }
             }
-            const go = (p) => p.locator('.mx-ribbon button[type=submit]').click();
+            // The Go button of the form holding that select (the ribbon also carries the Section dropdown).
+            const go = (p, id) => p.locator(`.mx-ribbon form:has(#${id}) button[type=submit]`).click();
             await p.goto(base + '/entertainment');
             await p.locator('#entertainment-section-m').selectOption('/tv');
-            await go(p);
+            await go(p, 'entertainment-section-m');
             assert.equal(new URL(p.url()).pathname, '/tv');
             await p.locator('#tv-week-m').selectOption({ label: 'In two weeks' });
-            await go(p);
+            await go(p, 'tv-week-m');
             assert(new URL(p.url()).searchParams.has('from'));
             await p.goto(base + '/movies');
             await p.locator('#movie-view-m').selectOption('subscription');
-            await go(p);
+            await go(p, 'movie-view-m');
             assert.equal(new URL(p.url()).searchParams.get('type'), 'subscription');
             await p.goto(base + '/box-office');
             await p.locator('#box-office-view-m').selectOption('/box-office/movie-forecasts');
-            await go(p);
+            await go(p, 'box-office-view-m');
             assert.equal(new URL(p.url()).pathname, '/box-office/movie-forecasts');
             await ctx.close();
         }

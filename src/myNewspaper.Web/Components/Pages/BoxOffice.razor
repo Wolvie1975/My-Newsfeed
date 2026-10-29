@@ -76,7 +76,7 @@
 @* Phones: a ribbon with the View select on every view; Results also gets the folded chart (docs/mobile-refresh-handoff.md).
    The two forecast views keep their one section below the ribbon. *@
 <div class="mx-phone" data-phone-box-office>
-    <PhoneRibbon Kicker="@Kicker" Title="Box office">
+    <PhoneRibbon Kicker="@Kicker" Title="Box office" Section="entertainment">
         <form class="mx-ribbon__field" method="get" action="navigate">
             <label for="box-office-view-m">View</label>
             <select id="box-office-view-m" name="to" required onchange="this.form.requestSubmit()">
