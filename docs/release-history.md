@@ -5180,3 +5180,44 @@ expected Results/digital/admin redirects. Runtime environment, mounts, network,
 ports, health check and restart settings verified preserved. Previous
 container/image retained under `before-mynewspaper-watch-compact-20261024`.
 Evidence: `/tmp/mynewspaper-watch-compact-deploy/`.
+
+## Front-page logo — October 28, 2026 (Central)
+
+Replaced the folded-page “n” with the approved miniature front-page mark from
+`new development/logo-front-page-handoff.md`. Updated phone/desktop headers,
+Home and Editions mastheads, brand SVGs, placeholder mask, favicon and install
+icons. Existing theme classes remain in use. Manifest/Apple icon references now
+use `newspaper-front-*`; the service worker caches identity assets under
+`mynewsfeed-pwa-v6`. Old icon files remain for compatibility.
+
+Release image: `mynewspaper-web:front-page-logo-20261028`
+(`sha256:f55b915561abb656c6270bb44aedbe96ee33b7a5a6c56cd93a8ad266882a0e4e`).
+Rollback image: `mynewspaper-web:before-front-page-logo-20261028`; the previous
+container is retained, stopped, as
+`mynewsfeed-web-before-front-page-logo-20261028`. Runtime environment, key volume,
+network, IPv4/IPv6 host port 8085, restart policy and log rotation were preserved.
+No database changes or scraper rollout were needed.
+
+Validation: .NET build passed with zero warnings/errors; all 955 .NET tests
+passed; ESLint and formatting checks for the changed supported files passed.
+Preview and deployed browser checks cover Home and Editions at 320/390/430px
+in Kansas/Cardinals/monochrome, light/dark, plus 744/1024/1440px in Kansas,
+light/dark (48 page/width/scheme/theme combinations per pass). Checks inspect
+front-page SVG geometry, inherited ink colour, photo opacity and horizontal
+overflow. The deployed checks also assert the selected theme/scheme. Temporary
+verification profiles are deleted afterward. Login/administration were exercised
+during setup, and SVG/PNG responses, manifest icon references and service-worker
+version were checked. Representative phone, tablet/desktop and standalone
+logo/placeholder screenshots were visually inspected.
+
+The live container is healthy and `/healthz` returns 200. Unauthenticated content
+requests retain the profile gate; `/admin` redirects to login. HTTPS Editions
+returned 200, and a browser installed the active service worker and confirmed
+`mynewsfeed-pwa-v6` in Cache Storage. This workspace required an explicit browser
+DNS mapping to the existing Tailscale address for that HTTPS check; the proxy
+configuration was unchanged. Evidence and private runtime snapshot:
+`/tmp/logo-front-deploy/`.
+
+Limits: Chromium emulation only; no physical phone, Safari favicon or native
+home-screen icon refresh was verified. Existing iOS shortcuts may need removal
+and re-adding to display the new icon.

@@ -10,8 +10,8 @@
   "theme_color": "#0051BA",
   "background_color": "#F4F6FA",
   "icons": [
-    { "src": "/icons/newspaper-page-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "/icons/newspaper-page-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "/icons/newspaper-page-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    { "src": "/icons/newspaper-front-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/newspaper-front-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/newspaper-front-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }

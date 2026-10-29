@@ -1,13 +1,13 @@
 // Keep only the offline screen and app identity assets; schedules and admin responses are never cached here.
-const CACHE = 'mynewsfeed-pwa-v5';
+const CACHE = 'mynewsfeed-pwa-v6';
 const OFFLINE = '/offline.html';
 const ASSETS = [
     OFFLINE,
     '/manifest.webmanifest',
     '/img/brand/mark.svg',
-    '/icons/newspaper-page-192.png',
-    '/icons/newspaper-page-512.png',
-    '/icons/newspaper-page-maskable-512.png',
+    '/icons/newspaper-front-192.png',
+    '/icons/newspaper-front-512.png',
+    '/icons/newspaper-front-maskable-512.png',
 ];
 const PUBLIC_PAGES = new Set([
     '/',
