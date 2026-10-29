@@ -6,6 +6,7 @@
 @inject ILogger<DigitalReleases> Log
 
 <PageTitle>Digital releases · myNewspaper</PageTitle>
+<div class="mx-desktop">
 <PageHeading Section="entertainment" Title="Digital releases" Eyebrow="Coming home" Description="" />
 
 @* Rent-or-buy dates as in the approved concept: the source as pills (a segmented control on phones), then the
@@ -92,16 +93,132 @@ else
         }
     }
 }
+</div>
+
+@* Phones: the folded view (docs/mobile-refresh-handoff.md), from the same data; the dark block holds the next release
+   or the empty state. *@
+<div class="mx-phone">
+    <PhoneRibbon Kicker="@(data?.Selected?.LastScrapedAt is { } lastChecked ? $"Coming home · checked {Dates.Time(lastChecked)}" : "Coming home")" Title="Digital releases">
+        @if (data is { Sources.Count: > 0 })
+        {
+            <form class="mx-ribbon__field" method="get" action="movies/digital">
+                <label for="digital-source-m">Source</label>
+                <select id="digital-source-m" name="source" onchange="this.form.requestSubmit()">
+                    @foreach (var source in data.Sources)
+                    {
+                        <option value="@source.SourceKey" selected="@(data.Selected?.ID == source.ID)">@source.Name</option>
+                    }
+                </select>
+                <noscript><button class="nf-btn nf-btn--secondary" type="submit">Go</button></noscript>
+            </form>
+        }
+    </PhoneRibbon>
+
+    @if (data is null)
+    {
+        <p class="mx-empty">Digital releases are temporarily unavailable. <a href="movies/digital">Try again</a></p>
+    }
+    else if (data.Selected is null)
+    {
+        <p class="mx-empty">No digital release sources are enabled.</p>
+    }
+    else
+    {
+        var others = data.Sources.Where(s => s.ID != data.Selected.ID).ToList();
+        @if (!string.IsNullOrWhiteSpace(data.Selected.LastError))
+        {
+            <p class="mx-source-note mx-source-note--top" role="status">Latest collection failed; showing previously collected releases when available.</p>
+        }
+        @if (data.Items.FirstOrDefault() is { Date: { } nextDate } next)
+        {
+            var action = MovieCommerceQuery.Resolve(next.Title, next.Type, next.MovieActionUrl, next.MovieActionLabel, next.MovieActionKind);
+            <article class="mx-block" aria-label="Next digital release">
+                <div class="mx-block__media">
+                    @if (FeedQuery.SafeHref(next.Poster) is { } poster) { <img src="@poster" alt="" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()" /> }
+                    @if (nextDate <= Dates.Today) { <span class="mx-block__badge">Out now</span> }
+                </div>
+                <span class="mx-block__kicker">@nextDate.ToString("ddd, MMM d", Us) · Rent or buy</span>
+                <h2 class="mx-block__title">@next.Title</h2>
+                <div class="mx-block__actions">
+                    @if (action is not null) { <a class="mx-block__ghost" href="@action.Url" target="_blank" rel="noopener noreferrer" aria-label="@(action.Label + " · " + next.Title)">@action.Label <span aria-hidden="true">↗</span></a> }
+                    @if (FeedQuery.SafeHref(next.SourceUrl) is { } url) { <a class="mx-block__ghost" href="@url" target="_blank" rel="noopener noreferrer" aria-label="@("Details · " + next.Title)">Details <span aria-hidden="true">↗</span></a> }
+                </div>
+            </article>
+        }
+        else
+        {
+            <section class="mx-block" aria-labelledby="digital-empty-m">
+                <span class="mx-block__kicker">@data.Selected.Name</span>
+                <h2 class="mx-block__title" id="digital-empty-m">No confirmed dates yet</h2>
+                <p class="mx-block__quote">Sources publish on different schedules. Try another source, or check the store directly.</p>
+                @foreach (var (source, index) in others.Select((s, i) => (s, i)))
+                {
+                    <a class="@(index == 0 ? "mx-block__cta" : "mx-block__ghost")" href="@($"movies/digital?source={source.SourceKey}")">Try @source.Name</a>
+                }
+                <a class="mx-block__ghost" href="https://athome.fandango.com/" target="_blank" rel="noopener noreferrer">Fandango at Home <span aria-hidden="true">↗</span></a>
+            </section>
+        }
+
+        <FoldGroup Name="digital-more" Heading="@(data.Items.Count > 0 ? $"More from {data.Selected.Name}" : "While you wait")" Foot="Where to watch" FootHref="watch">
+            @{ var first = true; }
+            @if (data.Items.Count > 1)
+            {
+                var rest = data.Items.Skip(1).ToList();
+                <Fold Title="Coming soon to digital" Color="mx-c-tech" Open="@first" AllHref="https://athome.fandango.com/" AllText="Fandango at Home"
+                      Gist="@(string.Join(" · ", rest.Take(2).Select(m => m.Title)) + (rest[0].Date is { } d ? " · " + d.ToString("MMM d", Us) : ""))">
+                    @foreach (var movie in rest)
+                    {
+                        var action = MovieCommerceQuery.Resolve(movie.Title, movie.Type, movie.MovieActionUrl, movie.MovieActionLabel, movie.MovieActionKind);
+                        var href = action?.Url ?? FeedQuery.SafeHref(movie.SourceUrl);
+                        @if (href is not null)
+                        {
+                            <a class="mx-fold__row" href="@href" target="_blank" rel="noopener noreferrer"><span><b>@movie.Title</b><small>@string.Join(" · ", new[] { movie.Date?.ToString("ddd, MMM d", Us), movie.Certification, action?.Label }.Where(x => !string.IsNullOrWhiteSpace(x)))</small></span></a>
+                        }
+                        else
+                        {
+                            <div class="mx-fold__row"><span><b>@movie.Title</b><small>@movie.Date?.ToString("ddd, MMM d", Us)</small></span></div>
+                        }
+                    }
+                </Fold>
+                first = false;
+            }
+            @if (stillInTheaters.Count > 0)
+            {
+                <Fold Title="Still in theaters" Color="mx-c-us" Open="@first" AllHref="box-office" AllText="Box office"
+                      Gist="@string.Join(" · ", stillInTheaters.Select(m => m.Title))">
+                    @foreach (var movie in stillInTheaters)
+                    {
+                        <a class="mx-fold__row" href="box-office"><span><b>@movie.Title</b><small>Total so far</small></span><span class="mx-fold__value">@BoxOfficeChartQuery.Compact(movie.TotalDomesticGross)</span></a>
+                    }
+                </Fold>
+            }
+        </FoldGroup>
+        <p class="mx-source-note">
+            @if (data.Selected.SourceKey == "dvdsreleasedates") { <text>This provider supplies theater and digital release dates too. This view lists digital rental and purchase releases. </text> }
+            Digital rental and purchase are separate from subscription streaming. Listings reflect @data.Selected.Name’s published dates.
+        </p>
+    }
+</div>
 
 @code {
     private static readonly System.Globalization.CultureInfo Us = System.Globalization.CultureInfo.InvariantCulture;
     [SupplyParameterFromQuery(Name = "source")] private string? SourceKey { get; set; }
     private DigitalReleasePage? data;
+    private IReadOnlyList<BoxOfficeMovie> stillInTheaters = [];
     protected override async Task OnParametersSetAsync()
     {
         try { await using var db = await Factory.CreateDbContextAsync(); data = await DigitalReleasesQuery.GetAsync(db, Dates.Today, SourceKey); }
         catch (Exception ex) when (DataFailures.IsReadFailure(ex))
         { Log.LogError(ex, "Digital releases read failed."); data = null; }
+        // Phones: the biggest totals from the last weekend chart, for the Still in theaters fold.
+        try
+        {
+            await using var db = await Factory.CreateDbContextAsync();
+            stillInTheaters = (await BoxOfficeChartQuery.GetAsync(db, HomeBoxOfficeSchedule.ResultsWeekend(Dates.Today)))
+                .OrderByDescending(m => m.TotalDomesticGross).Take(3).ToList();
+        }
+        catch (Exception ex) when (DataFailures.IsReadFailure(ex))
+        { Log.LogError(ex, "Box office read failed for Digital releases."); stillInTheaters = []; }
         // Keep bookmarks and the visible provider in agreement after enablement changes.
         // Navigate outside the read-error handler so static SSR can issue its redirect.
         if (data is not null && SourceKey != data.Selected?.SourceKey)

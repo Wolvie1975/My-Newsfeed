@@ -30,7 +30,14 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
                 console.log(width, 'Home theatrical films:', homeTitles.length, 'Movies films:', titles.length);
             }
             await page.goto(base + '/movies?type=theatrical');
-            assert(await page.locator('.theater-site-link').isVisible());
+            // Phones show the folded Movies page, with its own AMC link under the week strip.
+            assert(
+                await page
+                    .locator('.theater-site-link, .mx-theater-link')
+                    .filter({ visible: true })
+                    .first()
+                    .isVisible(),
+            );
             for (const link of await page.locator('.movie-commerce-action a, a.movie-commerce-action').all())
                 assert.match(await link.getAttribute('href'), /^https:\/\//);
             assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
@@ -44,6 +51,8 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
             assert(
                 await page
                     .getByText('This provider supplies theater and digital release dates too.', { exact: false })
+                    .filter({ visible: true })
+                    .first()
                     .isVisible(),
             );
             assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));

@@ -24,6 +24,15 @@ public static class PhoneColors
         _ => "mx-c-world",
     };
 
+    /// <summary>The .mx-c-* color for where something is on screen (a movie release type, or "tv"); the type is shown beside it.</summary>
+    public static string ForRelease(string? type) => (type ?? "").ToLowerInvariant() switch
+    {
+        "tv" => "mx-c-us",
+        "theatrical" => "mx-c-business",
+        var t when t.StartsWith("digital", StringComparison.Ordinal) => "mx-c-tech",
+        _ => "mx-c-world",
+    };
+
     /// <summary>Folds list local news first and opinion last, as in the approved design.</summary>
     public static int Order(string? name) => ForCategory(name) switch
     {

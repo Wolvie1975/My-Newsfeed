@@ -6,7 +6,7 @@
 <PageTitle>@Title · myNewspaper</PageTitle>
 @* Each section front loads its own data (EntertainmentFront, SportsFront). *@
 @if (Entertainment) {
-    <PageHeading Section="entertainment" Title="Entertainment" Eyebrow="Stories, releases and what to watch next" Description="" />
+    <div class="mx-desktop"><PageHeading Section="entertainment" Title="Entertainment" Eyebrow="Stories, releases and what to watch next" Description="" /></div>
     <EntertainmentFront />
 } else {
     @* Phones: SportsFront's ribbon replaces this heading. *@

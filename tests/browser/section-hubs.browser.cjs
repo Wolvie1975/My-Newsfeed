@@ -115,10 +115,8 @@ const base = process.env.BASE_URL || 'http://localhost:5295',
                 .click();
             await plain.waitForURL('**/' + route);
             assert(await plain.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
-            await plain.selectOption(
-                '#' + route + '-section' + (route === 'sports' ? '-m' : ''),
-                '/' + route + '/news',
-            );
+            // Both fronts have phone ribbons, whose Section select carries the -m ID.
+            await plain.selectOption('#' + route + '-section-m', '/' + route + '/news');
             await plain.locator('.section-select button:visible').click();
             await plain.waitForURL('**/' + route + '/news');
         }

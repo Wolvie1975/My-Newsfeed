@@ -8,6 +8,8 @@
 @inject ILogger<BoxOffice> Log
 
 <PageTitle>@Title · myNewspaper</PageTitle>
+<div class="mx-tool-page">
+<div class="mx-desktop">
 <PageHeading Section="entertainment" Title="Box office" Eyebrow="Results &amp; forecasts" Description="" />
 
 @* Box office as in the approved concept: three views as pills (a segmented control on phones); results are an agate
@@ -69,17 +71,125 @@
     }
     </section>
 }
-else
+</div>
+
+@* Phones: a ribbon with the View select on every view; Results also gets the folded chart (docs/mobile-refresh-handoff.md).
+   The two forecast views keep their one section below the ribbon. *@
+<div class="mx-phone" data-phone-box-office>
+    <PhoneRibbon Kicker="@Kicker" Title="Box office">
+        <form class="mx-ribbon__field" method="get" action="navigate">
+            <label for="box-office-view-m">View</label>
+            <select id="box-office-view-m" name="to" required onchange="this.form.requestSubmit()">
+                <option value="/box-office" selected="@(view == "results")">Results@(movies.Count > 0 ? " · " + BoxOfficeChartQuery.WeekendLabel(movies[0].WeekendStart) : "")</option>
+                <option value="/box-office/weekend-preview" selected="@(view == "weekend-preview")">Next weekend</option>
+                <option value="/box-office/movie-forecasts" selected="@(view == "movie-forecasts")">Forecasts</option>
+            </select>
+            <noscript><button class="nf-btn nf-btn--secondary" type="submit">Go</button></noscript>
+        </form>
+    </PhoneRibbon>
+    @if (view == "results")
+    {
+        @if (failed) { <p class="mx-note" role="status">Box-office totals are temporarily unavailable. <a href="box-office">Try again</a></p> }
+        else if (movies.Count == 0) { <p class="mx-note">No weekend box-office chart is available yet. <a href="box-office">Check again</a></p> }
+        else
+        {
+            var top = movies[0];
+            var openers = movies.Where(IsNew).ToList();
+            var changed = movies.Where(m => m.WeeklyChangePercent is not null).ToList();
+            var hold = changed.MaxBy(m => m.WeeklyChangePercent);
+            var drop = changed.Where(m => m.WeeklyChangePercent < 0).MinBy(m => m.WeeklyChangePercent);
+            var tiles = (openers.Count > 0 ? 1 : 0) + (hold is not null ? 1 : 0) + (drop is not null ? 1 : 0);
+            @if (BoxOfficeChartQuery.IsStale(top.WeekendStart, Dates.Today)) { <p class="mx-note" role="status">This chart may be out of date; showing the last available weekend.</p> }
+            <section class="mx-block" aria-label="Number one">
+                <span class="mx-block__kicker">No. 1 · @(IsNew(top) ? "opening weekend" : BoxOfficeChartQuery.Change(top.WeeklyChangePercent) + " from last weekend")</span>
+                <div class="mx-number">1</div>
+                <h2 class="mx-block__title">@if (top.MovieUrl is { } url) { <a href="@url" target="_blank" rel="noopener noreferrer">@top.Title</a> } else { @top.Title }</h2>
+                <p class="mx-block__note"><b class="mx-gross">@BoxOfficeChartQuery.Compact(top.WeekendGross)</b> weekend · total @BoxOfficeChartQuery.Compact(top.TotalDomesticGross)</p>
+                @if (tiles > 0)
+                {
+                    <div class="mx-tiles" style="--mx-tile-cols: @tiles">
+                        @if (openers.Count > 0) { <div class="mx-tile"><span class="mx-tile__label">New @(openers.Count == 1 ? "opener" : "openers")</span><b class="mx-tile__value">@openers.Count</b><span class="mx-tile__sub">@string.Join(", ", openers.Select(m => m.Title))</span></div> }
+                        @if (hold is not null) { <div class="mx-tile"><span class="mx-tile__label">Best hold</span><b class="mx-tile__value">@BoxOfficeChartQuery.Change(hold.WeeklyChangePercent)</b><span class="mx-tile__sub">@hold.Title</span></div> }
+                        @if (drop is not null) { <div class="mx-tile"><span class="mx-tile__label">Biggest drop</span><b class="mx-tile__value">@BoxOfficeChartQuery.Change(drop.WeeklyChangePercent)</b><span class="mx-tile__sub">@drop.Title</span></div> }
+                    </div>
+                }
+            </section>
+
+            <section class="mx-sport-list" aria-labelledby="box-office-top-m">
+                <div class="mx-head"><h2 id="box-office-top-m">@BoxOfficeChartQuery.WeekendLabel(top.WeekendStart)</h2></div>
+                <ol class="mx-chart">
+                    @foreach (var movie in movies.Take(5))
+                    {
+                        var change = BoxOfficeChartQuery.Change(movie.WeeklyChangePercent);
+                        <li style="--share: @(top.WeekendGross > 0 ? Math.Round(100m * movie.WeekendGross / top.WeekendGross).ToString(System.Globalization.CultureInfo.InvariantCulture) : "0")%">
+                            <span class="mx-chart__rank" aria-hidden="true">@movie.Rank</span>
+                            <span class="mx-chart__title"><span class="sr-only">No. @movie.Rank, </span>@movie.Title@if (IsNew(movie)) { <span class="mx-chart__new">New</span> }</span>
+                            <b class="mx-chart__gross">@BoxOfficeChartQuery.Compact(movie.WeekendGross)</b>
+                            <span class="mx-chart__bar" aria-hidden="true"></span>
+                            <span class="mx-chart__change @(change.StartsWith('+') ? "mx-chart__change--up" : change.StartsWith('-') ? "mx-chart__change--down" : null)">@(change == "—" ? (IsNew(movie) ? "Opening weekend" : "Change unavailable") : change + " from last weekend")</span>
+                        </li>
+                    }
+                </ol>
+            </section>
+
+            <FoldGroup Name="box-office-more" Heading="More from the weekend">
+                @if (movies.Count > 5)
+                {
+                    var rest = movies.Skip(5).ToList();
+                    <Fold Title="@($"6–{rest[^1].Rank}")" Color="mx-c-world" Open="true" AllHref="@top.SourceUrl" AllText="Full chart at The Numbers"
+                          Gist="@($"{rest[0].Title} {BoxOfficeChartQuery.Compact(rest[0].WeekendGross)} through {rest[^1].Title} {BoxOfficeChartQuery.Compact(rest[^1].WeekendGross)}")">
+                        @foreach (var movie in rest)
+                        {
+                            <div class="mx-fold__row"><span><b>@movie.Rank. @movie.Title</b><small>Total @BoxOfficeChartQuery.Compact(movie.TotalDomesticGross) · @BoxOfficeChartQuery.Change(movie.WeeklyChangePercent)</small></span><span class="mx-fold__value">@BoxOfficeChartQuery.Compact(movie.WeekendGross)</span></div>
+                        }
+                    </Fold>
+                }
+                @{ var totals = movies.OrderByDescending(m => m.TotalDomesticGross).Take(5).ToList(); }
+                <Fold Title="Biggest totals" Color="mx-c-business" Open="@(movies.Count <= 5)"
+                      Gist="@string.Join(" · ", totals.Take(2).Select(m => $"{m.Title} {BoxOfficeChartQuery.Compact(m.TotalDomesticGross)}"))">
+                    @foreach (var movie in totals)
+                    {
+                        <div class="mx-fold__row"><span><b>@movie.Title</b><small>Total domestic so far</small></span><span class="mx-fold__value">@BoxOfficeChartQuery.Compact(movie.TotalDomesticGross)</span></div>
+                    }
+                </Fold>
+                @if (forecasts.Movies.Where(m => m.Kind == BoxOfficeForecastQuery.Preview).ToList() is { Count: > 0 } next)
+                {
+                    <Fold Title="Next weekend" Color="mx-c-tech" AllHref="box-office/weekend-preview" AllText="Weekend predictions"
+                          Gist="@($"{next[0].Title}, {BoxOfficeForecastQuery.Range(next[0].Low, next[0].High)}")">
+                        @foreach (var movie in next.Take(5))
+                        {
+                            <div class="mx-fold__row"><span><b>@movie.Title</b><small>Predicted · Boxoffice Pro</small></span><span class="mx-fold__value">@BoxOfficeForecastQuery.Range(movie.Low, movie.High)</span></div>
+                        }
+                    </Fold>
+                }
+            </FoldGroup>
+            <p class="mx-note">Weekend figures are estimates until finals are reported; totals may still be revised. Data from @if (top.SourceUrl is { } source) { <a href="@source" target="_blank" rel="noopener noreferrer">The Numbers</a> } else { <span>The Numbers</span> }.</p>
+        }
+    }
+</div>
+@if (view != "results")
 {
-    <BoxOfficeForecastSection Kind="@ForecastKind" Rows="@(forecasts.Movies.Where(m => m.Kind == ForecastKind).ToList())"
-        Source="@(forecasts.Sources.SingleOrDefault(s => s.Kind == ForecastKind))" UtcNow="@utcNow" />
+    <div class="mx-tool-content">
+        <BoxOfficeForecastSection Kind="@ForecastKind" Rows="@(forecasts.Movies.Where(m => m.Kind == ForecastKind).ToList())"
+            Source="@(forecasts.Sources.SingleOrDefault(s => s.Kind == ForecastKind))" UtcNow="@utcNow" />
+    </div>
 }
+</div>
 
 @code {
     [SupplyParameterFromQuery(Name = "view")] private string? SelectedView { get; set; }
     private string view = "results";
     private string ForecastKind => view == "weekend-preview" ? BoxOfficeForecastQuery.Preview : BoxOfficeForecastQuery.LongRange;
     private string Title => view switch { "weekend-preview" => "Weekend predictions", "movie-forecasts" => "Movie forecasts", _ => "Box Office" };
+    private string Kicker => view switch
+    {
+        "weekend-preview" => "Predictions · Boxoffice Pro",
+        "movie-forecasts" => "Long-range forecasts",
+        _ => (movies.Any(m => m.ResultStatus == "final") ? "Reported" : "Estimates") + " · The Numbers",
+    };
+
+    /// <summary>A film in its opening weekend: no change from last week and its total is this weekend's gross.</summary>
+    private static bool IsNew(BoxOfficeMovie movie) => movie.WeeklyChangePercent is null && movie.TotalDomesticGross == movie.WeekendGross;
 
     private IReadOnlyList<BoxOfficeMovie> movies = [];
     private IReadOnlyDictionary<string, BoxOfficeForecast> predictions = new Dictionary<string, BoxOfficeForecast>();
@@ -104,6 +214,8 @@ else
                 await using var db = await Factory.CreateDbContextAsync();
                 movies = await BoxOfficeChartQuery.GetAsync(db);
                 if (movies.Count > 0) predictions = await BoxOfficeForecastQuery.PredictionsAsync(db, movies[0].WeekendStart);
+                // Phones: next weekend's predictions for the Results view's last fold.
+                forecasts = await BoxOfficeForecastQuery.GetAsync(db, Dates.TodayAt(utcNow));
             }
             catch (Exception ex) when (DataFailures.IsReadFailure(ex))
             { Log.LogError(ex, "Box-office chart read failed."); failed = true; }

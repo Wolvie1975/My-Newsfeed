@@ -3,8 +3,11 @@
 @inject IDbContextFactory<WebScraperContext> Factory
 @inject FeedDates Dates
 @inject NavigationManager Navigation
+@inject ILogger<Movies> Log
 
 <PageTitle>Movies · myNewspaper</PageTitle>
+@* Phones get the folded week (docs/mobile-refresh-handoff.md); a title search keeps this layout on every width. *@
+<div class="@(Phone ? "mx-desktop" : "mx-contents")">
 <PageHeading Section="entertainment" Title="Movies" Eyebrow="The release calendar" Description="" />
 
 @* Release calendar as in the approved concept: a week of US releases, one column per day on desktop and one row per
@@ -85,6 +88,100 @@
         <a class="ef-more" href="watch">Find streaming options in Where to watch <span aria-hidden="true">→</span></a>
     </aside>
 </div>
+</div>
+
+@if (Phone)
+{
+    var featured = listing.Items.FirstOrDefault(m => m.Date >= today) ?? listing.Items.FirstOrDefault();
+    <div class="mx-phone">
+        <PhoneRibbon Kicker="@($"The release calendar · {WeekName.ToLowerInvariant()}")" Title="Movies">
+            <form class="mx-ribbon__field" method="get" action="movies">
+                <label for="movie-view-m">Release type</label>
+                <select id="movie-view-m" name="type" onchange="this.form.requestSubmit()">
+                    <option value="" selected="@(Type is null)">All releases</option>
+                    <option value="theatrical" selected="@(Type == "theatrical")">In theaters</option>
+                    <option value="subscription" selected="@(Type == "subscription")">Subscription streaming</option>
+                    <option value="digital">Digital rental / purchase</option>
+                </select>
+                <noscript><button class="nf-btn nf-btn--secondary" type="submit">Go</button></noscript>
+            </form>
+        </PhoneRibbon>
+
+        @* The week as a strip; a dot (and the count, for screen readers) marks days with releases. *@
+        <nav class="mx-days" aria-label="@WeekName">
+            @for (var offset = 0; offset < 7; offset++)
+            {
+                var day = weekStart.AddDays(offset);
+                var count = listing.Items.Count(m => m.Date == day);
+                <a href="@("movies" + PhoneQuery + "#movies-week-m")" aria-current="@(day == today ? "date" : null)" class="@(count > 0 ? "mx-days__has" : null)">
+                    <span class="mx-days__dow">@day.ToString("ddd", Us)</span>
+                    <b>@day.Day</b>
+                    <span class="sr-only">@(count == 0 ? "no releases" : count == 1 ? "1 release" : $"{count} releases")</span>
+                </a>
+            }
+        </nav>
+
+        @if (Type == "theatrical")
+        {
+            <a class="mx-more mx-more--inset mx-theater-link" href="https://www.amctheatres.com/" target="_blank" rel="noopener noreferrer">Visit AMC Theatres <span aria-hidden="true">↗</span></a>
+        }
+
+        @if (featured is { Date: { } featuredDate } next)
+        {
+            var action = MovieCommerceQuery.Resolve(next.Title, next.Type, next.MovieActionUrl, next.MovieActionLabel, next.MovieActionKind);
+            <article class="mx-block" aria-label="Next release">
+                <div class="mx-block__media">
+                    @if (FeedQuery.SafeHref(next.Poster) is { } poster) { <img src="@poster" alt="" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()" /> }
+                    @if (featuredDate <= today) { <span class="mx-block__badge">@(next.Type == "theatrical" ? "In theaters now" : next.Type == "subscription" ? "Streaming now" : "Out now")</span> }
+                </div>
+                <span class="mx-block__kicker">@featuredDate.ToString("ddd, MMM d", Us) · @Where(next)</span>
+                <h2 class="mx-block__title"><a href="@WatchHref(next)">@next.Title</a></h2>
+                <div class="mx-block__actions">
+                    <a class="mx-block__ghost" href="@WatchHref(next)">Where to watch</a>
+                    @if (action is not null) { <a class="mx-block__ghost" href="@action.Url" target="_blank" rel="noopener noreferrer" aria-label="@(action.Label + " · " + next.Title)">@action.Label <span aria-hidden="true">↗</span></a> }
+                </div>
+            </article>
+        }
+
+        <div id="movies-week-m">
+            @if (listing.Items.Count == 0)
+            {
+                <p class="mx-empty">No releases are listed for @WeekName.ToLowerInvariant() yet.</p>
+            }
+            else
+            {
+                <PhoneTimeline Heading="@WeekName" Sub="@($"{listing.Total} {(listing.Total == 1 ? "release" : "releases")}")"
+                               Items="@WeekLine()" MoreText="Next week" MoreHref="@WeekHref(weekStart.AddDays(7))" />
+            }
+            @if (weekStart > CurrentWeekStart) { <a class="mx-more mx-more--inset" href="@WeekHref(weekStart.AddDays(-7))">← Previous week</a> }
+        </div>
+
+        <FoldGroup Name="movies-more" Heading="More movies" Foot="Choose your services" FootHref="settings#my-services">
+            @{ var first = true; }
+            @if (ahead.Count > 0)
+            {
+                <Fold Title="Looking ahead" Color="mx-c-tech" Open="@first" AllHref="@WeekHref(weekStart.AddDays(7))" AllText="Next week"
+                      Gist="@string.Join(" · ", ahead.Take(2).Select(m => m.Title))">
+                    @foreach (var movie in ahead)
+                    {
+                        <a class="mx-fold__row" href="@WatchHref(movie)"><span><b>@movie.Title</b><small>@(movie.Date?.ToString("ddd, MMM d", Us)) · @Where(movie)</small></span></a>
+                    }
+                </Fold>
+                first = false;
+            }
+            @if (boxOffice.Count > 0)
+            {
+                <Fold Title="In theaters" Color="mx-c-us" Open="@first" AllHref="box-office" AllText="Box office"
+                      Gist="@($"{boxOffice[0].Title} No. 1 with {BoxOfficeChartQuery.Compact(boxOffice[0].WeekendGross)}")">
+                    @foreach (var movie in boxOffice)
+                    {
+                        <a class="mx-fold__row" href="box-office"><span><b>@movie.Title</b><small>@BoxOfficeMove(movie)</small></span><span class="mx-fold__value">@BoxOfficeChartQuery.Compact(movie.WeekendGross)</span></a>
+                    }
+                </Fold>
+            }
+        </FoldGroup>
+    </div>
+}
 
 @code {
     private static readonly System.Globalization.CultureInfo Us = System.Globalization.CultureInfo.InvariantCulture;
@@ -101,6 +198,22 @@
         : $"{weekStart.ToString("MMM d", Us)} – {weekStart.AddDays(6).ToString("MMM d", Us)}";
     private MoviesPage listing = new([], 0, [], null);
     private IReadOnlyList<MovieReleaseItem> ahead = [];
+    private IReadOnlyList<BoxOfficeMovie> boxOffice = [];
+
+    private bool Phone => string.IsNullOrWhiteSpace(Q);
+    private string WeekName => weekStart == CurrentWeekStart ? "This week" : weekStart == CurrentWeekStart.AddDays(7) ? "Next week" : "Week of " + weekStart.ToString("MMM d", Us);
+    /// <summary>The current view's query, so the strip's links stay on this week and release type.</summary>
+    private string PhoneQuery => WeekHref(weekStart)["movies".Length..];
+
+    private IReadOnlyList<TimelineItem> WeekLine() => listing.Items
+        .Select(m => new TimelineItem(m.Date?.ToString("ddd d", Us) ?? "TBA", m.Title,
+            MoviesQuery.Types.GetValueOrDefault(m.Type, m.Type) + (m.DateStatus == "estimated" ? " · estimated" : ""),
+            m.Platform, WatchHref(m), PhoneColors.ForRelease(m.Type)))
+        .ToList();
+
+    private static string BoxOfficeMove(BoxOfficeMovie movie) => movie.WeeklyChangePercent is { } change
+        ? (change >= 0 ? "Up " : "Down ") + Math.Abs(Math.Round(change)).ToString(Us) + "%"
+        : "New this weekend";
 
     private string ViewHref(string? type) => "movies" + (type is null ? "" : "?type=" + type);
     private string WeekHref(DateOnly start) => "movies?" + (Type is null ? "" : "type=" + Type + "&") +
@@ -111,12 +224,14 @@
 
     protected override async Task OnParametersSetAsync()
     {
+        // Set before the redirect: static rendering still renders the page once, and the week math needs a real date.
+        today = Dates.Today;
+        weekStart = CurrentWeekStart;
         if (TypeText == "digital")
         {
             Navigation.NavigateTo("movies/digital", forceLoad: true);
             return;
         }
-        today = Dates.Today;
         // Weeks run Sunday to Saturday; an unparseable or past week falls back to the current one.
         weekStart = DateOnly.TryParseExact(WeekText, "yyyy-MM-dd", Us, System.Globalization.DateTimeStyles.None, out var requested)
             && requested >= CurrentWeekStart
@@ -128,6 +243,13 @@
             : await MoviesQuery.GetAsync(db, today, QueryText.Term(Q), Type, null, "all", take: 100);
         ahead = (await MoviesQuery.GetAsync(db, weekStart.AddDays(7), null, Type, null, null, take: 6)).Items
             .Where(m => m.Date is not null).ToList();
+        // Phones: the last weekend's top three for the In theaters fold (as on the Entertainment front).
+        if (Phone)
+        {
+            try { boxOffice = (await BoxOfficeChartQuery.GetAsync(db, HomeBoxOfficeSchedule.ResultsWeekend(today))).Take(3).ToList(); }
+            catch (Exception ex) when (DataFailures.IsReadFailure(ex))
+            { boxOffice = []; Log.LogError(ex, "Could not read box office for Movies."); }
+        }
     }
 
     /// <summary>One release: poster, title (to Where to watch) and where it is showing, with a tickets or rent link.</summary>

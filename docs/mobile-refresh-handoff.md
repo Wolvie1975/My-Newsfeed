@@ -344,7 +344,7 @@ Each release is independent: a page that hasn't been converted keeps its current
   Deployed as `soccer-points-20261028` (`79a593092535`); 955 .NET tests pass. Local NWSL checks passed at
   320/390/430px in light/dark, plus MLS/Championship/Premier League data checks, no-JS and retained desktop tables.
   Live verification is recorded in release history. Evidence: `/tmp/soccer-points/`. Included in the scheme-ribbon local check-in.
-- [ ] 4. **Entertainment**, **Movies**, **TV & Streaming**, **Digital releases**, **Box office**.
+- [ ] 4. **Entertainment**, **Movies**, **TV & Streaming**, **Digital releases**, **Box office** — In progress (started October 28, 2026 after release 6); see the working record below.
 - [x] 5. **Where to watch**, **Local**, **YouTube** — deployed October 28, 2026 as `phone-life-20261028` (`7176ce3f5fa0`); see the working record below.
 - [x] 6. Ribbon-only pages: both All headlines pages, **Saved**, **Settings** — ✅ Done October 28, 2026: commit `63748dc`, deployed as `phone-tools-20261028` (`ce1907bbd201`); see the working record below.
 
@@ -508,3 +508,63 @@ the native Show options; the first item is chosen after filtering/grouping and m
 Its render signature now includes the selected filter. Settings Jump to uses the current page hash with
 JavaScript and the existing local `/navigate` redirect without it. Profile-only anchors are conditional.
 Dark-card foreground/button overrides are scoped to phone widths. Build passed with zero warnings/errors.
+
+## Release 4 working record — October 28, 2026 — In progress
+
+Status: started after release 6 (`024a3a5`) on `develop`. Not committed or deployed.
+
+- [x] Entertainment: Section ribbon, dark lead, "On screen" timeline, top three headlines, folds (Weekend box
+  office open, Tonight on TV, Movies this week, Friday in theaters, More headlines).
+- [x] Movies: Release type ribbon, 7-day strip, dark block for the next release this week, folds (Looking ahead
+  open, In theaters, Trending).
+- [x] TV & Streaming: Week ribbon, dark block for tonight's (or the next) episode, "This week" timeline, folds
+  (Your shows open, Trending TV).
+- [x] Digital releases: Source ribbon, dark block (next release or the empty state), folds (Coming soon to
+  digital open, Still in theaters).
+- [x] Box office: View ribbon, dark No. 1 block with tiles, 1–5 with gross bars, folds (6–10 open, Biggest
+  totals, Next weekend).
+- [x] `phone-screens` browser check: 320/390/430px × three schemes × light/dark, no-JS folds and selects, data
+  edges, 744/1024/1440px retained; screenshots reviewed.
+- [ ] Full browser suite, .NET tests, lint/format; commit, deploy, live check, records.
+  Full local browser suite: 43 passed, 10 skipped (profiles-only), 13 failed. 11 are the known local-only ones
+  without a streaming-catalog key (watch*, active-tv, us-options, mixed-search-nav, track-series, phone-life's Watch
+  rail). `section-hubs` (Entertainment's Section select is now the phone copy) and `theatrical-provider` (the
+  phone Movies page had lost the AMC Theatres link; restored under the week strip, and the Digital releases note
+  now matches the desktop wording) were fixed and pass. 955 .NET tests pass; eslint, prettier and
+  `git diff --check` clean. Deploying at the user's request.
+
+Implementation notes and deviations from the mockups:
+
+- Every page keeps its desktop markup in `.mx-desktop` and adds an `.mx-phone` copy from the data it already loads.
+  Phone controls have their own IDs (`entertainment-section-m`, `movie-view-m`, `tv-week-m`, `digital-source-m`,
+  `box-office-view-m`), each with a no-JavaScript Go button.
+- **Trending** (Movies) and **Trending TV** (TV) are left out: they would need the streaming catalog's live API.
+  Where to watch already carries trending titles on phones.
+- **Movies:** the mockup's strip only marks release days, so a "This week" timeline lists the week's releases
+  (the strip links to it); a title search keeps the old layout at every width. The dark block links to Where to
+  watch (and the store, when there is one) instead of Save/Share, which only articles and videos support. The
+  In theaters fold adds one box office read (the last weekend's top three), as the Entertainment front does.
+- **TV:** weeks start today, so the Week select offers This week / Next week / In two weeks (no Last week). The
+  dark block uses the batch label for multi-episode drops ("E10–E13 · 4 episodes"). TVmaze attribution stays on
+  phones. Your shows' "Manage" link appears only with a profile open.
+- **Digital releases:** the Coming soon fold lists every remaining release so nothing is lost on phones; Still in
+  theaters adds one box office read (biggest totals). The empty state could not be shown locally (every source has
+  dates); it renders from the same `data.Items.Count == 0` branch as the desktop empty state.
+- **Box office:** Results is folded; the two forecast views keep their single section under the ribbon
+  (`.mx-tool-page`). The Results view also reads next weekend's predictions for its last fold.
+- **Entertainment:** "Movies this week" is titled "Next releases" when the next four reach past seven days.
+- Shared CSS: dark-block and top-list title links are now 44px flex targets everywhere (release 5 had this for its
+  own pages only); new `.mx-days`, `.mx-chart`, `.mx-gross`, `.mx-source-note`.
+- Bug fixed along the way: `/movies?type=digital` (the Digital option in the Movies select, desktop and phone)
+  returned a 500. In .NET 10 static rendering still renders the page after `NavigateTo`, and the week math ran on
+  an unset date. It now redirects to `/movies/digital`.
+
+Local verification so far (profiles off, port 5296): `phone-screens` passes 320/390/430px × Kansas/Monochrome/
+Cardinals × light/dark on all seven routes (Entertainment, Movies, TV, Digital releases, Box office results,
+next weekend and forecasts): one ribbon, desktop heading hidden, no overflow, unique IDs, contrast audit, no split
+title words, first fold open, exclusive and keyboard folds, 64px summaries, 44px targets. Interactions: lead
+save/share, every ribbon select, Movies' strip (seven days, today marked, counts in words) and search, Digital
+source switch, TV week, Box office chart and View. No-JS folds and Go paths at each phone width. 744/1024/1440px
+light/dark: no phone copy visible, headings shown, contrast and overflow pass. Screenshots reviewed. Found and
+fixed: a one-line dark-block title and two-line top-list titles under 44px; the NEW badge's dark-mode contrast
+(2.33:1); the Movies 500 above.
