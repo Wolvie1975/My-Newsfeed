@@ -6,7 +6,51 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The latest recorded web release is `mynewspaper-web:article-image-nav-fix-20261029`
+## Headline top arrangements — October 29, 2026 (Central)
+
+Latest web release: `mynewspaper-web:headline-top-20261029`, image `d899ee3c639d`.
+Deployed the local working tree to `mynewsfeed-web` on the existing production host;
+no commit or push was made. Runtime environment, port 8085, dev-bridge network,
+restart policy, health check and persistent key volume were preserved. The runtime
+connection remains sql2025 / WebScraper. No database migration was required or run.
+Rollback image: `mynewspaper-web:before-headline-top-20261029` (`28f0349b1fab`);
+previous stopped container: `mynewsfeed-web-before-headline-top-20261029`.
+
+The lead's measured photo now selects a photo layout with two supporting text cards
+and a Latest column, or a full-width text banner followed by three cards. Tablet
+portrait retains all three cards rather than hiding story 4. Stories 5–8 have only
+one visible copy, and group headings continue across the grid seam. Desktop card
+photos are loaded eagerly so hidden, unmeasured media cannot stall lazy loading.
+
+Validation: solution build passed with zero warnings; all 1,007 application tests
+passed. ESLint and formatting for changed JS/CSS/tests passed. The repository-wide
+format check still flags six unchanged browser test files (local-weather-nav,
+phone-life, phone-screens, phone-sports, section-select and tv-series-delete).
+Local article-images, headline-top and publisher-layout checks passed, including
+BBC fallback, dynamic images, enhanced navigation and Load more; the phone suite passed at
+320/390/430px, light/dark, Kansas/monochrome/Cardinals, including folds, category
+selection, no-JS fallbacks and tablet/desktop regressions.
+
+After rollout, `/healthz` returned 200 Healthy and the container became healthy.
+Authenticated checks returned 200 for News, Events, the Results destination,
+Standings, Rankings, Movies, digital movies, box office and sports/entertainment
+headlines. League-phase startup checks were present. Live headline-top tests passed
+at 320/390/430/744/1024/1280/1440px with wide, compact and broken image fixtures,
+visible-story uniqueness, Share dialogs and no-JS banner. The live phone suite
+passed all required phone widths/themes and three colour schemes. Additional live
+desktop checks verified all six theme/scheme combinations with real photos.
+Screenshots were inspected locally and on production; artifacts are under
+`test-results/browser/` and `test-results/browser/live-headline/` (not versioned).
+Temporary verification profiles and stored authentication state were removed.
+Real-device checks were unavailable; phone verification used Chromium emulation.
+The Tailscale HTTPS hostname was unreachable from this workspace (curl status 000),
+so deployed browser checks used the private container HTTP address. HTTPS/TLS
+verification from a tailnet device remains outstanding. Unauthenticated admin access
+redirected to login (302).
+
+Previous recorded release follows.
+
+The previously recorded web release is `mynewspaper-web:article-image-nav-fix-20261029`
 (image `756ae425b587`), deployed October 29, 2026 (Central), from `7ff365d`.
 Rollback: image `mynewspaper-web:before-image-nav-fix-20261029` and container
 `mynewsfeed-web-before-image-nav-fix-20261029`.

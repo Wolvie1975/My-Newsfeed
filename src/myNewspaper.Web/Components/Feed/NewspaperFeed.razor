@@ -1,19 +1,32 @@
 @using myNewspaper.Web.Data
+@inject FeedDates Dates
 @if (Cards)
 {
-    @* Headline cards (docs/headline-cards-handoff.md): the lead and three beside it, then a grid with hour or day
-       headings. Phones flatten these wrappers into the usual one-column list. *@
     @if (Featured && Items.Count > 0)
     {
-        <div class="hc-top">
+        <div class="hc-top hc-top--text" data-hc-top>
             <section class="hc-lead" aria-label="Lead story"><FeedArticles Items="@Items.Take(1).ToArray()" LeadFirst="true" PhoneFeatureFirst="PhoneFeatureFirst" Cards="true" NoGroupHeadings="true" /></section>
             @if (Items.Count > 1) {
-                <section class="hc-side" aria-label="Latest headlines"><FeedArticles Items="@Items.Skip(1).Take(3).ToArray()" Cards="true" NoGroupHeadings="true" /></section>
+                <section class="hc-under" aria-label="More top stories"><FeedArticles Items="@Items.Skip(1).Take(2).ToArray()" Cards="true" NoGroupHeadings="true" /></section>
+            }
+            @if (Items.Count > 3) {
+                <section class="hc-latest" aria-label="Latest headlines">
+                    <h2 class="hc-latest__title">Latest</h2>
+                    <FeedArticles Items="@Items.Skip(3).Take(5).ToArray()" Cards="true" Rows="true" NoGroupHeadings="true" />
+                </section>
             }
         </div>
     }
-    @if (CardRemaining.Count > 0) {
-        <div class="hc-grid" data-hc-grid><FeedArticles Items="CardRemaining" PhoneFeatureFirst="@(PhoneFeatureFirst && !Featured)" PreviousDay="@PreviousDay" Total="Total" Cards="true" GroupBy="@GroupBy" /></div>
+    @if (CardRemaining.Count > 0 || (Featured && Items.Count > 4)) {
+        <div class="hc-grid" data-hc-grid>
+            @if (Featured) {
+                <div class="hc-grid__textonly"><FeedArticles Items="@Items.Skip(4).Take(4).ToArray()" Cards="true" GroupBy="@GroupBy" PreviousDay="@PreviousDay" Total="Total" /></div>
+            }
+            @if (Featured && Items.Count > 8 && ContinuationGroup == Dates.CardGroupKey(Items[8], GroupBy, DateTime.UtcNow)) {
+                <h3 class="hc-group hc-group--photo">@Dates.CardGroupLabel(Items[8], GroupBy, DateTime.UtcNow)</h3>
+            }
+            <FeedArticles Items="CardRemaining" PhoneFeatureFirst="@(PhoneFeatureFirst && !Featured)" PreviousDay="@(Featured && Items.Count > 8 ? Dates.DayKey(Items[7]) : PreviousDay)" PreviousGroup="@ContinuationGroup" Total="Total" Cards="true" GroupBy="@GroupBy" />
+        </div>
     }
 }
 else
@@ -46,5 +59,6 @@ else
     /// <summary>Cards only: "hour" (a busy today) or "day".</summary>
     [Parameter] public string GroupBy { get; set; } = "day";
     private IReadOnlyList<FeedItem> Remaining => Featured ? Items.Skip(8).ToArray() : Items;
-    private IReadOnlyList<FeedItem> CardRemaining => Featured ? Items.Skip(4).ToArray() : Items;
+    private string? ContinuationGroup => Featured && Items.Count > 8 ? Dates.CardGroupKey(Items[7], GroupBy, DateTime.UtcNow) : null;
+    private IReadOnlyList<FeedItem> CardRemaining => Featured ? Items.Skip(8).ToArray() : Items;
 }

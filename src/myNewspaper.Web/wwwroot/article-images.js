@@ -16,6 +16,13 @@
         return url.href;
     }
 
+    function arrange(story, quality) {
+        const top = story?.closest('.hc-lead')?.closest('[data-hc-top]');
+        if (!top) return;
+        top.classList.toggle('hc-top--photo', quality === 'wide');
+        top.classList.toggle('hc-top--text', quality !== 'wide');
+    }
+
     function classify(img) {
         const state = images.get(img);
         // A tiny image is removed on its first pass; the load listener classifies it again once it is detached.
@@ -38,11 +45,15 @@
             // Headline cards keep the lead's photo slot until now, rather than flashing a text card first.
             story.dataset.imageMeasured = '';
         }
+        arrange(story, quality);
         if (quality === 'none') img.remove();
     }
 
     function bind(img) {
         if (!img.matches(selector)) return;
+        // Text-first cards hide their media until measured. Hidden lazy images would never load,
+        // so measure desktop card photos eagerly before choosing the arrangement.
+        if (img.closest('.hc-card') && matchMedia('(min-width: 744px)').matches) img.loading = 'eager';
         const original = img.src;
         if (images.get(img)?.active === original) {
             classify(img);
@@ -90,6 +101,7 @@
             const story = img.closest('[data-article-story]');
             if (story) {
                 story.dataset.imageLayout = 'none';
+                arrange(story, 'none');
                 story.dataset.imageMeasured = '';
             }
             img.remove();
@@ -104,6 +116,7 @@
         const empty = (story) => {
             if (!story.querySelector(selector)) {
                 story.dataset.imageLayout = 'none';
+                arrange(story, 'none');
                 story.dataset.imageMeasured = '';
             }
         };

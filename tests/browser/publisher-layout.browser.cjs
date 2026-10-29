@@ -48,13 +48,13 @@ const base = process.env.BASE_URL || 'http://172.18.0.5:8080',
                     );
                     if ([320, 390, 430, 753, 1440].includes(width)) {
                         // The three stories beside the lead (headline cards); on phones they join the one list.
-                        await p.locator(width < 744 ? '.hc-side .article >> nth=0' : '.hc-side').screenshot({
+                        await p.locator(width < 744 ? '.hc-under .article >> nth=0' : '.hc-under').screenshot({
                             path: root + route.replaceAll('/', '-') + '-' + width + '-' + theme + '.png',
                         });
                     }
                 }
         await p.goto(base + '/entertainment/news');
-        const button = p.locator('.hc-side [data-share-open]').first();
+        const button = p.locator('.hc-under [data-share-open]').first();
         await button.click();
         await p.getByRole('dialog').waitFor();
         await p.keyboard.press('Escape');

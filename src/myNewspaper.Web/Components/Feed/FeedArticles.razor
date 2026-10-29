@@ -39,7 +39,7 @@
         <h3 class="hc-group" id="@($"hc-{groupKey}")" data-hc-group="@groupKey">@Dates.CardGroupLabel(item, GroupBy, nowUtc)</h3>
     }
 
-    <article data-article-story="@(isLead || (PhoneFeatureFirst && i == 0) ? "feature" : "row")" data-image-layout="compact" @key="item.Id" data-article-id="@item.Id" data-news-url="@href" data-news-source="@sourceName" class="article @(isLead ? "article--lead" : "") @(PhoneFeatureFirst && i == 0 ? "mx-list-feature" : null) @(Cards ? "hc-card " + PhoneColors.ForCategory(item.CategoryName) : null)">
+    <article data-article-story="@(isLead || (PhoneFeatureFirst && i == 0) ? "feature" : "row")" data-image-layout="compact" @key="item.Id" data-article-id="@item.Id" data-news-url="@href" data-news-source="@sourceName" class="article @(Rows ? (i == 0 ? "hc-row hc-row--first" : "hc-row") : null) @(isLead ? "article--lead" : "") @(PhoneFeatureFirst && i == 0 ? "mx-list-feature" : null) @(Cards ? "hc-card " + PhoneColors.ForCategory(item.CategoryName) : null)">
         @* Default image: the placeholder background shows through when there is no image or it fails to load. *@
         <div class="thumb" data-article-media aria-hidden="true">
             @if (image is not null)
@@ -110,6 +110,7 @@
 
     /// <summary>Desktop card layout for the All headlines pages (docs/headline-cards-handoff.md); phones still render these as rows.</summary>
     [Parameter] public bool Cards { get; set; }
+    [Parameter] public bool Rows { get; set; }
 
     /// <summary>Cards only: how headings are grouped ("hour" or "day").</summary>
     [Parameter] public string GroupBy { get; set; } = "day";

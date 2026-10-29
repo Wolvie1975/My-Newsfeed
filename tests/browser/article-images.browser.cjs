@@ -275,12 +275,26 @@ async function ready(page, story, quality) {
             window.articleImageNavigationTest = true;
             const link = document.createElement('a');
             link.id = 'article-nav-test';
-            link.href = '/news/all?category=all';
+            link.href = '/sports/news';
             link.textContent = 'Test headlines navigation';
             document.body.append(link);
         });
         await page.locator('#article-nav-test').click();
+        await page.waitForURL('**/sports/news');
+        await page.locator('.hc-lead').waitFor();
+        await page.waitForLoadState('networkidle');
+        await ready(page, page.locator(selector).filter({ visible: true }).first(), 'wide');
+        // Return from another page: same-page navigation can retain the original compact fixture in the DOM.
+        await page.evaluate(() => {
+            const link = document.createElement('a');
+            link.id = 'article-return-test';
+            link.href = '/news/all?category=all';
+            link.textContent = 'Return to headlines';
+            document.body.append(link);
+        });
+        await page.locator('#article-return-test').click();
         await page.waitForURL('**/news/all?category=all');
+        await page.locator('.mx-phone article[data-article-story="feature"]').waitFor();
         await page.waitForLoadState('networkidle');
         assert(
             await page.evaluate(() => window.articleImageNavigationTest),
