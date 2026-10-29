@@ -422,6 +422,36 @@ The open profile's teams render without JavaScript; browser-only preferences app
 are off. Missing data does not create empty data folds or invented ranks, records, games or point gaps. See
 [the mobile refresh handoff](mobile-refresh-handoff.md) and [release verification](release-history.md).
 
+## Folded phone Entertainment, Movies, TV, Digital releases and Box office
+
+Release 4 deployed October 28, 2026 (Central) as `phone-screens-20261029`; verification is maintained in the mobile
+handoff/release history. Below 744px each page shows a scheme ribbon with one native select (each with a
+no-JavaScript Go), a dark focal block, one middle list and exclusive native folds whose first fold starts open. The
+existing layouts remain from 744px. Each phone copy reuses its page's data; Movies, Digital releases and the Box
+office Results view add one box office read each for their theater folds.
+
+Entertainment: Section select, the lead story, an On screen timeline (tonight's tracked episodes, then the next
+releases), the top three headlines, and folds for the weekend box office (or next weekend's predictions), tonight
+on TV, the next releases ("Movies this week" when all are within seven days), Friday in theaters and more headlines.
+
+Movies: Release type select (Digital opens Digital releases), a seven-day strip (today dark, a dot and a spoken count
+on days with releases), the next release this week, the week's releases as a timeline with Next week, the AMC
+Theatres link under In theaters, and folds for Looking ahead and In theaters (last weekend's top three). A title
+search keeps the full layout at every width.
+
+TV & Streaming: Week select (This week, Next week, In two weeks; weeks start today), tonight's or the next episode
+(multi-episode drops keep their batch label), the week's timeline, and Your shows with each show's next day.
+Manage your shows appears with a profile open. TVmaze attribution stays visible.
+
+Digital releases: Source select, the next rent-or-buy release (or the empty state with the other sources and
+Fandango at Home), every remaining release in Coming soon to digital, and Still in theaters (biggest totals).
+
+Box office: View select (Results, Next weekend, Forecasts). Results shows No. 1 with openers, best hold and biggest
+drop tiles, the top five with gross bars scaled to No. 1 (the change is also written out), then folds for 6–10,
+biggest totals and next weekend. The two forecast views keep their single section under the ribbon.
+
+Trending folds from the mockups are left out; they would need the live streaming-catalog API.
+
 ## Folded phone Watch, Local and YouTube
 
 Release 5 deployed October 28, 2026 as `phone-life-20261028`; verification is maintained in the mobile handoff/release history.

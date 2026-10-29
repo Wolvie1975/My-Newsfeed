@@ -6,10 +6,48 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The latest recorded web release is `mynewspaper-web:phone-tools-20261028`
-(image `ce1907bbd201`), deployed October 28, 2026 (Central), with household profiles enabled.
-Rollback: `mynewsfeed-web:before-mynewspaper-phone-tools-20261028` (`7176ce3f5fa0`).
+The latest recorded web release is `mynewspaper-web:phone-screens-20261029`
+(image `2cf78ecff635`), deployed October 28, 2026 (Central), with household profiles enabled.
+Rollback: `mynewsfeed-web:before-mynewspaper-phone-screens-20261029` (`ce1907bbd201`).
 This is a dated deployment record, not live hosting status.
+
+## Phone refresh, release 4: Entertainment, Movies, TV, Digital releases and Box office — deployed October 28, 2026 (Central)
+
+Below 744px these pages get folded phone fronts beside their unchanged desktop markup: a scheme ribbon with one
+native select (Section, Release type, Week, Source, View; each with a no-JavaScript Go), a dark focal block, a middle
+list and exclusive native folds. Entertainment: lead, On screen timeline, top three, box office/TV/releases/Friday/
+headline folds. Movies: week strip, next release, the week's timeline, AMC link under In theaters, Looking ahead and
+In theaters folds; title searches keep the full layout. TV: tonight's or the next episode (batch drops labelled as
+batches), the week's timeline, Your shows, TVmaze attribution. Digital releases: next release or the empty state,
+every remaining release, Still in theaters. Box office Results: No. 1 with openers/best hold/biggest drop, top five
+with gross bars, 6–10/biggest totals/next weekend folds; forecast views keep their section under the ribbon. Trending
+folds are left out (they need the live catalog API). Dark-block and top-list title links are now 44px targets on
+every phone page. Fixed: `/movies?type=digital` (the Digital option of the Movies select) returned a 500 because
+static rendering ran the week math on an unset date after `NavigateTo`; it now redirects to `/movies/digital`.
+Commit `ec95073` on `develop` (local).
+
+Deployed `mynewspaper-web:phone-screens-20261029` (tag uses the UTC date), image
+`sha256:2cf78ecff635198b5318f61442dd32349b9ccccea105ad550c3a4993a9d30092`.
+Rollback retained as `mynewsfeed-web:before-mynewspaper-phone-screens-20261029` (`ce1907bbd201`).
+Runtime environment hash unchanged; container healthy, `/healthz` 200. No database migration or collector changes.
+
+Predeploy (local, profiles off): build with zero warnings/errors, 955 .NET tests, eslint, prettier and
+`git diff --check` passed. New `phone-screens` passed 320/390/430px × Kansas/Monochrome/Cardinals × light/dark on
+Entertainment, Movies, TV, Digital releases and all three Box office views: one ribbon, hidden desktop heading,
+contrast audit, overflow, unique IDs, unsplit titles, first fold open, exclusive/keyboard folds, 64px summaries, 44px
+targets; lead save/share, every ribbon select, the week strip, Movies search, Digital source, TV week and Box office
+chart/View; no-JS folds and Go paths at each phone width; 744/1024/1440px light/dark unchanged. Full browser suite:
+43 passed, 10 skipped (profiles-only), 13 failed; 11 are the known local-only ones without a streaming-catalog key,
+and `section-hubs` and `theatrical-provider` were fixed (Entertainment's phone Section select; the phone Movies page
+had lost the AMC Theatres link) and pass. Local evidence: `/tmp/release4/local/`.
+
+Live (profiles on, throwaway profile): `phone-screens` passed the same matrix. The first two live runs timed out
+because third-party poster hosts (`dvdsreleasedates.com`) throttled the run's fresh fetches; without JavaScript
+Chrome also ignores `loading="lazy"`. The check now blocks external images and checks the pages' no-poster
+fallbacks. The throwaway profiles (including two diagnostic probes) were deleted, and 14 headless test-device
+records without a profile were removed; Jason and Jacob remain. Live screenshots reviewed, including the TV empty
+state for a profile with no shows. Evidence: `/tmp/release4/deploy/`. Not checked: the Digital releases empty state
+with real data (every source has dates), a real device, VoiceOver/TalkBack.
 
 ## Phone refresh, release 6: All headlines, Saved and Settings — deployed October 28, 2026 (Central)
 

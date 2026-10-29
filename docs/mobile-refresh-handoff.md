@@ -344,7 +344,7 @@ Each release is independent: a page that hasn't been converted keeps its current
   Deployed as `soccer-points-20261028` (`79a593092535`); 955 .NET tests pass. Local NWSL checks passed at
   320/390/430px in light/dark, plus MLS/Championship/Premier League data checks, no-JS and retained desktop tables.
   Live verification is recorded in release history. Evidence: `/tmp/soccer-points/`. Included in the scheme-ribbon local check-in.
-- [ ] 4. **Entertainment**, **Movies**, **TV & Streaming**, **Digital releases**, **Box office** — In progress (started October 28, 2026 after release 6); see the working record below.
+- [x] 4. **Entertainment**, **Movies**, **TV & Streaming**, **Digital releases**, **Box office** — ✅ Done October 28, 2026 (Central): commit `ec95073`, deployed as `phone-screens-20261029` (`2cf78ecff635`); see the working record below.
 - [x] 5. **Where to watch**, **Local**, **YouTube** — deployed October 28, 2026 as `phone-life-20261028` (`7176ce3f5fa0`); see the working record below.
 - [x] 6. Ribbon-only pages: both All headlines pages, **Saved**, **Settings** — ✅ Done October 28, 2026: commit `63748dc`, deployed as `phone-tools-20261028` (`ce1907bbd201`); see the working record below.
 
@@ -509,9 +509,9 @@ Its render signature now includes the selected filter. Settings Jump to uses the
 JavaScript and the existing local `/navigate` redirect without it. Profile-only anchors are conditional.
 Dark-card foreground/button overrides are scoped to phone widths. Build passed with zero warnings/errors.
 
-## Release 4 working record — October 28, 2026 — In progress
+## Release 4 working record — October 28, 2026 — ✅ Done
 
-Status: started after release 6 (`024a3a5`) on `develop`. Not committed or deployed.
+Status: committed locally as `ec95073` on `develop` (not pushed) and deployed as `phone-screens-20261029`. All six releases are now live.
 
 - [x] Entertainment: Section ribbon, dark lead, "On screen" timeline, top three headlines, folds (Weekend box
   office open, Tonight on TV, Movies this week, Friday in theaters, More headlines).
@@ -525,13 +525,13 @@ Status: started after release 6 (`024a3a5`) on `develop`. Not committed or deplo
   totals, Next weekend).
 - [x] `phone-screens` browser check: 320/390/430px × three schemes × light/dark, no-JS folds and selects, data
   edges, 744/1024/1440px retained; screenshots reviewed.
-- [ ] Full browser suite, .NET tests, lint/format; commit, deploy, live check, records.
+- [x] Full browser suite, .NET tests, lint/format; commit, deploy, live check, records.
   Full local browser suite: 43 passed, 10 skipped (profiles-only), 13 failed. 11 are the known local-only ones
   without a streaming-catalog key (watch*, active-tv, us-options, mixed-search-nav, track-series, phone-life's Watch
   rail). `section-hubs` (Entertainment's Section select is now the phone copy) and `theatrical-provider` (the
   phone Movies page had lost the AMC Theatres link; restored under the week strip, and the Digital releases note
   now matches the desktop wording) were fixed and pass. 955 .NET tests pass; eslint, prettier and
-  `git diff --check` clean. Deploying at the user's request.
+  `git diff --check` clean.
 
 Implementation notes and deviations from the mockups:
 
@@ -568,3 +568,12 @@ source switch, TV week, Box office chart and View. No-JS folds and Go paths at e
 light/dark: no phone copy visible, headings shown, contrast and overflow pass. Screenshots reviewed. Found and
 fixed: a one-line dark-block title and two-line top-list titles under 44px; the NEW badge's dark-mode contrast
 (2.33:1); the Movies 500 above.
+
+Deployed `mynewspaper-web:phone-screens-20261029` (`2cf78ecff635`; the tag uses the UTC date) from a copy of the
+release 6 override with only the image tag changed. Rollback: `mynewsfeed-web:before-mynewspaper-phone-screens-20261029`
+(`ce1907bbd201`). Environment hash unchanged; healthy; `/healthz` 200. Live `phone-screens` (profiles on, throwaway
+profile) passed after the check started blocking third-party images: the first two runs stalled because the poster
+host throttled the run's fresh fetches (without JavaScript Chrome ignores `loading="lazy"`). Throwaway profiles
+deleted; 14 headless test devices without a profile removed; Jason and Jacob remain. Live screenshots reviewed.
+Evidence: `/tmp/release4/`. Not checked: the Digital releases empty state with real data, a real device,
+VoiceOver/TalkBack. See the release history.

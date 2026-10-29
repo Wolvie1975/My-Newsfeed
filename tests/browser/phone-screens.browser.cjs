@@ -42,6 +42,13 @@ const routes = [
                     for (const [k, v] of Object.entries(s)) localStorage.setItem(k, v);
                 } catch {}
             }, settings);
+        // Third-party posters are left out: the poster hosts throttle a run's hundreds of fresh fetches (and without
+        // JavaScript Chrome ignores loading="lazy"), which stalls the load event. Pages fall back to no poster.
+        await context.route('**/*', (route) =>
+            route.request().resourceType() === 'image' && !route.request().url().startsWith(base)
+                ? route.abort()
+                : route.fallback(),
+        );
         // A private Saved list, so the check never touches the real one.
         let saved = [];
         await context.route('**/api/saved**', (route) => {
