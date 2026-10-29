@@ -31,14 +31,10 @@
                 }
             </section>
         }
-        <section class="mx-sport-list"><div class="mx-head"><h2>In the Top 10</h2></div><PhoneRankRows Teams="@Data.Teams.Where(t => t.Rank is >= 2 and <= 10)" /></section>
-        <FoldGroup Name="rankings-more" Heading="More from the poll">
-            @{ var rest = Data.Teams.Where(t => t.Rank is null or > 10).ToList(); var big12 = Data.Teams.Where(t => t.IsBig12 == true).ToList(); var fresh = Data.Teams.Where(t => t.PreviouslyUnranked && t.PreviousRank is null).ToList(); var drops = Data.Teams.Where(t => PhoneSports.Movement(t) < 0).OrderBy(t => PhoneSports.Movement(t)).ToList(); }
-            @if (rest.Count > 0) { <Fold Title="11–25" Gist="@Gist(rest)" Open="true"><PhoneRankRows Teams="rest" /></Fold> }
-            @if (big12.Count > 0) { <Fold Title="Big 12 in the poll" Gist="@Gist(big12)" Open="@(rest.Count == 0)" Color="mx-c-us"><PhoneRankRows Teams="big12" /></Fold> }
-            @if (fresh.Count > 0) { <Fold Title="New this week" Gist="@Gist(fresh)" Open="@(rest.Count == 0 && big12.Count == 0)" Color="mx-c-tech"><PhoneRankRows Teams="fresh" /></Fold> }
-            @if (drops.Count > 0) { <Fold Title="Biggest drops" Gist="@Gist(drops)" Open="@(rest.Count == 0 && big12.Count == 0 && fresh.Count == 0)" Color="mx-c-us"><PhoneRankRows Teams="drops" /></Fold> }
-        </FoldGroup>
+        @if (Data.Teams.Where(t => t.Rank is null or > 1).ToList() is { Count: > 0 } rest)
+        {
+            <section class="mx-sport-list"><div class="mx-head"><h2>The rest of the poll</h2></div><PhoneRankRows Teams="rest" /></section>
+        }
         @if (FeedQuery.SafeHref(Data.Poll.SourceUrl) is { } url) { <a class="mx-more" href="@url" target="_blank" rel="noopener noreferrer">View poll source ↗</a> }
         <p class="mx-note">Data via ESPN · @Data.Poll.PollName</p>
     }
@@ -48,5 +44,4 @@
     [Parameter] public string RetryHref { get; set; } = "rankings";
     private IReadOnlyList<myNewspaper.Web.Data.Models.SportsRankingTeam> Movers => Data.Teams.Where(t => PhoneSports.Movement(t) > 0).OrderByDescending(t => PhoneSports.Movement(t)).Take(2)
         .Concat(Data.Teams.Where(t => PhoneSports.Movement(t) < 0).OrderBy(t => PhoneSports.Movement(t)).Take(1)).ToList();
-    private static string Gist(IEnumerable<myNewspaper.Web.Data.Models.SportsRankingTeam> teams) => string.Join(" · ", teams.Take(2).Select(t => $"{t.TeamName} No. {t.Rank}"));
 }
