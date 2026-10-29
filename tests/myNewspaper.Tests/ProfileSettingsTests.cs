@@ -133,7 +133,7 @@ public class ProfileSettingsTests
         var root = Path.GetFullPath("../../../../../src/myNewspaper.Web/wwwroot/", AppContext.BaseDirectory);
         var personal = File.ReadAllText(root + "personal.js");
         var order = File.ReadAllText(root + "settings-order.js");
-        var theme = File.ReadAllText(root + "theme-init.js");
+        var theme = File.ReadAllText(Path.GetFullPath("../../myNewspaper.Shared/wwwroot/theme-init.js", root));
         // The scripts read SiteDefaults from the page and keep a copy only as a fallback; this keeps the copies in step.
         Assert.Contains(string.Join(",\n        ", SiteDefaults.HomeOrder.Select(s => $"'{s}'")), personal.Replace("\r", ""));
         Assert.Contains($"defaults?.settingsOrder || [{string.Join(", ", SiteDefaults.SettingsOrder.Select(s => $"'{s}'"))}];", order);

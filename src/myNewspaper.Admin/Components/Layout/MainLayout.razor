@@ -1,0 +1,42 @@
+@inject myNewspaper.Hosting.SiteLinks SiteLinks
+@inherits LayoutComponentBase
+
+@* The admin workspace: a dark sidebar of sections beside the page on desktop; on phones a bar with a CSS-only Menu
+   toggle (works before Blazor connects). Signed out (the sign-in page) shows the page alone. Styles: admin.css. *@
+<div class="adm">
+    <AuthorizeView>
+        <Authorized>
+            <input id="adm-menu-toggle" class="adm-menu-toggle adm-sr" type="checkbox" aria-label="Show the admin menu" />
+            <div class="adm-bar">
+                <a class="adm-brand" href="admin">
+                    <img src="img/brand/mark.svg" alt="" width="32" height="32" />
+                    <span><span class="adm-brand__name">myNewspaper</span><span class="adm-brand__tag">Admin</span></span>
+                </a>
+                <span class="adm-bar__spacer"></span>
+                <a class="adm-bar__btn" href="@SiteLinks.Public" target="_blank" rel="noopener noreferrer" aria-label="View site"><AdminIcon Name="external" /></a>
+                <label class="adm-bar__btn adm-bar__menu" for="adm-menu-toggle"><span class="adm-sr">Menu</span><AdminIcon Name="menu" /></label>
+            </div>
+
+            <aside class="adm-side">
+                <a class="adm-brand" href="admin">
+                    <img src="img/brand/mark.svg" alt="" width="34" height="34" />
+                    <span><span class="adm-brand__name">myNewspaper</span><span class="adm-brand__tag">Admin</span></span>
+                </a>
+                <AdminAlert />
+                <NavMenu />
+            </aside>
+        </Authorized>
+    </AuthorizeView>
+
+    <main class="adm-main" id="main">
+        <div class="adm-main__inner">
+            @Body
+        </div>
+    </main>
+</div>
+
+<div id="blazor-error-ui" data-nosnippet>
+    An unhandled error has occurred.
+    <a href="." class="reload">Reload</a>
+    <span class="dismiss">🗙</span>
+</div>

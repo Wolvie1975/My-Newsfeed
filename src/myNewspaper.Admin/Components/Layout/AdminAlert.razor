@@ -10,7 +10,7 @@
    AuthorizeView, so readers never get it. The count is two cheap COUNTs; the panel's list loads from
    /admin/api/requests/summary when it's opened (admin-alert.js). Without JavaScript it's a link to Admin · Requests. *@
 <div class="admin-alert" data-admin-alert>
-    <a class="admin-alert__button" href="admin/requests" aria-haspopup="dialog" aria-expanded="false" aria-controls="admin-alert-panel"
+    <a class="admin-alert__button" href="admin/requests" data-enhance-nav="false" aria-haspopup="dialog" aria-expanded="false" aria-controls="admin-alert-panel"
        aria-label="@Label" data-admin-alert-toggle>
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 13h5l2 3h4l2-3h5"></path><path d="M5 5h14l2 8v6H3v-6z"></path></svg>
         <span class="admin-alert__label" aria-hidden="true">Requests</span>

@@ -29,6 +29,7 @@ public sealed class ProfileApp(bool enabled) : WebApplicationFactory<Program>
         builder.UseSetting("Profiles:Enabled", enabled ? "true" : "false");
         builder.UseSetting("Admin:Password", AdminPassword);
         builder.UseSetting("Results:BackgroundSyncEnabled", "false");
+        builder.UseSetting("BackgroundJobs:Enabled", "false");
     }
 
     public HttpClient Browser()
@@ -57,9 +58,9 @@ public sealed class ProfileApp(bool enabled) : WebApplicationFactory<Program>
 
 public class ProfileHttpTests
 {
-    private static async Task<string> TokenFromLoginPageAsync(HttpClient client)
+    private static async Task<string> TokenFromPickerPageAsync(HttpClient client)
     {
-        var html = await (await client.GetAsync("/login")).Content.ReadAsStringAsync();
+        var html = await (await client.SendAsync(Page("/editions"))).Content.ReadAsStringAsync();
         return Regex.Match(html, @"name=""__RequestVerificationToken""[^>]*value=""([^""]+)""").Groups[1].Value;
     }
 
@@ -74,7 +75,7 @@ public class ProfileHttpTests
 
     private static async Task<HttpResponseMessage> OpenAsync(HttpClient client, Profile profile, string pin, bool json = true) =>
         await PostFormAsync(client, $"/profiles/{profile.Id}/open",
-            new() { ["pin"] = pin, ["returnUrl"] = "/tv", ["__RequestVerificationToken"] = await TokenFromLoginPageAsync(client) }, json);
+            new() { ["pin"] = pin, ["returnUrl"] = "/tv", ["__RequestVerificationToken"] = await TokenFromPickerPageAsync(client) }, json);
 
     private static async Task<HttpResponseMessage> SendJsonAsync(HttpClient client, HttpMethod method, string url, object? body, string? token)
     {
@@ -123,16 +124,15 @@ public class ProfileHttpTests
     }
 
     [Fact]
-    public async Task Admin_sign_in_health_and_static_files_are_never_sent_to_the_picker()
+    public async Task The_public_host_has_no_admin_routes_and_health_and_assets_are_not_gated()
     {
         await using var app = new ProfileApp(enabled: true);
         var client = app.Browser();
         try
         {
-            Assert.Equal(HttpStatusCode.OK, (await client.SendAsync(Page("/login"))).StatusCode);
+            Assert.Equal(HttpStatusCode.NotFound, (await client.SendAsync(Page("/login"))).StatusCode);
             var admin = await client.SendAsync(Page("/admin"));
-            Assert.Equal(HttpStatusCode.Redirect, admin.StatusCode);
-            Assert.StartsWith("http://localhost/login", admin.Headers.Location!.ToString());
+            Assert.Equal(HttpStatusCode.NotFound, admin.StatusCode);
             Assert.NotEqual(HttpStatusCode.Redirect, (await client.GetAsync("/healthz")).StatusCode);
             Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/manifest.webmanifest")).StatusCode);
             Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/theme-init.js")).StatusCode);
@@ -169,8 +169,8 @@ public class ProfileHttpTests
         Assert.Equal(HttpStatusCode.NotFound, (await client.PostAsync("/me/pin", new FormUrlEncodedContent([]))).StatusCode);
         Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/api/saved")).StatusCode);
         Assert.Equal(HttpStatusCode.OK, (await client.SendAsync(Page("/"))).StatusCode);
-        // Admin APIs work either way, behind the admin sign-in.
-        Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync("/admin/api/profiles")).StatusCode);
+        // Admin APIs are available only from the separate admin website.
+        Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync("/admin/api/profiles")).StatusCode);
     }
 
     [Fact]
@@ -217,73 +217,11 @@ public class ProfileHttpTests
             Assert.Empty(blairMe.GetProperty("settings").EnumerateObject());
 
             // Sign out: the picker is back.
-            var signOut = await PostFormAsync(alex, "/profiles/signout", new() { ["__RequestVerificationToken"] = await TokenFromLoginPageAsync(alex) });
+            var signOut = await PostFormAsync(alex, "/profiles/signout", new() { ["__RequestVerificationToken"] = await TokenFromPickerPageAsync(alex) });
             Assert.Equal("/editions", signOut.Headers.Location!.OriginalString);
             Assert.Equal(HttpStatusCode.Unauthorized, (await alex.GetAsync("/api/me")).StatusCode);
         }
         finally { await app.CleanUpAsync(a, b); }
-    }
-
-    [Fact]
-    public async Task The_admin_apis_need_the_admin_and_never_show_a_profiles_follows_settings_or_saved_items()
-    {
-        await using var app = new ProfileApp(enabled: true);
-        var a = await app.AddProfileAsync();
-        var marker = "zzmarker" + Guid.NewGuid().ToString("N")[..8];
-        var client = app.Browser();
-        try
-        {
-            await using (var db = app.Db())
-            {
-                await ProfileStore.PatchSettingsAsync(db, a.Id, new System.Text.Json.Nodes.JsonObject { ["teams"] = new System.Text.Json.Nodes.JsonArray(marker) });
-                var feed = await db.YoutubeVideoFeeds.OrderBy(f => f.Id).FirstOrDefaultAsync();
-                if (feed is not null && !await db.ProfileChannelFollows.AnyAsync(f => f.ProfileId == a.Id && f.YoutubeVideoFeedId == feed.Id))
-                    db.ProfileChannelFollows.Add(new ProfileChannelFollow { ProfileId = a.Id, YoutubeVideoFeedId = feed.Id });
-                await db.SaveChangesAsync();
-            }
-
-            Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync("/admin/api/profiles")).StatusCode);
-            Assert.Equal(HttpStatusCode.Unauthorized, (await client.PostAsync($"/admin/api/profiles/{a.Id}/unlock", null)).StatusCode);
-
-            var login = await PostFormAsync(client, "/account/login", new()
-            {
-                ["password"] = ProfileApp.AdminPassword,
-                ["returnUrl"] = "/admin",
-                ["__RequestVerificationToken"] = await TokenFromLoginPageAsync(client),
-            });
-            Assert.Equal("/admin", login.Headers.Location!.OriginalString);
-            var token = (await (await client.GetAsync("/admin/api/token")).Content.ReadFromJsonAsync<JsonElement>()).GetProperty("token").GetString();
-            Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsync($"/admin/api/profiles/{a.Id}/unlock", null)).StatusCode);
-            Assert.Equal(HttpStatusCode.OK, (await SendJsonAsync(client, HttpMethod.Post, $"/admin/api/profiles/{a.Id}/unlock", null, token)).StatusCode);
-
-            foreach (var path in new[] { "/admin/api/profiles", $"/admin/api/profiles/{a.Id}/devices", "/admin/api/household",
-                         "/admin/api/household/base-edition", "/admin/api/requests", $"/admin/api/requests?profileId={a.Id}", "/admin/api/requests/summary" })
-            {
-                var response = await client.GetAsync(path);
-                Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-                var body = await response.Content.ReadAsStringAsync();
-                Assert.DoesNotContain(marker, body);
-                Assert.DoesNotContain("lastReadAt", body, StringComparison.OrdinalIgnoreCase);
-                Assert.DoesNotContain("lastSeenAt", body, StringComparison.OrdinalIgnoreCase);
-                Assert.DoesNotContain("YoutubeVideoFeedId", body, StringComparison.OrdinalIgnoreCase);
-                Assert.DoesNotContain("TvTrackedSeriesId", body, StringComparison.OrdinalIgnoreCase);
-            }
-
-            // The admin pages render the same limited view: name, color, lock, devices and requests only.
-            foreach (var path in new[] { "/admin/profiles", $"/admin/profiles/{a.Id}", "/admin/profiles/base", "/admin/requests?status=all" })
-            {
-                var response = await client.SendAsync(Page(path));
-                Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-                var html = await response.Content.ReadAsStringAsync();
-                Assert.Contains(path switch { "/admin/profiles/base" => "Base edition", "/admin/requests?status=all" => "Requests", _ => a.Name }, html);
-                Assert.DoesNotContain(marker, html);
-                Assert.DoesNotContain("Open as", html);
-            }
-
-            // Admin can't open a profile without its PIN: the admin cookie gives no profile.
-            Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync("/api/me")).StatusCode);
-        }
-        finally { await app.CleanUpAsync(a); }
     }
 
     [Fact]
@@ -359,7 +297,7 @@ public class ProfileHttpTests
                 ["pin"] = "2580",
                 ["pinConfirm"] = "2581",
                 ["returnUrl"] = "/tv",
-                ["__RequestVerificationToken"] = await TokenFromLoginPageAsync(client),
+                ["__RequestVerificationToken"] = await TokenFromPickerPageAsync(client),
             });
             Assert.StartsWith($"/editions/{noPin.Id}/new-pin?error=", mismatch.Headers.Location!.OriginalString);
             var set = await PostFormAsync(client, $"/profiles/{noPin.Id}/new-pin", new()
@@ -367,7 +305,7 @@ public class ProfileHttpTests
                 ["pin"] = "2580",
                 ["pinConfirm"] = "2580",
                 ["returnUrl"] = "/tv",
-                ["__RequestVerificationToken"] = await TokenFromLoginPageAsync(client),
+                ["__RequestVerificationToken"] = await TokenFromPickerPageAsync(client),
             });
             Assert.Equal("/tv", set.Headers.Location!.OriginalString);
             Assert.Equal(HttpStatusCode.OK, (await client.SendAsync(Page("/tv"))).StatusCode);
@@ -385,26 +323,26 @@ public class ProfileHttpTests
         {
             await client.SendAsync(Page("/"));
             // No profile open: the gate answers before the form does.
-            var closed = await PostFormAsync(client, "/me/device", new() { ["pickerMode"] = "daily", ["__RequestVerificationToken"] = await TokenFromLoginPageAsync(client) });
+            var closed = await PostFormAsync(client, "/me/device", new() { ["pickerMode"] = "daily", ["__RequestVerificationToken"] = await TokenFromPickerPageAsync(client) });
             Assert.Equal(HttpStatusCode.Unauthorized, closed.StatusCode);
             Assert.Equal(HttpStatusCode.OK, (await OpenAsync(client, a, "1357")).StatusCode);
 
             Assert.Equal(HttpStatusCode.BadRequest, (await PostFormAsync(client, "/me/device", new() { ["pickerMode"] = "daily" })).StatusCode);
-            var saved = await PostFormAsync(client, "/me/device", new() { ["pickerMode"] = "daily", ["__RequestVerificationToken"] = await TokenFromLoginPageAsync(client) });
+            var saved = await PostFormAsync(client, "/me/device", new() { ["pickerMode"] = "daily", ["__RequestVerificationToken"] = await TokenFromPickerPageAsync(client) });
             Assert.Equal("/settings?done=device-saved#profile", saved.Headers.Location!.OriginalString);
             var wrong = await PostFormAsync(client, "/me/pin", new()
             {
                 ["currentPin"] = "0000",
                 ["newPin"] = "2468",
                 ["newPinConfirm"] = "2468",
-                ["__RequestVerificationToken"] = await TokenFromLoginPageAsync(client),
+                ["__RequestVerificationToken"] = await TokenFromPickerPageAsync(client),
             });
             Assert.Equal("/settings?error=pin-wrong&triesLeft=4#profile", wrong.Headers.Location!.OriginalString);
             var request = await PostFormAsync(client, "/me/requests", new()
             {
                 ["kind"] = "news",
                 ["name"] = "zz paper",
-                ["__RequestVerificationToken"] = await TokenFromLoginPageAsync(client),
+                ["__RequestVerificationToken"] = await TokenFromPickerPageAsync(client),
             });
             Assert.Equal("/settings?done=request-sent#requests", request.Headers.Location!.OriginalString);
             var settings = System.Net.WebUtility.HtmlDecode(await (await client.SendAsync(Page("/settings?done=request-sent"))).Content.ReadAsStringAsync());
@@ -416,22 +354,15 @@ public class ProfileHttpTests
     }
 
     [Fact]
-    public async Task Only_the_signed_in_admin_gets_the_requests_alert_in_the_site_header()
+    public async Task Public_pages_link_to_admin_without_serving_admin_alerts_or_login()
     {
         await using var app = new ProfileApp(enabled: false);
         var client = app.Browser();
-        var reader = await (await client.SendAsync(Page("/saved"))).Content.ReadAsStringAsync();
-        Assert.Contains("saved-link", reader);
-        Assert.DoesNotContain("data-admin-alert", reader);
-
-        await PostFormAsync(client, "/account/login", new()
-        {
-            ["password"] = ProfileApp.AdminPassword,
-            ["returnUrl"] = "/admin",
-            ["__RequestVerificationToken"] = await TokenFromLoginPageAsync(client),
-        });
-        var admin = await (await client.SendAsync(Page("/saved"))).Content.ReadAsStringAsync();
-        Assert.Contains("data-admin-alert-toggle", admin);
-        Assert.Contains("href=\"admin/requests\"", admin);
+        var html = await (await client.SendAsync(Page("/saved"))).Content.ReadAsStringAsync();
+        Assert.Contains("saved-link", html);
+        Assert.DoesNotContain("data-admin-alert", html);
+        Assert.Contains("http://localhost:5297/admin", html);
+        foreach (var path in new[] { "/login", "/admin", "/admin/api/profiles" })
+            Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync(path)).StatusCode);
     }
 }

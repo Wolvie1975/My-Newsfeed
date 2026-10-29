@@ -5,6 +5,7 @@ const assert = require('node:assert/strict');
 const { audit } = require('./contrast-audit.cjs');
 
 const base = process.env.BASE_URL || 'http://localhost:5295';
+const adminBase = process.env.ADMIN_BASE_URL || base;
 const shots = process.env.SCREENSHOT_DIR;
 const password = process.env.ADMIN_PASSWORD;
 
@@ -77,7 +78,7 @@ const routes = [
     try {
         if (profiles) {
             admin = await (await browser.newContext({ viewport: { width: 1440, height: 1000 } })).newPage();
-            await admin.goto(base + '/login?returnUrl=%2Fadmin%2Fprofiles');
+            await admin.goto(adminBase + '/login?returnUrl=%2Fadmin%2Fprofiles');
             await admin.locator('#password').fill(password);
             await admin.getByRole('button', { name: 'Sign in', exact: true }).click();
             await admin.waitForURL('**/admin/profiles');
@@ -190,9 +191,18 @@ const routes = [
             await p.locator('#entertainment-section-m').selectOption('/movies');
             await p.waitForURL((u) => u.pathname === '/movies');
             // Each Entertainment page's ribbon keeps the Section dropdown above its own select.
-            for (const [path, current] of [['/tv', '/tv'], ['/movies/digital', '/movies/digital'], ['/box-office/weekend-preview', '/box-office'], ['/movies', '/movies']]) {
+            for (const [path, current] of [
+                ['/tv', '/tv'],
+                ['/movies/digital', '/movies/digital'],
+                ['/box-office/weekend-preview', '/box-office'],
+                ['/movies', '/movies'],
+            ]) {
                 await p.goto(base + path, { waitUntil: 'networkidle' });
-                assert.equal(await p.locator('.mx-ribbon #entertainment-section-m').inputValue(), current, path + ' Section dropdown');
+                assert.equal(
+                    await p.locator('.mx-ribbon #entertainment-section-m').inputValue(),
+                    current,
+                    path + ' Section dropdown',
+                );
             }
             // Movies: seven days, today marked, each day's count in words; the week's releases are listed.
             const days = p.locator('.mx-days a');
@@ -305,7 +315,7 @@ const routes = [
     } finally {
         if (id) {
             try {
-                await admin.goto(base + '/admin/profiles/' + id);
+                await admin.goto(adminBase + '/admin/profiles/' + id);
                 await admin.waitForLoadState('networkidle');
                 await admin.getByRole('button', { name: 'Delete profile…' }).click();
                 await admin.getByRole('button', { name: 'Delete profile', exact: true }).click();

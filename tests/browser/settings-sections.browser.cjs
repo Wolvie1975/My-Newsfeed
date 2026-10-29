@@ -11,6 +11,7 @@ const assert = require('node:assert/strict');
 const { audit } = require('./contrast-audit.cjs');
 
 const base = process.env.BASE_URL || 'http://localhost:5295';
+const adminBase = process.env.ADMIN_BASE_URL || base;
 const password = process.env.ADMIN_PASSWORD;
 const shots = process.env.SCREENSHOT_DIR;
 if (!password) {
@@ -35,7 +36,7 @@ const person = { name: 'zz Ed ' + tag, pin: '3691' };
     };
     let id = null;
     try {
-        await admin.goto(base + '/login?returnUrl=%2Fadmin%2Ftv-series');
+        await admin.goto(adminBase + '/login?returnUrl=%2Fadmin%2Ftv-series');
         await admin.locator('#password').fill(password);
         await admin.getByRole('button', { name: 'Sign in', exact: true }).click();
         await admin.waitForURL('**/admin/tv-series');
@@ -45,7 +46,7 @@ const person = { name: 'zz Ed ' + tag, pin: '3691' };
         assert((await switches.count()) > 0, 'a tracked show to follow');
         const show = (await switches.first().getAttribute('aria-label')).replace(/^Following: /, '');
 
-        await admin.goto(base + '/admin/profiles');
+        await admin.goto(adminBase + '/admin/profiles');
         await settle(admin);
         await admin.getByRole('button', { name: 'Add profile', exact: true }).first().click();
         await admin.locator('#add-name').fill(person.name);
@@ -192,7 +193,7 @@ const person = { name: 'zz Ed ' + tag, pin: '3691' };
     } finally {
         if (id) {
             try {
-                await admin.goto(base + '/admin/profiles/' + id);
+                await admin.goto(adminBase + '/admin/profiles/' + id);
                 await settle(admin);
                 await admin.getByRole('button', { name: 'Delete profile…' }).click();
                 await admin.getByRole('button', { name: 'Delete profile', exact: true }).click();

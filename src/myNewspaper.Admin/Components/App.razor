@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <base href="/" />
+    <ResourcePreloader />
+    <link rel="stylesheet" href="@Assets["lib/bootstrap/dist/css/bootstrap.min.css"]" />
+    <link rel="stylesheet" href="@Assets["app.css"]" />
+    <link rel="stylesheet" href="@Assets["public.css"]" />
+    <link rel="stylesheet" href="@Assets["admin.css"]" />
+    <link rel="stylesheet" href="@Assets["myNewspaper.Admin.styles.css"]" />
+    <script src="@Assets["solar-times.js"]"></script>
+    <script src="@Assets["theme-init.js"]"></script>
+    <ImportMap />
+    <link rel="icon" type="image/svg+xml" href="img/brand/mark.svg" />
+    <link rel="apple-touch-icon" href="icons/newspaper-page-180.png" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <meta name="theme-color" content="#141b2b" />
+    <HeadOutlet />
+</head>
+<body>
+    <Routes />
+    <ReconnectModal />
+    <script src="@Assets["_framework/blazor.web.js"]"></script>
+    <script src="@Assets["admin-alert.js"]" defer></script>
+    <script src="@Assets["pwa.js"]" defer></script>
+</body>
+</html>

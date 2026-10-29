@@ -5,7 +5,7 @@ const { chromium } = require('playwright');
 const assert = require('node:assert/strict');
 const { audit } = require('./contrast-audit.cjs');
 
-const base = process.env.BASE_URL || 'http://localhost:5295';
+const base = process.env.ADMIN_BASE_URL || process.env.BASE_URL || 'http://localhost:5297';
 const password = process.env.ADMIN_PASSWORD;
 const title = process.env.TV_FIXTURE_TITLE;
 if (!password || !title) {
@@ -44,7 +44,10 @@ const shots = process.env.SHOTS;
                 assert.equal(await row().count(), 1, `${label}: fixture row listed`);
                 await menu().locator('summary').scrollIntoViewIfNeeded();
                 const box = await menu().locator('summary').boundingBox();
-                assert(box && box.width >= 44 && box.height >= 44, `${label}: ⋯ target is 44px (${box?.width}×${box?.height})`);
+                assert(
+                    box && box.width >= 44 && box.height >= 44,
+                    `${label}: ⋯ target is 44px (${box?.width}×${box?.height})`,
+                );
                 await menu().locator('summary').click();
                 const item = row().getByRole('button', { name: 'Delete…' });
                 assert((await item.boundingBox())?.height >= 44, `${label}: Delete… item is 44px tall`);
@@ -56,8 +59,13 @@ const shots = process.env.SHOTS;
                     const b = await confirm.getByRole('button', { name }).boundingBox();
                     assert(b && b.height >= 44, `${label}: ${name} is 44px tall`);
                 }
-                assert.equal(await p.evaluate(() => document.documentElement.scrollWidth - innerWidth), 0, `${label}: no sideways scroll`);
-                if (width === 390 || width === 1440) assert.deepEqual(await p.evaluate(audit), [], `${label}: contrast`);
+                assert.equal(
+                    await p.evaluate(() => document.documentElement.scrollWidth - innerWidth),
+                    0,
+                    `${label}: no sideways scroll`,
+                );
+                if (width === 390 || width === 1440)
+                    assert.deepEqual(await p.evaluate(audit), [], `${label}: contrast`);
                 if (shots) await p.screenshot({ path: `${shots}/tv-delete-${width}-${theme}.png`, fullPage: false });
                 await confirm.getByRole('button', { name: 'Cancel' }).click();
                 await confirm.waitFor({ state: 'detached', timeout: 5000 });
@@ -79,7 +87,11 @@ const shots = process.env.SHOTS;
         // A stopped series offers only Delete; deleting removes the row.
         await menu().locator('summary').click();
         await row().getByRole('button', { name: 'Delete…' }).click();
-        assert.equal(await p.getByRole('button', { name: 'Stop following instead' }).count(), 0, 'no Stop for a stopped series');
+        assert.equal(
+            await p.getByRole('button', { name: 'Stop following instead' }).count(),
+            0,
+            'no Stop for a stopped series',
+        );
         await p.getByRole('button', { name: 'Delete series' }).click();
         await p.getByText(`Deleted ${title}.`).waitFor();
         assert.equal(await row().count(), 0, 'row removed');

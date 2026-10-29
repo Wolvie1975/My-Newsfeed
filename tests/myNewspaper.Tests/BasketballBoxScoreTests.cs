@@ -40,7 +40,7 @@ public class BasketballBoxScoreTests
         Assert.Contains("Starter", html); Assert.Contains("Bench", html);
         if (Environment.GetEnvironmentVariable("BASKETBALL_PREVIEW_FILE") is { } preview)
         {
-            var css = await File.ReadAllTextAsync(Path.Combine(root, "src/myNewspaper.Web/wwwroot/public.css"));
+            var css = await File.ReadAllTextAsync(Path.Combine(root, "src/myNewspaper.Shared/wwwroot/public.css"));
             await File.WriteAllTextAsync(preview, "<!doctype html><html lang=\"en\"><head><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>Development fixture: college basketball</title><style>" + css + "</style></head><body class=\"pub\"><main style=\"padding:1rem;max-width:1100px;margin:auto\">" + html + "</main></body></html>");
         }
     }

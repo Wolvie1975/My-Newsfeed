@@ -6,6 +6,52 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
+## Separate public and admin PWAs — October 29, 2026 (Central)
+
+Deployed the split websites from local `develop`, with shared code in
+`myNewspaper.Shared` and independent public/admin projects, images and PWA identities.
+Public remains at `https://mynewsfeed-prod.tailbf31bc.ts.net` on port 443; Admin is
+`https://mynewsfeed-prod.tailbf31bc.ts.net:8443/admin`, as selected by the user.
+Both are tailnet-only and use trusted HTTPS. `admin.mynewspaper` remains a future
+hostname. Details and rollback steps: [admin separation](admin-separation.md).
+
+- Public: `mynewsfeed-web`, image `mynewspaper-web:split-20261029` (`e48d70bae523`).
+- Admin: `mynewspaper-admin`, image `mynewspaper-admin:split-20261029` (`4e1a75444c26`).
+- Combined-app rollback: stopped container `mynewsfeed-web-before-split-20261029`
+  and image `mynewspaper-web:before-split-20261029` (`d899ee3c639d`).
+
+Preserved sql2025 / WebScraper, existing public key volume, profile cookie purposes,
+operational overrides and background worker ownership. Admin has its own key volume
+and authentication cookies; the public container no longer receives the admin
+password. No schema scripts or database migrations ran. A profile opened before the
+public switch remained signed in afterwards; its temporary profile/devices were
+removed. Both containers are healthy and both HTTPS `/healthz` endpoints return 200.
+League-phase startup checks were observed. Private, ignored Compose settings were
+prepared from actual runtime configuration; no secrets are committed.
+
+Validation: zero-warning builds; 1,006 public/shared plus three admin .NET tests;
+five JavaScript unit tests; ESLint; full Prettier check. Both Docker images publish
+and serve nonempty shared assets, including fingerprinted resources and Blazor.
+The local 24-page admin layout suite passed at 320/390/430/744/1440px light/dark,
+including contrast, navigation, filters and dirty editor state. Local profile,
+separation, public headline and PWA checks passed.
+
+After deployment, admin profile, separation, public headline and PWA suites passed
+over the actual HTTPS origins. Phone verification used 320/390/430px light/dark
+with Kansas, monochrome and Cardinals schemes for public headlines; admin checks
+also covered 744/1440px, both themes, loaded Requests data, panel bounds, menu and
+Escape, API/authentication separation, independent caches/storage and offline
+recovery. Screenshots were inspected under `test-results/browser/live-split/`.
+The Requests toggle opts out of enhanced navigation so Blazor cannot overwrite
+loaded panel content. The theme check waits for the debounced save to finish before
+reloading. Shared-asset byte checks guard against HTTP 200 responses with empty
+bodies, which the first extraction attempt exposed.
+
+Limits: physical-device installation was unavailable; the seeded request
+approval/decline browser suite skipped because no disposable fixtures were present.
+Those domain operations remain covered by .NET tests. GitHub workflows are local
+and have not run on GitHub. No push was made.
+
 ## Headline top arrangements — October 29, 2026 (Central)
 
 Latest web release: `mynewspaper-web:headline-top-20261029`, image `d899ee3c639d`.

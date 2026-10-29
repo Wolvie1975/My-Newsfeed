@@ -15,7 +15,16 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
                         location: 'Kansas City',
                         updated: new Date().toISOString(),
                         stale: false,
-                        periods: [{ name: 'Today', temperature: 63, unit: 'F', summary: 'Partly Cloudy', wind: 'S 5 mph', isDaytime: true }],
+                        periods: [
+                            {
+                                name: 'Today',
+                                temperature: 63,
+                                unit: 'F',
+                                summary: 'Partly Cloudy',
+                                wind: 'S 5 mph',
+                                isDaytime: true,
+                            },
+                        ],
                     },
                 }),
             );
@@ -32,7 +41,10 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
             await page.waitForURL('**/news/kansas-city');
             const host = page.locator('[data-local-weather]');
             await host.locator('.weather-period').first().waitFor({ timeout: 5000 });
-            assert.match(await host.locator('[data-weather-status]').textContent(), /National Weather Service · updated/);
+            assert.match(
+                await host.locator('[data-weather-status]').textContent(),
+                /National Weather Service · updated/,
+            );
             assert.deepEqual(errors, []);
             console.log('ok', from);
             await page.close();

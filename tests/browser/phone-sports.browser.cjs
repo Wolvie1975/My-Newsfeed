@@ -4,6 +4,7 @@ const assert = require('node:assert/strict');
 const { audit } = require('./contrast-audit.cjs');
 
 const base = process.env.BASE_URL || 'http://localhost:5295';
+const adminBase = process.env.ADMIN_BASE_URL || base;
 const shots = process.env.SCREENSHOT_DIR;
 const password = process.env.ADMIN_PASSWORD;
 const pages = [
@@ -60,7 +61,7 @@ const OWN_SELECT = '.mx-ribbon select:not(#sports-section-m)';
     try {
         if (profiles) {
             admin = await (await browser.newContext({ viewport: { width: 1440, height: 1000 } })).newPage();
-            await admin.goto(base + '/login?returnUrl=%2Fadmin%2Fprofiles');
+            await admin.goto(adminBase + '/login?returnUrl=%2Fadmin%2Fprofiles');
             await admin.locator('#password').fill(password);
             await admin.getByRole('button', { name: 'Sign in', exact: true }).click();
             await admin.waitForURL('**/admin/profiles');
@@ -179,9 +180,19 @@ const OWN_SELECT = '.mx-ribbon select:not(#sports-section-m)';
                 }
             }
             // The Section dropdown sits above each page's own select, also on Scoreboard, and works without JavaScript.
-            for (const [path, current] of [['/scoreboard', '/scoreboard'], ['/standings', '/standings'], ['/rankings', '/rankings'], ['/college/standings', '/college'], ['/f1/results', '/f1']]) {
+            for (const [path, current] of [
+                ['/scoreboard', '/scoreboard'],
+                ['/standings', '/standings'],
+                ['/rankings', '/rankings'],
+                ['/college/standings', '/college'],
+                ['/f1/results', '/f1'],
+            ]) {
                 await page.goto(base + path);
-                assert.equal(await page.locator('.mx-ribbon #sports-section-m').inputValue(), current, path + ' Section dropdown');
+                assert.equal(
+                    await page.locator('.mx-ribbon #sports-section-m').inputValue(),
+                    current,
+                    path + ' Section dropdown',
+                );
             }
             await page.locator('#sports-section-m').selectOption('/rankings');
             await page.locator('.mx-ribbon form:has(#sports-section-m) button[type=submit]').click();
@@ -202,11 +213,7 @@ const OWN_SELECT = '.mx-ribbon select:not(#sports-section-m)';
                     await page.waitForTimeout(500);
                     assert.equal(await page.locator(OWN_SELECT).inputValue(), value, path + ' JS select');
                     await page.reload({ waitUntil: 'networkidle' });
-                    assert.equal(
-                        await page.locator(OWN_SELECT).inputValue(),
-                        value,
-                        path + ' persisted selection',
-                    );
+                    assert.equal(await page.locator(OWN_SELECT).inputValue(), value, path + ' persisted selection');
                 }
             }
             await visit(page, '/college', look('kansas', 'light'));
@@ -242,7 +249,7 @@ const OWN_SELECT = '.mx-ribbon select:not(#sports-section-m)';
     } finally {
         if (id) {
             try {
-                await admin.goto(base + '/admin/profiles/' + id);
+                await admin.goto(adminBase + '/admin/profiles/' + id);
                 await admin.waitForLoadState('networkidle');
                 await admin.getByRole('button', { name: 'Delete profile…' }).click();
                 await admin.getByRole('button', { name: 'Delete profile', exact: true }).click();

@@ -6,7 +6,6 @@
 @inject ProfilePins Pins
 @inject TimeProvider Clock
 @inject NavigationManager Nav
-@inject Microsoft.Extensions.Caching.Memory.IMemoryCache Cache
 
 <PageTitle>@(profile is null ? "Manage profile" : $"Manage {profile.Name}")</PageTitle>
 
@@ -306,7 +305,6 @@
     {
         await ProfileAdmin.SetAdminProfileAsync(db, Id, on);
         // The gate caches the household row for a minute; drop it so the link changes on the next page.
-        ProfileGateMiddleware.ForgetHousehold(Cache);
         return on ? $"{profile!.Name}’s pages now show the Admin sign in link." : $"{profile!.Name}’s pages no longer show the Admin sign in link.";
     });
 

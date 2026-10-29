@@ -1711,3 +1711,356 @@
     right: 0.75rem;
     top: 0.5rem;
 }
+
+/* Admin only: the Requests alert beside Saved, and its quick-look panel (admin-alert.js). A bottom sheet on phones, a
+   popover under the button from 744px. */
+.adm .admin-alert {
+    position: relative;
+    flex: none;
+}
+.adm .admin-alert__button {
+    position: relative;
+    min-width: 44px;
+    height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border-radius: 10px;
+    color: inherit;
+}
+.adm .admin-alert__button:hover {
+    text-decoration: none;
+    background: rgba(255, 255, 255, 0.08);
+}
+.adm .admin-alert.is-open .admin-alert__button {
+    background: rgba(255, 255, 255, 0.18);
+}
+.adm .admin-alert__label {
+    display: none;
+}
+.adm .admin-alert__count {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 5px;
+    box-sizing: border-box;
+    border: 2px solid var(--header-bg);
+    border-radius: 999px;
+    background: #ffd34d;
+    color: #141b2b;
+    font-size: 11px;
+    font-weight: 800;
+    line-height: 16px;
+    text-align: center;
+}
+.adm .admin-alert__count[hidden] {
+    display: none;
+}
+.adm .admin-alert__dot {
+    position: absolute;
+    bottom: 6px;
+    right: 6px;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: #ffd34d;
+    box-shadow: 0 0 0 2px var(--header-bg);
+}
+.adm .admin-alert__panel {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 30;
+    max-height: min(82vh, 690px);
+    display: flex;
+    flex-direction: column;
+    border-radius: 22px 22px 0 0;
+    background: var(--surface);
+    color: var(--text);
+    box-shadow: 0 -12px 40px rgba(20, 27, 43, 0.3);
+    text-align: left;
+}
+.adm .admin-alert__panel[hidden] {
+    display: none;
+}
+.adm .admin-alert.is-open::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 29;
+    background: rgba(20, 27, 43, 0.45);
+}
+:root.admin-alert-sheet {
+    overflow: hidden;
+}
+.adm .admin-alert__panel :focus-visible {
+    outline-color: var(--accent);
+}
+.adm .admin-alert__head {
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+    padding: 16px 12px 8px 16px;
+}
+.adm .admin-alert__head > div {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+.adm .admin-alert__eyebrow {
+    display: block;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+}
+.adm .admin-alert__title {
+    margin: 2px 0 0;
+    font-family: 'Newsreader', Georgia, serif;
+    font-size: 24px;
+    font-weight: 800;
+    line-height: 1.15;
+}
+.adm .admin-alert__title:focus {
+    outline: none;
+}
+.adm .admin-alert__link,
+.adm .admin-alert__close {
+    min-height: 44px;
+    padding: 0 8px;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--accent);
+    font: inherit;
+    font-size: 14px;
+    font-weight: 700;
+}
+.adm .admin-alert__link {
+    white-space: nowrap;
+}
+.adm .admin-alert__link[hidden] {
+    display: none;
+}
+.adm .admin-alert__close {
+    width: 44px;
+    padding: 0;
+    color: var(--text);
+}
+.adm .admin-alert__status {
+    margin: 0;
+    padding: 8px 16px 16px;
+    color: var(--text-2);
+    font-size: 14px;
+}
+.adm .admin-alert__status[hidden] {
+    display: none;
+}
+.adm .admin-alert__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    overflow: auto;
+    overscroll-behavior: contain;
+    border-top: 1px solid var(--border);
+}
+.adm .admin-alert__list:empty {
+    display: none;
+}
+.adm .admin-alert__item {
+    display: grid;
+    grid-template-columns: 36px minmax(0, 1fr);
+    gap: 12px;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+}
+.adm .admin-alert__item.is-new {
+    background: color-mix(in srgb, var(--accent) 7%, var(--surface));
+}
+.adm .admin-alert__item--locked {
+    background: color-mix(in srgb, #b0001e 8%, var(--surface));
+}
+.adm .admin-alert__avatar {
+    width: 36px;
+    height: 36px;
+    display: grid;
+    place-items: center;
+    border-radius: 10px;
+    background: #0051ba;
+    color: #ffffff;
+    font-family: 'Newsreader', Georgia, serif;
+    font-size: 19px;
+    font-weight: 800;
+}
+.adm .admin-alert__body {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.adm .admin-alert__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 6px;
+    font-size: 12px;
+    color: var(--text-2);
+}
+.adm .admin-alert__kind {
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: var(--pill-bg);
+    color: var(--pill-fg);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+.adm .admin-alert__new {
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: #0051ba;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 800;
+}
+.adm .admin-alert__name {
+    font-size: 16px;
+    overflow-wrap: anywhere;
+}
+.adm .admin-alert__note,
+.adm .admin-alert__check {
+    font-size: 13px;
+    color: var(--text-2);
+    overflow-wrap: anywhere;
+}
+.adm .admin-alert__check {
+    font-weight: 600;
+}
+.adm .admin-alert__check.is-ok {
+    color: var(--gain);
+}
+:root:not([data-theme='dark']) .adm .admin-alert__check.is-ok {
+    color: #136c34;
+}
+.adm .admin-alert__actions {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 8px;
+    margin-top: 4px;
+}
+.adm .admin-alert__action {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 12px;
+    border: 1px solid var(--field-border);
+    border-radius: 10px;
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    text-align: center;
+}
+.adm .admin-alert__action:hover {
+    text-decoration: none;
+    border-color: var(--accent);
+}
+.adm .admin-alert__action--primary {
+    border-color: var(--btn-bg);
+    background: var(--btn-bg);
+    color: var(--btn-fg);
+}
+.adm .admin-alert__foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px 12px;
+    padding: 12px 16px 20px;
+    font-size: 13px;
+    color: var(--text-2);
+}
+.adm .admin-alert__foot a {
+    color: var(--accent);
+    font-weight: 700;
+}
+.adm .admin-alert__all {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    margin-left: auto;
+}
+@media (min-width: 744px) {
+    .adm .admin-alert__button {
+        border: 1px solid var(--header-line);
+    }
+    .adm .admin-alert.is-open::before {
+        content: none;
+    }
+    .adm .admin-alert__panel {
+        position: absolute;
+        left: auto;
+        right: 0;
+        bottom: auto;
+        top: calc(100% + 10px);
+        width: min(440px, calc(100vw - 32px));
+        max-height: min(70vh, 640px);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        box-shadow: 0 18px 44px rgba(20, 27, 43, 0.2);
+        overflow: hidden;
+    }
+    .adm .admin-alert__close {
+        display: none;
+    }
+    .adm .admin-alert__actions {
+        display: flex;
+        flex-wrap: wrap;
+    }
+}
+@media (min-width: 1024px) {
+    .adm .admin-alert__button {
+        padding: 0 12px;
+    }
+    .adm .admin-alert__label {
+        display: inline;
+        font-size: 14px;
+        font-weight: 600;
+    }
+    .adm .admin-alert__count {
+        position: static;
+        border: 0;
+        background: #b0001e;
+        color: #ffffff;
+        line-height: 20px;
+    }
+}
+.adm .saved-head {
+    margin: 0;
+    font-size: 24px;
+    letter-spacing: -0.02em;
+}
+.adm .count:empty {
+    display: none;
+}
+
+/* Requests now lives in the admin sidebar; keep its panel inside the viewport. */
+.adm-side > .admin-alert {
+    margin: 0 12px 12px;
+}
+@media (min-width: 744px) {
+    .adm .admin-alert__panel {
+        position: fixed;
+        inset: 76px auto auto 16px;
+        width: min(440px, calc(100vw - 32px));
+        max-height: calc(100dvh - 92px);
+        overflow-y: auto;
+    }
+}

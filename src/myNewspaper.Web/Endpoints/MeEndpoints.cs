@@ -27,7 +27,7 @@ public static class MeEndpoints
             return next(context);
         });
 
-        me.MapPost("/profile", async ([FromForm] string? name, [FromForm] string? color, ProfileContext reader, AdminProfileEndpoints.Db db) =>
+        me.MapPost("/profile", async ([FromForm] string? name, [FromForm] string? color, ProfileContext reader, RequestDb db) =>
         {
             try
             {
@@ -39,7 +39,7 @@ public static class MeEndpoints
         });
 
         me.MapPost("/pin", async ([FromForm] string? currentPin, [FromForm] string? newPin, [FromForm] string? newPinConfirm,
-            ProfileContext reader, ProfilePins pins, AdminProfileEndpoints.Db db) =>
+            ProfileContext reader, ProfilePins pins, RequestDb db) =>
         {
             if (!ProfileRules.IsValidPin(newPin)) return Back("profile", error: "pin-invalid");
             if (newPin != newPinConfirm) return Back("profile", error: "pin-mismatch");
@@ -53,7 +53,7 @@ public static class MeEndpoints
             };
         });
 
-        me.MapPost("/device", async ([FromForm] string? pickerMode, ProfileContext reader, AdminProfileEndpoints.Db db) =>
+        me.MapPost("/device", async ([FromForm] string? pickerMode, ProfileContext reader, RequestDb db) =>
         {
             try
             {
@@ -63,7 +63,7 @@ public static class MeEndpoints
             catch (ArgumentException) { return Back("profile", error: "device-invalid"); }
         });
 
-        me.MapPost("/tv/follow", async ([FromForm] int? show, [FromForm] string? returnUrl, ProfileContext reader, TvmazeClient tvmaze, AdminProfileEndpoints.Db db) =>
+        me.MapPost("/tv/follow", async ([FromForm] int? show, [FromForm] string? returnUrl, ProfileContext reader, TvmazeClient tvmaze, RequestDb db) =>
         {
             var back = ProfileEndpoints.SafeReturnUrl(returnUrl);
             if (show is not > 0) return To(back, "shows", error: "show-invalid");
@@ -74,13 +74,13 @@ public static class MeEndpoints
             return To(back, "shows", done: "show-followed");
         });
 
-        me.MapPost("/tv/{trackingId:int}/unfollow", async (int trackingId, ProfileContext reader, AdminProfileEndpoints.Db db) =>
+        me.MapPost("/tv/{trackingId:int}/unfollow", async (int trackingId, ProfileContext reader, RequestDb db) =>
         {
             await MyFollows.UnfollowShowAsync(db.Context, reader.Id, trackingId, db.Ct);
             return Back("shows", done: "show-unfollowed");
         });
 
-        me.MapPost("/channels/{feedId:int}", async (int feedId, [FromForm] string? follow, ProfileContext reader, AdminProfileEndpoints.Db db) =>
+        me.MapPost("/channels/{feedId:int}", async (int feedId, [FromForm] string? follow, ProfileContext reader, RequestDb db) =>
         {
             var on = follow == "on";
             return await MyFollows.SetChannelAsync(db.Context, reader.Id, feedId, on, db.Ct)
@@ -89,7 +89,7 @@ public static class MeEndpoints
         });
 
         me.MapPost("/requests", async ([FromForm] string? kind, [FromForm] string? name, [FromForm] string? link, [FromForm] string? note,
-            ProfileContext reader, RequestBacklog backlog, AdminProfileEndpoints.Db db) =>
+            ProfileContext reader, RequestBacklog backlog, RequestDb db) =>
         {
             try
             {
@@ -103,7 +103,7 @@ public static class MeEndpoints
 
         // Your topics (docs/news-section-handoff.md, phase 5). Every call is for the open profile's own topics.
         me.MapGet("/topics/preview", async (string? terms, string? except, string? hub, HttpContext http, FeedDates dates,
-            AdminProfileEndpoints.Db db) =>
+            RequestDb db) =>
         {
             http.Response.Headers.CacheControl = "no-store";
             var preview = await TopicQuery.PreviewAsync(db.Context, dates, terms, except, hub, db.Now, db.Ct);
@@ -125,7 +125,7 @@ public static class MeEndpoints
         });
 
         me.MapPost("/topics", async ([FromForm] string? terms, [FromForm] string? except, [FromForm] string? hub,
-            ProfileContext reader, AdminProfileEndpoints.Db db) =>
+            ProfileContext reader, RequestDb db) =>
         {
             try
             {
@@ -137,7 +137,7 @@ public static class MeEndpoints
         });
 
         me.MapPost("/topics/{id:int}", async (int id, [FromForm] string? terms, [FromForm] string? except, [FromForm] string? hub,
-            ProfileContext reader, AdminProfileEndpoints.Db db) =>
+            ProfileContext reader, RequestDb db) =>
         {
             try
             {
@@ -148,12 +148,12 @@ public static class MeEndpoints
             catch (ArgumentException) { return Results.LocalRedirect($"{TopicFollowPath}?edit={id}&error=topic-invalid"); }
         });
 
-        me.MapPost("/topics/{id:int}/read", async (int id, ProfileContext reader, AdminProfileEndpoints.Db db) =>
+        me.MapPost("/topics/{id:int}/read", async (int id, ProfileContext reader, RequestDb db) =>
             await TopicQuery.MarkReadAsync(db.Context, reader.Id, id, db.Now, db.Ct)
                 ? Results.LocalRedirect($"/news/topics/{id}?done=topic-read")
                 : Results.NotFound());
 
-        me.MapPost("/topics/{id:int}/delete", async (int id, ProfileContext reader, AdminProfileEndpoints.Db db) =>
+        me.MapPost("/topics/{id:int}/delete", async (int id, ProfileContext reader, RequestDb db) =>
             await TopicQuery.DeleteAsync(db.Context, reader.Id, id, db.Ct)
                 ? Results.LocalRedirect("/news?done=topic-removed")
                 : Results.NotFound());

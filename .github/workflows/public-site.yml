@@ -1,0 +1,21 @@
+name: Public website
+on:
+  push:
+    branches: [develop, main]
+    paths: ['src/myNewspaper.Web/**', 'src/myNewspaper.Shared/**', 'tests/myNewspaper.Tests/**', 'Directory.Build.props', '.editorconfig', 'Dockerfile', '.github/workflows/public-site.yml']
+  pull_request:
+    paths: ['src/myNewspaper.Web/**', 'src/myNewspaper.Shared/**', 'tests/myNewspaper.Tests/**', 'Directory.Build.props', '.editorconfig', 'Dockerfile', '.github/workflows/public-site.yml']
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - run: dotnet build tests/myNewspaper.Tests/myNewspaper.Tests.csproj -c Release
+      # SQL integration tests and responsive browser checks run against the configured local preview.
+      - run: dotnet test tests/myNewspaper.Tests/myNewspaper.Tests.csproj -c Release --no-build --filter 'FullyQualifiedName~AdminAuthTests|FullyQualifiedName~FeedArticlesRenderTests|FullyQualifiedName~ProfileGateTests'
+      - run: docker build -t mynewspaper-web:ci .

@@ -1,6 +1,7 @@
 const { chromium } = require('playwright');
 const assert = require('node:assert/strict');
 const base = process.env.BASE_URL || 'http://localhost:5295';
+const adminBase = process.env.ADMIN_BASE_URL || base;
 (async () => {
     const browser = await chromium.launch();
     try {
@@ -25,7 +26,7 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
         assert(await page.locator('table button').count());
         await page.setViewportSize({ width: 390, height: 900 });
         assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
-        const protectedResponse = await page.request.get(base + '/admin/tv-series', { maxRedirects: 0 });
+        const protectedResponse = await page.request.get(adminBase + '/admin/tv-series', { maxRedirects: 0 });
         assert([302, 401, 403].includes(protectedResponse.status()));
         if (protectedResponse.status() === 302) assert(protectedResponse.headers().location.includes('login'));
         console.log(

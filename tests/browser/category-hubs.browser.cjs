@@ -2,6 +2,7 @@ const assert = require('node:assert/strict'),
     { chromium } = require('playwright');
 const base = process.env.BASE_URL || 'http://localhost:5295',
     root = process.env.SCREENSHOT_DIR;
+const adminBase = process.env.ADMIN_BASE_URL || base;
 if (!process.env.CATEGORY_ADMIN_PASSWORD) {
     console.log('SKIP: changes admin category hubs; set CATEGORY_ADMIN_PASSWORD to run it.');
     process.exit(0);
@@ -12,7 +13,7 @@ if (!process.env.CATEGORY_ADMIN_PASSWORD) {
         const p = await b.newPage();
         const errors = [];
         p.on('pageerror', (e) => errors.push(e.message));
-        await p.goto(base + '/admin/categories');
+        await p.goto(adminBase + '/admin/categories');
         await p.locator('#password').fill(process.env.CATEGORY_ADMIN_PASSWORD);
         await p.getByRole('button', { name: 'Sign in', exact: true }).click();
         await p.waitForURL('**/admin/categories');
@@ -20,7 +21,7 @@ if (!process.env.CATEGORY_ADMIN_PASSWORD) {
             for (const theme of ['light', 'dark']) {
                 await p.setViewportSize({ width, height: 900 });
                 await p.emulateMedia({ colorScheme: theme });
-                await p.goto(base + '/admin/categories');
+                await p.goto(adminBase + '/admin/categories');
                 await p.waitForLoadState('networkidle');
                 assert(!(await p.locator('#blazor-error-ui').isVisible()));
                 assert(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth));

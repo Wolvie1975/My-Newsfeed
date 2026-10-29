@@ -5,7 +5,6 @@
 @using myNewspaper.Web.Profiles
 @inject IDbContextFactory<WebScraperContext> Factory
 @inject ProfilePins Pins
-@inject IMemoryCache Cache
 @inject TimeProvider Clock
 @inject IOptions<ProfilesOptions> ProfilesSwitch
 
@@ -329,7 +328,6 @@
     private Task SaveHouseholdAsync(HouseholdSettings next) => Run(async db =>
     {
         await ProfileAdmin.SaveHouseholdAsync(db, next);
-        ProfileGateMiddleware.ForgetHousehold(Cache);
         return "Household settings saved.";
     });
 

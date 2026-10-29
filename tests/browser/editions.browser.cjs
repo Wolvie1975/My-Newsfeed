@@ -11,6 +11,7 @@ const assert = require('node:assert/strict');
 const { audit } = require('./contrast-audit.cjs');
 
 const base = process.env.BASE_URL || 'http://localhost:5295';
+const adminBase = process.env.ADMIN_BASE_URL || base;
 const password = process.env.ADMIN_PASSWORD;
 const shots = process.env.SCREENSHOT_DIR;
 if (!password) {
@@ -41,7 +42,7 @@ const people = [
     };
     const added = [];
     try {
-        await admin.goto(base + '/login?returnUrl=%2Fadmin%2Fprofiles');
+        await admin.goto(adminBase + '/login?returnUrl=%2Fadmin%2Fprofiles');
         await admin.locator('#password').fill(password);
         await admin.getByRole('button', { name: 'Sign in', exact: true }).click();
         await admin.waitForURL('**/admin/profiles');
@@ -218,7 +219,7 @@ const people = [
     } finally {
         for (const person of added) {
             try {
-                await admin.goto(base + '/admin/profiles/' + person.id);
+                await admin.goto(adminBase + '/admin/profiles/' + person.id);
                 await settle(admin);
                 await admin.getByRole('button', { name: 'Delete profile…' }).click();
                 await admin.getByRole('button', { name: 'Delete profile', exact: true }).click();

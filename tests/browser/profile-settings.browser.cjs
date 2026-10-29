@@ -11,6 +11,7 @@ const assert = require('node:assert/strict');
 const { audit } = require('./contrast-audit.cjs');
 
 const base = process.env.BASE_URL || 'http://localhost:5295';
+const adminBase = process.env.ADMIN_BASE_URL || base;
 const password = process.env.ADMIN_PASSWORD;
 const shots = process.env.SCREENSHOT_DIR;
 if (!password) {
@@ -48,7 +49,7 @@ const legacy = {
     const added = [];
     let previousAdmin = null;
     try {
-        await admin.goto(base + '/login?returnUrl=%2Fadmin%2Fprofiles');
+        await admin.goto(adminBase + '/login?returnUrl=%2Fadmin%2Fprofiles');
         await admin.locator('#password').fill(password);
         await admin.getByRole('button', { name: 'Sign in', exact: true }).click();
         await admin.waitForURL('**/admin/profiles');
@@ -78,7 +79,7 @@ const legacy = {
             }
         }
         // Cy is the household admin.
-        await admin.goto(base + '/admin/profiles/' + cy.id);
+        await admin.goto(adminBase + '/admin/profiles/' + cy.id);
         await settle(admin);
         await admin.locator('[aria-labelledby="admin-l"]').click();
         await admin.getByText('now show the Admin sign in link').waitFor();
@@ -227,7 +228,7 @@ const legacy = {
     } finally {
         for (const person of added) {
             try {
-                await admin.goto(base + '/admin/profiles/' + person.id);
+                await admin.goto(adminBase + '/admin/profiles/' + person.id);
                 await settle(admin);
                 await admin.getByRole('button', { name: 'Delete profile…' }).click();
                 await admin.getByRole('button', { name: 'Delete profile', exact: true }).click();
@@ -239,7 +240,7 @@ const legacy = {
         // Deleting Cy cleared the household admin; mark the one that was marked before.
         if (previousAdmin) {
             try {
-                await admin.goto(base + '/' + previousAdmin.replace(/^\//, ''));
+                await admin.goto(adminBase + '/' + previousAdmin.replace(/^\//, ''));
                 await settle(admin);
                 if ((await admin.locator('[aria-labelledby="admin-l"]').getAttribute('aria-checked')) !== 'true') {
                     await admin.locator('[aria-labelledby="admin-l"]').click();

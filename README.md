@@ -135,3 +135,11 @@ tests/myNewspaper.Tests/myNewspaper.Tests.csproj. The existing My-Newsfeed check
 and GitHub repository name are retained for link compatibility. The October 24 rename updates assemblies and namespaces to myNewspaper. Saved
 articles, browser preferences, app id/scope and authentication identifiers retain
 their existing identities. See docs/interface.md for the new logo and icon assets.
+
+## Separate admin website
+
+The public site and admin now have separate projects and PWA identities in this
+repository. See [local setup and deployment](docs/admin-separation.md). Admin runs
+on http://localhost:5297. The deployed admin PWA is at
+https://mynewsfeed-prod.tailbf31bc.ts.net:8443/admin (tailnet only);
+`admin.mynewspaper` remains a possible future hostname.

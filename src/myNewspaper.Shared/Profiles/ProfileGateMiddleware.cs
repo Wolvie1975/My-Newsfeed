@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.StaticAssets;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using myNewspaper.Web.Data;
 using myNewspaper.Web.Data.Models;
@@ -14,13 +13,8 @@ namespace myNewspaper.Web.Profiles;
 /// switched off it does nothing except hide the public profile routes.
 /// </summary>
 public sealed class ProfileGateMiddleware(RequestDelegate next, IOptions<ProfilesOptions> options, IDbContextFactory<WebScraperContext> factory,
-    ProfileCookies cookies, IMemoryCache cache, FeedDates dates, TimeProvider clock)
+    ProfileCookies cookies, FeedDates dates, TimeProvider clock)
 {
-    private const string HouseholdCacheKey = "profiles.household";
-
-    /// <summary>Call after the admin changes household settings, so the next request sees them.</summary>
-    public static void ForgetHousehold(IMemoryCache cache) => cache.Remove(HouseholdCacheKey);
-
     public async Task InvokeAsync(HttpContext http, ProfileContext context)
     {
         var path = http.Request.Path;
@@ -49,15 +43,10 @@ public sealed class ProfileGateMiddleware(RequestDelegate next, IOptions<Profile
 
         var ct = http.RequestAborted;
         var now = clock.GetUtcNow().UtcDateTime;
-        var household = await cache.GetOrCreateAsync(HouseholdCacheKey, async entry =>
-        {
-            entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(1);
-            await using var db = await factory.CreateDbContextAsync(ct);
-            return await ProfileStore.GetHouseholdAsync(db, ct);
-        }) ?? new Household();
-
         await using (var db = await factory.CreateDbContextAsync(ct))
         {
+            // Admin runs in another process; read household policy with this request's profile data.
+            var household = await ProfileStore.GetHouseholdAsync(db, ct) ?? new Household();
             ProfileDevice? device = null;
             Profile? profile = null;
             if (cookies.ReadDevice(http) is { } token)

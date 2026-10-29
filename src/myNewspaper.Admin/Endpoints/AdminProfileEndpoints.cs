@@ -1,7 +1,7 @@
+using Db = myNewspaper.Web.Endpoints.RequestDb;
 using System.Text.Json.Nodes;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Memory;
 using myNewspaper.Web.Data;
 using myNewspaper.Web.Profiles;
 using myNewspaper.Web.Requests;
@@ -68,10 +68,9 @@ public static class AdminProfileEndpoints
 
         var household = api.MapGroup("/household");
         household.MapGet("", async (Db db) => Results.Ok(await ProfileAdmin.GetHouseholdAsync(db.Context, db.Ct)));
-        household.MapPut("", async (HouseholdSettings body, Db db, IMemoryCache cache) =>
+        household.MapPut("", async (HouseholdSettings body, Db db) =>
         {
             await ProfileAdmin.SaveHouseholdAsync(db.Context, body, db.Ct);
-            ProfileGateMiddleware.ForgetHousehold(cache);
             return Results.Ok(await ProfileAdmin.GetHouseholdAsync(db.Context, db.Ct));
         });
         household.MapGet("/base-edition", async (Db db) => Results.Ok(new { settings = await ProfileAdmin.GetBaseEditionAsync(db.Context, db.Ct) }));
@@ -125,22 +124,4 @@ public static class AdminProfileEndpoints
         _ => Results.NotFound(),
     };
 
-    /// <summary>A database context for one admin request, disposed with the request, plus its clock and cancellation.</summary>
-    public sealed class Db(WebScraperContext context, DateTime now, CancellationToken ct) : IAsyncDisposable
-    {
-        public WebScraperContext Context { get; } = context;
-        public DateTime Now { get; } = now;
-        public CancellationToken Ct { get; } = ct;
-
-        public static async ValueTask<Db?> BindAsync(HttpContext http)
-        {
-            var factory = http.RequestServices.GetRequiredService<IDbContextFactory<WebScraperContext>>();
-            var clock = http.RequestServices.GetRequiredService<TimeProvider>();
-            var db = new Db(await factory.CreateDbContextAsync(http.RequestAborted), clock.GetUtcNow().UtcDateTime, http.RequestAborted);
-            http.Response.RegisterForDisposeAsync(db);
-            return db;
-        }
-
-        public ValueTask DisposeAsync() => Context.DisposeAsync();
-    }
 }

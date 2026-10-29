@@ -1,3 +1,4 @@
+@inject myNewspaper.Hosting.SiteLinks SiteLinks
 @page "/editions"
 @layout PickerLayout
 @using myNewspaper.Web.Endpoints
@@ -105,7 +106,7 @@ else
     }
     @* Always offered (decision 10): anyone with the link can start an edition. *@
     <a class="picker__link" href="editions/new">+ Start a new edition</a>
-    <a class="picker__link" href="admin/profiles">Manage profiles</a>
+    <a class="picker__link" href="@(SiteLinks.Admin + "/profiles")">Manage profiles</a>
 </footer>
 
 @* The PIN pad. Without JavaScript it's never shown and the forms above post the typed PIN. *@

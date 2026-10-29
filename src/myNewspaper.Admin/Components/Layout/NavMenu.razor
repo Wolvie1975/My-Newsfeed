@@ -1,3 +1,4 @@
+@inject myNewspaper.Hosting.SiteLinks SiteLinks
 @inject IDbContextFactory<WebScraperContext> Factory
 @inject IConfiguration Config
 @inject FeedDates Dates
@@ -63,7 +64,7 @@
 </nav>
 
 <div class="adm-side__foot">
-    <a class="adm-nav__link" href="/" target="_blank" rel="noopener noreferrer"><AdminIcon Name="external" /><span class="adm-nav__text">View site</span></a>
+    <a class="adm-nav__link" href="@SiteLinks.Public" target="_blank" rel="noopener noreferrer"><AdminIcon Name="external" /><span class="adm-nav__text">View site</span></a>
     <form method="post" action="/account/logout">
         <AntiforgeryToken />
         <button type="submit" class="adm-nav__link"><AdminIcon Name="signout" /><span class="adm-nav__text">Sign out</span></button>

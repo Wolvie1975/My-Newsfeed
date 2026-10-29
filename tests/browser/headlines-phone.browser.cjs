@@ -10,6 +10,7 @@ const assert = require('node:assert/strict');
 const { audit } = require('./contrast-audit.cjs');
 
 const base = process.env.BASE_URL || 'http://localhost:5295';
+const adminBase = process.env.ADMIN_BASE_URL || base;
 const shots = process.env.SCREENSHOT_DIR;
 const password = process.env.ADMIN_PASSWORD;
 
@@ -45,6 +46,10 @@ const password = process.env.ADMIN_PASSWORD;
     const visit = async (page, path, scheme, theme) => {
         await page.goto(base + path, { waitUntil: 'networkidle' });
         if (!profiles) return;
+        const saved = page.waitForResponse(
+            (response) =>
+                new URL(response.url()).pathname === '/api/me/settings' && response.request().method() === 'PUT',
+        );
         await page.evaluate(
             ([s, t]) => {
                 window.myNewspaperPrefs.setItem('mynewsfeed-color-scheme', s);
@@ -52,13 +57,15 @@ const password = process.env.ADMIN_PASSWORD;
             },
             [scheme, theme],
         );
-        await page.waitForTimeout(900);
+        const response = await saved;
+        assert.equal(response.status(), 200, 'Profile theme and scheme save succeeds before reload');
+        await response.finished();
         await page.reload({ waitUntil: 'networkidle' });
     };
     try {
         if (profiles) {
             admin = await (await browser.newContext({ viewport: { width: 1440, height: 1000 } })).newPage();
-            await admin.goto(base + '/login?returnUrl=%2Fadmin%2Fprofiles');
+            await admin.goto(adminBase + '/login?returnUrl=%2Fadmin%2Fprofiles');
             await admin.locator('#password').fill(password);
             await admin.getByRole('button', { name: 'Sign in', exact: true }).click();
             await admin.waitForURL('**/admin/profiles');
@@ -259,7 +266,7 @@ const password = process.env.ADMIN_PASSWORD;
     } finally {
         if (id) {
             try {
-                await admin.goto(base + '/admin/profiles/' + id);
+                await admin.goto(adminBase + '/admin/profiles/' + id);
                 await admin.waitForLoadState('networkidle');
                 await admin.getByRole('button', { name: 'Delete profile…' }).click();
                 await admin.getByRole('button', { name: 'Delete profile', exact: true }).click();

@@ -1,6 +1,6 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-require('../../src/myNewspaper.Web/wwwroot/solar-times.js');
+require('../../src/myNewspaper.Shared/wwwroot/solar-times.js');
 const solar = globalThis.myNewspaperSolar;
 const location = solar.location;
 

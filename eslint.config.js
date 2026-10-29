@@ -6,7 +6,7 @@ module.exports = [
         ignores: [
             '**/bin/**',
             '**/obj/**',
-            'src/myNewspaper.Web/wwwroot/lib/**',
+            'src/myNewspaper.Shared/wwwroot/lib/**',
             'new development/**',
             'node_modules/**',
         ],
@@ -24,18 +24,18 @@ module.exports = [
         },
     },
     {
-        files: ['src/myNewspaper.Web/wwwroot/**/*.js'],
+        files: ['src/*/wwwroot/**/*.js', 'src/myNewspaper.Shared/wwwroot/*.js'],
         languageOptions: {
             sourceType: 'script',
             globals: { ...globals.browser, Blazor: 'readonly', myNewspaperSolar: 'readonly' },
         },
     },
     {
-        files: ['src/myNewspaper.Web/wwwroot/service-worker.js'],
+        files: ['src/*/wwwroot/service-worker.js'],
         languageOptions: { globals: { ...globals.serviceworker } },
     },
     {
-        files: ['src/myNewspaper.Web/Components/**/*.razor.js'],
+        files: ['src/*/Components/**/*.razor.js'],
         languageOptions: { sourceType: 'module', globals: { ...globals.browser, Blazor: 'readonly' } },
     },
     {
@@ -45,7 +45,7 @@ module.exports = [
     },
     {
         // solar-times.js is shared with the Node unit test through a CommonJS guard.
-        files: ['src/myNewspaper.Web/wwwroot/solar-times.js'],
+        files: ['src/myNewspaper.Shared/wwwroot/solar-times.js'],
         languageOptions: { globals: { ...globals.browser, module: 'writable' } },
     },
 ];

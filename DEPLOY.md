@@ -294,3 +294,13 @@ a direct 200 response from the legacy route. Scoreboard's Show/Games filters
 reuse enabled follow configuration and existing records rules. Keep the results
 worker settings and result tables: college/season pages still use them. No schema
 migration or collector change accompanies this consolidation.
+
+## Public/admin separation
+
+The split build adds a separate Admin host, image, port and key volume. Read
+[the separation runbook](docs/admin-separation.md) before deploying this working
+tree; the old single-container steps alone no longer expose the admin website.
+The split is deployed using the existing Tailscale hostname: public on HTTPS 443,
+admin on HTTPS 8443. `admin.mynewspaper` remains a future hostname. Preserve both
+site URLs, runtime overrides and key volumes; validate both PWAs on each rollout.
+See the separation runbook for the retained combined-container rollback target.

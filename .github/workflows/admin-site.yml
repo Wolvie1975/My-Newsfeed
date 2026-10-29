@@ -1,0 +1,20 @@
+name: Admin website
+on:
+  push:
+    branches: [develop, main]
+    paths: ['src/myNewspaper.Admin/**', 'src/myNewspaper.Shared/**', 'tests/myNewspaper.Admin.Tests/**', 'tests/myNewspaper.Tests/TestDatabase.cs', 'tests/myNewspaper.Tests/xunit.runner.json', 'Directory.Build.props', '.editorconfig', 'Dockerfile.admin', '.github/workflows/admin-site.yml']
+  pull_request:
+    paths: ['src/myNewspaper.Admin/**', 'src/myNewspaper.Shared/**', 'tests/myNewspaper.Admin.Tests/**', 'tests/myNewspaper.Tests/TestDatabase.cs', 'tests/myNewspaper.Tests/xunit.runner.json', 'Directory.Build.props', '.editorconfig', 'Dockerfile.admin', '.github/workflows/admin-site.yml']
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - run: dotnet build tests/myNewspaper.Admin.Tests/myNewspaper.Admin.Tests.csproj -c Release
+      - run: dotnet test tests/myNewspaper.Admin.Tests/myNewspaper.Admin.Tests.csproj -c Release --no-build --filter 'FullyQualifiedName~AdminHostTests'
+      - run: docker build -f Dockerfile.admin -t mynewspaper-admin:ci .

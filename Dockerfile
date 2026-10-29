@@ -7,7 +7,7 @@ WORKDIR /src
 # Restore first so the package layer is cached until a .csproj changes.
 COPY myNewspaper.sln Directory.Build.props .editorconfig ./
 COPY src/myNewspaper.Web/myNewspaper.Web.csproj src/myNewspaper.Web/
-COPY tests/myNewspaper.Tests/myNewspaper.Tests.csproj tests/myNewspaper.Tests/
+COPY src/myNewspaper.Shared/myNewspaper.Shared.csproj src/myNewspaper.Shared/
 RUN dotnet restore src/myNewspaper.Web/myNewspaper.Web.csproj
 
 COPY src/ src/
@@ -19,7 +19,7 @@ RUN dotnet publish src/myNewspaper.Web/myNewspaper.Web.csproj -c Release -o /app
 # interactive and every form post is rejected with a 400, and nothing else would notice until someone used the site.
 RUN grep -q "_framework/blazor.web.js" /app/publish/myNewspaper.Web.staticwebassets.endpoints.json || { \
       echo "ERROR: _framework/blazor.web.js is missing from the published static assets." >&2; \
-      echo "The admin pages would not be interactive. Check that restore ran with the full source (see the publish step)." >&2; \
+      echo "The interactive pages would not be available. Check that restore ran with the full source (see the publish step)." >&2; \
       exit 1; }
 
 # ---- runtime ----

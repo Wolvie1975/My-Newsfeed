@@ -12,11 +12,43 @@ services:
       - "${WEB_PORT:-8085}:8080"
     environment:
       ConnectionStrings__DefaultConnection: ${SQL_CONNECTION:?Set SQL_CONNECTION in .env}
+      ReverseProxy__KnownProxies__0: ${REVERSE_PROXY_IP:-}
+      Display__TimeZone: ${DISPLAY_TIMEZONE:-America/Chicago}
+      Movies__AccessToken: ${MOVIES_ACCESS_TOKEN:-}
+      Results__SyncIntervalHours: ${RESULTS_SYNC_INTERVAL_HOURS:-0.16666666666666666}
+      Profiles__Enabled: ${PROFILES_ENABLED:-false}
+      Sites__AdminBaseUrl: ${ADMIN_BASE_URL:-https://admin.mynewspaper}
+    volumes:
+      - mynewsfeed-keys:/keys
+    networks:
+      - dev-bridge
+    healthcheck:
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8080 && printf 'GET /healthz HTTP/1.0\\r\\n\\r\\n' >&3 && head -n1 <&3 | grep -q ' 200 '"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  admin:
+    build:
+      context: .
+      dockerfile: Dockerfile.admin
+    image: mynewspaper-admin:latest
+    container_name: mynewspaper-admin
+    restart: unless-stopped
+    ports:
+      - "${ADMIN_PORT:-8086}:8080"
+    environment:
+      ConnectionStrings__DefaultConnection: ${ADMIN_SQL_CONNECTION:-${SQL_CONNECTION}}
       Admin__Password: ${ADMIN_PASSWORD:?Set ADMIN_PASSWORD in .env}
       ReverseProxy__KnownProxies__0: ${REVERSE_PROXY_IP:-}
       Display__TimeZone: ${DISPLAY_TIMEZONE:-America/Chicago}
+      Movies__AccessToken: ${MOVIES_ACCESS_TOKEN:-}
+      Profiles__Enabled: ${PROFILES_ENABLED:-false}
+      Sites__PublicBaseUrl: ${PUBLIC_BASE_URL:-http://localhost:5295}
+      Sites__AdminBaseUrl: ${ADMIN_BASE_URL:-https://admin.mynewspaper}
     volumes:
-      - mynewsfeed-keys:/keys
+      - mynewspaper-admin-keys:/keys
     networks:
       - dev-bridge
     healthcheck:
@@ -32,3 +64,4 @@ networks:
 
 volumes:
   mynewsfeed-keys:
+  mynewspaper-admin-keys:

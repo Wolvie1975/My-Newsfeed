@@ -16,4 +16,6 @@
     <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.13" />
   </ItemGroup>
 
+  <ItemGroup><ProjectReference Include="../myNewspaper.Shared/myNewspaper.Shared.csproj" /></ItemGroup>
+
 </Project>

@@ -5,7 +5,7 @@ const { chromium } = require('playwright');
 const assert = require('node:assert/strict');
 const { audit } = require('./contrast-audit.cjs');
 
-const base = process.env.BASE_URL || 'http://localhost:5295';
+const base = process.env.ADMIN_BASE_URL || process.env.BASE_URL || 'http://localhost:5297';
 const password = process.env.ADMIN_PASSWORD;
 if (!password) {
     console.log('SKIP: signs in to admin; set ADMIN_PASSWORD to run it.');

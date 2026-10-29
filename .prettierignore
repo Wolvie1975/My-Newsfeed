@@ -8,3 +8,10 @@
 !tests/browser/*.cjs
 !*.config.js
 !tools/*.cjs
+
+!src/myNewspaper.Admin/wwwroot/*.js
+!src/myNewspaper.Admin/wwwroot/*.css
+!src/myNewspaper.Admin/Components/**/*.razor.css
+!src/myNewspaper.Admin/Components/**/*.razor.js
+!src/myNewspaper.Shared/wwwroot/*.js
+!src/myNewspaper.Shared/wwwroot/*.css

@@ -17,6 +17,8 @@ using myNewspaper.Web.Tv;
 using myNewspaper.Web.Watching;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.Configure<myNewspaper.Hosting.SiteLinkOptions>(builder.Configuration.GetSection("Sites"));
+builder.Services.AddSingleton<myNewspaper.Hosting.SiteLinks>();
 
 builder.Services.AddScoped<BoxScoresRepository>();
 builder.Services.AddScoped<ScoreboardRepository>();
@@ -39,32 +41,6 @@ builder.Services.AddHttpClient("local-weather", client =>
 
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
-
-builder.Services.AddAuthentication(AdminAuth.Scheme)
-    .AddCookie(AdminAuth.Scheme, options =>
-    {
-        // Retain the deployed cookie name so the rebrand does not sign users out.
-        options.Cookie.Name = "MyNewsFeed.Admin";
-        options.Cookie.HttpOnly = true;
-        options.LoginPath = "/login";
-        options.AccessDeniedPath = "/login";
-        options.ExpireTimeSpan = TimeSpan.FromHours(8);
-        // The admin APIs answer with status codes; only pages redirect to the sign-in page.
-        options.Events.OnRedirectToLogin = context => AdminApiStatus(context, StatusCodes.Status401Unauthorized);
-        options.Events.OnRedirectToAccessDenied = context => AdminApiStatus(context, StatusCodes.Status403Forbidden);
-        static Task AdminApiStatus(Microsoft.AspNetCore.Authentication.RedirectContext<Microsoft.AspNetCore.Authentication.Cookies.CookieAuthenticationOptions> context, int status)
-        {
-            if (context.Request.Path.StartsWithSegments("/admin/api"))
-            {
-                context.HttpContext.Features.Get<Microsoft.AspNetCore.Diagnostics.IStatusCodePagesFeature>()?.Enabled = false;
-                context.Response.StatusCode = status;
-            }
-            else context.Response.Redirect(context.RedirectUri);
-            return Task.CompletedTask;
-        }
-    });
-builder.Services.AddAuthorization();
-builder.Services.AddCascadingAuthenticationState();
 
 // In a container the default key ring lives in the container's own filesystem and is lost on every rebuild,
 // which would sign everyone out. DataProtection:KeysPath points it at a persistent volume instead.
@@ -102,9 +78,11 @@ builder.Services.AddHttpClient(RequestChecks.ClientName, client =>
 builder.Services.AddSingleton<RequestChecks>();
 builder.Services.AddSingleton<RequestBacklog>();
 // The request checker fills in details for the admin; the rollout turns new household channels on for everyone.
-builder.Services.AddHostedService<RequestCheckerService>();
+if (builder.Configuration.GetValue("BackgroundJobs:Enabled", true))
+    builder.Services.AddHostedService<RequestCheckerService>();
 builder.Services.AddSingleton<ChannelRolloutService>();
-builder.Services.AddHostedService(sp => sp.GetRequiredService<ChannelRolloutService>());
+if (builder.Configuration.GetValue("BackgroundJobs:Enabled", true))
+    builder.Services.AddHostedService(sp => sp.GetRequiredService<ChannelRolloutService>());
 
 // Game results from ESPN's public scoreboard data: a background sync stores followed leagues' and teams' games; pages
 // only read the database.
@@ -118,7 +96,7 @@ builder.Services.AddHttpClient<EspnClient>(http =>
 builder.Services.AddSingleton<LeaguePhases>();
 builder.Services.AddHostedService<LeaguePhaseService>();
 builder.Services.AddTransient<ScoresSync>();
-if (builder.Configuration.GetValue("Results:BackgroundSyncEnabled", true))
+if (builder.Configuration.GetValue("BackgroundJobs:Enabled", true) && builder.Configuration.GetValue("Results:BackgroundSyncEnabled", true))
     builder.Services.AddHostedService<ScoresSyncService>();
 
 builder.Services.AddHttpClient<TvmazeClient>(http =>
@@ -160,19 +138,15 @@ app.Use(async (context, next) =>
     context.Response.Redirect(context.Request.PathBase + to + context.Request.QueryString, permanent: true);
 });
 
-app.UseAuthentication();
-app.UseAuthorization();
 // After routing (which WebApplication adds first) and authentication, so it can read endpoint metadata.
 app.UseProfileGate();
 app.UseAntiforgery();
 
 app.MapStaticAssets();
 app.MapSharedArticles();
-app.MapAccount();
 app.MapPublicEndpoints();
 app.MapProfiles();
 app.MapMe();
-app.MapAdminProfiles();
 app.MapFeed();
 
 // Used by the container health check: healthy only when the database is reachable.

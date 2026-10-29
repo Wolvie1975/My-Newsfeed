@@ -107,7 +107,13 @@ const base = process.env.BASE_URL || 'http://localhost:5295',
         await plain.locator('.mx-ribbon form:has(#f1-view-m) button').click();
         await plain.waitForURL(base + '/f1/results');
         // Sports pages with their own ribbon still carry the Section dropdown.
-        for (const [path, current] of [['/scoreboard', '/scoreboard'], ['/standings', '/standings'], ['/rankings', '/rankings'], ['/college/standings', '/college'], ['/f1/results', '/f1']]) {
+        for (const [path, current] of [
+            ['/scoreboard', '/scoreboard'],
+            ['/standings', '/standings'],
+            ['/rankings', '/rankings'],
+            ['/college/standings', '/college'],
+            ['/f1/results', '/f1'],
+        ]) {
             await plain.goto(base + path);
             assert.equal(await plain.locator('#sports-section-m').inputValue(), current, path + ' Section dropdown');
         }
