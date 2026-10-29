@@ -200,4 +200,22 @@ public class PhoneSportsTests
         Assert.Contains("<strong>58</strong>", rows);
         Assert.Contains("W 17 · D 7 · L 5", rows);
     }
+
+    [Theory]
+    [InlineData("espn-nwsl", "Soccer", true)]
+    [InlineData("espn-epl", "Soccer", true)]
+    [InlineData("espn-championship", "Soccer", true)]
+    [InlineData("big12", "Soccer", true)]
+    [InlineData("espn-mls", "Soccer", false)]
+    [InlineData("big12", "Football", false)]
+    public async Task Single_table_soccer_leagues_list_every_place_after_the_leader_in_one_section(string provider, string sport, bool single)
+    {
+        var stats = SoccerTeam().Statistics;
+        var source = new SportsStandingsSource { Id = 1, Enabled = true, ProviderKey = provider, Sport = sport, DisplayName = "League", LastSuccessAt = DateTime.UtcNow };
+        var teams = Enumerable.Range(1, 9).Select(i => new StandingTeam(new SportsStanding { TeamName = "Team " + i, Position = i, Rank = i }, stats)).ToArray();
+        var group = new StandingGroup("soccer", "Regular season", teams, StandingsQuery.Columns(provider, teams, sport));
+        var html = System.Net.WebUtility.HtmlDecode(await RenderSports<PhoneStandings>(new() { ["Data"] = new StandingsPage([source], source, [group]) }));
+        Assert.Equal(single, html.Contains("The rest of the table"));
+        Assert.Equal(!single, html.Contains("Places 7–9"));
+    }
 }

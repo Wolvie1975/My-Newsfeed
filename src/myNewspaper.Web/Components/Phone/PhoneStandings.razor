@@ -39,11 +39,18 @@
                 </div>
             </section>
         }
-        @foreach (var g in Data.Groups)
-        { <section class="mx-sport-list"><div class="mx-head"><h2>@g.Name</h2><span>@PhoneSports.PrimaryLabel(g, Soccer)</span></div><PhoneStandingRows Soccer="Soccer" Group="g" Teams="@g.Teams.Take(6)" /></section> }
+        @if (SingleTable)
+        {
+            @if (group.Teams.Count > 1) { <section class="mx-sport-list"><div class="mx-head"><h2>The rest of the table</h2><span>@PhoneSports.PrimaryLabel(group, true)</span></div><PhoneStandingRows Soccer="true" Group="group" Teams="@group.Teams.Skip(1)" /></section> }
+        }
+        else
+        {
+            @foreach (var g in Data.Groups)
+            { <section class="mx-sport-list"><div class="mx-head"><h2>@g.Name</h2><span>@PhoneSports.PrimaryLabel(g, Soccer)</span></div><PhoneStandingRows Soccer="Soccer" Group="g" Teams="@g.Teams.Take(6)" /></section> }
+        }
         <FoldGroup Name="standings-more" Heading="More from the league">
             @{ var first = true; }
-            @foreach (var g in Data.Groups.Where(g => g.Teams.Count > 6))
+            @foreach (var g in Data.Groups.Where(g => !SingleTable && g.Teams.Count > 6))
             { <Fold Title="@(Data.Groups.Count == 1 ? $"Places 7–{g.Teams.Count}" : $"{g.Name} · 7–{g.Teams.Count}")" Gist="@string.Join(" · ", g.Teams.Skip(6).Take(2).Select(t => t.Row.TeamName))" Open="first"><PhoneStandingRows Soccer="Soccer" Group="g" Teams="@g.Teams.Skip(6)" /></Fold> first = false; }
             @if (Games.Count > 0)
             {
@@ -61,6 +68,7 @@
 </div>
 @code {
     private bool Soccer => PhoneSports.IsSoccer(Data.Selected?.ProviderKey, Data.Selected?.Sport);
+    private bool SingleTable => PhoneSports.IsSingleTable(Data.Selected?.ProviderKey, Data.Selected?.Sport) && Data.Groups.Count == 1;
     [Parameter] public StandingsPage Data { get; set; } = new([], null, []);
     [Parameter] public IReadOnlyList<EventItem> Games { get; set; } = [];
     [Parameter] public RankingsPage Poll { get; set; } = new([], null, null, []);

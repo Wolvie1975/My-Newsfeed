@@ -35,6 +35,8 @@ public static class PhoneSports
         team.Statistics.FirstOrDefault(s => labels.Contains(s.DisplayName, StringComparer.OrdinalIgnoreCase) || labels.Contains(s.Name, StringComparer.OrdinalIgnoreCase))?.DisplayValue ?? "—";
     public static bool IsSoccer(string? provider, string? sport) => provider is "espn-nwsl" or "espn-mls" or "espn-championship" or "espn-epl"
         || provider == "big12" && sport == "Soccer";
+    public static bool IsSingleTable(string? provider, string? sport) => provider is "espn-nwsl" or "espn-championship" or "espn-epl"
+        || provider == "big12" && sport == "Soccer";
     public static StandingColumn? PrimaryColumn(StandingGroup group, bool soccer = false) => soccer
         ? group.Columns.FirstOrDefault(c => c.Name is "points" or "collegeSoccerPoints" || c.Label.Equals("Points", StringComparison.OrdinalIgnoreCase)) ?? new("points", "PTS")
         : group.Columns.Count > 0 ? group.Columns[0] : null;
