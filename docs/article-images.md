@@ -1,8 +1,10 @@
 # Article image handling
 
-Prepared October 28, 2026 (Central). **Not deployed**: the user requested local
-implementation and verification only. Deployment and live mobile checks remain
-outstanding.
+Implemented and deployed October 28, 2026 (Central), from local commit `62f43bb`.
+Production image: `mynewspaper-web:article-images-20261028`
+(`sha256:5cfa5bcc085a36d466bf0f5564da2c01341b39be0322b56ee91fc2e94fcf8599`).
+Previous container and image retained as `mynewsfeed-web-before-article-images-20261028`
+and `mynewspaper-web:before-article-images-20261028`.
 
 Article photography now follows the decoded image dimensions instead of stretching
 every feed thumbnail into a feature. Headlines, descriptions, publisher attribution,
@@ -70,4 +72,21 @@ BASE_URL=http://127.0.0.1:5397 SCREENSHOT_DIR=/tmp/article-photo-checks \
 These checks use Chromium viewport emulation, not physical devices or Safari.
 Dimensions are a practical resolution safeguard; they do not detect subjective
 blur, poor composition or a publisher that has already enlarged a low-quality image.
-Repeat the affected mobile checks against production only after deployment is authorized.
+Live deployment evidence is recorded in `/tmp/article-images-deploy/`. Runtime
+environment, IPv4/IPv6 ports, network, restart policy, logging and the persistent
+keys volume/access were preserved. Docker reports different mount syntax metadata
+(`z` instead of `rw`); the named volume, destination and read/write access match.
+
+
+## Live verification
+
+Repeated the complete browser suite against the production container with household
+profiles enabled and a temporary profile. Themes were saved through the profile
+preferences API and verified after reload, rather than relying on localStorage.
+All 50 Headlines and 36 front-page combinations passed, along with source-size
+limits, BBC upgrade/fallback, dynamic replacement, enhanced navigation, Load more
+and no-JavaScript checks. The temporary profile was deleted afterward.
+Representative live compact-image, Home desktop and real BBC phone/desktop
+screenshots were visually inspected. The BBC example decoded at 1024 × 575px on
+both 390px and 1440px viewports. Container health is healthy; direct and public
+HTTPS `/healthz` return 200. No physical-device or Safari validation was available.

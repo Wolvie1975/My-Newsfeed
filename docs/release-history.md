@@ -6,10 +6,29 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The latest recorded web release is `mynewspaper-web:request-checks-20261029`
-(image `70c4ed214980`), deployed October 29, 2026 (Central), with household profiles enabled.
-Rollback: `mynewsfeed-web:before-request-checks-20261029` (`dc23d626d211`).
+The latest recorded web release is `mynewspaper-web:article-images-20261028`
+(image `5cfa5bcc085a`), deployed October 28, 2026 (Central), from `62f43bb`.
+Rollback: `mynewspaper-web:before-article-images-20261028` and container
+`mynewsfeed-web-before-article-images-20261028` (the request-checks release).
 This is a dated deployment record, not live hosting status.
+
+## Article image sizing and fallback — deployed October 28, 2026 (Central)
+
+Small images now remain thumbnails; suitable large images use capped feature
+layouts. Tiny or failed images collapse to text. Supported BBC thumbnails request
+the same asset at higher resolution with a single fallback to the original URL.
+No schema or collector changes. The image includes the preceding request checks.
+
+Runtime environment, IPv4/IPv6 ports, network, restart policy, log rotation and
+persistent keys volume/access were preserved. Container health and direct/public
+HTTPS health endpoints passed. The complete live Chromium suite covered
+320/390/430/744/1440px, light/dark, 50 Headlines cases and 36 front-page cases,
+source-size limits, dynamic updates, BBC success/fallback, enhanced navigation,
+Load more and no-JavaScript behavior. Representative screenshots were inspected,
+including the reported BBC photograph at 1024 × 575px on phone and desktop.
+The temporary profile was removed. No physical-device or Safari check was
+available. Evidence: `/tmp/article-images-deploy/`; implementation and limits:
+[article-images.md](article-images.md).
 
 ## Request checks: YouTube by channel ID, news through Google News — deployed October 29, 2026 (Central)
 
