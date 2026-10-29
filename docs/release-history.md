@@ -6,10 +6,36 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The latest recorded web release is `mynewspaper-web:phone-screens-20261029`
-(image `2cf78ecff635`), deployed October 28, 2026 (Central), with household profiles enabled.
-Rollback: `mynewsfeed-web:before-mynewspaper-phone-screens-20261029` (`ce1907bbd201`).
+The latest recorded web release is `mynewspaper-web:profiles-u4-20261029`
+(image `dc23d626d211`), deployed October 29, 2026 (Central), with household profiles enabled.
+Rollback: `mynewsfeed-web:before-profiles-u4-20261029` (`b579fd2c0382`).
 This is a dated deployment record, not live hosting status.
+
+## Profiles U4: new edition setup and full profile deletion — deployed October 29, 2026 (Central)
+
+The picker's **+ Start a new edition** opens `/editions/new`: one form, prefilled from the base edition, that
+`profiles.js` steps through four screens (name, color and PIN; teams with a search; services, up to 20; home
+sections with show/hide and move-up), posting as JSON so a refused name returns to step 1 with every choice kept.
+Without JavaScript it is one long form that posts to `POST /profiles/new` (`setup=1`; `ProfileSettings.FromSetup`
+lays the fields over the base edition). Deleting a profile (`ProfileAdmin.DeleteAsync`) now runs one transaction
+under the channel-rollout lock: devices, the profile (cascading Saved, follows and requests), then any YouTube
+channel only its requests added and that channel's stored videos. Commit `afba7db` on `develop` (local); built
+together with `e23a1d7` (Settings sections independently collapsible).
+
+Deployed `mynewspaper-web:profiles-u4-20261029`, image
+`sha256:dc23d626d2115e1f1e0752e24f35b76350f5f113b32fcf2d6d7ebce67c34792a`, built from a clean worktree of `e23a1d7`.
+The previous container (`settings-panels-20261028`, started with `docker run`) is kept stopped as
+`mynewsfeed-web-before-profiles-u4-20261029`, with rollback tag `mynewsfeed-web:before-profiles-u4-20261029`
+(`b579fd2c0382`). Port 8085, `dev-bridge` network, restart policy and runtime environment hash unchanged;
+container healthy. No database migration.
+
+Verification: 957 .NET tests passed, including the new setup-to-settings and full-deletion tests. Live (profiles
+on): `profile-setup` passed 320/390/430/768/1440px light/dark (overflow, contrast, unique IDs, 44px targets), the
+full phone flow from the picker, the taken-name return to step 1, and the no-JavaScript form and its error;
+`editions`, `admin-profiles` and `settings-panels` passed. Known failures, not from this release:
+`profile-settings` (phone release 2's folded home duplicates `[data-home-section]`) and `settings-order` (its
+`a[href="settings"]` selector no longer matches; fails on the pre-U4 build too). Only the household's two profiles
+remain afterwards.
 
 ## Phone refresh, release 4: Entertainment, Movies, TV, Digital releases and Box office — deployed October 28, 2026 (Central)
 
