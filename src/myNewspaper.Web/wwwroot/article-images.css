@@ -109,6 +109,10 @@
 :root .pub :is(.article, .d-lead__story)[data-article-story='feature'][data-image-layout='wide'] {
     grid-template-columns: minmax(0, 1fr);
 }
+/* Home's top story starts right under the "Top story" rule: keep the photo off it. */
+:root .pub .d-lead__story[data-article-story='feature'][data-image-layout='wide'] {
+    padding-top: 14px;
+}
 :root
     .pub
     :is(.article, .d-lead__story)[data-article-story='feature'][data-image-layout='wide']

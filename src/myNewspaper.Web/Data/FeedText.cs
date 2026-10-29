@@ -14,6 +14,13 @@ public static partial class FeedText
     [GeneratedRegex(@"\s{2,}")]
     private static partial Regex Whitespace();
 
+    [GeneratedRegex(@"^\s*title\s*:\s*", RegexOptions.IgnoreCase)]
+    private static partial Regex TitleLabel();
+
+    /// <summary>Drops a leading "Title:" label some feeds put in the headline (Al Jazeera, October 29, 2026).</summary>
+    public static string StripTitleLabel(string title) =>
+        TitleLabel().Replace(title ?? "", "") is { Length: > 0 } stripped ? stripped : title ?? "";
+
     /// <summary>Removes emoji and tidies the spaces they leave behind. Text without emoji is returned unchanged.</summary>
     public static string StripEmoji(string? text)
     {

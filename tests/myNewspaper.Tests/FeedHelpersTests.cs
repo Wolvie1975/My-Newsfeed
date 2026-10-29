@@ -144,6 +144,19 @@ public class FeedHelpersTests
         Assert.Equal("", FeedText.StripEmoji("🔥🔥"));
     }
 
+    [Theory]
+    [InlineData("Title: Afghan farmers pushed to opium farming", "Afghan farmers pushed to opium farming")]
+    [InlineData("  TITLE :  Spaced label", "Spaced label")]
+    [InlineData("Title IX: what the ruling means", "Title IX: what the ruling means")]
+    [InlineData("Title fight: Chiefs host Bills", "Title fight: Chiefs host Bills")]
+    [InlineData("The title: a mid-sentence label stays", "The title: a mid-sentence label stays")]
+    [InlineData("Title:", "Title:")]
+    public void StripTitleLabel_drops_only_a_leading_title_label(string input, string expected)
+    {
+        Assert.Equal(expected, FeedText.StripTitleLabel(input));
+        Assert.Equal(expected, new FeedItem(1, input, "https://example.com", null, null, null, "https://example.com", null, null, DateTime.UnixEpoch).Title);
+    }
+
     // ---- Source names -------------------------------------------------------------------------------------------
 
     [Theory]

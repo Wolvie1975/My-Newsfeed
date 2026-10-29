@@ -13,7 +13,11 @@ public sealed record FeedItem(
     int? CategoryId,
     string? CategoryName,
     DateTime Date,
-    bool Undated = false);   // Date is the sort date (the publish date, or the scrape date when there is none)
+    bool Undated = false)    // Date is the sort date (the publish date, or the scrape date when there is none)
+{
+    // Every page shows this headline, so a feed's "Title: …" label is dropped once here.
+    public string Title { get; init; } = FeedText.StripTitleLabel(Title);
+}
 
 public sealed record FeedCategory(int Id, string Name, int Count, string Hub = "headlines");
 public sealed record FeedSource(int Id, string Name);
