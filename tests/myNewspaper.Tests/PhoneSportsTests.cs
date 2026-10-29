@@ -206,7 +206,6 @@ public class PhoneSportsTests
     [InlineData("espn-epl", "Soccer", true)]
     [InlineData("espn-championship", "Soccer", true)]
     [InlineData("big12", "Soccer", true)]
-    [InlineData("espn-mls", "Soccer", false)]
     [InlineData("big12", "Football", false)]
     public async Task Single_table_soccer_leagues_list_every_place_after_the_leader_in_one_section(string provider, string sport, bool single)
     {
@@ -217,5 +216,22 @@ public class PhoneSportsTests
         var html = System.Net.WebUtility.HtmlDecode(await RenderSports<PhoneStandings>(new() { ["Data"] = new StandingsPage([source], source, [group]) }));
         Assert.Equal(single, html.Contains("The rest of the table"));
         Assert.Equal(!single, html.Contains("Places 7–9"));
+    }
+
+    [Fact]
+    public async Task Mls_leads_with_the_most_points_overall_and_lists_each_conference_in_full()
+    {
+        var source = new SportsStandingsSource { Id = 1, Enabled = true, ProviderKey = "espn-mls", Sport = "Soccer", DisplayName = "MLS", LastSuccessAt = DateTime.UtcNow };
+        StandingTeam Team(string name, int position, int points) => new(new SportsStanding { TeamName = name, Position = position, Rank = position },
+            [new StandingStatistic("points", "Points", points.ToString(), points)]);
+        var east = new StandingGroup("east", "Eastern Conference", Enumerable.Range(1, 9).Select(i => Team("East " + i, i, 60 - i)).ToArray(), StandingsQuery.Columns("espn-mls", [], "Soccer"));
+        var west = new StandingGroup("west", "Western Conference", Enumerable.Range(1, 9).Select(i => Team("West " + i, i, 70 - i)).ToArray(), StandingsQuery.Columns("espn-mls", [], "Soccer"));
+        var html = System.Net.WebUtility.HtmlDecode(await RenderSports<PhoneStandings>(new() { ["Data"] = new StandingsPage([source], source, [east, west]) }));
+        Assert.Contains("Most points · Western Conference", html);
+        Assert.Contains("mx-block__title\">West 1</h2>", html);
+        Assert.Contains("mx-number mx-number--record\">69</div>", html);
+        Assert.Contains("East 9", html);
+        Assert.Contains("West 9", html);
+        Assert.DoesNotContain("· 7–9", html);
     }
 }

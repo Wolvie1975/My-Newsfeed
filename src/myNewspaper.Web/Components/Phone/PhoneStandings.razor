@@ -17,11 +17,11 @@
     else
     {
         @if (StandingsQuery.Freshness(Data.Selected, DateTime.UtcNow) is { } warning) { <p class="mx-note" role="status">@warning</p> }
-        var group = Data.Groups[0]; var leader = group.Teams.FirstOrDefault(); var yours = PhoneSports.Teams(Reader);
+        var (group, leader) = Conferences ? MostPoints() : (Data.Groups[0], Data.Groups[0].Teams.FirstOrDefault()); var yours = PhoneSports.Teams(Reader);
         @if (leader is not null)
         {
             <section class="mx-block" aria-label="First place">
-                <span class="mx-block__kicker">First in provider order · @group.Name</span><h2 class="mx-block__title">@leader.Row.TeamName</h2>
+                <span class="mx-block__kicker">@(Conferences ? "Most points" : "First in provider order") · @group.Name</span><h2 class="mx-block__title">@leader.Row.TeamName</h2>
                 @if (Soccer) { <span class="mx-block__kicker">Points</span> }
                 <div class="mx-number mx-number--record">@PhoneSports.Primary(group, leader, Soccer)</div>
                 <p class="mx-block__note">@(Soccer ? PhoneSports.Secondary(group, leader, true) : string.Join(" · ", group.Columns.Skip(1).Select(c => $"{c.Label} {StandingsQuery.StatisticValue(leader, c.Name)}")))</p>
@@ -43,6 +43,11 @@
         {
             @if (group.Teams.Count > 1) { <section class="mx-sport-list"><div class="mx-head"><h2>The rest of the table</h2><span>@PhoneSports.PrimaryLabel(group, true)</span></div><PhoneStandingRows Soccer="true" Group="group" Teams="@group.Teams.Skip(1)" /></section> }
         }
+        else if (Conferences)
+        {
+            @foreach (var g in Data.Groups)
+            { <section class="mx-sport-list"><div class="mx-head"><h2>@g.Name</h2><span>@PhoneSports.PrimaryLabel(g, true)</span></div><PhoneStandingRows Soccer="true" Group="g" Teams="@g.Teams" /></section> }
+        }
         else
         {
             @foreach (var g in Data.Groups)
@@ -50,7 +55,7 @@
         }
         <FoldGroup Name="standings-more" Heading="More from the league">
             @{ var first = true; }
-            @foreach (var g in Data.Groups.Where(g => !SingleTable && g.Teams.Count > 6))
+            @foreach (var g in Data.Groups.Where(g => !SingleTable && !Conferences && g.Teams.Count > 6))
             { <Fold Title="@(Data.Groups.Count == 1 ? $"Places 7–{g.Teams.Count}" : $"{g.Name} · 7–{g.Teams.Count}")" Gist="@string.Join(" · ", g.Teams.Skip(6).Take(2).Select(t => t.Row.TeamName))" Open="first"><PhoneStandingRows Soccer="Soccer" Group="g" Teams="@g.Teams.Skip(6)" /></Fold> first = false; }
             @if (Games.Count > 0)
             {
@@ -68,6 +73,10 @@
 </div>
 @code {
     private bool Soccer => PhoneSports.IsSoccer(Data.Selected?.ProviderKey, Data.Selected?.Sport);
+    private bool Conferences => Data.Selected?.ProviderKey == "espn-mls";
+    private (StandingGroup Group, StandingTeam? Leader) MostPoints() => Data.Groups
+        .SelectMany(g => g.Teams.Select(t => (Group: g, Leader: (StandingTeam?)t)))
+        .OrderByDescending(x => StandingsQuery.Points(x.Leader!)).FirstOrDefault() is { Leader: not null } best ? best : (Data.Groups[0], null);
     private bool SingleTable => PhoneSports.IsSingleTable(Data.Selected?.ProviderKey, Data.Selected?.Sport) && Data.Groups.Count == 1;
     [Parameter] public StandingsPage Data { get; set; } = new([], null, []);
     [Parameter] public IReadOnlyList<EventItem> Games { get; set; } = [];

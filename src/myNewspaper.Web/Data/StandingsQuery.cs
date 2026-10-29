@@ -157,7 +157,7 @@ public static class StandingsQuery
                 return new StandingGroup(group.Key, group.First().GroupName ?? "Standings", teams, Columns(provider, teams, sport));
             }).ToList();
 
-    private static double? Points(StandingTeam team)
+    public static double? Points(StandingTeam team)
     {
         var points = team.Statistics.FirstOrDefault(s => s.Name == "points");
         if (points?.Value is { } numeric) return numeric;
