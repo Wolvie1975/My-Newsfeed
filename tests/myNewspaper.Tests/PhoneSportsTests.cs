@@ -206,7 +206,10 @@ public class PhoneSportsTests
     [InlineData("espn-epl", "Soccer", true)]
     [InlineData("espn-championship", "Soccer", true)]
     [InlineData("big12", "Soccer", true)]
-    [InlineData("big12", "Football", false)]
+    [InlineData("big12", "Football", true)]
+    [InlineData("big12", "Basketball", true)]
+    [InlineData("big12", "Volleyball", true)]
+    [InlineData("espn-nba", "Basketball", false)]
     public async Task Single_table_soccer_leagues_list_every_place_after_the_leader_in_one_section(string provider, string sport, bool single)
     {
         var stats = SoccerTeam().Statistics;

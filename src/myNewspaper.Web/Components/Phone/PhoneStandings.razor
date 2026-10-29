@@ -41,7 +41,7 @@
         }
         @if (SingleTable)
         {
-            @if (group.Teams.Count > 1) { <section class="mx-sport-list"><div class="mx-head"><h2>The rest of the table</h2><span>@PhoneSports.PrimaryLabel(group, true)</span></div><PhoneStandingRows Soccer="true" Group="group" Teams="@group.Teams.Skip(1)" /></section> }
+            @if (group.Teams.Count > 1) { <section class="mx-sport-list"><div class="mx-head"><h2>The rest of the table</h2><span>@PhoneSports.PrimaryLabel(group, Soccer)</span></div><PhoneStandingRows Soccer="Soccer" Group="group" Teams="@group.Teams.Skip(1)" /></section> }
         }
         else if (Conferences)
         {
@@ -77,7 +77,7 @@
     private (StandingGroup Group, StandingTeam? Leader) MostPoints() => Data.Groups
         .SelectMany(g => g.Teams.Select(t => (Group: g, Leader: (StandingTeam?)t)))
         .OrderByDescending(x => StandingsQuery.Points(x.Leader!)).FirstOrDefault() is { Leader: not null } best ? best : (Data.Groups[0], null);
-    private bool SingleTable => PhoneSports.IsSingleTable(Data.Selected?.ProviderKey, Data.Selected?.Sport) && Data.Groups.Count == 1;
+    private bool SingleTable => PhoneSports.IsSingleTable(Data.Selected?.ProviderKey) && Data.Groups.Count == 1;
     [Parameter] public StandingsPage Data { get; set; } = new([], null, []);
     [Parameter] public IReadOnlyList<EventItem> Games { get; set; } = [];
     [Parameter] public RankingsPage Poll { get; set; } = new([], null, null, []);
