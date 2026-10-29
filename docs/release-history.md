@@ -5221,3 +5221,28 @@ configuration was unchanged. Evidence and private runtime snapshot:
 Limits: Chromium emulation only; no physical phone, Safari favicon or native
 home-screen icon refresh was verified. Existing iOS shortcuts may need removal
 and re-adding to display the new icon.
+
+## Settings profile spacing — October 28, 2026 (Central)
+
+The Settings → Your profile colour legend inherited Bootstrap's float and occupied
+the first grid cell, leaving an uneven first row. Reset the legend float/width,
+put an 8px gap below it, and limit the choice grid to the name field's 28rem width.
+The choices now start below “Color” and form aligned rows on phone and desktop.
+
+Deployed `mynewspaper-web:settings-profile-spacing-20261028`
+(`sha256:93ab6319537435cc79cb303cb6bbec5db33c9453fdc550f00f0317152504c86f`).
+Built from committed source plus this CSS change, excluding unrelated working-tree
+profile changes. Previous image/container retained as
+`mynewspaper-web:before-settings-profile-spacing-20261028` /
+`mynewsfeed-web-before-settings-profile-spacing-20261028`. Runtime environment,
+key mounts, network, IPv4/IPv6 port bindings, restart and log settings match the
+previous deployment. No database changes.
+
+Validation: release image build and CSS formatting passed. Before and after
+deployment, Chromium checked 320/390/430/744/1440px in light and dark: legend
+above choices, grid/name alignment, 44px choice targets, no horizontal overflow,
+and colour selection surviving save/reload. Representative mobile and desktop
+screenshots were inspected. The deployed check also exercised colour saving with
+JavaScript disabled at 390px. Verification used temporary profiles, removed after
+the checks. Container health and `/healthz` passed. No physical device was available.
+Evidence: `/tmp/settings-spacing/`.
