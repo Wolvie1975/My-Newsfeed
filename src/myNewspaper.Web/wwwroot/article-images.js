@@ -1,6 +1,7 @@
 // Article photos only: never enlarge feed thumbnails into feature photography.
 (function () {
     'use strict';
+    // Enhanced navigation can activate links inside noscript; gate that fallback explicitly.
     const selector = '[data-article-media] > img';
     const images = new WeakMap();
 
@@ -84,6 +85,7 @@
     );
 
     function scan(root = document) {
+        document.documentElement.dataset.articleImages = 'enabled';
         if (root instanceof HTMLImageElement) bind(root);
         root.querySelectorAll?.(selector).forEach(bind);
         const empty = (story) => {

@@ -90,3 +90,21 @@ Representative live compact-image, Home desktop and real BBC phone/desktop
 screenshots were visually inspected. The BBC example decoded at 1024 × 575px on
 both 390px and 1440px viewports. Container health is healthy; direct and public
 HTTPS `/healthz` return 200. No physical-device or Safari validation was available.
+
+
+## October 29 navigation correction
+
+A user report exposed a missed case: Blazor enhanced navigation activates the
+stylesheet link inside `noscript`. Its fallback hid correctly downloaded images
+on Home, Sports and other feature cards. Direct page loads had passed, and the
+previous enhanced-navigation check did not assert image visibility on these pages.
+The fallback now requires the absence of the article-image JavaScript marker;
+every image scan restores that marker after navigation updates the document.
+No scraper rerun or database change is required.
+
+Added regression coverage for News → Home → Sports → Entertainment → News at
+320/390/430/744/1440px in both themes. It verifies document retention, decoded
+image visibility and layout area, plus overflow. The regression failed before the
+correction and passed afterward, alongside both no-JavaScript fallback cases.
+These were scoped reruns; the unchanged full fixture matrix was not repeated.
+Evidence: `/tmp/article-images-deploy/fix-local.log` and `fix-shots/`.

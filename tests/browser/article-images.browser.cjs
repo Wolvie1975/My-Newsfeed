@@ -285,6 +285,53 @@ async function ready(page, story, quality) {
         await appended.scrollIntoViewIfNeeded();
         await ready(page, appended, 'wide');
         await context.close();
+        // Blazor enhanced navigation can activate a noscript stylesheet link.
+        for (const width of [320, 390, 430, 744, 1440]) {
+            for (const theme of ['light', 'dark']) {
+                const navContext = await browser.newContext({ viewport: { width, height: 1000 }, colorScheme: theme });
+                await navContext.route('**/*', (route) => {
+                    if (
+                        route.request().resourceType() !== 'image' ||
+                        new URL(route.request().url()).origin === new URL(base).origin
+                    )
+                        return route.fallback();
+                    return route.fulfill({ contentType: 'image/svg+xml', body: photo('wide') });
+                });
+                const navPage = await navContext.newPage();
+                await navPage.goto(base + '/news', { waitUntil: 'networkidle' });
+                await navPage.evaluate(() => {
+                    window.articleNavigationSentinel = true;
+                });
+                for (const path of ['', 'sports', 'entertainment', 'news']) {
+                    await navPage.evaluate((path) => {
+                        document.getElementById('article-nav-regression')?.remove();
+                        const link = document.createElement('a');
+                        link.href = path || '/';
+                        link.id = 'article-nav-regression';
+                        link.textContent = 'Navigate';
+                        document.body.append(link);
+                    }, path);
+                    await navPage.locator('#article-nav-regression').evaluate((link) => link.click());
+                    await navPage.waitForURL(base + '/' + path);
+                    await navPage.waitForLoadState('networkidle');
+                    await navPage.waitForTimeout(1000);
+                    assert(
+                        await navPage.evaluate(() => window.articleNavigationSentinel),
+                        'enhanced navigation retained document',
+                    );
+                    const lead = navPage.locator(selector).filter({ visible: true }).first();
+                    const media = lead.locator('[data-article-media]');
+                    if (await media.locator('img').count()) {
+                        await ready(navPage, lead, 'wide');
+                        assert(await media.isVisible(), 'enhanced navigation must not activate image-hiding fallback');
+                        assert((await media.boundingBox()).height > 0, 'lead image has visible area');
+                    }
+                    assert(await navPage.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+                }
+                if (shots) await navPage.screenshot({ path: `${shots}/navigation-${width}-${theme}.png` });
+                await navContext.close();
+            }
+        }
         // Without JS, even large images stay modest; failed images leave no large blank region.
         for (const broken of [false, true]) {
             const plain = await browser.newContext({

@@ -1,10 +1,10 @@
 /* Image dimensions and load failures cannot be checked without JavaScript: use text-led features. */
-:root .pub [data-article-story='feature'] [data-article-media] {
+:root:not([data-article-images='enabled']) .pub [data-article-story='feature'] [data-article-media] {
     display: none;
 }
-:root .pub :is(.article, .d-lead__story)[data-article-story='feature'] {
+:root:not([data-article-images='enabled']) .pub :is(.article, .d-lead__story)[data-article-story='feature'] {
     grid-template-columns: minmax(0, 1fr);
 }
-:root .pub .mx-block[data-article-story='feature'][data-image-layout] {
+:root:not([data-article-images='enabled']) .pub .mx-block[data-article-story='feature'][data-image-layout] {
     display: flex;
 }
