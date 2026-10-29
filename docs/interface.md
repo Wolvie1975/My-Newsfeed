@@ -497,6 +497,13 @@ Settings replaces the section index with a Jump to select. With JavaScript it mo
 without it, Go uses the local `/navigate` redirect, which keeps the `#section`. Your profile, TV shows,
 YouTube channels and Requests are offered only while a profile is open.
 
+Each Settings section has an expand/collapse heading, like Arrange Settings sections.
+Panels start closed and open independently using a tap, click, Enter or Space.
+With JavaScript, section links and Jump to open their target panel, including on
+reload. Form results and TV search results open their relevant panel on the server,
+so feedback remains visible without JavaScript. Expanding or collapsing a panel
+does not change its saved settings or its position in the Settings order.
+
 Ribbon titles step down from 44px to 36px below 360px, so a long title such as "Entertainment headlines"
 wraps between words.
 

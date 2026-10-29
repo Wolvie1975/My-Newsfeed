@@ -3,6 +3,15 @@ namespace myNewspaper.Web.Components.Settings;
 /// <summary>The fixed messages the /me forms come back with (MeEndpoints). Codes only, so no name is ever in the address.</summary>
 public static class SettingsMessages
 {
+    public static string? Section(string? code) => code switch
+    {
+        null => null,
+        var c when c.StartsWith("show", StringComparison.Ordinal) => "shows",
+        var c when c.StartsWith("channel", StringComparison.Ordinal) => "channels",
+        var c when c.StartsWith("request", StringComparison.Ordinal) || c == "too-many-requests" => "requests",
+        _ => "profile",
+    };
+
     public static string? Done(string? code) => code switch
     {
         "profile-saved" => "Name and color saved.",

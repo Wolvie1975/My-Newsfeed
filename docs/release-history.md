@@ -5246,3 +5246,40 @@ screenshots were inspected. The deployed check also exercised colour saving with
 JavaScript disabled at 390px. Verification used temporary profiles, removed after
 the checks. Container health and `/healthz` passed. No physical device was available.
 Evidence: `/tmp/settings-spacing/`.
+
+## Collapsible Settings sections — October 28, 2026 (Central)
+
+All nine Settings sections now use native details/summary panels, like Arrange
+Settings sections. They start closed and open independently with pointer or
+keyboard controls. Existing anchor IDs are retained on the expandable headings;
+section links and the phone Jump to menu open their target, including repeated
+links and page reloads. Scroll offsets keep headings below the sticky header.
+Reordering retains the panel contents and open state. Saved preferences are
+unchanged by opening or closing a panel.
+
+Form success/error messages open the relevant panel on the server. TV searches
+keep TV shows open, and the no-JavaScript services form keeps its submitted
+selection visible. Message-to-section mapping is shared with the message component.
+
+Deployed image: `mynewspaper-web:settings-panels-20261028`
+(`sha256:b579fd2c0382542db1011227e1ff075534a3c887cbcc9dc1f313c38e0c077735`).
+The image was built from `02138e9` plus this Settings implementation, separately
+from the concurrent profile-setup release. Previous image/container retained as
+`mynewspaper-web:before-settings-panels-20261028` /
+`mynewsfeed-web-before-settings-panels-20261028`. Runtime environment, keys volume,
+network, IPv4/IPv6 bindings, restart and logging settings were compared and
+preserved. No schema or collector changes.
+
+Validation: release build passed; workspace build had zero warnings/errors;
+all 955 tests against the isolated release source passed. Targeted ESLint and
+formatting checks passed. Chromium viewport checks covered 320/390/430/744/1440px,
+light/dark, before and after rollout: all nine panels, pointer/Enter/Space controls,
+44px summaries, section jumps/deep links, reordering, theme selection and profile
+saves/reloads, visible feedback, heading offsets and no horizontal overflow.
+No-JavaScript checks exercised profile/services submission and server-opened
+profile/TV/channel/request messages. Updated the existing profile-theme and
+services browser checks to open the relevant panels; added
+`tests/browser/settings-panels.browser.cjs` for the new behavior. Temporary test
+profiles were removed. Representative phone and desktop screenshots were
+visually inspected. The live container is healthy and `/healthz` returns 200.
+No physical-device or Safari check was available. Evidence: `/tmp/settings-panels/`.

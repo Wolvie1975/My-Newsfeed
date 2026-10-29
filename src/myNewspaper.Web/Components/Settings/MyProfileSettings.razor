@@ -5,8 +5,8 @@
    each comes back here with a fixed message. There's no way to turn the PIN off. *@
 @if (Reader.Profile is { } me)
 {
-    <section id="profile" data-settings-section="profile" aria-labelledby="profile-heading">
-        <h2 id="profile-heading">Your profile</h2>
+    <details class="settings-panel" open="@(SettingsMessages.Section(Done ?? Error) == "profile")" id="profile" data-settings-section="profile" aria-labelledby="profile-heading">
+        <summary id="profile-heading"><h2>Your profile</h2></summary>
         <Message Section="profile" Done="@Done" Error="@Error" TriesLeft="TriesLeft" />
         <form class="set-form" method="post" action="me/profile">
             <AntiforgeryToken />
@@ -58,15 +58,15 @@
             <AntiforgeryToken />
             <button class="nf-btn nf-btn--secondary" type="submit">Sign this device out</button>
         </form>
-    </section>
+    </details>
 
-    <section data-settings-section="shared" aria-labelledby="shared-heading">
-        <h2 id="shared-heading">What’s yours and what’s shared</h2>
+    <details class="settings-panel" data-settings-section="shared" aria-labelledby="shared-heading">
+        <summary id="shared-heading"><h2>What’s yours and what’s shared</h2></summary>
         <ul class="set-list">
             <li><b>Yours:</b> your Saved list, the TV shows and YouTube channels you follow, your requests, and every setting on this page. Nobody else in the house sees them, and the admin doesn’t either.</li>
             <li><b>Shared:</b> the news sources, household YouTube channels and sports everyone reads. The picker shows each edition’s counts and team games, never show or channel names.</li>
         </ul>
-    </section>
+    </details>
 }
 
 @code {

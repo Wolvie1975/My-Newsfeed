@@ -1,8 +1,8 @@
 @using myNewspaper.Web.Watching
 @inject WatchCatalog Catalog
 @inject myNewspaper.Web.Profiles.ProfileContext Reader
-<section id="my-services" data-settings-section="services" aria-labelledby="watch-services-heading">
-<h2 id="watch-services-heading">My services</h2>
+<details class="settings-panel" open="@(Selected.Length > 0)" id="my-services" data-settings-section="services" aria-labelledby="watch-services-heading">
+<summary id="watch-services-heading"><h2>My services</h2></summary>
 <p>Choose up to 20 US services. Where to watch prioritizes subscription and free/ad-supported matches on each results page.</p>
 <form method="get" action="settings#my-services" data-watch-services data-watch-settings>
 @if(services.Count==0){<p role="status">Service choices are temporarily unavailable. Please try again later.</p>}
@@ -11,7 +11,7 @@
 <p class="updated" data-watch-services-status role="status">@(Reader.HasProfile ? $"Selections save to {Reader.Profile!.Name}’s edition." : "Selections save in this browser when storage is available.")</p>
 <noscript><p>Without JavaScript, apply your selections and use the Where to watch link. Choices will not be remembered across visits.</p></noscript>
 </form>
-</section>
+</details>
 @code {
     [Parameter]public string? Selection {get;set;}
     private int[] Selected=>WatchCatalog.ServiceIds(Selection);

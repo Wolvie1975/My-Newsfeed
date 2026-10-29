@@ -10,12 +10,5 @@
     [Parameter] public string? Error { get; set; }
     [Parameter] public int? TriesLeft { get; set; }
     // The message codes say which section they belong to.
-    private string? CurrentSection => (Done ?? Error) switch
-    {
-        null => null,
-        var c when c.StartsWith("show", StringComparison.Ordinal) => "shows",
-        var c when c.StartsWith("channel", StringComparison.Ordinal) => "channels",
-        var c when c.StartsWith("request", StringComparison.Ordinal) || c == "too-many-requests" => "requests",
-        _ => "profile",
-    };
+    private string? CurrentSection => SettingsMessages.Section(Done ?? Error);
 }

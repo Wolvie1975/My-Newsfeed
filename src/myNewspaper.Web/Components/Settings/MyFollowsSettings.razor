@@ -8,8 +8,8 @@
    profile's follows, the household channels everyone has, household picks, and this profile's own requests. *@
 @if (Reader.Profile is not null && page is not null)
 {
-    <section id="shows" data-settings-section="tv" aria-labelledby="shows-heading">
-        <h2 id="shows-heading">TV shows</h2>
+    <details class="settings-panel" open="@(SettingsMessages.Section(Done ?? Error) == "shows" || !string.IsNullOrWhiteSpace(TvQuery))" id="shows" data-settings-section="tv" aria-labelledby="shows-heading">
+        <summary id="shows-heading"><h2>TV shows</h2></summary>
         <p class="updated">Shows you follow are on your TV calendar and in Tonight on TV. Others in the house follow their own.</p>
         <Message Section="shows" Done="@Done" Error="@Error" />
         @if (page.Shows.Count == 0)
@@ -33,10 +33,10 @@
         }
         <h3>Add a show</h3>
         <TvShowSearch Action="settings#shows" Query="@TvQuery" ReturnUrl="/settings" Followed="followedShows" />
-    </section>
+    </details>
 
-    <section id="channels" data-settings-section="channels" aria-labelledby="channels-heading">
-        <h2 id="channels-heading">YouTube channels</h2>
+    <details class="settings-panel" open="@(SettingsMessages.Section(Done ?? Error) == "channels")" id="channels" data-settings-section="channels" aria-labelledby="channels-heading">
+        <summary id="channels-heading"><h2>YouTube channels</h2></summary>
         <Message Section="channels" Done="@Done" Error="@Error" />
         <h3>Household channels</h3>
         <p class="updated">Channels the household collects, on for everyone to start with. Turn off the ones you don’t want.</p>
@@ -89,10 +89,10 @@
             </div>
         }
         <p><a class="set-link" href="settings#requests">Request a channel →</a></p>
-    </section>
+    </details>
 
-    <section id="requests" data-settings-section="requests" aria-labelledby="requests-heading">
-        <h2 id="requests-heading">Requests</h2>
+    <details class="settings-panel" open="@(SettingsMessages.Section(Done ?? Error) == "requests")" id="requests" data-settings-section="requests" aria-labelledby="requests-heading">
+        <summary id="requests-heading"><h2>Requests</h2></summary>
         <p class="updated">Ask for a YouTube channel or a news source. The admin adds it; a channel is then followed for you, and a news source appears for everyone in its section.</p>
         <Message Section="requests" Done="@Done" Error="@Error" />
         <form class="set-form" method="post" action="me/requests">
@@ -131,7 +131,7 @@
                 }
             </ul>
         }
-    </section>
+    </details>
 }
 
 @code {

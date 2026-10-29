@@ -163,7 +163,7 @@ const legacy = {
             'imported hidden section',
         );
         assert.equal(await two.page.locator('[data-home-section="news"]').evaluate((n) => n.hidden), false);
-        await two.page.goto(base + '/settings');
+        await two.page.goto(base + '/settings#appearance-heading');
         await settle(two.page);
         await two.page.locator('input[data-theme-mode][value="light"]').check();
         await two.page.waitForTimeout(1200);
@@ -199,6 +199,8 @@ const legacy = {
         for (const theme of ['light', 'dark'])
             for (const width of widths) {
                 await p.setViewportSize({ width, height: 900 });
+                if (!(await p.locator('[data-settings-section="appearance"]').evaluate((n) => n.open)))
+                    await p.locator('[data-settings-section="appearance"] > summary').click();
                 await p.locator('input[data-theme-mode][value="' + theme + '"]').check();
                 await p.waitForTimeout(700);
                 await p.reload();

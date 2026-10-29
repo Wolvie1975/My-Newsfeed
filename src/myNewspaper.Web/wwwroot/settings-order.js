@@ -8,6 +8,22 @@
         services: 'My services',
         teams: 'My Teams',
     };
+    function revealSection() {
+        if (!document.querySelector('.set-main')) return;
+        let target;
+        try {
+            target = document.getElementById(decodeURIComponent(location.hash.slice(1)));
+        } catch {
+            return;
+        }
+        const panel = target?.closest('details.settings-panel');
+        if (panel) {
+            panel.open = true;
+            requestAnimationFrame(() => {
+                if (panel.isConnected) panel.scrollIntoView({ block: 'start' });
+            });
+        }
+    }
     function order() {
         let saved = [];
         try {
@@ -91,7 +107,19 @@
         }
     });
     // Enhanced navigation can replace the page without rerunning global scripts.
-    if (window.Blazor?.addEventListener) window.Blazor.addEventListener('enhancedload', render);
+    if (window.Blazor?.addEventListener)
+        window.Blazor.addEventListener('enhancedload', () => {
+            render();
+            revealSection();
+        });
+    window.addEventListener('hashchange', revealSection);
+    document.addEventListener('change', (e) => {
+        if (e.target.matches('#settings-jump-m')) revealSection();
+    });
+    document.addEventListener('click', (e) => {
+        const link = e.target.closest('.set-index a');
+        if (link && new URL(link.href).hash === location.hash) revealSection();
+    });
     let scheduled = false;
     new MutationObserver(() => {
         if (scheduled) return;
@@ -105,4 +133,5 @@
         if (e.key === key) render();
     });
     render();
+    revealSection();
 })();

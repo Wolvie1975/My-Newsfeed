@@ -3552,10 +3552,33 @@ a.tvc-row__show:hover {
     border-radius: 16px;
     background: var(--surface);
 }
-.pub .set-main [data-settings-section] > h2 {
+.pub .set-main [data-settings-section] > h2,
+.pub .settings-panel > summary > h2 {
     margin: 0 0 4px;
     font-size: 18px;
     font-weight: 800;
+}
+.pub .settings-panel > summary {
+    min-height: 44px;
+    align-content: center;
+    cursor: pointer;
+}
+.pub .settings-panel,
+.pub .settings-panel > summary,
+.pub .settings-panel > summary > h2 {
+    scroll-margin-top: 80px;
+}
+.pub .settings-panel > summary > h2 {
+    display: inline;
+    margin: 0;
+}
+.pub .settings-panel[open] > summary {
+    margin-bottom: 12px;
+}
+.pub .settings-panel > summary:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 4px;
+    border-radius: 4px;
 }
 /* Choices as tappable buttons, two across on phones. */
 :root:is([data-color-scheme], :not([data-color-scheme])) .pub .set-main .settings-schemes {
@@ -3661,7 +3684,8 @@ a.tvc-row__show:hover {
         border-radius: 0;
         background: none;
     }
-    .pub .set-main [data-settings-section] > h2 {
+    .pub .set-main [data-settings-section] > h2,
+    .pub .settings-panel > summary > h2 {
         font-family: var(--font-serif);
         font-size: 28px;
     }
