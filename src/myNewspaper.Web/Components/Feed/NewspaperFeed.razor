@@ -1,4 +1,23 @@
 @using myNewspaper.Web.Data
+@if (Cards)
+{
+    @* Headline cards (docs/headline-cards-handoff.md): the lead and three beside it, then a grid with hour or day
+       headings. Phones flatten these wrappers into the usual one-column list. *@
+    @if (Featured && Items.Count > 0)
+    {
+        <div class="hc-top">
+            <section class="hc-lead" aria-label="Lead story"><FeedArticles Items="@Items.Take(1).ToArray()" LeadFirst="true" PhoneFeatureFirst="PhoneFeatureFirst" Cards="true" NoGroupHeadings="true" /></section>
+            @if (Items.Count > 1) {
+                <section class="hc-side" aria-label="Latest headlines"><FeedArticles Items="@Items.Skip(1).Take(3).ToArray()" Cards="true" NoGroupHeadings="true" /></section>
+            }
+        </div>
+    }
+    @if (CardRemaining.Count > 0) {
+        <div class="hc-grid" data-hc-grid><FeedArticles Items="CardRemaining" PhoneFeatureFirst="@(PhoneFeatureFirst && !Featured)" PreviousDay="@PreviousDay" Total="Total" Cards="true" GroupBy="@GroupBy" /></div>
+    }
+}
+else
+{
 @if (Featured && Items.Count > 0)
 {
     <div class="paper-top">
@@ -13,7 +32,8 @@
 }
 @if (Remaining.Count > 0) {
     <h2 class="paper-label">More stories</h2>
-    <div class="paper-rows"><FeedArticles Items="Remaining" PhoneFeatureFirst="@(PhoneFeatureFirst && !Featured)" PreviousDay="PreviousDay" Total="Total" /></div>
+    <div class="paper-rows"><FeedArticles Items="Remaining" PhoneFeatureFirst="@(PhoneFeatureFirst && !Featured)" PreviousDay="@PreviousDay" Total="Total" /></div>
+}
 }
 @code {
     [Parameter] public IReadOnlyList<FeedItem> Items { get; set; } = [];
@@ -21,5 +41,10 @@
     [Parameter] public bool Featured { get; set; }
     [Parameter] public string? PreviousDay { get; set; }
     [Parameter] public int? Total { get; set; }
+    /// <summary>Headline cards on desktop (the All headlines pages).</summary>
+    [Parameter] public bool Cards { get; set; }
+    /// <summary>Cards only: "hour" (a busy today) or "day".</summary>
+    [Parameter] public string GroupBy { get; set; } = "day";
     private IReadOnlyList<FeedItem> Remaining => Featured ? Items.Skip(8).ToArray() : Items;
+    private IReadOnlyList<FeedItem> CardRemaining => Featured ? Items.Skip(4).ToArray() : Items;
 }

@@ -70,7 +70,16 @@ async function ready(page, story, quality) {
                     console.log(width, theme, kind);
                     await ready(page, story, quality);
                     const media = story.locator('[data-article-media]');
-                    if (quality === 'wide') {
+                    // From 744px All headlines shows headline cards: a photo card at 16:9 for the lead, or a text card
+                    // with no image area (docs/headline-cards-handoff.md). Phones keep the checks below.
+                    if (width >= 744) {
+                        if (quality === 'wide') {
+                            const box = await media.boundingBox(),
+                                card = await story.boundingBox();
+                            assert(Math.abs(box.width - card.width) < 2, 'photo spans the card');
+                            assert(Math.abs(box.width / box.height - 16 / 9) < 0.03, 'lead photo card at 16:9');
+                        } else assert(!(await media.isVisible()), 'text card: no image area');
+                    } else if (quality === 'wide') {
                         assert(
                             (await media.boundingBox()).height <= (width >= 900 ? 360 : 220) + 1,
                             'feature image height capped',
@@ -179,7 +188,8 @@ async function ready(page, story, quality) {
             return route.fulfill({ contentType: 'image/svg+xml', body: photo('modest') });
         });
         const largePage = await largeScreen.newPage();
-        await largePage.goto(base + '/news/all', { waitUntil: 'networkidle' });
+        // The News front's lead keeps the 1.5× cap; All headlines' cards fill their column by design.
+        await largePage.goto(base + '/news', { waitUntil: 'networkidle' });
         const largeStory = largePage.locator(selector).filter({ visible: true }).first();
         await ready(largePage, largeStory, 'wide');
         assert(

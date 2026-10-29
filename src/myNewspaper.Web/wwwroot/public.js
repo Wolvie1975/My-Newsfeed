@@ -729,6 +729,12 @@
             endpoint.searchParams.set(key, value);
         });
         endpoint.searchParams.set('day', feed.getAttribute('data-last-day') || '');
+        // Headline cards: same grouping as the page, continuing from its last hour or day heading.
+        if (feed.getAttribute('data-feed-cards') === '1') {
+            endpoint.searchParams.set('cards', '1');
+            endpoint.searchParams.set('groupBy', feed.getAttribute('data-feed-group-by') || 'day');
+            endpoint.searchParams.set('group', feed.getAttribute('data-last-group') || '');
+        }
         endpoint.searchParams.set('view', link.getAttribute('data-feed-view') || 'news');
 
         const label = link.textContent;
@@ -742,8 +748,10 @@
             })
             .then((data) => {
                 const before = feed.querySelectorAll('.article').length;
-                feed.insertAdjacentHTML('beforeend', data.html);
+                // Cards go inside the card grid; without one (no grid on the page yet), straight into the feed.
+                (feed.querySelector('[data-hc-grid]') || feed).insertAdjacentHTML('beforeend', data.html);
                 if (data.lastDay) feed.setAttribute('data-last-day', data.lastDay);
+                if (data.lastGroup) feed.setAttribute('data-last-group', data.lastGroup);
 
                 document.querySelectorAll('[data-shown-total]').forEach((el) => {
                     el.textContent = 'Showing ' + data.shown + ' of ' + data.total;

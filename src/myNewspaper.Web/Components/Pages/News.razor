@@ -102,8 +102,8 @@ else
 
     <div class="news-front @(EntertainmentSection ? "news-front--posters" : null)">
         <div class="news-front__stories">
-            <section class="feed paper-feed" aria-label="Articles" data-last-day="@lastDay">
-                <NewspaperFeed Items="feed.Items" Featured="@(After is null)" PhoneFeatureFirst="SectionNews" Total="@(After is null ? feed.Total : null)" />
+            <section class="feed paper-feed hc-feed" aria-label="Articles" data-last-day="@lastDay" data-feed-cards="1" data-feed-group-by="@groupBy" data-last-group="@lastGroup">
+                <NewspaperFeed Items="feed.Items" Featured="@(After is null)" PhoneFeatureFirst="SectionNews" Total="@(After is null ? feed.Total : null)" Cards="true" GroupBy="@groupBy" />
             </section>
         </div>
     </div>
@@ -232,6 +232,9 @@ else
     private IReadOnlyDictionary<int, IReadOnlyList<FeedItem>> latestByCategory = new Dictionary<int, IReadOnlyList<FeedItem>>();
     private FeedPage? feed;
     private string? lastDay;
+    // Headline cards: "hour" headings on a busy today, else "day"; and the last card group, for Load more.
+    private string groupBy = "day";
+    private string? lastGroup;
     private DateTime? lastUpdated;
 
     protected override async Task OnParametersSetAsync()
@@ -274,6 +277,10 @@ else
         feed = SectionNews && Category == null ? new FeedPage([], 0, 0, null) : await FeedQuery.GetFeedAsync(
             db, Category, Q, After, After is null ? FeedQuery.FirstBatch : FeedQuery.MoreBatch, Source, headlinesOnly: !SectionNews);
         lastDay = feed.Items.Count > 0 ? Dates.DayKey(feed.Items[^1]) : null;
+        var nowUtc = DateTime.UtcNow;
+        groupBy = feed.Items.Count > 0 && await FeedQuery.CountPublishedSinceAsync(db, Dates.StartOfDayUtc(Dates.TodayAt(nowUtc)),
+            Category, Q, Source, headlinesOnly: !SectionNews) >= FeedQuery.HourGroupingThreshold ? "hour" : "day";
+        lastGroup = feed.Items.Count > 0 ? Dates.CardGroupKey(feed.Items[^1], groupBy, nowUtc) : null;
         lastUpdated = SectionNews && Category == null ? null : await FeedQuery.GetLastUpdatedAsync(db, headlinesOnly: !SectionNews, categoryId: Category);
         // The phone folds: every other headline category, local news first and opinion last.
         foldCategories = Phone

@@ -142,4 +142,32 @@ public sealed class FeedDates(TimeZoneInfo zone)
             ? day.ToString("ddd MMM d, yyyy", Culture)
             : dayKey;
     }
+
+    // ---------- Headline cards (docs/headline-cards-handoff.md): groups by hour (today only) or by day ----------
+
+    /// <summary>The card group for an article: "h-2026-10-29-09" for today's hours in hour mode, else "d-2026-10-28" or "d-undated".</summary>
+    public string CardGroupKey(FeedItem item, string groupBy, DateTime utcNow)
+    {
+        if (item.Undated) return "d-undated";
+        var local = Local(item.Date);
+        return groupBy == "hour" && DateOnly.FromDateTime(local) == TodayAt(utcNow)
+            ? "h-" + local.ToString("yyyy-MM-dd-HH", Culture)
+            : "d-" + local.ToString("yyyy-MM-dd", Culture);
+    }
+
+    /// <summary>The card group heading: "9 AM hour", "Today", "Yesterday · Wed, Oct 28", "Mon, Oct 26" or "Date unknown".</summary>
+    public string CardGroupLabel(FeedItem item, string groupBy, DateTime utcNow) => CardGroupKey(item, groupBy, utcNow) switch
+    {
+        "d-undated" => "Date unknown",
+        var key when key.StartsWith("h-", StringComparison.Ordinal) => Local(item.Date).ToString("h tt", Culture) + " hour",
+        _ => DayHeading(DateOnly.FromDateTime(Local(item.Date)), utcNow),
+    };
+
+    /// <summary>"Today", "Yesterday · Wed, Oct 28", or "Mon, Oct 26" (with the year when it isn't this year's).</summary>
+    public string DayHeading(DateOnly day, DateTime utcNow)
+    {
+        var today = TodayAt(utcNow);
+        var date = day.ToString(day.Year == today.Year ? "ddd, MMM d" : "ddd, MMM d, yyyy", Culture);
+        return day == today ? "Today" : day == today.AddDays(-1) ? "Yesterday · " + date : date;
+    }
 }

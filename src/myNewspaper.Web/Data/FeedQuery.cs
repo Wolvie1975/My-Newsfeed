@@ -118,13 +118,9 @@ public static class FeedQuery
                 && (!headlinesOnly || s.SourceCategory == null || s.SourceCategory.NewsHub == "headlines"))
             .MaxAsync(s => s.LastScrapedAt);
 
-    /// <summary>
-    /// Newest first by publish date. Articles with no publish date sort last, among themselves by scrape date (that is
-    /// only the tiebreak; no date is shown for them). Returns up to
-    /// <paramref name="take"/> articles that come after <paramref name="after"/> (or from the start when it is null).
-    /// </summary>
-    public static async Task<FeedPage> GetFeedAsync(
-        WebScraperContext db, int? categoryId, string? search, FeedCursor? after, int take = FirstBatch, int? sourceId = null, bool headlinesOnly = false)
+    /// <summary>The articles a feed list shows (hub, category, source and search), unordered; shared so counts can't disagree with the list.</summary>
+    private static IQueryable<Models.Page> Filtered(
+        WebScraperContext db, int? categoryId, string? search, int? sourceId, bool headlinesOnly)
     {
         var query = Visible(db);
         if (headlinesOnly) query = query.Where(p => p.Source.SourceCategory == null || p.Source.SourceCategory.NewsHub == "headlines");
@@ -143,6 +139,26 @@ public static class FeedQuery
                 || (p.Description != null && p.Description.Contains(term)));
         }
 
+        return query;
+    }
+
+    /// <summary>How many dated articles in this feed list were published since <paramref name="sinceUtc"/>.</summary>
+    public static Task<int> CountPublishedSinceAsync(
+        WebScraperContext db, DateTime sinceUtc, int? categoryId, string? search, int? sourceId, bool headlinesOnly) =>
+        Filtered(db, categoryId, search, sourceId, headlinesOnly).CountAsync(p => p.Published != null && p.Published >= sinceUtc);
+
+    /// <summary>Headline cards group a busy day by hour: at least this many of today's stories in the list.</summary>
+    public const int HourGroupingThreshold = 20;
+
+    /// <summary>
+    /// Newest first by publish date. Articles with no publish date sort last, among themselves by scrape date (that is
+    /// only the tiebreak; no date is shown for them). Returns up to
+    /// <paramref name="take"/> articles that come after <paramref name="after"/> (or from the start when it is null).
+    /// </summary>
+    public static async Task<FeedPage> GetFeedAsync(
+        WebScraperContext db, int? categoryId, string? search, FeedCursor? after, int take = FirstBatch, int? sourceId = null, bool headlinesOnly = false)
+    {
+        var query = Filtered(db, categoryId, search, sourceId, headlinesOnly);
         var total = await query.CountAsync();
 
         var older = query;

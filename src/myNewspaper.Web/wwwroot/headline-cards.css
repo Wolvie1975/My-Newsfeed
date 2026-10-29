@@ -1,0 +1,254 @@
+/* =====================================================================================================================
+   Headline cards (docs/headline-cards-handoff.md): the All headlines pages on desktop and iPad show each story as a
+   photo card (the photo across the card, one 16:10 crop) or a text card (tinted, coloured top edge, bigger
+   headline), never a small thumbnail. article-images.js decides: a "wide" photo makes a photo card. Phones keep the
+   usual one-column story list. Loaded after article-images.css; the :root:is(...) prefix outranks the feed and
+   article-image rules these cards replace.
+   ===================================================================================================================== */
+.pub {
+    --hc-tint: color-mix(in srgb, var(--text) 5%, var(--surface));
+}
+.pub .hc-group {
+    display: none;
+}
+@media (max-width: 743px) {
+    .pub .hc-top,
+    .pub .hc-top > section,
+    .pub .hc-grid {
+        display: contents;
+    }
+}
+
+@media (min-width: 744px) {
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .hc-feed {
+        display: block;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .hc-feed .daylabel {
+        display: none;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .hc-top {
+        display: grid;
+        grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+        gap: 28px;
+        padding-bottom: 28px;
+        border-bottom: 2px solid var(--text);
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .hc-side {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        min-width: 0;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .hc-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 28px;
+        margin-top: 28px;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .hc-group {
+        display: block;
+        grid-column: 1 / -1;
+        margin: 6px 0 -8px;
+        padding-bottom: 6px;
+        border-bottom: 2px solid var(--text);
+        color: var(--text);
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        scroll-margin-top: 140px;
+    }
+
+    /* Every card starts as a text card: tinted, coloured top edge (its category's colour), actions at the bottom. */
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .hc-feed .hc-card {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        min-width: 0;
+        margin: 0;
+        padding: 18px;
+        border: 0;
+        border-top: 4px solid var(--edge, var(--accent));
+        border-radius: 10px;
+        background: var(--hc-tint);
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .hc-feed .hc-card [data-article-media] {
+        display: none;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .hc-feed .hc-card .body {
+        display: flex;
+        flex: 1 1 auto;
+        flex-direction: column;
+        gap: 8px;
+        padding: 0;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .hc-feed .hc-card .cat {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin: 0;
+        color: var(--edge, var(--accent));
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .hc-feed .hc-card .cat::before {
+        content: '';
+        width: 8px;
+        height: 8px;
+        border-radius: 999px;
+        background: var(--dot, var(--accent));
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .hc-feed .hc-card .title {
+        display: block;
+        margin: 0;
+        font-family: var(--mx-serif);
+        font-size: 25px;
+        font-weight: 800;
+        line-height: 1.15;
+        -webkit-line-clamp: unset;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .hc-feed .hc-card .summary {
+        display: -webkit-box;
+        margin: 0;
+        overflow: hidden;
+        color: var(--text-2);
+        font-size: 15px;
+        line-height: 1.5;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+    }
+    /* One line, as in the design: "Source · 9:42 AM", Share and Save at the right (the rows' three-row grid steps aside). */
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .hc-feed .hc-card .src {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0 6px;
+        align-self: stretch;
+        margin-top: auto;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .hc-feed .hc-card .article-publisher {
+        display: inline-flex;
+        min-width: 0;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .hc-feed .hc-card .src__sep {
+        display: inline;
+        color: var(--text-2);
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .hc-feed
+        .hc-card
+        :is(.src__name, .src time, .src .publication-unavailable, .src__sep) {
+        font-size: 13px;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .hc-feed .hc-card .article-actions {
+        display: flex;
+        gap: 2px;
+        margin-left: auto;
+    }
+    /* The group heading already gives the day; the lead's "Read on" link and the source badge aren't in the design. */
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .hc-feed
+        .hc-card
+        :is(.src__mark, .pubdate__day, .more) {
+        display: none;
+    }
+
+    /* Photo card: a measured "wide" photo, or (lead and the three beside it) a photo not measured yet, so they don't
+       flash as text cards first. No tint or edge; the photo spans the card at one crop. */
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .hc-feed
+        :is(
+            .hc-card[data-image-layout='wide'],
+            .hc-top .hc-card:not([data-image-measured]):has([data-article-media] > img)
+        ) {
+        padding: 0;
+        border-top: 0;
+        background: transparent;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .hc-feed
+        :is(
+            .hc-card[data-image-layout='wide'],
+            .hc-top .hc-card:not([data-image-measured]):has([data-article-media] > img)
+        )
+        [data-article-media] {
+        position: relative;
+        display: block;
+        float: none;
+        width: 100%;
+        max-width: none;
+        height: auto;
+        min-height: 0;
+        max-height: none;
+        margin: 0;
+        overflow: hidden;
+        border-radius: 10px;
+        aspect-ratio: 16 / 10;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .hc-feed
+        :is(
+            .hc-card[data-image-layout='wide'],
+            .hc-top .hc-card:not([data-image-measured]):has([data-article-media] > img)
+        )
+        [data-article-media]
+        img {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: center 30%;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .hc-feed
+        :is(
+            .hc-card[data-image-layout='wide'],
+            .hc-top .hc-card:not([data-image-measured]):has([data-article-media] > img)
+        )
+        .title {
+        font-size: 21px;
+        font-weight: 700;
+    }
+
+    /* The lead: bigger everything; without a good photo it's a large text panel. */
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .hc-feed .hc-lead .hc-card .title {
+        font-size: 44px;
+        line-height: 1.1;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .hc-feed .hc-lead .hc-card .summary {
+        -webkit-line-clamp: 3;
+        line-clamp: 3;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .hc-feed
+        .hc-lead
+        :is(.hc-card[data-image-layout='wide'], .hc-card:not([data-image-measured]):has([data-article-media] > img))
+        .title {
+        font-size: 34px;
+        font-weight: 800;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .hc-feed
+        .hc-lead
+        :is(.hc-card[data-image-layout='wide'], .hc-card:not([data-image-measured]):has([data-article-media] > img))
+        [data-article-media] {
+        aspect-ratio: 16 / 9;
+    }
+}
+@media (min-width: 1024px) {
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .hc-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}

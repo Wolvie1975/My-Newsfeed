@@ -33,7 +33,11 @@
         media.style.setProperty('--article-image-ratio', cropped ? '3 / 2' : width + ' / ' + height);
         img.classList.toggle('article-image--cropped', quality === 'wide' && cropped);
         media.style.setProperty('--article-image-width', width + 'px');
-        if (story) story.dataset.imageLayout = quality;
+        if (story) {
+            story.dataset.imageLayout = quality;
+            // Headline cards keep the lead's photo slot until now, rather than flashing a text card first.
+            story.dataset.imageMeasured = '';
+        }
         if (quality === 'none') img.remove();
     }
 
@@ -45,8 +49,14 @@
             return;
         }
         const story = img.closest('[data-article-story]');
-        if (story) story.dataset.imageLayout = 'compact';
-        const feature = story?.dataset.articleStory === 'feature',
+        if (story) {
+            story.dataset.imageLayout = 'compact';
+            delete story.dataset.imageMeasured;
+        }
+        // Desktop headline cards show every good photo full width, so they ask BBC for its larger size too.
+        const feature =
+                story?.dataset.articleStory === 'feature' ||
+                (story?.classList.contains('hc-card') && matchMedia('(min-width: 744px)').matches),
             active = preferred(original, feature);
         images.set(img, { original, active, fallback: false });
         if (active !== original) img.src = active;
@@ -78,7 +88,10 @@
                 return;
             }
             const story = img.closest('[data-article-story]');
-            if (story) story.dataset.imageLayout = 'none';
+            if (story) {
+                story.dataset.imageLayout = 'none';
+                story.dataset.imageMeasured = '';
+            }
             img.remove();
         },
         true,
@@ -89,7 +102,10 @@
         if (root instanceof HTMLImageElement) bind(root);
         root.querySelectorAll?.(selector).forEach(bind);
         const empty = (story) => {
-            if (!story.querySelector(selector)) story.dataset.imageLayout = 'none';
+            if (!story.querySelector(selector)) {
+                story.dataset.imageLayout = 'none';
+                story.dataset.imageMeasured = '';
+            }
         };
         if (root.matches?.('[data-article-story]')) empty(root);
         root.querySelectorAll?.('[data-article-story]').forEach(empty);

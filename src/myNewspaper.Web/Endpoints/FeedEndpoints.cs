@@ -12,7 +12,8 @@ public static class FeedEndpoints
     public static void MapFeed(this WebApplication app) => app.MapGet("/feed/more", MoreAsync);
 
     private static async Task<IResult> MoreAsync(HttpContext http, IDbContextFactory<WebScraperContext> factory, ILoggerFactory loggers,
-        FeedDates dates, string? after, string? category, string? q, string? day, string? source, string? view, string? sport)
+        FeedDates dates, string? after, string? category, string? q, string? day, string? source, string? view, string? sport,
+        string? cards, string? groupBy, string? group)
     {
         if (FeedCursor.Parse(after) is not { } cursor)
         {
@@ -63,6 +64,10 @@ public static class FeedEndpoints
         var page = await FeedQuery.GetFeedAsync(db, categoryId, q, cursor, FeedQuery.MoreBatch, sourceId,
             headlinesOnly: !boxOffice && !big12News && sectionCategory == null);
 
+        // Headline cards: the page decides hour or day grouping; the last group stops a repeated heading at the seam.
+        var cardMode = cards == "1";
+        var grouping = groupBy == "hour" ? "hour" : "day";
+        var nowUtc = DateTime.UtcNow;
         await using var renderer = new HtmlRenderer(http.RequestServices, loggers);
         var html = await renderer.Dispatcher.InvokeAsync(async () =>
         {
@@ -71,6 +76,9 @@ public static class FeedEndpoints
                 {
                     [nameof(FeedArticles.Items)] = page.Items,
                     [nameof(FeedArticles.PreviousDay)] = day,
+                    [nameof(FeedArticles.Cards)] = cardMode,
+                    [nameof(FeedArticles.GroupBy)] = grouping,
+                    [nameof(FeedArticles.PreviousGroup)] = group,
                 }));
             return output.ToHtmlString();
         });
@@ -100,6 +108,7 @@ public static class FeedEndpoints
             total = page.Total,
             added = page.Items.Count,
             lastDay = page.Items.Count > 0 ? dates.DayKey(page.Items[^1]) : day,
+            lastGroup = cardMode && page.Items.Count > 0 ? dates.CardGroupKey(page.Items[^1], grouping, nowUtc) : group,
         });
     }
 }
