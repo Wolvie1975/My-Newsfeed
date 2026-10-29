@@ -6,6 +6,44 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
+## Homepage weather icons — October 29, 2026 (Central)
+
+Deployed public image `mynewspaper-web:home-weather-20261029`
+(`0729f739cdcf`) to `mynewsfeed-web`. Each homepage forecast period now
+includes a server-rendered condition icon, including day/night variants, on both
+phone and desktop layouts. Artwork matches the existing local weather icons;
+forecast text remains the accessible description. No database scripts or migrations
+ran. The existing sql2025 / WebScraper connection, runtime environment, ports,
+network, restart policy, health check and persistent key volume were preserved.
+Admin remains on its existing image and configuration.
+
+Rollback: image `mynewspaper-web:before-home-weather-20261029`
+(`f057f45e0be1`) and stopped container
+`mynewsfeed-web-before-home-weather-20261029` retain the preceding public release.
+
+Validation: local public build passed with zero warnings/errors; changed CSS passed
+Prettier and the diff passed whitespace checks. Local Chromium checks covered
+320/390/430/768/1440px light/dark, with screenshot inspection and no horizontal
+overflow. Refresh, forecast navigation and no-JavaScript rendering were checked.
+The Docker publish and static-asset manifest guard passed.
+
+After rollout, the public and admin containers were healthy and both production
+HTTPS health endpoints returned 200. Authenticated HTTPS checks passed for News,
+Events, Results (following its redirect), Standings, Rankings, Movies, digital
+movies and box office. League-phase startup checks were observed. Actual homepage
+checks at 320/390/430/768/1440px light/dark verified four visible icons, no horizontal
+overflow, saved theme persistence after refresh and decorative SVG accessibility.
+The phone forecast link exceeds 44px and opens Kansas City news. A no-JavaScript
+phone session also rendered four icons and followed the link. Screenshots at all
+widths/themes were inspected under `test-results/browser/live-home-weather/`
+(ignored). A disposable profile used for verification was removed afterwards.
+A temporary workspace hostname mapping enabled the production Tailscale HTTPS
+address with certificate verification enabled; it was removed after the checks.
+
+Limits: phone checks used Chromium emulation; physical-device testing was
+unavailable. The full unrelated test suites were not rerun for this presentation
+change. The commit remains local on `develop`; no push was made.
+
 ## Separate public and admin PWAs — October 29, 2026 (Central)
 
 Deployed the split websites from local `develop`, with shared code in

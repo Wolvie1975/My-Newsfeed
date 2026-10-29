@@ -1,0 +1,68 @@
+@using System.Text.RegularExpressions
+
+<svg class="weather-icon weather-icon--@Kind" viewBox="0 0 48 48" width="28" height="28" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+    @switch (Kind)
+    {
+        case "sun":
+            <circle cx="24" cy="24" r="9"/><path d="M24 4v5m0 30v5M4 24h5m30 0h5M10 10l4 4m20 20 4 4M10 38l4-4m20-20 4-4"/>
+            break;
+        case "moon":
+            <path d="M33 7a18 18 0 1 0 8 28A17 17 0 0 1 33 7Z"/>
+            break;
+        case "cloud":
+            <path d="M12 33h25a8 8 0 0 0 0-16h-1a12 12 0 0 0-23-2 9 9 0 0 0-1 18Z"/>
+            break;
+        case "partly-day":
+            <circle cx="16" cy="14" r="7"/><path d="M16 2v3M4 14h3m1-9 2 2m14-2-2 2"/><path d="M12 33h25a8 8 0 0 0 0-16h-1a12 12 0 0 0-23-2 9 9 0 0 0-1 18Z"/>
+            break;
+        case "partly-night":
+            <path d="M21 3A12 12 0 1 0 30 22 12 12 0 0 1 21 3Z"/><path d="M12 33h25a8 8 0 0 0 0-16h-1a12 12 0 0 0-23-2 9 9 0 0 0-1 18Z"/>
+            break;
+        case "rain":
+            <path d="M12 33h25a8 8 0 0 0 0-16h-1a12 12 0 0 0-23-2 9 9 0 0 0-1 18Z"/><path d="m17 38-2 6m11-6-2 6m11-6-2 6"/>
+            break;
+        case "storm":
+            <path d="M12 33h25a8 8 0 0 0 0-16h-1a12 12 0 0 0-23-2 9 9 0 0 0-1 18Z"/><path d="m25 30-6 9h7l-4 8m-8-9-2 5m24-5-2 5"/>
+            break;
+        case "snow":
+            <path d="M12 33h25a8 8 0 0 0 0-16h-1a12 12 0 0 0-23-2 9 9 0 0 0-1 18Z"/><path d="M15 38v8m-3-6 6 4m0-4-6 4m20-6v8m-3-6 6 4m0-4-6 4"/>
+            break;
+        case "ice":
+            <path d="M12 33h25a8 8 0 0 0 0-16h-1a12 12 0 0 0-23-2 9 9 0 0 0-1 18Z"/><path d="m17 37-4 5 4 5 4-5Zm17 0-4 5 4 5 4-5Z"/>
+            break;
+        case "mixed":
+            <path d="M12 33h25a8 8 0 0 0 0-16h-1a12 12 0 0 0-23-2 9 9 0 0 0-1 18Z"/><path d="m16 38-2 7m15-7v8m-3-6 6 4m0-4-6 4"/>
+            break;
+        case "fog":
+            <path d="M12 33h25a8 8 0 0 0 0-16h-1a12 12 0 0 0-23-2 9 9 0 0 0-1 18Z"/><path d="M6 38h36M10 44h28"/>
+            break;
+        case "wind":
+            <path d="M5 15h26a6 6 0 1 0-6-6M5 24h33a5 5 0 1 0-5-5M5 33h22a6 6 0 1 1-6 6"/>
+            break;
+        case "temperature":
+            <path d="M19 29V9a5 5 0 0 1 10 0v20a10 10 0 1 1-10 0Z"/><path d="M24 15v20m10-23h5m-5 8h5"/><circle cx="24" cy="36" r="3"/>
+            break;
+    }
+</svg>
+
+@code {
+    [Parameter] public string Summary { get; set; } = "";
+    [Parameter] public bool IsDaytime { get; set; } = true;
+
+    private string Kind => Summary.ToLowerInvariant() switch
+    {
+        var s when Matches(s, "thunder|t-storm") => "storm",
+        var s when Matches(s, "freezing|ice|icy") => "ice",
+        var s when Matches(s, "sleet|wintry|winter.*mix|rain.*snow|snow.*rain") => "mixed",
+        var s when Matches(s, "snow|flurr") => "snow",
+        var s when Matches(s, "rain|shower|drizzle") => "rain",
+        var s when Matches(s, "fog|mist|haze|smoke|dust") => "fog",
+        var s when Matches(s, "partly|mostly sunny|mostly clear") => IsDaytime ? "partly-day" : "partly-night",
+        var s when Matches(s, "cloud|overcast") => "cloud",
+        var s when Matches(s, "sunny|clear") => IsDaytime ? "sun" : "moon",
+        var s when Matches(s, "wind|breez") => "wind",
+        _ => "temperature"
+    };
+
+    private static bool Matches(string summary, string pattern) => Regex.IsMatch(summary, pattern);
+}

@@ -48,7 +48,7 @@
                         <ul class="bs-glance__periods">
                             @foreach (var period in forecast.Periods.Take(4))
                             {
-                                <li><span class="bs-glance__name">@period.Name</span><span class="bs-glance__reading"><b>@period.Temperature°</b> @period.Summary</span></li>
+                                <li><span class="bs-glance__name">@period.Name</span><WeatherIcon Summary="@period.Summary" IsDaytime="@period.IsDaytime" /><span class="bs-glance__reading"><b>@period.Temperature°</b> @period.Summary</span></li>
                             }
                         </ul>
                         <a class="d-more" href="news/kansas-city">Kansas City <span aria-hidden="true">→</span></a>
@@ -395,7 +395,7 @@
                     <span class="sr-only">Kansas City weather:</span>
                     @foreach (var period in forecast.Periods.Take(4))
                     {
-                        <span class="mx-weather__period"><span class="mx-weather__name">@ShortPeriod(period.Name)</span><b class="mx-weather__temp">@period.Temperature°</b><span class="mx-weather__summary">@period.Summary</span></span>
+                        <span class="mx-weather__period"><span class="mx-weather__name">@ShortPeriod(period.Name)</span><WeatherIcon Summary="@period.Summary" IsDaytime="@period.IsDaytime" /><b class="mx-weather__temp">@period.Temperature°</b><span class="mx-weather__summary">@period.Summary</span></span>
                     }
                 </a>
             }

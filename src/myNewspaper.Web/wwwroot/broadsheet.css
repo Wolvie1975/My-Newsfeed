@@ -1793,3 +1793,9 @@
         gap: 14px;
     }
 }
+
+.pub .bs-glance__periods .weather-icon {
+    width: 28px;
+    height: 28px;
+    margin-block: 3px;
+}

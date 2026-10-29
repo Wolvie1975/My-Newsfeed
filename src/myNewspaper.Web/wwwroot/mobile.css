@@ -1479,3 +1479,11 @@ span.mx-stepper__btn {
 .pub .mx-theater-link {
     margin-top: 16px;
 }
+
+/* Forecast icons inherit the ribbon's contrast in either theme. */
+.pub .mx-weather__period .weather-icon {
+    width: 28px;
+    height: 28px;
+    margin-block: 3px;
+    color: inherit;
+}
