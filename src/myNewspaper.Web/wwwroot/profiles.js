@@ -1,9 +1,11 @@
-// Household profiles (profiles handoff 2.2 and 6.1). Two jobs:
+// Household profiles (profiles handoff 2.2, 6.1 and 6.2). Three jobs:
 // 1. The gate for scripts: when profiles are on and this device's profile isn't open (a new browser session on an
 //    "every visit" device, say), the server answers a script's fetch with 401 { gate: "/editions" }. Send the browser
 //    to the picker, coming back to this page afterwards. Loaded before the other scripts so it sees their fetches.
 // 2. The PIN pad on the edition picker. Each column is a plain form that posts the typed PIN; this replaces the PIN
 //    field with a dialog (a bottom sheet on phones) and posts the four digits as JSON.
+// 3. New edition setup (/editions/new): one step at a time with Back, Continue and a progress bar, posting as JSON so a
+//    refused name or PIN keeps everything chosen. Without JavaScript the four steps are one long form.
 (function () {
     'use strict';
 
@@ -314,4 +316,146 @@
 
     enhance();
     if (window.Blazor?.addEventListener) window.Blazor.addEventListener('enhancedload', enhance);
+})();
+
+(function () {
+    'use strict';
+
+    // Runs on load and after Blazor's enhanced navigation (the picker's link arrives that way), once per form.
+    function setup() {
+        const form = document.querySelector('[data-setup]');
+        if (!form || form.dataset.setupReady) return;
+        form.dataset.setupReady = 'true';
+        const steps = [...form.querySelectorAll('[data-setup-step]')];
+        const find = (selector) => form.querySelector(selector);
+        const back = find('[data-setup-back]'),
+            next = find('[data-setup-next]'),
+            submit = find('[data-setup-submit]'),
+            bar = find('[data-setup-bar]'),
+            count = find('[data-setup-count]'),
+            error = find('[data-setup-error]'),
+            name = find('[data-setup-name]'),
+            pin = find('[data-setup-pin]'),
+            pinConfirm = find('[data-setup-pin-confirm]'),
+            pinStatus = find('[data-setup-pin-status]');
+        const maxServices = 20;
+        let step = 0;
+
+        const firstName = () => name.value.trim();
+        const pinsOk = () => /^\d{4}$/.test(pin.value) && pin.value === pinConfirm.value;
+        // Continue stays off on step 1 until there's a name and the same 4-digit PIN twice (handoff 6.2).
+        const ready = () => step > 0 || (firstName().length > 0 && pinsOk());
+
+        function paint() {
+            steps.forEach((s, i) => (s.hidden = i !== step));
+            back.hidden = step === 0;
+            next.hidden = step === steps.length - 1;
+            submit.hidden = step !== steps.length - 1;
+            next.disabled = !ready();
+            count.textContent = 'Step ' + (step + 1) + ' of ' + steps.length;
+            bar.querySelectorAll('span').forEach((s, i) => s.classList.toggle('is-done', i <= step));
+            submit.textContent = firstName() ? 'Open ' + firstName() + '’s edition' : 'Open my edition';
+        }
+
+        function go(to) {
+            step = Math.max(0, Math.min(steps.length - 1, to));
+            paint();
+            const heading = steps[step].querySelector('h1, h2');
+            heading.focus();
+            heading.scrollIntoView({ block: 'nearest' });
+        }
+
+        function pinNote() {
+            if (pin.value && !/^\d*$/.test(pin.value + pinConfirm.value)) pinStatus.textContent = 'A PIN is 4 digits.';
+            else if (pin.value.length === 4 && pinConfirm.value.length === 4 && pin.value !== pinConfirm.value)
+                pinStatus.textContent = 'The two PINs don’t match.';
+            else pinStatus.textContent = '';
+        }
+
+        function filter(input) {
+            const term = input.value.trim().toLowerCase();
+            const within = input.closest('[data-setup-step]');
+            within.querySelectorAll('[data-setup-option]').forEach((o) => {
+                o.hidden = term !== '' && !o.dataset.setupOption.includes(term);
+            });
+            // Searching opens every group, as on Settings, and hides groups with no match.
+            within.querySelectorAll('[data-setup-group]').forEach((g) => {
+                if (term) g.open = true;
+                g.hidden = term !== '' && !g.querySelector('[data-setup-option]:not([hidden])');
+            });
+        }
+
+        function limitServices() {
+            const boxes = [...form.querySelectorAll('[data-setup-service]')];
+            const full = boxes.filter((b) => b.checked).length >= maxServices;
+            boxes.forEach((b) => (b.disabled = full && !b.checked));
+        }
+
+        form.addEventListener('input', (event) => {
+            const target = event.target;
+            if (target === name) find('[data-setup-initial]').textContent = (firstName()[0] || '?').toUpperCase();
+            if (target === pin || target === pinConfirm) pinNote();
+            if (target.matches('[data-setup-color]')) form.style.setProperty('--ed', target.value);
+            if (target.matches('[data-setup-filter]')) filter(target);
+            if (target.matches('[data-setup-service]')) limitServices();
+            paint();
+        });
+
+        form.addEventListener('click', (event) => {
+            const up = event.target.closest('[data-setup-up]');
+            if (!up) return;
+            const item = up.closest('li');
+            if (item.previousElementSibling) item.parentElement.insertBefore(item, item.previousElementSibling);
+            up.focus();
+        });
+        back.addEventListener('click', () => go(step - 1));
+        next.addEventListener('click', () => {
+            if (ready()) go(step + 1);
+        });
+        // Enter in a text field moves on instead of submitting a half-finished edition.
+        form.addEventListener('keydown', (event) => {
+            if (event.key !== 'Enter' || step === steps.length - 1) return;
+            if (!event.target.matches('input:not([type=checkbox]):not([type=radio])')) return;
+            event.preventDefault();
+            if (ready()) go(step + 1);
+        });
+
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            if (!ready()) return go(0);
+            submit.disabled = true;
+            error.hidden = true;
+            let response = null,
+                body;
+            try {
+                response = await fetch(form.action, {
+                    method: 'POST',
+                    body: new FormData(form),
+                    credentials: 'same-origin',
+                    headers: { Accept: 'application/json' },
+                });
+                body = await response.json().catch(() => ({}));
+            } catch (_) {
+                body = { error: 'That didn’t go through. Check your connection and try again.' };
+            }
+            if (response && response.ok && body.opened) {
+                location.assign(body.returnUrl || '/');
+                return;
+            }
+            submit.disabled = false;
+            error.textContent = body.error || 'Something went wrong. Please try again.';
+            error.hidden = false;
+            // Every refusal is about the name or the PIN, which are on step 1.
+            go(0);
+        });
+
+        form.querySelectorAll('[data-setup-up]').forEach((b) => (b.hidden = false));
+        form.classList.add('is-stepped');
+        bar.hidden = false;
+        limitServices();
+        paint();
+    }
+
+    setup();
+    if (window.Blazor?.addEventListener) window.Blazor.addEventListener('enhancedload', setup);
 })();

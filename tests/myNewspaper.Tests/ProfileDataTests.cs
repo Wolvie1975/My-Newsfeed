@@ -434,4 +434,57 @@ public class ProfileDataTests
         await ProfileAdmin.UnlockAsync(db, a.Id);
         Assert.Equal(0, await RequestStore.AlertCountAsync(db) - await db.Profiles.CountAsync(p => p.LockedAt != null));
     }
+
+    [Fact]
+    public async Task Deleting_a_profile_removes_its_devices_and_the_channels_only_it_requested()
+    {
+        await using var db = Create();
+        await using var tx = await db.Database.BeginTransactionAsync();
+        var tag = Tag();
+        var a = await NewProfile(db);
+        var b = await NewProfile(db);
+        var aDevice = await NewDevice(db);
+        var bDevice = await NewDevice(db);
+        await ProfileStore.AssignDeviceAsync(db, aDevice.Id, a.Id);
+        await ProfileStore.AssignDeviceAsync(db, bDevice.Id, b.Id);
+
+        // A's own channel, with a stored video; and a channel both A and B asked for.
+        var own = await RequestStore.SubmitAsync(db, a.Id, RequestStore.Youtube, "A's channel", null, null);
+        var ownId = $"UC{tag}O".PadRight(24, 'x');
+        Assert.Equal(ApproveOutcome.Approved, await RequestStore.ApproveYoutubeAsync(db, own.Id, ownId, $"zz {tag} own", null, false, Now));
+        var ownFeed = await db.YoutubeVideoFeeds.SingleAsync(f => f.ChannelId == ownId);
+        db.YouTubeVideos.Add(new YouTubeVideo
+        {
+            VideoId = $"v{tag}",
+            ChannelId = ownId,
+            Title = "zz video",
+            Url = $"https://{tag}.test.invalid/v",
+            PublishedAt = Now,
+            FirstSeenAt = Now,
+            LastSeenAt = Now,
+            YoutubeVideoFeedId = ownFeed.Id,
+        });
+        await db.SaveChangesAsync();
+        var shared = await RequestStore.SubmitAsync(db, b.Id, RequestStore.Youtube, "Shared channel", null, null);
+        var sharedId = $"UC{tag}S".PadRight(24, 'x');
+        Assert.Equal(ApproveOutcome.Approved, await RequestStore.ApproveYoutubeAsync(db, shared.Id, sharedId, $"zz {tag} shared", null, false, Now));
+        var sharedFeed = await db.YoutubeVideoFeeds.SingleAsync(f => f.ChannelId == sharedId);
+        var aShared = await RequestStore.SubmitAsync(db, a.Id, RequestStore.Youtube, "Shared channel", null, null);
+        await db.ContentRequests.Where(r => r.Id == aShared.Id)
+            .ExecuteUpdateAsync(s => s.SetProperty(r => r.YoutubeVideoFeedId, sharedFeed.Id).SetProperty(r => r.Status, RequestStore.Added));
+
+        Assert.True(await ProfileAdmin.DeleteAsync(db, a.Id));
+
+        Assert.False(await db.Profiles.AnyAsync(p => p.Id == a.Id));
+        Assert.False(await db.ProfileDevices.AnyAsync(d => d.Id == aDevice.Id));
+        Assert.False(await db.ContentRequests.AnyAsync(r => r.ProfileId == a.Id));
+        Assert.False(await db.YoutubeVideoFeeds.AnyAsync(f => f.Id == ownFeed.Id));
+        Assert.False(await db.YouTubeVideos.AnyAsync(v => v.YoutubeVideoFeedId == ownFeed.Id));
+        // B, its device and the channel B asked for stay.
+        Assert.True(await db.YoutubeVideoFeeds.AnyAsync(f => f.Id == sharedFeed.Id));
+        Assert.Equal(b.Id, await db.ProfileDevices.Where(d => d.Id == bDevice.Id).Select(d => d.ProfileId).SingleAsync());
+        Assert.True(await db.ContentRequests.AnyAsync(r => r.Id == shared.Id));
+        // A second delete finds nothing.
+        Assert.False(await ProfileAdmin.DeleteAsync(db, a.Id));
+    }
 }

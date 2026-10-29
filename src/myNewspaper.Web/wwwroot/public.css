@@ -7998,6 +7998,264 @@
     margin-top: 8px;
 }
 
+/* New edition setup (/editions/new). --ed is the chosen color; profiles.js shows one step at a time. */
+.pub .setup {
+    max-width: 36rem;
+    width: 100%;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+.pub .setup__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+.pub .setup__back,
+.pub .setup__up {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 1px solid var(--field-border);
+    border-radius: 10px;
+    background: var(--surface);
+    color: var(--text);
+}
+.pub .setup__back[hidden],
+.pub .setup__up[hidden] {
+    display: none;
+}
+.pub .setup__count {
+    margin-right: auto;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-2);
+}
+.pub .setup__bar {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+}
+.pub .setup__bar[hidden] {
+    display: none;
+}
+.pub .setup__bar span {
+    height: 5px;
+    border-radius: 999px;
+    background: var(--border);
+}
+.pub .setup__bar span.is-done {
+    background: var(--ed);
+}
+.pub .setup__step {
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+/* Without JavaScript the four steps are one long form, divided by rules. */
+.pub .setup:not(.is-stepped) .setup__step + .setup__step {
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+}
+.pub .setup__step[hidden] {
+    display: none;
+}
+.pub .setup__kicker {
+    margin: 0;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+}
+/* Stepped, the top bar already counts the steps. */
+.pub .setup.is-stepped .setup__kicker-step {
+    display: none;
+}
+.pub .setup .picker-card__title:focus {
+    outline: none;
+}
+.pub .setup__tile {
+    align-self: center;
+    width: 96px;
+    height: 96px;
+    border-radius: 22px;
+    font-size: 48px;
+}
+.pub .setup__label {
+    font-size: 14px;
+    font-weight: 700;
+}
+.pub .setup__hint {
+    margin: 0;
+    font-size: 14px;
+    color: var(--text-2);
+}
+.pub .setup__hint:empty {
+    display: none;
+}
+.pub .setup__input {
+    min-height: 48px;
+    padding: 0 14px;
+    border: 1px solid var(--field-border);
+    border-radius: 10px;
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
+    font-size: 17px;
+}
+.pub .setup__colors {
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+.pub .setup__swatches {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 8px;
+}
+@media (min-width: 744px) {
+    /* Two to a row on phones, where "Raspberry" wouldn't fit a third. */
+    .pub .setup__swatches {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+.pub .setup__swatch {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 48px;
+    padding: 0 10px;
+    border: 2px solid var(--field-border);
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 700;
+}
+.pub .setup__swatch::before {
+    content: '';
+    flex: none;
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    background: var(--sw);
+}
+.pub .setup__swatch input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+.pub .setup__swatch:has(input:checked) {
+    border-color: var(--text);
+    box-shadow: inset 0 0 0 1px var(--text);
+}
+.pub .setup__swatch:has(input:focus-visible) {
+    outline: 3px solid var(--accent);
+    outline-offset: 2px;
+}
+.pub .setup__group {
+    border-bottom: 1px solid var(--border);
+}
+.pub .setup__group[hidden] {
+    display: none;
+}
+.pub .setup__group summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 48px;
+    font-weight: 800;
+    cursor: pointer;
+}
+.pub .setup__count-note {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-2);
+}
+.pub .setup__options {
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 8px;
+}
+.pub .setup__options--grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 12px;
+}
+.pub .setup__option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 44px;
+    min-width: 0;
+    font-size: 15px;
+    overflow-wrap: anywhere;
+}
+.pub .setup__option[hidden] {
+    display: none;
+}
+.pub .setup__option input {
+    flex: none;
+    width: 20px;
+    height: 20px;
+    accent-color: var(--ed);
+}
+.pub .setup__sections {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.pub .setup__section {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 2px 6px 2px 12px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+}
+.pub .setup__section .setup__option {
+    flex: 1 1 auto;
+    font-weight: 700;
+}
+.pub .setup__section:first-child .setup__up {
+    visibility: hidden;
+}
+.pub .setup__foot {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.pub .setup__foot [hidden] {
+    display: none;
+}
+.pub .setup__foot .edition__open:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+@media (max-width: 743px) {
+    /* Continue stays at the bottom of the screen on phones (handoff 6.2). */
+    .pub .setup.is-stepped .setup__foot {
+        position: sticky;
+        bottom: 0;
+        margin: 0 -16px;
+        padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+        border-top: 1px solid var(--border);
+        background: var(--surface);
+    }
+}
+
 /* The PIN pad: a bottom sheet on phones, a centred dialog from 744px. */
 .pub .pin-sheet {
     --ed: #0051ba;

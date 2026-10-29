@@ -84,6 +84,31 @@ public static class ProfileSettings
     }
 
     /// <summary>One value, checked and tidied (duplicates removed). Throws <see cref="ArgumentException"/>.</summary>
+    /// <summary>
+    /// Setup steps 2 to 4 (handoff 6.2) as plain form fields: the teams and services ticked, and the home sections in the
+    /// order shown, with the unticked ones hidden. Sections setup doesn't list (the F1 card) and the rest of the base
+    /// edition's home (teamsOnly) keep the base edition's values. Validated like every other settings write.
+    /// </summary>
+    public static JsonObject FromSetup(JsonObject baseEdition, IEnumerable<string>? teams, IEnumerable<int>? services,
+        IEnumerable<string>? shown, IEnumerable<string>? order)
+    {
+        var home = baseEdition[Home] is JsonObject current ? (JsonObject)current.DeepClone() : new JsonObject();
+        var listed = (order ?? []).Where(SiteDefaults.HomeOrder.Contains).Distinct().ToList();
+        if (listed.Count > 0)
+        {
+            var on = (shown ?? []).ToHashSet(StringComparer.Ordinal);
+            var keptHidden = (home["hidden"] as JsonArray ?? []).Select(n => n?.GetValue<string>()).OfType<string>().Where(s => !listed.Contains(s));
+            home["order"] = new JsonArray([.. listed.Select(s => (JsonNode)s)]);
+            home["hidden"] = new JsonArray([.. keptHidden.Concat(listed.Where(s => !on.Contains(s))).Distinct().Select(s => (JsonNode)s)]);
+        }
+        return Normalize(new JsonObject
+        {
+            [Teams] = new JsonArray([.. (teams ?? []).Select(t => (JsonNode)t)]),
+            [Services] = new JsonArray([.. (services ?? []).Select(s => (JsonNode)s)]),
+            [Home] = home,
+        });
+    }
+
     public static JsonNode Normalize(string key, JsonNode? value) => key switch
     {
         Theme => OneOf(value, SiteDefaults.Themes, key),

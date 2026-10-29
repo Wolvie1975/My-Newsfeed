@@ -8,6 +8,23 @@ public class ProfileSettingsTests
     private static JsonObject Json(string json) => JsonNode.Parse(json)!.AsObject();
 
     [Fact]
+    public void Setup_fields_become_settings_over_the_base_edition()
+    {
+        var baseEdition = Json("""{"home":{"hidden":["f1","opinion"],"teamsOnly":true},"teams":["byu"],"services":[8]}""");
+        var choices = ProfileSettings.FromSetup(baseEdition, ["kansas", "kansas"], [15, 9], ["news", "lead"], ["news", "lead", "opinion", "nope"]);
+        Assert.Equal("""["kansas"]""", choices["teams"]!.ToJsonString());
+        Assert.Equal("[15,9]", choices["services"]!.ToJsonString());
+        // The order as listed (unknown keys dropped); unticked sections hidden; F1, which setup doesn't list, stays hidden.
+        Assert.Equal("""{"hidden":["f1","opinion"],"teamsOnly":true,"order":["news","lead","opinion"]}""", choices["home"]!.ToJsonString());
+        var shown = ProfileSettings.FromSetup(baseEdition, [], [], ["opinion"], ["opinion"]);
+        Assert.Equal("""["f1"]""", shown["home"]!["hidden"]!.ToJsonString());
+        Assert.Equal("[]", shown["teams"]!.ToJsonString());
+        Assert.Throws<ArgumentException>(() => ProfileSettings.FromSetup([], [], Enumerable.Range(1, 21), [], []));
+        // The base edition itself is untouched.
+        Assert.Equal("""["f1","opinion"]""", baseEdition["home"]!["hidden"]!.ToJsonString());
+    }
+
+    [Fact]
     public void Scoreboard_stars_are_their_own_setting_and_are_checked_like_teams()
     {
         var merged = ProfileSettings.Merge([], Json("""{"scoreboardTeams":["kansas","kansas","nhl:blues"]}"""));

@@ -142,19 +142,29 @@ public static class ProfileEndpoints
     }
 
     /// <summary>
-    /// The setup flow's submit (decision 10: anyone with the link). <c>settings</c> is the JSON document from setup
-    /// steps 2 to 4, laid over the base edition. The new profile opens on this device.
+    /// The setup flow's submit (decision 10: anyone with the link). Steps 2 to 4 arrive either as the <c>settings</c>
+    /// JSON document or, from the setup page (<c>setup=1</c>), as plain fields that work without JavaScript; both are laid
+    /// over the base edition. The new profile opens on this device.
     /// </summary>
     private static async Task<IResult> CreateAsync([FromForm] string? name, [FromForm] string? color, [FromForm] string? pin,
-        [FromForm] string? pinConfirm, [FromForm] string? settings, [FromForm] string? returnUrl, HttpContext http, ProfileContext reader,
-        IDbContextFactory<WebScraperContext> factory, ProfilePins pins, ProfileCookies cookies, TimeProvider clock)
+        [FromForm] string? pinConfirm, [FromForm] string? settings, [FromForm] string? setup, [FromForm] string? returnUrl, HttpContext http,
+        ProfileContext reader, IDbContextFactory<WebScraperContext> factory, ProfilePins pins, ProfileCookies cookies, TimeProvider clock)
     {
         if (reader.Device is null) return Outcome(http, OpenResult.NoDevice, 0, returnUrl, cookies, Guid.Empty, default);
         try
         {
             if (pin != pinConfirm) throw new ArgumentException("The two PINs don't match.");
-            var choices = ProfileSettings.ParseInput(settings);
             await using var db = await factory.CreateDbContextAsync(http.RequestAborted);
+            JsonObject choices;
+            if (setup == "1")
+            {
+                // The repeated fields (team, service, show, order); the form is already read for the fields above.
+                var form = await http.Request.ReadFormAsync(http.RequestAborted);
+                var services = form["service"].Select(s => int.TryParse(s, out var id) ? id : throw new ArgumentException("Invalid services."));
+                choices = ProfileSettings.FromSetup(await ProfileAdmin.GetBaseEditionAsync(db, http.RequestAborted),
+                    form["team"].OfType<string>(), services, form["show"].OfType<string>(), form["order"].OfType<string>());
+            }
+            else choices = ProfileSettings.ParseInput(settings);
             var profile = await ProfileStore.CreateAsync(db, pins, name, color, pin, choices, http.RequestAborted);
             await ProfileStore.AssignDeviceAsync(db, reader.Device.Id, profile.Id, http.RequestAborted);
             return Outcome(http, OpenResult.Opened, profile.Id, returnUrl, cookies, reader.Device.Id, clock.GetUtcNow().UtcDateTime);
@@ -162,7 +172,7 @@ public static class ProfileEndpoints
         catch (ArgumentException ex)
         {
             return WantsJson(http.Request) ? Results.BadRequest(new { error = ex.Message })
-                : Results.LocalRedirect($"/profiles/new?error={Uri.EscapeDataString(ex.Message)}");
+                : Results.LocalRedirect($"{ProfileGate.PickerPath}/new?error={Uri.EscapeDataString(ex.Message)}");
         }
     }
 

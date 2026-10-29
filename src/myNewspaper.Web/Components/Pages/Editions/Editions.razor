@@ -31,7 +31,7 @@
 
 @if (page.Editions.Count == 0)
 {
-    <p class="picker__empty">There are no editions yet. The admin adds them in Manage profiles.</p>
+    <p class="picker__empty">There are no editions yet. Start one below, or the admin can add them in Manage profiles.</p>
 }
 else
 {
@@ -103,6 +103,8 @@ else
             <button type="submit" class="picker__link">Sign this device out of @Reader.Profile!.Name’s edition</button>
         </form>
     }
+    @* Always offered (decision 10): anyone with the link can start an edition. *@
+    <a class="picker__link" href="editions/new">+ Start a new edition</a>
     <a class="picker__link" href="admin/profiles">Manage profiles</a>
 </footer>
 

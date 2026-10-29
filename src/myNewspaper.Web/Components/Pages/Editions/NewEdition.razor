@@ -1,0 +1,185 @@
+@page "/editions/new"
+@layout PickerLayout
+@using System.Text.Json.Nodes
+@using myNewspaper.Web.Profiles
+@using myNewspaper.Web.Watching
+@inject IDbContextFactory<WebScraperContext> Factory
+@inject WatchCatalog Catalog
+@inject ILogger<NewEdition> Log
+
+<PageTitle>Start a new edition · myNewspaper</PageTitle>
+
+@* New profile setup (profiles handoff 6.2): four steps, one form, posting to /profiles/new. Steps 2 to 4 start from the
+   base edition (decision 12), never from another profile. Without JavaScript all four steps show as one long form;
+   profiles.js turns them into steps with Back, Continue and a progress bar. *@
+<form class="setup" method="post" action="profiles/new" data-setup style="--ed: @SiteDefaults.ProfileColors[0].Hex">
+    <AntiforgeryToken />
+    <input type="hidden" name="setup" value="1" />
+    <input type="hidden" name="returnUrl" value="/" />
+
+    <div class="setup__top">
+        <button type="button" class="setup__back" data-setup-back hidden aria-label="Back">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6" /></svg>
+        </button>
+        <span class="setup__count" data-setup-count>New edition · four steps</span>
+        <a class="picker__link" href="editions">Cancel</a>
+    </div>
+    <div class="setup__bar" aria-hidden="true" data-setup-bar hidden><span></span><span></span><span></span><span></span></div>
+
+    @if (Error is { Length: > 0 } error)
+    {
+        <p class="edition__note edition__note--bad" role="alert">@error</p>
+    }
+    <p class="edition__note edition__note--bad" role="alert" data-setup-error hidden></p>
+
+    <fieldset class="setup__step" data-setup-step aria-labelledby="setup-step-1">
+        <p class="setup__kicker"><span class="setup__kicker-step">Step 1 of 4 · </span>New edition</p>
+        <h1 id="setup-step-1" class="picker-card__title" tabindex="-1">Who’s this edition for?</h1>
+        <span class="edition__tile setup__tile" aria-hidden="true" data-setup-initial>?</span>
+        <label class="setup__label" for="setup-name">Name</label>
+        <input id="setup-name" class="setup__input" name="name" maxlength="@ProfileRules.MaxNameLength" autocomplete="off" required data-setup-name />
+        <fieldset class="setup__colors">
+            <legend class="setup__label">Color</legend>
+            <div class="setup__swatches">
+                @foreach (var (hex, label, index) in SiteDefaults.ProfileColors.Select((c, i) => (c.Hex, c.Name, i)))
+                {
+                    <label class="setup__swatch" style="--sw: @hex">
+                        <input type="radio" name="color" value="@hex" checked="@(index == 0)" data-setup-color />
+                        <span>@label</span>
+                    </label>
+                }
+            </div>
+        </fieldset>
+        <label class="setup__label" for="setup-pin">4-digit PIN</label>
+        <p class="setup__hint" id="setup-pin-hint">You’ll enter it each time you open this edition. It’s a household lock, not a password: don’t reuse a bank or phone PIN.</p>
+        <input id="setup-pin" class="edition__pin" name="pin" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4"
+               autocomplete="new-password" required aria-describedby="setup-pin-hint" data-setup-pin />
+        <label class="setup__label" for="setup-pin-confirm">Same PIN again</label>
+        <input id="setup-pin-confirm" class="edition__pin" name="pinConfirm" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4"
+               autocomplete="new-password" required data-setup-pin-confirm />
+        <p class="setup__hint" data-setup-pin-status aria-live="polite"></p>
+    </fieldset>
+
+    <fieldset class="setup__step" data-setup-step aria-labelledby="setup-step-2">
+        <p class="setup__kicker"><span class="setup__kicker-step">Step 2 of 4 · </span>Teams</p>
+        <h2 id="setup-step-2" class="picker-card__title" tabindex="-1">Who do you follow?</h2>
+        <p class="setup__hint">Your teams are highlighted in scores, schedules and standings. You can change them later in Settings.</p>
+        @if (teamError)
+        {
+            <p class="edition__note">Teams are temporarily unavailable. You can choose them later in Settings.</p>
+        }
+        else
+        {
+            <label class="setup__label" for="setup-team-filter">Find a team or school</label>
+            <input id="setup-team-filter" class="setup__input" type="search" data-setup-filter="team" autocomplete="off" />
+            @foreach (var group in teams.GroupBy(t => t.Group))
+            {
+                <details class="setup__group" open="@group.Any(t => chosenTeams.Contains(t.Key))" data-setup-group>
+                    <summary>@group.Key <span class="setup__count-note">@group.Count() teams</span></summary>
+                    <div class="setup__options">
+                        @foreach (var choice in group)
+                        {
+                            <label class="setup__option" data-setup-option="@choice.Name.ToLowerInvariant()">
+                                <input type="checkbox" name="team" value="@choice.Key" checked="@chosenTeams.Contains(choice.Key)" />
+                                <span>@choice.Name</span>
+                            </label>
+                        }
+                    </div>
+                </details>
+            }
+        }
+    </fieldset>
+
+    <fieldset class="setup__step" data-setup-step aria-labelledby="setup-step-3">
+        <p class="setup__kicker"><span class="setup__kicker-step">Step 3 of 4 · </span>Services</p>
+        <h2 id="setup-step-3" class="picker-card__title" tabindex="-1">What do you watch on?</h2>
+        <p class="setup__hint">Where to watch shows these first. Choose up to @SiteDefaults.MaxServices.</p>
+        @if (services.Count == 0)
+        {
+            <p class="edition__note">Service choices are temporarily unavailable. You can choose them later in Settings.</p>
+            @foreach (var id in chosenServices) { <input type="hidden" name="service" value="@id" /> }
+        }
+        else
+        {
+            <label class="setup__label" for="setup-service-filter">Find a service</label>
+            <input id="setup-service-filter" class="setup__input" type="search" data-setup-filter="service" autocomplete="off" />
+            <div class="setup__options setup__options--grid">
+                @foreach (var s in services.OrderByDescending(s => chosenServices.Contains(s.Id)).ThenBy(s => s.Name, StringComparer.OrdinalIgnoreCase))
+                {
+                    <label class="setup__option" data-setup-option="@s.Name.ToLowerInvariant()">
+                        <input type="checkbox" name="service" value="@s.Id" checked="@chosenServices.Contains(s.Id)" data-setup-service />
+                        <span>@s.Name</span>
+                    </label>
+                }
+            </div>
+        }
+    </fieldset>
+
+    <fieldset class="setup__step" data-setup-step aria-labelledby="setup-step-4">
+        <p class="setup__kicker"><span class="setup__kicker-step">Step 4 of 4 · </span>Home page</p>
+        <h2 id="setup-step-4" class="picker-card__title" tabindex="-1">What goes on your front page?</h2>
+        <p class="setup__hint">Turn sections on or off, and move them up. You can change this later on the home page.</p>
+        <ol class="setup__sections" data-setup-sections>
+            @foreach (var key in homeOrder)
+            {
+                var name = SiteDefaults.HomeSectionNames.GetValueOrDefault(key, key);
+                <li class="setup__section">
+                    <input type="hidden" name="order" value="@key" />
+                    <label class="setup__option"><input type="checkbox" name="show" value="@key" checked="@(!hiddenSections.Contains(key))" /><span>@name</span></label>
+                    <button type="button" class="setup__up" data-setup-up hidden aria-label="@($"Move {name} up")">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 15 6-6 6 6" /></svg>
+                    </button>
+                </li>
+            }
+        </ol>
+    </fieldset>
+
+    <div class="setup__foot">
+        <button type="button" class="edition__open" data-setup-next hidden>Continue</button>
+        <button type="submit" class="edition__open" data-setup-submit>Open my edition</button>
+    </div>
+</form>
+
+@code {
+    [SupplyParameterFromQuery(Name = "error")] private string? Error { get; set; }
+
+    private IReadOnlyList<SportsTeamChoice> teams = SportsTeamPreferences.GetChoices();
+    private IReadOnlyList<WatchCatalog.Service> services = [];
+    private HashSet<string> chosenTeams = [];
+    private HashSet<int> chosenServices = [];
+    private HashSet<string> hiddenSections = [];
+    private List<string> homeOrder = [.. SiteDefaults.HomeOrder];
+    private bool teamError;
+
+    protected override async Task OnInitializedAsync()
+    {
+        JsonObject baseEdition = [];
+        try
+        {
+            await using var db = await Factory.CreateDbContextAsync();
+            baseEdition = await ProfileAdmin.GetBaseEditionAsync(db);
+            teams = await SportsTeamPreferences.GetChoicesAsync(db);
+        }
+        catch (Exception ex) when (DataFailures.IsReadFailure(ex))
+        {
+            Log.LogError(ex, "Could not read the base edition or team choices for setup.");
+            teamError = true;
+        }
+        try { services = await Catalog.Services(); }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+        { Log.LogWarning(ex, "Service choices are unavailable for setup."); }
+
+        chosenTeams = [.. Strings(baseEdition[ProfileSettings.Teams])];
+        chosenServices = [.. (baseEdition[ProfileSettings.Services] as JsonArray ?? []).Select(n => n?.GetValue<int>() ?? 0).Where(id => id > 0)];
+        if (baseEdition[ProfileSettings.Home] is JsonObject home)
+        {
+            hiddenSections = [.. Strings(home["hidden"])];
+            // The base edition's order first, then any sections it doesn't list, in the default order.
+            var order = Strings(home["order"]).Where(SiteDefaults.HomeOrder.Contains).ToList();
+            homeOrder = [.. order.Concat(SiteDefaults.HomeOrder.Except(order))];
+        }
+    }
+
+    private static IEnumerable<string> Strings(JsonNode? value) =>
+        (value as JsonArray ?? []).Select(n => n?.GetValue<string>()).OfType<string>();
+}

@@ -96,9 +96,35 @@ public static class ProfileAdmin
         return true;
     }
 
-    /// <summary>Cascading foreign keys remove the profile's Saved list, follows and requests; its devices keep no profile.</summary>
-    public static async Task<bool> DeleteAsync(WebScraperContext db, int id, CancellationToken ct = default) =>
-        await db.Profiles.Where(p => p.Id == id).ExecuteDeleteAsync(ct) > 0;
+    /// <summary>
+    /// Deletes the profile and every record tied to it (decided October 29, 2026): its devices, and the YouTube channels
+    /// only its requests added, with their stored videos, so nothing it kept private rolls out to everyone. Cascading
+    /// foreign keys remove its Saved list, follows and requests. A deleted device's browser gets a new one and the picker.
+    /// </summary>
+    public static async Task<bool> DeleteAsync(WebScraperContext db, int id, CancellationToken ct = default)
+    {
+        var deleted = await db.Database.SqlQuery<int>($"""
+            SET XACT_ABORT ON;
+            BEGIN TRANSACTION;
+            -- The channel rollout's lock: once the requests are gone, a private feed would look like a household one.
+            EXEC sp_getapplock @Resource = N'myNewspaper.ChannelRollout', @LockMode = N'Exclusive', @LockOwner = N'Transaction';
+            DECLARE @feeds TABLE (Id int PRIMARY KEY);
+            INSERT @feeds (Id)
+            SELECT DISTINCT q.YoutubeVideoFeedId FROM dbo.MyDailyFeedContentRequests q
+            WHERE q.ProfileId = {id} AND q.YoutubeVideoFeedId IS NOT NULL
+              AND NOT EXISTS (SELECT 1 FROM dbo.MyDailyFeedContentRequests o
+                              WHERE o.YoutubeVideoFeedId = q.YoutubeVideoFeedId AND o.ProfileId <> {id})
+              AND NOT EXISTS (SELECT 1 FROM dbo.MyDailyFeedChannelRollouts r WHERE r.YoutubeVideoFeedId = q.YoutubeVideoFeedId);
+            DELETE dbo.MyDailyFeedProfileDevices WHERE ProfileId = {id};
+            DELETE dbo.MyDailyFeedProfiles WHERE Id = {id};
+            DECLARE @deleted int = @@ROWCOUNT;
+            DELETE v FROM dbo.YouTubeVideos v JOIN @feeds f ON f.Id = v.YoutubeVideoFeedId;
+            DELETE y FROM dbo.YoutubeVideoFeed y JOIN @feeds f ON f.Id = y.ID;
+            COMMIT TRANSACTION;
+            SELECT @deleted AS Value;
+            """).ToListAsync(ct);
+        return deleted.Single() > 0;
+    }
 
     /// <summary>The picker order: the listed profiles get 1, 2, 3…; any not listed keep theirs after them.</summary>
     public static async Task ReorderAsync(WebScraperContext db, IReadOnlyList<int> ids, CancellationToken ct = default)
