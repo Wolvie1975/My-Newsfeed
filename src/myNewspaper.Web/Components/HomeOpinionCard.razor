@@ -4,7 +4,7 @@
          data-opinion-hour="@Snapshot.Hour" data-opinion-refresh-after="@Snapshot.RefreshAfterMs" aria-labelledby="h-opinion">
     <div class="d-card__head">
         <h2 class="d-card__title" id="h-opinion">Opinion <span class="d-card__count">Publisher spotlight · rotates hourly</span></h2>
-        @if (Snapshot.CategoryId is {} categoryId) { <a class="d-more" href="news?category=@categoryId">View all →</a> }
+        @if (Snapshot.CategoryId is {} categoryId) { <a class="d-more" href="news/all?category=@categoryId">View all →</a> }
     </div>
     @if (Snapshot.Failed) { <p class="d-empty" role="status">Opinion is temporarily unavailable. Please try again.</p> }
     else if (Snapshot.Article is {} item) {

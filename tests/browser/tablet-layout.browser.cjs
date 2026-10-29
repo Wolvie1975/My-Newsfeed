@@ -7,7 +7,7 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
 
 const pages = (
     process.env.PAGES ||
-    '/,/news,/local,/sports,/scoreboard,/standings,/rankings,/college,/f1,/entertainment,/movies,/tv,/box-office,/watch,/videos,/saved,/settings'
+    '/,/news,/news/kansas-city,/sports,/scoreboard,/standings,/rankings,/college,/f1,/entertainment,/movies,/tv,/box-office,/watch,/videos,/saved,/settings'
 ).split(',');
 const widths = [430, 743, 744, 768, 820, 834, 1023, 1024, 1440];
 

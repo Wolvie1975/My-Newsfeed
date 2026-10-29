@@ -91,8 +91,8 @@ async function mockSaved(p) {
         const readOnly = plain.locator('[data-home-opinion]');
         assert.equal(await readOnly.locator('[data-opinion-article]').count(), 1);
         await readOnly.getByRole('link', { name: 'View all →', exact: true }).click();
-        assert.equal(new URL(plain.url()).pathname, '/news');
-        assert.equal(await plain.locator('#category option:checked').innerText(), 'Opinion');
+        assert.equal(new URL(plain.url()).pathname, '/news/all');
+        assert.equal(await plain.locator('#news-section option:checked').innerText(), 'Opinion');
         assert((await plain.locator('#source option').count()) > 1);
         const rotating = await b.newPage({ viewport: { width: 820, height: 1000 } });
         await mockSaved(rotating);

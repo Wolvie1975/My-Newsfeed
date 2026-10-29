@@ -24,7 +24,7 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
             route.fulfill({ json: { periods, updated: new Date().toISOString(), stale: false } }),
         );
         for (const theme of ['light', 'dark']) {
-            await page.goto(base + '/local');
+            await page.goto(base + '/news/kansas-city');
             await page.evaluate((value) => localStorage.setItem('theme', value), theme);
             for (const width of [390, 768, 1440]) {
                 await page.setViewportSize({ width, height: 1000 });

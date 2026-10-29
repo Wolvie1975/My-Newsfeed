@@ -8,11 +8,11 @@ const base = process.env.BASE_URL || 'http://localhost:5295',
         const p = await browser.newPage(),
             errors = [];
         p.on('pageerror', (e) => errors.push(e.message));
-        for (const route of ['news', 'sports/news', 'entertainment/news', 'videos'])
+        for (const route of ['news/all', 'sports/news', 'entertainment/news', 'videos'])
             for (const width of [320, 390, 430, 768, 1440])
                 for (const theme of ['light', 'dark']) {
                     // Headlines has its own folded phone front (headlines-phone).
-                    if (route === 'news' && width < 744) continue;
+                    if (route === 'news/all' && width < 744) continue;
                     await p.setViewportSize({ width, height: 1000 });
                     await p.emulateMedia({ colorScheme: theme });
                     const r = await p.goto(base + '/' + route);
@@ -65,7 +65,7 @@ const base = process.env.BASE_URL || 'http://localhost:5295',
                         });
                 }
         assert.deepEqual(errors, []);
-        for (const route of ['news', 'sports/news', 'entertainment/news']) {
+        for (const route of ['news/all', 'sports/news', 'entertainment/news']) {
             await p.goto(base + '/' + route);
             const before = await p.locator('.feed .article').count();
             if (await p.locator('[data-load-more]').count()) {
@@ -93,7 +93,7 @@ const base = process.env.BASE_URL || 'http://localhost:5295',
             );
         }
         const plain = await browser.newPage({ javaScriptEnabled: false, viewport: { width: 390, height: 1000 } });
-        for (const route of ['news', 'sports/news', 'entertainment/news', 'videos']) {
+        for (const route of ['news/all', 'sports/news', 'entertainment/news', 'videos']) {
             await plain.goto(base + '/' + route);
             assert(await plain.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
             // Phone Headlines puts its Category select in the ribbon; the desktop copy is hidden.

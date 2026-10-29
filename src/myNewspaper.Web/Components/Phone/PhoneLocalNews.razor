@@ -14,7 +14,7 @@
     <div id="local-more-m">
     <FoldGroup Name="local-more-m" Heading="More nearby">
         @if (Data.Items.Count > 3 && !Expanded) {
-            <Fold Title="More local news" Gist="@string.Join(" · ", Data.Items.Skip(3).Take(2).Select(v => v.Title))" Open="@(Section != "events")" Color="mx-c-local" AllHref="local?view=news#local-news-m" AllText="All local stories">
+            <Fold Title="More local news" Gist="@string.Join(" · ", Data.Items.Skip(3).Take(2).Select(v => v.Title))" Open="@(Section != "events")" Color="mx-c-local" AllHref="news/kansas-city?view=news#local-news-m" AllText="All local stories">
                 @foreach (var item in Data.Items.Skip(3).Take(3)) { <article class="mx-local-story"><h3><StoryLink Item="item" /></h3><span class="mx-item-meta">@FeedText.SourceName(item.SourceLabel, item.SourceUrl)</span><div class="mx-actions"><SaveButton Item="item" Title="@FeedText.StripEmoji(item.Title)" Source="@FeedText.SourceName(item.SourceLabel, item.SourceUrl)" /><ShareButton Url="@item.Url" Title="@FeedText.StripEmoji(item.Title)" /></div></article> }
             </Fold>
         }
@@ -29,7 +29,7 @@
     </FoldGroup>
     </div>
     @if (After is not null || Data.Next is not null) {
-        <nav class="mx-local-pages" aria-label="Phone local news pages">@if (After is not null) { <a href="local#local-news-m">Newest stories</a> } @if (Data.Next is { } next) { <a href="@($"local?after={Uri.EscapeDataString(next.ToToken())}#local-news-m")">Older stories →</a> }</nav>
+        <nav class="mx-local-pages" aria-label="Phone local news pages">@if (After is not null) { <a href="news/kansas-city#local-news-m">Newest stories</a> } @if (Data.Next is { } next) { <a href="@($"news/kansas-city?after={Uri.EscapeDataString(next.ToToken())}#local-news-m")">Older stories →</a> }</nav>
     }
 </div>
 @code {

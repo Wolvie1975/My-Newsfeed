@@ -17,7 +17,7 @@ const base = process.env.BASE_URL || 'http://localhost:5295',
             '/f1',
             '/f1/standings',
             '/watch?kind=tv&sort=newest',
-            '/local',
+            '/news/kansas-city',
             '/mls/results',
         ];
         for (const width of [320, 390, 430, 768, 1440])
@@ -106,11 +106,12 @@ const base = process.env.BASE_URL || 'http://localhost:5295',
         await plain.selectOption('#f1-view-m', '/f1/results');
         await plain.locator('.mx-ribbon form button').click();
         await plain.waitForURL(base + '/f1/results');
-        // Phone Local (release 5) moved its section links into the ribbon select (phone-life covers the folds).
-        await plain.goto(base + '/local');
-        await plain.selectOption('#local-section-m', '/local?section=events#local-more-m');
+        // Kansas City lives under News: its ribbon select is the News tabs (phone-life covers the folds).
+        await plain.goto(base + '/news/kansas-city');
+        assert.equal(await plain.locator('#news-section-m').inputValue(), '/news/kansas-city');
+        await plain.selectOption('#news-section-m', '/news/all');
         await plain.locator('.mx-ribbon button[type=submit]').click();
-        await plain.waitForURL(base + '/local?section=events#local-more-m');
+        await plain.waitForURL(base + '/news/all');
         for (const target of ['https://example.com', '//example.com', '/\\example.com', 'javascript:alert(1)']) {
             const r = await p.request.get(base + '/navigate?to=' + encodeURIComponent(target), { maxRedirects: 0 });
             assert.equal(r.status(), 302);

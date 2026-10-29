@@ -1,16 +1,23 @@
-@page "/local"
+@page "/news/kansas-city"
 @layout PublicLayout
 @using myNewspaper.Web.Components.Feed
 @inject IDbContextFactory<WebScraperContext> Factory
 @inject ILogger<Local> Logger
-<PageTitle>Kansas City · myNewspaper</PageTitle>
+<PageTitle>Kansas City · News · myNewspaper</PageTitle>
 <div class="mx-life-layout">
 <div class="mx-desktop">
-<PageHeading Title="Kansas City" Eyebrow="Closer to home" Description="" />
+<PageHeading Section="news" Choices="newsTabs" SectionCurrent="news/kansas-city"
+             Title="Kansas City" Eyebrow="News · closer to home" Description="" />
 @* Layout as in the approved concept: the forecast across the top, then local news beside things to do. *@
-<SectionSelect Id="local-section" Label="Section" Current="local" Choices="@(new NavigationChoice[] { new("local", "Overview"), new("local#local-news", "News"), new("local#local-weather", "Weather"), new("local#local-events", "Events") })" />
+<nav class="lc-jump" aria-label="On this page">
+    <a href="news/kansas-city#local-weather">Forecast</a>
+    <a href="news/kansas-city#local-news">Local news</a>
+    <a href="news/kansas-city#local-events">Things to do</a>
+</nav>
 </div>
-<div class="mx-phone"><PhoneRibbon Title="Kansas City" Kicker="Closer to home · local news & weather"><SectionSelect Id="local-section-m" Label="Section" Current="@(LocalSection == "events" ? "local?section=events#local-more-m" : "local")" Choices="@(new NavigationChoice[] { new("local", "Overview"), new("local#local-news-m", "News"), new("local#local-weather", "Weather"), new("local?section=events#local-more-m", "Events") })" AlwaysSelect="true" /></PhoneRibbon></div>
+<div class="mx-phone"><PhoneRibbon Title="Kansas City" Kicker="News · closer to home">
+    <SectionSelect Id="news-section-m" Label="Section" Choices="newsTabs" Current="news/kansas-city" AlwaysSelect="true" />
+</PhoneRibbon></div>
 <section class="local-panel mx-local-weather" id="local-weather" data-local-weather>
     <div class="d-card__head"><h2 data-weather-title>Kansas City forecast</h2><a data-weather-link href="https://forecast.weather.gov/MapClick.php?lat=39.0997&amp;lon=-94.5786" target="_blank" rel="noopener noreferrer">National Weather Service ↗</a></div>
     <div class="mx-phone mx-weather-feature" data-weather-feature></div>
@@ -38,7 +45,7 @@
                 <div class="paper-rows"><FeedArticles Items="@feed.Items.Skip(1).ToArray()" /></div>
             </section>
         }
-        <nav class="personal-links" aria-label="Local news pages">@if (After is not null) { <a href="local#local-news">Newest stories</a> } @if (feed.Next is {} next) { <a href="@($"local?after={Uri.EscapeDataString(next.ToToken())}#local-news")">Older stories →</a> }</nav>
+        <nav class="personal-links" aria-label="Local news pages">@if (After is not null) { <a href="news/kansas-city#local-news">Newest stories</a> } @if (feed.Next is {} next) { <a href="@($"news/kansas-city?after={Uri.EscapeDataString(next.ToToken())}#local-news")">Older stories →</a> }</nav>
     </section>
     <aside class="local-panel lc-events" id="local-events"><h2 class="ef-label">Find something to do</h2>
         <p>Browse these calendars for community events and current details.</p>
@@ -56,11 +63,13 @@
     [SupplyParameterFromQuery(Name="section")] private string? LocalSection {get;set;}
     [SupplyParameterFromQuery(Name="after")] private string? After {get;set;}
     private FeedPage feed = new([],0,0,null);
+    // If the database can't be read, the tabs still lead home, to every headline and back here.
+    private IReadOnlyList<NavigationChoice> newsTabs = SectionChoices.News([new FeedCategory(0, SectionChoices.NewsKansasCityCategory, 0)]);
     private bool dedicated;
     private string? error;
     protected override async Task OnParametersSetAsync() {
         error = null;
-        try { await using var db = await Factory.CreateDbContextAsync(); (feed, dedicated) = await LocalNewsQuery.GetAsync(db, FeedCursor.Parse(After)); }
+        try { await using var db = await Factory.CreateDbContextAsync(); (feed, dedicated) = await LocalNewsQuery.GetAsync(db, FeedCursor.Parse(After)); newsTabs = await SectionChoices.NewsAsync(db); }
         catch (Exception ex) when (DataFailures.IsReadFailure(ex)) {
             Logger.LogWarning(ex,"Local news unavailable"); error = "Local news is temporarily unavailable. Weather and event links remain available.";
         }

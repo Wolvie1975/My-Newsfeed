@@ -32,7 +32,7 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
             const errors = [];
             page.on('pageerror', (e) => errors.push(e.message));
             // The folded phone Home links to videos; sharing is exercised on the video page.
-            for (const route of mobile ? ['/videos', '/saved', '/news'] : ['/', '/videos', '/saved', '/news']) {
+            for (const route of mobile ? ['/videos', '/saved', '/news/all'] : ['/', '/videos', '/saved', '/news/all']) {
                 if (route === '/saved')
                     await page.route('**/api/saved', (r) =>
                         r.fulfill({
@@ -51,7 +51,7 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
                     );
                 await page.goto(base + route);
                 const button = page
-                    .locator(route === '/news' ? '[data-share-open]' : '[data-share-open][data-kind="video"]')
+                    .locator(route === '/news/all' ? '[data-share-open]' : '[data-share-open][data-kind="video"]')
                     // Phone Headlines has a hidden desktop copy of each story.
                     .filter({ visible: true })
                     .first();
@@ -63,7 +63,7 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
                 await dialog.waitFor();
                 assert.equal(
                     await dialog.locator('h2').innerText(),
-                    route === '/news' ? 'Share article' : 'Share video',
+                    route === '/news/all' ? 'Share article' : 'Share video',
                 );
                 assert.equal(await dialog.locator('.article-share__title').innerText(), title);
                 assert.equal(await dialog.getByRole('link', { name: 'Send by SMS' }).count(), mobile ? 1 : 0);

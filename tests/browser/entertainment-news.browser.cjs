@@ -34,7 +34,7 @@ const base = process.env.BASE_URL || 'http://localhost:5295',
                 (id) => movedSources.add(id),
             );
             const firstSource = await p.locator('#source option').evaluateAll((ns) => ns.find((n) => n.value)?.value);
-            const redirect = await p.request.get(base + '/news?category=' + category + '&source=' + firstSource, {
+            const redirect = await p.request.get(base + '/news/all?category=' + category + '&source=' + firstSource, {
                 maxRedirects: 0,
             });
             assert.equal(redirect.status(), 302);
@@ -108,8 +108,8 @@ const base = process.env.BASE_URL || 'http://localhost:5295',
         await p.goto(base + '/entertainment/tv-film');
         await p.getByRole('heading', { name: 'TV/Film', exact: true }).waitFor();
         assert.equal(await p.locator('h2').first().innerText(), 'TV/Film');
-        await p.goto(base + '/news?category=all');
-        const names = await p.locator('#category option').allTextContents();
+        await p.goto(base + '/news/all');
+        const names = await p.locator('#news-section option').allTextContents();
         assert(!names.includes('Entertainment') && !names.includes('TV/Film'));
         const sourceIds = await p.locator('#source option').evaluateAll((ns) => ns.map((n) => n.value));
         assert(sourceIds.every((id) => !movedSources.has(id)));

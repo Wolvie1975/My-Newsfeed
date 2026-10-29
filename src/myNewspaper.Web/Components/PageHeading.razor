@@ -2,9 +2,9 @@
     <p class="page-eyebrow">@Eyebrow</p>
     <h1>@Title</h1>
     @if (!string.IsNullOrEmpty(Description)) { <p>@Description</p> }
-    @if (SectionChoices.For(Section) is { } choices)
+    @if ((Choices ?? SectionChoices.For(Section)) is { } choices)
     {
-        <SectionSelect Id="@($"{Section}-section")" Label="@($"{(Section == "sports" ? "Sports" : "Entertainment")} sections")"
+        <SectionSelect Id="@($"{Section}-section")" Label="@((Section switch { "sports" => "Sports", "entertainment" => "Entertainment", _ => "News" }) + " sections")"
                        Choices="choices" Current="@SectionCurrent" MatchPrefix="true" />
     }
 </header>
@@ -13,8 +13,10 @@
     [Parameter, EditorRequired] public string Title { get; set; } = "";
     [Parameter, EditorRequired] public string Eyebrow { get; set; } = "";
     [Parameter, EditorRequired] public string Description { get; set; } = "";
-    /// <summary>"sports" or "entertainment": adds that section's navigation under the heading.</summary>
+    /// <summary>"news", "sports" or "entertainment": adds that section's navigation under the heading.</summary>
     [Parameter] public string? Section { get; set; }
+    /// <summary>The section's tabs when they come from the database (News); otherwise <see cref="SectionChoices.For"/>.</summary>
+    [Parameter] public IReadOnlyList<NavigationChoice>? Choices { get; set; }
     /// <summary>Overrides which section is current when the page path is ambiguous.</summary>
     [Parameter] public string? SectionCurrent { get; set; }
 }

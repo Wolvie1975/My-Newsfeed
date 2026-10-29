@@ -2960,9 +2960,6 @@ a.tvc-row__show:hover {
 }
 
 /* ---------- Headlines (and the section headline pages that share its feed) ---------- */
-.pub .hl-cats {
-    display: none;
-}
 .pub .loadmore .nf-btn {
     min-height: 50px;
     padding: 0 36px;
@@ -3006,37 +3003,6 @@ a.tvc-row__show:hover {
     }
 }
 @media (min-width: 744px) {
-    .pub .hl-cats {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0 4px;
-        margin: -22px 0 18px;
-        padding-bottom: 0;
-        border-bottom: 4px double var(--text);
-    }
-    .pub .page-heading:has(+ .hl-cats) {
-        margin-bottom: 0;
-        border-bottom: 0;
-    }
-    .pub .hl-cats a {
-        display: flex;
-        align-items: center;
-        min-height: 46px;
-        padding: 0 14px;
-        border-bottom: 4px solid transparent;
-        color: var(--text);
-        font-size: 15px;
-        font-weight: 600;
-        text-decoration: none;
-    }
-    .pub .hl-cats a[aria-current] {
-        border-bottom-color: var(--accent);
-        color: var(--accent);
-        font-weight: 800;
-    }
-    .pub .news-front-filters form:has(#category) {
-        display: none;
-    }
     .pub .paper-feed .paper-label {
         margin: 24px 0 0;
         padding: 8px 0;
@@ -3178,6 +3144,26 @@ a.tvc-row__show:hover {
 .pub #local-weather .weather-period > .updated {
     margin: 0;
     font-size: 12px;
+}
+/* Kansas City (News › Kansas City): jump links beside the News tabs, desktop only. */
+.pub .lc-jump {
+    display: flex;
+    gap: 18px;
+    margin: -14px 0 6px;
+    justify-content: flex-end;
+    font-size: 14px;
+    font-weight: 700;
+}
+.pub .lc-jump a {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    color: var(--accent);
+}
+@media (max-width: 743px) {
+    .pub .lc-jump {
+        display: none;
+    }
 }
 .pub .lc-cols {
     display: flex;

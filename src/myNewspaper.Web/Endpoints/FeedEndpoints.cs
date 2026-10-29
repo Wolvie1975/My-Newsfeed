@@ -85,7 +85,7 @@ public static class FeedEndpoints
             }
             else
             {
-                var route = boxOffice ? "box-office" : sectionCategory != null ? NewsSections.RouteFor(sectionCategory)! : "news";
+                var route = boxOffice ? "box-office" : sectionCategory != null ? NewsSections.RouteFor(sectionCategory)! : "news/all";
                 nextHref = route + FeedQuery.QueryString(categoryId, q, token, sourceId,
                     allCategories: !boxOffice && categoryId is null);
             }

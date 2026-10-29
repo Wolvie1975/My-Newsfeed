@@ -54,7 +54,7 @@ async function ready(page, story, quality) {
                     });
                     const page = await context.newPage();
                     page.on('pageerror', (error) => errors.push(error.message));
-                    const response = await page.goto(base + '/news', { waitUntil: 'networkidle' });
+                    const response = await page.goto(base + '/news/all', { waitUntil: 'networkidle' });
                     assert.equal(response.status(), 200, 'Use an ungated local preview');
                     const story = page.locator(selector).filter({ visible: true }).first();
                     const quality =
@@ -166,7 +166,7 @@ async function ready(page, story, quality) {
             return route.fulfill({ contentType: 'image/svg+xml', body: photo('modest') });
         });
         const largePage = await largeScreen.newPage();
-        await largePage.goto(base + '/news', { waitUntil: 'networkidle' });
+        await largePage.goto(base + '/news/all', { waitUntil: 'networkidle' });
         const largeStory = largePage.locator(selector).filter({ visible: true }).first();
         await ready(largePage, largeStory, 'wide');
         assert(
@@ -188,7 +188,7 @@ async function ready(page, story, quality) {
         });
         const page = await context.newPage();
         page.on('pageerror', (error) => errors.push(error.message));
-        await page.goto(base + '/news', { waitUntil: 'networkidle' });
+        await page.goto(base + '/news/all', { waitUntil: 'networkidle' });
         await page.evaluate(() => {
             const source = [...document.querySelectorAll('[data-article-story="feature"]')].find(
                 (n) => n.offsetWidth > 0,
@@ -252,12 +252,12 @@ async function ready(page, story, quality) {
             window.articleImageNavigationTest = true;
             const link = document.createElement('a');
             link.id = 'article-nav-test';
-            link.href = '/news?category=all';
+            link.href = '/news/all?category=all';
             link.textContent = 'Test headlines navigation';
             document.body.append(link);
         });
         await page.locator('#article-nav-test').click();
-        await page.waitForURL('**/news?category=all');
+        await page.waitForURL('**/news/all?category=all');
         await page.waitForLoadState('networkidle');
         assert(
             await page.evaluate(() => window.articleImageNavigationTest),
@@ -302,7 +302,7 @@ async function ready(page, story, quality) {
                 );
             });
             const p = await plain.newPage();
-            await p.goto(base + '/news', { waitUntil: 'networkidle' });
+            await p.goto(base + '/news/all', { waitUntil: 'networkidle' });
             const story = p.locator(selector).filter({ visible: true }).first(),
                 media = story.locator('[data-article-media]');
             assert(!(await media.isVisible()), 'no-JavaScript features use a text-led fallback');

@@ -46,7 +46,7 @@ const base = process.env.BASE_URL || 'http://localhost:5295',
                             );
                         }
                     }
-            await p.goto(base + '/news');
+            await p.goto(base + '/news/all');
             assert.equal(await p.locator('main a[href="box-office"]').count(), 0);
             assert.deepEqual(errors, []);
             await p.close();

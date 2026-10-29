@@ -39,7 +39,7 @@ const sections = [
                 const alias = await p.request.get(base + '/sports/news/category-' + category);
                 assert.equal(alias.status(), 200);
 
-                const redirect = await p.request.get(base + '/news?category=' + category + '&source=' + ids[0], {
+                const redirect = await p.request.get(base + '/news/all?category=' + category + '&source=' + ids[0], {
                     maxRedirects: 0,
                 });
                 assert.equal(redirect.status(), 302);
@@ -123,8 +123,8 @@ const sections = [
         assert.equal(await p.locator('#hub-category option:checked').innerText(), 'F1');
         await p.goto(base + '/f1');
         assert.equal(await p.locator('a[href="f1/news"]').count(), 0);
-        await p.goto(base + '/news?category=all');
-        const names = await p.locator('#category option').allTextContents();
+        await p.goto(base + '/news/all');
+        const names = await p.locator('#news-section option').allTextContents();
         for (const name of [
             'Sports',
             'Big 12 News',

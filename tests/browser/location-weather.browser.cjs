@@ -66,7 +66,7 @@ const data = (location) => ({
                             : data(u.searchParams.has('lat') ? 'New York, NY' : 'Kansas City'),
                 });
             });
-            await page.goto(base + '/local');
+            await page.goto(base + '/news/kansas-city');
             await page.getByRole('heading', { name: 'Kansas City forecast', exact: true }).waitFor();
             await page.locator('#local-weather .weather-period').waitFor();
             assert(
@@ -113,7 +113,7 @@ const data = (location) => ({
         }
         const plain = await browser.newContext({ javaScriptEnabled: false });
         const p = await plain.newPage();
-        await p.goto(base + '/local');
+        await p.goto(base + '/news/kansas-city');
         assert(await p.getByRole('button', { name: 'Use my location', exact: true }).isHidden());
         assert((await p.locator('[data-weather-link]').getAttribute('href')).includes('39.0997'));
         await plain.close();

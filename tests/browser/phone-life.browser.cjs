@@ -113,7 +113,7 @@ const PERSONAL = 'mynewsfeed-personal-v1';
                     await prepare(ctx);
                     const p = await ctx.newPage();
                     p.on('pageerror', (e) => errors.push(e.message));
-                    for (const path of ['/watch?services=8,9,337', '/local', '/videos']) {
+                    for (const path of ['/watch?services=8,9,337', '/news/kansas-city', '/videos']) {
                         await visit(p, path, look(scheme, theme));
                         await p.waitForTimeout(250);
                         assert(await p.locator('.mx-ribbon').filter({ visible: true }).isVisible(), path + ' ribbon');
@@ -162,7 +162,7 @@ const PERSONAL = 'mynewsfeed-personal-v1';
                             await d.locator('[data-watch-content]').waitFor();
                             await p.keyboard.press('Escape');
                             await d.waitFor({ state: 'detached' });
-                        } else if (path === '/local') {
+                        } else if (path === '/news/kansas-city') {
                             assert.equal(
                                 (await p.locator('[data-weather-feature]').innerText()).replace(/\s+/g, ' '),
                                 'TODAY 80°F Sunny Wind 10 mph S',
@@ -201,7 +201,7 @@ const PERSONAL = 'mynewsfeed-personal-v1';
             for (const theme of ['light']) {
                 const ctx = await contextFor(width, look('kansas', theme), false),
                     p = await ctx.newPage();
-                for (const path of ['/watch?services=8', '/local', '/videos']) {
+                for (const path of ['/watch?services=8', '/news/kansas-city', '/videos']) {
                     await p.goto(base + path);
                     const folds = p.locator('[data-phone-life] details.mx-fold');
                     if ((await folds.count()) > 1) {
@@ -213,9 +213,8 @@ const PERSONAL = 'mynewsfeed-personal-v1';
                 await p.locator('#video-channel-m').selectOption({ index: 1 });
                 await p.locator('.mx-ribbon button[type=submit]').click();
                 assert(new URL(p.url()).searchParams.has('category'));
-                await p.goto(base + '/local');
-                await p.locator('#local-section-m').selectOption('/local?section=events#local-more-m');
-                await p.locator('.mx-ribbon button[type=submit]').click();
+                // The events view (the ribbon's Events choice before Kansas City moved under News) still opens its fold.
+                await p.goto(base + '/news/kansas-city?section=events#local-more-m');
                 assert(
                     await p
                         .getByText('Things to do', { exact: true })
@@ -244,7 +243,7 @@ const PERSONAL = 'mynewsfeed-personal-v1';
             await p.goto(base + '/videos?category=tech&view=all');
             assert(await p.getByRole('heading', { name: 'All matching videos' }).isVisible());
             assert((await p.locator('[data-phone-life] .mx-video-row').count()) > 3);
-            await p.goto(base + '/local?view=news#local-news-m');
+            await p.goto(base + '/news/kansas-city?view=news#local-news-m');
             assert((await p.locator('#local-news-m .mx-top li').count()) > 3);
             await p.goto(base + '/videos?q=zzNoMatchingVideoForPhoneTest');
             assert(await p.getByText('No videos match this view.').isVisible());
@@ -265,7 +264,7 @@ const PERSONAL = 'mynewsfeed-personal-v1';
                 const ctx = await contextFor(width, look('kansas', theme));
                 await prepare(ctx);
                 const p = await ctx.newPage();
-                for (const path of ['/watch?services=8', '/local', '/videos']) {
+                for (const path of ['/watch?services=8', '/news/kansas-city', '/videos']) {
                     await visit(p, path, look('kansas', theme));
                     assert(!(await p.locator('[data-phone-life]').isVisible()));
                     assert.equal(await p.locator('.mx-ribbon').filter({ visible: true }).count(), 0);
@@ -276,7 +275,7 @@ const PERSONAL = 'mynewsfeed-personal-v1';
                         const rows = await p.locator('.mx-desktop .watch-rows').boundingBox();
                         assert(Math.abs(rows.width - grid.width) < 2, 'desktop Watch rows span the full grid');
                     }
-                    if (path === '/local') {
+                    if (path === '/news/kansas-city') {
                         assert(!(await p.locator('[data-weather-tiles]').isVisible()));
                         assert(await p.locator('.weather-grid').isVisible());
                     }

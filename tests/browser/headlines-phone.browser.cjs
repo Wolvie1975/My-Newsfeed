@@ -1,7 +1,7 @@
 // The folded phone Headlines front (docs/mobile-refresh-handoff.md, release 1) at 320, 390 and 430px in light and dark
 // under three colour schemes: ribbon, dark lead block, top stories, timeline and category folds; no sideways scroll,
 // readable text, 44px targets (64px fold summaries), no repeated ids. Folds open one at a time with JavaScript off, the
-// Category select switches category, "More stories" and a search keep the old layout, and 744/1024/1440px don't change.
+// News Section select opens a category, "More stories" and a search keep the old layout, and 744/1024/1440px don't change.
 //
 // With profiles switched on (the live site) it needs ADMIN_PASSWORD: it adds one throwaway profile, opens it, sets the
 // scheme and theme on that profile, and deletes it at the end.
@@ -77,10 +77,10 @@ const password = process.env.ADMIN_PASSWORD;
             );
             const context = await browser.newContext({ viewport: { width: 390, height: 900 } });
             const p = await context.newPage();
-            await p.goto(base + '/news');
+            await p.goto(base + '/news/all');
             await p.locator(`form[action="profiles/${id}/open"]`).getByRole('button').click();
             await p.keyboard.type('3691');
-            await p.waitForURL('**/news');
+            await p.waitForURL('**/news/all');
             storageState = await context.storageState();
             await context.close();
         }
@@ -91,7 +91,7 @@ const password = process.env.ADMIN_PASSWORD;
                     const context = await contextFor(width, { scheme, theme });
                     const page = await context.newPage();
                     page.on('pageerror', (e) => errors.push(e.message));
-                    await visit(page, '/news', scheme, theme);
+                    await visit(page, '/news/all', scheme, theme);
                     await page.waitForTimeout(300);
                     const label = `${scheme} ${theme} ${width}px`;
                     const phone = page.locator('.mx-phone');
@@ -101,16 +101,16 @@ const password = process.env.ADMIN_PASSWORD;
                     }
                     assert(await phone.isVisible(), label + ' phone front shows');
                     assert(!(await page.locator('.paper-feed').isVisible()), label + ' desktop feed hidden');
-                    assert.equal(await page.locator('.mx-ribbon h1').innerText(), 'The day so far');
+                    assert.equal(await page.locator('.mx-ribbon h1').innerText(), 'All headlines');
                     const r = await page.evaluate(() => {
                         const visible = (n) => n.offsetParent !== null || getComputedStyle(n).position === 'fixed';
                         const ids = [...document.querySelectorAll('[id]')].map((n) => n.id);
-                        const select = document.querySelector('#category-m').getBoundingClientRect();
+                        const select = document.querySelector('#news-section-m').getBoundingClientRect();
                         return {
                             theme: document.documentElement.getAttribute('data-theme'),
                             over: document.documentElement.scrollWidth - innerWidth,
                             selectRight: select.right - innerWidth,
-                            selectFont: getComputedStyle(document.querySelector('#category-m')).fontSize,
+                            selectFont: getComputedStyle(document.querySelector('#news-section-m')).fontSize,
                             dupes: ids.filter((id, i) => ids.indexOf(id) !== i),
                             summaries: [...document.querySelectorAll('.mx-fold > summary')]
                                 .filter(visible)
@@ -186,7 +186,7 @@ const password = process.env.ADMIN_PASSWORD;
         {
             const context = await contextFor(390, { js: false });
             const page = await context.newPage();
-            await page.goto(base + '/news');
+            await page.goto(base + '/news/all');
             const folds = page.locator('.mx-fold');
             const n = await folds.count();
             assert(await page.locator('.mx-ribbon noscript, .mx-ribbon button[type="submit"]').count(), 'Go button');
@@ -206,18 +206,18 @@ const password = process.env.ADMIN_PASSWORD;
             await context.close();
         }
 
-        // The Category select switches category; "More stories" and a search keep the old layout.
+        // The News Section select opens a category; "More stories" and a search keep the old layout.
         {
             const context = await contextFor(390);
             const page = await context.newPage();
             page.on('pageerror', (e) => errors.push(e.message));
-            await visit(page, '/news', 'kansas', 'light');
-            const option = page.locator('#category-m option:not([selected])').filter({ hasNotText: 'All categories' });
+            await visit(page, '/news/all', 'kansas', 'light');
+            const option = page.locator('#news-section-m option:not([selected])[value*="category="]');
             if (await option.count()) {
                 const name = (await option.first().innerText()).trim();
                 await Promise.all([
                     page.waitForURL(/category=\d+/),
-                    page.selectOption('#category-m', await option.first().getAttribute('value')),
+                    page.selectOption('#news-section-m', await option.first().getAttribute('value')),
                 ]);
                 await page.waitForLoadState('networkidle');
                 assert.equal(await page.locator('.mx-ribbon h1').innerText(), name, 'title follows the category');
@@ -228,7 +228,7 @@ const password = process.env.ADMIN_PASSWORD;
                     0,
                     'the open category has no fold of its own',
                 );
-                await page.goto(base + '/news', { waitUntil: 'networkidle' });
+                await page.goto(base + '/news/all', { waitUntil: 'networkidle' });
             }
             const more = page.locator('.mx-timeline .mx-more');
             if (await more.count()) {
@@ -237,7 +237,7 @@ const password = process.env.ADMIN_PASSWORD;
                 await page.locator('.mx-phone').waitFor({ state: 'detached' });
                 assert(await page.locator('.paper-feed').isVisible(), 'More stories: the list shows');
             }
-            await page.goto(base + '/news?q=the', { waitUntil: 'networkidle' });
+            await page.goto(base + '/news/all?q=the', { waitUntil: 'networkidle' });
             assert.equal(await page.locator('.mx-phone').count(), 0, 'search keeps the old layout');
             await context.close();
         }
@@ -246,10 +246,10 @@ const password = process.env.ADMIN_PASSWORD;
         for (const width of [744, 1024, 1440]) {
             const context = await contextFor(width);
             const page = await context.newPage();
-            await page.goto(base + '/news', { waitUntil: 'networkidle' });
+            await page.goto(base + '/news/all', { waitUntil: 'networkidle' });
             assert(!(await page.locator('.mx-phone').isVisible()), `${width}px phone front hidden`);
             assert(await page.locator('.paper-feed').isVisible(), `${width}px feed shows`);
-            assert(await page.locator('.hl-cats').isVisible(), `${width}px category tabs show`);
+            assert(await page.locator('.section-tabs').isVisible(), `${width}px News tabs show`);
             await context.close();
         }
         assert.deepEqual(errors, []);

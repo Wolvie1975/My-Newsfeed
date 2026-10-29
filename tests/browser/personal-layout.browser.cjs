@@ -11,7 +11,7 @@ const assert = require('node:assert/strict');
             await p.setViewportSize({ width, height: 900 });
             await p.goto(base + '/');
             await p.evaluate((theme) => localStorage.setItem('theme', theme), theme);
-            for (const path of ['/events', '/tv', '/videos', '/local', '/settings', '/']) {
+            for (const path of ['/events', '/tv', '/videos', '/news/kansas-city', '/settings', '/']) {
                 const response = await p.goto(base + path);
                 assert.equal(response.status(), 200);
                 assert.equal(

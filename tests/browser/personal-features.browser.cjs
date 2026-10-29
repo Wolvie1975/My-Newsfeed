@@ -44,7 +44,7 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
                 .first()
                 .evaluate((e) => e.classList.contains('is-customized')),
         );
-        await page.goto(base + '/news');
+        await page.goto(base + '/news/all');
         assert.equal(
             await page.locator('[data-news-read], [data-news-mute], .reading-actions, .reading-preferences').count(),
             0,
@@ -60,7 +60,7 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
         await other.waitForFunction(() => !document.querySelector('[data-home-section="videos"]').hidden);
         await other.close();
         // Saving still works without read/mute buttons.
-        await page.goto(base + '/news?category=all');
+        await page.goto(base + '/news/all');
         const first = page.locator('[data-news-url]').first(),
             save = first.locator('[data-save]');
         await page.waitForFunction(() => !document.querySelector('[data-news-url] [data-save]').disabled);
@@ -85,7 +85,7 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
         }
         const noJs = await browser.newContext({ javaScriptEnabled: false }),
             plain = await noJs.newPage();
-        for (const path of ['/local', '/tv']) assert.equal((await plain.goto(base + path)).status(), 200);
+        for (const path of ['/news/kansas-city', '/tv']) assert.equal((await plain.goto(base + path)).status(), 200);
         await noJs.close();
         const blocked = await browser.newContext();
         await blocked.addInitScript(() => {

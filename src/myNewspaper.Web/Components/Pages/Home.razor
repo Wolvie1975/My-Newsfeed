@@ -51,7 +51,7 @@
                                 <li><span class="bs-glance__name">@period.Name</span><span class="bs-glance__reading"><b>@period.Temperature°</b> @period.Summary</span></li>
                             }
                         </ul>
-                        <a class="d-more" href="local">Local <span aria-hidden="true">→</span></a>
+                        <a class="d-more" href="news/kansas-city">Kansas City <span aria-hidden="true">→</span></a>
                     </div>
                 }
                 @if (episodes.FirstOrDefault() is { } next)
@@ -149,7 +149,7 @@
 
         <div class="bs-col bs-col--main">
             <HomeLeadStory Snapshot="@lead" />
-            <HomeHeadlineShelf SectionKey="news" Title="More headlines" HeadingId="h-news" Href="news"
+            <HomeHeadlineShelf SectionKey="news" Title="More headlines" HeadingId="h-news" Href="news/all"
                                CssClass="d-news" Stories="@headlineStories" ShowCategory="true" EmptyText="More headlines will appear as new stories arrive." />
         </div>
 
@@ -391,7 +391,7 @@
         <Extra>
             @if (weather is { Periods.Count: > 0 } forecast)
             {
-                <a class="mx-weather" href="local">
+                <a class="mx-weather" href="news/kansas-city">
                     <span class="sr-only">Kansas City weather:</span>
                     @foreach (var period in forecast.Periods.Take(4))
                     {
@@ -446,7 +446,7 @@
     @if (headlineStories.Count > 0)
     {
         <section class="mx-section" aria-labelledby="home-headlines-m" data-home-section="news">
-            <div class="mx-head"><h2 id="home-headlines-m">Headlines</h2><a href="news">View all →</a></div>
+            <div class="mx-head"><h2 id="home-headlines-m">Headlines</h2><a href="news/all">View all →</a></div>
             <ol class="mx-top">
                 @foreach (var (item, i) in headlineStories.Take(3).Select((s, i) => (s, i)))
                 {
@@ -555,7 +555,7 @@
         }
         @if (opinion.Article is { } column)
         {
-            <Fold Title="Opinion" Section="opinion" Color="mx-c-ink" AllHref="@(opinion.CategoryId is { } id ? $"news?category={id}" : "news")" AllText="All opinion"
+            <Fold Title="Opinion" Section="opinion" Color="mx-c-ink" AllHref="@(opinion.CategoryId is { } id ? $"news/all?category={id}" : "news/all")" AllText="All opinion"
                   Gist="@($"{Source(column)} · {Title(column)}")">
                 @StoryRow(column)
             </Fold>
@@ -579,7 +579,7 @@
     private F1Page homeF1 = F1Page.Empty;
     private string? homeF1Error;
     private bool FoldF1 => F1Query.HomeWeekendRace(homeF1, Dates, Dates.TodayAt(nowUtc)) is not null;
-    // News used to live at "/", so an old bookmark like "/?category=3" is sent on to "/news" with its query intact.
+    // News used to live at "/", so an old bookmark like "/?category=3" is sent on to "/news/all" with its query intact.
     [SupplyParameterFromQuery(Name = "category")] private string? Category { get; set; }
     [SupplyParameterFromQuery(Name = "q")] private string? Q { get; set; }
     [SupplyParameterFromQuery(Name = "after")] private string? After { get; set; }
@@ -610,7 +610,7 @@
     {
         if (Category is not null || Q is not null || After is not null)
         {
-            Nav.NavigateTo("news" + new Uri(Nav.Uri).Query, replace: true);
+            Nav.NavigateTo("news/all" + new Uri(Nav.Uri).Query, replace: true);
             return;
         }
 

@@ -6,7 +6,11 @@
     var path = Nav.ToBaseRelativePath(Nav.Uri);
     var onSportsHub = path.Split('?')[0].TrimEnd('/').Equals("sports", StringComparison.OrdinalIgnoreCase);
     var onEntertainmentHub = path.Split('?')[0].TrimEnd('/').Equals("entertainment", StringComparison.OrdinalIgnoreCase);
-    var onLocal = path.Split('?')[0].Equals("local", StringComparison.OrdinalIgnoreCase);
+    var bare = path.Split('?', '#')[0].TrimEnd('/');
+    var onNewsHome = bare.Equals("news", StringComparison.OrdinalIgnoreCase);
+    var onNewsSection = onNewsHome || bare.StartsWith("news/", StringComparison.OrdinalIgnoreCase);
+    var onNewsAll = bare.Equals("news/all", StringComparison.OrdinalIgnoreCase);
+    var onKansasCity = bare.Equals("news/kansas-city", StringComparison.OrdinalIgnoreCase);
     var onCollege = path.Equals("college", StringComparison.OrdinalIgnoreCase) || path.StartsWith("college/", StringComparison.OrdinalIgnoreCase) || path.StartsWith("college?", StringComparison.OrdinalIgnoreCase);
     var onF1 = path.Equals("f1", StringComparison.OrdinalIgnoreCase) || path.StartsWith("f1/", StringComparison.OrdinalIgnoreCase) || path.StartsWith("f1?", StringComparison.OrdinalIgnoreCase);
     var onTeams = path.StartsWith("settings", StringComparison.OrdinalIgnoreCase) || path.StartsWith("sports/teams", StringComparison.OrdinalIgnoreCase);
@@ -28,7 +32,6 @@
     var onSportsNews = path.Split('?')[0].StartsWith("sports/news", StringComparison.OrdinalIgnoreCase);
     var onBasketballNews = path.Split('?')[0].Equals("sports/mens-college-basketball/news", StringComparison.OrdinalIgnoreCase);
     var onBig12News = path.Split('?')[0].Equals("college/news", StringComparison.OrdinalIgnoreCase);
-    var onNews = path.StartsWith("news", StringComparison.OrdinalIgnoreCase);
     var onSaved = path.StartsWith("saved", StringComparison.OrdinalIgnoreCase);
     var onHome = path.Length == 0 || path[0] is '?' or '#';
     var onSportsSection = onSportsHub || onSportsNews || onBasketballNews || onScoreboard || onEvents || onResults || onStandings || onRankings || onF1 || onCollege || onBig12News;
@@ -59,8 +62,7 @@
 
         <nav class="site-nav site-nav--inline" aria-label="Main">
             <a href="" aria-current="@(onHome ? "page" : null)">Home</a>
-            <a href="news" aria-current="@(onNews ? "page" : null)">Headlines</a>
-            <a href="local" aria-current="@(onLocal ? "page" : null)">Local</a>
+            <a href="news" aria-current="@(onNewsHome ? "page" : onNewsSection ? "true" : null)">News</a>
             <a href="sports" aria-current="@(onSportsHub ? "page" : onSportsSection ? "true" : null)">Sports</a>
             <a href="entertainment" aria-current="@(onEntertainmentHub ? "page" : onEntertainmentSection ? "true" : null)">Entertainment</a>
             <a href="watch" aria-current="@(onWatch ? "page" : null)">Where to watch</a>
@@ -113,8 +115,9 @@
                     <div class="mobile-nav-group" role="group" aria-labelledby="mobile-news-heading">
                         <span class="nav-group-label" id="mobile-news-heading">News</span>
                         <div class="mobile-subnav">
-                            <a href="news" aria-current="@(onNews ? "page" : null)">Headlines</a>
-                            <a href="local" aria-current="@(onLocal ? "page" : null)">Local</a>
+                            <a href="news" aria-current="@(onNewsHome ? "page" : null)">News home</a>
+                            <a href="news/all" aria-current="@(onNewsAll ? "page" : null)">All headlines</a>
+                            <a href="news/kansas-city" aria-current="@(onKansasCity ? "page" : null)">Kansas City</a>
                         </div>
                     </div>
                     <div class="mobile-nav-group" role="group" aria-labelledby="mobile-sports-heading">

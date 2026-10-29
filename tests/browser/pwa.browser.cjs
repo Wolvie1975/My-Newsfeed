@@ -19,7 +19,7 @@ const base = process.env.BASE_URL || 'https://mynewsfeed-prod.tailbf31bc.ts.net'
         const page = await browser.newPage();
         await page.goto(base + '/offline.html');
         await page.evaluate(async () => {
-            await caches.open('mynewsfeed-pwa-v4');
+            await caches.open('mynewsfeed-pwa-v6');
             await caches.open('unrelated-cache');
         });
         await page.goto(base);
@@ -29,7 +29,7 @@ const base = process.env.BASE_URL || 'https://mynewsfeed-prod.tailbf31bc.ts.net'
         assert.equal(manifest.id, '/');
         assert.equal(manifest.display, 'standalone');
         for (const icon of manifest.icons) {
-            assert(icon.src.includes('newspaper-page-'));
+            assert(icon.src.includes('newspaper-front-'));
             const dimensions = await page.evaluate(async (src) => {
                 const img = new Image();
                 img.src = src;
@@ -43,8 +43,8 @@ const base = process.env.BASE_URL || 'https://mynewsfeed-prod.tailbf31bc.ts.net'
         await cdp.send('Page.enable');
         assert.deepEqual((await cdp.send('Page.getInstallabilityErrors')).installabilityErrors, []);
         const keys = await page.evaluate(() => caches.keys());
-        assert(keys.includes('mynewsfeed-pwa-v5'));
-        assert(!keys.includes('mynewsfeed-pwa-v4'));
+        assert(keys.includes('mynewsfeed-pwa-v7'));
+        assert(!keys.includes('mynewsfeed-pwa-v6'));
         assert(keys.includes('unrelated-cache'));
         await page.context().setOffline(true);
         await page.goto(base + '/news');

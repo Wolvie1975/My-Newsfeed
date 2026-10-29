@@ -42,7 +42,7 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
                 });
                 for (mode of ['single', 'empty', 'failed']) {
                     requests = 0;
-                    await page.goto(base + '/local', { waitUntil: 'networkidle' });
+                    await page.goto(base + '/news/kansas-city', { waitUntil: 'networkidle' });
                     assert.equal(requests, 1, 'one request per load');
                     assert.equal(await page.locator('[data-weather-tiles] article').count(), 0);
                     if (mode === 'single') {

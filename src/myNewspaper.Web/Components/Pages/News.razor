@@ -1,4 +1,5 @@
 @page "/news"
+@page "/news/all"
 @page "/entertainment/news"
 @page "/entertainment/tv-film"
 @page "/sports/news"
@@ -23,17 +24,8 @@
     </PhoneRibbon></div>
 }
 <div class="@(SectionNews ? "mx-desktop" : "mx-contents")">
-<PageHeading Section="@(SectionNews ? (EntertainmentSection ? "entertainment" : "sports") : null)" SectionCurrent="@(SectionNews ? (EntertainmentSection ? "entertainment/news" : "sports/news") : null)" Title="@Title" Eyebrow="@(SectionNews ? (EntertainmentSection ? "Entertainment" : "Sports") + " · Every story, every source" : "The latest stories")" Description="" />
+<PageHeading Section="@(SectionNews ? (EntertainmentSection ? "entertainment" : "sports") : "news")" Choices="@(SectionNews ? null : newsTabs)" SectionCurrent="@(SectionNews ? (EntertainmentSection ? "entertainment/news" : "sports/news") : NewsCurrent)" Title="@Title" Eyebrow="@((SectionNews ? (EntertainmentSection ? "Entertainment" : "Sports") : "News") + " · Every story, every source")" Description="" />
 </div>
-@if (!SectionNews && categories.Count > 0)
-{
-    @* Categories as underlined tabs on desktop (as in the approved concept); phones keep the dropdown below. *@
-    <nav class="hl-cats" aria-label="Categories">
-        <a href="@Href(null, null)" aria-current="@(Category is null ? "page" : null)">All categories</a>
-        @foreach (var category in categories)
-        { <a href="@Href(category.Id, null)" aria-current="@(Category == category.Id ? "page" : null)">@category.Name</a> }
-    </nav>
-}
 @if (SectionNews && HubCategories.Count > 0) {
     @* Categories as pills on desktop (as in the approved concept); phones use the dropdown beside Source. *@
     <nav class="sec-pills sec-pills--desktop hn-cats" aria-label="@(EntertainmentSection ? "Topic" : "Sport")">
@@ -42,7 +34,7 @@
     </nav>
 }
 @if (SectionNews) {
-    <form class="catselect news-category-select" method="get" action="news">
+    <form class="catselect news-category-select" method="get" action="news/all">
         <label for="hub-category">@(EntertainmentSection ? "Topic" : "Sport")</label>
         <select id="hub-category" name="category" onchange="this.form.requestSubmit()" disabled="@(HubCategories.Count == 0)">
             @foreach (var item in HubCategories) {
@@ -54,25 +46,6 @@
     <h2 class="sr-only">@NewsSections.LabelFor(SectionCategory)</h2>
 }
 <div class="filters news-front-filters">
-    @if (!SectionNews && categories.Count > 0)
-    {
-        @* Selecting a filter submits the form; Apply remains available without JavaScript. *@
-        <form class="catselect" method="get" action="@BasePath">
-            @if (!string.IsNullOrWhiteSpace(Q))
-            {
-                <input type="hidden" name="q" value="@Q" />
-            }
-            <label class="sr-only" for="category">Category</label>
-            <select id="category" name="category" onchange="this.form.requestSubmit()">
-                <option value="all" selected="@(Category is null)">All categories</option>
-                @foreach (var category in categories)
-                {
-                    <option value="@category.Id" selected="@(Category == category.Id)">@category.Name</option>
-                }
-            </select>
-            <noscript><button class="nf-btn nf-btn--secondary" type="submit">Apply</button></noscript>
-        </form>
-    }
     @if (sources.Count > 0)
     {
         <form class="catselect" method="get" action="@BasePath">
@@ -156,15 +129,7 @@ else
     var folds = foldCategories.Where(c => latestByCategory.TryGetValue(c.Id, out var items) && items.Count > 0).ToArray();
     <div class="mx-phone">
         <PhoneRibbon Kicker="@RibbonKicker(front)" Title="@PhoneTitle">
-            <form class="mx-ribbon__field" method="get" action="news">
-                <label for="category-m">Category</label>
-                <select id="category-m" name="category" onchange="this.form.requestSubmit()">
-                    <option value="all" selected="@(Category is null)">All categories</option>
-                    @foreach (var category in categories)
-                    { <option value="@category.Id" selected="@(Category == category.Id)">@category.Name</option> }
-                </select>
-                <noscript><button class="nf-btn nf-btn--secondary" type="submit">Go</button></noscript>
-            </form>
+            <SectionSelect Id="news-section-m" Label="Section" Choices="newsTabs" Current="@NewsCurrent" AlwaysSelect="true" />
         </PhoneRibbon>
 
         <article class="mx-block" data-article-story="feature" data-image-layout="compact" aria-label="Lead story">
@@ -219,10 +184,10 @@ else
                     var category = folds[i];
                     var items = latestByCategory[category.Id];
                     <Fold Title="@FoldName(category.Name)" Gist="@string.Join(" · ", items.Take(2).Select(StoryTitle))"
-                          Color="@PhoneColors.ForCategory(category.Name)" Open="@(i == 0)" AllHref="@($"news?category={category.Id}")" AllText="@category.Name">
+                          Color="@PhoneColors.ForCategory(category.Name)" Open="@(i == 0)" AllHref="@CategoryHref(category)" AllText="@category.Name">
                         @foreach (var item in items)
                         {
-                            <a class="mx-fold__row" href="@(FeedQuery.SafeHref(item.Url) ?? $"news?category={category.Id}")" target="_blank" rel="noopener noreferrer">
+                            <a class="mx-fold__row" href="@(FeedQuery.SafeHref(item.Url) ?? CategoryHref(category))" target="_blank" rel="noopener noreferrer">
                                 <span><b>@StoryTitle(item)</b><small>@Meta(item, withCategory: false)</small></span>
                             </a>
                         }
@@ -243,9 +208,15 @@ else
     private IReadOnlyList<FeedCategory> HubCategories = [];
     private string? SectionCategory => selectedCategory?.Name;
     private FeedCategory? selectedCategory;
-    private string BasePath => selectedCategory is {} selected && SectionNews ? NewsSections.RouteFor(selected)! : SectionNews ? Hub + "/news" : "news";
+    private string BasePath => selectedCategory is {} selected && SectionNews ? NewsSections.RouteFor(selected)! : SectionNews ? Hub + "/news" : "news/all";
     private string FeedView => SectionNews ? Hub + "-hub-news" : "news";
-    private string Title => EntertainmentSection ? "Entertainment headlines" : SportsSection ? "Sports headlines" : "Headlines";
+    private string Title => EntertainmentSection ? "Entertainment headlines" : SportsSection ? "Sports headlines"
+        : categories.FirstOrDefault(c => c.Id == Category)?.Name ?? "All headlines";
+    private IReadOnlyList<NavigationChoice> newsTabs = [];
+    /// <summary>The News tab for this list: All headlines, or the category's own tab.</summary>
+    private string NewsCurrent => categories.FirstOrDefault(c => c.Id == Category) is { } c ? CategoryHref(c) : "news/all";
+    private static string CategoryHref(FeedCategory category) =>
+        category.Name == SectionChoices.NewsKansasCityCategory ? "news/kansas-city" : $"news/all?category={category.Id}";
     // Query values arrive as text and are parsed leniently: a hand-edited "?category=abc" must not throw.
     [SupplyParameterFromQuery(Name = "category")] private string? CategoryQuery { get; set; }
     [SupplyParameterFromQuery(Name = "q")] private string? Q { get; set; }
@@ -276,6 +247,7 @@ else
             return;
         }
         categories = allCategories.Where(c => c.Hub == "headlines").ToList();
+        newsTabs = SectionChoices.News(categories);
         selectedCategory = null;
         if (SectionNews) {
             HubCategories = allCategories.Where(c => c.Hub == Hub).OrderBy(NewsSections.Order).ThenBy(c => c.Name).ToList();
@@ -290,14 +262,13 @@ else
                 ? allCategories.FirstOrDefault(c => c.Id == id)
                 : known != null ? allCategories.FirstOrDefault(c => c.Name == known) : null;
             if (requested != null && requested.Hub != Hub) {
-                var assignedDestination = NewsSections.RouteFor(requested) ?? "news";
+                var assignedDestination = NewsSections.RouteFor(requested) ?? "news/all";
                 Nav.NavigateTo(assignedDestination + FeedQuery.QueryString(requested.Hub == "headlines" ? requested.Id : null, Q, After?.ToToken(), int.TryParse(SourceQuery, out var source) ? source : null), forceLoad: true);
                 return;
             }
             selectedCategory = requested ?? (Topic == null && known == null ? HubCategories.FirstOrDefault() : null);
         }
         Category = SectionNews ? selectedCategory?.Id
-            : CategoryQuery is null ? categories.FirstOrDefault(c => c.Name == "Top Headlines")?.Id
             : int.TryParse(CategoryQuery, out var categoryId) ? categoryId : null;
         sources = SectionNews && Category == null ? [] : await FeedQuery.GetSourcesAsync(db, Category, headlinesOnly: !SectionNews);
         Source = int.TryParse(SourceQuery, out var sourceId) && sources.Any(s => s.Id == sourceId) ? sourceId : null;
@@ -317,7 +288,7 @@ else
     /// <summary>The folded phone front is for the plain Headlines view only.</summary>
     private bool Phone => !SectionNews && After is null && string.IsNullOrWhiteSpace(Q) && Source is null && feed is { Items.Count: > 0 };
 
-    private string PhoneTitle => categories.FirstOrDefault(c => c.Id == Category) is { } c && c.Name != "Top Headlines" ? c.Name : "The day so far";
+    private string PhoneTitle => categories.FirstOrDefault(c => c.Id == Category)?.Name ?? "All headlines";
 
     private string RibbonKicker(FeedPage page)
     {
@@ -344,7 +315,7 @@ else
 
     private TimelineItem Timeline(FeedItem item) => new(item.Undated ? "" : Dates.Time(item.Date), StoryTitle(item),
         string.Join(" · ", new[] { SourceName(item), item.CategoryName }.Where(p => !string.IsNullOrEmpty(p))), null,
-        FeedQuery.SafeHref(item.Url) ?? "news", PhoneColors.ForCategory(item.CategoryName), External: FeedQuery.SafeHref(item.Url) is not null);
+        FeedQuery.SafeHref(item.Url) ?? "news/all", PhoneColors.ForCategory(item.CategoryName), External: FeedQuery.SafeHref(item.Url) is not null);
 
     /// <summary>"Kansas City News" reads as "Kansas City" on its fold; the See all link keeps the full name.</summary>
     private static string FoldName(string name) => name.EndsWith(" News", StringComparison.Ordinal) ? name[..^5] : name;

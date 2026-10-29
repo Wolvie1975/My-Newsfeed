@@ -147,6 +147,19 @@ if (!app.Environment.IsDevelopment())
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
 app.UseHttpsRedirection();
 
+// Old Headlines and Local addresses (bookmarks, the installed app, Saved links) move under News, query intact.
+app.Use(async (context, next) =>
+{
+    var path = context.Request.Path.Value?.TrimEnd('/') ?? "";
+    var to = path.Equals("/local", StringComparison.OrdinalIgnoreCase) ? "/news/kansas-city"
+        // /news with a list query is the old Headlines list.
+        : path.Equals("/news", StringComparison.OrdinalIgnoreCase)
+          && context.Request.Query.Keys.Any(k => k is "category" or "source" or "q" or "after") ? "/news/all"
+        : null;
+    if (to is null) { await next(); return; }
+    context.Response.Redirect(context.Request.PathBase + to + context.Request.QueryString, permanent: true);
+});
+
 app.UseAuthentication();
 app.UseAuthorization();
 // After routing (which WebApplication adds first) and authentication, so it can read endpoint metadata.
