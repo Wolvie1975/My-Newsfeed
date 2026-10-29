@@ -10,6 +10,8 @@ const fixtures = {
     modest: [640, 360, '#3b738c'],
     compact: [240, 135, '#a06336'],
     portrait: [480, 800, '#70477b'],
+    standard: [1600, 1200, '#4c7a52'],
+    square: [1675, 1675, '#7a4c4c'],
     tiny: [16, 16, '#777'],
 };
 function photo(kind) {
@@ -35,7 +37,7 @@ async function ready(page, story, quality) {
     try {
         for (const width of [320, 390, 430, 744, 1440]) {
             for (const theme of ['light', 'dark']) {
-                for (const kind of ['wide', 'compact', 'portrait', 'tiny', 'broken']) {
+                for (const kind of ['wide', 'standard', 'square', 'compact', 'portrait', 'tiny', 'broken']) {
                     const context = await browser.newContext({ viewport: { width, height: 1000 }, colorScheme: theme });
                     await context.addInitScript(
                         ({ theme }) => {
@@ -58,7 +60,13 @@ async function ready(page, story, quality) {
                     assert.equal(response.status(), 200, 'Use an ungated local preview');
                     const story = page.locator(selector).filter({ visible: true }).first();
                     const quality =
-                        kind === 'tiny' || kind === 'broken' ? 'none' : kind === 'portrait' ? 'compact' : kind;
+                        kind === 'tiny' || kind === 'broken'
+                            ? 'none'
+                            : kind === 'portrait'
+                              ? 'compact'
+                              : kind === 'standard' || kind === 'square'
+                                ? 'wide'
+                                : kind;
                     console.log(width, theme, kind);
                     await ready(page, story, quality);
                     const media = story.locator('[data-article-media]');
@@ -67,6 +75,11 @@ async function ready(page, story, quality) {
                             (await media.boundingBox()).height <= (width >= 900 ? 360 : 220) + 1,
                             'feature image height capped',
                         );
+                        // Large 4:3 and square photos lead too; squares crop into a 3:2 frame rather than a thumbnail.
+                        const box = await media.boundingBox();
+                        if (kind === 'square' && box.height < (width >= 900 ? 360 : 220) - 1)
+                            assert(Math.abs(box.width / box.height - 1.5) < 0.02, 'square photo cropped to 3:2');
+                        assert(box.width > 200, 'large photo is not a thumbnail');
                     } else if (quality === 'compact') {
                         const box = await media.boundingBox();
                         assert(box.width <= 113 && box.height <= 85, 'small/portrait photos stay thumbnails');
@@ -358,7 +371,7 @@ async function ready(page, story, quality) {
         }
         assert.deepEqual(errors, []);
         console.log(
-            'PASS: article images at 320/390/430/744/1440 light/dark; wide, thumbnail, portrait, tiny, broken, BBC retry, dynamic replacement, enhanced navigation, Load more, front pages, actions and no-JS.',
+            'PASS: article images at 320/390/430/744/1440 light/dark; wide, 4:3, square, thumbnail, portrait, tiny, broken, BBC retry, dynamic replacement, enhanced navigation, Load more, front pages, actions and no-JS.',
         );
     } finally {
         await browser.close();

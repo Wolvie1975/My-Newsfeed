@@ -10,16 +10,20 @@ Article photography now follows the decoded image dimensions instead of stretchi
 every feed thumbnail into a feature. Headlines, descriptions, publisher attribution,
 links and Save/Share actions remain available in every layout.
 
-- Landscape photos at least 640 × 300px, with an aspect ratio between 1.5 and 2.2,
-  can use the large feature treatment. Height is capped at 220px below 900px and
+- Photos at least 640 × 300px, with an aspect ratio up to 2.2, can use the large
+  feature treatment. Since October 29 that includes 4:3, square and portrait photos
+  (a 1675px-square NYT lead and a 5712 × 4284 XDA lead had shrunk to thumbnails);
+  those under 1.2 crop into a 3:2 frame weighted toward the top. Height is capped at 220px below 900px and
   360px on larger screens. The image frame cannot exceed the source pixel width.
-  Desktop feed features put the headline beside the photo.
-- Other usable images, including portraits and unusually wide images, use compact
+  Desktop feed features put the headline beside the photo; Home's top story does so
+  only from 1280px, where its middle column is wide enough.
+- Other usable images, including small portraits and unusually wide images, use compact
   thumbnails beside the feature headline. `object-fit: scale-down` preserves the
   whole image and prevents enlargement. Regular feed thumbnails also avoid
   enlarging small sources.
 - Images below 96px wide or 64px high, failed images and missing images produce
-  text-led stories, without a large empty photo area. Compact thumbnails do not
+  text-led stories, without a large empty photo area. Rows without a photo give the
+  text the whole card rather than the thumbnail column. Compact thumbnails do not
   carry the overlaid “Just in” badge; the article timestamp remains available.
 - With JavaScript disabled, featured stories use a text-only fallback. The browser
   cannot reliably check image quality or remove failed images without scripting.

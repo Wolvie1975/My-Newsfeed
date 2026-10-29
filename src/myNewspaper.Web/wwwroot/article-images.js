@@ -18,20 +18,20 @@
 
     function classify(img) {
         const state = images.get(img);
-        if (!state || !img.complete || img.currentSrc !== state.active || !img.naturalWidth) return;
+        // A tiny image is removed on its first pass; the load listener classifies it again once it is detached.
+        if (!state || !img.isConnected || !img.complete || img.currentSrc !== state.active || !img.naturalWidth) return;
         const width = img.naturalWidth,
             height = img.naturalHeight,
             ratio = width / height;
         const quality =
-            width < 96 || height < 64
-                ? 'none'
-                : width >= 640 && height >= 300 && ratio >= 1.5 && ratio <= 2.2
-                  ? 'wide'
-                  : 'compact';
+            width < 96 || height < 64 ? 'none' : width >= 640 && height >= 300 && ratio <= 2.2 ? 'wide' : 'compact';
         img.dataset.articleQuality = quality;
         const media = img.closest('[data-article-media]'),
             story = img.closest('[data-article-story]');
-        media.style.setProperty('--article-image-ratio', width + ' / ' + height);
+        // Large square and portrait photos still lead, cropped into a landscape frame.
+        const cropped = ratio < 1.2;
+        media.style.setProperty('--article-image-ratio', cropped ? '3 / 2' : width + ' / ' + height);
+        img.classList.toggle('article-image--cropped', quality === 'wide' && cropped);
         media.style.setProperty('--article-image-width', width + 'px');
         if (story) story.dataset.imageLayout = quality;
         if (quality === 'none') img.remove();

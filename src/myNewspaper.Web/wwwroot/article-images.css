@@ -2,7 +2,10 @@
 :root .pub [data-article-story='row'] [data-article-media] img[data-article-quality='compact'] {
     object-fit: scale-down;
 }
-:root .pub .d-story[data-article-story='row'][data-image-layout='none'] {
+/* No photo: the text takes the whole card instead of the thumbnail column (outranks the section and poster grids). */
+:root:is([data-color-scheme], :not([data-color-scheme]))
+    .pub
+    :is(.d-story, .article)[data-article-story='row'][data-image-layout='none'] {
     grid-template-columns: minmax(0, 1fr);
 }
 :root .pub [data-article-story='feature'] [data-article-media] {
@@ -99,6 +102,9 @@
 :root .pub [data-article-story='feature'][data-image-layout='wide'] [data-article-media] img {
     object-fit: cover;
 }
+:root .pub [data-article-story='feature'][data-image-layout='wide'] [data-article-media] img.article-image--cropped {
+    object-position: 50% 30%;
+}
 :root .pub :is(.article, .d-lead__story)[data-article-story='feature'][data-image-layout='wide'] {
     grid-template-columns: minmax(0, 1fr);
 }
@@ -119,14 +125,22 @@
     :root .pub [data-article-story='feature'][data-image-layout='wide'] [data-article-media] {
         max-height: 360px;
     }
-    :root .pub :is(.article, .d-lead__story)[data-article-story='feature'][data-image-layout='wide'] {
+    :root .pub .article[data-article-story='feature'][data-image-layout='wide'] {
         grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
         gap: 20px;
     }
-    :root
-        .pub
-        :is(.article, .d-lead__story)[data-article-story='feature'][data-image-layout='wide']
-        > :is(.body, .d-lead__body) {
+    :root .pub .article[data-article-story='feature'][data-image-layout='wide'] > .body {
+        grid-column: 2;
+        grid-row: 1;
+    }
+}
+/* Home's top story sits in the middle of three columns: beside its photo only once that column is wide enough. */
+@media (min-width: 1280px) {
+    :root .pub .d-lead__story[data-article-story='feature'][data-image-layout='wide'] {
+        grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+        gap: 20px;
+    }
+    :root .pub .d-lead__story[data-article-story='feature'][data-image-layout='wide'] > .d-lead__body {
         grid-column: 2;
         grid-row: 1;
     }
