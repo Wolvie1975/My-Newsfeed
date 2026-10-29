@@ -589,3 +589,17 @@ inside its card and the page had no horizontal overflow. Screenshots were inspec
 Fixtures blocked network assets, so fallback fonts were used. These checks cover
 representative markup rather than a live game or real device. Full live-page
 interaction and post-deployment evidence are recorded in the release history.
+
+### Requests choice alignment — October 29, 2026
+
+The Requests form now uses a normal fieldset with the legend above a separate
+choices grid. Choices stack below 360px and share an equal-width row at larger
+widths, including desktop; the group aligns with the form fields. Public build
+passed with zero warnings/errors; CSS Prettier and diff whitespace checks passed.
+Actual preview Settings checks passed at 320/390/430/768/1440px light/dark:
+legend placement, choice alignment, both radio selections, 44px minimum targets,
+no horizontal overflow, refresh, saved theme and no-JavaScript radio selection.
+Screenshots were inspected under `test-results/browser/request-format/` (ignored).
+The temporary profile was removed; no content requests were submitted. Physical
+device checks were unavailable. Deployment and live verification are recorded in
+the release history.

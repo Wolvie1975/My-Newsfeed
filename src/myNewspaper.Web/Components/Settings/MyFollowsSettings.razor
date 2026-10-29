@@ -97,10 +97,12 @@
         <Message Section="requests" Done="@Done" Error="@Error" />
         <form class="set-form" method="post" action="me/requests">
             <AntiforgeryToken />
-            <fieldset class="settings-schemes">
+            <fieldset class="set-request-kind">
                 <legend>What is it?</legend>
-                <label class="settings-scheme"><input type="radio" name="kind" value="@RequestStore.Youtube" checked /> <span>YouTube channel</span></label>
-                <label class="settings-scheme"><input type="radio" name="kind" value="@RequestStore.News" /> <span>News source</span></label>
+                <div class="settings-schemes">
+                    <label class="settings-scheme"><input type="radio" name="kind" value="@RequestStore.Youtube" checked /> <span>YouTube channel</span></label>
+                    <label class="settings-scheme"><input type="radio" name="kind" value="@RequestStore.News" /> <span>News source</span></label>
+                </div>
             </fieldset>
             <label for="request-name">Name</label>
             <input id="request-name" class="set-input" name="name" maxlength="200" required placeholder="For example: Lawrence Journal-World" />

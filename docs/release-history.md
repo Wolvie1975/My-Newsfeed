@@ -6,6 +6,43 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
+## Requests form choice alignment — October 29, 2026 (Central)
+
+Deployed public image `mynewspaper-web:request-format-20261029`
+(`0c896cbfef6b`) to `mynewsfeed-web`. The request-type legend now sits above
+a separate choices grid. Options stack below 360px and share an equal-width row
+at larger sizes. The group aligns with the form inputs and keeps the native
+fieldset/legend association. Runtime environment, ports, network, restart policy,
+health check and key volume were preserved. The existing database connection remains
+sql2025 / WebScraper. No schema scripts or migrations ran; Admin was not rebuilt
+or replaced.
+
+Rollback: image `mynewspaper-web:before-request-format-20261029`
+(`c7957f2eefdb`) and stopped container
+`mynewsfeed-web-before-request-format-20261029` preserve the preceding public build.
+
+Validation: public build passed with zero warnings/errors, changed CSS and docs
+passed Prettier, and diff whitespace checks passed. Docker publish and its asset
+manifest guard passed. Actual preview Settings checks passed at
+320/390/430/768/1440px light/dark, including legend placement, option alignment,
+both radio selections, 44px minimum touch targets, horizontal overflow, refresh,
+saved theme and no-JavaScript selection. Screenshots were inspected.
+
+After deployment, the same checks passed against the production HTTPS Settings
+page at all five widths in both themes. Phone screenshots and a desktop screenshot
+were inspected. Both services were healthy, both HTTPS health endpoints returned
+200, and league-phase startup checks were present. Authenticated HTTP smoke checks
+returned 200 for News, Events, Results (following its redirect), Standings, Rankings,
+Movies, digital movies and box office. Artifacts are under
+`test-results/browser/live-request-format/` (ignored). No requests were submitted;
+the temporary verification profile was deleted. A temporary workspace hostname
+mapping enabled certificate-verified production HTTPS checks and was removed after
+verification.
+
+Limits: checks used Chromium emulation; physical-device testing was unavailable.
+The full unrelated application suites were not rerun for this markup/CSS change.
+The commit remains local on `develop`; no push was made.
+
 ## Mobile live-score quarter shorthand — October 29, 2026 (Central)
 
 Public image `mynewspaper-web:mobile-live-quarter-20261029`
