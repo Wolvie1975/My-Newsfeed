@@ -51,6 +51,12 @@ public sealed class FeedDates(TimeZoneInfo zone)
 
     public DateOnly Today => TodayAt(DateTime.UtcNow);
 
+    /// <summary>When a site-local day starts, in UTC.</summary>
+    public DateTime StartOfDayUtc(DateOnly day) => TimeZoneInfo.ConvertTimeToUtc(day.ToDateTime(TimeOnly.MinValue), zone);
+
+    /// <summary>"Monday, 7:12 PM" in site time.</summary>
+    public string DayAndTime(DateTime utc) => Local(utc).ToString("dddd, h:mm tt", Culture);
+
     /// <summary>The calendar day (in the display zone) an article belongs to, as yyyy-MM-dd.</summary>
     public string DayKey(DateTime utc) => Local(utc).ToString("yyyy-MM-dd", Culture);
 

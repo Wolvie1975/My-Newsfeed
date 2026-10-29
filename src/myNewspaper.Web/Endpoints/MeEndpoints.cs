@@ -1,5 +1,7 @@
+using System.Globalization;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
+using myNewspaper.Web.Data;
 using myNewspaper.Web.Profiles;
 using myNewspaper.Web.Requests;
 using myNewspaper.Web.Tv;
@@ -98,7 +100,66 @@ public static class MeEndpoints
             catch (RequestStore.TooManyWaitingException) { return Back("requests", error: "too-many-requests"); }
             catch (ArgumentException) { return Back("requests", error: "request-invalid"); }
         });
+
+        // Your topics (docs/news-section-handoff.md, phase 5). Every call is for the open profile's own topics.
+        me.MapGet("/topics/preview", async (string? terms, string? except, string? hub, HttpContext http, FeedDates dates,
+            AdminProfileEndpoints.Db db) =>
+        {
+            http.Response.Headers.CacheControl = "no-store";
+            var preview = await TopicQuery.PreviewAsync(db.Context, dates, terms, except, hub, db.Now, db.Ct);
+            return Results.Json(new
+            {
+                total = preview.Total,
+                verdict = preview.Verdict,
+                perDay = preview.PerDay.Select(d => new { day = d.Day.ToString("ddd", CultureInfo.InvariantCulture), count = d.Count }),
+                latest = preview.Latest.Select(i => new
+                {
+                    url = FeedQuery.SafeHref(i.Url),
+                    title = TopicQuery.Highlight(FeedText.StripEmoji(i.Title), terms).Select(s => new { text = s.Text, match = s.Match }),
+                    meta = string.Join(" · ", new[] { FeedText.SourceName(i.SourceLabel, i.SourceUrl), i.CategoryName, i.Undated ? null : dates.Published(i.Date) }
+                        .Where(p => !string.IsNullOrEmpty(p))),
+                }),
+                hiddenByExcept = preview.HiddenByExcept,
+                except = TopicQuery.Split(except, TopicQuery.MaxExcept),
+            });
+        });
+
+        me.MapPost("/topics", async ([FromForm] string? terms, [FromForm] string? except, [FromForm] string? hub,
+            ProfileContext reader, AdminProfileEndpoints.Db db) =>
+        {
+            try
+            {
+                var topic = await TopicQuery.CreateAsync(db.Context, reader.Id, terms, except, hub, db.Now, db.Ct);
+                return Results.LocalRedirect($"/news/topics/{topic.Id}?done=topic-followed");
+            }
+            catch (TopicQuery.TooManyTopicsException) { return Results.LocalRedirect(TopicFollowPath + "?error=too-many"); }
+            catch (ArgumentException) { return Results.LocalRedirect(TopicFollowPath + "?error=topic-invalid"); }
+        });
+
+        me.MapPost("/topics/{id:int}", async (int id, [FromForm] string? terms, [FromForm] string? except, [FromForm] string? hub,
+            ProfileContext reader, AdminProfileEndpoints.Db db) =>
+        {
+            try
+            {
+                return await TopicQuery.UpdateAsync(db.Context, reader.Id, id, terms, except, hub, db.Ct)
+                    ? Results.LocalRedirect($"/news/topics/{id}?done=topic-saved")
+                    : Results.NotFound();
+            }
+            catch (ArgumentException) { return Results.LocalRedirect($"{TopicFollowPath}?edit={id}&error=topic-invalid"); }
+        });
+
+        me.MapPost("/topics/{id:int}/read", async (int id, ProfileContext reader, AdminProfileEndpoints.Db db) =>
+            await TopicQuery.MarkReadAsync(db.Context, reader.Id, id, db.Now, db.Ct)
+                ? Results.LocalRedirect($"/news/topics/{id}?done=topic-read")
+                : Results.NotFound());
+
+        me.MapPost("/topics/{id:int}/delete", async (int id, ProfileContext reader, AdminProfileEndpoints.Db db) =>
+            await TopicQuery.DeleteAsync(db.Context, reader.Id, id, db.Ct)
+                ? Results.LocalRedirect("/news?done=topic-removed")
+                : Results.NotFound());
     }
+
+    public const string TopicFollowPath = "/news/topics/follow";
 
     private static IResult Back(string section, string? done = null, string? error = null, int? triesLeft = null) =>
         To(SettingsPath, section, done, error, triesLeft);

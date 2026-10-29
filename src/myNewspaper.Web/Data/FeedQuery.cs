@@ -72,6 +72,13 @@ public static class FeedQuery
     private static IQueryable<Models.Page> Visible(WebScraperContext db) =>
         db.Pages.AsNoTracking().Where(p => p.Source.Enabled);
 
+    /// <summary>Visible stories dated from <paramref name="since"/>, in one hub (headlines | sports | entertainment) or all.</summary>
+    internal static IQueryable<Models.Page> VisibleSince(WebScraperContext db, DateTime since, string? hub) =>
+        Visible(db).Where(p => (p.Published ?? p.ScrapedAt) >= since)
+            .Where(p => hub == null || (hub == "headlines"
+                ? p.Source.SourceCategory == null || p.Source.SourceCategory.NewsHub == "headlines"
+                : p.Source.SourceCategory != null && p.Source.SourceCategory.NewsHub == hub));
+
     public static async Task<IReadOnlyList<FeedCategory>> GetCategoriesAsync(WebScraperContext db) =>
         await db.SourceCategories.AsNoTracking()
             .Select(c => new
@@ -182,7 +189,7 @@ public static class FeedQuery
         return latest;
     }
 
-    private static readonly System.Linq.Expressions.Expression<Func<Models.Page, FeedItem>> ToFeedItem = p => new FeedItem(
+    internal static readonly System.Linq.Expressions.Expression<Func<Models.Page, FeedItem>> ToFeedItem = p => new FeedItem(
         p.Id,
         p.Title,
         p.Url,
@@ -221,6 +228,16 @@ public static class FeedQuery
                 p.Source.SourceCategory != null ? p.Source.SourceCategory.CategoryName : null,
                 p.Published ?? p.ScrapedAt, p.Published == null))
             .ToListAsync();
+
+    /// <summary>Headlines-hub stories newer than <paramref name="since"/>: how many, and how many in one category.</summary>
+    public static async Task<(int Total, int InCategory)> CountSinceAsync(WebScraperContext db, DateTime since, int? categoryId)
+    {
+        var query = Visible(db).Where(p => (p.Published ?? p.ScrapedAt) > since
+            && (p.Source.SourceCategory == null || p.Source.SourceCategory.NewsHub == "headlines"));
+        var total = await query.CountAsync();
+        var inCategory = categoryId is { } id ? await query.CountAsync(p => p.Source.SourceCategoryId == id) : 0;
+        return (total, inCategory);
+    }
 
     /// <summary>The newest headlines-hub articles with a usable image, one per source, for the News front's In pictures.</summary>
     public static async Task<IReadOnlyList<FeedItem>> GetPhotosAsync(WebScraperContext db, DateTime nowUtc, int take = 5)

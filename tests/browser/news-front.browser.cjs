@@ -152,6 +152,12 @@ const password = process.env.ADMIN_PASSWORD;
                         .locator('.nf-brief--phone .nf-tile')
                         .evaluateAll((ns) => ns.map((n) => n.getBoundingClientRect()).map((b) => [b.left, b.right]));
                     assert(tiles.length >= 1, label + ' briefing tiles');
+                    // A new profile (or no profile) is on its first visit: no Since last visit tile yet.
+                    assert.equal(
+                        await page.locator('.nf-tile', { hasText: 'Since last visit' }).count(),
+                        0,
+                        label + ' no Since tile on a first visit',
+                    );
                     assert(
                         tiles.every(([l, rt]) => l >= 0 && rt <= width),
                         label + ' tiles inside the screen',

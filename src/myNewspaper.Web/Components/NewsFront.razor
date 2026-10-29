@@ -5,6 +5,7 @@
 @inject IConfiguration Config
 @inject LocalWeather Weather
 @inject ILogger<NewsFront> Log
+@inject myNewspaper.Web.Profiles.ProfileContext Reader
 
 @* News front page (docs/news-section-handoff.md, phase 3), built like the Sports front: a briefing strip, then the day
    so far, the lead and top headlines, and a side column of Kansas City and Opinion; In pictures and the three desks
@@ -101,6 +102,20 @@
                     <a class="ef-more" href="@CategoryHref(op)">All opinion <span aria-hidden="true">→</span></a>
                 </section>
             }
+            @if (topics is { } mine)
+            {
+                <section class="nf-side nf-topics" aria-labelledby="nf-topics-title">
+                    <h2 id="nf-topics-title" class="ef-label">Your topics</h2>
+                    @if (mine.Count == 0) { <p class="ef-note">Follow a word or phrase and see every story that mentions it. Only you see your topics.</p> }
+                    <ul class="nf-topics__list">
+                        @foreach (var topic in mine)
+                        {
+                            <li><a href="@($"news/topics/{topic.Topic.Id}")"><span>@topic.Name</span><b class="@(topic.New > 0 ? "nf-topics__new" : null)">@(topic.New > 0 ? $"{topic.New} new" : "none new")</b></a></li>
+                        }
+                    </ul>
+                    @if (mine.Count < myNewspaper.Web.Profiles.TopicQuery.Limit) { <a class="ef-more" href="news/topics/follow">Follow a topic <span aria-hidden="true">→</span></a> }
+                </section>
+            }
         </aside>
     </div>
 
@@ -193,7 +208,20 @@
         <PhoneTimeline Heading="The day so far" Sub="newest first" Items="@day.Take(3).Select(Timeline).ToList()" MoreText="All headlines" MoreHref="news/all" />
     }
 
-    <FoldGroup Name="news-more" Heading="More News">
+    <FoldGroup Name="news-more" Heading="More News" Foot="@(topics is { Count: < myNewspaper.Web.Profiles.TopicQuery.Limit } ? "Follow a topic" : null)" FootHref="news/topics/follow">
+        @if (topics is { Count: > 0 } followed)
+        {
+            <Fold Title="Your topics" Color="mx-c-world" AllHref="news/topics/follow" AllText="Follow a topic"
+                  Gist="@string.Join(" · ", followed.Take(2).Select(t => t.New > 0 ? $"{t.Name} · {t.New} new" : t.Name))">
+                @foreach (var topic in followed)
+                {
+                    <a class="mx-fold__row" href="@($"news/topics/{topic.Topic.Id}")">
+                        <span><b>@topic.Name</b><small>Only you see this</small></span>
+                        <span class="mx-fold__value">@(topic.New > 0 ? topic.New.ToString(CultureInfo.InvariantCulture) : "–")</span>
+                    </a>
+                }
+            </Fold>
+        }
         @if (kansasCity is { } kc && Latest(kc).Count > 0)
         {
             <Fold Title="Kansas City" Color="mx-c-local" Open="true" AllHref="news/kansas-city" AllText="Kansas City"
@@ -255,6 +283,9 @@
     private IReadOnlyList<FeedCategory> desks = [];
     private int total, sourceCount;
     private LocalWeatherPage? weather;
+    private (int Total, int Local)? sinceVisit;
+    // The open profile's topics; null without a profile (profiles off), when the box doesn't show.
+    private List<myNewspaper.Web.Profiles.TopicSummary>? topics;
 
     // The desks below the columns, in the design's order.
     private static readonly string[] DeskNames = ["Technology", "Linux", "Video Games"];
@@ -283,6 +314,12 @@
                 new[] { kansasCity, opinion }.OfType<FeedCategory>().Concat(desks).Select(c => c.Id));
             // In pictures leaves out the lead, whose photo is already the biggest on the page.
             photos = (await FeedQuery.GetPhotosAsync(db, nowUtc, 6)).Where(p => stories.Count == 0 || p.Id != stories[0].Id).Take(5).ToList();
+            // Since your last visit: read fresh, because the gate moves PreviousVisitAt as this request starts a visit.
+            sinceVisit = null;
+            if (Reader.HasProfile
+                && await db.Profiles.Where(p => p.Id == Reader.Id).Select(p => p.PreviousVisitAt).FirstOrDefaultAsync() is { } previous)
+                sinceVisit = await FeedQuery.CountSinceAsync(db, previous, kansasCity?.Id);
+            topics = Reader.HasProfile ? await myNewspaper.Web.Profiles.TopicQuery.SummariesAsync(db, Reader.Id, nowUtc) : null;
             electionStories = ElectionDays is not null
                 ? (await FeedQuery.GetFeedAsync(db, null, "election", null, 3, headlinesOnly: true)).Items
                 : [];
@@ -315,7 +352,7 @@
         sourceCount > 0 ? $"{sourceCount} {(sourceCount == 1 ? "source" : "sources")}" : null,
     }.Where(p => p is not null));
 
-    // ---------- Briefing tiles: Kansas City now and Election Day ("Since your last visit" waits for phase 4) ----------
+    // ---------- Briefing tiles: Since your last visit (an open profile's second visit on), Kansas City now, Election Day ----------
 
     private LocalForecast? Now => weather?.Periods.FirstOrDefault();
     private string? WeatherLine => Now is { } now ? $"{now.Name}: {now.Temperature}° · {now.Summary}" : null;
@@ -329,6 +366,11 @@
     private static string ElectionValue(int days) => days switch { 0 => "Today", 1 => "Tomorrow", _ => $"{days} days" };
 
     private RenderFragment Tiles => @<text>
+        @if (sinceVisit is { } since)
+        {
+            @Tile("news/all", "mx-c-world", "Since last visit", since.Total.ToString("N0", CultureInfo.InvariantCulture),
+                since.Total == 0 ? "nothing new yet" : since.Local > 0 ? $"new · {since.Local} local" : "new")
+        }
         @Tile("news/kansas-city#local-weather", "mx-c-local", "Kansas City now", Now is { } now ? $"{now.Temperature}°" : "Forecast", Now?.Summary ?? "National Weather Service")
         @if (ElectionDays is { } days) { @Tile("news/all?q=election", "mx-c-us", "Election Day", ElectionValue(days), ElectionDate) }
     </text>;

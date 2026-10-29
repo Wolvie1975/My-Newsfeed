@@ -1,0 +1,147 @@
+@page "/news/topics/{Id:int}"
+@layout PublicLayout
+@using myNewspaper.Web.Components.Feed
+@using myNewspaper.Web.Profiles
+@using myNewspaper.Web.Data.Models
+@inject IDbContextFactory<WebScraperContext> Factory
+@inject ProfileContext Reader
+@inject FeedDates Dates
+@inject NavigationManager Nav
+
+@* One of your topics (docs/news-section-handoff.md, phase 5): what's new since it was last marked read, then earlier
+   matches from the past 30 days, 20 at a time. Opening the page doesn't mark anything read; only the button does, so
+   the count survives a quick look. Only the profile that follows it can open it; anyone else gets 404. *@
+@if (topic is { } t)
+{
+    <PageTitle>@name · Your topics · myNewspaper</PageTitle>
+    <div class="mx-desktop">
+        <PageHeading Section="news" Choices="newsTabs" SectionCurrent="news/topics" Title="@name" Eyebrow="Your topic · only you see this" Description="" />
+        @if (topicChoices.Count > 1) { <SectionSelect Id="topic" Label="Your topics" Choices="topicChoices" Current="@($"news/topics/{t.Id}")" /> }
+    </div>
+    <div class="mx-phone">
+        <PhoneRibbon Kicker="Your topic · only you see this" Title="@name">
+            <SectionSelect Id="topic-m" Label="Topic" Choices="topicChoices" Current="@($"news/topics/{t.Id}")" AlwaysSelect="true" />
+        </PhoneRibbon>
+    </div>
+
+    <div class="tp-page">
+        @if (DoneText is { } done) { <p class="tp-done" role="status">@done</p> }
+        <section class="tp-since" aria-labelledby="tp-since-title">
+            <div>
+                <span class="tp-since__kicker">Since @Dates.DayAndTime(TopicQuery.NewSince(t))</span>
+                <h2 id="tp-since-title" class="tp-since__count"><b>@fresh.Count</b> new @(fresh.Count == 1 ? "story" : "stories")</h2>
+                <span class="tp-since__sub">@SubLine(t)</span>
+            </div>
+            <form method="post" action="@($"me/topics/{t.Id}/read")">
+                <AntiforgeryToken />
+                <button class="nf-btn tp-since__read" type="submit">Mark as read</button>
+            </form>
+        </section>
+
+        <section class="tp-list" aria-labelledby="tp-new-title">
+            <h2 id="tp-new-title" class="ef-label">New</h2>
+            @if (fresh.Count == 0) { <p class="ef-empty">Nothing new yet. New matches show here and on the News front.</p> }
+            else
+            {
+                <ul class="ef-headlines tp-rows">
+                    @foreach (var item in fresh) { @Row(item) }
+                </ul>
+            }
+        </section>
+
+        <section class="tp-list" aria-labelledby="tp-earlier-title">
+            <h2 id="tp-earlier-title" class="ef-label">Earlier this month</h2>
+            @if (earlier.Count == 0) { <p class="ef-empty">No earlier matches in the past 30 days.</p> }
+            else
+            {
+                <ul class="ef-headlines tp-rows">
+                    @foreach (var item in earlier.Take(Shown)) { @Row(item) }
+                </ul>
+            }
+            @if (earlier.Count > Shown)
+            {
+                <a class="nf-btn nf-btn--secondary tp-more" href="@($"news/topics/{t.Id}?shown={Shown + TopicQuery.PageSize}#tp-earlier-title")">Show earlier stories</a>
+            }
+        </section>
+
+        <div class="tp-manage">
+            <a class="nf-btn nf-btn--secondary" href="@($"news/topics/follow?edit={t.Id}")">Edit topic</a>
+            <form method="post" action="@($"me/topics/{t.Id}/delete")">
+                <AntiforgeryToken />
+                <button class="nf-btn tp-stop" type="submit">Stop following</button>
+            </form>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+    [SupplyParameterFromQuery(Name = "shown")] private int? ShownQuery { get; set; }
+    [SupplyParameterFromQuery(Name = "done")] private string? Done { get; set; }
+
+    private ProfileTopic? topic;
+    private string name = "";
+    private IReadOnlyList<NavigationChoice> newsTabs = [];
+    private IReadOnlyList<NavigationChoice> topicChoices = [];
+    private List<FeedItem> fresh = [], earlier = [];
+    private int week;
+
+    private int Shown => Math.Clamp(ShownQuery ?? TopicQuery.PageSize, TopicQuery.PageSize, 500);
+
+    private string? DoneText => Done switch
+    {
+        "topic-followed" => "Following. New matches show here and on the News front.",
+        "topic-saved" => "Topic saved.",
+        "topic-read" => "Marked as read.",
+        _ => null,
+    };
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var nowUtc = DateTime.UtcNow;
+        await using var db = await Factory.CreateDbContextAsync();
+        // Only the open profile's own topic; anything else answers exactly as an unknown ID does.
+        topic = await TopicQuery.GetAsync(db, Reader.Id, Id);
+        if (topic is null)
+        {
+            Nav.NotFound();
+            return;
+        }
+        name = TopicQuery.NameOf(topic);
+        newsTabs = await SectionChoices.NewsAsync(db);
+        var summaries = await TopicQuery.SummariesAsync(db, Reader.Id, nowUtc);
+        topicChoices = summaries.Select(s => new NavigationChoice($"news/topics/{s.Topic.Id}", $"{s.Name} · {(s.New > 0 ? $"{s.New} new" : "none new")}")).ToList();
+        var (items, _) = await TopicQuery.MatchAsync(db, topic.Terms, topic.ExceptTerms, topic.Hub, nowUtc.AddDays(-TopicQuery.PageDays));
+        var since = TopicQuery.NewSince(topic);
+        fresh = items.Where(i => i.Date > since).ToList();
+        earlier = items.Where(i => i.Date <= since).ToList();
+        week = items.Count(i => i.Date >= nowUtc.AddDays(-TopicQuery.PreviewDays));
+    }
+
+    /// <summary>"18 this week · except “Chiefs” · all sections".</summary>
+    private string SubLine(ProfileTopic t) => string.Join(" · ", new[]
+    {
+        $"{week} this week",
+        t.ExceptTerms is { Length: > 0 } x ? $"except “{x}”" : null,
+        t.Hub switch { "headlines" => "News only", "sports" => "Sports only", "entertainment" => "Entertainment only", _ => "all sections" },
+    }.Where(p => p is not null));
+
+    private RenderFragment Row(FeedItem item) =>
+        @<li data-news-url="@FeedQuery.SafeHref(item.Url)" data-news-source="@Source(item)">
+            @{ var href = FeedQuery.SafeHref(item.Url); }
+            <a class="ef-headlines__title" href="@(href ?? "news/all")" target="@(href is null ? null : "_blank")" rel="@(href is null ? null : "noopener noreferrer")">
+                @foreach (var span in TopicQuery.Highlight(Title(item), topic?.Terms))
+                {
+                    if (span.Match) { <mark>@span.Text</mark> } else { @span.Text }
+                }
+            </a>
+            <div class="ef-meta">
+                <span class="ef-meta__when">@string.Join(" · ", new[] { Source(item), item.CategoryName, item.Undated ? null : Dates.Published(item.Date) }.Where(p => !string.IsNullOrEmpty(p)))</span>
+                <ShareButton Url="@item.Url" Title="@Title(item)" />
+                <SaveButton Item="item" Title="@Title(item)" Source="@Source(item)" Summary="@FeedText.StripEmoji(FeedQuery.Excerpt(item.Description))" />
+            </div>
+        </li>;
+
+    private static string Title(FeedItem item) => FeedText.StripEmoji(item.Title) is { Length: > 0 } title ? title : item.Title;
+    private static string Source(FeedItem item) => FeedText.SourceName(item.SourceLabel, item.SourceUrl);
+}

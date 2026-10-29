@@ -1,0 +1,83 @@
+@page "/news/topics/follow"
+@layout PublicLayout
+@using myNewspaper.Web.Profiles
+@using myNewspaper.Web.Data.Models
+@inject IDbContextFactory<WebScraperContext> Factory
+@inject ProfileContext Reader
+
+@* Follow (or edit) a topic (docs/news-section-handoff.md, phase 5). A plain form that posts without JavaScript;
+   topics.js adds the live preview from /me/topics/preview after a pause in typing. Phones: a full-width sheet;
+   desktop: the form beside the preview, as in the follow dialog mockup. *@
+<PageTitle>@Heading · News · myNewspaper</PageTitle>
+<div class="tp-follow">
+    <form class="tp-form" method="post" action="@(editing is null ? "me/topics" : $"me/topics/{editing.Id}")" data-topic-form>
+        <AntiforgeryToken />
+        <p class="tp-kicker">Your topics · only you see these</p>
+        <h1>@Heading</h1>
+        @if (ErrorText is { } error) { <p class="tp-error" role="alert">@error</p> }
+        @if (Full)
+        {
+            <p class="tp-error" role="status">You follow @TopicQuery.Limit topics, the most there can be. Stop following one to add another.</p>
+        }
+        <div class="tp-field">
+            <label for="tp-terms">Words or phrase</label>
+            <input id="tp-terms" name="terms" type="text" required maxlength="300" autocomplete="off" value="@editing?.Terms" aria-describedby="tp-terms-help" />
+            <span id="tp-terms-help" class="tp-help">Whole words, any capitals. Separate alternatives with commas: <i>Chiefs stadium, Arrowhead</i></span>
+        </div>
+        <div class="tp-row">
+            <div class="tp-field">
+                <label for="tp-except">Except <span class="tp-optional">(optional)</span></label>
+                <input id="tp-except" name="except" type="text" maxlength="200" autocomplete="off" value="@editing?.ExceptTerms" />
+            </div>
+            <div class="tp-field">
+                <label for="tp-hub">Look in</label>
+                <select id="tp-hub" name="hub">
+                    <option value="" selected="@(editing?.Hub is null)">All sections</option>
+                    <option value="headlines" selected="@(editing?.Hub == "headlines")">News</option>
+                    <option value="sports" selected="@(editing?.Hub == "sports")">Sports</option>
+                    <option value="entertainment" selected="@(editing?.Hub == "entertainment")">Entertainment</option>
+                </select>
+            </div>
+        </div>
+        <div class="tp-actions">
+            <button class="nf-btn nf-btn--primary" type="submit" data-topic-submit disabled="@Full">@(editing is null ? "Follow" : "Save topic")</button>
+            <a class="nf-btn nf-btn--secondary" href="@(editing is null ? "news" : $"news/topics/{editing.Id}")">Cancel</a>
+            <span class="tp-help">@count of @TopicQuery.Limit topics used</span>
+        </div>
+    </form>
+
+    <section class="tp-preview" aria-labelledby="tp-preview-title" data-topic-preview hidden>
+        <h2 id="tp-preview-title">Preview · updates as you type</h2>
+        <div aria-live="polite">
+            <div class="tp-verdict" data-topic-verdict><b></b><span></span></div>
+            <div class="tp-chart" role="img" data-topic-chart></div>
+            <h3>Latest matches</h3>
+            <ul class="tp-latest" data-topic-latest></ul>
+            <p class="tp-help" data-topic-hidden></p>
+        </div>
+    </section>
+</div>
+
+@code {
+    [SupplyParameterFromQuery(Name = "edit")] private int? EditId { get; set; }
+    [SupplyParameterFromQuery(Name = "error")] private string? Error { get; set; }
+    private ProfileTopic? editing;
+    private int count;
+
+    private string Heading => editing is null ? "Follow a topic" : "Edit topic";
+    private bool Full => editing is null && count >= TopicQuery.Limit;
+    private string? ErrorText => Error switch
+    {
+        "topic-invalid" => "Enter a word or phrase of 2 to 60 characters; separate alternatives with commas.",
+        "too-many" => $"You can follow up to {TopicQuery.Limit} topics.",
+        _ => null,
+    };
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // The gate keeps this page to an open profile (it doesn't exist with profiles off).
+        await using var db = await Factory.CreateDbContextAsync();
+        count = await TopicQuery.CountAsync(db, Reader.Id);
+        editing = EditId is { } id ? await TopicQuery.GetAsync(db, Reader.Id, id) : null;
+    }
+}

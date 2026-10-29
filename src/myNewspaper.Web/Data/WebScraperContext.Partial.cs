@@ -39,6 +39,7 @@ public partial class WebScraperContext
     public DbSet<ProfileDevice> ProfileDevices { get; set; }
     public DbSet<ProfileTvFollow> ProfileTvFollows { get; set; }
     public DbSet<ProfileChannelFollow> ProfileChannelFollows { get; set; }
+    public DbSet<ProfileTopic> ProfileTopics { get; set; }
     public DbSet<ChannelRollout> ChannelRollouts { get; set; }
     public DbSet<ContentRequest> ContentRequests { get; set; }
     public DbSet<Household> Household { get; set; }
@@ -99,6 +100,11 @@ public partial class WebScraperContext
         });
         modelBuilder.Entity<ProfileTvFollow>().Property(e => e.FollowedAt).HasDefaultValueSql("sysutcdatetime()");
         modelBuilder.Entity<ProfileChannelFollow>().Property(e => e.FollowedAt).HasDefaultValueSql("sysutcdatetime()");
+        modelBuilder.Entity<ProfileTopic>(entity =>
+        {
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("sysutcdatetime()");
+            entity.HasOne<Profile>().WithMany().HasForeignKey(e => e.ProfileId).OnDelete(DeleteBehavior.Cascade);
+        });
         // Single int keys would otherwise be treated as identity columns and left out of inserts.
         modelBuilder.Entity<ChannelRollout>(entity =>
         {

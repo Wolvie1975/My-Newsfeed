@@ -26,6 +26,34 @@ public class ProfileDataTests
         ProfileStore.CreateDeviceAsync(db, ProfileCookies.NewDevice(), "tests", ProfileGate.EveryVisit);
 
     [Fact]
+    public async Task A_new_visit_starts_after_thirty_minutes_away_and_keeps_its_start_while_reading()
+    {
+        await using var db = Create();
+        await using var tx = await db.Database.BeginTransactionAsync();
+        var profile = await NewProfile(db);
+        var device = await NewDevice(db);
+        async Task<Profile> Touch(DateTime at)
+        {
+            var current = await db.Profiles.AsNoTracking().SingleAsync(p => p.Id == profile.Id);
+            await ProfileStore.TouchAsync(db, device, current, at);
+            return await db.Profiles.AsNoTracking().SingleAsync(p => p.Id == profile.Id);
+        }
+
+        // The first read has no previous visit.
+        var first = await Touch(Now);
+        Assert.Equal((Now, (DateTime?)null), (first.LastReadAt!.Value, first.PreviousVisitAt));
+        // Reading on, minute by minute: LastReadAt moves, there's still no previous visit.
+        var reading = await Touch(Now.AddMinutes(20));
+        Assert.Equal((Now.AddMinutes(20), (DateTime?)null), (reading.LastReadAt!.Value, reading.PreviousVisitAt));
+        // Back after 45 minutes away: a new visit, whose previous visit ended at the last read.
+        var back = await Touch(Now.AddMinutes(65));
+        Assert.Equal((Now.AddMinutes(65), (DateTime?)Now.AddMinutes(20)), (back.LastReadAt!.Value, back.PreviousVisitAt));
+        // Reading on during that visit keeps its previous visit.
+        var later = await Touch(Now.AddMinutes(80));
+        Assert.Equal((Now.AddMinutes(80), (DateTime?)Now.AddMinutes(20)), (later.LastReadAt!.Value, later.PreviousVisitAt));
+    }
+
+    [Fact]
     public async Task Five_wrong_pins_lock_the_profile_until_the_admin_acts()
     {
         await using var db = Create();

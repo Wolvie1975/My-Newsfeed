@@ -22,6 +22,7 @@ public class Profile
     public DateTime? BrowserImportAt { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? LastReadAt { get; set; }
+    public DateTime? PreviousVisitAt { get; set; }          // db/023: the start of the previous visit
 }
 
 [Table("MyDailyFeedProfileDevices")]
@@ -95,4 +96,17 @@ public class Household
     public DateTime? RequestsSeenAt { get; set; }                     // admin's "Mark all seen"
     public int? AdminProfileId { get; set; }                          // db/022: only this profile sees "Admin sign in"
     public string BaseSettings { get; set; } = "{}";                  // same shape as Profile.Settings
+}
+
+/// <summary>A word or phrase a profile follows (db/023, "Your topics"). Private to the profile, like its follows.</summary>
+[Table("MyDailyFeedProfileTopics")]
+public class ProfileTopic
+{
+    public int Id { get; set; }
+    public int ProfileId { get; set; }
+    [MaxLength(300)] public string Terms { get; set; } = "";       // comma-separated alternatives
+    [MaxLength(200)] public string? ExceptTerms { get; set; }     // comma-separated
+    [MaxLength(16)] public string? Hub { get; set; }               // null = all sections
+    public DateTime CreatedAt { get; set; }
+    public DateTime? LastViewedAt { get; set; }
 }

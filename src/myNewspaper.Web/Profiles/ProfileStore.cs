@@ -75,14 +75,26 @@ public static class ProfileStore
         return device;
     }
 
-    /// <summary>Records use at most once a minute: the device's LastSeenAt, and LastReadAt for the profile it reads as.</summary>
+    /// <summary>A return after this long away starts a new visit (News front's "Since your last visit").</summary>
+    public static readonly TimeSpan VisitGap = TimeSpan.FromMinutes(30);
+
+    /// <summary>
+    /// Records use at most once a minute: the device's LastSeenAt, and LastReadAt for the profile it reads as. When the
+    /// profile comes back after <see cref="VisitGap"/>, the old LastReadAt becomes PreviousVisitAt.
+    /// </summary>
     public static async Task TouchAsync(WebScraperContext db, ProfileDevice device, Profile? profile, DateTime nowUtc, CancellationToken ct = default)
     {
         var stale = nowUtc.AddMinutes(-1);
         if (device.LastSeenAt < stale)
             await db.ProfileDevices.Where(d => d.Id == device.Id).ExecuteUpdateAsync(s => s.SetProperty(d => d.LastSeenAt, nowUtc), ct);
         if (profile is not null && (profile.LastReadAt is null || profile.LastReadAt < stale))
-            await db.Profiles.Where(p => p.Id == profile.Id).ExecuteUpdateAsync(s => s.SetProperty(p => p.LastReadAt, nowUtc), ct);
+        {
+            var rows = db.Profiles.Where(p => p.Id == profile.Id);
+            if (profile.LastReadAt is { } last && last < nowUtc - VisitGap)
+                await rows.ExecuteUpdateAsync(s => s.SetProperty(p => p.LastReadAt, nowUtc).SetProperty(p => p.PreviousVisitAt, last), ct);
+            else
+                await rows.ExecuteUpdateAsync(s => s.SetProperty(p => p.LastReadAt, nowUtc), ct);
+        }
     }
 
     /// <summary>
