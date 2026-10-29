@@ -60,12 +60,7 @@ public class PhoneSportsTests
         Assert.Equal("50%", PhoneSports.Percent(50, 100));
     }
 
-    private static async Task<string> RenderRankings(RankingsPage page)
-    {
-        await using var services = new ServiceCollection().AddLogging().AddSingleton(FeedDates.Create("America/Chicago")).BuildServiceProvider();
-        await using var renderer = new HtmlRenderer(services, services.GetRequiredService<ILoggerFactory>());
-        return await renderer.Dispatcher.InvokeAsync(async () => (await renderer.RenderComponentAsync<PhoneRankings>(ParameterView.FromDictionary(new Dictionary<string, object?> { ["Data"] = page }))).ToHtmlString());
-    }
+    private static Task<string> RenderRankings(RankingsPage page) => RenderSports<PhoneRankings>(new() { ["Data"] = page });
 
     [Fact]
     public async Task Poll_without_previous_ranks_has_no_moves_tiles_or_empty_folds()
@@ -75,6 +70,7 @@ public class PhoneSportsTests
         Assert.DoesNotContain("Biggest moves", html);
         Assert.DoesNotContain("<details", html);
         Assert.Contains("ranking-source-m", html);
+        Assert.Contains("sports-section-m", html);
         Assert.Contains("<noscript>", html);
     }
 

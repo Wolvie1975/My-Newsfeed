@@ -1,4 +1,4 @@
-<PhoneRibbon Title="F1" Kicker="@($"Formula 1{(Season is { } season ? $" · {season} season" : "")}")">
+<PhoneRibbon Title="F1" Section="sports" Kicker="@($"Formula 1{(Season is { } season ? $" · {season} season" : "")}")">
     <SectionSelect Id="f1-view-m" Label="View" Current="@(View == "schedule" ? "f1" : "f1/" + View)" AlwaysSelect="true"
         Choices="@(new NavigationChoice[] { new("f1", "Schedule"), new("f1/results", "Results"), new("f1/standings", "Standings") })" />
 </PhoneRibbon>

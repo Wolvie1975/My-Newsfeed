@@ -91,7 +91,7 @@
         // The league with the most live games starts open (ties: the first listed).
         var opened = leagues.OrderByDescending(g => g.Count(x => x.Active)).FirstOrDefault();
         <div class="mx-phone">
-            <PhoneRibbon Kicker="@PhoneKicker(games.Count, live.Count, upcoming.Count)" Title="Scoreboard">
+            <PhoneRibbon Kicker="@PhoneKicker(games.Count, live.Count, upcoming.Count)" Title="Scoreboard" Section="sports">
                 <Extra>
                     <nav class="mx-stepper" aria-label="Scoreboard dates">
                         @if (selectedDay > today.AddDays(-1))

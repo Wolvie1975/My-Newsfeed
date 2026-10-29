@@ -1,6 +1,6 @@
 @inject FeedDates Dates
 <div class="mx-phone" data-phone-sports="rankings">
-    <PhoneRibbon Title="Top 25" Kicker="@(Data.Poll is { } poll ? $"Poll dated {Dates.Published(poll.PublishedAtUtc)} · Big 12 highlighted" : "National polls")">
+    <PhoneRibbon Title="Top 25" Section="sports" Kicker="@(Data.Poll is { } poll ? $"Poll dated {Dates.Published(poll.PublishedAtUtc)} · Big 12 highlighted" : "National polls")">
         @if (Data.Sources.Count > 0)
         {
             <form class="mx-ribbon__field" method="get" action="rankings">

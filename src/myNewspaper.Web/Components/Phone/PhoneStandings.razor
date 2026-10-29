@@ -1,7 +1,7 @@
 @inject FeedDates Dates
 @inject myNewspaper.Web.Profiles.ProfileContext Reader
 <div class="mx-phone" data-phone-sports="standings">
-    <PhoneRibbon Title="Standings" Kicker="@($"{Data.Selected?.DisplayName ?? "The league picture"}{(Data.Selected?.LatestSeason is { Length: > 0 } season ? $" · {season} season" : "")}")">
+    <PhoneRibbon Title="Standings" Section="sports" Kicker="@($"{Data.Selected?.DisplayName ?? "The league picture"}{(Data.Selected?.LatestSeason is { Length: > 0 } season ? $" · {season} season" : "")}")">
         @if (Data.Sources.Count > 0)
         {
             <form class="mx-ribbon__field" method="get" action="standings"><label for="standings-source-m">League</label>

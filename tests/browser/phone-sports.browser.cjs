@@ -13,6 +13,8 @@ const pages = [
     { path: '/f1', title: /^F1$/, desktop: '.f1-cols' },
 ];
 const PERSONAL = 'mynewsfeed-personal-v1';
+// Each page's own ribbon select, not the shared Section dropdown above it.
+const OWN_SELECT = '.mx-ribbon select:not(#sports-section-m)';
 
 (async () => {
     const profiles = (await fetch(base + '/editions', { headers: { Accept: 'text/html' } })).status !== 404;
@@ -166,16 +168,24 @@ const PERSONAL = 'mynewsfeed-personal-v1';
                         assert(await weekend.locator('li').count(), 'collected weekend sessions shown');
                     }
                 }
-                const form = page.locator('.mx-ribbon form');
+                const form = page.locator('.mx-ribbon form').filter({ has: page.locator(OWN_SELECT) });
                 const select = form.locator('select');
                 const value = await select.locator('option').evaluateAll((ns) => ns.find((n) => !n.selected)?.value);
                 if (value) {
                     await select.selectOption(value);
                     await form.locator('button[type=submit]').click();
                     await page.waitForLoadState('networkidle');
-                    assert.equal(await page.locator('.mx-ribbon select').inputValue(), value, path + ' no-JS select');
+                    assert.equal(await page.locator(OWN_SELECT).inputValue(), value, path + ' no-JS select');
                 }
             }
+            // The Section dropdown sits above each page's own select, also on Scoreboard, and works without JavaScript.
+            for (const [path, current] of [['/scoreboard', '/scoreboard'], ['/standings', '/standings'], ['/rankings', '/rankings'], ['/college/standings', '/college'], ['/f1/results', '/f1']]) {
+                await page.goto(base + path);
+                assert.equal(await page.locator('.mx-ribbon #sports-section-m').inputValue(), current, path + ' Section dropdown');
+            }
+            await page.locator('#sports-section-m').selectOption('/rankings');
+            await page.locator('.mx-ribbon form:has(#sports-section-m) button[type=submit]').click();
+            await page.waitForURL(base + '/rankings');
             await context.close();
         }
         // JS selects, My Teams and persisted choices, deep links into existing views.
@@ -184,16 +194,16 @@ const PERSONAL = 'mynewsfeed-personal-v1';
             const page = await context.newPage();
             for (const { path } of pages) {
                 await visit(page, path, look('kansas', 'light'));
-                const select = page.locator('.mx-ribbon select');
+                const select = page.locator(OWN_SELECT);
                 const value = await select.locator('option').evaluateAll((ns) => ns.find((n) => !n.selected)?.value);
                 if (value) {
                     await select.selectOption(value);
                     await page.waitForLoadState('networkidle');
                     await page.waitForTimeout(500);
-                    assert.equal(await page.locator('.mx-ribbon select').inputValue(), value, path + ' JS select');
+                    assert.equal(await page.locator(OWN_SELECT).inputValue(), value, path + ' JS select');
                     await page.reload({ waitUntil: 'networkidle' });
                     assert.equal(
-                        await page.locator('.mx-ribbon select').inputValue(),
+                        await page.locator(OWN_SELECT).inputValue(),
                         value,
                         path + ' persisted selection',
                     );
@@ -227,7 +237,7 @@ const PERSONAL = 'mynewsfeed-personal-v1';
         }
         assert.deepEqual(errors, []);
         console.log(
-            'Top 25, Standings, College and F1: 320/390/430px, three schemes, light/dark; contrast, overflow, 44px targets, exclusive folds/keyboard/no-JS selects, JS navigation and persistence, My Teams, full F1 calendar and retained 744/1024/1440px layouts passed.',
+            'Top 25, Standings, College and F1: 320/390/430px, Section dropdown on these and Scoreboard, three schemes, light/dark; contrast, overflow, 44px targets, exclusive folds/keyboard/no-JS selects, JS navigation and persistence, My Teams, full F1 calendar and retained 744/1024/1440px layouts passed.',
         );
     } finally {
         if (id) {

@@ -100,12 +100,20 @@ const base = process.env.BASE_URL || 'http://localhost:5295',
         await plain.locator('.mx-phone a[href="college/results?sport=soccer"]').click();
         await plain.waitForURL(base + '/college/results?sport=soccer');
         await plain.selectOption('#college-sport-m', 'football');
-        await plain.locator('.mx-ribbon form button').click();
+        await plain.locator('.mx-ribbon form:has(#college-sport-m) button').click();
         await plain.waitForURL(base + '/college/results?sport=football');
         await plain.goto(base + '/f1');
         await plain.selectOption('#f1-view-m', '/f1/results');
-        await plain.locator('.mx-ribbon form button').click();
+        await plain.locator('.mx-ribbon form:has(#f1-view-m) button').click();
         await plain.waitForURL(base + '/f1/results');
+        // Sports pages with their own ribbon still carry the Section dropdown.
+        for (const [path, current] of [['/scoreboard', '/scoreboard'], ['/standings', '/standings'], ['/rankings', '/rankings'], ['/college/standings', '/college'], ['/f1/results', '/f1']]) {
+            await plain.goto(base + path);
+            assert.equal(await plain.locator('#sports-section-m').inputValue(), current, path + ' Section dropdown');
+        }
+        await plain.selectOption('#sports-section-m', '/rankings');
+        await plain.locator('.mx-ribbon form:has(#sports-section-m) button').click();
+        await plain.waitForURL(base + '/rankings');
         // Kansas City lives under News: its ribbon select is the News tabs (phone-life covers the folds).
         await plain.goto(base + '/news/kansas-city');
         assert.equal(await plain.locator('#news-section-m').inputValue(), '/news/kansas-city');
