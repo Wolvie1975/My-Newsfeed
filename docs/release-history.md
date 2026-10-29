@@ -25,6 +25,90 @@ Temporary profiles removed; health and runtime preservation checks passed.
 No physical-device or Safari verification. Evidence and scoped-test details:
 [article-images.md](article-images.md), `/tmp/article-images-deploy/fix-live.log`.
 
+## News section, phases 4–5: Since your last visit and Your topics — deployed October 29, 2026 (Central)
+
+Following docs/news-section-handoff.md. Migration `db/023_news_section.sql` (additive, repeatable; applied to
+`sql2025`/`WebScraper` before the build, run twice to confirm) adds `MyDailyFeedProfiles.PreviousVisitAt` and the
+app-owned `MyDailyFeedProfileTopics` (cascades with its profile). Since your last visit: `ProfileStore.TouchAsync`
+moves the old `LastReadAt` into `PreviousVisitAt` when a profile returns after 30 minutes; the News front's first
+briefing tile counts headlines-hub stories since then and how many are Kansas City's (none with no profile or on a
+first visit). Your topics: a profile follows up to 20 words or phrases (5 alternatives, 5 Except words, one section
+or all), matched as whole words in any capitals (terms may start or end with a symbol, such as C++). The follow form
+(`/news/topics/follow`) is a plain page that works without JavaScript; `topics.js` adds the live preview from
+`GET /me/topics/preview` (verdict, 7-day chart, latest matches with the phrase marked, the Except count). It is a page
+rather than the mockup's dialog. Topic pages (`/news/topics/{id}`): new since Mark as read, then 30 days of earlier
+matches 20 at a time, each with Share and Save; Edit topic and Stop following. The front has a Your topics box
+(desktop) and fold (phones). Every topic read and write is limited to the open profile: another profile's topic answers
+404 and the admin sees no topic text. With profiles off, `/news/topics` answers 404. Commit `acaaf6c` on `develop`
+(local).
+
+Deployed `mynewspaper-web:news-topics-20261029`, image
+`sha256:a774e1b385eca8a464ec6f67205f4b9972418f90e2be3b4818abded8629ba449`, from a clean worktree of `acaaf6c`. Rollback
+`mynewsfeed-web:before-news-topics-20261029` (`dfe15f64b102`); a rollback build ignores the new column and table. Port
+8085, `dev-bridge`, restart policy and runtime environment hash unchanged; healthy, `/healthz` 200.
+
+Verification: 983 .NET tests (new: the visit rule; topic splitting, whole-word and symbol matching, verdicts,
+validation, the 20 limit, profile isolation and deletion with the profile). Locally (profiles on) and live: `topics`
+(nonsense, broad and normal phrases with their verdicts, chart, marks, Except; follow, topic page with Share and Save,
+Mark as read, the front's box and fold, edit, another profile 404, no-JS follow and its error, stop following;
+320/390/430/1440 light and dark overflow, contrast, ids, 44px targets), `news-front` (now also no Since tile on a first
+visit) and `headlines-phone` passed. Since your last visit seen at 320px on a throwaway profile with its previous
+visit set 3 hours back (live: 61 new, 8 local; three tiles fit). Screenshots inspected: follow form 390 light/dark and
+1440 dark, topic page 390 dark, the Since tiles at 320. Throwaway profiles deleted; no topic rows left.
+
+## News section, phases 1–3: News front, News tabs, Kansas City under News — deployed October 29, 2026 (Central)
+
+Headlines becomes a section called News (docs/news-section-handoff.md, saved from `new development/`). The top
+navigation is Home · News · Sports · Entertainment · Where to watch · YouTube (Local folded in). News tabs:
+News home, All headlines, then each headlines-hub category (the design's order first, others alphabetically), with
+Kansas City going to its own page; phones get the Section dropdown. `/news` is the News front (`NewsFront`): a
+briefing strip (Kansas City now from the NWS forecast, rendered on the server; Election Day from
+`News:ElectionDay`, hidden from the day after), the day so far, the lead and six Top headlines, Kansas City and
+Opinion beside them, In pictures (`FeedQuery.GetPhotosAsync`, one photo per source from 36 hours, not the lead's; four
+on tablets) and desks for Technology, Linux and Video Games; Share and Save on every row. Phones: the folded front with
+three Top headlines (Save with Share stacked), the day so far and More News folds. The headlines list moved to
+`/news/all`, where no category means every category; Local moved to `/news/kansas-city` with desktop jump links.
+`/local` and `/news` with a list query answer 301 with the query intact; links site-wide use the new addresses; the
+service worker caches `v7`. Commits `8df2d7f` and `096f47e` on `develop` (local).
+
+Deployed `mynewspaper-web:news-section-20261029`, image
+`sha256:dfe15f64b102672198858825844587df67c13e8b2330db5da58f1a544c8c3195`, from a clean worktree of `096f47e`. Rollback
+`mynewsfeed-web:before-news-section-20261029` (`99d260e5e283`, the phone story share release). Port 8085, `dev-bridge`,
+restart policy and runtime environment hash unchanged; healthy, `/healthz` 200; `/local` and `/news?category=…` 301.
+
+Verification: 971 .NET tests (new: tab order and Kansas City's page, the six redirects and four non-redirects).
+New `news-front` passed locally and live: the front at 320/390/430 × Kansas/Monochrome/Cardinals × light/dark and
+744/1024/1440 light/dark (overflow, contrast, ids, 44px targets, briefing tiles inside the screen, Save and Share on
+every row, first fold open, Share dialog, phone menu, no-JS Section select, 6-link nav, Kansas City tabs and jump
+links). Browser checks moved to the new addresses; locally 19 of 22 passed: `phone-life` (the Watch rail needs the
+streaming-catalog key) and `theme-mode` (Settings' theme radios now sit in a collapsed panel since `e23a1d7`) fail for
+reasons outside this release, and `headlines-phone` was fixed and passes. Live, the profile-aware checks
+(`news-front`, `headlines-phone`, `phone-fronts`, `phone-life`) passed; the others don't support profiles and stop at
+the picker. Screenshots inspected at 320/390 and 744/1440, light and dark. `pwa` now matches the current cache and
+icons.
+
+## Phone story lists: Share under Save — deployed October 28, 2026 (Central)
+
+The phone refresh gave the Top stories rows one 44px column with only Save, so Share was left on the lead story
+alone. Share now sits under Save in that column on every phone top list (Headlines, Home, Sports, Entertainment and
+Kansas City news), so headlines keep their width at 320px; the "More nearby" local stories get Save and Share in a
+row, as video rows do. `headlines-phone` now checks that every top story has both buttons, Share under Save and inside
+its row, and that Share opens the dialog for that story. The Google News request test uses a made-up paper (the Kansas
+City Star feed it used is now a real source). Commit `ace1a71` on `develop` (local), which includes `62f43bb`/`a7ea7d2`
+(article images).
+
+Deployed `mynewspaper-web:story-share-20261029`, image
+`sha256:99d260e5e283ed32caa32a24b95078ac724e137e9de851812102c3ff8a511e5a`, built from a clean worktree of `ace1a71`.
+The previous container (article images, started with `docker run`) is kept stopped as
+`mynewsfeed-web-before-story-share-20261029`, tag `mynewsfeed-web:before-story-share-20261029`. Port 8085,
+`dev-bridge`, restart policy and runtime environment hash unchanged; healthy, `/healthz` 200.
+
+Verification: 960 .NET tests. Locally and live (profiles on): `headlines-phone` (320/390/430 × Kansas/Monochrome/
+Cardinals × light/dark, the new Share assertions, Share dialog at 390), `phone-fronts` and `phone-life` passed;
+`phone-screens` passed locally. Screenshots inspected: Headlines 320 dark (local) and Kansas City 320 light (live).
+Not from this release: `video-share` fails on the pre-change build too (it waits for a visible video Share button);
+`phone-life`'s Watch rail needs the streaming-catalog key, so it fails locally only.
+
 ## Article image sizing and fallback — deployed October 28, 2026 (Central)
 
 Small images now remain thumbnails; suitable large images use capped feature
