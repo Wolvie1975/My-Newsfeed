@@ -83,7 +83,7 @@
                 <span class="saved-link__label">Saved</span>
                 <span class="saved-link__count" data-saved-count hidden></span>
             </a>
-            @* Admin only: requests waiting and locked profiles, with a quick-look panel. *@
+            @if (Reader.IsHouseholdAdmin) { <RequestsViewLink /> }
 
             <a class="settings-link" href="settings" aria-current="@(onTeams ? "page" : null)">Settings</a>
             @* With profiles on: whose edition this is, and the way back to the picker. *@
@@ -150,6 +150,7 @@
                             <a href="settings" aria-current="@(onTeams ? "page" : null)">Settings</a>
                             @if (Reader.Profile is { } reading) { <a href="editions">Switch edition (@reading.Name’s)</a> }
                             <button class="mobile-nav__theme" type="button" aria-label="Switch to dark mode" aria-pressed="false" data-theme-toggle><span class="when-light">Dark mode</span><span class="when-dark">Light mode</span></button>
+                            @if (Reader.IsHouseholdAdmin) { <a href="requests">Requests</a> }
                             @if (ShowSignIn) { <a href="@SiteLinks.Admin">Administration</a> }
                         </div>
                     </div>

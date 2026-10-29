@@ -1,0 +1,24 @@
+@using myNewspaper.Web.Requests
+@inject IDbContextFactory<WebScraperContext> Factory
+@inject ILogger<RequestsViewLink> Log
+@if (count > 0)
+{
+    <a class="requests-link" href="requests" aria-label="@($"Requests, {count} need attention")">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 13h5l2 3h4l2-3h5M5 5h14l2 8v6H3v-6z" /></svg><span class="requests-link__label">Requests</span><span class="requests-link__count">@count</span>
+    </a>
+}
+@code {
+    private int count;
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            await using var db = await Factory.CreateDbContextAsync();
+            count = await RequestStore.OpenItemsCountAsync(db);
+        }
+        catch (Exception ex) when (DataFailures.IsReadFailure(ex))
+        {
+            Log.LogWarning(ex, "Could not count household requests.");
+        }
+    }
+}

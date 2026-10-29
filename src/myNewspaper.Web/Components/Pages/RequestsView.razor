@@ -1,0 +1,67 @@
+@page "/requests"
+@layout PublicLayout
+@using myNewspaper.Web.Requests
+@inject IDbContextFactory<WebScraperContext> Factory
+@inject myNewspaper.Web.Profiles.ProfileContext Reader
+@inject myNewspaper.Hosting.SiteLinks Sites
+@inject FeedDates Dates
+@inject NavigationManager Nav
+@inject ILogger<RequestsView> Log
+
+<PageTitle>Requests · myNewspaper</PageTitle>
+@if (Reader.IsHouseholdAdmin)
+{
+<div class="mx-tool-page">
+    <div class="mx-phone"><PhoneRibbon Title="Requests" Kicker="Household · view only" /></div>
+    <div class="mx-tool-content rq">
+        <header class="mx-desktop"><h1>Requests</h1><p>Household · view only</p></header>
+        <aside class="rq-side"><p><strong>View only.</strong> Approve, decline and unlock in Admin. You may be asked to sign in.</p>
+            <a class="rq-open" href="@(Sites.Admin + "/requests")">Open Admin · Requests →</a>
+        </aside>
+        @if (failed)
+        {
+            <p role="status">Requests couldn’t be read. The database may be busy or restarting; try refreshing in a moment.</p>
+        }
+        else if (overview is { } o)
+        {
+            <p>@o.Waiting waiting · @o.Locked locked · @o.NewSinceSeen new since last marked seen</p>
+            <ul class="rq-list">
+                @foreach (var p in o.LockedProfiles)
+                {
+                    <li class="rq-item"><strong>@p.Name is locked</strong><p>@myNewspaper.Web.Profiles.ProfileRules.MaxWrongPins wrong PINs@(p.Device is null ? "" : " on " + p.Device) · @Dates.Published(p.LockedAt)</p>
+                        <a class="rq-open" href="@(Sites.Admin + $"/profiles/{p.ProfileId}#pin")">Open in Admin →</a></li>
+                }
+                @foreach (var r in o.Requests)
+                {
+                    var fresh = o.SeenAt is null || r.CreatedAt > o.SeenAt;
+                    <li class="rq-item"><strong>@r.Name</strong> @if (fresh) { <span class="rq-new">New</span> }
+                        <p>@(r.Kind == RequestStore.Youtube ? "YouTube channel" : "News source") · asked by @r.ProfileName · @Dates.Published(r.CreatedAt)</p>
+                        @if (!string.IsNullOrWhiteSpace(r.Note)) { <blockquote>@r.Note</blockquote> }
+                        <p>@(r.CheckSummary ?? "Not checked yet")</p>
+                        <a class="rq-open" href="@(Sites.Admin + $"/requests?id={r.Id}")">Open in Admin →</a></li>
+                }
+            </ul>
+            @if (o.Waiting > o.Requests.Count) { <p>and @(o.Waiting - o.Requests.Count) more in Admin</p> }
+            @if (o.Waiting == 0 && o.Locked == 0) { <p>Nothing is waiting. New requests show up here and in the header.</p> }
+        }
+    </div>
+</div>
+}
+@code {
+    private RequestOverview? overview;
+    private bool failed;
+    protected override async Task OnInitializedAsync()
+    {
+        if (!Reader.IsHouseholdAdmin) { Nav.NotFound(); return; }
+        try
+        {
+            await using var db = await Factory.CreateDbContextAsync();
+            overview = await RequestStore.OverviewAsync(db);
+        }
+        catch (Exception ex) when (DataFailures.IsReadFailure(ex))
+        {
+            failed = true;
+            Log.LogWarning(ex, "Could not read household requests.");
+        }
+    }
+}

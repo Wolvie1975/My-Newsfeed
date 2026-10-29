@@ -21,6 +21,9 @@ public sealed record LockedProfileAlert(int ProfileId, string Name, string Color
 /// <summary>The admin's quick look (5.4): locked profiles first, then waiting requests, and the header count.</summary>
 public sealed record RequestSummary(int Count, IReadOnlyList<LockedProfileAlert> Locked, IReadOnlyList<AdminRequestRow> Waiting, DateTime? SeenAt);
 
+public sealed record RequestOverview(int Waiting, int Locked, int NewSinceSeen, IReadOnlyList<AdminRequestRow> Requests,
+    IReadOnlyList<LockedProfileAlert> LockedProfiles, DateTime? SeenAt);
+
 public enum ApproveOutcome { Approved, NotFound, NotWaiting, AlreadyCollected, NotCollected }
 
 /// <summary>YouTube channel and news source requests (profiles handoff 5.1, 5.3, 5.4). Nothing is auto-approved.</summary>
@@ -273,6 +276,19 @@ public static class RequestStore
             .ToListAsync(ct);
         var seen = (await ProfileStore.GetHouseholdAsync(db, ct)).RequestsSeenAt;
         return new(await AlertCountAsync(db, ct), locked, await ListAsync(db, Waiting, take: 20, ct: ct), seen);
+    }
+
+    public static async Task<int> OpenItemsCountAsync(WebScraperContext db, CancellationToken ct = default) =>
+        await db.ContentRequests.CountAsync(r => r.Status == Waiting, ct)
+        + await db.Profiles.CountAsync(p => p.LockedAt != null, ct);
+
+    public static async Task<RequestOverview> OverviewAsync(WebScraperContext db, CancellationToken ct = default)
+    {
+        var summary = await SummaryAsync(db, ct);
+        var waiting = await db.ContentRequests.CountAsync(r => r.Status == Waiting, ct);
+        var fresh = await db.ContentRequests.CountAsync(r => r.Status == Waiting
+            && (summary.SeenAt == null || r.CreatedAt > summary.SeenAt), ct);
+        return new(waiting, summary.Locked.Count, fresh, summary.Waiting, summary.Locked, summary.SeenAt);
     }
 
     public static async Task MarkSeenAsync(WebScraperContext db, DateTime nowUtc, CancellationToken ct = default) =>
