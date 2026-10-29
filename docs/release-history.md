@@ -6,11 +6,33 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The latest recorded web release is `mynewspaper-web:article-images-20261028`
-(image `5cfa5bcc085a`), deployed October 28, 2026 (Central), from `62f43bb`.
-Rollback: `mynewspaper-web:before-article-images-20261028` and container
-`mynewsfeed-web-before-article-images-20261028` (the request-checks release).
+The latest recorded web release is `mynewspaper-web:story-share-20261029`
+(image `99d260e5e283`), deployed October 28, 2026 (Central), from `ace1a71`.
+Rollback: `mynewsfeed-web:before-story-share-20261029` and container
+`mynewsfeed-web-before-story-share-20261029` (the article-images release, `5cfa5bcc085a`).
 This is a dated deployment record, not live hosting status.
+
+## Phone story lists: Share under Save — deployed October 28, 2026 (Central)
+
+The phone refresh gave the Top stories rows one 44px column with only Save, so Share was left on the lead story
+alone. Share now sits under Save in that column on every phone top list (Headlines, Home, Sports, Entertainment and
+Kansas City news), so headlines keep their width at 320px; the "More nearby" local stories get Save and Share in a
+row, as video rows do. `headlines-phone` now checks that every top story has both buttons, Share under Save and inside
+its row, and that Share opens the dialog for that story. The Google News request test uses a made-up paper (the Kansas
+City Star feed it used is now a real source). Commit `ace1a71` on `develop` (local), which includes `62f43bb`/`a7ea7d2`
+(article images).
+
+Deployed `mynewspaper-web:story-share-20261029`, image
+`sha256:99d260e5e283ed32caa32a24b95078ac724e137e9de851812102c3ff8a511e5a`, built from a clean worktree of `ace1a71`.
+The previous container (article images, started with `docker run`) is kept stopped as
+`mynewsfeed-web-before-story-share-20261029`, tag `mynewsfeed-web:before-story-share-20261029`. Port 8085,
+`dev-bridge`, restart policy and runtime environment hash unchanged; healthy, `/healthz` 200.
+
+Verification: 960 .NET tests. Locally and live (profiles on): `headlines-phone` (320/390/430 × Kansas/Monochrome/
+Cardinals × light/dark, the new Share assertions, Share dialog at 390), `phone-fronts` and `phone-life` passed;
+`phone-screens` passed locally. Screenshots inspected: Headlines 320 dark (local) and Kansas City 320 light (live).
+Not from this release: `video-share` fails on the pre-change build too (it waits for a visible video Share button);
+`phone-life`'s Watch rail needs the streaming-catalog key, so it fails locally only.
 
 ## Article image sizing and fallback — deployed October 28, 2026 (Central)
 
