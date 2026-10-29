@@ -1,11 +1,15 @@
+@page "/news"
 @page "/sports"
 @page "/entertainment"
 @layout PublicLayout
 @inject NavigationManager Nav
 
 <PageTitle>@Title · myNewspaper</PageTitle>
-@* Each section front loads its own data (EntertainmentFront, SportsFront). *@
-@if (Entertainment) {
+@* Each section front loads its own data (NewsFront, EntertainmentFront, SportsFront). *@
+@if (Section == "news") {
+    @* NewsFront draws its own heading: its tabs come from the database. *@
+    <NewsFront />
+} else if (Section == "entertainment") {
     <div class="mx-desktop"><PageHeading Section="entertainment" Title="Entertainment" Eyebrow="Stories, releases and what to watch next" Description="" /></div>
     <EntertainmentFront />
 } else {
@@ -15,6 +19,6 @@
 }
 
 @code {
-    private bool Entertainment => Nav.ToBaseRelativePath(Nav.Uri).Split('?')[0].TrimEnd('/').Equals("entertainment", StringComparison.OrdinalIgnoreCase);
-    private string Title => Entertainment ? "Entertainment" : "Sports";
+    private string Section => Nav.ToBaseRelativePath(Nav.Uri).Split('?', '#')[0].TrimEnd('/').ToLowerInvariant();
+    private string Title => Section switch { "news" => "News", "entertainment" => "Entertainment", _ => "Sports" };
 }

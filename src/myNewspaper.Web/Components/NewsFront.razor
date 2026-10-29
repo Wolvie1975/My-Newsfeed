@@ -1,0 +1,368 @@
+@using System.Globalization
+@using myNewspaper.Web.Components.Feed
+@inject IDbContextFactory<WebScraperContext> Factory
+@inject FeedDates Dates
+@inject IConfiguration Config
+@inject LocalWeather Weather
+@inject ILogger<NewsFront> Log
+
+@* News front page (docs/news-section-handoff.md, phase 3), built like the Sports front: a briefing strip, then the day
+   so far, the lead and top headlines, and a side column of Kansas City and Opinion; In pictures and the three desks
+   below. Phones get the same data folded (docs/mobile-refresh-handoff.md). Headlines hub only. *@
+<div class="mx-desktop">
+<PageHeading Section="news" Choices="newsTabs" SectionCurrent="news" Title="News" Eyebrow="The day’s news, every source" Description="" />
+<div class="ef spf nf">
+    <section class="nf-brief" aria-labelledby="nf-brief-title">
+        <h2 id="nf-brief-title" class="ef-label">The briefing · @Dates.TodayLabel(nowUtc)</h2>
+        <div class="nf-brief__tiles">@Tiles</div>
+    </section>
+
+    <div class="spf-cols">
+        <section class="spf-upcoming nf-day" aria-labelledby="nf-day-title">
+            <div class="ef-head"><h2 id="nf-day-title">The day so far</h2><a href="news/all">All headlines <span aria-hidden="true">→</span></a></div>
+            <p class="ef-note">Newest first, from every source</p>
+            @if (day.Count == 0) { <p class="ef-empty">No stories yet today.</p> }
+            <ul class="spf-agate nf-agate">
+                @foreach (var item in day)
+                {
+                    <li class="@PhoneColors.ForCategory(item.CategoryName)">
+                        <a href="@(FeedQuery.SafeHref(item.Url) ?? "news/all")" target="_blank" rel="noopener noreferrer">
+                            <span class="spf-agate__time">@(item.Undated ? "" : Dates.Time(item.Date))</span>
+                            <span class="spf-agate__match">@Title(item) <span class="spf-agate__sport">@Meta(item)</span></span>
+                        </a>
+                    </li>
+                }
+            </ul>
+        </section>
+
+        <div class="ef-main spf-main">
+            @if (unavailable)
+            {
+                <p class="updated" role="status">Headlines are temporarily unavailable. Please try again.</p>
+            }
+            else if (stories.Count == 0)
+            {
+                <p class="ef-empty">No recent stories are available yet.</p>
+            }
+            else
+            {
+                var lead = stories[0];
+                var leadHref = FeedQuery.SafeHref(lead.Url);
+                var leadImage = FeedQuery.SafeHref(lead.ImageUrl);
+                <article class="ef-lead" data-article-story="feature" data-image-layout="compact" data-news-url="@leadHref" data-news-source="@Source(lead)">
+                    @if (leadHref is not null && leadImage is not null)
+                    {
+                        <a class="ef-lead__image" data-article-media href="@leadHref" target="_blank" rel="noopener noreferrer" tabindex="-1" aria-hidden="true">
+                            <img src="@leadImage" alt="" fetchpriority="high" referrerpolicy="no-referrer" onerror="this.parentElement.remove()" />
+                        </a>
+                    }
+                    <p class="ef-kicker">@(lead.CategoryName ?? "News") <span aria-hidden="true">·</span> @Source(lead)</p>
+                    <h2 class="ef-lead__title">
+                        @if (leadHref is not null) { <a href="@leadHref" target="_blank" rel="noopener noreferrer">@Title(lead)</a> }
+                        else { @Title(lead) }
+                    </h2>
+                    <div class="ef-meta">
+                        <span class="ef-meta__when">@When(lead)</span>
+                        <ShareButton Url="@lead.Url" Title="@Title(lead)" />
+                        <SaveButton Item="lead" Title="@Title(lead)" Source="@Source(lead)" Summary="@Summary(lead)" />
+                    </div>
+                </article>
+
+                @if (stories.Count > 1)
+                {
+                    <h3 class="ef-label">Top headlines</h3>
+                    <ul class="ef-headlines spf-headlines">
+                        @foreach (var item in stories.Skip(1)) { @Headline(item, withCategory: true) }
+                    </ul>
+                }
+            }
+            <a class="ef-more" href="news/all">All headlines <span aria-hidden="true">→</span></a>
+        </div>
+
+        <aside class="ef-side spf-side">
+            @if (kansasCity is { } kc)
+            {
+                <section class="nf-side" aria-labelledby="nf-kc-title">
+                    <h2 id="nf-kc-title" class="ef-label">Kansas City</h2>
+                    @if (WeatherLine is { } line) { <p class="ef-note"><a href="news/kansas-city#local-weather">@line</a></p> }
+                    <ul class="ef-headlines spf-headlines">
+                        @foreach (var item in Latest(kc)) { @Headline(item) }
+                    </ul>
+                    <a class="ef-more" href="news/kansas-city">Kansas City news <span aria-hidden="true">→</span></a>
+                </section>
+            }
+            @if (opinion is { } op && Latest(op).Count > 0)
+            {
+                <section class="nf-side nf-opinion" aria-labelledby="nf-op-title">
+                    <h2 id="nf-op-title" class="ef-label">Opinion</h2>
+                    <ul class="ef-headlines spf-headlines">
+                        @foreach (var item in Latest(op).Take(2)) { @Headline(item) }
+                    </ul>
+                    <a class="ef-more" href="@CategoryHref(op)">All opinion <span aria-hidden="true">→</span></a>
+                </section>
+            }
+        </aside>
+    </div>
+
+    @if (photos.Count > 0)
+    {
+        <section class="nf-pictures" aria-labelledby="nf-pics-title">
+            <h2 id="nf-pics-title" class="ef-label">In pictures</h2>
+            <ul class="nf-pictures__grid">
+                @foreach (var photo in photos)
+                {
+                    <li>
+                        <a class="nf-pictures__image" href="@FeedQuery.SafeHref(photo.Url)" target="_blank" rel="noopener noreferrer" tabindex="-1" aria-hidden="true">
+                            <img src="@FeedQuery.SafeHref(photo.ImageUrl)" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.closest('li').remove()" />
+                        </a>
+                        <a class="nf-pictures__title" href="@FeedQuery.SafeHref(photo.Url)" target="_blank" rel="noopener noreferrer">@Title(photo)</a>
+                        <span class="nf-pictures__source">@Source(photo)</span>
+                    </li>
+                }
+            </ul>
+        </section>
+    }
+
+    @if (desks.Any(d => Latest(d).Count > 0))
+    {
+        <div class="nf-desks">
+            @foreach (var desk in desks.Where(d => Latest(d).Count > 0))
+            {
+                <section class="nf-desk" aria-labelledby="@($"nf-desk-{desk.Id}")">
+                    <h2 id="@($"nf-desk-{desk.Id}")" class="ef-label">@desk.Name</h2>
+                    <ul class="ef-headlines spf-headlines">
+                        @foreach (var item in Latest(desk)) { @Headline(item) }
+                    </ul>
+                    <a class="ef-more" href="@CategoryHref(desk)">More @desk.Name <span aria-hidden="true">→</span></a>
+                </section>
+            }
+        </div>
+    }
+</div>
+</div>
+
+@* Phones: the folded News front, from the same data. *@
+<div class="mx-phone">
+    <PhoneRibbon Kicker="@RibbonKicker" Title="News">
+        <SectionSelect Id="news-section-m" Label="Section" Choices="newsTabs" Current="news" AlwaysSelect="true" />
+    </PhoneRibbon>
+
+    <section class="nf-brief nf-brief--phone" aria-label="The briefing"><div class="nf-brief__tiles">@Tiles</div></section>
+
+    @if (stories.Count > 0)
+    {
+        var lead = stories[0];
+        <article class="mx-block" data-article-story="feature" data-image-layout="compact" aria-label="Lead story">
+            @if (FeedQuery.SafeHref(lead.ImageUrl) is { } image)
+            {
+                <div class="mx-block__media" data-article-media><img src="@image" alt="" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()" /></div>
+            }
+            <span class="mx-block__kicker">@string.Join(" · ", new[] { lead.CategoryName ?? "News", Source(lead), lead.Undated ? null : Dates.Time(lead.Date) }.Where(p => !string.IsNullOrEmpty(p)))</span>
+            <h2 class="mx-block__title"><StoryLink Item="lead" /></h2>
+            @if (Summary(lead) is { Length: > 0 } summary) { <p class="mx-block__quote">@summary</p> }
+            <div class="mx-block__actions">
+                <SaveButton Item="lead" Title="@Title(lead)" Source="@Source(lead)" Summary="@Summary(lead)" Labelled="true" />
+                <ShareButton Url="@lead.Url" Title="@Title(lead)" Labelled="true" />
+            </div>
+        </article>
+    }
+    else if (unavailable)
+    {
+        <p class="mx-empty" role="status">Headlines are temporarily unavailable. Please try again.</p>
+    }
+
+    @if (stories.Count > 1)
+    {
+        <section class="mx-section" aria-labelledby="news-top-m">
+            <div class="mx-head"><h2 id="news-top-m">Top headlines</h2><a href="news/all">All headlines →</a></div>
+            <ol class="mx-top">
+                @foreach (var (item, i) in stories.Skip(1).Take(3).Select((s, i) => (s, i)))
+                {
+                    <li class="@PhoneColors.ForCategory(item.CategoryName)">
+                        <span class="mx-top__n" aria-hidden="true">@(i + 1)</span>
+                        <span><span class="mx-top__title"><StoryLink Item="item" /></span><span class="mx-top__meta">@Meta(item)</span></span>
+                        <span class="mx-top__actions"><SaveButton Item="item" Title="@Title(item)" Source="@Source(item)" Summary="@Summary(item)" /><ShareButton Url="@item.Url" Title="@Title(item)" /></span>
+                    </li>
+                }
+            </ol>
+        </section>
+    }
+
+    @if (day.Count > 0)
+    {
+        <PhoneTimeline Heading="The day so far" Sub="newest first" Items="@day.Take(3).Select(Timeline).ToList()" MoreText="All headlines" MoreHref="news/all" />
+    }
+
+    <FoldGroup Name="news-more" Heading="More News">
+        @if (kansasCity is { } kc && Latest(kc).Count > 0)
+        {
+            <Fold Title="Kansas City" Color="mx-c-local" Open="true" AllHref="news/kansas-city" AllText="Kansas City"
+                  Gist="@string.Join(" · ", new[] { WeatherShort }.Concat(Latest(kc).Take(1).Select(Title)).Where(p => !string.IsNullOrEmpty(p)))">
+                @foreach (var item in Latest(kc)) { @FoldRow(item) }
+            </Fold>
+        }
+        @if (opinion is { } op && Latest(op).Count > 0)
+        {
+            <Fold Title="Opinion" Color="mx-c-ink" AllHref="@CategoryHref(op)" AllText="All opinion" Gist="@string.Join(" · ", Latest(op).Take(2).Select(Title))">
+                @foreach (var item in Latest(op).Take(2)) { @FoldRow(item) }
+            </Fold>
+        }
+        @if (ElectionDays is { } days)
+        {
+            <Fold Title="Election 2026" Color="mx-c-us" AllHref="news/all?q=election" AllText="Election coverage" Gist="@($"{ElectionValue(days)} · {ElectionDate}")">
+                <div class="mx-fold__row">
+                    <span><b>Election Day</b><small>@ElectionDate</small></span>
+                    <span class="mx-fold__value">@ElectionValue(days)</span>
+                </div>
+                @foreach (var item in electionStories) { @FoldRow(item) }
+            </Fold>
+        }
+        @foreach (var desk in desks.Where(d => Latest(d).Count > 0))
+        {
+            <Fold Title="@desk.Name" Color="@PhoneColors.ForCategory(desk.Name)" AllHref="@CategoryHref(desk)" AllText="@desk.Name" Gist="@string.Join(" · ", Latest(desk).Take(2).Select(Title))">
+                @foreach (var item in Latest(desk)) { @FoldRow(item) }
+            </Fold>
+        }
+        @if (photos.Count > 0)
+        {
+            <Fold Title="In pictures" Color="mx-c-local" Gist="@string.Join(" · ", photos.Take(2).Select(Title))">
+                <ul class="nf-pictures__strip">
+                    @foreach (var photo in photos)
+                    {
+                        <li>
+                            <a href="@FeedQuery.SafeHref(photo.Url)" target="_blank" rel="noopener noreferrer">
+                                <img src="@FeedQuery.SafeHref(photo.ImageUrl)" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.closest('li').remove()" />
+                                <span><b>@Title(photo)</b><small>@Source(photo)</small></span>
+                            </a>
+                        </li>
+                    }
+                </ul>
+            </Fold>
+        }
+    </FoldGroup>
+</div>
+
+@code {
+    private DateTime nowUtc;
+    private bool unavailable;
+    private IReadOnlyList<NavigationChoice> newsTabs = SectionChoices.News([new FeedCategory(0, SectionChoices.NewsKansasCityCategory, 0)]);
+    private IReadOnlyList<FeedItem> stories = [];
+    private IReadOnlyList<FeedItem> day = [];
+    private IReadOnlyList<FeedItem> photos = [];
+    private IReadOnlyList<FeedItem> electionStories = [];
+    private IReadOnlyDictionary<int, IReadOnlyList<FeedItem>> latest = new Dictionary<int, IReadOnlyList<FeedItem>>();
+    private FeedCategory? kansasCity, opinion;
+    private IReadOnlyList<FeedCategory> desks = [];
+    private int total, sourceCount;
+    private LocalWeatherPage? weather;
+
+    // The desks below the columns, in the design's order.
+    private static readonly string[] DeskNames = ["Technology", "Linux", "Video Games"];
+
+    protected override async Task OnParametersSetAsync()
+    {
+        nowUtc = DateTime.UtcNow;
+        unavailable = false;
+        try
+        {
+            await using var db = await Factory.CreateDbContextAsync();
+            var categories = (await FeedQuery.GetCategoriesAsync(db)).Where(c => c.Hub == "headlines").ToList();
+            newsTabs = SectionChoices.News(categories);
+            kansasCity = categories.FirstOrDefault(c => c.Name == SectionChoices.NewsKansasCityCategory);
+            opinion = categories.FirstOrDefault(c => c.Name == "Opinion");
+            desks = DeskNames.Select(n => categories.FirstOrDefault(c => c.Name == n)).OfType<FeedCategory>().ToList();
+
+            stories = await FeedQuery.GetHomeNewsAsync(db, 7, "headlines");
+            // The day so far leaves out what the lead and Top headlines already show.
+            var shown = stories.Select(s => s.Id).ToHashSet();
+            var feed = await FeedQuery.GetFeedAsync(db, null, null, null, 10 + shown.Count, headlinesOnly: true);
+            total = feed.Total;
+            day = feed.Items.Where(i => !shown.Contains(i.Id)).Take(10).ToList();
+            sourceCount = (await FeedQuery.GetSourcesAsync(db, null, headlinesOnly: true)).Count;
+            latest = await FeedQuery.GetLatestByCategoryAsync(db,
+                new[] { kansasCity, opinion }.OfType<FeedCategory>().Concat(desks).Select(c => c.Id));
+            // In pictures leaves out the lead, whose photo is already the biggest on the page.
+            photos = (await FeedQuery.GetPhotosAsync(db, nowUtc, 6)).Where(p => stories.Count == 0 || p.Id != stories[0].Id).Take(5).ToList();
+            electionStories = ElectionDays is not null
+                ? (await FeedQuery.GetFeedAsync(db, null, "election", null, 3, headlinesOnly: true)).Items
+                : [];
+        }
+        catch (Exception ex) when (DataFailures.IsReadFailure(ex))
+        {
+            unavailable = true;
+            stories = day = photos = electionStories = [];
+            Log.LogError(ex, "Could not read the News front.");
+        }
+
+        weather = null;
+        try
+        {
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(3));
+            weather = await Weather.GetAsync(timeout.Token);
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or OperationCanceledException or System.Text.Json.JsonException or InvalidOperationException)
+        { Log.LogWarning(ex, "News front forecast unavailable."); }
+    }
+
+    private IReadOnlyList<FeedItem> Latest(FeedCategory category) => latest.TryGetValue(category.Id, out var items) ? items : [];
+
+    private static string CategoryHref(FeedCategory category) => $"news/all?category={category.Id}";
+
+    private string RibbonKicker => string.Join(" · ", new[]
+    {
+        Dates.TodayAt(nowUtc).ToString("ddd, MMM d", CultureInfo.InvariantCulture),
+        total > 0 ? $"{total} {(total == 1 ? "story" : "stories")}" : null,
+        sourceCount > 0 ? $"{sourceCount} {(sourceCount == 1 ? "source" : "sources")}" : null,
+    }.Where(p => p is not null));
+
+    // ---------- Briefing tiles: Kansas City now and Election Day ("Since your last visit" waits for phase 4) ----------
+
+    private LocalForecast? Now => weather?.Periods.FirstOrDefault();
+    private string? WeatherLine => Now is { } now ? $"{now.Name}: {now.Temperature}° · {now.Summary}" : null;
+    private string? WeatherShort => Now is { } now ? $"{now.Temperature}° {now.Summary}" : null;
+
+    /// <summary>Days until the configured Election Day (0 on the day); null when it isn't set or has passed.</summary>
+    private int? ElectionDays => DateOnly.TryParse(Config["News:ElectionDay"], CultureInfo.InvariantCulture, out var day)
+        && day.DayNumber - Dates.TodayAt(nowUtc).DayNumber is var days && days >= 0 ? days : null;
+    private string ElectionDate => DateOnly.TryParse(Config["News:ElectionDay"], CultureInfo.InvariantCulture, out var day)
+        ? day.ToString("ddd, MMM d", CultureInfo.InvariantCulture) : "";
+    private static string ElectionValue(int days) => days switch { 0 => "Today", 1 => "Tomorrow", _ => $"{days} days" };
+
+    private RenderFragment Tiles => @<text>
+        @Tile("news/kansas-city#local-weather", "mx-c-local", "Kansas City now", Now is { } now ? $"{now.Temperature}°" : "Forecast", Now?.Summary ?? "National Weather Service")
+        @if (ElectionDays is { } days) { @Tile("news/all?q=election", "mx-c-us", "Election Day", ElectionValue(days), ElectionDate) }
+    </text>;
+
+    private static RenderFragment Tile(string href, string color, string label, string value, string sub) =>
+        @<a class="nf-tile @color" href="@href"><span class="nf-tile__label">@label</span><b class="nf-tile__value">@value</b><span class="nf-tile__sub">@sub</span></a>;
+
+    // ---------- Rows ----------
+
+    /// <summary>A headline row with Share and Save, as in the Sports and Entertainment fronts.</summary>
+    private RenderFragment Headline(FeedItem item, bool withCategory = false) =>
+        @<li data-news-url="@FeedQuery.SafeHref(item.Url)" data-news-source="@Source(item)">
+            @if (withCategory && !string.IsNullOrWhiteSpace(item.CategoryName)) { <span class="ef-headlines__kicker">@item.CategoryName</span> }
+            @if (FeedQuery.SafeHref(item.Url) is { } href) { <a class="ef-headlines__title" href="@href" target="_blank" rel="noopener noreferrer">@Title(item)</a> }
+            else { <span class="ef-headlines__title">@Title(item)</span> }
+            <div class="ef-meta">
+                <span class="ef-meta__when">@Source(item)@(item.Undated ? "" : " · " + Dates.Published(item.Date))</span>
+                <ShareButton Url="@item.Url" Title="@Title(item)" />
+                <SaveButton Item="item" Title="@Title(item)" Source="@Source(item)" Summary="@Summary(item)" />
+            </div>
+        </li>;
+
+    private RenderFragment FoldRow(FeedItem item) =>
+        @<a class="mx-fold__row" href="@(FeedQuery.SafeHref(item.Url) ?? "news/all")" target="_blank" rel="noopener noreferrer">
+            <span><b>@Title(item)</b><small>@string.Join(" · ", new[] { Source(item), item.Undated ? null : Dates.Time(item.Date) }.Where(p => p is not null))</small></span>
+        </a>;
+
+    private TimelineItem Timeline(FeedItem item) => new(item.Undated ? "" : Dates.Time(item.Date), Title(item),
+        string.Join(" · ", new[] { Source(item), item.CategoryName }.Where(p => !string.IsNullOrEmpty(p))), null,
+        FeedQuery.SafeHref(item.Url) ?? "news/all", PhoneColors.ForCategory(item.CategoryName), External: FeedQuery.SafeHref(item.Url) is not null);
+
+    private static string Title(FeedItem item) => FeedText.StripEmoji(item.Title) is { Length: > 0 } title ? title : item.Title;
+    private static string Source(FeedItem item) => FeedText.SourceName(item.SourceLabel, item.SourceUrl);
+    private static string Summary(FeedItem item) => FeedText.StripEmoji(FeedQuery.Excerpt(item.Description));
+    private static string Meta(FeedItem item) => string.Join(" · ", new[] { Source(item), item.CategoryName }.Where(p => !string.IsNullOrEmpty(p)));
+    private string When(FeedItem item) => item.Undated ? "" : $"{Dates.Published(item.Date)} · {Dates.Time(item.Date)}";
+}

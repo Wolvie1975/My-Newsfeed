@@ -115,6 +115,14 @@
         font-size: 32px;
     }
 
+    /* ---------- News front: four photos fill one row ---------- */
+    .pub .nf-pictures__grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+    .pub .nf-pictures__grid li:nth-child(n + 5) {
+        display: none;
+    }
+
     /* ---------- Two-column section fronts: a slimmer side column ---------- */
     /* Entertainment, Movies, TV, College, Local and Saved. */
     .pub .ef-cols {

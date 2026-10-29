@@ -249,7 +249,7 @@ const password = process.env.ADMIN_PASSWORD;
             await page.goto(base + '/news/all', { waitUntil: 'networkidle' });
             assert(!(await page.locator('.mx-phone').isVisible()), `${width}px phone front hidden`);
             assert(await page.locator('.paper-feed').isVisible(), `${width}px feed shows`);
-            assert(await page.locator('.section-tabs').isVisible(), `${width}px News tabs show`);
+            assert(await page.locator('.section-tabs:visible').first().isVisible(), `${width}px News tabs show`);
             await context.close();
         }
         assert.deepEqual(errors, []);

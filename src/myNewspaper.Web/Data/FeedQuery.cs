@@ -222,6 +222,21 @@ public static class FeedQuery
                 p.Published ?? p.ScrapedAt, p.Published == null))
             .ToListAsync();
 
+    /// <summary>The newest headlines-hub articles with a usable image, one per source, for the News front's In pictures.</summary>
+    public static async Task<IReadOnlyList<FeedItem>> GetPhotosAsync(WebScraperContext db, DateTime nowUtc, int take = 5)
+    {
+        var since = nowUtc.AddHours(-36);
+        var rows = await Visible(db)
+            .Where(p => p.ImageUrl != null && (p.Published ?? p.ScrapedAt) >= since
+                && (p.Source.SourceCategory == null || p.Source.SourceCategory.NewsHub == "headlines"))
+            .OrderByDescending(p => p.Published ?? p.ScrapedAt).ThenByDescending(p => p.Id)
+            .Take(take * 6)
+            .Select(ToFeedItem)
+            .ToListAsync();
+        return rows.Where(r => SafeHref(r.ImageUrl) is not null && SafeHref(r.Url) is not null)
+            .DistinctBy(r => r.SourceUrl).Take(take).ToList();
+    }
+
     /// <summary>Rotate Home sources when successful news collection advances to another UTC hour.</summary>
     public static async Task<IReadOnlyList<FeedItem>> GetHomeNewsAsync(WebScraperContext db, int take = 10, string? hub = null)
     {

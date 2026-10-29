@@ -2289,6 +2289,165 @@ a.tvc-row__show:hover {
     }
 }
 
+/* ---------- News front (docs/news-section-handoff.md): the Sports front's columns plus a briefing strip, In pictures
+   and three desks. Briefing tiles colour their top edge and figure with the .mx-c-* category tokens. ---------- */
+.pub .nf-brief__tiles {
+    display: grid;
+    grid-auto-columns: minmax(0, 1fr);
+    grid-auto-flow: column;
+    gap: 8px;
+}
+.pub .nf-tile {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    min-height: 44px;
+    padding: 10px 12px;
+    border-top: 4px solid var(--dot);
+    border-radius: 4px 4px 10px 10px;
+    background: color-mix(in srgb, var(--text) 4%, var(--surface));
+    color: var(--text);
+    text-decoration: none;
+}
+.pub .nf-tile__label {
+    color: var(--text-2);
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+.pub .nf-tile__value {
+    color: var(--dot);
+    font-family: var(--font-serif);
+    font-size: 26px;
+    line-height: 1;
+}
+.pub .nf-tile__sub {
+    overflow: hidden;
+    color: var(--text-2);
+    font-size: 12px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.pub .nf-brief--phone {
+    padding: 12px 16px;
+    background: var(--surface);
+}
+.pub .nf-opinion .ef-headlines__title {
+    font-family: var(--font-serif);
+    font-style: italic;
+}
+.pub .nf-pictures__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 16px;
+    margin: 12px 0 0;
+    padding: 0;
+    list-style: none;
+}
+.pub .nf-pictures__grid li {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+}
+.pub .nf-pictures__image img {
+    display: block;
+    width: 100%;
+    height: 150px;
+    border-radius: 8px;
+    object-fit: cover;
+}
+.pub .nf-pictures__title {
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
+    text-decoration: none;
+}
+.pub .nf-pictures__title:hover {
+    color: var(--accent);
+}
+.pub .nf-pictures__source {
+    color: var(--text-2);
+    font-size: 12px;
+}
+.pub .nf-desks {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 20px 24px;
+}
+/* Phones: In pictures as a fold of thumbnail rows. */
+.pub .nf-pictures__strip {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+.pub .nf-pictures__strip a {
+    display: grid;
+    grid-template-columns: 72px minmax(0, 1fr);
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--row-border);
+    color: var(--text);
+    text-decoration: none;
+}
+.pub .nf-pictures__strip img {
+    width: 72px;
+    height: 54px;
+    border-radius: 6px;
+    object-fit: cover;
+}
+.pub .nf-pictures__strip b {
+    display: block;
+    font-size: 15px;
+    line-height: 1.3;
+}
+.pub .nf-pictures__strip small {
+    color: var(--text-2);
+    font-size: 12px;
+}
+@media (min-width: 744px) {
+    .pub .nf-brief {
+        padding: 2px 0 16px;
+        border-bottom: 1px solid var(--text);
+    }
+    .pub .nf-brief .ef-label {
+        margin-bottom: 10px;
+        padding: 0;
+        border: 0;
+    }
+    .pub .nf-brief__tiles {
+        grid-auto-columns: minmax(0, 220px);
+        gap: 12px;
+    }
+    .pub .nf-tile {
+        padding: 12px 14px;
+    }
+    .pub .nf-tile__value {
+        font-size: 30px;
+    }
+    /* The day so far: the time takes its story's category colour. */
+    .pub .nf-agate .spf-agate__time {
+        color: var(--dot, var(--text-2));
+        font-weight: 700;
+    }
+    .pub .nf-side + .nf-side {
+        margin-top: 4px;
+    }
+    .pub .nf-side .ef-note a {
+        color: var(--text-2);
+    }
+    .pub .nf-pictures,
+    .pub .nf-desks {
+        margin-top: 12px;
+        padding-top: 20px;
+        border-top: 1px solid var(--text);
+    }
+}
+
 /* ---------- Standings ---------- */
 .pub .st-head h2 {
     margin: 0;
