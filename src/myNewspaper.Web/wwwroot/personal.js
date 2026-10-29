@@ -349,6 +349,8 @@
         )
             schedule();
     }).observe(document.body, { childList: true, subtree: true });
+    // Enhanced navigation can patch an existing element into a marker (News tab → Kansas City), which adds no node.
+    if (window.Blazor) Blazor.addEventListener('enhancedload', schedule);
     window.addEventListener('storage', (e) => {
         if ([PREFS, TEAMS, null].includes(e.key)) schedule();
     });
