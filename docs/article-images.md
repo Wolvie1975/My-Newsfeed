@@ -14,7 +14,8 @@ links and Save/Share actions remain available in every layout.
   feature treatment. Since October 29 that includes 4:3, square and portrait photos
   (a 1675px-square NYT lead and a 5712 × 4284 XDA lead had shrunk to thumbnails);
   those under 1.2 crop into a 3:2 frame weighted toward the top. Height is capped at 220px below 900px and
-  360px on larger screens. The image frame cannot exceed the source pixel width.
+  360px on larger screens. The image frame cannot exceed 1.5× the source pixel width
+  (from October 29; at 1× a 740px photo stopped short of the News front's lead column).
   Desktop feed features put the headline beside the photo; Home's top story does so
   only from 1280px, where its middle column is wide enough.
 - Other usable images, including small portraits and unusually wide images, use compact

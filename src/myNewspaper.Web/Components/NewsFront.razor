@@ -303,7 +303,13 @@
             opinion = categories.FirstOrDefault(c => c.Name == "Opinion");
             desks = DeskNames.Select(n => categories.FirstOrDefault(c => c.Name == n)).OfType<FeedCategory>().ToList();
 
-            stories = await FeedQuery.GetHomeNewsAsync(db, 7, "headlines");
+            // The lead comes from Top Headlines, U.S. News and Kansas City; Top headlines below keeps the hourly mix of every desk.
+            var candidates = await FeedQuery.GetLatestPerSourceAsync(db, int.MaxValue, hub: "headlines");
+            var rotation = FeedQuery.SelectHomeNews(candidates,
+                await FeedQuery.GetLastUpdatedAsync(db, headlinesOnly: true) ?? DateTime.UnixEpoch, 7);
+            stories = NewsLeadQuery.Select(candidates) is { } lead
+                ? [lead, .. rotation.Where(s => s.Id != lead.Id).Take(6)]
+                : rotation;
             // The day so far leaves out what the lead and Top headlines already show.
             var shown = stories.Select(s => s.Id).ToHashSet();
             var feed = await FeedQuery.GetFeedAsync(db, null, null, null, 10 + shown.Count, headlinesOnly: true);

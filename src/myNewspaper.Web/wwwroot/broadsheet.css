@@ -1169,6 +1169,16 @@
         min-width: 0;
     }
 }
+/* Below 1440px the forecast ear is too narrow for the periods and the Kansas City link side by side ("Thunderstorms"
+   ran under the link at 1024px): the link moves under the periods. */
+@media (min-width: 1024px) and (max-width: 1439px) {
+    .pub .bs-glance__weather {
+        grid-template-columns: minmax(0, 1fr);
+    }
+    .pub .bs-glance__weather .d-more {
+        justify-self: end;
+    }
+}
 .pub .tt-team .team-record {
     white-space: nowrap;
 }

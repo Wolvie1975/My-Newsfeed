@@ -183,8 +183,8 @@ async function ready(page, story, quality) {
         const largeStory = largePage.locator(selector).filter({ visible: true }).first();
         await ready(largePage, largeStory, 'wide');
         assert(
-            (await largeStory.locator('[data-article-media]').boundingBox()).width <= 640,
-            'never enlarge beyond source pixels',
+            (await largeStory.locator('[data-article-media]').boundingBox()).width <= 640 * 1.5,
+            'never enlarge beyond 1.5× the source pixels',
         );
         await largePage.setViewportSize({ width: 390, height: 1000 });
         await ready(largePage, largePage.locator(selector).filter({ visible: true }).first(), 'wide');

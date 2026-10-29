@@ -93,7 +93,8 @@
 :root .pub [data-article-story='feature'][data-image-layout='wide'] [data-article-media] {
     float: none;
     width: 100%;
-    max-width: min(100%, var(--article-image-width, 100%));
+    /* Up to 1.5× the source, so a 740px photo fills a lead column instead of stopping short of its edge. */
+    max-width: min(100%, calc(var(--article-image-width, 100%) * 1.5));
     height: auto;
     max-height: 220px;
     aspect-ratio: var(--article-image-ratio, 16 / 9);
