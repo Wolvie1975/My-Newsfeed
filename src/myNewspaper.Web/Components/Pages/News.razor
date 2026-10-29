@@ -167,10 +167,10 @@ else
             </form>
         </PhoneRibbon>
 
-        <article class="mx-block" aria-label="Lead story">
+        <article class="mx-block" data-article-story="feature" data-image-layout="compact" aria-label="Lead story">
             @if (FeedQuery.SafeHref(lead.ImageUrl) is { } image)
             {
-                <div class="mx-block__media">
+                <div class="mx-block__media" data-article-media>
                     <img src="@image" alt="" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()" />
                     @if (!lead.Undated && DateTime.UtcNow - lead.Date < TimeSpan.FromHours(1)) { <span class="mx-block__badge">Just in</span> }
                 </div>

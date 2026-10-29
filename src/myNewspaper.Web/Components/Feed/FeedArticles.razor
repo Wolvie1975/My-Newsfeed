@@ -31,9 +31,9 @@
         </p>
     }
 
-    <article @key="item.Id" data-article-id="@item.Id" data-news-url="@href" data-news-source="@sourceName" class="article @(isLead ? "article--lead" : "") @(PhoneFeatureFirst && i == 0 ? "mx-list-feature" : null)">
+    <article data-article-story="@(isLead || (PhoneFeatureFirst && i == 0) ? "feature" : "row")" data-image-layout="compact" @key="item.Id" data-article-id="@item.Id" data-news-url="@href" data-news-source="@sourceName" class="article @(isLead ? "article--lead" : "") @(PhoneFeatureFirst && i == 0 ? "mx-list-feature" : null)">
         @* Default image: the placeholder background shows through when there is no image or it fails to load. *@
-        <div class="thumb" aria-hidden="true">
+        <div class="thumb" data-article-media aria-hidden="true">
             @if (image is not null)
             {
                 <img src="@image" alt="" loading="@(isLead ? "eager" : "lazy")" decoding="async"

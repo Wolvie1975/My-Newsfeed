@@ -413,10 +413,10 @@
 
     @if (lead.Article is { } top)
     {
-        <article class="mx-block" aria-label="Top story" data-home-section="lead">
+        <article class="mx-block" data-article-story="feature" data-image-layout="compact" aria-label="Top story" data-home-section="lead">
             @if (FeedQuery.SafeHref(top.ImageUrl) is { } image)
             {
-                <div class="mx-block__media"><img src="@image" alt="" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()" /></div>
+                <div class="mx-block__media" data-article-media><img src="@image" alt="" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()" /></div>
             }
             <span class="mx-block__kicker">@string.Join(" · ", new[] { "Top story", Source(top), top.Undated ? null : Dates.Time(top.Date) }.Where(p => !string.IsNullOrEmpty(p)))</span>
             <h2 class="mx-block__title"><StoryLink Item="top" /></h2>

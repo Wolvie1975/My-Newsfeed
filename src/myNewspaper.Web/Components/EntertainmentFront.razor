@@ -56,10 +56,10 @@
                 var leadTitle = Title(lead);
                 var leadSummary = FeedText.StripEmoji(FeedQuery.Excerpt(lead.Description));
                 var leadSource = FeedText.SourceName(lead.SourceLabel, lead.SourceUrl);
-                <article class="ef-lead" data-news-url="@leadHref" data-news-source="@leadSource">
+                <article class="ef-lead" data-article-story="feature" data-image-layout="compact" data-news-url="@leadHref" data-news-source="@leadSource">
                     @if (leadHref is not null && leadImage is not null)
                     {
-                        <a class="ef-lead__image" href="@leadHref" target="_blank" rel="noopener noreferrer" tabindex="-1" aria-hidden="true">
+                        <a class="ef-lead__image" data-article-media href="@leadHref" target="_blank" rel="noopener noreferrer" tabindex="-1" aria-hidden="true">
                             <img src="@leadImage" alt="" fetchpriority="high" referrerpolicy="no-referrer" onerror="this.parentElement.remove()" />
                         </a>
                     }
@@ -214,10 +214,10 @@
     {
         var lead = stories[0];
         var leadSummary = FeedText.StripEmoji(FeedQuery.Excerpt(lead.Description));
-        <article class="mx-block" aria-label="Lead story">
+        <article class="mx-block" data-article-story="feature" data-image-layout="compact" aria-label="Lead story">
             @if (FeedQuery.SafeHref(lead.ImageUrl) is { } image)
             {
-                <div class="mx-block__media"><img src="@image" alt="" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()" /></div>
+                <div class="mx-block__media" data-article-media><img src="@image" alt="" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()" /></div>
             }
             <span class="mx-block__kicker">@string.Join(" · ", new[] { lead.CategoryName ?? "Entertainment", Source(lead), lead.Undated ? null : Dates.Time(lead.Date) }.Where(p => !string.IsNullOrEmpty(p)))</span>
             <h2 class="mx-block__title"><StoryLink Item="lead" /></h2>

@@ -1,0 +1,73 @@
+# Article image handling
+
+Prepared October 28, 2026 (Central). **Not deployed**: the user requested local
+implementation and verification only. Deployment and live mobile checks remain
+outstanding.
+
+Article photography now follows the decoded image dimensions instead of stretching
+every feed thumbnail into a feature. Headlines, descriptions, publisher attribution,
+links and Save/Share actions remain available in every layout.
+
+- Landscape photos at least 640 × 300px, with an aspect ratio between 1.5 and 2.2,
+  can use the large feature treatment. Height is capped at 220px below 900px and
+  360px on larger screens. The image frame cannot exceed the source pixel width.
+  Desktop feed features put the headline beside the photo.
+- Other usable images, including portraits and unusually wide images, use compact
+  thumbnails beside the feature headline. `object-fit: scale-down` preserves the
+  whole image and prevents enlargement. Regular feed thumbnails also avoid
+  enlarging small sources.
+- Images below 96px wide or 64px high, failed images and missing images produce
+  text-led stories, without a large empty photo area. Compact thumbnails do not
+  carry the overlaid “Just in” badge; the article timestamp remains available.
+- With JavaScript disabled, featured stories use a text-only fallback. The browser
+  cannot reliably check image quality or remove failed images without scripting.
+
+For feature images from the verified BBC `https://ichef.bbci.co.uk/ace/standard/`
+service, a supplied size below 1024 requests the 1024px version of the **same asset**.
+The original URL is retained for one fallback if that request fails. A successful
+response is still measured: a thumbnail returned by the larger URL stays compact.
+Other hosts and URL formats are not rewritten. No article pages are fetched on the
+server, no new image proxy is introduced, and there is no database migration.
+The collector still supplies one image URL; discovering additional publisher
+images for other providers is a separate collection-side enhancement.
+
+The shared behavior covers the article feed, Home lead and opinion thumbnails,
+and Sports/Entertainment lead stories. It also binds after enhanced navigation,
+image URL replacement, hourly Home content replacement and appended feed content.
+Movie posters, video thumbnails and brand assets are outside its selectors.
+Implementation lives in `wwwroot/article-images.js`, `article-images.css` and
+`article-images-nojs.css`, with explicit article/media markers on their Razor markup.
+
+## Local verification
+
+A local preview at port 5397 used the existing runtime read configuration, with
+profiles and results-writing background sync disabled. Production was not rebuilt,
+restarted or replaced. Evidence: `/tmp/article-images/`.
+
+- `dotnet build myNewspaper.sln`: zero warnings and errors.
+- Targeted ESLint and Prettier checks passed for the new assets and browser check.
+- `tests/browser/article-images.browser.cjs`: 50 Headlines combinations covering
+  320/390/430/744/1440px, light/dark, and large/small/portrait/tiny/broken fixtures.
+  Checked thumbnail placement, feature height, overflow, headline and action presence.
+- 36 Home/Sports/Entertainment combinations at 390/1440px, light/dark, with
+  large/small/broken fixtures. An existing empty Home image slot also received a
+  controlled photo to exercise both layouts when the current lead had no image.
+- Checked a 640px source on a 2560px viewport and a resize back to 390px; BBC
+  higher-resolution success/fallback, no retry loop, strict host matching and query
+  preservation; dynamic URL replacement, enhanced navigation and actual More stories /
+  Load more interactions; no-JavaScript fallback with both usable and failed images.
+- The real BBC article from the reported example loaded its 1024 × 575px image
+  instead of the 240 × 134px feed thumbnail, at 390px and 1440px. Representative
+  real-image and fixture screenshots were visually inspected.
+
+Run the browser check against an ungated development preview:
+
+```bash
+BASE_URL=http://127.0.0.1:5397 SCREENSHOT_DIR=/tmp/article-photo-checks \
+  node tests/browser/article-images.browser.cjs
+```
+
+These checks use Chromium viewport emulation, not physical devices or Safari.
+Dimensions are a practical resolution safeguard; they do not detect subjective
+blur, poor composition or a publisher that has already enlarged a low-quality image.
+Repeat the affected mobile checks against production only after deployment is authorized.
