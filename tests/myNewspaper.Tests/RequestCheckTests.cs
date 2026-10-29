@@ -1,5 +1,7 @@
 using System.Net;
 using System.Text;
+using Microsoft.EntityFrameworkCore;
+using myNewspaper.Web.Data;
 using myNewspaper.Web.Requests;
 
 namespace myNewspaper.Tests;
@@ -139,6 +141,68 @@ public class RequestCheckTests
         var checks = new RequestChecks(new Clients(new Fake(_ => Ok(Rss))));
         Assert.Equal(["https://example.com/rss"], await checks.FindFeedsAsync(new Uri("https://example.com/rss")));
     }
+
+    private const string StarSearch = "https://news.google.com/rss/search?q=site%3Akansascity.com+when%3A30d&hl=en-US&gl=US&ceid=US%3Aen";
+
+    private static string GoogleNews(params string[] sources) =>
+        """<?xml version="1.0"?><rss version="2.0"><channel><title>Google News</title>"""
+        + string.Concat(sources.Select((s, i) => $"""<item><title>Story {i} - Paper</title><source url="{s}">Paper</source></item>"""))
+        + "</channel></rss>";
+
+    [Fact]
+    public async Task Google_news_is_offered_only_when_its_headlines_come_from_the_site()
+    {
+        var body = GoogleNews("https://www.kansascity.com", "https://amp.kansascity.com", "https://www.kansascity.com");
+        var checks = new RequestChecks(new Clients(new Fake(request =>
+            request.RequestUri!.AbsoluteUri == StarSearch ? Ok(body) : new HttpResponseMessage(HttpStatusCode.NotFound))));
+        Assert.Equal((StarSearch, 3), await checks.GoogleNewsFeedAsync(new Uri("https://www.kansascity.com/")));
+
+        // A section link searches that section, in the same form as the USA Today sources.
+        string? asked = null;
+        var section = new RequestChecks(new Clients(new Fake(request => { asked = request.RequestUri!.AbsoluteUri; return Ok(GoogleNews()); })));
+        Assert.Null(await section.GoogleNewsFeedAsync(new Uri("https://www.usatoday.com/story/news")));
+        Assert.Equal("https://news.google.com/rss/search?q=site%3Ausatoday.com%2Fstory%2Fnews%2F+when%3A30d&hl=en-US&gl=US&ceid=US%3Aen", asked);
+
+        // Mostly other publishers (Google matched loosely), no headlines, or no answer: nothing is offered.
+        var mixed = new RequestChecks(new Clients(new Fake(_ => Ok(GoogleNews("https://www.kansascity.com", "https://www.kshb.com")))));
+        Assert.Null(await mixed.GoogleNewsFeedAsync(new Uri("https://kansascity.com")));
+        var down = new RequestChecks(new Clients(new Fake(_ => throw new HttpRequestException("blocked"))));
+        Assert.Null(await down.GoogleNewsFeedAsync(new Uri("https://kansascity.com")));
+    }
+
+    [Fact]
+    public async Task A_site_that_blocks_the_checker_is_offered_through_google_news()
+    {
+        var checks = new RequestChecks(new Clients(new Fake(request => request.RequestUri!.Host == "news.google.com"
+            ? Ok(GoogleNews("https://www.kansascity.com", "https://www.kansascity.com"))
+            : throw new HttpRequestException("Connection reset"))));
+        await using var db = Database();
+        var result = await checks.CheckNewsAsync(db, "https://www.kansascity.com/");
+        Assert.True(result.Ok);
+        Assert.Equal("The site didn't respond · Google News feed found (2 headlines)", result.Summary);
+        Assert.Equal([StarSearch], result.FeedUrls);
+
+        var nothing = new RequestChecks(new Clients(new Fake(_ => Ok("<html>no feeds</html>"))));
+        var none = await nothing.CheckNewsAsync(db, "https://example.com/");
+        Assert.False(none.Ok);
+        Assert.Equal("No feed found on example.com · needs a feed address", none.Summary);
+    }
+
+    [Fact]
+    public async Task A_youtube_channel_is_ready_once_its_id_is_found_even_if_its_feed_is_down()
+    {
+        // YouTube's feeds can answer 404 while the scraper still collects from the channel page.
+        var checks = new RequestChecks(new Clients(new Fake(_ => new HttpResponseMessage(HttpStatusCode.NotFound))));
+        await using var db = Database();
+        var result = await checks.CheckYoutubeAsync(db, "https://www.youtube.com/channel/UCzzzzzzzzzzzzzzzzzzzzzz");
+        Assert.True(result.Ok);
+        Assert.Equal("Channel ID found from the link", result.Summary);
+        Assert.Equal("UCzzzzzzzzzzzzzzzzzzzzzz", result.ChannelId);
+        Assert.Equal([RequestChecks.FeedUrl("UCzzzzzzzzzzzzzzzzzzzzzz")], result.FeedUrls);
+    }
+
+    private static WebScraperContext Database() =>
+        new(new DbContextOptionsBuilder<WebScraperContext>().UseSqlServer(TestDatabase.ConnectionString).Options);
 
     private const string Rss = """<?xml version="1.0"?><rss version="2.0"><channel><title>T</title><item><title>Newest story</title></item><item><title>Older</title></item></channel></rss>""";
     private const string Atom = """<feed xmlns="http://www.w3.org/2005/Atom"><title>T</title><entry><title> Atom entry </title></entry></feed>""";

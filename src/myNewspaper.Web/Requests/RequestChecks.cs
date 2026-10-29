@@ -44,6 +44,9 @@ public sealed partial class RequestChecks(IHttpClientFactory clients)
     [GeneratedRegex(@"\b(rel|type|href)\s*=\s*(?:""([^""]*)""|'([^']*)')", RegexOptions.IgnoreCase)]
     private static partial Regex Attribute();
 
+    [GeneratedRegex(@"<source\b[^>]*\burl=""([^""]*)""", RegexOptions.IgnoreCase)]
+    private static partial Regex SourceTag();
+
     public static bool IsChannelId(string? value) => value is not null && ChannelIdPattern().IsMatch(value);
 
     public static string FeedUrl(string channelId) => AdminData.YoutubeFeedUrl(channelId);
@@ -62,11 +65,10 @@ public sealed partial class RequestChecks(IHttpClientFactory clients)
         if (string.IsNullOrWhiteSpace(link)) return new(false, "No link given · needs a channel ID");
         if (channelId is null) return new(false, "Couldn't find the channel from the link · needs a channel ID");
 
+        // The channel ID is all the scraper needs, so the feed isn't tested: YouTube's feeds can answer 404 while the
+        // scraper still collects from the channel page.
         var collected = await db.YoutubeVideoFeeds.AnyAsync(f => f.ChannelId == channelId, ct);
-        var feed = await TestFeedAsync(FeedUrl(channelId), ct);
-        var summary = "Channel ID found from the link · " + (feed.Ok ? "feed responds" : "feed didn't respond");
-        if (collected) summary += " · Already collected";
-        return new(feed.Ok, summary, channelId, [FeedUrl(channelId)], feed.Entries, feed.NewestTitle);
+        return new(true, "Channel ID found from the link" + (collected ? " · Already collected" : ""), channelId, [FeedUrl(channelId)]);
     }
 
     /// <summary>The channel ID behind a youtube.com or youtu.be link: from the address itself, or from the page.</summary>
@@ -101,18 +103,54 @@ public sealed partial class RequestChecks(IHttpClientFactory clients)
             return new(false, "The link isn't a web address · needs a feed address");
 
         List<string> found;
+        string? problem = null;
         try { found = await FindFeedsAsync(uri, ct); }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException && !ct.IsCancellationRequested)
         {
-            return new(false, "The site didn't respond · needs a feed address");
+            found = [];
+            problem = "The site didn't respond";
         }
-        if (found.Count == 0) return new(false, $"No feed found on {uri.Host} · needs a feed address");
+        // A site with no feed of its own, or one that blocks the checker, can often still be read through Google News.
+        var google = found.Count == 0 ? await GoogleNewsFeedAsync(uri, ct) : null;
+        if (google is { } g) found = [g.Url];
+        if (found.Count == 0) return new(false, (problem ?? $"No feed found on {uri.Host}") + " · needs a feed address");
 
         var hashes = found.Select(SourceUrlHash).ToList();
         var existing = await db.Sources.AsNoTracking().Where(s => s.UrlHash != null).Select(s => s.UrlHash!).ToListAsync(ct);
         var already = hashes.Any(h => existing.Any(e => e.AsSpan().SequenceEqual(h)));
-        var summary = $"{found.Count} {(found.Count == 1 ? "feed" : "feeds")} found on {uri.Host}" + (already ? " · Already a source" : "");
-        return new(true, summary, FeedUrls: found);
+        var summary = google is { } feed
+            ? $"{problem ?? $"No feed on {uri.Host}"} · Google News feed found ({feed.Entries} {(feed.Entries == 1 ? "headline" : "headlines")})"
+            : $"{found.Count} {(found.Count == 1 ? "feed" : "feeds")} found on {uri.Host}";
+        return new(true, summary + (already ? " · Already a source" : ""), FeedUrls: found);
+    }
+
+    /// <summary>
+    /// The Google News search feed for a site, in the form the USA Today sources use (<c>site:</c>, the last 30 days,
+    /// US English). Offered only when it has headlines and at least 90% of them name that site as their source.
+    /// </summary>
+    public async Task<(string Url, int Entries)?> GoogleNewsFeedAsync(Uri site, CancellationToken ct = default)
+    {
+        var domain = DomainOf(site.Host);
+        if (domain == "news.google.com") return null;
+        var path = site.AbsolutePath.TrimEnd('/');
+        var url = "https://news.google.com/rss/search?q=" + Uri.EscapeDataString("site:" + domain + (path.Length > 0 ? path + "/" : ""))
+            + "+when%3A30d&hl=en-US&gl=US&ceid=US%3Aen";
+        string body;
+        try { body = (await FetchAsync(new Uri(url), ct)).Body; }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException && !ct.IsCancellationRequested) { return null; }
+        if (ParseFeed(body) is not { Entries: > 0 } feed) return null;
+
+        // Each item names its publisher: <source url="https://www.kansascity.com">Kansas City Star</source>.
+        var fromSite = SourceTag().Matches(body).Count(m =>
+            Uri.TryCreate(WebUtility.HtmlDecode(m.Groups[1].Value), UriKind.Absolute, out var source)
+            && DomainOf(source.Host) is var d && (d == domain || d.EndsWith("." + domain, StringComparison.Ordinal)));
+        return fromSite * 10 >= feed.Entries * 9 ? (url, feed.Entries) : null;
+    }
+
+    private static string DomainOf(string host)
+    {
+        host = host.ToLowerInvariant();
+        return host.StartsWith("www.", StringComparison.Ordinal) ? host[4..] : host;
     }
 
     /// <summary>The link itself if it's a feed; otherwise the page's advertised feeds, then /feed, /rss and /feed.xml.</summary>
