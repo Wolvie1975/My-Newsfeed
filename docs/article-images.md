@@ -108,3 +108,17 @@ image visibility and layout area, plus overflow. The regression failed before th
 correction and passed afterward, alongside both no-JavaScript fallback cases.
 These were scoped reruns; the unchanged full fixture matrix was not repeated.
 Evidence: `/tmp/article-images-deploy/fix-local.log` and `fix-shots/`.
+
+
+Correction deployed as `mynewspaper-web:article-image-nav-fix-20261029`
+(`sha256:756ae425b587d812436d23ff38719c3ad917fae8b081369747684f45f4efbe17`),
+from `7ff365d`. Repeated the scoped navigation regression at all five widths and
+both themes against production with a throwaway profile, plus no-JavaScript
+checks; passed. The runner's inherited final summary lists the full suite, but
+only the navigation/no-JavaScript subset ran for this correction. Actual NYT and
+ESPN lead images remained visible after enhanced navigation (1675px square and
+1296 × 729px respectively). Inspected real desktop and fixture phone screenshots.
+Temporary profile removed; live health passed. Runtime configuration and keys
+volume/access preserved; rollback container/image retained with suffix/tag
+`before-image-nav-fix-20261029`. Live evidence: `fix-live.log`, `fix-live-shots/`,
+`nav-home.png` and `nav-sports.png` under `/tmp/article-images-deploy/`.
