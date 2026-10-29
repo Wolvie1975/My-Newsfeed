@@ -144,6 +144,34 @@ const password = process.env.ADMIN_PASSWORD;
                             label + ' first fold open',
                         );
                     assert.notEqual(r.darkBlock, r.pageBg, label + ' dark block separates from the page');
+                    // Every top story has Save with Share under it, both inside the row.
+                    for (const row of await page.locator('.mx-phone .mx-top li').all()) {
+                        const [rowBox, save, share] = await Promise.all([
+                            row.boundingBox(),
+                            row.locator('.save').boundingBox(),
+                            row.locator('.share-button:not([hidden])').boundingBox(),
+                        ]);
+                        assert(save && share, label + ' Save and Share on each top story');
+                        assert(share.y >= save.y + save.height - 1, label + ' Share under Save');
+                        assert(
+                            share.x + share.width <= width && share.y + share.height <= rowBox.y + rowBox.height + 1,
+                            label + ' Share inside its row',
+                        );
+                    }
+                    if (width === 390 && scheme === 'kansas') {
+                        const first = page.locator('.mx-phone .mx-top li').first();
+                        const title = (await first.locator('.mx-top__title').innerText()).trim();
+                        await first.locator('.share-button').click();
+                        const dialog = page.getByRole('dialog');
+                        await dialog.waitFor();
+                        assert.equal(
+                            (await dialog.locator('.article-share__title').innerText()).trim(),
+                            title,
+                            label + ' Share names the story',
+                        );
+                        await page.keyboard.press('Escape');
+                        await dialog.waitFor({ state: 'detached' });
+                    }
                     const bad = await page.evaluate(audit);
                     assert.deepEqual(bad, [], label + ' contrast');
                     if (shots && (width === 390 || width === 320) && scheme === 'kansas')

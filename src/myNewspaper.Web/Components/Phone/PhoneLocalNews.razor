@@ -7,7 +7,7 @@
         else if (Data.Items.Count == 0) { <p class="mx-note">No matching stories available. Check back after the next collection.</p> }
         else {
             <ol class="mx-top">@foreach (var (item, index) in (Expanded ? Data.Items : Data.Items.Take(3)).Select((v, i) => (v, i))) {
-                <li class="mx-top__item"><span class="mx-top__n">@(index + 1)</span><div class="mx-top__body"><span class="mx-top__meta mx-c-local">@FeedText.SourceName(item.SourceLabel, item.SourceUrl)</span><h3 class="mx-top__title"><StoryLink Item="item" /></h3></div><SaveButton Item="item" Title="@FeedText.StripEmoji(item.Title)" Source="@FeedText.SourceName(item.SourceLabel, item.SourceUrl)" /></li>
+                <li class="mx-top__item"><span class="mx-top__n">@(index + 1)</span><div class="mx-top__body"><span class="mx-top__meta mx-c-local">@FeedText.SourceName(item.SourceLabel, item.SourceUrl)</span><h3 class="mx-top__title"><StoryLink Item="item" /></h3></div><span class="mx-top__actions"><SaveButton Item="item" Title="@FeedText.StripEmoji(item.Title)" Source="@FeedText.SourceName(item.SourceLabel, item.SourceUrl)" /><ShareButton Url="@item.Url" Title="@FeedText.StripEmoji(item.Title)" /></span></li>
             }</ol>
         }
     </section>
@@ -15,7 +15,7 @@
     <FoldGroup Name="local-more-m" Heading="More nearby">
         @if (Data.Items.Count > 3 && !Expanded) {
             <Fold Title="More local news" Gist="@string.Join(" · ", Data.Items.Skip(3).Take(2).Select(v => v.Title))" Open="@(Section != "events")" Color="mx-c-local" AllHref="local?view=news#local-news-m" AllText="All local stories">
-                @foreach (var item in Data.Items.Skip(3).Take(3)) { <article class="mx-local-story"><h3><StoryLink Item="item" /></h3><span class="mx-item-meta">@FeedText.SourceName(item.SourceLabel, item.SourceUrl)</span><SaveButton Item="item" Title="@FeedText.StripEmoji(item.Title)" Source="@FeedText.SourceName(item.SourceLabel, item.SourceUrl)" /></article> }
+                @foreach (var item in Data.Items.Skip(3).Take(3)) { <article class="mx-local-story"><h3><StoryLink Item="item" /></h3><span class="mx-item-meta">@FeedText.SourceName(item.SourceLabel, item.SourceUrl)</span><div class="mx-actions"><SaveButton Item="item" Title="@FeedText.StripEmoji(item.Title)" Source="@FeedText.SourceName(item.SourceLabel, item.SourceUrl)" /><ShareButton Url="@item.Url" Title="@FeedText.StripEmoji(item.Title)" /></div></article> }
             </Fold>
         }
         <Fold Title="Forecast" Gist="Full National Weather Service outlook" Open="@((Data.Items.Count <= 3 || Expanded) && Section != "events")" Color="mx-c-world">

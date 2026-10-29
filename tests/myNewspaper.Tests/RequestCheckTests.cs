@@ -173,14 +173,15 @@ public class RequestCheckTests
     [Fact]
     public async Task A_site_that_blocks_the_checker_is_offered_through_google_news()
     {
+        // A made-up paper, so the answer doesn't depend on which sources the household has added.
         var checks = new RequestChecks(new Clients(new Fake(request => request.RequestUri!.Host == "news.google.com"
-            ? Ok(GoogleNews("https://www.kansascity.com", "https://www.kansascity.com"))
+            ? Ok(GoogleNews("https://www.blocked-paper.example", "https://www.blocked-paper.example"))
             : throw new HttpRequestException("Connection reset"))));
         await using var db = Database();
-        var result = await checks.CheckNewsAsync(db, "https://www.kansascity.com/");
+        var result = await checks.CheckNewsAsync(db, "https://www.blocked-paper.example/");
         Assert.True(result.Ok);
         Assert.Equal("The site didn't respond · Google News feed found (2 headlines)", result.Summary);
-        Assert.Equal([StarSearch], result.FeedUrls);
+        Assert.Equal(["https://news.google.com/rss/search?q=site%3Ablocked-paper.example+when%3A30d&hl=en-US&gl=US&ceid=US%3Aen"], result.FeedUrls);
 
         var nothing = new RequestChecks(new Clients(new Fake(_ => Ok("<html>no feeds</html>"))));
         var none = await nothing.CheckNewsAsync(db, "https://example.com/");

@@ -453,7 +453,7 @@
                     <li class="@PhoneColors.ForCategory(item.CategoryName)">
                         <span class="mx-top__n" aria-hidden="true">@(i + 1)</span>
                         <span><span class="mx-top__title"><StoryLink Item="item" /></span><span class="mx-top__meta">@string.Join(" · ", new[] { Source(item), item.CategoryName }.Where(p => !string.IsNullOrEmpty(p)))</span></span>
-                        <SaveButton Item="item" Title="@Title(item)" Source="@Source(item)" Summary="@FeedText.StripEmoji(FeedQuery.Excerpt(item.Description))" />
+                        <span class="mx-top__actions"><SaveButton Item="item" Title="@Title(item)" Source="@Source(item)" Summary="@FeedText.StripEmoji(FeedQuery.Excerpt(item.Description))" /><ShareButton Url="@item.Url" Title="@Title(item)" /></span>
                     </li>
                 }
             </ol>

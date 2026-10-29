@@ -486,10 +486,16 @@
     border-radius: 999px;
     background: var(--dot, var(--mx-world));
 }
-.pub .mx-top .save {
+/* Save, with Share under it: one 44px column, so the headline keeps its width. */
+.mx-top__actions {
+    display: flex;
+    flex-direction: column;
+    margin-top: -6px;
+}
+.pub .mx-top :is(.save, .share-button) {
     width: 44px;
     height: 44px;
-    margin: -6px 0 0;
+    margin: 0;
 }
 
 /* ---------------------------------------------------------------- Fold group (native <details>, one open at a time) */
