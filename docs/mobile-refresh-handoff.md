@@ -577,3 +577,15 @@ host throttled the run's fresh fetches (without JavaScript Chrome ignores `loadi
 deleted; 14 headless test devices without a profile removed; Jason and Jacob remain. Live screenshots reviewed.
 Evidence: `/tmp/release4/`. Not checked: the Digital releases empty state with real data, a real device,
 VoiceOver/TalkBack. See the release history.
+
+### Mobile score-card quarter shorthand — October 29, 2026
+
+Phone score tiles display quarter statuses as e.g. `1:56 · 4Q`, retaining
+the original full status in the accessible link label. Other statuses and desktop
+markup are unchanged. All 38 PhoneSportsTests passed, including quarter mappings
+and rendered accessible status checks. Browser layout fixtures used the rendered
+component and repository CSS at 320/390/430px in light/dark; status text stayed
+inside its card and the page had no horizontal overflow. Screenshots were inspected.
+Fixtures blocked network assets, so fallback fonts were used. These checks cover
+representative markup rather than a live game or real device. Full live-page
+interaction and post-deployment evidence are recorded in the release history.

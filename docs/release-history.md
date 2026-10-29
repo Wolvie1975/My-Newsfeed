@@ -6,6 +6,51 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
+## Mobile live-score quarter shorthand — October 29, 2026 (Central)
+
+Public image `mynewspaper-web:mobile-live-quarter-20261029`
+(`c7957f2eefdb`) replaces `mynewsfeed-web`. Phone score tiles now display
+`1:56 · 4Q` instead of `1:56 - 4th Quarter`; the accessible link label retains
+the full provider status. Other statuses and desktop markup are unchanged.
+The current runtime environment, ports, health check, restart policy, network and
+persistent key volume were preserved; Admin was not rebuilt or replaced. No schema
+scripts or migrations ran. The existing connection remains sql2025 / WebScraper.
+Rollback image: `mynewspaper-web:before-mobile-live-quarter-20261029`
+(`0729f739cdcf`), with stopped container
+`mynewsfeed-web-before-mobile-live-quarter-20261029` retaining its configuration.
+
+The 38 PhoneSportsTests passed, including quarter conversions, unchanged non-quarter
+statuses and full accessible status in rendered component markup. Docker publish
+and its static-asset guard passed. Local homepage checks covered 320/390/430px in
+light/dark, plus 768/1440px layout regressions, refresh, saved theme, score-card
+navigation and no-JavaScript navigation. Screenshots were inspected. The example
+quarter card used actual component-rendered test markup inserted into the homepage;
+no live games were present. It stayed within the card at all required phone widths,
+retained its full accessible label, and exceeded the 44px touch-target minimum.
+Local artifacts: `test-results/browser/local-quarter/` (ignored).
+
+After rollout, both containers were healthy and both production HTTPS health
+endpoints returned 200. League-phase startup checks were present. Authenticated
+production homepage checks repeated 320/390/430px light/dark and 768/1440px layout
+checks, with saved theme persistence, refresh and score-card navigation. The
+no-JavaScript navigation check passed. All six phone screenshots were inspected
+under `test-results/browser/live-quarter/` (ignored). No live games were present,
+so the quarter-specific layout check used the same component-rendered example
+inserted into the deployed homepage, without changing stored game data.
+
+The first HTTP smoke run encountered an Events 500: logs identified SQL Server
+error 1205, a deadlock victim in the existing schedule-choices query. A focused
+retry returned 200 for health, News, Events, Results (following its redirect),
+Standings, Rankings, Movies, digital movies and box office. No unrelated database
+or query changes were made. Disposable profiles were deleted after both runs.
+The temporary workspace hostname mapping used for trusted production HTTPS checks
+was removed afterwards.
+
+Limits: quarter-specific data was a rendered test example, rather than a currently
+live game; real-device and screen-reader testing were unavailable. Full unrelated
+application suites were not rerun. The commit remains local on `develop`; no push
+was made.
+
 ## Homepage weather icons — October 29, 2026 (Central)
 
 Deployed public image `mynewspaper-web:home-weather-20261029`

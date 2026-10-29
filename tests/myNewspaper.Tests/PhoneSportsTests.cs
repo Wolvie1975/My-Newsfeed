@@ -60,6 +60,31 @@ public class PhoneSportsTests
         Assert.Equal("50%", PhoneSports.Percent(50, 100));
     }
 
+    [Theory]
+    [InlineData("1:56 - 4th Quarter", "1:56 · 4Q")]
+    [InlineData("12:00 - 1st Quarter", "12:00 · 1Q")]
+    [InlineData("End of 2nd Quarter", "End of 2Q")]
+    [InlineData("3RD QUARTER", "3Q")]
+    [InlineData("Halftime", "Halftime")]
+    [InlineData("51′", "51′")]
+    [InlineData("1:56 - OT", "1:56 - OT")]
+    public void Score_tiles_shorten_quarters_without_changing_other_statuses(string status, string expected)
+    {
+        var game = new ScoreboardGame { Status = "live", StatusText = status };
+        var dates = FeedDates.Create("America/Chicago");
+        Assert.Equal(expected, PhoneText.CompactClock(game, dates));
+        Assert.Equal(status, PhoneText.Clock(game, dates));
+    }
+
+    [Fact]
+    public async Task Score_tiles_preserve_full_status_for_screen_readers()
+    {
+        var game = new ScoreboardGame { Status = "live", StatusText = "1:56 - 4th Quarter", AwayName = "Golden State", HomeName = "Atlanta", AwayScore = 64, HomeScore = 77 };
+        var html = await RenderSports<PhoneScoreTiles>(new() { ["Games"] = new[] { game } });
+        Assert.Contains("1:56 - 4th Quarter", html);
+        Assert.Contains("1:56 · 4Q", System.Net.WebUtility.HtmlDecode(html));
+    }
+
     private static Task<string> RenderRankings(RankingsPage page) => RenderSports<PhoneRankings>(new() { ["Data"] = page });
 
     [Fact]

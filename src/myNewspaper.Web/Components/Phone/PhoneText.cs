@@ -1,4 +1,5 @@
 using myNewspaper.Web.Data;
+using System.Text.RegularExpressions;
 
 namespace myNewspaper.Web.Components.Phone;
 
@@ -30,6 +31,15 @@ public static class PhoneText
         _ when game.Active => game.StatusText ?? game.DisplayClock ?? "Live",
         _ => game.Label,
     };
+
+    /// <summary>Compact quarter names for score tiles; leave other provider statuses intact.</summary>
+    public static string CompactClock(ScoreboardGame game, FeedDates dates)
+    {
+        var status = Clock(game, dates);
+        if (!game.Active) return status;
+        var compact = Regex.Replace(status, @"\b([1-4])(?:st|nd|rd|th)\s+Quarter\b", "$1Q", RegexOptions.IgnoreCase);
+        return compact == status ? status : Regex.Replace(compact, @"\s+[-–—]\s+", " · ");
+    }
 
     /// <summary>The first network of a broadcast list ("ESPN, ESPN+" reads as "ESPN").</summary>
     public static string? Network(string? broadcasts) =>
