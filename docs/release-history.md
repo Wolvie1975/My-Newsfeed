@@ -6,10 +6,36 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-The latest recorded web release is `mynewspaper-web:profiles-u4-20261029`
-(image `dc23d626d211`), deployed October 29, 2026 (Central), with household profiles enabled.
-Rollback: `mynewsfeed-web:before-profiles-u4-20261029` (`b579fd2c0382`).
+The latest recorded web release is `mynewspaper-web:request-checks-20261029`
+(image `70c4ed214980`), deployed October 29, 2026 (Central), with household profiles enabled.
+Rollback: `mynewsfeed-web:before-request-checks-20261029` (`dc23d626d211`).
 This is a dated deployment record, not live hosting status.
+
+## Request checks: YouTube by channel ID, news through Google News — deployed October 29, 2026 (Central)
+
+A YouTube request is ready once the checker finds its channel ID ("Channel ID found from the link", plus "Already
+collected"); the channel's feed is no longer tested, because YouTube's `feeds/videos.xml` answers 404 from this
+server while the scraper still collects from the channel page. A news link with no feed of its own, or a site that
+blocks the checker, is offered through its Google News search feed (`site:<domain>[/path/] when:30d`, US English,
+the form the USA Today sources use), only when it has headlines and at least 90% of them name that site as their
+source: "The site didn't respond · Google News feed found (100 headlines)". Admin's Find feeds uses the same check.
+The admin still approves every request. Commit `ab7241e` on `develop` (local).
+
+Deployed `mynewspaper-web:request-checks-20261029`, image
+`sha256:70c4ed2149807352797bc967b4ad3048ee78e2b516ff8ea84071ab275b9a3487`, built from a clean worktree of `ab7241e`.
+Rollback retained as `mynewsfeed-web:before-request-checks-20261029` (`dc23d626d211`, the U4 image). Port 8085,
+`dev-bridge`, restart policy and runtime environment hash unchanged; healthy, `/healthz` 200. No database change.
+
+Verification: 960 .NET tests (three new: the Google News lookup and its 90% source rule, a blocked site offered
+through Google News, a YouTube channel ready with its feed down). The real checker against the real sites:
+kansascity.com and www2.ljworld.com get a 100-headline Google News feed; `youtube.com/@mkbhd` is ready; an unknown
+handle still needs a channel ID; `kcstar.com` still needs a feed address (it only redirects to kansascity.com, and
+the block stops the check before the redirect lands; enter `kansascity.com` in Find feeds instead). Live, with a
+throwaway profile: a kansascity.com news request and a YouTube request sent from Settings at 390px, both checked
+("Checked"), and read in Admin · Requests at 320/390/430/1440px light and dark: no sideways scroll, contrast audit
+clean, the summary and the Google News feed address inside the screen; screenshots inspected at 320 and 390. The
+profile and its requests were deleted. Seen, not from this release: admin pages show an unstyled "Saved articles
+could not sync" line from `public.js` when no profile is open.
 
 ## Profiles U4: new edition setup and full profile deletion — deployed October 29, 2026 (Central)
 
