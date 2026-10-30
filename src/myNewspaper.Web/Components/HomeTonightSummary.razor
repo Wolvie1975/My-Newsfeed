@@ -1,0 +1,22 @@
+@inject FeedDates Dates
+
+@{
+    var shows = Episodes.GroupBy(e => e.ShowId != 0 ? $"id:{e.ShowId}" : $"title:{e.SeriesTitle}").ToList();
+}
+@if (shows.FirstOrDefault() is { } first)
+{
+    var next = first.First();
+    var others = shows.Count - 1;
+    <a class="bs-live__tonight" href="tv" title="@string.Join(" · ", shows.Select(g => g.First().SeriesTitle))">
+        <span class="bs-live__kicker">New tonight@(next.StartsUtc is { } time ? " · " + Dates.Time(time) : "")@(others == 0 && next.Platform is { } platform ? " · " + platform : "")</span>
+        <span class="bs-live__show">@next.SeriesTitle</span>
+        @if (others > 0)
+        { <span class="bs-live__more">+ @others more</span> }
+        else if (first.Count() > 1)
+        { <span class="bs-live__more">· @first.Count() episodes</span> }
+    </a>
+}
+
+@code {
+    [Parameter] public IReadOnlyList<TvEpisodeItem> Episodes { get; set; } = [];
+}

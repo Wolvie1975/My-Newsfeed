@@ -6,6 +6,56 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
+## Wide Home polish and public-header search — October 30, 2026 (Central)
+
+Reviewed the second revised wide-screens handoff against the deployed build. The
+wide Home masthead now uses a 56px greeting, date-line Refresh, right-aligned weather
+with its link alongside, and a bounded Live now/Coming up line below the double rule.
+It shows at most three games plus a show summary. Normal GET Where to watch search
+appears in the public header from 1920px, except on Watch; Home's wide search band is
+hidden. The lead photo/P8 frame is 16:9 above a 46px headline, the latest video title
+is 20px, and the six-column grid has a 2.4fr lead and side columns at least 340px.
+Primary labels fit one line; the episode count remains visible below its heading.
+Series titles wrap in full. Narrower layouts retain their existing search/masthead.
+
+Show summaries group episodes by show ID, with a title fallback for unknown IDs.
+One show retains its platform and adds a batch count; multiple shows show `+ N more`
+and omit a misleading single platform; no episodes produce no link. Four rendering
+tests passed, covering these branches and encoded titles. The implementation also
+accounts for the existing lead classifier's higher-specificity rules, the ticker's
+inherited column direction, long ticker text, actual 44px controls, and CSS zoom.
+No queries, schema migrations or collector changes were needed on sql2025 / WebScraper.
+
+Solution build passed with zero warnings/errors; changed browser-test ESLint,
+repository formatting and diff checks passed. Full .NET/JS-unit/repository-lint
+suites were not repeated; their previously recorded unrelated failures remain
+outside this change. Preview and live Chromium matrices covered 320/390/430/768/
+1024/1280/1440/1920/2560/3200/3840px in light/dark, plus Monochrome/Cardinals at 2560.
+Checks covered real Refresh, phone folds, theme persistence, header GET submission
+and absence on Watch, header search/overflow on Sports, All headlines, YouTube,
+Entertainment, Settings and Saved, no-JavaScript search/Refresh/folds, three-game
+single-line geometry, long forecast/show fixtures, six primary single-line labels,
+lead image order/ratio and classified headline size. A focused preview at 2560 also
+verified an unclamped long TV series title; the live matrix included that fixture.
+A final placeholder-contrast adjustment uses the theme text color at full opacity;
+its preview/live follow-up covered 320/390/430/1920/2560/3840px in both themes and
+repeated the search/navigation/no-JavaScript flows.
+Fixtures change only test DOM; no production episodes/forecasts were modified.
+Screenshots were inspected and each disposable profile was removed. Evidence:
+`test-results/browser/home-polish-{preview,live}/` and
+`test-results/browser/home-polish-release/`. Physical devices, Safari and Firefox
+were unavailable; no claim is made for them.
+
+Public image `mynewspaper-web:home-polish-release-20261030` (`c5ed3f806c1b`) deployed
+as `mynewsfeed-web`. Public/admin HTTPS health returned 200. Environment, key mounts,
+ports, restart policy and network aliases were preserved; public/broadsheet CSS
+hashes match source. Startup logs had no failure/critical entries. Admin was not
+rebuilt. Rollback: stopped container `mynewsfeed-web-before-home-polish-20261030`
+and image `mynewspaper-web:before-home-polish-20261030` (`f976307bda8d`).
+The intermediate pre-contrast release is also retained as stopped container
+`mynewsfeed-web-before-home-polish-contrast-20261030` and image
+`mynewspaper-web:before-home-polish-contrast-20261030` (`2aa90031f401`).
+
 ## Compact wide-screen Home masthead — October 30, 2026 (Central)
 
 From 1920 CSS px, Home uses its existing navigation tile/wordmark, a left-aligned

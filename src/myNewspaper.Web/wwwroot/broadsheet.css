@@ -2226,3 +2226,331 @@ body:has([data-scheme-dialog][open]) {
         line-height: 1.1;
     }
 }
+
+/* ---------- Home masthead polish, 1920px and up (wide-screens-4k-handoff.md 2.4) ---------- */
+@media (min-width: 1920px) {
+    .pub .bs-masthead {
+        grid-template-columns: minmax(480px, 1fr) minmax(0, auto);
+        grid-template-rows: auto auto;
+        align-items: center;
+        row-gap: 0;
+        padding: 18px 0 0;
+        border-bottom: 0;
+    }
+    /* 2: greeting smaller; date and Refresh share a line. */
+    .pub .bs-masthead > .bs-title {
+        grid-template-areas: 'date refresh' 'greeting greeting';
+        grid-template-columns: auto 1fr;
+        gap: 4px 12px;
+        align-items: center;
+    }
+    .pub .bs-title__greeting {
+        font-size: 56px;
+        font-weight: 700;
+        letter-spacing: -0.015em;
+    }
+    .pub .bs-title .home-refresh {
+        justify-self: start;
+        min-height: 44px;
+        margin: 0;
+        padding: 0 10px;
+        border: 0;
+        border-radius: 8px;
+        background: color-mix(in srgb, var(--accent) 10%, transparent);
+        font-size: 13px;
+        position: relative;
+    }
+    .pub .bs-title .home-refresh::after {
+        /* Preserve the button footprint. */
+        content: '';
+        position: absolute;
+        inset: 0;
+    }
+    /* 3: weather to the right edge, tight. */
+    .pub .bs-masthead > .bs-glance {
+        grid-column: 2;
+        grid-row: 1;
+        justify-self: end;
+    }
+    .pub .bs-glance__periods {
+        grid-template-columns: repeat(4, minmax(0, 210px));
+    }
+    .pub .bs-glance__weather {
+        align-items: end;
+    }
+    /* 1: Live now becomes one line under the double rule. */
+    .pub .bs-masthead > .bs-live {
+        grid-column: 1 / -1;
+        grid-row: 2;
+        display: flex;
+        align-items: center;
+        gap: 0;
+        margin-top: 16px;
+        padding: 10px 0;
+        border: 0;
+        border-top: 4px double var(--text);
+        border-bottom: 1px solid var(--row-border);
+        border-radius: 0;
+        font-size: 14px;
+    }
+    .pub .bs-live .bs-ear__title {
+        order: 0;
+        margin: 0;
+        padding-right: 16px;
+        font-size: 12px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--live, #b0001e);
+    }
+    .pub .bs-live__list {
+        order: 1;
+        display: flex;
+        margin: 0;
+        padding: 0;
+    }
+    .pub .bs-live__list li {
+        padding: 0 16px;
+        border: 0;
+        border-left: 1px solid var(--row-border);
+    }
+    .pub .bs-live__list a {
+        display: flex;
+        gap: 6px;
+        white-space: nowrap;
+    }
+    .pub .bs-live__score {
+        font-weight: 700;
+    }
+    .pub .bs-live__clock {
+        color: var(--text-2);
+    }
+    .pub .bs-live__clock::before {
+        content: '· ';
+    }
+    .pub .bs-live__tonight {
+        order: 2;
+        display: flex;
+        gap: 6px;
+        padding: 0 16px;
+        border: 0;
+        border-left: 1px solid var(--row-border);
+        white-space: nowrap;
+    }
+    .pub .bs-live > .d-more {
+        order: 3;
+        margin-left: auto;
+    }
+    .pub .bs-live__list li:nth-child(n + 4) {
+        display: none;
+    } /* three games max on the line */
+}
+
+/* broadsheet.css, outside any media query: also used by the Coming up box below 1920 */
+.pub .bs-live__more {
+    color: var(--text-2);
+    font-weight: 400;
+    white-space: nowrap;
+}
+
+/* broadsheet.css: 4, the band goes from 1920 (the header has the search now) */
+@media (min-width: 1920px) {
+    .pub .bs-watch {
+        display: none;
+    }
+}
+
+/* ---------- Home columns polish (wide-screens-4k-handoff.md 2.4) ---------- */
+@media (min-width: 1920px) {
+    /* 7: one heading style for every column. */
+    .pub .bs-home .bs-sheet .bs-tonight .d-card__title {
+        font-family: inherit;
+        font-size: 13px;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+    }
+    .pub .bs-home .bs-sheet .bs-tonight .d-card__head {
+        border-bottom: 2px solid var(--text); /* the 1024px rule removed it; match the other columns */
+    }
+    /* 5: the top story: photo on top, headline under it. */
+    :root .pub[data-page='home'] .bs-home .bs-sheet .d-lead__story {
+        display: flex;
+        flex-direction: column;
+    }
+    :root .pub[data-page='home'] .bs-home .bs-sheet .d-lead__image {
+        order: 0;
+        width: 100%;
+        height: auto;
+        aspect-ratio: 16 / 9;
+        margin: 0 0 14px;
+    }
+    :root .pub[data-page='home'] .bs-home .bs-sheet .d-lead__image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    :root .pub[data-page='home'] .bs-home .bs-sheet .d-lead__source {
+        order: 1;
+        margin: 0 0 6px;
+    }
+    :root .pub[data-page='home'] .bs-home .bs-sheet .d-lead__title {
+        order: 2;
+        font-size: 46px;
+        line-height: 1.06;
+    }
+    :root .pub[data-page='home'] .bs-home .bs-sheet .d-lead__summary {
+        order: 3;
+    }
+    :root .pub[data-page='home'] .bs-home .bs-sheet .d-lead__meta {
+        order: 4;
+    }
+    /* 6: the video headline stops competing. */
+    .pub .bs-home .bs-sheet .home-latest-video__title {
+        font-size: 20px;
+        line-height: 1.25;
+    }
+}
+@media (min-width: 2560px) {
+    /* 5 and 8: the top story takes the extra width; side columns never drop below 340px. Replaces 2.2's 2560 template. */
+    .pub .bs-sheet {
+        grid-template-columns: 300px minmax(0, 2.4fr) repeat(4, minmax(340px, 1fr));
+    }
+}
+
+@media (min-width: 1920px) {
+    .pub .bs-glance__weather {
+        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-areas: 'periods link';
+        gap: 16px;
+    }
+    .pub .bs-glance__weather > .d-more {
+        white-space: nowrap;
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
+    }
+    .pub .bs-masthead > .bs-glance {
+        align-self: center;
+        min-width: 0;
+    }
+    .pub .bs-live {
+        min-width: 0;
+    }
+    .pub .bs-live .d-empty {
+        order: 1;
+        margin: 0;
+    }
+    .pub .bs-live__list {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+    .pub .bs-live__list li {
+        flex: 1 1 0;
+        min-width: 0;
+    }
+    .pub .bs-live__list a {
+        min-height: 44px;
+        align-items: center;
+    }
+    .pub .bs-live__score,
+    .pub .bs-live__clock {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .pub .bs-live__tonight {
+        flex: 0 1 340px;
+        min-width: 0;
+        min-height: 44px;
+        align-items: center;
+    }
+    .pub .bs-live__kicker {
+        flex: 0 1 auto;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .pub .bs-live__show {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .pub .bs-live__more,
+    .pub .bs-live > .d-more,
+    .pub .bs-live .bs-ear__title {
+        flex-shrink: 0;
+    }
+    :root .pub[data-page='home'] .bs-home .bs-sheet .d-lead__story {
+        gap: 0;
+    }
+    :root .pub[data-page='home'] .bs-home .bs-sheet .d-lead__body {
+        display: contents;
+    }
+    :root .pub[data-page='home'] .bs-home .bs-sheet .d-lead__image {
+        max-height: none;
+        margin-top: 0;
+    }
+}
+
+@media (min-width: 1920px) {
+    /* Outrank the existing per-game grid and the photo classifier's headline rule. */
+    .pub .bs-masthead > .bs-live .bs-live__list li a {
+        display: flex;
+        flex-direction: row;
+        padding: 0;
+        border-top: 0;
+        align-items: center;
+        gap: 6px;
+        min-width: 0;
+        min-height: 44px;
+        white-space: nowrap;
+    }
+    :root .pub[data-page='home'] .bs-home .bs-sheet .d-lead__story[data-article-story] .d-lead__title {
+        font-size: 46px;
+        line-height: 1.06;
+    }
+}
+
+@media (min-width: 1920px) {
+    .pub .bs-home .bs-col--side .d-tv__body .d-vid__title {
+        display: block;
+        -webkit-line-clamp: unset;
+        overflow: visible;
+    }
+}
+
+@media (min-width: 1920px) {
+    .pub .bs-masthead > .bs-live .bs-live__tonight {
+        flex-direction: row;
+    }
+}
+
+.pub .bs-episodes-count {
+    display: none;
+}
+@media (min-width: 2560px) {
+    .pub .bs-home .bs-sheet .bs-col > .d-card:first-child .d-card__title {
+        font-size: 12px;
+        letter-spacing: 0.06em;
+        white-space: nowrap;
+    }
+    .pub .bs-home .bs-sheet .bs-col > .d-card:first-child .d-card__head > .d-more {
+        font-size: 12px;
+    }
+    .pub .bs-home .d-episodes .d-card__title .d-card__count {
+        display: none;
+    }
+    .pub .bs-episodes-count {
+        display: block;
+        margin: 8px 0;
+        color: var(--text-2);
+        font-size: 12px;
+    }
+}
+
+@media (min-width: 1920px) {
+    .pub .bs-masthead > .bs-live .bs-live__kicker {
+        flex: 0 0 auto;
+        max-width: 150px;
+    }
+}

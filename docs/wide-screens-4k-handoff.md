@@ -107,3 +107,39 @@ no-JavaScript Refresh/folds. Desktop checks stress a longer greeting and four lo
 forecast summaries by changing only the test DOM. Live and preview results and
 limits are recorded in release history; screenshots/logs remain in ignored
 `test-results/browser/home-masthead-*` directories.
+
+## Home polish from the second revised handoff
+
+The second revision replaces the wide masthead's tall Live now/Coming up box with
+a single line below the double rule. At most three games are shown; score and
+status share one row. Long game/show text stays inside its allotted width, with
+links to the complete scoreboard/TV listing. The greeting is 56px/700 and Refresh
+shares the date row, retaining a real 44px target. The weather stays against the
+right edge, with the Kansas City link beside its four periods.
+
+A new public-header Where to watch form appears from 1920px, except on `/watch`,
+which already has its own search. It uses a normal GET and works without JavaScript.
+The Home search band is hidden only at wide widths. The lead photo/placeholder is
+above its 46px headline in a 16:9 frame, including after the existing photo classifier
+runs. The latest-video headline is 20px. From 2560px the Home grid uses a 300px first
+column, a 2.4fr lead column and four side columns at least 340px wide. Primary labels
+use a consistent 12px style at that width to fit on one line; the episode count moves
+just below its heading. TV series titles wrap in full rather than being clamped.
+
+`HomeTonightSummary` groups by show ID (series-name fallback for unknown IDs). A
+single show keeps its platform and adds an episode count for batches; multiple
+shows use `+ N more` and omit the first show's platform. No episodes means no link.
+This also updates the smaller desktop Coming up box. Four rendering tests cover
+empty/single/batch/multiple-show cases and encoded titles. No data/query/schema or
+collector changes are required.
+
+The existing masthead browser test now also checks the header search's real GET
+submission and absence on Watch, another five public routes, single-row ticker
+geometry, a test-only long show-title fixture, all six single-line column headings,
+the lead image position/ratio, and the 46px headline after classification. Preview
+and live matrices use the same required phone/tablet/wide widths and themes; release
+history records actual outcomes and remaining device/browser limits.
+
+The new header search placeholder uses the theme’s secondary text color at full
+opacity, including dark mode. Its final contrast check repeats required phone
+widths and representative desktop/4K widths in light and dark.

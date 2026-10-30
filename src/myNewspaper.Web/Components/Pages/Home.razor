@@ -72,13 +72,7 @@
                     </li>
                 }
             </ul>
-            @if (episodes.FirstOrDefault() is { } next)
-            {
-                <a class="bs-live__tonight" href="tv">
-                    <span class="bs-live__kicker">New tonight@(next.StartsUtc is { } time ? " · " + Dates.Time(time) : "")@(next.Platform is { } platform ? " · " + platform : "")</span>
-                    <span class="bs-live__show">@next.SeriesTitle</span>
-                </a>
-            }
+            <HomeTonightSummary Episodes="episodes" />
         </section>
     </div>
 
@@ -246,6 +240,7 @@
                     <h2 class="d-card__title" id="h-tv">Today’s episodes <span class="d-card__count">@episodes.Count @(episodes.Count == 1 ? "episode" : "episodes")</span></h2>
                     <a class="d-more" href="tv">View calendar <span aria-hidden="true">→</span></a>
                 </div>
+                <p class="bs-episodes-count">@episodes.Count @(episodes.Count == 1 ? "episode" : "episodes")</p>
                 @if (episodes.Count == 0)
                 {
                     <p class="d-empty">No new episodes from followed series today.</p>

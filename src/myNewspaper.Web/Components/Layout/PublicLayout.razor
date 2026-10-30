@@ -70,6 +70,15 @@
             <a href="videos" aria-current="@(onVideos ? "page" : null)">YouTube</a>
         </nav>
 
+        @if (!onWatch)
+        {
+            <form method="get" action="watch" class="header-watch" role="search" aria-label="Where to watch search">
+                <label class="sr-only" for="header-watch-query">Movie or TV title</label>
+                <input id="header-watch-query" name="q" type="search" maxlength="120" placeholder="Where to watch: search a movie or TV show…" required />
+                <button type="submit">Search</button>
+            </form>
+        }
+
         <time class="header-clock" data-header-clock hidden aria-live="off">
             <span class="header-clock__date" data-clock-date></span>
             <span class="header-clock__date-compact" data-clock-date-compact></span>
