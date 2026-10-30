@@ -740,3 +740,36 @@ and keys were preserved. Live checks passed all seven widths in light/dark, incl
 TV links worked at 390/1440px. Live screenshots were inspected; both HTTPS health
 endpoints returned 200. The temporary test profile was removed. See release
 history for rollback and deployment evidence.
+
+### Mobile header theme toggle — October 30, 2026
+
+Exposed the existing sun/moon theme button immediately beside Saved in the mobile
+header, using the same outlined 44px treatment as Saved and Menu. The existing
+JavaScript keeps both header/menu toggle labels, icons and pressed state in sync,
+and retains the selected theme across refresh and navigation. Desktop order is
+unchanged. Narrow-phone spacing accommodates long weekday/date and time labels.
+If an admin also has the Requests action, narrow screens place the clock on a
+second row; the menu sheet fills the remaining viewport below the actual header.
+
+Preview checks passed 320/390/430/820/1024/1440px light/dark: switching both ways,
+correct icon/accessible label/pressed state, refresh/navigation persistence,
+44px mobile controls, Saved navigation, Menu/Escape, long Wednesday/date and
+12:59 PM CDT clock labels, and no overflow. Representative phone screenshots were
+inspected. An injected admin Requests notification fixture passed 320/390/430px
+light/dark with no overlapping controls and a correctly sized menu sheet. Without
+JavaScript, native Menu and Saved links still work; theme switching requires
+JavaScript, as it did previously. Build passed with zero warnings/errors; changed
+CSS formatting and whitespace checks passed. Evidence:
+`test-results/browser/mobile-theme/` and `/tmp/mobile-theme-*.log`.
+Physical-device and Safari checks were unavailable. Deployed public image
+`mynewspaper-web:mobile-theme-20261030` (`ba56cac5113b`); runtime settings and
+persistent keys were preserved. Final HTTPS checks passed at 320/390/430/820/1024/1440px in light/dark.
+Every toggle saved successfully to the temporary profile; icons, labels and
+pressed state matched. Preferences survived refresh and navigation, and toggling
+still worked after enhanced navigation. Long clock labels, Saved/Menu/Escape,
+44px mobile controls and no overflow passed. The injected Requests fixture also
+passed 320/390/430px light/dark, including menu geometry. Native no-JavaScript
+Menu/Saved navigation worked. Representative live screenshots were inspected.
+Both HTTPS health endpoints returned 200, the public container is healthy and
+startup league-phase checks ran without application errors. The temporary profile
+and workspace hostname mapping were removed after verification.

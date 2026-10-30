@@ -1396,7 +1396,7 @@
 }
 
 /* ---------- Site header, as in the approved concepts ---------- */
-/* Phones and tablets: a coloured bar with the page mark, the date and time, Saved and a Menu button. The menu is a
+/* Phones and tablets: a coloured bar with the page mark, the date and time, Saved, a theme toggle and a Menu button. The menu is a
    native disclosure that opens a full-height sheet of every section below the bar. The header keeps this bar up to
    1023px even though page layouts switch to desktop at 1024px (iPad portrait): seven section links and the actions do
    not fit in one row below 1024px. */
@@ -1417,10 +1417,6 @@
         .pub
         .header-actions
         > .settings-link,
-    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
-        .pub
-        .header-actions
-        > .theme-toggle,
     :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
         .pub
         .header-actions
@@ -1462,7 +1458,11 @@
         gap: 8px;
         margin-left: auto;
     }
-    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme])) .pub .saved-link {
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme])) .pub .saved-link,
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+        .pub
+        .header-actions
+        > .theme-toggle {
         position: relative;
         display: grid;
         place-items: center;
@@ -1471,6 +1471,16 @@
         border: 1px solid var(--header-line);
         border-radius: 10px;
         color: var(--header-fg);
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+        .pub
+        .header-actions
+        > .theme-toggle {
+        background: transparent;
+        order: -1;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme])) .pub .saved-link {
+        order: -2;
     }
     :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
         .pub
@@ -1522,7 +1532,7 @@
         top: 100%;
         left: 0;
         right: 0;
-        height: calc(100dvh - 64px);
+        height: calc(100dvh - 100%);
         overflow-y: auto;
         overscroll-behavior: contain;
         gap: 0;
@@ -1797,4 +1807,39 @@
     width: 28px;
     height: 28px;
     margin-block: 3px;
+}
+
+/* Keep three 44px header actions and the date/time readable on narrow phones. */
+@media (max-width: 374px) {
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme])) .pub .site-header {
+        gap: 2px;
+        padding-inline: 6px;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme])) .pub .header-actions {
+        gap: 4px;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+        .pub
+        .header-clock__date-compact {
+        font-size: 12px;
+    }
+}
+
+/* An admin's extra Requests action gets a second clock row on narrow phones. */
+@media (max-width: 429px) {
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+        .pub
+        .site-header:has(.requests-link) {
+        flex-wrap: wrap;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+        .pub
+        .site-header:has(.requests-link)
+        .header-clock {
+        order: 1;
+        flex-basis: 100%;
+        flex-direction: row;
+        justify-content: center;
+        gap: 8px;
+    }
 }

@@ -6,6 +6,46 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
+## Mobile header light/dark toggle — October 30, 2026 (Central)
+
+The existing sun/moon theme button now appears immediately beside Saved in the
+mobile header, with the same outlined 44px treatment as Saved/Menu. It uses the
+existing theme behavior and profile persistence. Narrow-phone spacing fits long
+dates/times; an admin Requests notification moves the clock to a second row at
+narrow widths. The menu sheet fits below the actual header height. Desktop action
+order and theme behavior are unchanged.
+
+Deployed public image `mynewspaper-web:mobile-theme-20261030` (`ba56cac5113b`)
+to `mynewsfeed-web`. Runtime environment, health check, ports, network, restart
+policy and persistent keys were preserved. Admin was not rebuilt. No migration
+or collector change ran. Rollback image/container:
+`mynewspaper-web:before-mobile-theme-20261030` (`d375ffdbd724`) /
+`mynewsfeed-web-before-mobile-theme-20261030`.
+
+Public build and Docker publish/static-asset guard passed; changed CSS formatting
+and whitespace checks passed. Preview checks covered 320/390/430/820/1024/1440px
+light/dark: switching both directions, sun/moon icons, accessible labels/pressed
+state, 44px mobile targets, Saved and Menu/Escape, refresh/navigation persistence,
+long Wednesday/date/time fit and no overflow. An injected admin Requests fixture
+also passed 320/390/430px light/dark without overlapping controls and with the
+menu aligned to the viewport. Native Saved/Menu work without JavaScript; theme
+switching requires JavaScript, as before. Screenshots were inspected.
+
+Final HTTPS checks passed at 320/390/430/820/1024/1440px in light/dark.
+Every toggle saved successfully to the temporary profile; icons, labels and
+pressed state matched. Preferences survived refresh and navigation, and toggling
+still worked after enhanced navigation. Long clock labels, Saved/Menu/Escape,
+44px mobile controls and no overflow passed. The injected Requests fixture also
+passed 320/390/430px light/dark, including menu geometry. Native no-JavaScript
+Menu/Saved navigation worked. Representative live screenshots were inspected.
+Both HTTPS health endpoints returned 200, the public container is healthy and
+startup league-phase checks ran without application errors. The temporary profile
+and workspace hostname mapping were removed after verification.
+
+Evidence: `test-results/browser/mobile-theme/` and `/tmp/mobile-theme-*.log`.
+Physical-device and Safari checks were unavailable. Commit remains local on
+`develop`.
+
 ## Homepage New Tonight in Coming up — October 30, 2026 (Central)
 
 Moved the masthead's New Tonight episode teaser below the games in the Coming up /
