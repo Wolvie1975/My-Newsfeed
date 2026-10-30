@@ -8267,3 +8267,25 @@
         text-overflow: ellipsis;
     }
 }
+
+/* ---------- 1920px and up: the page fills the screen; pages add columns (wide-screens-4k-handoff.md) ---------- */
+@media (min-width: 1920px) {
+    .pub {
+        --page-max: 100%;
+        --page-pad: 56px;
+    }
+    .pub .videos {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+}
+@media (min-width: 2560px) {
+    .pub .videos {
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+    }
+}
+/* 4K at 100% and TVs: reuse the 2560 layout, 25% larger. 3200 / 1.25 = 2560, so the 2560 rules always fit. */
+@media (min-width: 3200px) {
+    .pub {
+        zoom: 1.25;
+    }
+}

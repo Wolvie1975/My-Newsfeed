@@ -2029,3 +2029,79 @@ body:has([data-scheme-dialog][open]) {
     padding: 8px 0;
     text-align: left;
 }
+
+/* ---------- Home, 1920px and up: one sheet of columns (wide-screens-4k-handoff.md) ---------- */
+@media (min-width: 1920px) {
+    .pub .bs-sheet {
+        display: grid;
+        grid-template-columns: minmax(300px, 1fr) minmax(0, 2fr) minmax(300px, 1fr) minmax(300px, 1fr);
+        padding-top: 20px;
+    }
+    .pub .bs-sheet .bs-front,
+    .pub .bs-sheet .bs-more {
+        display: contents; /* their .bs-col children become the sheet's columns */
+    }
+    /* Every column is ruled on its left except the first; the existing :first-child / + rules don't work across the two wrappers. */
+    .pub .bs-sheet .bs-col {
+        padding: 0 22px;
+        border-left: 1px solid var(--row-border);
+    }
+    .pub .bs-sheet .bs-front > .bs-col--left {
+        padding-left: 0;
+        border-left: 0;
+    }
+    .pub .bs-sheet .bs-more > .bs-col--left {
+        grid-column: 4;
+        grid-row: 1;
+    }
+    .pub .bs-sheet .bs-band {
+        grid-column: 1 / -1;
+        grid-row: 2;
+    }
+    .pub .bs-sheet .bs-more > .bs-col--main {
+        grid-column: 1 / span 2;
+        grid-row: 3;
+        padding-left: 0;
+        border-left: 0;
+    }
+    .pub .bs-sheet .bs-more > .bs-col--side {
+        grid-column: 3 / span 2;
+        grid-row: 3;
+    }
+}
+@media (min-width: 2560px) {
+    .pub .bs-sheet {
+        grid-template-columns: 320px minmax(0, 2fr) repeat(4, minmax(320px, 1fr));
+    }
+    .pub .bs-sheet .bs-band {
+        display: none;
+    }
+    .pub .bs-sheet .bs-more > .bs-col--left {
+        grid-column: 4;
+        grid-row: 1;
+    }
+    .pub .bs-sheet .bs-more > .bs-col--main {
+        grid-column: 5;
+        grid-row: 1;
+        padding-left: 22px;
+        border-left: 1px solid var(--row-border);
+    }
+    .pub .bs-sheet .bs-more > .bs-col--side {
+        grid-column: 6;
+        grid-row: 1;
+    }
+}
+
+/* The desktop masthead has its own higher-specificity padding rule. */
+@media (min-width: 1920px) {
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme])) .pub .site-header {
+        padding-left: var(--page-pad);
+        padding-right: var(--page-pad);
+    }
+}
+@media (min-width: 2560px) {
+    /* The fifth sheet column is a narrow desk, rather than the wide lead column. */
+    .pub .bs-home .bs-more > .bs-col--main .d-headline-shelf__list {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}

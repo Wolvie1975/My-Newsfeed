@@ -285,3 +285,22 @@
         display: block;
     }
 }
+
+/* ---------- All headlines, 1920px and up (wide-screens-4k-handoff.md) ---------- */
+@media (min-width: 1920px) {
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .hc-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .hc-top {
+        grid-template-columns: minmax(0, 2fr) minmax(0, 1.1fr);
+        gap: 32px;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .hc-feed .hc-lead .hc-card .title {
+        font-size: 40px;
+    }
+}
+@media (min-width: 2560px) {
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .hc-grid {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+}

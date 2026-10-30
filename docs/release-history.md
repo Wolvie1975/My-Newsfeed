@@ -6,6 +6,73 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
+## Wide screens and 4K — October 30, 2026 (Central)
+
+The public reader fills the viewport from 1920 CSS px with 56px edges. Home adds
+its fourth column at 1920px and puts all six columns together at 2560px. News,
+Sports and Entertainment side sections share the extra width; headline/video
+grids add columns. At 3200px and above the reader shell scales by 1.25. The header
+padding override, YouTube selector specificity and narrow Home Entertainment list
+were adjusted after source/screenshot review. Optional YouTube sidebar/channel-tab
+work and the absent Jump to component are excluded. Admin's separate shell is
+unchanged. See [implementation notes](wide-screens-4k-handoff.md).
+
+Solution build passed with zero warnings/errors, all five JavaScript unit tests
+passed, repository-wide formatting and changed-browser-test ESLint passed. The
+full .NET run passed 1,038 of 1,040 tests. Two unchanged profile tests expect empty
+settings, but new profiles inherit the configured database's nonempty base edition:
+ProfileHttpTests.Opening_a_profile_checks_the_pin_and_antiforgery_and_gives_it_its_own_saved_list
+and ProfileDataTests.Settings_patch_by_key_and_the_browser_import_happens_once.
+No household preferences were cleared to satisfy these assertions. Repository-wide
+ESLint already reported 258 errors in unchanged JavaScript before implementation;
+those remain outside this CSS/Razor release.
+
+Preview checks passed Home columns, phone headlines, YouTube categories, phone
+fronts and phone life interactions. Preview/live wide-screen checks covered Home,
+News, Sports, Entertainment, All headlines and YouTube at 320/390/430/768/1024/1280/
+1440/1920/2560/3200/3840px, light/dark, with no horizontal overflow. Wide Home column
+placement/band visibility, header/page edges, headline/video column counts and 4K
+sticky header/share dialog geometry passed. Wide secondary-page overflow checks
+passed for Where to watch, Scoreboard, Standings, Movies, TV, Saved and Settings.
+Monochrome/Cardinals at 2560px were also checked through saved preferences; reviewed
+screenshots show visible column rules. Live headline interactions passed three
+schemes, phone widths, saved preferences and no-JavaScript/tablet/desktop checks.
+Corrected live phone-front/life reruns passed 320/390/430px in Kansas light/dark,
+including 44px targets, contrast, folds/menus, date/filter controls, save/share,
+watch dialogs/search/sort, refresh and saved-preference persistence, empty states,
+no-JavaScript paths and retained 1024/1280/1440 layouts. Their preview runs covered
+all three schemes. Live headline checks covered all three schemes separately.
+
+The first live phone-front interaction run exposed a test race: its fixed 900ms
+wait could reload before the settings PUT completed. The phone-front/life helpers
+now await the actual successful save response. Their temporary-profile setup also
+uses the existing Admin hydration retry for creation and deletion. Initial runs
+needed manual removal of their own temporary profiles; corrected cleanup was
+verified separately. The superseded pre-fix run was stopped. These are test-harness
+corrections; no application code was changed after the release image was built.
+All temporary profiles from this release were removed; the final Admin check
+found none remaining. The older YouTube
+category suite requires a profiles-disabled preview; live YouTube is covered by
+the profile-aware wide-screen and phone-life checks.
+
+Deployed public image mynewspaper-web:wide-20261030 (c34ccf4053df), container
+ba5c65ffed3e. The original environment, key mount, ports, restart policy, health
+check, network and aliases were preserved from the actual runtime configuration.
+Database remains sql2025 / WebScraper; no migrations or collector changes were
+needed. Both public/admin HTTPS health endpoints returned 200; both containers
+are healthy. No fail/critical startup entries were observed; league-phase checks
+reported regular-season confirmations. All four deployed stylesheet hashes match
+the working tree. Admin image remains 4e1a75444c26.
+Rollback image mynewspaper-web:before-wide-20261030 and stopped container
+mynewsfeed-web-before-wide-20261030 retain the previous public image 118925ff2fe6.
+
+Evidence: test-results/browser/wide-preview-wide/, wide-live-wide/,
+wide-live-schemes/, wide-live-phone/, wide-live-fronts/ and wide-live-life/.
+Validation logs are retained under test-results/browser/wide-release/.
+Screenshots were reviewed. Verification uses Chromium emulation; physical devices,
+Safari and Firefox were unavailable. Content height is variable; six columns do
+not guarantee that every section fits above the fold.
+
 ## College daily featured game — October 30, 2026 (Central)
 
 Replaced the phone/tablet Game of the week selection with Today's featured game.

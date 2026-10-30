@@ -50,10 +50,16 @@ const PERSONAL = 'mynewsfeed-personal-v1';
     const visit = async (page, path, settings = {}) => {
         await page.goto(base + path, { waitUntil: 'networkidle' });
         if (!profiles || !Object.keys(settings).length) return;
+        const saved = page.waitForResponse(
+            (response) =>
+                new URL(response.url()).pathname === '/api/me/settings' && response.request().method() === 'PUT',
+        );
         await page.evaluate((s) => {
             for (const [k, v] of Object.entries(s)) window.myNewspaperPrefs.setItem(k, v);
         }, settings);
-        await page.waitForTimeout(900);
+        const response = await saved;
+        assert.equal(response.status(), 200, 'Profile settings save completes before reload');
+        await response.finished();
         await page.reload({ waitUntil: 'networkidle' });
     };
     const look = (scheme, theme) => ({
@@ -70,7 +76,15 @@ const PERSONAL = 'mynewsfeed-personal-v1';
             await admin.waitForURL('**/admin/profiles');
             await admin.waitForLoadState('networkidle');
             const name = 'zz Fronts ' + Date.now().toString(36);
-            await admin.getByRole('button', { name: 'Add profile', exact: true }).first().click();
+            // Admin can finish its interactive circuit after the server-rendered button appears.
+            for (let attempt = 0; attempt < 12 && !(await admin.locator('#add-name').isVisible()); attempt++) {
+                await admin.getByRole('button', { name: 'Add profile', exact: true }).first().click();
+                try {
+                    await admin.locator('#add-name').waitFor({ state: 'visible', timeout: 1500 });
+                } catch {
+                    if (attempt === 11) throw new Error('Admin Add profile did not become interactive');
+                }
+            }
             await admin.locator('#add-name').fill(name);
             await admin.locator('#add-pin').fill('3691');
             await admin.locator('#add-confirm').fill('3691');
@@ -83,7 +97,7 @@ const PERSONAL = 'mynewsfeed-personal-v1';
             );
             const context = await browser.newContext({ viewport: { width: 390, height: 900 } });
             const p = await context.newPage();
-            await p.goto(base + '/sports');
+            await p.goto(base + '/sports', { waitUntil: 'domcontentloaded' });
             await p.locator(`form[action="profiles/${id}/open"]`).getByRole('button').click();
             await p.keyboard.type('3691');
             await p.waitForURL('**/sports');
@@ -279,10 +293,19 @@ const PERSONAL = 'mynewsfeed-personal-v1';
             try {
                 await admin.goto(adminBase + '/admin/profiles/' + id);
                 await admin.waitForLoadState('networkidle');
-                await admin.getByRole('button', { name: 'Delete profile…' }).click();
-                await admin.getByRole('button', { name: 'Delete profile', exact: true }).click();
+                const confirm = admin.getByRole('button', { name: 'Delete profile', exact: true });
+                for (let attempt = 0; attempt < 12 && !(await confirm.isVisible()); attempt++) {
+                    await admin.getByRole('button', { name: 'Delete profile…' }).click();
+                    try {
+                        await confirm.waitFor({ state: 'visible', timeout: 1500 });
+                    } catch {
+                        // Retry while the admin circuit becomes interactive.
+                    }
+                }
+                await confirm.click();
                 await admin.waitForURL('**/admin/profiles?deleted=*');
             } catch (e) {
+                process.exitCode = 1;
                 console.error(
                     `Could not delete the throwaway profile ${id}; remove it in Admin · Profiles. ${e.message}`,
                 );
