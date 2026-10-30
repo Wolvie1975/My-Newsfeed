@@ -425,9 +425,12 @@
 }
 .pub .bs-glance__weather {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: center;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
     gap: 8px;
+}
+.pub .bs-glance__weather > .d-more {
+    justify-self: start;
 }
 .pub .bs-glance__periods {
     display: grid;
@@ -820,9 +823,9 @@
         font-weight: 700;
     }
     .pub .bs-glance__weather {
-        grid-template-columns: minmax(0, 1fr) auto;
-        align-items: end;
-        gap: 10px 16px;
+        grid-template-columns: minmax(0, 1fr);
+        align-items: start;
+        gap: 10px;
     }
     .pub .bs-glance__periods {
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1169,16 +1172,6 @@
         min-width: 0;
     }
 }
-/* Below 1440px the forecast ear is too narrow for the periods and the Kansas City link side by side ("Thunderstorms"
-   ran under the link at 1024px): the link moves under the periods. */
-@media (min-width: 1024px) and (max-width: 1439px) {
-    .pub .bs-glance__weather {
-        grid-template-columns: minmax(0, 1fr);
-    }
-    .pub .bs-glance__weather .d-more {
-        justify-self: end;
-    }
-}
 .pub .tt-team .team-record {
     white-space: nowrap;
 }
@@ -1207,9 +1200,6 @@
     }
     .pub .bs-glance__weather {
         grid-template-columns: minmax(0, 1fr);
-    }
-    .pub .bs-glance__weather .d-more {
-        justify-self: end;
     }
 }
 @media (max-width: 599px) {

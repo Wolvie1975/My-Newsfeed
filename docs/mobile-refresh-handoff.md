@@ -639,4 +639,21 @@ these edits while checking the Rankings page at 320/390/430/744/768/820/834/1023
 1024/1280/1440px light/dark, menus, folds and overflow. That supplies local rendered
 verification; the focused integration test checks the exclusion itself. Real-device
 checks were unavailable. This change was excluded from the deployed iPad image and
-has not subsequently been deployed; production verification remains outstanding.
+is now included in the masthead-links deployment; production verification is
+recorded in the release history.
+
+### Homepage masthead links — October 29, 2026 (Central)
+
+Moved Kansas City immediately below the weather heading and Scoreboard immediately
+below Live now/Coming up. The forecast uses a single full-width parent column,
+with its existing two-by-two desktop period grid. Obsolete link-side-column rules
+were removed. Public build passed with zero warnings/errors; CSS Prettier and diff
+whitespace checks passed. Actual preview checks passed at 320/390/430/768/820/834/
+1024/1280/1440/1817/1920px light/dark: no horizontal overflow, existing phone/iPad
+layout visibility, desktop heading/link/content order, left alignment, 44px links
+and full forecast width. Both links opened the correct pages with and without
+JavaScript; refresh retained the theme. Desktop masthead and representative phone
+screenshots were inspected under `test-results/browser/masthead-links/` (ignored).
+Preview used profiles/background jobs disabled and blocked third-party images;
+local fonts/scripts loaded. Physical-device testing was unavailable. Deployment
+and live verification are recorded in the release history.

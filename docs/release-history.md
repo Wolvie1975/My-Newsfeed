@@ -6,6 +6,48 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
+## Homepage masthead link placement — October 29, 2026 (Central)
+
+Public image `mynewspaper-web:masthead-links-20261029` (`41e524538773`)
+is deployed to `mynewsfeed-web`. Kansas City now appears immediately below the
+weather heading; Scoreboard appears below Live now/Coming up. The forecast's parent
+grid uses one full-width column, retaining the two-by-two desktop periods without
+a side column reserved for the link. Mobile/iPad content remains the existing
+mobile version below 1024px. This release also includes committed ranking-source
+exclusion `d8d5236`, whose 13 focused ranking tests passed before its commit.
+
+Runtime environment, port bindings, network, restart policy, health check and the
+persistent key volume were preserved. The database connection remains sql2025 /
+WebScraper. No schema scripts or migrations ran. Admin was not rebuilt or replaced.
+Rollback: `mynewspaper-web:before-masthead-links-20261029` (`0e7f428fb1ad`)
+and stopped container `mynewsfeed-web-before-masthead-links-20261029` retain the
+preceding public release.
+
+Local public build passed with zero warnings/errors. Changed CSS/docs passed
+Prettier and whitespace checks. Docker publish and its Blazor static-asset guard
+passed. Preview checks passed at 320/390/430/768/820/834/1024/1280/1440/1817/1920px
+light/dark for overflow, mobile content visibility, desktop heading/link/content
+order, left alignment, 44px link targets and full forecast width. Both links
+navigated with and without JavaScript; refresh retained the theme. Desktop masthead
+and representative phone screenshots were inspected.
+
+Post-deployment checks passed against the actual HTTPS site with a disposable
+signed-in profile at all 11 widths in light/dark. Assertions checked the links
+below their headings and above their content, left alignment, 44px targets, full
+forecast width, mobile/iPad rendering and no horizontal overflow. Screenshots of
+the masthead and phone layouts were inspected. Refresh preserved the saved theme;
+both links navigated correctly with and without JavaScript. Ranking selectors
+excluded Women's Basketball. Authenticated smoke checks returned 200 for health,
+News, Events, Results (following its redirect), Standings, Rankings, Movies,
+digital Movies and box office. Both services were healthy, both production HTTPS
+health endpoints returned 200, and league-phase startup checks were observed.
+
+Evidence: `test-results/browser/live-masthead-links/` (ignored). The temporary
+profile was deleted; the workspace hostname mapping used for trusted production
+HTTPS checks was removed afterwards. Browser checks blocked third-party images,
+while local fonts/scripts loaded. Physical-device tests and full unrelated suites
+were not run. The commit remains local on `develop`; no push was made.
+
 ## iPad portrait uses the mobile version — October 29, 2026 (Central)
 
 Deployed public image `mynewspaper-web:ipad-mobile-20261029`
