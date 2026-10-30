@@ -449,8 +449,8 @@ Digital releases: Source select, the next rent-or-buy release (or the empty stat
 Fandango at Home), every remaining release in Coming soon to digital, and Still in theaters (biggest totals).
 
 Box office: View select (Results, Next weekend, Forecasts). Results shows No. 1 with openers, best hold and biggest
-drop tiles, the top five with gross bars scaled to No. 1 (the change is also written out), then folds for 6–10,
-biggest totals and next weekend. The two forecast views keep their single section under the ribbon.
+drop tiles, then one complete weekend chart with rank, title, gross and change labels, without gross bars or a
+separate 6–10 fold. Biggest totals and next weekend remain supplemental folds. The two forecast views keep their single section under the ribbon.
 
 Trending folds from the mockups are left out; they would need the live streaming-catalog API.
 

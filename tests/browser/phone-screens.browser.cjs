@@ -240,11 +240,13 @@ const routes = [
                 'Next week',
                 'TV week kept after reload',
             );
-            // Box office: No. 1, at most five chart rows with words for the change, View select.
+            // Box office: No. 1, the complete chart without bars, change labels and View select.
             await p.goto(base + '/box-office');
             const rows = p.locator('.mx-chart li');
             if (await rows.count()) {
-                assert((await rows.count()) <= 5);
+                assert.equal(await rows.count(), await p.locator('.bo-table tbody tr').count());
+                assert.equal(await p.locator('.mx-chart__bar').count(), 0);
+                assert.equal(await p.locator('details > summary').filter({ hasText: /^6–/ }).count(), 0);
                 assert.equal((await p.locator('.mx-phone .mx-number').textContent()).trim(), '1');
                 for (const change of await p.locator('.mx-chart__change').allTextContents())
                     assert.match(change, /from last weekend|Opening weekend|Change unavailable/);

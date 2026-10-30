@@ -73,7 +73,7 @@
 }
 </div>
 
-@* Phones: a ribbon with the View select on every view; Results also gets the folded chart (docs/mobile-refresh-handoff.md).
+@* Phones: a ribbon with the View select on every view; Results also gets the full chart (docs/mobile-refresh-handoff.md).
    The two forecast views keep their one section below the ribbon. *@
 <div class="mx-phone" data-phone-box-office>
     <PhoneRibbon Kicker="@Kicker" Title="Box office" Section="entertainment">
@@ -118,14 +118,13 @@
             <section class="mx-sport-list" aria-labelledby="box-office-top-m">
                 <div class="mx-head"><h2 id="box-office-top-m">@BoxOfficeChartQuery.WeekendLabel(top.WeekendStart)</h2></div>
                 <ol class="mx-chart">
-                    @foreach (var movie in movies.Take(5))
+                    @foreach (var movie in movies)
                     {
                         var change = BoxOfficeChartQuery.Change(movie.WeeklyChangePercent);
-                        <li style="--share: @(top.WeekendGross > 0 ? Math.Round(100m * movie.WeekendGross / top.WeekendGross).ToString(System.Globalization.CultureInfo.InvariantCulture) : "0")%">
+                        <li>
                             <span class="mx-chart__rank" aria-hidden="true">@movie.Rank</span>
                             <span class="mx-chart__title"><span class="sr-only">No. @movie.Rank, </span>@movie.Title@if (IsNew(movie)) { <span class="mx-chart__new">New</span> }</span>
                             <b class="mx-chart__gross">@BoxOfficeChartQuery.Compact(movie.WeekendGross)</b>
-                            <span class="mx-chart__bar" aria-hidden="true"></span>
                             <span class="mx-chart__change @(change.StartsWith('+') ? "mx-chart__change--up" : change.StartsWith('-') ? "mx-chart__change--down" : null)">@(change == "—" ? (IsNew(movie) ? "Opening weekend" : "Change unavailable") : change + " from last weekend")</span>
                         </li>
                     }
@@ -133,19 +132,8 @@
             </section>
 
             <FoldGroup Name="box-office-more" Heading="More from the weekend">
-                @if (movies.Count > 5)
-                {
-                    var rest = movies.Skip(5).ToList();
-                    <Fold Title="@($"6–{rest[^1].Rank}")" Color="mx-c-world" Open="true" AllHref="@top.SourceUrl" AllText="Full chart at The Numbers"
-                          Gist="@($"{rest[0].Title} {BoxOfficeChartQuery.Compact(rest[0].WeekendGross)} through {rest[^1].Title} {BoxOfficeChartQuery.Compact(rest[^1].WeekendGross)}")">
-                        @foreach (var movie in rest)
-                        {
-                            <div class="mx-fold__row"><span><b>@movie.Rank. @movie.Title</b><small>Total @BoxOfficeChartQuery.Compact(movie.TotalDomesticGross) · @BoxOfficeChartQuery.Change(movie.WeeklyChangePercent)</small></span><span class="mx-fold__value">@BoxOfficeChartQuery.Compact(movie.WeekendGross)</span></div>
-                        }
-                    </Fold>
-                }
                 @{ var totals = movies.OrderByDescending(m => m.TotalDomesticGross).Take(5).ToList(); }
-                <Fold Title="Biggest totals" Color="mx-c-business" Open="@(movies.Count <= 5)"
+                <Fold Title="Biggest totals" Color="mx-c-business" Open="true"
                       Gist="@string.Join(" · ", totals.Take(2).Select(m => $"{m.Title} {BoxOfficeChartQuery.Compact(m.TotalDomesticGross)}"))">
                     @foreach (var movie in totals)
                     {

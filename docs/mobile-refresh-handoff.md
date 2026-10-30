@@ -672,3 +672,22 @@ is running `mynewspaper-web:standings-logos-final-20261029` (`3e5afc6aa2ea`).
 Logs/screenshots are under `test-results/browser/standings-logos-live/` (ignored).
 A disposable profile was removed. Real-device checks were unavailable; release
 and rollback evidence are in the release history.
+
+### Complete box-office list without bars — October 29, 2026 (Central)
+
+The mobile/iPad Results chart renders all collected rows in one ordered list,
+without the blue gross bars or separate 6–10 fold. Numeric grosses, new-release
+badges and change labels remain. Two-digit ranks have additional column space.
+Desktop retains its full table. The existing browser regression now requires
+mobile/desktop row counts to match and asserts no bars or 6–10 disclosure.
+
+Public build passed with zero warnings/errors. CSS/browser-test formatting and
+diff whitespace checks passed. Actual preview checks covered
+320/390/430/768/820/834/1024/1440px light/dark with ten real chart entries: matching
+ranks/counts, all rows outside disclosures, rank-10 fit, titles clear of grosses,
+no horizontal overflow and desktop-table visibility. Screenshots were inspected.
+Refresh retained theme, View changed to Next weekend and back, and all entries
+remained available without JavaScript; the no-JavaScript View form opened Forecasts.
+Artifacts: `test-results/browser/full-boxoffice/` (ignored). Profiles/background
+jobs were disabled in preview. Physical-device and signed-in checks were not run.
+Deployment and production verification are recorded in the release history.

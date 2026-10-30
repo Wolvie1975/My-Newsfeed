@@ -6,6 +6,48 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
+## Complete box-office chart without bars — October 29, 2026 (Central)
+
+Deployed public image `mynewspaper-web:full-boxoffice-20261029`
+(`50431d7b01c5`) to `mynewsfeed-web`. Mobile/iPad weekend results now show
+all collected chart entries in one ordered list, without blue gross bars or a
+separate 6–10 disclosure. Weekend grosses, new-release badges and change labels
+remain, with extra rank-column space for two-digit places. Biggest totals and
+Next weekend remain supplemental sections; the desktop results table is unchanged.
+No database migrations or schema scripts ran. Runtime environment, ports, network,
+restart policy, health check and persistent key volume were preserved. The
+connection remains sql2025 / WebScraper. Admin was not rebuilt or replaced.
+
+Rollback: image `mynewspaper-web:before-full-boxoffice-20261029`
+(`3e5afc6aa2ea`) and stopped container
+`mynewsfeed-web-before-full-boxoffice-20261029` preserve the preceding release.
+
+Public build passed with zero warnings/errors. Docker publish and its static-asset
+guard passed. ESLint, changed-file Prettier and diff whitespace checks passed.
+Preview checks covered 320/390/430/768/820/834/1024/1440px light/dark with ten real
+entries: matching mobile/desktop ranks and counts, rows outside disclosures,
+absence of bars and the 6–10 fold, two-digit rank fit, no title/gross overlap,
+no horizontal overflow and desktop-table visibility. Refresh retained the theme;
+View navigated to Next weekend and back. Without JavaScript, the full chart stayed
+visible and the View form opened Forecasts. Screenshots were inspected.
+
+After deployment, all checks passed against the production HTTPS site using a
+disposable signed-in profile at all eight widths in light/dark. All ten chart
+entries were in one continuous list, matching desktop order; no bars or 6–10
+fold remained. Phone/iPad screenshots were inspected, including rank 10 spacing.
+Refresh retained the saved theme, View navigation worked to Next weekend and
+back, and the full list and Forecasts form worked without JavaScript. Authenticated
+smoke checks returned 200 for health, News, Events, Results (following its redirect),
+Standings, Rankings, Movies, digital Movies and box office. Both services were
+healthy, both production HTTPS health endpoints returned 200, and league-phase
+startup checks were observed.
+
+Artifacts: `test-results/browser/live-full-boxoffice/` (ignored). The temporary
+profile was removed, and the workspace hostname mapping used for certificate-verified
+HTTPS checks was removed afterwards. Physical-device checks and full unrelated
+application suites were not run. The commit remains local on `develop`; no push
+was made.
+
 ## Standings team logos and simpler rows — October 29, 2026 (Central)
 
 Deployed public image `mynewspaper-web:standings-logos-final-20261029`

@@ -1412,7 +1412,7 @@ span.mx-stepper__btn {
     width: 100%;
 }
 
-/* Box office: No. 1's weekend gross, and the top five with a bar scaled to No. 1 (the change is also in words). */
+/* Box office: the complete weekend chart, with changes shown in words. */
 .mx-gross {
     font-family: var(--mx-serif);
     font-size: 28px;
@@ -1426,7 +1426,7 @@ span.mx-stepper__btn {
 }
 .mx-chart li {
     display: grid;
-    grid-template-columns: 32px minmax(0, 1fr) auto;
+    grid-template-columns: 42px minmax(0, 1fr) auto;
     column-gap: 10px;
     row-gap: 4px;
     align-items: baseline;
@@ -1434,7 +1434,7 @@ span.mx-stepper__btn {
     border-bottom: 1px solid var(--row-border);
 }
 .mx-chart__rank {
-    grid-row: span 3;
+    grid-row: span 2;
     font-family: var(--mx-serif);
     font-size: 30px;
     font-weight: 800;
@@ -1461,12 +1461,6 @@ span.mx-stepper__btn {
 .mx-chart__gross {
     font-family: var(--mx-serif);
     font-size: 18px;
-}
-.mx-chart__bar {
-    grid-column: 2 / 4;
-    height: 6px;
-    border-radius: 3px;
-    background: linear-gradient(90deg, var(--mx-world) var(--share, 0%), var(--row-border) 0);
 }
 .mx-chart__change {
     grid-column: 2 / 4;
