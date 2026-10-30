@@ -31,6 +31,9 @@ public static class PhoneSports
         .OrderBy(g => Rank(g.SchoolName, poll) is > 0 && Rank(g.Opponent, poll) is > 0 ? 0 : 1)
         .ThenBy(g => Rank(g.SchoolName, poll) is { } a && Rank(g.Opponent, poll) is { } b ? a + b : Math.Min(Rank(g.SchoolName, poll) ?? int.MaxValue, Rank(g.Opponent, poll) ?? int.MaxValue))
         .ThenBy(g => g.EventDate).ThenBy(g => g.TimeTbd || g.StartsAtUtc is null).ThenBy(g => g.StartsAtUtc).ThenBy(g => g.Id).FirstOrDefault();
+    /// <summary>Apply the same matchup priority only within the site's current calendar date.</summary>
+    public static EventItem? FeaturedToday(IEnumerable<EventItem> games, IReadOnlyList<SportsRankingTeam> poll, DateOnly today) =>
+        Featured(games.Where(g => g.EventDate == today), poll);
     public static string Statistic(StandingTeam team, params string[] labels) =>
         team.Statistics.FirstOrDefault(s => labels.Contains(s.DisplayName, StringComparer.OrdinalIgnoreCase) || labels.Contains(s.Name, StringComparer.OrdinalIgnoreCase))?.DisplayValue ?? "—";
     public static bool IsSoccer(string? provider, string? sport) => provider is "espn-nwsl" or "espn-mls" or "espn-championship" or "espn-epl"

@@ -38,6 +38,31 @@ public class PhoneSportsTests
         Assert.Equal("BYU vs Utah", PhoneSports.Matchup(first with { IsNeutral = true }));
     }
 
+    [Fact]
+    public void Todays_feature_excludes_better_ranked_future_games_and_yesterday()
+    {
+        var today = new DateOnly(2026, 10, 28);
+        var current = Game(1, "Kansas", "TCU");
+        var nextWeek = Game(2, "Baylor", "Utah", 6);
+        var yesterday = Game(3, "Baylor", "Utah", -1);
+        var poll = new[] { Ranked("Baylor", 1), Ranked("Utah", 2) };
+        Assert.Equal(current, PhoneSports.FeaturedToday([nextWeek, yesterday, current], poll, today));
+        Assert.Null(PhoneSports.FeaturedToday([nextWeek, yesterday], poll, today));
+        Assert.Null(PhoneSports.FeaturedToday([], poll, today));
+    }
+
+    [Fact]
+    public void Todays_feature_uses_site_date_even_when_UTC_has_advanced_and_preserves_rank_priority()
+    {
+        var dates = FeedDates.Create("America/Chicago");
+        var today = dates.TodayAt(new DateTime(2026, 10, 29, 1, 0, 0, DateTimeKind.Utc));
+        Assert.Equal(new DateOnly(2026, 10, 28), today);
+        var lower = Game(1, "Kansas", "TCU");
+        var ranked = Game(2, "BYU", "Utah") with { StartsAtUtc = new DateTime(2026, 10, 29, 2, 0, 0, DateTimeKind.Utc) };
+        Assert.Equal(ranked, PhoneSports.FeaturedToday([lower, ranked, Game(3, "BYU", "Utah", 1)],
+            [Ranked("BYU", 6), Ranked("Utah", 7)], today));
+    }
+
     [Theory]
     [InlineData("4-0", 1d)]
     [InlineData("3-1", .75)]
@@ -159,19 +184,43 @@ public class PhoneSportsTests
     [Fact]
     public async Task College_with_one_game_and_no_poll_or_standings_has_no_fabricated_data_folds()
     {
-        var game = Game(1, "Kansas", "TCU");
+        var game = Game(1, "Kansas", "TCU") with { EventDate = FeedDates.Create("America/Chicago").Today };
         var html = await RenderSports<PhoneCollege>(new() { ["Events"] = new EventsPage([game], 1) });
         Assert.Contains("Kansas at TCU", html);
-        Assert.Contains("Game of the week", html);
+        Assert.Contains("Today’s featured game", System.Net.WebUtility.HtmlDecode(html));
         Assert.DoesNotContain("Big 12 standings", html);
         Assert.DoesNotContain("Big 12 in the Top 25", html);
+    }
+
+    [Fact]
+    public async Task College_with_only_future_games_keeps_weekly_schedule_without_featuring_a_future_game()
+    {
+        var game = Game(1, "Kansas", "TCU") with { EventDate = FeedDates.Create("America/Chicago").Today.AddDays(6) };
+        var html = await RenderSports<PhoneCollege>(new() { ["Events"] = new EventsPage([game], 1) });
+        Assert.Contains("No games today", html);
+        Assert.Contains("This week", html);
+        Assert.Contains("Kansas at TCU", html);
+        Assert.DoesNotContain("data-college-featured-day", html);
+    }
+
+    [Fact]
+    public async Task College_highlight_can_use_todays_games_when_viewing_a_later_weekly_page()
+    {
+        var today = FeedDates.Create("America/Chicago").Today;
+        var current = Game(1, "BYU", "Utah") with { EventDate = today };
+        var later = Game(2, "Kansas", "TCU") with { EventDate = today.AddDays(6) };
+        var html = await RenderSports<PhoneCollege>(new()
+        { ["Events"] = new EventsPage([later], 1), ["TodayGames"] = new[] { current }, ["Page"] = 1 });
+        Assert.Contains($"data-college-featured-day=\"{today:yyyy-MM-dd}\"", html);
+        Assert.Contains("BYU at Utah", html);
+        Assert.Contains("Kansas at TCU", html);
     }
 
     [Fact]
     public async Task Empty_college_and_disabled_F1_do_not_show_featured_content()
     {
         var college = await RenderSports<PhoneCollege>([]);
-        Assert.Contains("No upcoming games", college);
+        Assert.Contains("No games today", college);
         Assert.DoesNotContain("Game of the week", college);
         var f1 = await RenderSports<PhoneF1>([]);
         Assert.Contains("F1 data is not enabled", f1);

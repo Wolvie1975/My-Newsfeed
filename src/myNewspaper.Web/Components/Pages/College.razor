@@ -139,7 +139,7 @@ else
 }
 
 </div>
-@if (view == "schedule") { <PhoneCollege Selected="selected" Events="events" Poll="phonePoll" Leaders="leaders" Records="records" Error="error" UpdatedAt="updatedAt" Page="pageIndex" /> }
+@if (view == "schedule") { <PhoneCollege Selected="selected" Events="events" TodayGames="todayGames" Poll="phonePoll" Leaders="leaders" Records="records" Error="error" UpdatedAt="updatedAt" Page="pageIndex" /> }
 
 @code {
     [SupplyParameterFromQuery(Name = "sport")] private string? Sport { get; set; }
@@ -159,6 +159,7 @@ else
     private DateOnly resultDay;
     private IReadOnlyList<myNewspaper.Web.Data.Models.SportsRankingTeam> pollTeams = [];
     private string? pollName;
+    private IReadOnlyList<EventItem> todayGames = [];
     private RankingsPage phonePoll = new([], null, null, []);
     private StandingGroup? leaders;
     private string PageHref(int page) => CollegeHub.Href(view, selected) + "&page=" + page;
@@ -181,6 +182,10 @@ else
                 pageIndex = int.TryParse(Page, out var page) ? Math.Clamp(page, 0, 10000) : 0;
                 events = await EventsQuery.GetUpcomingAsync(db, Dates.Today, selected.StandingsSport, null,
                     provider: "big12", to: Dates.Today.AddDays(7), offset: pageIndex * EventsQuery.Limit);
+                // Paging the weekly schedule must not replace today's highlight with a later game.
+                todayGames = pageIndex == 0 ? events.Items
+                    : (await EventsQuery.GetUpcomingAsync(db, Dates.Today, selected.StandingsSport, null,
+                        provider: "big12", to: Dates.Today)).Items;
                 updatedAt = await db.SportsEvents.AsNoTracking().Where(e => e.ProviderKey == "big12" && e.Sport == selected.StandingsSport).MaxAsync(e => (DateTime?)e.LastSeenAt);
                 pageIndex = Math.Min(pageIndex, Math.Max(0, (events.Total - 1) / EventsQuery.Limit));
                 // Side column: Big 12 schools in the national poll and the conference leaders, when published.

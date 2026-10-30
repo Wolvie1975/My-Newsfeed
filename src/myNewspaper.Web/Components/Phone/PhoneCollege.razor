@@ -6,17 +6,17 @@
     @if (Error) { <p class="mx-note" role="status">College sports are temporarily unavailable. <a href="@CollegeHub.Href("schedule", Selected)">Try again</a></p> }
     else
     {
-        @if (PhoneSports.Featured(Events.Items, Poll.Teams) is { } game)
+        @if (PhoneSports.FeaturedToday(TodayGames ?? Events.Items, Poll.Teams, Dates.Today) is { } game)
         {
-            <section class="mx-block" aria-label="Game of the week">
-                <span class="mx-block__kicker">Game of the week · @Selected.Name</span><h2 class="mx-block__title">@PhoneSports.Matchup(game)</h2>
+            <section class="mx-block" aria-label="Today’s featured game" data-college-featured-day="@game.EventDate.ToString("yyyy-MM-dd")">
+                <span class="mx-block__kicker">Today’s featured game · @Selected.Name</span><h2 class="mx-block__title">@PhoneSports.Matchup(game)</h2>
                 <p class="mx-block__note">@TeamLine(game.SchoolName) · @TeamLine(game.Opponent)</p>
                 <p class="mx-race-time">@EventsText.TimeLabel(game, Dates)</p>
                 <p class="mx-block__note">@FeedDates.LongDate(game.EventDate) · @(game.Tv ?? "Broadcast to be announced")</p>
                 @if (FeedQuery.SafeHref(game.Url) is { } url) { <a class="mx-block__cta" href="@url" target="_blank" rel="noopener noreferrer">Game details →</a> }
             </section>
         }
-        else { <p class="mx-note">No upcoming games are available for this sport in the next seven days.</p> }
+        else { <p class="mx-note" role="status" data-college-no-games-today>No games today for @Selected.Name.</p> }
         @if (Events.Items.Count > 0)
         { <section class="mx-timeline" aria-label="This week's games"><div class="mx-timeline__top"><h2>This week</h2><span>@Selected.Name</span></div><ol>
             @foreach (var fixture in Events.Items.Take(6)) {
@@ -50,6 +50,7 @@
 @code {
     [Parameter] public CollegeSport Selected { get; set; } = CollegeHub.Sports[0];
     [Parameter] public EventsPage Events { get; set; } = new([], 0);
+    [Parameter] public IReadOnlyList<EventItem>? TodayGames { get; set; }
     [Parameter] public RankingsPage Poll { get; set; } = new([], null, null, []);
     [Parameter] public StandingGroup? Leaders { get; set; }
     [Parameter] public TeamRecords Records { get; set; } = TeamRecords.Empty;

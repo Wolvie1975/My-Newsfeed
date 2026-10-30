@@ -902,3 +902,44 @@ fail/critical startup entries observed. Runtime/keys preserved; Admin unchanged.
 Rollback tag `mynewspaper-web:before-video-actions-20261030` and stopped container
 `mynewsfeed-web-before-video-actions-20261030` retain previous image `fa00b619f79b`.
 Browser evidence: test-results/browser/video-actions/live.
+
+
+### Sports Media category — October 30, 2026
+
+Created Sports Media in the Sports hub through Admin and moved the existing
+Awful Announcing source into it. The existing category framework exposes
+/sports/news/category-7628 on desktop tabs and the mobile Sports headlines
+dropdown without an application deployment. Live Chromium passed 320, 390, 430,
+820, 1024 and 1440px, both themes, JS on/off, category navigation, populated
+headlines, correct category/publisher/source options and no horizontal overflow.
+Phone/desktop screenshots inspected; temporary test profiles deleted. Evidence:
+test-results/browser/sports-media/live. Physical devices/Safari unavailable.
+
+### College featured game is today only — October 30, 2026
+
+Changed the phone/tablet College Sports hero to Today's featured game. Candidates
+must have EventDate equal to the site's configured calendar date before the
+existing ranked-matchup preference is applied. It never falls back to a future
+game. If the selected sport has no games today, it says No games today and keeps
+the weekly schedule below. Later schedule pages load today's candidates separately
+so paging cannot promote next week's games or falsely remove today's highlight.
+Desktop weekly schedule remains unchanged.
+
+77 targeted PhoneSports/College tests passed, including ranked future exclusion,
+empty-day/future-only rendering, America/Chicago versus UTC date boundaries and
+independent daily candidates on later weekly pages. Preview Chromium passed 320,
+390, 430, 820, 1024 and 1440px, light/dark, JS on/off; all four college sports were
+checked at 390px. Verified actual hero date against the weekly schedule's current
+day, real no-games-today state, retained weekly content, 44px sport selector and
+no horizontal overflow. Phone/empty-state/desktop screenshots inspected; temporary
+profile deleted. Formatting, changed-test lint and diff checks passed. Evidence:
+test-results/browser/college-today/preview. Physical devices/Safari unavailable.
+Deployed public image `mynewspaper-web:college-today-20261030` (prefix
+`118925ff2fe6`). Live Chromium repeated the same widths/themes/JS modes and all
+four sports at 390px; passed today-date checks, real empty-day state and retained
+weekly content. Live phone/desktop screenshots inspected; temporary profile
+deleted. Both sites healthy, public HTTPS health 200, no fail/critical startup
+entries observed. Runtime settings and persistent keys preserved; Admin unchanged.
+Rollback tag `mynewspaper-web:before-college-today-20261030` and stopped container
+`mynewsfeed-web-before-college-today-20261030` retain previous image `1fac6e35369f`.
+Live evidence: test-results/browser/college-today/live.

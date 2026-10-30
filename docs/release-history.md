@@ -6,6 +6,48 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
+## College daily featured game — October 30, 2026 (Central)
+
+Replaced the phone/tablet Game of the week selection with Today's featured game.
+Only events on the site's configured calendar date are eligible; ranked-matchup
+priority is then applied within that day. No future fallback: an empty day shows
+No games today for the selected sport. Weekly schedule remains below. Later weekly
+pages load daily candidates independently. Desktop weekly schedule is unchanged.
+
+77 targeted PhoneSports/College tests passed, including future/past exclusion,
+rank priority, Chicago/UTC boundaries, empty-day rendering and later-page daily
+candidates. Preview/live Chromium passed 320, 390, 430, 820, 1024 and 1440px,
+light/dark, JS on/off; all four sports checked at 390px. Verified hero date against
+actual schedule groups, real basketball empty day, retained weekly content, 44px
+sport selector and no horizontal overflow. Phone/empty-state/desktop screenshots
+inspected; temporary profiles deleted. Release build, formatting, changed-test lint
+and diff checks passed. Physical devices/Safari unavailable.
+
+Deployed `mynewspaper-web:college-today-20261030` (prefix `118925ff2fe6`), preserving
+runtime configuration and keys. Rollback tag
+`mynewspaper-web:before-college-today-20261030` and stopped container
+`mynewsfeed-web-before-college-today-20261030` retain image `1fac6e35369f`.
+Both sites healthy; public HTTPS health 200; no fail/critical startup entries observed.
+Admin unchanged; no schema/collector changes. Evidence: test-results/browser/college-today/live.
+
+## Sports Media headline category — October 30, 2026 (Central)
+
+Admin configuration only: created Sports Media (category 7628) in the Sports hub
+and reassigned the existing enabled Awful Announcing source from General Sports
+(category 9). Its URL and collection settings were preserved. Existing collected
+headlines are immediately available at /sports/news/category-7628, via desktop
+tabs and the mobile dropdown. No application build, deployment or schema change
+was needed; both hosts read the shared category/source data.
+
+Live Chromium passed 320, 390, 430, 820, 1024 and 1440px, light/dark, JS on/off:
+category navigation/redirect, active category, Awful Announcing source filter,
+correct article categories/publishers and no horizontal overflow. Ten articles
+were observed during verification. Phone/desktop screenshots inspected; temporary
+verification profiles deleted. Evidence: test-results/browser/sports-media/live.
+Physical devices/Safari unavailable. Application unit tests are not applicable to
+this configuration-only change. To reverse, reassign the source to Sports before
+removing the then-unused category; do not delete the source or its articles.
+
 ## Latest video action alignment — October 30, 2026 (Central)
 
 Reset inherited Save margins and center the latest-video card's action row so
