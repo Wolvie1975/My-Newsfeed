@@ -21,7 +21,7 @@
         @if (leader is not null)
         {
             <section class="mx-block" aria-label="First place">
-                <span class="mx-block__kicker">@(Conferences ? "Most points" : "First in provider order") · @group.Name</span><h2 class="mx-block__title">@leader.Row.TeamName</h2>
+                <span class="mx-block__kicker">@(Conferences ? "Most points" : "First in provider order") · @group.Name</span><div class="mx-standing-leader"><PhoneStandingLogo Url="@leader.Row.LogoUrl" /><h2 class="mx-block__title">@leader.Row.TeamName</h2></div>
                 @if (Soccer) { <span class="mx-block__kicker">Points</span> }
                 <div class="mx-number mx-number--record">@PhoneSports.Primary(group, leader, Soccer)</div>
                 <p class="mx-block__note">@(Soccer ? PhoneSports.Secondary(group, leader, true) : string.Join(" · ", group.Columns.Skip(1).Select(c => $"{c.Label} {StandingsQuery.StatisticValue(leader, c.Name)}")))</p>
@@ -30,7 +30,7 @@
                     @foreach (var g in Data.Groups) { @foreach (var team in g.Teams) {
                         var game = Games.FirstOrDefault(e => TeamNames.Matches(e.SchoolName, team.Row.TeamName) || TeamNames.Matches(e.Opponent, team.Row.TeamName));
                         <div class="mx-tile" data-phone-team-only data-sports-teams="@SportsTeamPreferences.Keys(team.Row.TeamName)" hidden="@(!PhoneSports.Yours(yours, team.Row.TeamName))">
-                            <span class="mx-tile__label">@team.Row.TeamName · @(team.Row.Rank ?? team.Row.Position)</span><b class="mx-tile__value">@PhoneSports.Primary(g, team, Soccer)@(Soccer ? " pts" : "")</b>
+                            <span class="mx-tile__label mx-standing-name"><PhoneStandingLogo Url="@team.Row.LogoUrl" /><span>@team.Row.TeamName · @(team.Row.Rank ?? team.Row.Position)</span></span><b class="mx-tile__value">@PhoneSports.Primary(g, team, Soccer)@(Soccer ? " pts" : "")</b>
                             <span class="mx-tile__sub">@(Soccer ? PhoneSports.Secondary(g, team, true) : "Streak " + PhoneSports.Statistic(team, "Streak", "streak"))</span>
                             @if (game is not null) { <a class="mx-tile__sub mx-touch" href="@(FeedQuery.SafeHref(game.Url) ?? "events")">Next: @PhoneSports.Matchup(game) · @PhoneSports.ShortDate(game.EventDate) · @EventsText.TimeLabel(game, Dates)</a> }
                         </div>

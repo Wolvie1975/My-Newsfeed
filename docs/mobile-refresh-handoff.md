@@ -657,3 +657,18 @@ screenshots were inspected under `test-results/browser/masthead-links/` (ignored
 Preview used profiles/background jobs disabled and blocked third-party images;
 local fonts/scripts loaded. Physical-device testing was unavailable. Deployment
 and live verification are recorded in the release history.
+
+### Standings team logos, without win bars — October 29, 2026 (Central)
+
+Removed the mobile standings win-percentage meters. Restored safe provider logos
+in team rows, the featured leader and Your teams, with a white backing for dark
+logos. Missing/failed images leave names and numeric records readable. Desktop
+keeps its existing table logos. All 41 focused PhoneSportsTests passed. Preview
+and production checks covered 320/390/430/768/820/834/1024/1440px light/dark, real
+logo loading, no meters or overflow, team/record spacing, 44px links, followed-team
+and leader logos, league selection, refresh, saved preferences, failed-logo fallback
+and no-JavaScript League form navigation. Screenshots were inspected. Production
+is running `mynewspaper-web:standings-logos-final-20261029` (`3e5afc6aa2ea`).
+Logs/screenshots are under `test-results/browser/standings-logos-live/` (ignored).
+A disposable profile was removed. Real-device checks were unavailable; release
+and rollback evidence are in the release history.

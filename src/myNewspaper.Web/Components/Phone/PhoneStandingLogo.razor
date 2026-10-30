@@ -1,0 +1,7 @@
+@if (EventsText.LogoUrl(Url) is { } logo)
+{
+    <img class="mx-standing-logo" src="@logo" alt="" width="28" height="28" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()" />
+}
+@code {
+    [Parameter] public string? Url { get; set; }
+}

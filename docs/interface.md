@@ -409,7 +409,9 @@ tablet/desktop page layouts remain in use.
 
 Top 25 highlights No. 1 and real rank movements, lists 2–10 and folds the rest of the poll. Standings preserves
 provider groups/order, lists each group's first six rows and folds remaining places and available schedule/poll
-context. Soccer highlights published points (PTS), followed by W–D–L, in the leader, My Teams tiles and all rows,
+context. Team logos appear beside names in the leader, My Teams tiles and rows, with a white backing for dark
+logos; missing or failed images leave the team name readable. Win-percentage meters are omitted from standings.
+Soccer highlights published points (PTS), followed by W–D–L, in the leader, My Teams tiles and all rows,
 including folded rows. Missing points remain unknown; they are not calculated or replaced by games played.
 My Teams tiles include the next collected game when present. College's featured game chooses two ranked
 teams with the best combined rank, then the highest-ranked participant, then the earliest scheduled game. Its weekly

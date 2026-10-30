@@ -6,6 +6,55 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
+## Standings team logos and simpler rows — October 29, 2026 (Central)
+
+Deployed public image `mynewspaper-web:standings-logos-final-20261029`
+(`3e5afc6aa2ea`) to `mynewsfeed-web`. Mobile/iPad standings no longer show
+win-percentage meters. Team logos appear beside names in the rows, featured leader
+and Your teams tiles, with a small white backing to keep dark logos readable.
+Decorative images reuse the existing validated logo URLs and lazy-loading behavior;
+missing/failed images leave the name and numeric record intact. Desktop standings
+retain their existing logo/table layout. No database migration or schema script
+ran. Runtime environment, ports, network, restart policy, health check and persistent
+key volume were preserved; the connection remains sql2025 / WebScraper. Admin was
+not rebuilt or replaced.
+
+Rollback to the preceding release: image
+`mynewspaper-web:before-standings-logos-20261029` (`41e524538773`) and stopped
+container `mynewsfeed-web-before-standings-logos-20261029`. The first candidate
+without logo backings was briefly deployed; screenshot review prompted the final
+contrast improvement. That candidate is retained separately as
+`mynewsfeed-web-before-standings-logos-final-20261029` (`cec87bb2226a`).
+
+Validation: all 41 PhoneSportsTests passed, including rendered standings names and
+records, absence of meters, safe/missing/unsafe logo URLs and empty decorative alt
+text. Docker publish and its static-asset guard passed. CSS/docs formatting and
+diff whitespace checks passed. Actual preview checks passed at
+320/390/430/768/820/834/1024/1440px light/dark with real provider logos loading,
+no meters, no page overflow, records clear of team names, followed-team/leader
+logos, 44px team links and desktop logo regressions. League switching, selected
+league/theme persistence after refresh, failed-image removal with readable team
+name and the no-JavaScript League form passed. Backing-color screenshots were
+checked after the contrast adjustment. Local artifacts are under
+`test-results/browser/standings-logos-local/` (ignored).
+
+After deployment, the same checks passed on the actual production HTTPS site with
+a disposable profile following BYU and Kansas. Real team logos loaded at all eight
+widths in both themes; screenshots of rows, the featured team, Your teams and the
+desktop layout were inspected. League switching and selected-league/theme persistence
+survived refresh. A deliberately failed logo was removed without losing the team
+name. The native League form worked at 820px with JavaScript disabled. Authenticated
+smoke checks returned 200 for health, News, Events, Results (following its redirect),
+Standings, Rankings, Movies, digital Movies and box office. Both services were
+healthy, both production HTTPS health endpoints returned 200, and league-phase
+startup checks were present.
+
+Artifacts: `test-results/browser/standings-logos-live/` (ignored). The disposable
+profile was deleted after checks; no real profile settings were changed. Temporary
+workspace hostname mapping used for certificate-verified production HTTPS checks
+was removed. Physical-device and full unrelated test suites were not run. The
+commit remains local on `develop`; no push was made.
+
 ## Homepage masthead link placement — October 29, 2026 (Central)
 
 Public image `mynewspaper-web:masthead-links-20261029` (`41e524538773`)

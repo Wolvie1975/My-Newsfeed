@@ -85,6 +85,22 @@ public class PhoneSportsTests
         Assert.Contains("1:56 · 4Q", System.Net.WebUtility.HtmlDecode(html));
     }
 
+    [Theory]
+    [InlineData("https://a.espncdn.com/i/teamlogos/ncaa/500/2305.png", true)]
+    [InlineData(null, false)]
+    [InlineData("javascript:alert(1)", false)]
+    public async Task Standing_rows_keep_names_and_records_without_meters_and_only_render_safe_logos(string? logo, bool hasLogo)
+    {
+        var team = new StandingTeam(new() { TeamName = "Kansas", LogoUrl = logo, Position = 1 }, [new("wins", "Wins", "3")]);
+        var group = new StandingGroup("test", "Big 12", [team], [new("wins", "W")]);
+        var html = await RenderSports<PhoneStandingRows>(new() { ["Group"] = group, ["Teams"] = new[] { team } });
+        Assert.Contains("Kansas", html);
+        Assert.Contains("<strong>3</strong>", html);
+        Assert.DoesNotContain("mx-meter", html);
+        Assert.Equal(hasLogo, html.Contains("mx-standing-logo"));
+        if (hasLogo) Assert.Matches(" alt(?:=\"\")?[ >]", html);
+    }
+
     private static Task<string> RenderRankings(RankingsPage page) => RenderSports<PhoneRankings>(new() { ["Data"] = page });
 
     [Fact]

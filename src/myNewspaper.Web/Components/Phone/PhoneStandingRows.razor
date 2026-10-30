@@ -2,14 +2,15 @@
     @foreach (var team in Teams)
     {
         var primary = PhoneSports.Primary(Group, team, Soccer);
-        var fraction = PhoneSports.WinFraction(primary);
         <li data-sports-teams="@SportsTeamPreferences.Keys(team.Row.TeamName)">
             <b>@(team.Row.Rank?.ToString() ?? team.Row.Position.ToString())</b>
             <span>
-                @if (FeedQuery.SafeHref(team.Row.TeamUrl) is { } url) { <a href="@url" target="_blank" rel="noopener noreferrer">@team.Row.TeamName</a> }
-                else { <b>@team.Row.TeamName</b> }
+                <span class="mx-standing-name">
+                    <PhoneStandingLogo Url="@team.Row.LogoUrl" />
+                    @if (FeedQuery.SafeHref(team.Row.TeamUrl) is { } url) { <a href="@url" target="_blank" rel="noopener noreferrer">@team.Row.TeamName</a> }
+                    else { <b>@team.Row.TeamName</b> }
+                </span>
                 <small>@PhoneSports.Secondary(Group, team, Soccer)</small>
-                @if (fraction is { } f) { <span class="mx-meter" aria-hidden="true"><span style="@($"width:{(f * 100).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)}%")"></span></span> }
             </span>
             <strong>@primary</strong>
         </li>
