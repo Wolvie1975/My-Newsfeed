@@ -820,3 +820,25 @@ passed. Physical devices/Safari were unavailable. Deployed as
 `mynewspaper-web:lead-spacing-20261030`; live Chromium checks passed all six widths
 in both themes, including 16px desktop geometry and screenshot review. The temporary
 verification profile was deleted. Public/admin containers healthy, public health HTTP 200.
+
+### Mobile feature card width — October 30, 2026
+
+Fixed the narrow text/publisher column shown in the Big 12 news screenshot.
+At widths below 1024px, compact feature photos share a row with the category;
+headline and summary span the card below. Feature metadata wraps publisher,
+date and action controls into readable rows. The single-column body also keeps
+wide-photo and no-JavaScript placeholder cards readable. Desktop styling is unchanged.
+
+Preview Chromium checks on /sports/news/big12 used a controlled small square
+image and the screenshot's headline, summary and publisher text. Passed at 320,
+390, 430, 820 and 1440px in light/dark; checked full-width text/publisher, no
+horizontal overflow, 44px save/share controls, and saving/unsaving. Repeated with
+a large landscape image and with JavaScript disabled (P8 fallback). Inspected
+compact, landscape and no-JavaScript screenshots; artifacts are in
+test-results/browser/feature-card. CSS formatting and diff checks passed.
+Physical devices/Safari unavailable. Deployed as
+`mynewspaper-web:feature-card-20261030`. Live Chromium repeated all five widths,
+both themes, JavaScript on/off, actual Big 12 story content and controlled compact
+thumbnail checks. Full-width text/publisher, 44px controls and saving/unsaving
+passed; live phone and desktop screenshots inspected. Temporary profile deleted.
+Public/admin healthy, public HTTPS health HTTP 200. Admin was not replaced.

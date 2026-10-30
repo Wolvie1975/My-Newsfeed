@@ -6,6 +6,28 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
+## Mobile feature story width — October 30, 2026 (Central)
+
+Compact feature thumbnails now share a row with the category below 1024px;
+headline and summary use the full card width. Publisher, date and action controls
+wrap into readable rows. Wide-photo and no-JavaScript feature bodies also use a
+single text column. Desktop styling is unchanged.
+
+Preview Chromium passed 320, 390, 430, 820 and 1440px in light/dark with compact
+and landscape fixtures and JavaScript disabled. Live checks repeated those widths
+and themes, actual Big 12 story content, compact thumbnail fixtures, and the
+no-JavaScript fallback. Confirmed full-width text/publisher, no horizontal overflow,
+44px actions and saving/unsaving. Phone/desktop screenshots inspected; temporary
+profile deleted. CSS formatting and diff checks passed. Physical devices/Safari
+unavailable.
+
+Deployed `mynewspaper-web:feature-card-20261030` (image prefix `d93da38f3063`),
+preserving runtime configuration and keys. Rollback image
+`mynewspaper-web:before-feature-card-20261030` (prefix `e51c997555cf`) and stopped
+container `mynewsfeed-web-before-feature-card-20261030` retained. Both sites healthy;
+public HTTPS health returned 200. No fail/critical startup entries observed. Admin
+was not replaced. Browser evidence: test-results/browser/feature-card/live.
+
 ## Home Top story spacing — October 30, 2026 (Central)
 
 Added 16px top padding to the desktop lead story so its image/placeholder clears
