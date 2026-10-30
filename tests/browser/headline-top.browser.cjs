@@ -44,7 +44,7 @@ const base = process.env.BASE_URL || 'http://127.0.0.1:5398';
                     assert(ids.length > 4, 'Representative stories required');
                     assert.equal(new Set(ids).size, ids.length, 'Visible duplicate stories');
                     if (width >= 1024) {
-                        assert.equal(await page.locator('.hc-under [data-article-media]:visible').count(), 0);
+                        assert.equal(await page.locator('.hc-under [data-article-media]:visible').count(), 2);
                         assert.equal(
                             await page.locator('.hc-row:not(.hc-row--first) [data-article-media]:visible').count(),
                             0,
@@ -53,7 +53,9 @@ const base = process.env.BASE_URL || 'http://127.0.0.1:5398';
                         const title = await page.locator('.hc-lead .title').boundingBox();
                         if (cat && title) assert(cat.y + cat.height <= title.y + 1, 'Category overlaps headline');
                     }
-                    if (width >= 1024 && kind !== 'wide') assert(await page.locator('.hc-top--text').count());
+                    assert(await page.locator('.hc-top--photo').count(), 'Always uses the photo arrangement');
+                    if (width >= 1024 && kind !== 'wide')
+                        assert(await page.locator('.hc-lead .ph').isVisible(), 'P8 replaces compact and broken photos');
                     if ([390, 744, 1440].includes(width))
                         await page.screenshot({
                             path: `${shots}headline-top-${width}-${theme}-${kind}.png`,
@@ -73,9 +75,10 @@ const base = process.env.BASE_URL || 'http://127.0.0.1:5398';
             viewport: { width: 1440, height: 1000 },
         });
         await page.goto(base + '/sports/news');
-        assert(await page.locator('.hc-top--text').count(), 'No JS uses banner');
+        assert(await page.locator('.hc-top--photo').count(), 'No JS retains the photo arrangement');
+        assert(await page.locator('.hc-lead .ph').isVisible(), 'No JS retains the P8 frame');
         console.log(
-            'Passed responsive layouts, image failures, visible uniqueness, share interactions, screenshots and no-JS banner.',
+            'Passed responsive layouts, image failures, visible uniqueness, share interactions, screenshots and no-JS P8 frames.',
         );
     } finally {
         await browser.close();

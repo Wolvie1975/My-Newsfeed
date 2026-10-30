@@ -1,13 +1,4 @@
-/* =====================================================================================================================
-   Headline cards (docs/headline-cards-handoff.md): the All headlines pages on desktop and iPad show each story as a
-   photo card (the photo across the card, one 16:10 crop) or a text card (tinted, coloured top edge, bigger
-   headline), never a small thumbnail. article-images.js decides: a "wide" photo makes a photo card. Phones keep the
-   usual one-column story list. Loaded after article-images.css; the :root:is(...) prefix outranks the feed and
-   article-image rules these cards replace.
-   ===================================================================================================================== */
-.pub {
-    --hc-tint: color-mix(in srgb, var(--text) 5%, var(--surface));
-}
+/* Headline cards: every story has a photo or P8 frame. Desktop uses lead + two under + Latest. */
 .pub .hc-group {
     display: none;
 }
@@ -59,21 +50,17 @@
         scroll-margin-top: 140px;
     }
 
-    /* Every card starts as a text card: tinted, coloured top edge (its category's colour), actions at the bottom. */
+    /* Every card retains its image frame and actions at the bottom. */
     :root:is([data-color-scheme], :not([data-color-scheme])) .pub .hc-feed .hc-card {
         display: flex;
         flex-direction: column;
         gap: 10px;
         min-width: 0;
         margin: 0;
-        padding: 18px;
+        padding: 0;
         border: 0;
-        border-top: 4px solid var(--edge, var(--accent));
         border-radius: 10px;
-        background: var(--hc-tint);
-    }
-    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .hc-feed .hc-card [data-article-media] {
-        display: none;
+        background: transparent;
     }
     :root:is([data-color-scheme], :not([data-color-scheme])) .pub .hc-feed .hc-card .body {
         display: flex;
@@ -158,18 +145,13 @@
         display: none;
     }
 
-    /* Photo card: a measured "wide" photo, or (lead and the three beside it) a photo not measured yet, so they don't
-       flash as text cards first. No tint or edge; the photo spans the card at one crop. */
-    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .hc-feed .hc-card[data-image-layout='wide'] {
+    /* Photo and placeholder frames share the same geometry. */
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .hc-feed .hc-card {
         padding: 0;
         border-top: 0;
         background: transparent;
     }
-    :root:is([data-color-scheme], :not([data-color-scheme]))
-        .pub
-        .hc-feed
-        .hc-card[data-image-layout='wide']
-        [data-article-media] {
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .hc-feed .hc-card [data-article-media] {
         position: relative;
         display: block;
         float: none;
@@ -183,12 +165,7 @@
         border-radius: 10px;
         aspect-ratio: 16 / 10;
     }
-    :root:is([data-color-scheme], :not([data-color-scheme]))
-        .pub
-        .hc-feed
-        .hc-card[data-image-layout='wide']
-        [data-article-media]
-        img {
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .hc-feed .hc-card [data-article-media] img {
         position: absolute;
         inset: 0;
         width: 100%;
@@ -196,12 +173,12 @@
         object-fit: cover;
         object-position: center 30%;
     }
-    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .hc-feed .hc-card[data-image-layout='wide'] .title {
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .hc-feed .hc-card .title {
         font-size: 21px;
         font-weight: 700;
     }
 
-    /* The lead: bigger everything; without a good photo it's a large text panel. */
+    /* The lead keeps a larger headline and a 16:9 frame. */
     :root:is([data-color-scheme], :not([data-color-scheme])) .pub .hc-feed .hc-lead .hc-card .title {
         font-size: 44px;
         line-height: 1.1;
@@ -210,21 +187,11 @@
         -webkit-line-clamp: 3;
         line-clamp: 3;
     }
-    :root:is([data-color-scheme], :not([data-color-scheme]))
-        .pub
-        .hc-feed
-        .hc-lead
-        .hc-card[data-image-layout='wide']
-        .title {
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .hc-feed .hc-lead .hc-card .title {
         font-size: 34px;
         font-weight: 800;
     }
-    :root:is([data-color-scheme], :not([data-color-scheme]))
-        .pub
-        .hc-feed
-        .hc-lead
-        .hc-card[data-image-layout='wide']
-        [data-article-media] {
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .hc-feed .hc-lead .hc-card [data-article-media] {
         aspect-ratio: 16 / 9;
     }
 }
@@ -233,7 +200,8 @@
         grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 }
-/* Lead-photo dependent top section. Keep the reading order identical on phones. */
+
+/* Phones keep stories 5–8 in sequence; desktop already shows them in Latest. */
 .pub .hc-grid__textonly {
     display: contents;
 }
@@ -246,77 +214,26 @@
     :root:is([data-color-scheme], :not([data-color-scheme])) .pub .hc-feed {
         & .hc-top {
             gap: 24px;
-        }
-        & .hc-top--text {
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-        }
-        & .hc-top--text .hc-lead {
-            grid-column: 1 / -1;
-        }
-        & .hc-top--text .hc-lead .hc-card {
-            display: grid;
-            grid-template-columns: minmax(0, 1fr) minmax(240px, 360px);
-            gap: 12px 32px;
-            align-items: end;
-            padding: 28px 32px;
-            border-top: 0;
-            border-left: 6px solid var(--edge, var(--accent));
-            background: var(--hc-tint);
-        }
-        & .hc-top--text .hc-lead .body {
-            display: contents;
-        }
-        & .hc-top--text .hc-lead :is(.cat, .title) {
-            grid-column: 1;
-        }
-        & .hc-top--text .hc-lead .title {
-            font-size: 46px;
-            line-height: 1.06;
-        }
-        & .hc-top--text .hc-lead :is(.summary, .src) {
-            grid-column: 2;
-        }
-        & .hc-top--text .hc-lead .summary {
-            grid-row: 1 / span 2;
-            font-family: var(--mx-serif);
-            font-size: 19px;
-        }
-        & .hc-top--text :is(.hc-under, .hc-latest) {
-            display: contents;
-        }
-        & .hc-top--text .hc-lead [data-article-media],
-        & .hc-under .hc-card [data-article-media] {
-            display: none;
-        }
-        & .hc-under .hc-card {
-            padding: 18px;
-            border-top: 4px solid var(--edge, var(--accent));
-            background: var(--hc-tint);
-        }
-        & .hc-top--photo {
             grid-template-rows: auto 1fr;
             align-items: start;
         }
-        & .hc-top--photo .hc-lead {
+        & .hc-lead {
             grid-column: 1;
             grid-row: 1;
         }
-        & .hc-top--photo .hc-lead .title {
-            font-size: 34px;
-        }
-        & .hc-top--photo .hc-under {
+        & .hc-under {
             grid-column: 1;
             grid-row: 2;
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
             gap: 20px;
         }
-        & .hc-top--photo .hc-latest {
+        & .hc-latest {
             grid-column: 2;
             grid-row: 1 / span 2;
             min-width: 0;
         }
-        & .hc-top--photo .hc-latest__title {
+        & .hc-latest__title {
             display: block;
             margin: 0 0 8px;
             padding-bottom: 6px;
@@ -326,11 +243,10 @@
             letter-spacing: 0.1em;
             text-transform: uppercase;
         }
-        & .hc-top--photo .hc-row--first [data-article-media] {
+        & .hc-row--first [data-article-media] {
             aspect-ratio: 16 / 9;
         }
-        & .hc-top--photo .hc-row:not(.hc-row--first),
-        & .hc-top--photo .hc-row--first:not([data-image-layout='wide']) {
+        & .hc-row:not(.hc-row--first) {
             display: flex;
             padding: 12px 0;
             border: 0;
@@ -338,46 +254,34 @@
             border-radius: 0;
             background: none;
         }
-        & .hc-top--photo .hc-row:not(.hc-row--first) :is([data-article-media], .summary),
-        & .hc-top--photo .hc-row--first:not([data-image-layout='wide']) :is([data-article-media], .summary) {
+        & .hc-row:not(.hc-row--first) :is([data-article-media], .summary) {
             display: none;
         }
-        & .hc-top--photo .hc-row:not(.hc-row--first) .title,
-        & .hc-top--photo .hc-row--first:not([data-image-layout='wide']) .title {
+        & .hc-row:not(.hc-row--first) .title {
             font-size: 19px;
             font-weight: 700;
         }
-        & .hc-top--photo ~ .hc-grid .hc-grid__textonly {
+        & .hc-grid__textonly {
             display: none;
         }
-        & .hc-group--photo {
-            display: none;
-        }
-        & .hc-top--photo ~ .hc-grid .hc-group--photo {
+        & .hc-grid .hc-group--photo {
             display: block;
         }
     }
-}
-
-@media (min-width: 1024px) {
     :root:is([data-color-scheme], :not([data-color-scheme]))
         .pub
         .hc-feed
-        .hc-top--text
-        .hc-latest
-        .hc-row:not(.hc-row--first) {
+        .hc-card:not([data-image-layout='wide'])
+        [data-article-media]
+        > img {
         display: none;
     }
-}
-
-@media (min-width: 1024px) {
-    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .hc-feed .hc-top--text .hc-lead .cat {
-        grid-row: 1;
-    }
-    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .hc-feed .hc-top--text .hc-lead .title {
-        grid-row: 2;
-    }
-    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .hc-feed .hc-top--text .hc-lead .src {
-        grid-row: 3;
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .hc-feed
+        .hc-card:not([data-image-layout='wide'])
+        [data-article-media]
+        > .ph {
+        display: block;
     }
 }

@@ -6,7 +6,7 @@ public static class PhoneColors
     public static string ForCategory(string? name) => (name ?? "").ToLowerInvariant() switch
     {
         var n when n.Contains("kansas") || n.Contains("local") => "mx-c-local",
-        var n when n.Contains("u.s.") || n == "us" || n.Contains("politic") || n.Contains("nation") => "mx-c-us",
+        var n when n.Contains("top headline") || n.Contains("u.s.") || n == "us" || n.Contains("politic") || n.Contains("nation") => "mx-c-us",
         var n when n.Contains("business") || n.Contains("money") || n.Contains("econom") => "mx-c-business",
         var n when n.Contains("tech") || n.Contains("science") || n.Contains("linux") || n.Contains("game") => "mx-c-tech",
         var n when n.Contains("opinion") => "mx-c-ink",

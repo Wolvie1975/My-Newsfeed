@@ -5,7 +5,7 @@
 /* No photo: the text takes the whole card instead of the thumbnail column (outranks the section and poster grids). */
 :root:is([data-color-scheme], :not([data-color-scheme]))
     .pub
-    :is(.d-story, .article)[data-article-story='row'][data-image-layout='none'] {
+    :is(.d-story, .article)[data-article-story='row'][data-image-layout='none']:not(:has(.ph)) {
     grid-template-columns: minmax(0, 1fr);
 }
 :root .pub [data-article-story='feature'] [data-article-media] {
@@ -29,8 +29,8 @@
     height: 100%;
     object-fit: scale-down;
 }
-:root .pub [data-article-story='feature'] [data-article-media]:not(:has(> img)),
-:root .pub [data-image-layout='none'] [data-article-media] {
+:root .pub [data-article-story='feature'] [data-article-media]:not(:has(> img, > .ph)),
+:root .pub [data-image-layout='none'] [data-article-media]:not(:has(> .ph)) {
     display: none;
 }
 :root .pub :is(.article, .d-lead__story)[data-article-story='feature'] {
@@ -148,5 +148,94 @@
     :root .pub .d-lead__story[data-article-story='feature'][data-image-layout='wide'] > .d-lead__body {
         grid-column: 2;
         grid-row: 1;
+    }
+}
+
+/* An absent photo still has a full P8 feature frame, including the home lead and phone list feature. */
+:root
+    .pub
+    :is(.article, .d-lead__story)[data-article-story='feature']:has([data-article-media] > .ph):not(
+        :has([data-article-media] > img)
+    ) {
+    grid-template-columns: minmax(0, 1fr);
+}
+:root
+    .pub
+    [data-article-story='feature']:has([data-article-media] > .ph):not(:has([data-article-media] > img))
+    > [data-article-media] {
+    display: block;
+    float: none;
+    width: 100%;
+    max-width: none;
+    height: auto;
+    max-height: none;
+    aspect-ratio: 16 / 9;
+    grid-column: 1;
+    grid-row: 1;
+    margin: 0 0 12px;
+}
+:root
+    .pub
+    :is(.article, .d-lead__story)[data-article-story='feature']:has([data-article-media] > .ph):not(
+        :has([data-article-media] > img)
+    )
+    > :is(.body, .d-lead__body) {
+    grid-column: 1;
+    grid-row: 2;
+}
+
+/* Shared phone lists use small row thumbnails; the first feature keeps its full frame. */
+@media (max-width: 1023px) {
+    :root .pub .article[data-article-story='row']:where(:not(.hc-row), .hc-row--first):has([data-article-media] > .ph) {
+        display: grid;
+        grid-template-columns: 96px minmax(0, 1fr);
+        align-items: start;
+        gap: 12px;
+        padding: 12px;
+    }
+    :root .pub .article[data-article-story='row'] > [data-article-media]:has(> .ph) {
+        width: 96px;
+        height: 72px;
+        margin: 0;
+        border-radius: 8px;
+        aspect-ratio: 4 / 3;
+    }
+    :root
+        .pub
+        .article[data-article-story='row']:where(:not(.hc-row), .hc-row--first):has([data-article-media] > .ph)
+        > .body {
+        min-width: 0;
+        padding: 0;
+    }
+}
+
+@media (max-width: 1023px) {
+    /* Publisher names and 44px actions each need their own line beside a 96px thumbnail. */
+    :root .pub .article[data-article-story='row']:has([data-article-media] > .ph) > .body {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    :root .pub .article[data-article-story='row']:has([data-article-media] > .ph) .src {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+    }
+    :root .pub .article[data-article-story='row']:has([data-article-media] > .ph) .article-publisher {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        width: 100%;
+        min-width: 0;
+    }
+    :root .pub .article[data-article-story='row']:has([data-article-media] > .ph) .src time {
+        flex-basis: 100%;
+    }
+    :root .pub .article[data-article-story='row']:has([data-article-media] > .ph) .article-actions {
+        display: flex;
+        gap: 4px;
+        margin-left: auto;
     }
 }

@@ -4,7 +4,7 @@
 {
     @if (Featured && Items.Count > 0)
     {
-        <div class="hc-top hc-top--text" data-hc-top>
+        <div class="hc-top hc-top--photo" data-hc-top>
             <section class="hc-lead" aria-label="Lead story"><FeedArticles Items="@Items.Take(1).ToArray()" LeadFirst="true" PhoneFeatureFirst="PhoneFeatureFirst" Cards="true" NoGroupHeadings="true" /></section>
             @if (Items.Count > 1) {
                 <section class="hc-under" aria-label="More top stories"><FeedArticles Items="@Items.Skip(1).Take(2).ToArray()" Cards="true" NoGroupHeadings="true" /></section>

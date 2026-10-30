@@ -1,3 +1,4 @@
+@using myNewspaper.Web.Components.Feed
 @inject FeedDates Dates
 
 <section class="d-card d-lead" data-home-section="lead" data-home-wide data-home-lead
@@ -21,10 +22,11 @@
         var title = FeedText.StripEmoji(item.Title);
         var summary = FeedText.StripEmoji(FeedQuery.Excerpt(item.Description));
         var sourceName = FeedText.SourceName(item.SourceLabel, item.SourceUrl);
-        <article class="d-lead__story" data-article-story="feature" data-image-layout="compact" data-news-url="@href" data-news-source="@sourceName">
+        <article class="d-lead__story @PhoneColors.ForCategory(item.CategoryName)" data-article-story="feature" data-image-layout="compact" data-news-url="@href" data-news-source="@sourceName">
             @if (href is not null)
             {
                 <a class="d-lead__image" data-article-media href="@href" target="_blank" rel="noopener noreferrer" aria-label="Read: @(title.Length > 0 ? title : item.Title)">
+                    <NoPhoto Source="@sourceName" Category="@item.CategoryName" />
                     @if (image is not null) { <img src="@image" alt="" fetchpriority="high" referrerpolicy="no-referrer" onerror="this.remove()" /> }
                 </a>
             }

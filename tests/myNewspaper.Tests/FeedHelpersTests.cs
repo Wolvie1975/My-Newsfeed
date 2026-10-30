@@ -171,6 +171,23 @@ public class FeedHelpersTests
         Assert.Equal(expected, FeedText.SourceName(label, url));
 
     [Theory]
+    [InlineData("BBC News", "BBC")]
+    [InlineData("NBC News", "NBC")]
+    [InlineData("KSHB 41", "KSHB")]
+    [InlineData("The Guardian", "G")]
+    [InlineData("The Guardian — U.S. & World Opinion", "G")]
+    [InlineData("Al Jazeera", "AJ")]
+    [InlineData("The New York Times", "NYT")]
+    [InlineData("Sky News", "SN")]
+    [InlineData("Big 12 Conference", "B12")]
+    [InlineData("Motorsport.com", "M")]
+    [InlineData("", "•")]
+    [InlineData(null, "•")]
+    [InlineData("... & !", "•")]
+    public void Source_initials_keep_acronyms_and_numbers_and_ignore_section_suffixes(string? name, string expected) =>
+        Assert.Equal(expected, FeedText.SourceInitials(name));
+
+    [Theory]
     [InlineData("ESPN", "E")]
     [InlineData("9to5Linux", "9")]
     [InlineData("/Film", "F")]

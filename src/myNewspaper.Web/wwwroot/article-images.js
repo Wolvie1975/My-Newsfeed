@@ -16,13 +16,6 @@
         return url.href;
     }
 
-    function arrange(story, quality) {
-        const top = story?.closest('.hc-lead')?.closest('[data-hc-top]');
-        if (!top) return;
-        top.classList.toggle('hc-top--photo', quality === 'wide');
-        top.classList.toggle('hc-top--text', quality !== 'wide');
-    }
-
     function classify(img) {
         const state = images.get(img);
         // A tiny image is removed on its first pass; the load listener classifies it again once it is detached.
@@ -42,17 +35,16 @@
         media.style.setProperty('--article-image-width', width + 'px');
         if (story) {
             story.dataset.imageLayout = quality;
-            // Headline cards keep the lead's photo slot until now, rather than flashing a text card first.
+            // Record that this frame has been measured; cards retain their slot throughout loading.
             story.dataset.imageMeasured = '';
         }
-        arrange(story, quality);
+
         if (quality === 'none') img.remove();
     }
 
     function bind(img) {
         if (!img.matches(selector)) return;
-        // Text-first cards hide their media until measured. Hidden lazy images would never load,
-        // so measure desktop card photos eagerly before choosing the arrangement.
+        // Measure desktop card photos eagerly so hidden compact images can be classified.
         if (img.closest('.hc-card') && matchMedia('(min-width: 1024px)').matches) img.loading = 'eager';
         const original = img.src;
         if (images.get(img)?.active === original) {
@@ -101,7 +93,6 @@
             const story = img.closest('[data-article-story]');
             if (story) {
                 story.dataset.imageLayout = 'none';
-                arrange(story, 'none');
                 story.dataset.imageMeasured = '';
             }
             img.remove();
@@ -116,7 +107,6 @@
         const empty = (story) => {
             if (!story.querySelector(selector)) {
                 story.dataset.imageLayout = 'none';
-                arrange(story, 'none');
                 story.dataset.imageMeasured = '';
             }
         };

@@ -70,15 +70,17 @@ async function ready(page, story, quality) {
                     console.log(width, theme, kind);
                     await ready(page, story, quality);
                     const media = story.locator('[data-article-media]');
-                    // From 744px All headlines shows headline cards: a photo card at 16:9 for the lead, or a text card
-                    // with no image area (docs/headline-cards-handoff.md). Phones keep the checks below.
+                    // Cards retain their frame for both real photos and P8.
                     if (width >= 1024) {
                         if (quality === 'wide') {
                             const box = await media.boundingBox(),
                                 card = await story.boundingBox();
                             assert(Math.abs(box.width - card.width) < 2, 'photo spans the card');
                             assert(Math.abs(box.width / box.height - 16 / 9) < 0.03, 'lead photo card at 16:9');
-                        } else assert(!(await media.isVisible()), 'text card: no image area');
+                        } else {
+                            assert(await media.isVisible(), 'P8 retains the image area');
+                            assert(await media.locator('.ph').isVisible(), 'P8 replaces unusable photos');
+                        }
                     } else if (quality === 'wide') {
                         assert(
                             (await media.boundingBox()).height <= (width >= 900 ? 360 : 220) + 1,
@@ -98,7 +100,10 @@ async function ready(page, story, quality) {
                         );
                         const headline = await story.locator('h2, h3').first().boundingBox();
                         assert(headline.x + headline.width <= box.x + 1, 'thumbnail beside the headline');
-                    } else assert(!(await media.isVisible()), 'no empty feature-image area');
+                    } else if (await media.locator('.ph').count()) {
+                        assert(await media.locator('.ph').isVisible(), 'Missing feature photo uses P8');
+                        assert((await media.boundingBox()).height >= 120, 'Full feature placeholder');
+                    } else assert(!(await media.isVisible()), 'Dedicated phone front keeps its text fallback');
                     assert(
                         await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
                         `${kind} ${width} ${theme}: no overflow`,
@@ -389,7 +394,9 @@ async function ready(page, story, quality) {
             await p.goto(base + '/news/all', { waitUntil: 'networkidle' });
             const story = p.locator(selector).filter({ visible: true }).first(),
                 media = story.locator('[data-article-media]');
-            assert(!(await media.isVisible()), 'no-JavaScript features use a text-led fallback');
+            if (await media.locator('.ph').count())
+                assert(await media.locator('.ph').isVisible(), 'no-JavaScript features retain P8');
+            else assert(!(await media.isVisible()), 'Dedicated phone front keeps its text fallback');
             assert(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
             await plain.close();
         }

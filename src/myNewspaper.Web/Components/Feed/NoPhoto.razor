@@ -1,0 +1,11 @@
+@* P8 is decorative: the story text already names its publisher and category. *@
+<span class="ph" aria-hidden="true">
+    <span class="ph__mark"></span>
+    <span class="ph__fold"></span>
+    @if (!string.IsNullOrWhiteSpace(Source)) { <span class="ph__src">@FeedText.SourceInitials(Source)</span> }
+    @if (!string.IsNullOrWhiteSpace(Category)) { <span class="ph__cat">@Category</span> }
+</span>
+@code {
+    [Parameter] public string? Source { get; set; }
+    [Parameter] public string? Category { get; set; }
+}

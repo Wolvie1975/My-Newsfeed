@@ -412,22 +412,91 @@
     aspect-ratio: 16 / 9;
     background: var(--ph-bg);
 }
-.pub :is(.thumb, .d-lead__image, .d-opinion .d-thumb)::before {
-    content: '';
+/* No photo (or one that failed and was removed): P8 — the category colour, logo H cropped large off the corner, a gold
+   fold, the publisher's initials and the category. docs/no-photo-placeholder-handoff.md. A real photo covers it. */
+.pub .ph {
+    --ph-cat: var(--edge, var(--mx-world, #0051ba));
     position: absolute;
     inset: 0;
-    margin: auto;
-    width: 30%;
-    max-width: 64px;
-    height: 50%;
-    background: var(--ph-fg);
-    opacity: 0.45;
+    z-index: 0;
+    container-type: size;
+    overflow: hidden;
+    background: var(--ph-cat);
+    pointer-events: none;
+}
+:root[data-theme='dark'] .pub .ph {
+    /* The dark tokens are light pastels; mix them into navy so the white logo still reads. */
+    background: color-mix(in srgb, var(--ph-cat) 35%, #111f36);
+}
+.pub .ph__mark {
+    position: absolute;
+    height: 135cqh;
+    aspect-ratio: 43 / 50;
+    right: -18cqh;
+    bottom: -40cqh;
+    background: #ffffff;
+    opacity: 0.2;
     -webkit-mask: url('img/placeholder-mark.svg') center / contain no-repeat;
     mask: url('img/placeholder-mark.svg') center / contain no-repeat;
 }
-/* A picture hides the mark, including transparent PNGs; it returns if the picture fails and is removed. */
-.pub :is(.thumb, .d-lead__image, .d-opinion .d-thumb):has(> img)::before {
+.pub .ph__fold {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 22cqh;
+    height: 22cqh;
+    background: #ffd34d;
+    clip-path: polygon(0 0, 100% 0, 100% 100%);
+}
+.pub .ph__src {
+    position: absolute;
+    left: max(8px, 6cqh);
+    top: max(8px, 6cqh);
+    display: grid;
+    place-items: center;
+    min-width: max(26px, 17cqh);
+    height: max(26px, 17cqh);
+    padding: 0 3cqh;
+    box-sizing: border-box;
+    border-radius: 4cqh;
+    background: #ffffff;
+    color: var(--ph-cat);
+    font-family: var(--font-serif, 'Newsreader', Georgia, serif);
+    font-size: max(11px, 7cqh);
+    font-weight: 800;
+    letter-spacing: -0.01em;
+}
+:root[data-theme='dark'] .pub .ph__src {
+    color: #141b2b;
+}
+.pub .ph__cat {
+    position: absolute;
+    left: max(10px, 7cqh);
+    bottom: max(8px, 6cqh);
+    max-width: 60%;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    color: #ffffff;
+    font-size: clamp(10px, 5.5cqh, 13px);
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+/* Too small to read: colour, crop and fold only. The row text names the source and category. */
+@container (max-height: 119px) {
+    .pub .ph__src,
+    .pub .ph__cat {
+        display: none;
+    }
+}
+/* A real photo covers the placeholder; if it fails, article-images.js removes it and the placeholder shows again. */
+.pub [data-article-media]:has(> img) > .ph {
     display: none;
+}
+.pub [data-article-media] > img {
+    position: relative;
+    z-index: 1;
 }
 .pub .thumb img {
     position: absolute;

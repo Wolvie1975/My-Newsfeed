@@ -691,3 +691,30 @@ remained available without JavaScript; the no-JavaScript View form opened Foreca
 Artifacts: `test-results/browser/full-boxoffice/` (ignored). Profiles/background
 jobs were disabled in preview. Physical-device and signed-in checks were not run.
 Deployment and production verification are recorded in the release history.
+
+### P8 no-photo frames — October 29, 2026 (Central)
+
+The approved [P8 design](no-photo-placeholder-handoff.md) is implemented in shared
+feed thumbnails, headline cards, Home lead and missing-photo Opinion thumbnails.
+Headline cards always keep a frame and the lead + two supporting + Latest layout.
+Phone lists keep a full first-feature frame and use 96px thumbnails for rows;
+small frames omit the initials/category labels. Publisher names and action buttons
+have separate lines beside the thumbnail at narrow widths. Dark mode uses the
+category/navy mix. The dedicated folded phone News front is unchanged.
+
+Preview checks passed 320/390/430/820px light/dark and 1024/1280/1440px across
+Kansas, Cardinals and monochrome schemes. Fixtures covered wide, compact, tiny,
+missing and late-failing images, correct frame ratios, label suppression,
+decorative markup, story order, no overflow, share dialogs, 44px actions, save and
+theme persistence after refresh. Article-image regression covered enhanced
+navigation, Load more and no-JavaScript fallbacks. Screenshots were inspected.
+
+Final live verification passed 320/390/430/820px light/dark and
+1024/1280/1440px desktop (Kansas, Cardinals and monochrome schemes). Image
+fixtures/failures, frames and label suppression, story order, Home placeholders,
+share dialogs, 44px actions, 390px save/refresh/unsave, saved themes and
+no-JavaScript P8 passed. Phone, iPad and desktop screenshots were inspected.
+Both HTTPS health endpoints returned 200; test profiles were removed.
+
+See [release history](release-history.md#p8-no-photo-frames--october-29-2026-central)
+for image tags, rollback and artifacts. Physical devices and Safari were unavailable.

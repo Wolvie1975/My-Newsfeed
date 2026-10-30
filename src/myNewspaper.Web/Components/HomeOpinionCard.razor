@@ -13,8 +13,9 @@
         var summary = FeedText.StripEmoji(FeedQuery.Excerpt(item.Description));
         var image = FeedQuery.SafeHref(item.ImageUrl);
         var source = FeedText.SourceName(item.SourceLabel, item.SourceUrl);
-        <ul class="d-list"><li class="d-story" data-article-story="row" data-image-layout="compact" data-news-url="@href" data-news-source="@source" data-opinion-article="@item.Id">
+        <ul class="d-list"><li class="d-story @PhoneColors.ForCategory("Opinion")" data-article-story="row" data-image-layout="compact" data-news-url="@href" data-news-source="@source" data-opinion-article="@item.Id">
             <a class="d-thumb" data-article-media href="@href" target="_blank" rel="noopener noreferrer" tabindex="-1" aria-hidden="true">
+                <NoPhoto Source="@source" Category="Opinion" />
                 @if (image != null) { <img src="@image" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()" /> }
             </a>
             <div class="d-story__body">

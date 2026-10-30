@@ -52,6 +52,20 @@ public static partial class FeedText
         return url ?? "";
     }
 
+    private static readonly HashSet<string> MinorWords = new(StringComparer.OrdinalIgnoreCase) { "the", "of", "and", "a", "an", "&" };
+
+    /// <summary>Publisher initials for P8: an opening acronym (up to four letters), otherwise up to three initials/digits.</summary>
+    public static string SourceInitials(string? name)
+    {
+        var main = Regex.Split(name ?? "", @"\s+[—–|·]\s+")[0];
+        var words = Regex.Split(main, @"[\s\-]+").Where(w => w.Length > 0).ToArray();
+        if (words.Length > 0 && Regex.IsMatch(words[0], "^[A-Z0-9]{2,4}$")) return words[0];
+        var initials = string.Concat(words
+            .Where(w => !MinorWords.Contains(w) && char.IsLetterOrDigit(w[0]))
+            .Select(w => w.All(char.IsDigit) ? w : char.ToUpper(w[0], CultureInfo.InvariantCulture).ToString()));
+        return initials.Length == 0 ? "•" : initials[..Math.Min(3, initials.Length)];
+    }
+
     /// <summary>The single character shown in the small source badge.</summary>
     public static string SourceMark(string name)
     {

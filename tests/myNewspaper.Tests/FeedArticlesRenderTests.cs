@@ -42,6 +42,17 @@ public class FeedArticlesRenderTests
     private static readonly DateTime Yesterday = new(2026, 9, 19, 9, 0, 0);
 
     [Fact]
+    public async Task Missing_photos_have_a_decorative_category_placeholder_with_publisher_initials()
+    {
+        var html = await RenderAsync([Item(1, "No picture", Today, image: null, label: "The New York Times", category: "Kansas City")]);
+        Assert.Contains("mx-c-local", html);
+        Assert.Contains("class=\"ph\" aria-hidden=\"true\"", html);
+        Assert.Contains("class=\"ph__src\">NYT</span>", html);
+        Assert.Contains("class=\"ph__cat\">Kansas City</span>", html);
+        Assert.DoesNotContain("<img", html);
+    }
+
+    [Fact]
     public async Task Only_the_first_article_is_the_lead_and_only_when_asked()
     {
         var items = new[] { Item(1, "One", Today), Item(2, "Two", Today) };

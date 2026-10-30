@@ -6,6 +6,61 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
+## P8 no-photo frames — October 29, 2026 (Central)
+
+Implemented the approved [P8 handoff](no-photo-placeholder-handoff.md): decorative
+category-colour frames with the cropped page mark, gold fold, publisher initials
+and category label. Labels disappear below 120px; dark backgrounds mix the category
+colour into navy. The existing category helper now maps Top Headlines to red.
+Headline cards retain their media area for missing, failed, tiny and compact photos;
+wide photos remain visible. The top always uses lead + two supporting stories +
+Latest, whose first row alone has media. Home lead and missing-photo Opinion
+thumbnails use P8. Shared phone lists use 96px thumbnails, with publisher names and
+44px actions on separate lines; their first feature keeps the full P8 frame.
+No-JavaScript featured cards also keep P8. The dedicated folded phone News front
+retains its existing photo/text behavior.
+
+Deployed public image `mynewspaper-web:p8-placeholders-final-20261029`
+(`890ff293ddff`) to `mynewsfeed-web`. Runtime environment, health check, ports,
+network, restart policy and persistent keys were preserved. Admin was not rebuilt
+or replaced. No database migration or collector change ran.
+
+The pre-P8 release remains in `mynewsfeed-web-before-p8-placeholders-20261029`
+and image `mynewspaper-web:before-p8-placeholders-20261029` (`50431d7b01c5`).
+The first P8 build was briefly deployed before live screenshot review prompted
+more room for phone publisher names. That build is separately retained in
+`mynewsfeed-web-before-p8-placeholders-final-20261029` (`627b8ee21114`).
+
+Validation: public build and Docker publish/static-asset guard passed. All 1,032
+.NET tests and five JavaScript unit tests passed; targeted ESLint, changed CSS/JavaScript
+Prettier and diff whitespace checks passed. Browser checks covered 320/390/430/820px
+light/dark plus 1024/1280/1440px with Kansas, Cardinals and monochrome schemes.
+News, Sports and Entertainment headline pages retained their frame geometry and
+unique visible story order. Controlled wide, compact, tiny and broken photos tested
+initial rendering, late failures and dynamic replacement; Home lead and Opinion,
+small-label suppression, decorative accessibility, share dialogs, 44px actions,
+saved-story persistence and theme persistence after refresh were checked.
+The updated article-image regression also passed 320/390/430/744/1440px light/dark,
+including square/portrait photos, BBC resolution retry, enhanced navigation,
+Load more, front pages and no-JavaScript fallbacks. Screenshots were inspected.
+
+After deployment, the final HTTPS build passed 320/390/430/820px light/dark
+and 1024/1280/1440px desktop checks. All three headline hubs were checked on
+desktop, with Kansas, Cardinals and monochrome schemes; fixtures, late image
+failures, layout/order, Home placeholders, share actions and no-JavaScript P8
+passed. The 390px save/refresh/unsave flow and saved theme survived refresh.
+Representative phone, iPad and desktop screenshots were inspected. The served
+fingerprinted CSS matched the final source; the real placeholder SVG decoded.
+Both HTTPS health endpoints returned 200, the public container is healthy, and
+league-phase startup checks ran without application errors. Temporary test
+profiles were removed. Admin test setup needed retries while its interactive
+circuit initialized; final verification completed successfully. The temporary
+workspace hostname mapping was removed after HTTPS checks.
+
+Artifacts: `test-results/browser/p8*/` and `test-results/browser/live-p8*/`
+(ignored); browser logs are in `/tmp/p8-*.log`. Physical devices and Safari were
+not available. The commit remains local on `develop`.
+
 ## Complete box-office chart without bars — October 29, 2026 (Central)
 
 Deployed public image `mynewspaper-web:full-boxoffice-20261029`

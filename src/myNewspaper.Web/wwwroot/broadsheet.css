@@ -999,7 +999,7 @@
         min-height: 0;
         aspect-ratio: auto;
     }
-    .pub .bs-home .d-lead__image:not(:has(img)) {
+    .pub .bs-home .d-lead__image:not(:has(img, .ph)) {
         display: none;
     }
     .pub .bs-home .d-lead__meta {
@@ -1014,6 +1014,15 @@
     .pub .bs-home .d-opinion .d-thumb {
         display: none;
     }
+    /* Keep the existing photo treatment, but give an absent opinion photo its P8 thumbnail. */
+    .pub .bs-home .d-opinion .d-thumb:has(> .ph):not(:has(> img)) {
+        display: block;
+        float: right;
+        width: 96px;
+        height: 72px;
+        margin: 8px 0 8px 12px;
+    }
+
     .pub .bs-home .d-opinion .d-src {
         padding: 0;
         background: none;

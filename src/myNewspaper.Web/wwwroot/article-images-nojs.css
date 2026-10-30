@@ -1,5 +1,5 @@
 /* Image dimensions and load failures cannot be checked without JavaScript: use text-led features. */
-:root:not([data-article-images='enabled']) .pub [data-article-story='feature'] [data-article-media] {
+:root:not([data-article-images='enabled']) .pub [data-article-story='feature'] [data-article-media]:not(:has(> .ph)) {
     display: none;
 }
 :root:not([data-article-images='enabled']) .pub :is(.article, .d-lead__story)[data-article-story='feature'] {
@@ -7,4 +7,31 @@
 }
 :root:not([data-article-images='enabled']) .pub .mx-block[data-article-story='feature'][data-image-layout] {
     display: flex;
+}
+
+/* P8 replaces unmeasured feature photos rather than collapsing their image areas. */
+:root:not([data-article-images='enabled']) .pub [data-article-story='feature'] [data-article-media]:has(> .ph) {
+    display: block;
+    float: none;
+    width: 100%;
+    max-width: none;
+    height: auto;
+    max-height: none;
+    aspect-ratio: 16 / 9;
+    grid-column: 1;
+    grid-row: 1;
+    margin: 0 0 12px;
+}
+:root:not([data-article-images='enabled']) .pub [data-article-story='feature'] [data-article-media] > img {
+    display: none;
+}
+:root:not([data-article-images='enabled']) .pub [data-article-story='feature'] [data-article-media] > .ph {
+    display: block;
+}
+:root:not([data-article-images='enabled'])
+    .pub
+    :is(.article, .d-lead__story)[data-article-story='feature']
+    > :is(.body, .d-lead__body) {
+    grid-column: 1;
+    grid-row: 2;
 }
