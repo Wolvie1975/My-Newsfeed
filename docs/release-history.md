@@ -6,6 +6,23 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
+## Latest video action alignment — October 30, 2026 (Central)
+
+Reset inherited Save margins and center the latest-video card's action row so
+Share and Watch later sit together on the right with an 8px gap. Both controls
+retain 44px touch targets. Added gap/alignment browser assertions.
+
+Preview/live Chromium passed 320, 390, 430, 820, 1024 and 1440px in light/dark;
+live also verified save/unsave and JS on/off. Phone/desktop screenshots inspected,
+temporary profile deleted. Formatting, changed-test lint, diff and release build
+passed. Physical devices/Safari unavailable.
+
+Deployed `mynewspaper-web:video-actions-20261030` (prefix `1fac6e35369f`), preserving
+runtime/keys. Rollback tag `mynewspaper-web:before-video-actions-20261030` and stopped
+container `mynewsfeed-web-before-video-actions-20261030` retain `fa00b619f79b`.
+Both sites healthy; public HTTPS health 200; no fail/critical startup entries observed.
+Admin unchanged. Evidence: test-results/browser/video-actions/live.
+
 ## Latest followed YouTube video on Home — October 30, 2026 (Central)
 
 Replaced the desktop Opinion box and phone Opinion fold with the newest collected

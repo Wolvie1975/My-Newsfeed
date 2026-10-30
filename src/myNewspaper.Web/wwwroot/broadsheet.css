@@ -2002,10 +2002,13 @@ body:has([data-scheme-dialog][open]) {
 }
 .pub .home-latest-video__actions {
     display: flex;
+    align-items: center;
     justify-content: flex-end;
     gap: 8px;
 }
 .pub .home-latest-video :is(.save, .share-button) {
+    margin: 0;
+    flex: none;
     min-width: 44px;
     min-height: 44px;
 }

@@ -881,3 +881,24 @@ configuration and keys preserved. Rollback tag
 `mynewspaper-web:before-latest-video-20261030` and stopped container
 `mynewsfeed-web-before-latest-video-20261030` retain previous image `d93da38f3063`.
 Admin was not redeployed. Live browser artifacts: test-results/browser/latest-video/live.
+
+### Latest video action alignment — October 30, 2026
+
+The shared Save button's automatic left margin and negative vertical margins
+were spreading Share and Watch later across the card. The latest-video card now
+resets both controls' margins, prevents flex shrink and centers their alignment.
+They sit together at the right with an 8px gap and 44px minimum touch targets.
+Added geometry assertions to the latest-video browser regression.
+
+Preview Chromium passed 320, 390, 430, 820, 1024 and 1440px, light/dark: 8px
+edge-to-edge gap, aligned button tops, 44px targets and no horizontal overflow.
+Phone/desktop screenshots inspected. Formatting, changed-test lint and diff checks
+passed. Physical devices/Safari unavailable. Deployed as
+`mynewspaper-web:video-actions-20261030` (prefix `1fac6e35369f`). Live Chromium
+passed the same six widths/themes with exact gap/alignment assertions, 44px
+controls, save/unsave and JS on/off. Live phone/desktop screenshots inspected;
+temporary profile deleted. Both sites healthy, public HTTPS health 200, no
+fail/critical startup entries observed. Runtime/keys preserved; Admin unchanged.
+Rollback tag `mynewspaper-web:before-video-actions-20261030` and stopped container
+`mynewsfeed-web-before-video-actions-20261030` retain previous image `fa00b619f79b`.
+Browser evidence: test-results/browser/video-actions/live.

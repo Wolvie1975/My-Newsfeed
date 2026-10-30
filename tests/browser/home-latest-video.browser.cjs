@@ -181,6 +181,10 @@ const password = process.env.ADMIN_PASSWORD;
                             const box = await card.locator(selector).boundingBox();
                             assert(box.width >= 44 && box.height >= 44, 'touch target');
                         }
+                        const shareBox = await card.locator('[data-share-open]').boundingBox();
+                        const saveBox = await card.locator('[data-save]').boundingBox();
+                        assert(Math.abs(saveBox.x - (shareBox.x + shareBox.width) - 8) < 1, '8px action gap');
+                        assert(Math.abs(saveBox.y - shareBox.y) < 1, 'aligned action buttons');
                     }
                     if (shots) await card.screenshot({ path: `${shots}/${js ? 'js' : 'nojs'}-${theme}-${width}.png` });
                     console.log('PASS latest video', width, theme, js ? 'JS' : 'no JS');
