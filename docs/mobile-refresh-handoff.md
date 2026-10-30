@@ -718,3 +718,25 @@ Both HTTPS health endpoints returned 200; test profiles were removed.
 
 See [release history](release-history.md#p8-no-photo-frames--october-29-2026-central)
 for image tags, rollback and artifacts. Physical devices and Safari were unavailable.
+
+### Homepage “New Tonight” placement — October 30, 2026
+
+Moved the masthead episode teaser from the weather box to the Coming up / Live now
+box, below its games. The forecast box now renders only when forecast data exists;
+episode title, platform/time and the TV link are retained. The separate phone
+“Coming to screens” fold is unchanged.
+
+Validation: public build passed with zero warnings/errors; CSS formatting and
+whitespace checks passed. Preview browser checks covered 320/390/430/820/1024/
+1440/1870px in light/dark: correct parent box and order, no overflow, 44px desktop
+episode link, saved theme after refresh, phone TV fold opening and navigation.
+The TV link also worked without JavaScript at 390/1440px. Existing homepage-column
+regression passed with and without JavaScript. Representative phone and desktop
+screenshots were inspected. Evidence: `test-results/browser/tonight-move/` and
+`/tmp/tonight-move-*.log`. Physical devices and Safari were unavailable.
+Deployed `mynewspaper-web:tonight-box-20261030` (`d375ffdbd724`); runtime settings
+and keys were preserved. Live checks passed all seven widths in light/dark, including placement, overflow,
+44px link, phone fold/TV navigation and saved theme after refresh. No-JavaScript
+TV links worked at 390/1440px. Live screenshots were inspected; both HTTPS health
+endpoints returned 200. The temporary test profile was removed. See release
+history for rollback and deployment evidence.

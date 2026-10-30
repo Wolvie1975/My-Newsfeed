@@ -38,29 +38,19 @@
             </a>
         </div>
 
-        @if (weather is { Periods.Count: > 0 } || episodes.Count > 0)
+        @if (weather is { Periods.Count: > 0 } forecast)
         {
-            <section class="bs-glance" aria-label="At a glance">
-                @if (weather is { Periods.Count: > 0 } forecast)
-                {
-                    <div class="bs-glance__weather">
-                        <h2 class="bs-glance__title">Kansas City weather</h2>
-                        <a class="d-more" href="news/kansas-city">Kansas City <span aria-hidden="true">→</span></a>
-                        <ul class="bs-glance__periods">
-                            @foreach (var period in forecast.Periods.Take(4))
-                            {
-                                <li><span class="bs-glance__name">@period.Name</span><WeatherIcon Summary="@period.Summary" IsDaytime="@period.IsDaytime" /><span class="bs-glance__reading"><b>@period.Temperature°</b> @period.Summary</span></li>
-                            }
-                        </ul>
-                    </div>
-                }
-                @if (episodes.FirstOrDefault() is { } next)
-                {
-                    <a class="bs-glance__tonight" href="tv">
-                        <span class="bs-glance__kicker">New tonight@(next.StartsUtc is { } time ? " · " + Dates.Time(time) : "")@(next.Platform is { } platform ? " · " + platform : "")</span>
-                        <span class="bs-glance__show">@next.SeriesTitle</span>
-                    </a>
-                }
+            <section class="bs-glance" aria-label="Kansas City weather">
+                <div class="bs-glance__weather">
+                    <h2 class="bs-glance__title">Kansas City weather</h2>
+                    <a class="d-more" href="news/kansas-city">Kansas City <span aria-hidden="true">→</span></a>
+                    <ul class="bs-glance__periods">
+                        @foreach (var period in forecast.Periods.Take(4))
+                        {
+                            <li><span class="bs-glance__name">@period.Name</span><WeatherIcon Summary="@period.Summary" IsDaytime="@period.IsDaytime" /><span class="bs-glance__reading"><b>@period.Temperature°</b> @period.Summary</span></li>
+                        }
+                    </ul>
+                </div>
             </section>
         }
 
@@ -82,6 +72,13 @@
                     </li>
                 }
             </ul>
+            @if (episodes.FirstOrDefault() is { } next)
+            {
+                <a class="bs-live__tonight" href="tv">
+                    <span class="bs-live__kicker">New tonight@(next.StartsUtc is { } time ? " · " + Dates.Time(time) : "")@(next.Platform is { } platform ? " · " + platform : "")</span>
+                    <span class="bs-live__show">@next.SeriesTitle</span>
+                </a>
+            }
         </section>
     </div>
 

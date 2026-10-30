@@ -407,7 +407,7 @@
     font-size: 12px;
 }
 
-/* At a glance: forecast and tonight's new episode. */
+/* At a glance: the Kansas City forecast. */
 .pub .bs-glance {
     display: grid;
     gap: 10px;
@@ -466,7 +466,7 @@
     color: var(--text);
     font-size: 18px;
 }
-.pub .bs-glance__tonight {
+.pub .bs-live__tonight {
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -476,14 +476,14 @@
     color: var(--text);
     text-decoration: none;
 }
-.pub .bs-glance__kicker {
+.pub .bs-live__kicker {
     color: var(--accent);
     font-size: 12px;
     font-weight: 800;
     letter-spacing: 0.06em;
     text-transform: uppercase;
 }
-.pub .bs-glance__show {
+.pub .bs-live__show {
     font-size: 16px;
     font-weight: 700;
 }
@@ -799,7 +799,7 @@
         border: 2px solid var(--text);
         background: transparent;
     }
-    /* The forecast is the masthead's left ear, outlined like Coming up: periods two by two, New tonight below. */
+    /* The forecast is the masthead's left ear, outlined like Coming up: periods two by two. */
     .pub .bs-glance {
         grid-template-columns: minmax(0, 1fr);
         align-self: stretch;
@@ -839,7 +839,7 @@
         margin-right: 4px;
         font-size: 20px;
     }
-    .pub .bs-glance__tonight {
+    .pub .bs-live__tonight {
         padding: 12px 0 0;
         border-top: 1px solid var(--row-border);
         border-left: 0;

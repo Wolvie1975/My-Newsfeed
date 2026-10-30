@@ -6,6 +6,40 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
+## Homepage New Tonight in Coming up — October 30, 2026 (Central)
+
+Moved the masthead's New Tonight episode teaser below the games in the Coming up /
+Live now box. The weather box contains only the forecast and no longer renders
+when forecast data is absent. Show title, time/platform and the TV link remain;
+the phone Coming to screens fold retains its existing presentation.
+
+Deployed `mynewspaper-web:tonight-box-20261030` (`d375ffdbd724`) to
+`mynewsfeed-web`. Runtime environment, health check, ports, network, restart policy
+and persistent keys were preserved. Admin was not rebuilt. No migration or
+collector change ran. Rollback: `mynewspaper-web:before-tonight-box-20261030`
+(`890ff293ddff`) and `mynewsfeed-web-before-tonight-box-20261030`.
+
+Public build and Docker publish/static-asset guard passed; changed CSS formatting
+and diff whitespace checks passed. Preview checks covered 320/390/430/820/1024/
+1440/1870px light/dark, correct placement below games, containment/no overflow,
+44px episode link, TV navigation and theme persistence after refresh. The phone
+TV fold and no-JavaScript TV links at 390/1440px worked. Existing homepage-column
+regression passed with and without JavaScript. Screenshots were inspected.
+
+Final HTTPS verification passed at all seven widths in light/dark: the teaser
+appeared only inside Coming up, below the game list, with no overflow and a 44px
+link. Mobile's Coming to screens fold and TV navigation worked. Refresh retained
+the selected theme, and TV links worked without JavaScript at 390/1440px.
+Representative live screenshots were inspected. A disposable profile followed
+the existing Avatar series for representative data and was removed after checks.
+Both HTTPS health endpoints returned 200, the public container is healthy and
+league-phase startup checks ran without application errors. The temporary
+workspace hostname mapping was removed after verification.
+
+Evidence: `test-results/browser/tonight-move/`, `/tmp/tonight-move-*.log` and
+`/tmp/tonight-box-*.log`. Physical devices and Safari were unavailable. Commit
+remains local on `develop`.
+
 ## P8 no-photo frames — October 29, 2026 (Central)
 
 Implemented the approved [P8 handoff](no-photo-placeholder-handoff.md): decorative
