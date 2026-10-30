@@ -629,3 +629,14 @@ and News on iPad. Artifacts: `test-results/browser/ipad-mobile/` (ignored). Remo
 images were blocked to avoid third-party stalls; local fonts/scripts loaded.
 Physical-device checks were unavailable. Signed-in production verification and
 deployment evidence are recorded in the release history.
+
+### Ranking source exclusion — local commit, October 29, 2026 (Central)
+
+Committed the existing edit excluding Women's Basketball sources from RankingsQuery
+and its season-start regression assertion. All 13 RankingsTests passed, including
+the SQL-backed source-filter test. The earlier local iPad/mobile preview included
+these edits while checking the Rankings page at 320/390/430/744/768/820/834/1023/
+1024/1280/1440px light/dark, menus, folds and overflow. That supplies local rendered
+verification; the focused integration test checks the exclusion itself. Real-device
+checks were unavailable. This change was excluded from the deployed iPad image and
+has not subsequently been deployed; production verification remains outstanding.

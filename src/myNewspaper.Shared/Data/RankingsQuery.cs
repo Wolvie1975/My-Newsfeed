@@ -31,7 +31,8 @@ public static class RankingsQuery
             ? "Rankings may be out of date." : null;
     public static async Task<RankingsPage> GetAsync(WebScraperContext db, int? sourceId, ILogger log, DateOnly? today = null, string? collegeSport = null)
     {
-        var sources = await db.SportsRankingSources.AsNoTracking().Where(s => s.Enabled && (collegeSport == null || s.Sport == collegeSport)).OrderBy(s => s.DisplayName).ThenBy(s => s.Id).ToListAsync();
+        var sources = await db.SportsRankingSources.AsNoTracking().Where(s => s.Enabled && s.Sport != "Women's Basketball"
+            && (collegeSport == null || s.Sport == collegeSport)).OrderBy(s => s.DisplayName).ThenBy(s => s.Id).ToListAsync();
         var day = today ?? FeedDates.Create(FeedDates.SiteTimeZoneId).Today;
         if (sources.Any(s => s.Sport.Contains("Basketball", StringComparison.OrdinalIgnoreCase)))
         {

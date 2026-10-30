@@ -124,6 +124,9 @@ public class RankingsTests
         Assert.Equal(source.Id, (await RankingsQuery.GetAsync(db, source.Id, NullLogger.Instance, day)).Selected!.Id);
         poll.SeasonLabel = "2030-31"; await db.SaveChangesAsync();
         Assert.DoesNotContain((await RankingsQuery.GetAsync(db, source.Id, NullLogger.Instance, day)).Sources, s => s.Id == source.Id);
+        // Women's basketball isn't covered anywhere on the site, even after its season starts.
+        poll.SeasonLabel = "2031-32"; source.Sport = game.Sport = "Women's Basketball"; await db.SaveChangesAsync();
+        Assert.DoesNotContain((await RankingsQuery.GetAsync(db, source.Id, NullLogger.Instance, day)).Sources, s => s.Id == source.Id);
     }
 
 }
