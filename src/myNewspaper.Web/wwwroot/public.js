@@ -996,12 +996,85 @@
             saved = false;
         }
         sync();
-        const status = document.querySelector('[data-scheme-status]');
-        if (status)
-            status.textContent = saved
-                ? 'Color scheme saved.'
-                : 'Color scheme applied. This browser could not save it.';
+        report(
+            saved
+                ? window.myNewspaperPrefs?.profile
+                    ? 'Saving color scheme…'
+                    : 'Color scheme saved.'
+                : 'Color scheme applied, but it could not be saved.',
+            !saved,
+        );
     });
+    function report(message, retry = false) {
+        document.querySelectorAll('[data-scheme-status]').forEach((status) => {
+            status.textContent = message;
+        });
+        document.querySelectorAll('[data-scheme-retry]').forEach((button) => {
+            button.hidden = !retry;
+        });
+    }
+    document.addEventListener('myNewspaper:settings-saved', (event) => {
+        if (event.detail?.colorScheme === applied) report('Color scheme saved.');
+    });
+    document.addEventListener('myNewspaper:settings-failed', (event) => {
+        if (event.detail?.colorScheme === applied)
+            report('Color scheme applied, but it could not be saved. Please try again.', true);
+    });
+    let opener;
+    document.addEventListener('click', (event) => {
+        const trigger = event.target.closest('[data-scheme-open]');
+        const dialog = document.querySelector('[data-scheme-dialog]');
+        if (trigger && dialog?.showModal) {
+            event.preventDefault();
+            opener = trigger;
+            sync();
+            if (!dialog.open) dialog.showModal();
+        }
+        if (event.target.closest('[data-scheme-close]')) dialog?.close();
+        if (event.target.closest('[data-scheme-retry]')) {
+            const selected = dialog?.querySelector('input[data-color-scheme]:checked');
+            selected?.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+        if (event.target === dialog && dialog.open) {
+            const box = dialog.getBoundingClientRect();
+            if (
+                event.clientX < box.left ||
+                event.clientX > box.right ||
+                event.clientY < box.top ||
+                event.clientY > box.bottom
+            )
+                dialog.close();
+        }
+    });
+    document.addEventListener('keydown', (event) => {
+        if (event.key !== 'Tab') return;
+        const dialog = document.querySelector('[data-scheme-dialog][open]');
+        if (!dialog) return;
+        const controls = Array.from(dialog.querySelectorAll('button, input, a[href], [tabindex]')).filter(
+            (control) =>
+                !control.disabled &&
+                control.tabIndex >= 0 &&
+                control.getClientRects().length &&
+                (control.type !== 'radio' || control.checked),
+        );
+        const first = controls[0],
+            last = controls.at(-1);
+        if (event.shiftKey && document.activeElement === first) {
+            event.preventDefault();
+            last?.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+            event.preventDefault();
+            first?.focus();
+        }
+    });
+    // Native dialog handles Escape; restore the shortcut after any close action.
+    document.addEventListener(
+        'close',
+        (event) => {
+            if (event.target.matches('[data-scheme-dialog]') && opener?.isConnected) opener.focus();
+        },
+        true,
+    );
     window.addEventListener('storage', (e) => {
         if (e.key === key || e.key === null) {
             applied = read();

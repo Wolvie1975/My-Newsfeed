@@ -1,0 +1,26 @@
+@* Shared choices and preference handlers keep the header picker in sync with Settings. *@
+<dialog class="scheme-picker" data-scheme-dialog aria-labelledby="scheme-picker-title" aria-describedby="scheme-picker-help">
+    <div class="scheme-picker__head">
+        <h2 id="scheme-picker-title">Color scheme</h2>
+        <button class="scheme-picker__close" type="button" data-scheme-close aria-label="Close color scheme picker" autofocus>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
+        </button>
+    </div>
+    <p id="scheme-picker-help">Choose a look. Light and dark mode work with every scheme.</p>
+    <fieldset class="settings-schemes scheme-picker__choices">
+        <legend class="sr-only">Choose a color scheme</legend>
+        @foreach (var scheme in myNewspaper.Web.Profiles.SiteDefaults.ColorSchemeChoices)
+        {
+            <label class="settings-scheme">
+                <input type="radio" name="header-color-scheme" value="@scheme.Key" data-color-scheme />
+                <span class="scheme-swatch" style="@($"--swatch-primary:{scheme.Primary};--swatch-secondary:{scheme.Secondary}")" aria-hidden="true"></span>
+                <span>@scheme.Name</span>
+            </label>
+        }
+    </fieldset>
+    <div class="scheme-picker__footer">
+        <p role="status" data-scheme-status></p>
+        <button class="nf-btn nf-btn--secondary" type="button" data-scheme-retry hidden>Try saving again</button>
+        <button class="nf-btn nf-btn--primary" type="button" data-scheme-close>Done</button>
+    </div>
+</dialog>

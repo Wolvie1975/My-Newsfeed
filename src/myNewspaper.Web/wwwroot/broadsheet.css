@@ -1809,7 +1809,7 @@
     margin-block: 3px;
 }
 
-/* Keep three 44px header actions and the date/time readable on narrow phones. */
+/* Keep header actions at 44px and the date/time readable on narrow phones. */
 @media (max-width: 374px) {
     :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme])) .pub .site-header {
         gap: 2px;
@@ -1825,16 +1825,14 @@
     }
 }
 
-/* An admin's extra Requests action gets a second clock row on narrow phones. */
-@media (max-width: 429px) {
-    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
-        .pub
-        .site-header:has(.requests-link) {
+/* Four header actions keep the clock on its own row on narrow phones. */
+@media (max-width: 479px) {
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme])) .pub .site-header {
         flex-wrap: wrap;
     }
     :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
         .pub
-        .site-header:has(.requests-link)
+        .site-header
         .header-clock {
         order: 1;
         flex-basis: 100%;
@@ -1842,4 +1840,118 @@
         justify-content: center;
         gap: 8px;
     }
+}
+
+/* Header color-scheme shortcut and native modal. */
+.pub .scheme-toggle {
+    display: inline-grid;
+    place-items: center;
+    flex: none;
+    width: 44px;
+    height: 44px;
+    border: 1px solid var(--header-line);
+    border-radius: 10px;
+    color: inherit;
+}
+.pub .scheme-toggle:hover {
+    text-decoration: none;
+}
+@media (max-width: 1023px) {
+    .pub .scheme-toggle {
+        order: -1;
+    }
+}
+.pub .scheme-picker {
+    width: min(680px, calc(100% - 24px));
+    max-width: none;
+    max-height: calc(100dvh - 24px);
+    padding: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: var(--surface);
+    color: var(--text);
+    box-shadow: 0 20px 70px #0005;
+}
+.pub .scheme-picker:not([open]) {
+    display: none;
+}
+.pub .scheme-picker::backdrop {
+    background: #0009;
+}
+.pub .scheme-picker__head {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+}
+.pub .scheme-picker h2 {
+    margin: 0;
+    font: 800 26px/1.2 var(--font-serif);
+}
+.pub .scheme-picker__close {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 44px;
+    height: 44px;
+    border: 1px solid var(--field-border);
+    border-radius: 10px;
+    background: var(--surface);
+    color: var(--text);
+}
+.pub .scheme-picker > p {
+    margin: 16px 20px 0;
+    color: var(--text-2);
+}
+.pub .scheme-picker__choices {
+    margin: 16px 20px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.pub .scheme-picker .settings-scheme {
+    min-width: 0;
+    min-height: 60px;
+    gap: 10px;
+    padding: 12px;
+}
+.pub .scheme-picker .settings-scheme > span:last-child {
+    overflow-wrap: anywhere;
+}
+.pub .scheme-picker__footer {
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 16px 20px;
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+}
+.pub .scheme-picker__footer p {
+    width: 100%;
+    margin: 0;
+    color: var(--text-2);
+    font-size: 14px;
+}
+.pub .scheme-picker [hidden] {
+    display: none;
+}
+@media (max-width: 479px) {
+    .pub .scheme-picker__choices {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+body:has([data-scheme-dialog][open]) {
+    overflow: hidden;
 }

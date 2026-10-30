@@ -6,6 +6,50 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
+## Header color-scheme modal — October 30, 2026 (Central)
+
+Added a palette shortcut beside the light/dark toggle on mobile and desktop.
+It opens a native modal with the same 16 named swatches from SiteDefaults as
+Settings. Choices apply immediately and save automatically, preserve light/dark
+mode, and synchronize with Settings. The modal supports Tab/Shift+Tab, Escape,
+backdrop/Close/Done dismissal and focus restoration. Sticky controls keep save
+feedback visible on small screens. A failed save exposes a retry action;
+profile acknowledgements identify the preference patch so stale/unrelated saves
+do not report success for the current selection. Without JavaScript/native modal
+support, the shortcut links to Settings. Narrow headers use a separate clock row
+to keep four controls (or five with an admin Requests alert) usable.
+
+Deployed public image `mynewspaper-web:scheme-picker-20261030` (`48accb3ec847`)
+to `mynewsfeed-web`. Runtime environment, health check, ports, network, restart
+policy and persistent keys were preserved. Admin was not rebuilt; no migration
+or collector change ran. Rollback: `mynewspaper-web:before-scheme-picker-20261030`
+(`ba56cac5113b`) and `mynewsfeed-web-before-scheme-picker-20261030`.
+
+Public build and Docker publish/static-asset guard passed with no build warnings
+or errors. All 139 profile-related .NET tests passed. Targeted ESLint, changed
+CSS/JavaScript Prettier and whitespace checks passed. Preview Chromium checks
+covered 320/390/430/820/1024/1280/1440px light/dark: modal fits, 44px shortcut,
+all choices, focus containment/restoration, three dismissal paths, no page
+navigation on opening, Settings synchronization, storage-failure retry,
+refresh/enhanced-navigation persistence, admin notification fixture and native
+no-JavaScript Settings fallback. Representative screenshots were inspected.
+
+Final HTTPS checks passed all seven widths in light/dark on a disposable profile.
+All 16 schemes saved, retained light/dark mode, synchronized with Settings and
+survived refresh/enhanced navigation. Tab/Shift+Tab, focus restoration, backdrop/
+Escape/Done, background scroll lock, viewport fit, 44px shortcut and no page
+navigation on opening passed. A controlled 503 response displayed failure
+feedback; retry saved successfully. The extra admin notification fixture passed
+320/390/430px light/dark after awaiting completed navigation before measuring the
+new header. Native no-JavaScript Settings fallback worked. Representative live
+phone/desktop screenshots were inspected. Both HTTPS health endpoints returned
+200; startup league-phase checks ran without application errors. Test profiles
+and the temporary workspace hostname mapping were removed after verification.
+
+Evidence: `test-results/browser/scheme-picker/` and `/tmp/scheme-modal-*.log`.
+Physical-device and Safari checks were unavailable. Commit remains local on
+`develop`.
+
 ## Mobile header light/dark toggle — October 30, 2026 (Central)
 
 The existing sun/moon theme button now appears immediately beside Saved in the

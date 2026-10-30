@@ -108,9 +108,11 @@
         const body = patch;
         patch = {};
         if (!Object.keys(body).length) return;
-        send(body, '/api/me/settings', 'PUT', keepalive).catch(() => {
-            document.dispatchEvent(new CustomEvent('myNewspaper:settings-failed'));
-        });
+        send(body, '/api/me/settings', 'PUT', keepalive)
+            .then(() => document.dispatchEvent(new CustomEvent('myNewspaper:settings-saved', { detail: body })))
+            .catch(() => {
+                document.dispatchEvent(new CustomEvent('myNewspaper:settings-failed', { detail: body }));
+            });
     }
 
     window.myNewspaperPrefs = profile

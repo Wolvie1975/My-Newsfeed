@@ -773,3 +773,38 @@ Menu/Saved navigation worked. Representative live screenshots were inspected.
 Both HTTPS health endpoints returned 200, the public container is healthy and
 startup league-phase checks ran without application errors. The temporary profile
 and workspace hostname mapping were removed after verification.
+
+
+### Header color-scheme modal — October 30, 2026
+
+Added the palette shortcut beside light/dark mode on both mobile and desktop.
+It opens the shared 16-scheme catalog in a native dialog with immediate previews,
+automatic saving and Settings synchronization. Light/dark mode is retained.
+Keyboard focus stays inside; Escape, backdrop, Close and Done restore the shortcut.
+Save feedback stays visible while choices scroll, including a retry on failure.
+Without JavaScript, the shortcut leads to Settings. Four mobile actions retain
+44px targets; narrow phones put the clock on a separate row, including admin
+notification layouts.
+
+Preview checks passed 320/390/430/820/1024/1280/1440px light/dark, all 16 schemes,
+focus/dismissal, viewport fit, no overflow, persistence, Settings synchronization,
+local save failure/retry and no-JavaScript fallback. An admin Requests fixture
+also passed 320/390/430px light/dark. Representative screenshots were inspected.
+All 139 profile-related .NET tests, public build, targeted lint/format and
+whitespace checks passed.
+
+Deployed `mynewspaper-web:scheme-picker-20261030` (`48accb3ec847`); runtime
+configuration and keys were preserved. Final HTTPS checks passed all seven widths in light/dark on a disposable profile.
+All 16 schemes saved, retained light/dark mode, synchronized with Settings and
+survived refresh/enhanced navigation. Tab/Shift+Tab, focus restoration, backdrop/
+Escape/Done, background scroll lock, viewport fit, 44px shortcut and no page
+navigation on opening passed. A controlled 503 response displayed failure
+feedback; retry saved successfully. The extra admin notification fixture passed
+320/390/430px light/dark after awaiting completed navigation before measuring the
+new header. Native no-JavaScript Settings fallback worked. Representative live
+phone/desktop screenshots were inspected. Both HTTPS health endpoints returned
+200; startup league-phase checks ran without application errors. Test profiles
+and the temporary workspace hostname mapping were removed after verification.
+
+Evidence: `test-results/browser/scheme-picker/` and `/tmp/scheme-modal-*.log`.
+See release history for rollback. Physical devices and Safari were unavailable.
