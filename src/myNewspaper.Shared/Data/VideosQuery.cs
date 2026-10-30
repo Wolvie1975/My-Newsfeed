@@ -74,6 +74,20 @@ public static class VideosQuery
         return list;
     }
 
+    /// <summary>Today's counts across the viewer's followed channels, independent of listing filters.</summary>
+    public static async Task<IReadOnlyDictionary<string, int>> GetCategoryCountsAsync(
+        WebScraperContext db, Viewer viewer, DateTime startUtc, DateTime endUtc)
+    {
+        var rows = await FollowQuery.Videos(db, viewer)
+            .Where(v => v.PublishedAt >= startUtc && v.PublishedAt < endUtc)
+            .GroupBy(v => v.YoutubeVideoFeed != null && v.YoutubeVideoFeed.YoutubeCategory != null
+                ? v.YoutubeVideoFeed.YoutubeCategory.CategoryName : null)
+            .Select(g => new { Name = g.Key, Count = g.Count() })
+            .ToListAsync();
+        return rows.GroupBy(r => r.Name is null ? Other.Slug : Slug(r.Name))
+            .ToDictionary(g => g.Key, g => g.Sum(r => r.Count), StringComparer.Ordinal);
+    }
+
     private static IQueryable<YouTubeVideo> Uncategorized(IQueryable<YouTubeVideo> videos) =>
         videos.Where(v => v.YoutubeVideoFeed == null || v.YoutubeVideoFeed.YoutubeCategoryId == null);
 

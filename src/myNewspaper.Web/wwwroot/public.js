@@ -501,6 +501,32 @@
         });
 
         if (scope === document || matchesWithin(scope, '[data-saved-list]').length) renderSavedPage(list);
+        renderWatchLater(list);
+    }
+
+    // Reuse Saved's profile-scoped list so saves, removals and other-device refreshes update the sidebar too.
+    function renderWatchLater(list) {
+        const section = document.querySelector('[data-yt-watch-later]');
+        const container = section?.querySelector('[data-yt-watch-list]');
+        if (!container || !savedReady) return;
+        const videos = list
+            .filter((a) => a.kind === 'video' && safeUrl(a.url))
+            .sort((a, b) => (Date.parse(b.savedAt) || 0) - (Date.parse(a.savedAt) || 0) || a.url.localeCompare(b.url))
+            .slice(0, 3);
+        const signature = JSON.stringify(videos);
+        if (container.dataset.signature === signature) return;
+        container.dataset.signature = signature;
+        const rows = videos.map((video) => {
+            const row = el('li');
+            const link = el('a', '', video.title);
+            link.href = safeUrl(video.url);
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            row.append(link, el('span', '', video.source));
+            return row;
+        });
+        container.replaceChildren(...rows);
+        section.hidden = videos.length === 0;
     }
 
     function toggleSave(button) {

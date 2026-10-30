@@ -4930,3 +4930,77 @@ a.tvc-row__show:hover {
         border-left: 1px solid var(--row-border);
     }
 }
+
+/* YouTube's personal sidebar appears only where the third column fits. */
+.pub .yt-aside {
+    display: none;
+}
+@media (min-width: 2560px) {
+    .pub .yt-top:has(.yt-aside) {
+        grid-template-columns: minmax(0, 1fr) 460px 380px;
+    }
+    .pub .yt-aside {
+        display: block;
+        min-width: 0;
+        padding-left: 28px;
+        border-left: 1px solid var(--row-border);
+    }
+    .pub .yt-top:has(.yt-aside) .yt-latest {
+        padding-right: 28px;
+    }
+    .pub .yt-aside > section + section {
+        margin-top: 32px;
+    }
+    .pub .yt-channel-counts a {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        min-height: 44px;
+        padding: 8px 0;
+        border-bottom: 1px solid var(--row-border);
+        color: var(--text);
+        text-decoration: none;
+    }
+    .pub .yt-channel-counts a[aria-current='page'] {
+        color: var(--accent);
+        font-weight: 800;
+    }
+    .pub .yt-category-count {
+        font-variant-numeric: tabular-nums;
+        color: var(--text-2);
+    }
+    .pub .yt-watch-list {
+        margin: 12px 0 0;
+        padding: 0;
+        list-style: none;
+    }
+    .pub .yt-watch-list li {
+        padding: 12px 0;
+        border-bottom: 1px solid var(--row-border);
+        overflow-wrap: anywhere;
+    }
+    .pub .yt-watch-list a {
+        display: block;
+        padding: 8px 0;
+        color: var(--text);
+        font-family: var(--font-serif);
+        font-size: 20px;
+        font-weight: 700;
+        line-height: 1.2;
+    }
+    .pub .yt-watch-list li > span {
+        color: var(--text-2);
+        font-size: 12px;
+    }
+}
+@media (min-width: 2560px) {
+    .pub .yt-watch-list a,
+    .pub .yt-aside .ef-more {
+        min-height: 44px;
+    }
+    .pub .yt-aside .ef-more {
+        display: flex;
+        align-items: center;
+    }
+}

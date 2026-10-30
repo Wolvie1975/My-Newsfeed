@@ -6,6 +6,49 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
+## YouTube sidebar — October 30, 2026 (Central)
+
+The YouTube featured front now adds a third column from 2560 CSS px. By channel
+shows today's video counts for the current reader's followed categories and links
+to each category. Counts use one grouped query bounded by the site's calendar day,
+independent of the active category/channel filter. Watch later shows the profile's
+three newest saved videos, links to the full Saved list, and updates after saves,
+removals and Saved refreshes. It is server-rendered for no-JavaScript readers and
+hidden when empty. Narrower layouts and the existing category controls are retained.
+No schema migration, carousel or collector changes were needed.
+
+Solution build passed with zero warnings/errors. All 36 targeted video tests and
+all five JavaScript unit tests passed. The new SQL test checks a 25-hour Chicago
+DST day, exclusive day boundaries, uncategorized videos, unfollowed feeds and a
+viewer with no profile. Changed JavaScript/browser-test ESLint, repository-wide
+formatting and diff checks passed. The previous release's unrelated full-suite
+profile-settings and repository-lint failures were not changed by this follow-up.
+
+Preview browser checks passed 320/390/430/768/1024/1280/1440/1920/2560/3840px in
+light/dark, plus Monochrome/Cardinals at 2560. Real temporary-profile saves/removals
+verified newest-first order, the three-item cap, empty hiding, refill after removal,
+live updates, reload persistence and safe plain-text saved titles. Category links
+and counts independent of filtering passed. Sidebar target sizes, phone menus/save
+controls, no horizontal overflow, breakpoint visibility, server-rendered bookmarks
+and no-JavaScript category form navigation passed. Screenshots were reviewed.
+The live layout matrix passed the same widths/themes and the real-save/category
+checks. A focused live rerun passed server-rendered bookmarks and no-JavaScript
+category navigation after the test was corrected to wait for CSS loading before
+asserting media-query layout. Test fixtures were removed through Admin cleanup; a final check found no sidebar
+test profiles remaining.
+
+Deployed mynewspaper-web:youtube-sidebar-20261030 (40a9579e1b76), public container
+1b4f0609bb74. The live environment, key volume, port mapping, restart policy,
+health check, network and aliases were preserved. Database remains sql2025 /
+WebScraper. Public/admin HTTPS health endpoints returned 200; Admin was unchanged.
+The deployed public.js/sections.css hashes match the working tree; no fail/critical
+startup entries were observed. Rollback image
+mynewspaper-web:before-youtube-sidebar-20261030 and stopped container
+mynewsfeed-web-before-youtube-sidebar-20261030 retain c34ccf4053df.
+Evidence: test-results/browser/youtube-sidebar-preview/, youtube-sidebar-live/
+and validation logs under test-results/browser/youtube-sidebar-release/.
+Checks use Chromium emulation; physical devices, Firefox and Safari were unavailable.
+
 ## Wide screens and 4K — October 30, 2026 (Central)
 
 The public reader fills the viewport from 1920 CSS px with 56px edges. Home adds

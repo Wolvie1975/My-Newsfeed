@@ -20,8 +20,20 @@ specificity. The Home wrapper uses `display: contents` for its two original grid
 only at wide widths; DOM and keyboard order remain the original order, even when
 the Scoreboard column moves into the first row at 1920px.
 
-No schema, queries, carousel behavior, channel tabs or saved-video sidebar were
-added. The absent Jump to component has no speculative CSS. Content height remains
+The initial wide-screen release changed layout only. The follow-up YouTube sidebar
+adds a third column at 2560px on the first-page featured front. By channel lists the
+existing category links with counts of videos published today in the site's display
+zone. One grouped query applies the viewer's followed-channel filter and the UTC
+start/end of the site-local day, including daylight-saving transitions. Counts
+cover the viewer's categories independently of the selected listing filter.
+
+Watch later shows the current profile's three most recently saved videos from the
+same SharedArticles store as Saved and VideoSaveButton. Copies survive feed expiry.
+The initial links are server-rendered; public.js reuses Saved's existing cache,
+save/remove responses and refresh to keep the list current without a new poller.
+The section hides when empty. Below 2560px the sidebar is hidden and the existing
+category controls remain. No schema, carousel behavior or channel-tab changes were
+needed. The absent Jump to component has no speculative CSS. Content height remains
 variable; six columns do not guarantee that every section fits above the fold.
 
 ## Verification
@@ -34,6 +46,13 @@ six fronts, page/header padding, column counts and overflow, plus wide secondary
 pages, phone menus, 4K sticky positioning/share dialog and two additional schemes.
 Temporary live profiles are deleted in cleanup. Existing phone/front/headline and
 YouTube suites cover controls, persistence, touch targets and no-JavaScript paths.
+
+The sidebar check is tests/browser/youtube-sidebar.browser.cjs. It requires a
+profiles-enabled site and ADMIN_BASE_URL/ADMIN_PASSWORD to create and delete its
+own disposable profile, plus BASE_URL and optional SCREENSHOT_DIR/WIDTHS. It checks
+real save/remove updates, latest-three ordering, category links, plain-text saved
+titles, mobile controls, themes, server-rendered no-JavaScript bookmarks and the
+no-JavaScript category form. No household Saved list is changed by this check.
 
 Release outcomes, image IDs and outstanding verification limits are recorded in
 [release history](release-history.md).

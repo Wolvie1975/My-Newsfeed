@@ -75,6 +75,45 @@ public class VideosTests
         Assert.Empty(VideosQuery.SelectHomeVideos([], collected));
     }
 
+    [Fact]
+    public async Task Sidebar_counts_use_site_day_boundaries_followed_channels_and_other()
+    {
+        await using var db = Create();
+        await using var tx = await db.Database.BeginTransactionAsync();
+        var token = Tag();
+        var dates = FeedDates.Create("America/Chicago");
+        var day = new DateOnly(2026, 11, 1);
+        var start = dates.StartOfDayUtc(day);
+        var end = dates.StartOfDayUtc(day.AddDays(1));
+        Assert.Equal(TimeSpan.FromHours(25), end - start);
+        var category = new YoutubeCategory { CategoryName = $"Zz {token} Tech", DateAdded = DateTime.UtcNow };
+        var followed = new YoutubeVideoFeed { ChannelId = $"UC{token}A", Url = $"https://{token}a.test.invalid/feed", YoutubeCategory = category, DateAdded = DateTime.UtcNow };
+        var loose = new YoutubeVideoFeed { ChannelId = $"UC{token}B", Url = $"https://{token}b.test.invalid/feed", DateAdded = DateTime.UtcNow };
+        var hidden = new YoutubeVideoFeed { ChannelId = $"UC{token}C", Url = $"https://{token}c.test.invalid/feed", YoutubeCategory = category, DateAdded = DateTime.UtcNow };
+        var profile = new Profile { Name = $"zz {token}", CreatedAt = DateTime.UtcNow };
+        db.Profiles.Add(profile);
+        db.YouTubeVideos.AddRange(
+            Video(token, "A", "before", start.AddSeconds(-1), feed: followed),
+            Video(token, "A", "start", start, feed: followed),
+            Video(token, "A", "last hour", end.AddMinutes(-30), feed: followed),
+            Video(token, "A", "tomorrow", end, feed: followed),
+            Video(token, "B", "uncategorized", start.AddHours(2), feed: loose),
+            Video(token, "C", "unfollowed", start.AddHours(3), feed: hidden));
+        await db.SaveChangesAsync();
+        db.ProfileChannelFollows.AddRange(
+            new ProfileChannelFollow { ProfileId = profile.Id, YoutubeVideoFeedId = followed.Id, FollowedAt = DateTime.UtcNow },
+            new ProfileChannelFollow { ProfileId = profile.Id, YoutubeVideoFeedId = loose.Id, FollowedAt = DateTime.UtcNow });
+        await db.SaveChangesAsync();
+        var counts = await VideosQuery.GetCategoryCountsAsync(db, Viewer.ForProfile(profile.Id), start, end);
+        Assert.Equal(2, counts.Count);
+        Assert.Equal(2, counts[VideosQuery.Slug(category.CategoryName)]);
+        Assert.Equal(1, counts[VideosQuery.Other.Slug]);
+        Assert.Empty(await VideosQuery.GetCategoryCountsAsync(db, Viewer.Nobody, start, end));
+        var tomorrow = await VideosQuery.GetCategoryCountsAsync(db, Viewer.ForProfile(profile.Id), end, end.AddDays(1));
+        Assert.Equal(1, tomorrow[VideosQuery.Slug(category.CategoryName)]);
+        Assert.Single(tomorrow);
+    }
+
     private static WebScraperContext Create() => new(
         new DbContextOptionsBuilder<WebScraperContext>()
             .UseSqlServer("Server=sql2025,1433;Database=WebScraper;User Id=sa;Password=Fedora_Dev_2025!;Encrypt=False;TrustServerCertificate=True;")

@@ -2,6 +2,7 @@
 @layout PublicLayout
 @inject IDbContextFactory<WebScraperContext> Factory
 @inject FeedDates Dates
+@inject myNewspaper.Web.Saved.SharedArticles SavedArticles
 @inject myNewspaper.Web.Profiles.ProfileContext Reader
 
 <PageTitle>YouTube · myNewspaper</PageTitle>
@@ -134,6 +135,34 @@ else
                     </article>
                 }
             </section>
+            @if (categories.Count > 0 || watchLater.Count > 0)
+            {
+                <aside class="yt-aside" aria-label="Your video channels and watch later">
+                    @if (categories.Count > 0)
+                    {
+                        <section aria-labelledby="yt-channel-heading">
+                            <h2 id="yt-channel-heading" class="ef-label">By channel</h2>
+                            <p class="ef-note">Videos published today · @(Dates.ZoneLabel ?? Dates.Zone.Id)</p>
+                            <nav class="yt-channel-counts" aria-label="Channel categories">
+                                @foreach (var category in categories)
+                                {
+                                    <a href="@CategoryHref(category)" aria-current="@(selectedCategory == category ? "page" : null)"><span>@category.Name</span><span class="yt-category-count" aria-label="@($"{categoryCounts.GetValueOrDefault(category.Slug)} videos published today")">@categoryCounts.GetValueOrDefault(category.Slug)</span></a>
+                                }
+                            </nav>
+                        </section>
+                    }
+                    <section data-yt-watch-later hidden="@(watchLater.Count == 0)" aria-labelledby="yt-watch-later-heading">
+                        <h2 id="yt-watch-later-heading" class="ef-label">Watch later</h2>
+                        <ul class="yt-watch-list" data-yt-watch-list>
+                            @foreach (var video in watchLater)
+                            {
+                                <li><a href="@FeedQuery.SafeHref(video.Url)" target="_blank" rel="noopener noreferrer">@video.Title</a><span>@video.Source</span></li>
+                            }
+                        </ul>
+                        <a class="ef-more" href="saved?list=video">All saved videos →</a>
+                    </section>
+                </aside>
+            }
         </div>
         @if (more.Count > 0) { <h2 class="yt-label">More videos</h2> }
     }
@@ -188,11 +217,19 @@ else
     private string? selectedChannel;
     private VideosPage? listing;
     private DateTime? lastUpdated;
+    private IReadOnlyDictionary<string, int> categoryCounts = new Dictionary<string, int>();
+    private IReadOnlyList<myNewspaper.Web.Saved.SavedArticle> watchLater = [];
 
     protected override async Task OnParametersSetAsync()
     {
         await using var db = await Factory.CreateDbContextAsync();
         categories = await VideosQuery.GetCategoriesAsync(db, Reader.Viewer);
+        var today = Dates.Today;
+        categoryCounts = await VideosQuery.GetCategoryCountsAsync(db, Reader.Viewer,
+            Dates.StartOfDayUtc(today), Dates.StartOfDayUtc(today.AddDays(1)));
+        watchLater = (await SavedArticles.Read(Reader.SavedListProfileId))
+            .Where(v => v.Kind == "video" && FeedQuery.SafeHref(v.Url) is not null)
+            .OrderByDescending(v => v.SavedAt).ThenBy(v => v.Url, StringComparer.Ordinal).Take(3).ToList();
         var wanted = CategoryQuery?.Trim().ToLowerInvariant();
         selectedCategory = categories.FirstOrDefault(c => c.Slug == wanted);
         channels = await VideosQuery.GetChannelsAsync(db, Reader.Viewer, selectedCategory);
