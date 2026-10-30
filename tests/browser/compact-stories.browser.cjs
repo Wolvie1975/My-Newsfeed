@@ -18,7 +18,7 @@ const base = process.env.BASE_URL || 'http://localhost:5295',
             for (const width of [320, 390, 430, 768, 1440])
                 for (const theme of ['light', 'dark']) {
                     // Headlines has its own folded phone front (headlines-phone); the cards stay on the other two.
-                    if (route === 'news' && width < 744) continue;
+                    if (route === 'news' && width < 1024) continue;
                     await p.setViewportSize({ width, height: 950 });
                     await p.emulateMedia({ colorScheme: theme });
                     assert.equal((await p.goto(base + '/' + route)).status(), 200);
@@ -30,7 +30,7 @@ const base = process.env.BASE_URL || 'http://localhost:5295',
                         .locator('.paper-rows .article,.paper-support .article,.paper-feed > .article')
                         .first();
                     await row.waitFor();
-                    if (width < 744) {
+                    if (width < 1024) {
                         // Phones (October 26, 2026): every story is a picture card, as on F1 News.
                         assert(
                             await p
@@ -54,7 +54,7 @@ const base = process.env.BASE_URL || 'http://localhost:5295',
                         if (width === 390 && theme === 'light')
                             await row.screenshot({ path: root + route.replaceAll('/', '-') + '-row.png' });
                     }
-                    if (width >= 744) {
+                    if (width >= 1024) {
                         // Tablets: large pictures above the headline. Desktop (concept board): a 96px thumbnail beside it.
                         const card = p.locator('.paper-rows .article').first();
                         if (await card.count())
@@ -65,7 +65,7 @@ const base = process.env.BASE_URL || 'http://localhost:5295',
                                     return wide
                                         ? [96, 72].includes(Math.round(t.width)) // 72px posters on Entertainment headlines
                                         : Math.abs(t.width - a.width) < 1 && t.height === 200;
-                                }, width >= 744),
+                                }, width >= 1024),
                                 'large More stories image ' + route,
                             );
                     }

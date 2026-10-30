@@ -603,3 +603,29 @@ Screenshots were inspected under `test-results/browser/request-format/` (ignored
 The temporary profile was removed; no content requests were submitted. Physical
 device checks were unavailable. Deployment and live verification are recorded in
 the release history.
+
+### iPad portrait uses the mobile version — October 29, 2026 (Central)
+
+The public website now switches to desktop at 1024px. The mobile version covers
+768/820/834px iPad portrait widths and the complete range below 1024px, with the
+same menu, ribbons, section selects and folds as phones. The former tablet-only
+desktop stylesheet was removed. Shared public CSS, public page CSS and article
+image loading now use the same boundary; browser assertions were adjusted. The
+1024px-wide large iPad portrait remains desktop under this width-based policy.
+A long live hockey status found during the 320px check now wraps within its card.
+Unrelated local ranking query/test edits were preserved.
+
+Validation: public build succeeded with zero warnings/errors; ESLint passed.
+The preview used profiles disabled and background jobs disabled. All page/width/
+theme checks logged success for 17 public pages at 320/390/430/744/768/820/834/1023/
+1024/1280/1440px light/dark: Home, News, Kansas City, Sports, Scoreboard, Standings,
+Rankings, College, F1, Entertainment, Movies, TV, Box office, Watch, Videos, Saved
+and Settings. Assertions covered mobile/desktop visibility, no page overflow,
+menu targets and opening/closing, and available folds. The broad harness exited
+143 after the page checks; a focused Home run then completed successfully,
+including all widths/themes, refresh, saved theme and no-JavaScript menu navigation.
+Screenshots were inspected for Home at phone/iPad/desktop widths in both themes
+and News on iPad. Artifacts: `test-results/browser/ipad-mobile/` (ignored). Remote
+images were blocked to avoid third-party stalls; local fonts/scripts loaded.
+Physical-device checks were unavailable. Signed-in production verification and
+deployment evidence are recorded in the release history.

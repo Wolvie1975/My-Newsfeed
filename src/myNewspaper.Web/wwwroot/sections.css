@@ -1,5 +1,5 @@
 /* Section pages rebuilt to the approved concept boards (October 2026). Loaded after broadsheet.css.
-   Phones: white cards on the grey ground. From 744px (iPad portrait): ruled newspaper columns on the paper. */
+   Phones: white cards on the grey ground. From 1024px (iPad portrait): ruled newspaper columns on the paper. */
 
 /* ---------- Shared pieces ---------- */
 .pub .ef-head {
@@ -260,14 +260,14 @@
     text-transform: none;
 }
 /* On phones tonight's episodes already lead On screen. */
-@media (max-width: 743px) {
+@media (max-width: 1023px) {
     .pub .ef-tv {
         display: none;
     }
 }
 
 /* Desktop: On screen across the top, then the lead and headlines beside a ruled side column. */
-@media (min-width: 744px) {
+@media (min-width: 1024px) {
     .pub .ef {
         gap: 0;
     }
@@ -477,7 +477,7 @@
     font-size: 11px;
     text-transform: uppercase;
 }
-@media (min-width: 744px) {
+@media (min-width: 1024px) {
     .pub .page-heading .page-eyebrow {
         font-size: 12px;
     }
@@ -518,7 +518,7 @@
 .pub .sec-pills--desktop {
     display: none;
 }
-@media (min-width: 744px) {
+@media (min-width: 1024px) {
     .pub .sec-pills,
     .pub .sec-pills--desktop {
         display: flex;
@@ -685,7 +685,7 @@
     text-transform: none;
 }
 
-@media (min-width: 744px) {
+@media (min-width: 1024px) {
     .pub .mv-filters {
         flex-direction: row;
         flex-wrap: wrap;
@@ -960,7 +960,7 @@ a.tvc-row__show:hover {
     text-decoration: none;
 }
 
-@media (min-width: 744px) {
+@media (min-width: 1024px) {
     .pub .tvc-jump {
         display: none;
     }
@@ -1163,7 +1163,7 @@ a.tvc-row__show:hover {
     text-decoration: none;
 }
 
-@media (min-width: 744px) {
+@media (min-width: 1024px) {
     .pub .dg-bar {
         flex-direction: row;
         flex-wrap: wrap;
@@ -1355,7 +1355,7 @@ a.tvc-row__show:hover {
     color: #ff8a99;
 }
 
-@media (min-width: 744px) {
+@media (min-width: 1024px) {
     .pub .bo-views {
         padding-bottom: 16px;
         border-bottom: 1px solid var(--text);
@@ -1445,7 +1445,7 @@ a.tvc-row__show:hover {
         color: var(--text-2);
     }
 }
-@media (min-width: 744px) {
+@media (min-width: 1024px) {
     .pub .sec-pills {
         border-radius: 0;
     }
@@ -1453,7 +1453,7 @@ a.tvc-row__show:hover {
 
 /* ---------- Where to watch (frame only; the approved rows and results are unchanged) ---------- */
 /* Search sits in a blue panel with a visible label and a yellow button, as on the homepage ear. Phones stack the
-   field and button; from 744px the panel sits beside the title and the browse bar runs under both. */
+   field and button; from 1024px the panel sits beside the title and the browse bar runs under both. */
 :root:is([data-color-scheme], :not([data-color-scheme])) .pub .watch-page .watch-controls {
     display: flex;
     flex-direction: column;
@@ -1544,7 +1544,7 @@ a.tvc-row__show:hover {
     font-weight: 800;
 }
 
-@media (min-width: 744px) {
+@media (min-width: 1024px) {
     .pub .watch-page {
         display: grid;
         grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
@@ -1826,7 +1826,7 @@ a.tvc-row__show:hover {
     gap: 0 16px;
 }
 
-@media (min-width: 744px) {
+@media (min-width: 1024px) {
     :root:is([data-color-scheme], :not([data-color-scheme])) .pub [data-scoreboard-compact='false'] {
         display: grid;
         grid-template-columns: auto minmax(0, 1fr);
@@ -1950,7 +1950,7 @@ a.tvc-row__show:hover {
     justify-content: flex-start;
 }
 /* Phones: previous day, the date and next day on one row; each filter label beside its dropdown. */
-@media (max-width: 743px) {
+@media (max-width: 1023px) {
     :root:is([data-color-scheme], :not([data-color-scheme])) .pub .scoreboard-dates {
         grid-template-columns: 64px minmax(0, 1fr) 64px;
     }
@@ -2179,7 +2179,7 @@ a.tvc-row__show:hover {
     background: color-mix(in srgb, var(--accent) 8%, var(--surface));
 }
 
-@media (min-width: 744px) {
+@media (min-width: 1024px) {
     .pub .spf-scores {
         padding: 2px 0 16px;
         border-bottom: 1px solid var(--text);
@@ -2422,7 +2422,7 @@ a.tvc-row__show:hover {
     color: var(--text-2);
     font-size: 12px;
 }
-@media (min-width: 744px) {
+@media (min-width: 1024px) {
     .pub .nf-brief {
         padding: 2px 0 16px;
         border-bottom: 1px solid var(--text);
@@ -2744,7 +2744,7 @@ a.tvc-row__show:hover {
     color: var(--mx-us);
     font-weight: 700;
 }
-@media (min-width: 744px) {
+@media (min-width: 1024px) {
     .pub .tp-follow {
         grid-template-columns: minmax(320px, 420px) minmax(0, 1fr);
         gap: 24px;
@@ -2780,7 +2780,7 @@ a.tvc-row__show:hover {
     width: 100%;
     min-height: 44px;
 }
-@media (min-width: 744px) {
+@media (min-width: 1024px) {
     .pub .st-leagues {
         padding-bottom: 16px;
         border-bottom: 1px solid var(--text);
@@ -2963,7 +2963,7 @@ a.tvc-row__show:hover {
     background: color-mix(in srgb, var(--accent) 8%, var(--surface));
     box-shadow: none;
 }
-@media (min-width: 744px) {
+@media (min-width: 1024px) {
     .pub .rk-cols {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -3079,7 +3079,7 @@ a.tvc-row__show:hover {
     font-weight: 600;
 }
 
-@media (min-width: 744px) {
+@media (min-width: 1024px) {
     .pub .cl-sports {
         padding-bottom: 16px;
         border-bottom: 1px solid var(--text);
@@ -3140,7 +3140,7 @@ a.tvc-row__show:hover {
         padding-left: 0;
     }
 }
-@media (max-width: 743px) {
+@media (max-width: 1023px) {
     :root:is([data-color-scheme], :not([data-color-scheme])) .pub .cl-main .group {
         margin-top: 12px;
         padding: 0 14px 4px;
@@ -3327,7 +3327,7 @@ a.tvc-row__show:hover {
     font-size: 12px;
 }
 
-@media (min-width: 744px) {
+@media (min-width: 1024px) {
     :root:is([data-color-scheme], :not([data-color-scheme])) .pub .f1-banner {
         flex-direction: row;
         align-items: flex-end;
@@ -3424,7 +3424,7 @@ a.tvc-row__show:hover {
 .pub .rk-row__rec {
     white-space: nowrap;
 }
-@media (min-width: 744px) {
+@media (min-width: 1024px) {
     .pub .rk-row {
         grid-template-columns: 34px minmax(0, 1fr) auto 56px;
     }
@@ -3445,7 +3445,7 @@ a.tvc-row__show:hover {
     color: var(--text);
     font-weight: 800;
 }
-@media (max-width: 743px) {
+@media (max-width: 1023px) {
     /* Phones, as on F1 News: every story is its own picture card in one column. The desktop groupings (lead,
        latest headlines, support stories, More stories rows) step aside so their articles join one list. */
     .pub .paper-top,
@@ -3478,7 +3478,7 @@ a.tvc-row__show:hover {
         width: 100%;
     }
 }
-@media (min-width: 744px) {
+@media (min-width: 1024px) {
     .pub .paper-feed .paper-label {
         margin: 24px 0 0;
         padding: 8px 0;
@@ -3543,7 +3543,7 @@ a.tvc-row__show:hover {
 /* Below 1280px a third of the page is too narrow for a thumbnail beside the headline (titles wrapped a word or two
    per line on iPads): the three stories under the lead show their picture above the headline instead, Entertainment's
    small posters included (the prefix outranks the poster rule further down). */
-@media (min-width: 744px) and (max-width: 1279px) {
+@media (min-width: 1024px) and (max-width: 1279px) {
     .pub .paper-support .article {
         grid-template-columns: minmax(0, 1fr);
         gap: 10px;
@@ -3636,7 +3636,7 @@ a.tvc-row__show:hover {
     min-height: 44px;
     color: var(--accent);
 }
-@media (max-width: 743px) {
+@media (max-width: 1023px) {
     .pub .lc-jump {
         display: none;
     }
@@ -3684,7 +3684,7 @@ a.tvc-row__show:hover {
     font-weight: 700;
     text-decoration: none;
 }
-@media (min-width: 744px) {
+@media (min-width: 1024px) {
     :root:is([data-color-scheme], :not([data-color-scheme])) .pub #local-weather {
         margin-top: 0;
         padding: 20px 0;
@@ -3854,7 +3854,7 @@ a.tvc-row__show:hover {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
-@media (min-width: 744px) {
+@media (min-width: 1024px) {
     .pub .page-heading:has(+ .filters--videos) {
         margin-bottom: 0;
     }
@@ -3949,7 +3949,7 @@ a.tvc-row__show:hover {
 .pub .sv-tabs a {
     gap: 0.3em;
 }
-@media (min-width: 744px) {
+@media (min-width: 1024px) {
     .pub .sv-tabs {
         margin-bottom: 0;
         padding-bottom: 16px;
@@ -4119,7 +4119,7 @@ a.tvc-row__show:hover {
         grid-template-columns: minmax(0, 1fr);
     }
 }
-@media (min-width: 744px) {
+@media (min-width: 1024px) {
     .pub .set-layout {
         display: grid;
         grid-template-columns: 220px minmax(0, 1fr);
@@ -4158,7 +4158,7 @@ a.tvc-row__show:hover {
         grid-template-columns: repeat(4, minmax(0, 1fr));
     }
 }
-@media (min-width: 744px) {
+@media (min-width: 1024px) {
     /* Source picker and count in one line with the feed note, under the category tabs. */
     .pub .news-front-filters {
         display: flex;
@@ -4182,7 +4182,7 @@ a.tvc-row__show:hover {
 .pub #local-weather .weather-temperature {
     white-space: nowrap;
 }
-@media (max-width: 743px) {
+@media (max-width: 1023px) {
     .pub #local-weather .weather-temperature {
         font-size: 28px;
     }
@@ -4203,7 +4203,7 @@ a.tvc-row__show:hover {
     grid-row: auto;
 }
 /* Side by side, both lists start on the same line (the stacked layout spaced the second one down). */
-@media (min-width: 744px) {
+@media (min-width: 1024px) {
     .pub .sv-lists .saved-section,
     .pub .sv-lists .saved-section + .saved-section {
         margin: 0;
@@ -4360,7 +4360,7 @@ a.tvc-row__show:hover {
     display: flex;
     margin-left: auto;
 }
-/* Tabs: one bar per featured video (the titles show from 744px). */
+/* Tabs: one bar per featured video (the titles show from 1024px). */
 .pub .yt-tabs {
     display: grid;
     grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -4445,7 +4445,7 @@ a.tvc-row__show:hover {
     color: var(--text-2);
     font-size: 13px;
 }
-@media (min-width: 744px) {
+@media (min-width: 1024px) {
     .pub .yt-top {
         display: grid;
         grid-template-columns: minmax(0, 2fr) minmax(320px, 1fr);
@@ -4533,7 +4533,7 @@ a.tvc-row__show:hover {
     font-size: 12px;
     font-weight: 700;
 }
-@media (min-width: 744px) {
+@media (min-width: 1024px) {
     .pub .hn-cats {
         padding-bottom: 14px;
         border-bottom: 1px solid var(--row-border);

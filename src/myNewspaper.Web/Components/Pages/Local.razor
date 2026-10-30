@@ -39,7 +39,7 @@
         else if (feed.Items.Count == 0) { <p class="empty">No matching stories available. Check back after the next collection.</p> }
         else
         {
-            @* The newest story leads with its picture; the rest are compact rows from 744px and picture cards on phones. *@
+            @* The newest story leads with its picture; the rest are compact rows from 1024px and picture cards on phones. *@
             <section class="feed paper-feed lc-feed" aria-label="Kansas City stories">
                 <div class="paper-lead"><FeedArticles Items="@feed.Items.Take(1).ToArray()" LeadFirst="true" /></div>
                 <div class="paper-rows"><FeedArticles Items="@feed.Items.Skip(1).ToArray()" /></div>

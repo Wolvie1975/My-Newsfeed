@@ -22,7 +22,7 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
                 // 744px (October 26), the first card on phones.
                 const lead = await page.locator('[data-home-section="lead"]:visible').boundingBox();
                 assert(box.y + box.height <= lead.y + 1);
-                if (width >= 744) assert(box.width >= lead.width);
+                if (width >= 1024) assert(box.width >= lead.width);
                 assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
                 const input = card.locator('input[name="q"]');
                 assert.equal(await input.getAttribute('maxlength'), '120');

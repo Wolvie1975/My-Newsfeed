@@ -200,7 +200,7 @@ const PERSONAL = 'mynewsfeed-personal-v1';
             console.log('PASS no-JS soccer data');
             await c.close();
         }
-        for (const width of [744, 1440]) {
+        for (const width of [1024, 1440]) {
             const c = await contextFor(width),
                 p = await c.newPage();
             await p.goto(base + '/standings?sourceId=' + nwsl.id);

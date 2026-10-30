@@ -1,7 +1,7 @@
 // The folded phone Headlines front (docs/mobile-refresh-handoff.md, release 1) at 320, 390 and 430px in light and dark
 // under three colour schemes: ribbon, dark lead block, top stories, timeline and category folds; no sideways scroll,
 // readable text, 44px targets (64px fold summaries), no repeated ids. Folds open one at a time with JavaScript off, the
-// News Section select opens a category, "More stories" and a search keep the old layout, and 744/1024/1440px don't change.
+// News Section select opens a category, "More stories" and a search keep the old layout, and 1024/1280/1440px don't change.
 //
 // With profiles switched on (the live site) it needs ADMIN_PASSWORD: it adds one throwaway profile, opens it, sets the
 // scheme and theme on that profile, and deletes it at the end.
@@ -250,7 +250,7 @@ const password = process.env.ADMIN_PASSWORD;
         }
 
         // iPad and desktop: unchanged.
-        for (const width of [744, 1024, 1440]) {
+        for (const width of [1024, 1280, 1440]) {
             const context = await contextFor(width);
             const page = await context.newPage();
             await page.goto(base + '/news/all', { waitUntil: 'networkidle' });
@@ -261,7 +261,7 @@ const password = process.env.ADMIN_PASSWORD;
         }
         assert.deepEqual(errors, []);
         console.log(
-            'Headlines phone front at 320/390/430px (kansas, monochrome, cardinals; light/dark), folds without JavaScript, category select, fallbacks and 744/1024/1440px passed.',
+            'Headlines phone front at 320/390/430px (kansas, monochrome, cardinals; light/dark), folds without JavaScript, category select, fallbacks and 1024/1280/1440px passed.',
         );
     } finally {
         if (id) {

@@ -131,7 +131,7 @@ const people = [
                     }));
                     assert.equal(r.over, 0, label + ' scrolls sideways');
                     assert.equal(r.small, 0, label + ' touch targets under 44px');
-                    if (path === '/') assert.equal(r.chip, width >= 744, label + ' edition chip from 744px');
+                    if (path === '/') assert.equal(r.chip, width >= 1024, label + ' edition chip from 744px');
                     if (width === 390 || width === 1440) {
                         assert.deepEqual(await p.evaluate(audit), [], label + ' contrast');
                         if (shots) {
@@ -158,7 +158,7 @@ const people = [
                 const label = `${theme} ${width}px PIN pad`;
                 assert(g.left >= 0 && g.right >= 0, label + ' inside the screen');
                 assert.equal(g.small, 0, label + ' keys under 44px');
-                if (width < 744) assert(Math.abs(g.bottom) < 1, label + ' is a bottom sheet');
+                if (width < 1024) assert(Math.abs(g.bottom) < 1, label + ' is a bottom sheet');
                 else assert(g.bottom > 20, label + ' is a dialog');
                 if (width === 390 || width === 1440) {
                     assert.deepEqual(await p.evaluate(audit), [], label + ' contrast');

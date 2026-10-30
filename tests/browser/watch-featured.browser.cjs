@@ -55,7 +55,7 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
                             .isEnabled(),
                     );
                 }
-                if (width < 744) {
+                if (width < 1024) {
                     const rail = page.locator('.mx-watch-rail');
                     assert((await rail.locator('li').count()) > 0);
                     await rail.evaluate((e) => (e.scrollLeft = 100));
@@ -66,10 +66,10 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
                     (u) => u.searchParams.get('kind') === 'tv' && u.searchParams.get('sort') === 'popular',
                 );
                 await page.locator('.watch-grid .watch-card').first().waitFor();
-                if (width < 744) await page.locator('#watch-browse-m').selectOption('featured');
+                if (width < 1024) await page.locator('#watch-browse-m').selectOption('featured');
                 else await page.getByRole('link', { name: 'Featured', exact: true }).click();
                 await page
-                    .locator(width < 744 ? '.mx-watch-rail' : '.mx-desktop [data-watch-row]')
+                    .locator(width < 1024 ? '.mx-watch-rail' : '.mx-desktop [data-watch-row]')
                     .first()
                     .waitFor();
                 assert.deepEqual(errors, []);

@@ -1,7 +1,7 @@
 /* myNewspaper public feed. Ported from the approved design (mynewsfeed-redesign.html).
  *
- * - >= 744px   desktop (iPad portrait up): search, category chips, lead card, 3-column grid
- * - < 744      mobile:  compact list rows, sideways-scrolling chips, first article expanded
+ * - >= 1024px   desktop: search, category chips, lead card, 3-column grid
+ * - < 1024     mobile / iPad portrait:  compact list rows, sideways-scrolling chips, first article expanded
  * - Light and dark themes through the tokens below; data-theme is set on <html> by theme-init.js.
  *
  * Everything is scoped under .pub because the admin area still uses Bootstrap on the same document.
@@ -663,7 +663,7 @@
     display: none;
 }
 /* ---------- Tablet and desktop ---------- */
-@media (min-width: 744px) {
+@media (min-width: 1024px) {
     .pub .site-header {
         height: 72px;
         padding: 0 80px;
@@ -762,7 +762,7 @@
     }
 }
 
-@media (min-width: 744px) {
+@media (min-width: 1024px) {
     .pub .feed {
         grid-template-columns: repeat(3, minmax(0, 1fr));
     }
@@ -1124,7 +1124,7 @@
 }
 
 /* ---------- Tablet and desktop ---------- */
-@media (min-width: 744px) {
+@media (min-width: 1024px) {
     .pub .count--inline {
         display: none;
     }
@@ -1265,7 +1265,7 @@
     font-weight: 700;
 }
 
-@media (min-width: 744px) {
+@media (min-width: 1024px) {
     /* Tablet: away, score and home on one line, between the competition and the venue. */
     .pub .result {
         grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -1510,7 +1510,7 @@
     color: var(--text-2);
 }
 
-@media (min-width: 744px) {
+@media (min-width: 1024px) {
     .pub .vfeed {
         gap: 24px;
     }
@@ -1532,7 +1532,7 @@
     }
 }
 
-@media (min-width: 744px) {
+@media (min-width: 1024px) {
     .pub .videos {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2039,7 +2039,7 @@
     color: var(--text-2);
 }
 
-@media (min-width: 744px) {
+@media (min-width: 1024px) {
     .pub .d-hello h1 {
         font-size: 32px;
     }
@@ -2080,7 +2080,7 @@
     }
 }
 
-@media (min-width: 744px) {
+@media (min-width: 1024px) {
     .pub .d-grid {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2114,7 +2114,7 @@
    Wide screens. The page grows past 1280px and its side padding shrinks, so a desktop monitor is used rather than
    framed; the header keeps its content in line with the page's edges at every width.
    ===================================================================================================================== */
-@media (min-width: 744px) {
+@media (min-width: 1024px) {
     .pub {
         --page-max: 1280px;
         --page-pad: 40px;
@@ -2390,7 +2390,7 @@
 .pub .d-movies .d-vid__meta {
     margin-top: 6px;
 }
-@media (min-width: 744px) {
+@media (min-width: 1024px) {
     .pub .d-vids .d-list {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2400,7 +2400,7 @@
         border-bottom: 1px solid var(--row-border);
     }
 }
-@media (min-width: 744px) {
+@media (min-width: 1024px) {
     .pub .d-movies .d-list {
         display: grid;
         grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -2516,7 +2516,7 @@
     color: var(--accent);
     text-decoration: underline;
 }
-@media (max-width: 743px) {
+@media (max-width: 1023px) {
     .pub .tv-episodes {
         grid-template-columns: 1fr;
     }
@@ -2584,7 +2584,7 @@
 .pub .d-tv__credit a {
     text-decoration: underline;
 }
-@media (max-width: 743px) {
+@media (max-width: 1023px) {
     .pub .d-tv__list {
         grid-template-columns: 1fr;
     }
@@ -2687,7 +2687,7 @@
     color: var(--text-2);
     line-height: 1.6;
 }
-@media (max-width: 743px) {
+@media (max-width: 1023px) {
     .pub .standing-team-name {
         white-space: normal;
         max-width: 180px;
@@ -2752,7 +2752,7 @@
 .pub .ranking-view:has(.ranking-detail-toggle input:checked) .ranking-extra {
     display: table-cell;
 }
-@media (min-width: 744px) {
+@media (min-width: 1024px) {
     .pub .ranking-view .ranking-detail-toggle {
         display: none;
     }
@@ -2784,12 +2784,12 @@
 .pub .ranking-view .rankings-table .ranking-big12 > :first-child {
     box-shadow: inset 3px 0 0 #e8000d;
 }
-@media (max-width: 743px) {
+@media (max-width: 1023px) {
     .pub .ranking-view .rankings-table .big12-badge {
         display: none;
     }
 }
-@media (max-width: 743px) {
+@media (max-width: 1023px) {
     .pub .rankings-table {
         font-size: 13px;
     }
@@ -2833,7 +2833,7 @@
 .pub .standings-view .standings-group {
     margin-top: 20px;
 }
-@media (max-width: 743px) {
+@media (max-width: 1023px) {
     .pub .league-standings-table {
         font-size: 13px;
     }
@@ -2933,7 +2933,7 @@
     justify-content: center;
     flex-wrap: wrap;
 }
-@media (max-width: 743px) {
+@media (max-width: 1023px) {
     .pub :is(.championship-results, .mls-results) {
         font-size: 13px;
     }
@@ -3038,7 +3038,7 @@
 .pub .empty > .nf-btn {
     margin: 12px 0;
 }
-@media (max-width: 743px) {
+@media (max-width: 1023px) {
     .pub .page {
         gap: 8px;
         padding-top: 12px;
@@ -3079,12 +3079,12 @@
         display: none;
     }
 }
-@media (min-width: 744px) {
+@media (min-width: 1024px) {
     .pub .count--inline {
         display: none;
     }
 }
-@media (max-width: 743px) {
+@media (max-width: 1023px) {
     .pub .release-tabs {
         flex-wrap: nowrap;
         overflow-x: auto;
@@ -3146,7 +3146,7 @@
     font-variant-numeric: tabular-nums;
     font-weight: 600;
 }
-@media (max-width: 743px) {
+@media (max-width: 1023px) {
     .pub .boxoffice-movie {
         padding: 16px 12px;
         gap: 10px;
@@ -3505,7 +3505,7 @@
     max-width: 100%;
     overflow-wrap: anywhere;
 }
-@media (min-width: 744px) {
+@media (min-width: 1024px) {
     .pub .movie-body .movie-commerce-action {
         display: flex;
         width: fit-content;
@@ -3575,7 +3575,7 @@
     gap: 8px;
     padding: 0 10px;
 }
-@media (max-width: 743px) {
+@media (max-width: 1023px) {
     .pub .settings-link__label {
         position: absolute;
         width: 1px;
@@ -4702,7 +4702,7 @@
 .pub .f1-scroll-hint {
     display: none;
 }
-@media (max-width: 743px) {
+@media (max-width: 1023px) {
     .pub .f1-scroll-hint {
         display: block;
     }
@@ -4727,7 +4727,7 @@
 .pub .d-f1__freshness {
     grid-column: 1 / -1;
 }
-@media (min-width: 744px) {
+@media (min-width: 1024px) {
     .pub .d-f1__body {
         grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
         padding: 20px 24px;
@@ -5513,7 +5513,7 @@
 
 /* Desktop cascading cards in document order: the full-width lead, then Watch. home-layout.js packs the columns;
    without JavaScript the lead still spans both columns. */
-@media (min-width: 744px) {
+@media (min-width: 1024px) {
     .pub .d-grid > [data-home-section] {
         grid-area: auto;
         order: 0;
@@ -5706,7 +5706,7 @@
     }
 }
 
-@media (min-width: 744px) {
+@media (min-width: 1024px) {
     .pub .d-rankings__table {
         max-height: none;
     }
@@ -5763,7 +5763,7 @@
 .pub .header-clock__date-compact {
     display: none;
 }
-@media (max-width: 743px) {
+@media (max-width: 1023px) {
     .pub .site-header {
         column-gap: 6px;
         flex-wrap: nowrap;
@@ -5802,7 +5802,7 @@
 .pub .d-grid > .d-forecasts {
     margin-top: 0;
 }
-@media (max-width: 743px) {
+@media (max-width: 1023px) {
     .pub .d-forecasts {
         order: 6;
     }
@@ -5812,7 +5812,7 @@
 .pub .home-limit-mobile {
     display: none;
 }
-@media (max-width: 743px) {
+@media (max-width: 1023px) {
     .pub .home-limit-desktop {
         display: none;
     }
@@ -5826,7 +5826,7 @@
 }
 
 /* Digital releases cascade independently of the theatrical card. */
-@media (max-width: 743px) {
+@media (max-width: 1023px) {
     .pub .d-digital {
         order: 7;
     }
@@ -6251,7 +6251,7 @@
 .pub .d-scoreboard [data-scoreboard] > .updated:not(.scoreboard-note):not(:empty) {
     margin: 10px 16px;
 }
-@media (min-width: 744px) {
+@media (min-width: 1024px) {
     .pub [data-scoreboard-compact='false'] .scoreboard-games {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
@@ -6261,7 +6261,7 @@
         grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 }
-@media (max-width: 743px) {
+@media (max-width: 1023px) {
     .pub .d-scoreboard {
         order: 7;
     }
@@ -6286,7 +6286,7 @@
     align-items: baseline;
     gap: 2px 6px;
 }
-@media (max-width: 743px) {
+@media (max-width: 1023px) {
     .pub .scoreboard-filter {
         display: grid;
         grid-template-columns: auto minmax(0, 1fr);
@@ -6300,7 +6300,7 @@
     }
 }
 
-@media (max-width: 743px) {
+@media (max-width: 1023px) {
     .pub .scoreboard-dates {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -6386,15 +6386,15 @@
     min-height: 44px;
 }
 
-@media (max-width: 743px) {
+@media (max-width: 1023px) {
     .pub .d-grid.is-customized > [data-home-section] {
         order: 0;
     }
 }
 
-/* Newspaper section fronts. From 744px: lead, latest headlines, support stories and compact rows. Phones use the
+/* Newspaper section fronts. From 1024px: lead, latest headlines, support stories and compact rows. Phones use the
    standard article card (as on F1 News) so every story shows its picture. */
-@media (min-width: 744px) {
+@media (min-width: 1024px) {
     .pub .paper-feed {
         display: block;
     }
@@ -6663,7 +6663,7 @@
         grid-column: 1 / -1;
     }
 }
-@media (min-width: 744px) {
+@media (min-width: 1024px) {
     .pub .paper-feed {
         grid-template-columns: repeat(3, minmax(0, 1fr));
     }
@@ -6717,7 +6717,7 @@
 }
 
 /* Desktop rows: the date above the publisher, actions beside it. */
-@media (min-width: 744px) {
+@media (min-width: 1024px) {
     /* Keep publisher names independent of action-button width in narrow news cards. */
     .pub .paper-feed .body {
         grid-template-columns: minmax(0, 1fr);
@@ -7271,7 +7271,7 @@
 .pub .watch-row__arrow {
     display: none;
 }
-@media (min-width: 744px) {
+@media (min-width: 1024px) {
     .pub .watch-shelf {
         grid-auto-columns: 172px;
         gap: 16px;
@@ -7784,7 +7784,7 @@
     gap: 8px;
     margin-top: 8px;
 }
-@media (min-width: 744px) {
+@media (min-width: 1024px) {
     /* Two to a row on phones, where "Raspberry" wouldn't fit a third. */
     .pub .setup__swatches {
         grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -7905,7 +7905,7 @@
     opacity: 0.55;
     cursor: not-allowed;
 }
-@media (max-width: 743px) {
+@media (max-width: 1023px) {
     /* Continue stays at the bottom of the screen on phones (handoff 6.2). */
     .pub .setup.is-stepped .setup__foot {
         position: sticky;
@@ -7917,7 +7917,7 @@
     }
 }
 
-/* The PIN pad: a bottom sheet on phones, a centred dialog from 744px. */
+/* The PIN pad: a bottom sheet on phones, a centred dialog from 1024px. */
 .pub .pin-sheet {
     --ed: #0051ba;
     width: 100%;
@@ -8029,7 +8029,7 @@
     font-size: 15px;
     font-weight: 700;
 }
-@media (min-width: 744px) {
+@media (min-width: 1024px) {
     .pub .picker {
         padding: 36px 48px 56px;
         gap: 24px;
@@ -8072,7 +8072,7 @@
 .pub .edition-chip {
     display: none;
 }
-@media (min-width: 744px) {
+@media (min-width: 1024px) {
     .pub .edition-chip {
         display: inline-flex;
         align-items: center;

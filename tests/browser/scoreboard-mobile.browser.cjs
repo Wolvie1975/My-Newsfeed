@@ -17,7 +17,7 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
                     if (js) assert.equal(await p.locator('html').getAttribute('data-theme'), theme);
                     assert(await p.getByRole('combobox', { name: 'Show', exact: true }).count());
                     assert.equal(await p.getByRole('button', { name: 'Apply', exact: true }).count(), js ? 0 : 1);
-                    if (width < 744) {
+                    if (width < 1024) {
                         const prev = await p.locator('.scoreboard-prev').boundingBox(),
                             next = await p.locator('.scoreboard-next').boundingBox(),
                             date = await p.locator('.scoreboard-date').boundingBox();

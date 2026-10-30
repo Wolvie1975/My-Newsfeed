@@ -29,7 +29,7 @@ const phoneOrder = [
             page.on('pageerror', (error) => errors.push(error.message));
             await page.goto(base + '/');
             const box = (selector) => page.locator(selector).first().boundingBox();
-            for (const width of [768, 1024, 1440]) {
+            for (const width of [1024, 1280, 1440]) {
                 await page.setViewportSize({ width, height: 1000 });
                 assert(
                     await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
@@ -56,7 +56,7 @@ const phoneOrder = [
                             `${a.key} overlaps ${b.key} at ${width}`,
                         );
                     }
-                if (width >= 744) {
+                if (width >= 1024) {
                     const watch = await box('[data-home-section="watch"]');
                     const weather = await box('.bs-glance');
                     const title = await box('.bs-title');
@@ -74,12 +74,6 @@ const phoneOrder = [
                         // Three columns: Today & Tonight | lead and headlines | Opinion.
                         assert(tonight.x < lead.x && lead.x < opinion.x, 'front columns');
                         assert(Math.abs(tonight.y - lead.y) < 40 && Math.abs(lead.y - opinion.y) < 40, 'front row');
-                    } else {
-                        // iPad portrait (tablet.css): title across the top, the ears side by side beneath it; lead
-                        // and Opinion side by side with Today & Tonight below them.
-                        assert(title.y + title.height <= weather.y && weather.x < live.x, 'tablet masthead');
-                        assert(lead.x < opinion.x && Math.abs(lead.y - opinion.y) < 40, 'tablet front row');
-                        assert(tonight.y > lead.y + lead.height, 'Today & Tonight below the lead');
                     }
                     assert(await page.locator('.bs-band').isVisible());
                     const band = await box('.bs-band');

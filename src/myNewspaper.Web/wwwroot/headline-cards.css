@@ -11,7 +11,7 @@
 .pub .hc-group {
     display: none;
 }
-@media (max-width: 743px) {
+@media (max-width: 1023px) {
     .pub .hc-top,
     .pub .hc-top > section,
     .pub .hc-grid {
@@ -19,7 +19,7 @@
     }
 }
 
-@media (min-width: 744px) {
+@media (min-width: 1024px) {
     :root:is([data-color-scheme], :not([data-color-scheme])) .pub .hc-feed {
         display: block;
     }
@@ -242,7 +242,7 @@
 .pub .hc-latest .hc-row:not(.hc-row--first) {
     display: none;
 }
-@media (min-width: 744px) {
+@media (min-width: 1024px) {
     :root:is([data-color-scheme], :not([data-color-scheme])) .pub .hc-feed {
         & .hc-top {
             gap: 24px;
@@ -358,16 +358,8 @@
         }
     }
 }
-@media (min-width: 744px) and (max-width: 1023px) {
-    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .hc-feed .hc-top--text .hc-lead .hc-card {
-        grid-template-columns: 1fr;
-    }
-    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .hc-feed .hc-top--text .hc-lead :is(.summary, .src) {
-        grid-column: 1;
-        grid-row: auto;
-    }
-}
-@media (min-width: 744px) {
+
+@media (min-width: 1024px) {
     :root:is([data-color-scheme], :not([data-color-scheme]))
         .pub
         .hc-feed
@@ -378,7 +370,7 @@
     }
 }
 
-@media (min-width: 744px) {
+@media (min-width: 1024px) {
     :root:is([data-color-scheme], :not([data-color-scheme])) .pub .hc-feed .hc-top--text .hc-lead .cat {
         grid-row: 1;
     }
@@ -387,13 +379,5 @@
     }
     :root:is([data-color-scheme], :not([data-color-scheme])) .pub .hc-feed .hc-top--text .hc-lead .src {
         grid-row: 3;
-    }
-}
-@media (min-width: 744px) and (max-width: 1023px) {
-    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .hc-feed .hc-top--text .hc-lead .summary {
-        grid-row: 3;
-    }
-    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .hc-feed .hc-top--text .hc-lead .src {
-        grid-row: 4;
     }
 }

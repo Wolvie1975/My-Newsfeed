@@ -303,7 +303,7 @@ const savedItems = [
         }
 
         // Tablet and desktop keep their layouts: no ribbon, no dark feature, the old headings and indexes.
-        for (const width of [744, 1024, 1440])
+        for (const width of [1024, 1280, 1440])
             for (const theme of ['light', 'dark']) {
                 const ctx = await contextFor(width, look('kansas', theme));
                 await mockSaved(ctx);
@@ -336,7 +336,7 @@ const savedItems = [
             }
         assert.deepEqual(errors, []);
         console.log(
-            'Release 6: All headlines (Sports, Entertainment), Saved and Settings ribbons at 320/390/430, three schemes, light/dark; contrast, overflow, unique IDs, 44px targets, one first-article feature (also after Load more and removal), counted Show select, Jump to, empty/unreachable Saved, no-JS Go paths, retained 744/1024/1440 layouts passed.',
+            'Release 6: All headlines (Sports, Entertainment), Saved and Settings ribbons at 320/390/430, three schemes, light/dark; contrast, overflow, unique IDs, 44px targets, one first-article feature (also after Load more and removal), counted Show select, Jump to, empty/unreachable Saved, no-JS Go paths, retained 1024/1280/1440 layouts passed.',
         );
     } finally {
         if (id) {

@@ -89,7 +89,7 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
                     );
                 }
                 const scroll = await card.locator('.d-rankings__table').boundingBox();
-                if (page.viewportSize().width < 744) assert(scroll.height <= 441);
+                if (page.viewportSize().width < 1024) assert(scroll.height <= 441);
                 else
                     assert(
                         await card.locator('.d-rankings__table').evaluate((n) => n.scrollHeight <= n.clientHeight + 1),
@@ -102,7 +102,7 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
             assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
             const table = card.locator('.d-rankings__table');
             if (await table.count()) {
-                if (width >= 744) {
+                if (width >= 1024) {
                     assert(await table.evaluate((n) => n.scrollHeight <= n.clientHeight + 1));
                     const last = await card.locator('tbody tr').last().boundingBox();
                     const area = await table.boundingBox();

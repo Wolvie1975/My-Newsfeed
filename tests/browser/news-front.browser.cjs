@@ -1,5 +1,5 @@
 // The News section (docs/news-section-handoff.md): the News front at phone widths (320/390/430 × three schemes × light
-// and dark) and at 744/1024/1440, Kansas City under News, the News tabs, the 6-link navigation and the phone menu, and
+// and dark) and at 1024/1280/1440, Kansas City under News, the News tabs, the 6-link navigation and the phone menu, and
 // the permanent redirects from the old Headlines and Local addresses. Every story row on the front has Share and Save.
 //
 // With profiles switched on (the live site) it needs ADMIN_PASSWORD: it adds one throwaway profile, opens it, sets the
@@ -235,7 +235,7 @@ const password = process.env.ADMIN_PASSWORD;
         }
 
         // iPad and desktop: the News front's columns, tabs and navigation.
-        for (const width of [744, 1024, 1440])
+        for (const width of [1024, 1280, 1440])
             for (const theme of ['light', 'dark']) {
                 const context = await contextFor(width, { theme });
                 const page = await context.newPage();
@@ -297,7 +297,7 @@ const password = process.env.ADMIN_PASSWORD;
             }
         assert.deepEqual(errors, []);
         console.log(
-            'News section: 301s from /local and old /news lists; the News front at 320/390/430 (kansas, monochrome, cardinals; light/dark) with briefing tiles, Save and Share on every top headline, folds, Share dialog, phone menu and no-JS Section select; 744/1024/1440 light/dark columns, tabs, 6-link nav, Share and Save on every row; Kansas City under News with its tabs and jump links passed.',
+            'News section: 301s from /local and old /news lists; the News front at 320/390/430 (kansas, monochrome, cardinals; light/dark) with briefing tiles, Save and Share on every top headline, folds, Share dialog, phone menu and no-JS Section select; 1024/1280/1440 light/dark columns, tabs, 6-link nav, Share and Save on every row; Kansas City under News with its tabs and jump links passed.',
         );
     } finally {
         if (id) {

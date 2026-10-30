@@ -6,6 +6,57 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
+## iPad portrait uses the mobile version — October 29, 2026 (Central)
+
+Deployed public image `mynewspaper-web:ipad-mobile-20261029`
+(`0e7f428fb1ad`) to `mynewsfeed-web`. Mobile layouts now cover all widths below
+1024px, including common 768/820/834px iPad portrait sizes. Desktop remains at
+1024px and wider, including the 1024px-wide large iPad portrait. The former tablet
+desktop stylesheet was removed; public CSS, article image loading and browser
+expectations now share the 1024px boundary. Long live-score statuses wrap inside
+their cards instead of extending the page at 320px.
+
+Built from an isolated source copy containing only this task's changes. Unrelated
+local edits to RankingsQuery.cs and RankingsTests.cs were excluded from the image
+and commit; their source copies were checked against HEAD. Runtime environment,
+port bindings, network, restart policy, health check and persistent key volume were
+preserved. The existing database connection remains sql2025 / WebScraper. No schema
+scripts or migrations ran. Admin remains on its existing image and configuration.
+Rollback: image `mynewspaper-web:before-ipad-mobile-20261029`
+(`0c896cbfef6b`) and stopped container
+`mynewsfeed-web-before-ipad-mobile-20261029` preserve the preceding public release.
+
+Local validation: zero-warning public build; ESLint, formatting and whitespace
+checks passed. Docker publish and the Blazor static-asset guard passed. Preview
+layout checks covered 17 pages at 320/390/430/744/768/820/834/1023/1024/1280/1440px
+light/dark; menu/fold interactions, mobile/desktop visibility and page overflow
+were checked. A focused Home run completed refresh, saved theme and no-JavaScript
+navigation after the broad local harness stopped following its page checks.
+Screenshots were inspected. Details: [mobile handoff](mobile-refresh-handoff.md).
+
+Production verification used a disposable signed-in profile over the actual HTTPS
+origin. Across the initial run and a shorter resumed batch, all 17 public pages
+passed at all 11 widths in light/dark: mobile content below 1024px, desktop at
+1024px and wider, no horizontal overflow, mobile menu visibility and opening/closing,
+available folds and 44px menu targets. Home, News, Scoreboard and Settings screenshots
+were inspected, including phone/iPad/desktop views in both themes. Saved themes
+survived refresh; navigation from the mobile menu worked with JavaScript disabled
+at 820px. Main pages returned 200, as did the additional health, Events, Results
+(following its redirect) and digital Movies smoke checks. Both containers were
+healthy, both HTTPS health endpoints returned 200, and league-phase startup checks
+were observed.
+
+The initial live harness exited 143 before all dark-mode checks completed. The
+remaining pages and final navigation checks passed in a shorter batch. Both
+verification profiles were removed, including manual cleanup of the interrupted
+run's profile. Logs and screenshots: `test-results/browser/live-ipad-mobile/`
+(ignored). Temporary stored authentication state and the workspace hostname mapping
+used for certificate-verified Tailscale HTTPS checks were removed after validation.
+Remote images were blocked during browser checks; local assets still loaded.
+Physical-device testing and full unrelated application test suites were not run.
+The commit is local on `develop`; no push was made. Unrelated ranking edits remain
+uncommitted in the workspace.
+
 ## Requests form choice alignment — October 29, 2026 (Central)
 
 Deployed public image `mynewspaper-web:request-format-20261029`

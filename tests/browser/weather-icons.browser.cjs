@@ -29,9 +29,9 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
             for (const width of [390, 768, 1440]) {
                 await page.setViewportSize({ width, height: 1000 });
                 await page.reload();
-                if (width < 744)
+                if (width < 1024)
                     await page.getByText('Forecast', { exact: true }).locator('xpath=ancestor::summary').click();
-                const host = width < 744 ? '[data-phone-forecast]' : '#local-weather';
+                const host = width < 1024 ? '[data-phone-forecast]' : '#local-weather';
                 await page
                     .locator(host + ' .weather-icon')
                     .first()

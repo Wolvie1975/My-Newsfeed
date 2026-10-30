@@ -2,7 +2,7 @@
  *
  * - Newsreader serif for mastheads, page titles and story headlines; Schibsted Grotesk stays the text face.
  * - The folded-page mark in the header; its ink and corner follow the colour scheme.
- * - Section navigation: underlined tabs from 768px; on phones a segmented control (four or fewer choices) or a
+ * - Section navigation: underlined tabs from 1024px; on phones a segmented control (four or fewer choices) or a
  *   native dropdown (five or more). Nothing scrolls sideways and every target is at least 44px.
  * - The default scheme is flat royal blue to match the mark; other schemes keep their own colours.
  *
@@ -98,7 +98,7 @@
     font-weight: 800;
     letter-spacing: 0.12em;
 }
-@media (min-width: 744px) {
+@media (min-width: 1024px) {
     .pub .page-heading {
         margin-bottom: 22px;
         padding-bottom: 20px;
@@ -119,7 +119,7 @@
 .pub .section-tabs {
     display: none;
 }
-@media (min-width: 744px) {
+@media (min-width: 1024px) {
     .pub .section-tabs {
         display: flex;
         flex-wrap: wrap;
@@ -148,7 +148,7 @@
         display: none;
     }
 }
-@media (max-width: 743px) {
+@media (max-width: 1023px) {
     .pub .section-nav--few .section-tabs {
         display: grid;
         grid-auto-flow: column;
@@ -225,7 +225,7 @@
     border-radius: 14px;
     box-shadow: none;
 }
-@media (min-width: 744px) {
+@media (min-width: 1024px) {
     :root:is([data-color-scheme], :not([data-color-scheme])) .pub .d-card__title {
         font-size: 13px;
         font-weight: 800;
@@ -342,7 +342,7 @@
     grid-row: 1 / span 2;
 }
 
-/* Ears: Where to watch and live scores (from 744px Where to watch is a band under the masthead). */
+/* Ears: Where to watch and live scores (from 1024px Where to watch is a band under the masthead). */
 .pub .bs-ear {
     padding: 14px 16px 16px;
     border: 1px solid var(--border);
@@ -599,7 +599,7 @@
 }
 
 /* Desktop: agate listings, one line per game ("1:00  Kansas at TCU (Soccer)  ESPN+"); the group says the half of day. */
-@media (min-width: 744px) {
+@media (min-width: 1024px) {
     .pub .bs-agate__row {
         grid-template-columns: 44px minmax(0, 1fr) auto;
         gap: 8px;
@@ -647,7 +647,7 @@
 }
 
 /* Phones and tablets: one compact tappable row per game — time, matchup (sport beneath), network. */
-@media (max-width: 743px) {
+@media (max-width: 1023px) {
     .pub .bs-agate__row {
         grid-template-columns: auto minmax(0, 1fr) auto;
         align-items: center;
@@ -696,7 +696,7 @@
 }
 
 /* ---------- Home: desktop broadsheet ---------- */
-@media (min-width: 744px) {
+@media (min-width: 1024px) {
     .pub .bs-home {
         display: block;
     }
@@ -954,7 +954,7 @@
 .pub .bs-glance__name {
     white-space: normal;
 }
-@media (min-width: 744px) {
+@media (min-width: 1024px) {
     .pub .bs-title__name {
         font-size: clamp(44px, 4.3vw, 64px);
     }
@@ -1072,7 +1072,7 @@
         line-height: 1.3;
     }
 }
-@media (min-width: 744px) {
+@media (min-width: 1024px) {
     /* Box office in the side column reads as a three-line agate table: rank, title, weekend gross. */
     .pub .bs-home .bs-col--side .boxoffice-movie:nth-child(n + 4),
     .pub .bs-home .bs-col--side .d-forecasts > .updated,
@@ -1154,7 +1154,7 @@
         padding: 12px 0;
     }
 }
-@media (min-width: 744px) {
+@media (min-width: 1024px) {
     /* Today's episodes in the side column: small poster, full-width text. */
     .pub .bs-home .bs-col--side .d-tv__show {
         gap: 12px;
@@ -1185,7 +1185,7 @@
 /* Phones and tablets: as on the phone concept, Where to watch sits right under the header. The greeting and Refresh
    share one short row (the header already shows the date). The forecast is a 2 × 2 grid on phones, which holds up
    with large system text, and a four-across strip on tablets. */
-@media (max-width: 743px) {
+@media (max-width: 1023px) {
     .pub .bs-title__greeting {
         font-size: 22px;
     }
@@ -1221,7 +1221,7 @@
         white-space: nowrap;
     }
 }
-@media (min-width: 600px) and (max-width: 743px) {
+@media (min-width: 600px) and (max-width: 1023px) {
     .pub .bs-glance__periods li {
         align-items: center;
         text-align: center;
@@ -1235,7 +1235,7 @@
 }
 
 /* ---------- Desktop paper ---------- */
-@media (min-width: 744px) {
+@media (min-width: 1024px) {
     :root:is([data-color-scheme], :not([data-color-scheme])) .pub {
         background: var(--surface);
     }
@@ -1264,7 +1264,7 @@
 }
 
 /* ---------- "More from today" on desktop: the same ruled-column style as the front page ---------- */
-@media (min-width: 744px) {
+@media (min-width: 1024px) {
     /* Content starts at the column edge, like the front page; the phone cards' inner padding goes. */
     :root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-more .d-scoreboard .scoreboard-note,
     :root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-more .d-scoreboard p.updated,
@@ -1399,7 +1399,7 @@
 /* ---------- Site header, as in the approved concepts ---------- */
 /* Phones and tablets: a coloured bar with the page mark, the date and time, Saved and a Menu button. The menu is a
    native disclosure that opens a full-height sheet of every section below the bar. The header keeps this bar up to
-   1023px even though page layouts switch to desktop at 744px (iPad portrait): seven section links and the actions do
+   1023px even though page layouts switch to desktop at 1024px (iPad portrait): seven section links and the actions do
    not fit in one row below 1024px. */
 @media (max-width: 1023px) {
     :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme])) .pub .site-header {

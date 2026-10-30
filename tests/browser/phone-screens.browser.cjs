@@ -290,7 +290,7 @@ const routes = [
         }
 
         // Tablet and desktop keep their layouts.
-        for (const width of [744, 1024, 1440])
+        for (const width of [1024, 1280, 1440])
             for (const theme of ['light', 'dark']) {
                 const ctx = await contextFor(width, look('kansas', theme));
                 const p = await ctx.newPage();
@@ -310,7 +310,7 @@ const routes = [
             }
         assert.deepEqual(errors, []);
         console.log(
-            'Release 4: Entertainment, Movies, TV & Streaming, Digital releases and Box office (three views) at 320/390/430, three schemes, light/dark; contrast, overflow, unique IDs, unsplit titles, 44px targets, 64px summaries, first fold open, exclusive and keyboard folds, lead save/share, week strip, ribbon selects with and without JavaScript, search keeps layout, retained 744/1024/1440 layouts passed.',
+            'Release 4: Entertainment, Movies, TV & Streaming, Digital releases and Box office (three views) at 320/390/430, three schemes, light/dark; contrast, overflow, unique IDs, unsplit titles, 44px targets, 64px summaries, first fold open, exclusive and keyboard folds, lead save/share, week strip, ribbon selects with and without JavaScript, search keeps layout, retained 1024/1280/1440 layouts passed.',
         );
     } finally {
         if (id) {

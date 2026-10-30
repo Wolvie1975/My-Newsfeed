@@ -265,7 +265,7 @@ const PERSONAL = 'mynewsfeed-personal-v1';
             assert.equal(await p.locator('#watch-sort').inputValue(), 'title');
             await ctx.close();
         }
-        for (const width of [744, 1024, 1440])
+        for (const width of [1024, 1280, 1440])
             for (const theme of ['light', 'dark']) {
                 const ctx = await contextFor(width, look('kansas', theme));
                 await prepare(ctx);
@@ -294,7 +294,7 @@ const PERSONAL = 'mynewsfeed-personal-v1';
             }
         assert.deepEqual(errors, []);
         console.log(
-            'Release 5: phone widths 320/390/430, three schemes, light/dark; contrast, overflow, unique IDs, native/keyboard/no-JS folds and selectors, weather focal/tiles/full forecast, save/share, watch modal/search/sort, category/query/reload, expanded lists, empty videos, retained 744/1024/1440 layouts passed.',
+            'Release 5: phone widths 320/390/430, three schemes, light/dark; contrast, overflow, unique IDs, native/keyboard/no-JS folds and selectors, weather focal/tiles/full forecast, save/share, watch modal/search/sort, category/query/reload, expanded lists, empty videos, retained 1024/1280/1440 layouts passed.',
         );
     } finally {
         if (id) {

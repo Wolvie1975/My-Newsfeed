@@ -12,7 +12,7 @@ const base = process.env.BASE_URL || 'http://localhost:5295',
             for (const width of [320, 390, 430, 768, 1440])
                 for (const theme of ['light', 'dark']) {
                     // Headlines has its own folded phone front (headlines-phone).
-                    if (route === 'news/all' && width < 744) continue;
+                    if (route === 'news/all' && width < 1024) continue;
                     await p.setViewportSize({ width, height: 1000 });
                     await p.emulateMedia({ colorScheme: theme });
                     const r = await p.goto(base + '/' + route);

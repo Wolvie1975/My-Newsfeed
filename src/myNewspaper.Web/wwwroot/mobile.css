@@ -1,6 +1,5 @@
 /* =====================================================================================================================
-   Phone refresh (docs/mobile-refresh-handoff.md). Everything is .mx-prefixed and only shows below 744px; desktop and
-   iPad portrait never see it. Uses the public.css tokens (--text, --text-2, --surface, --bg, --border, --accent) so color
+   Phone refresh (docs/mobile-refresh-handoff.md). Everything is .mx-prefixed and shows below 1024px, including iPad portrait; wider screens retain desktop. Uses the public.css tokens (--text, --text-2, --surface, --bg, --border, --accent) so color
    schemes and dark mode carry over.
    ===================================================================================================================== */
 .pub {
@@ -48,7 +47,7 @@
 .mx-contents {
     display: contents;
 }
-@media (max-width: 743px) {
+@media (max-width: 1023px) {
     .mx-phone {
         display: block;
     }
@@ -665,6 +664,7 @@
 }
 .mx-score__top {
     display: flex;
+    flex-wrap: wrap;
     justify-content: space-between;
     gap: 6px;
     font-size: 10px;
@@ -681,6 +681,9 @@
 }
 .mx-score__clock {
     flex: none;
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
     color: var(--mx-block-accent);
 }
 .mx-score__team {
@@ -1158,7 +1161,7 @@ span.mx-stepper__btn {
     font-family: var(--mx-serif);
     font-size: 32px;
 }
-@media (max-width: 743px) {
+@media (max-width: 1023px) {
     .pub .page > .mx-life-layout,
     .pub .watch-page:has([data-phone-watch-ribbon]) {
         margin: -12px -20px -40px;
@@ -1213,7 +1216,7 @@ span.mx-stepper__btn {
 .mx-phone.mx-video-pages {
     display: none;
 }
-@media (max-width: 743px) {
+@media (max-width: 1023px) {
     .mx-phone.mx-video-pages {
         display: flex;
     }
@@ -1240,14 +1243,14 @@ span.mx-stepper__btn {
     align-items: center;
     min-height: 44px;
 }
-@media (max-width: 743px) {
+@media (max-width: 1023px) {
     .pub .watch-page:has([data-phone-watch-ribbon]) > .watch-credits {
         margin-left: 16px;
         margin-right: 16px;
     }
 }
 /* The retained Watch layout uses a grid whose original direct children now sit in a display:contents wrapper. */
-@media (min-width: 744px) {
+@media (min-width: 1024px) {
     .pub .watch-page > .mx-desktop > * {
         grid-column: 1 / -1;
     }
@@ -1265,7 +1268,7 @@ span.mx-stepper__btn {
 .mx-tool-content {
     display: contents;
 }
-@media (max-width: 743px) {
+@media (max-width: 1023px) {
     .pub .page > .mx-tool-page {
         display: block;
         margin: -12px -20px -40px;

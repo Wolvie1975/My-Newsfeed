@@ -403,8 +403,8 @@ their tooltips remain available. Other sports pages retain the explanation.
 
 ## Folded phone sports pages
 
-Below 744px, Top 25, Standings, College Sports and F1 use the phone ribbon, dark focal block and native exclusive
-folds. Poll/League/Sport/View selectors remain plain GET forms with no-JavaScript buttons. From 744px the existing
+Below 1024px, Top 25, Standings, College Sports and F1 use the phone ribbon, dark focal block and native exclusive
+folds. Poll/League/Sport/View selectors remain plain GET forms with no-JavaScript buttons. From 1024px the existing
 tablet/desktop page layouts remain in use.
 
 Top 25 highlights No. 1 and real rank movements, lists 2–10 and folds the rest of the poll. Standings preserves
@@ -425,9 +425,9 @@ are off. Missing data does not create empty data folds or invented ranks, record
 ## Folded phone Entertainment, Movies, TV, Digital releases and Box office
 
 Release 4 deployed October 28, 2026 (Central) as `phone-screens-20261029`; verification is maintained in the mobile
-handoff/release history. Below 744px each page shows a scheme ribbon with one native select (each with a
+handoff/release history. Below 1024px each page shows a scheme ribbon with one native select (each with a
 no-JavaScript Go), a dark focal block, one middle list and exclusive native folds whose first fold starts open. The
-existing layouts remain from 744px. Each phone copy reuses its page's data; Movies, Digital releases and the Box
+existing layouts remain from 1024px. Each phone copy reuses its page's data; Movies, Digital releases and the Box
 office Results view add one box office read each for their theater folds.
 
 Entertainment: Section select, the lead story, an On screen timeline (tonight's tracked episodes, then the next
@@ -455,9 +455,9 @@ Trending folds from the mockups are left out; they would need the live streaming
 ## Folded phone Watch, Local and YouTube
 
 Release 5 deployed October 28, 2026 as `phone-life-20261028`; verification is maintained in the mobile handoff/release history.
-Below 744px these pages use scheme-colored title ribbons, one dark focal block and native exclusive folds.
+Below 1024px these pages use scheme-colored title ribbons, one dark focal block and native exclusive folds.
 The first available fold starts open; selectors and disclosures retain a no-JavaScript path. The existing
-layouts remain from 744px. These views reuse their page's loaded data rather than querying it twice.
+layouts remain from 1024px. These views reuse their page's loaded data rather than querying it twice.
 
 Where to watch has search and a Browse select in the ribbon, a numbered trending-movie shelf that scrolls
 inside the dark block, and folds for Trending TV, new movies and selected services. Search/provider results,
@@ -481,9 +481,9 @@ Unsafe video/story URLs remain plain text; thumbnails and metadata keep their ex
 
 ## Phone ribbons on All headlines, Saved and Settings
 
-Release 6 deployed October 28, 2026 as `phone-tools-20261028`; verification is maintained in the mobile handoff/release history. Below 744px
+Release 6 deployed October 28, 2026 as `phone-tools-20261028`; verification is maintained in the mobile handoff/release history. Below 1024px
 these pages keep their existing lists and forms under a scheme-colored title ribbon with one native select;
-nothing is folded or rendered twice. The existing layouts remain from 744px.
+nothing is folded or rendered twice. The existing layouts remain from 1024px.
 
 Sports and Entertainment headlines put the Section select in the ribbon. Sport/Topic, Source, pagination and
 Load more are unchanged. The first article of the first page takes the dark feature styling; Load more and

@@ -171,7 +171,7 @@ const widths = (process.env.WIDTHS || '320,390,430,744,820,1024,1440').split(','
                 });
                 assert.equal(geo.over, 0, `${theme} ${width}px alert scrolls sideways`);
                 assert(geo.left >= 0 && geo.right >= 0, `${theme} ${width}px alert inside the screen`);
-                if (width < 744) assert(Math.abs(geo.bottom) < 1, `${theme} ${width}px alert is a bottom sheet`);
+                if (width < 1024) assert(Math.abs(geo.bottom) < 1, `${theme} ${width}px alert is a bottom sheet`);
                 assert.equal(
                     (await p.locator('[data-admin-alert-list] li').first().getAttribute('class')).includes('locked'),
                     true,

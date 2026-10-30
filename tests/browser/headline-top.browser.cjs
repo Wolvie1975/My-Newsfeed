@@ -28,7 +28,7 @@ const base = process.env.BASE_URL || 'http://127.0.0.1:5398';
                             body: `<svg xmlns="http://www.w3.org/2000/svg" width="${kind === 'wide' ? 1280 : 240}" height="${kind === 'wide' ? 720 : 135}"><rect width="100%" height="100%" fill="#3b738c"/></svg>`,
                         });
                     });
-                    await page.goto(base + (width < 744 ? '/sports/news' : '/news/all'), { waitUntil: 'networkidle' });
+                    await page.goto(base + (width < 1024 ? '/sports/news' : '/news/all'), { waitUntil: 'networkidle' });
                     // All headlines may use a dedicated phone front; test the shared card feed on a hub there.
                     if (!(await page.locator('[data-hc-top]').count()))
                         await page.goto(base + '/sports/news', { waitUntil: 'networkidle' });
@@ -43,7 +43,7 @@ const base = process.env.BASE_URL || 'http://127.0.0.1:5398';
                         .evaluateAll((ns) => ns.map((n) => n.dataset.articleId));
                     assert(ids.length > 4, 'Representative stories required');
                     assert.equal(new Set(ids).size, ids.length, 'Visible duplicate stories');
-                    if (width >= 744) {
+                    if (width >= 1024) {
                         assert.equal(await page.locator('.hc-under [data-article-media]:visible').count(), 0);
                         assert.equal(
                             await page.locator('.hc-row:not(.hc-row--first) [data-article-media]:visible').count(),
@@ -53,7 +53,7 @@ const base = process.env.BASE_URL || 'http://127.0.0.1:5398';
                         const title = await page.locator('.hc-lead .title').boundingBox();
                         if (cat && title) assert(cat.y + cat.height <= title.y + 1, 'Category overlaps headline');
                     }
-                    if (width >= 744 && kind !== 'wide') assert(await page.locator('.hc-top--text').count());
+                    if (width >= 1024 && kind !== 'wide') assert(await page.locator('.hc-top--text').count());
                     if ([390, 744, 1440].includes(width))
                         await page.screenshot({
                             path: `${shots}headline-top-${width}-${theme}-${kind}.png`,

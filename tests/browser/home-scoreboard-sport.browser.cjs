@@ -123,7 +123,7 @@ const shots = process.env.SCREENSHOT_DIR || 'test-results/';
 
         // Phones, light and dark: the dropdown fits, with no sideways scrolling.
         for (const scheme of ['light', 'dark'])
-            for (const width of [744, 820]) {
+            for (const width of [1024, 1280]) {
                 const context = await browser.newContext({ viewport: { width, height: 900 }, colorScheme: scheme });
                 const p = await context.newPage();
                 p.on('pageerror', (e) => errors.push(e.message));

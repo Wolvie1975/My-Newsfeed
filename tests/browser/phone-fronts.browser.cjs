@@ -2,7 +2,7 @@
 // 430px in light and dark under three colour schemes: the ribbon, dark block, timeline and folds; no sideways scroll,
 // readable text, 44px targets (64px fold summaries), no repeated ids, at most one fold open. Folds open one at a time
 // with JavaScript off; the Scoreboard's date stepper and Sport select work and a refresh keeps the open fold; a Home
-// section hidden in Settings hides its fold; Sports' Section select navigates; 744/1024/1440px don't change.
+// section hidden in Settings hides its fold; Sports' Section select navigates; 1024/1280/1440px don't change.
 //
 // With profiles switched on (the live site) it needs ADMIN_PASSWORD: it adds one throwaway profile, opens it, sets the
 // scheme, theme and hidden Home section on that profile, and deletes it at the end.
@@ -256,7 +256,7 @@ const PERSONAL = 'mynewsfeed-personal-v1';
         }
 
         // iPad and desktop: unchanged.
-        for (const width of [744, 1024, 1440]) {
+        for (const width of [1024, 1280, 1440]) {
             const context = await contextFor(width);
             const page = await context.newPage();
             for (const { path, desktop } of pages) {
@@ -272,7 +272,7 @@ const PERSONAL = 'mynewsfeed-personal-v1';
         }
         assert.deepEqual(errors, []);
         console.log(
-            'Home, Sports and Scoreboard phone fronts at 320/390/430px (kansas, monochrome, cardinals; light/dark), folds without JavaScript, the date stepper, Sport and Section selects, a refresh keeping the open fold, a hidden Home section, and 744/1024/1440px passed.',
+            'Home, Sports and Scoreboard phone fronts at 320/390/430px (kansas, monochrome, cardinals; light/dark), folds without JavaScript, the date stepper, Sport and Section selects, a refresh keeping the open fold, a hidden Home section, and 1024/1280/1440px passed.',
         );
     } finally {
         if (id) {

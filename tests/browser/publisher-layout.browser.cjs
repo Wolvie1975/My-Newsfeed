@@ -15,7 +15,7 @@ const base = process.env.BASE_URL || 'http://172.18.0.5:8080',
             for (const theme of ['light', 'dark'])
                 for (const route of ['news/all', 'sports/news', 'entertainment/news']) {
                     // Headlines has its own folded phone front (headlines-phone).
-                    if (route === 'news/all' && width < 744) continue;
+                    if (route === 'news/all' && width < 1024) continue;
                     await p.setViewportSize({ width, height: 950 });
                     await p.emulateMedia({ colorScheme: theme });
                     assert.equal((await p.goto(base + '/' + route)).status(), 200);
@@ -48,7 +48,7 @@ const base = process.env.BASE_URL || 'http://172.18.0.5:8080',
                     );
                     if ([320, 390, 430, 753, 1440].includes(width)) {
                         // The three stories beside the lead (headline cards); on phones they join the one list.
-                        await p.locator(width < 744 ? '.hc-under .article >> nth=0' : '.hc-under').screenshot({
+                        await p.locator(width < 1024 ? '.hc-under .article >> nth=0' : '.hc-under').screenshot({
                             path: root + route.replaceAll('/', '-') + '-' + width + '-' + theme + '.png',
                         });
                     }

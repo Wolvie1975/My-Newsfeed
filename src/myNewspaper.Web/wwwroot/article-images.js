@@ -53,7 +53,7 @@
         if (!img.matches(selector)) return;
         // Text-first cards hide their media until measured. Hidden lazy images would never load,
         // so measure desktop card photos eagerly before choosing the arrangement.
-        if (img.closest('.hc-card') && matchMedia('(min-width: 744px)').matches) img.loading = 'eager';
+        if (img.closest('.hc-card') && matchMedia('(min-width: 1024px)').matches) img.loading = 'eager';
         const original = img.src;
         if (images.get(img)?.active === original) {
             classify(img);
@@ -67,7 +67,7 @@
         // Desktop headline cards show every good photo full width, so they ask BBC for its larger size too.
         const feature =
                 story?.dataset.articleStory === 'feature' ||
-                (story?.classList.contains('hc-card') && matchMedia('(min-width: 744px)').matches),
+                (story?.classList.contains('hc-card') && matchMedia('(min-width: 1024px)').matches),
             active = preferred(original, feature);
         images.set(img, { original, active, fallback: false });
         if (active !== original) img.src = active;

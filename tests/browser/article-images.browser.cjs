@@ -72,7 +72,7 @@ async function ready(page, story, quality) {
                     const media = story.locator('[data-article-media]');
                     // From 744px All headlines shows headline cards: a photo card at 16:9 for the lead, or a text card
                     // with no image area (docs/headline-cards-handoff.md). Phones keep the checks below.
-                    if (width >= 744) {
+                    if (width >= 1024) {
                         if (quality === 'wide') {
                             const box = await media.boundingBox(),
                                 card = await story.boundingBox();

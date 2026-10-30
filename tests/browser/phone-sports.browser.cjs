@@ -228,7 +228,7 @@ const OWN_SELECT = '.mx-ribbon select:not(#sports-section-m)';
             await context.close();
         }
         // Retained tablet/desktop layouts, no repeated ids or sideways scroll.
-        for (const width of [744, 1024, 1440]) {
+        for (const width of [1024, 1280, 1440]) {
             const context = await contextFor(width);
             const page = await context.newPage();
             for (const { path, desktop } of pages) {
@@ -244,7 +244,7 @@ const OWN_SELECT = '.mx-ribbon select:not(#sports-section-m)';
         }
         assert.deepEqual(errors, []);
         console.log(
-            'Top 25, Standings, College and F1: 320/390/430px, Section dropdown on these and Scoreboard, three schemes, light/dark; contrast, overflow, 44px targets, exclusive folds/keyboard/no-JS selects, JS navigation and persistence, My Teams, full F1 calendar and retained 744/1024/1440px layouts passed.',
+            'Top 25, Standings, College and F1: 320/390/430px, Section dropdown on these and Scoreboard, three schemes, light/dark; contrast, overflow, 44px targets, exclusive folds/keyboard/no-JS selects, JS navigation and persistence, My Teams, full F1 calendar and retained 1024/1280/1440px layouts passed.',
         );
     } finally {
         if (id) {
