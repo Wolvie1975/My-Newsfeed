@@ -143,3 +143,20 @@ history records actual outcomes and remaining device/browser limits.
 The new header search placeholder uses the theme’s secondary text color at full
 opacity, including dark mode. Its final contrast check repeats required phone
 widths and representative desktop/4K widths in light and dark.
+
+## Today’s episodes spacing correction
+
+The Home sidebar inherited the general two-column TV-show list, dividing an already
+narrow card in half. From 1024px, its list now has one full-width show per row. A
+56px poster sits beside the platform and series heading; the episode list spans
+both grid columns below that header. Episode links retain 44px targets, with clear
+row spacing and metadata underneath. Multiple shows stack vertically. Phone fronts
+and the full TV calendar retain their existing layouts; no markup/query/data changes
+are required.
+
+The dedicated episode-spacing browser check uses the real Home page and a test-only
+DOM fixture with the reported four-episode batch plus a second show. It checks full
+sidebar width, details below the poster, single-line date-only metadata, stacked
+shows, touch targets, calendar navigation, Refresh, theme persistence, no-JavaScript
+links/folds and overflow. Preview/live widths, outcomes, screenshots and browser/
+device limits are recorded in release history. Production episode data is untouched.

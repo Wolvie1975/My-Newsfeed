@@ -6,6 +6,36 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
+## Home episode-card spacing — October 30, 2026 (Central)
+
+Fixed the sidebar's inherited two-column show grid, which left the episode text
+squeezed beside a poster in half of an already narrow card. From 1024px, each show
+occupies a full row. Its poster/platform/title share a compact header, with every
+episode and its metadata spanning the full card width below. Multiple shows stack,
+series titles remain readable, and episode links have 44px targets. Phone fronts
+and the full TV calendar keep their existing layouts. This is a scoped CSS fix;
+no markup, query, schema or collector changes were needed on sql2025 / WebScraper.
+
+Solution build passed with zero warnings/errors, browser-test ESLint, repository
+formatting and diff checks passed. No .NET/JS unit or full repository-lint rerun was
+needed for the CSS change. Preview and live Chromium checks covered 320/390/430/
+768/1024/1280/1440/1920/2560/3200/3840px in light/dark. A test-only DOM fixture uses
+the reported four-episode batch plus a second series, matching the actual nested
+show-list markup. Assertions check one full-width show per row, episode details
+below the poster, full-width lists, unwrapped date-only metadata, stacked series,
+44px episode links, calendar navigation, Refresh, theme persistence, no horizontal
+overflow and no-JavaScript calendar/fold controls. Screenshots were inspected.
+Production episode data and existing readers' preferences were untouched; each run
+removed its disposable reader profile. Evidence: `test-results/browser/home-episodes-{preview,live}/` and `test-results/browser/episode-spacing-release/`. Physical devices,
+Safari and Firefox were unavailable; no checks on those are claimed.
+
+Deployed public image `mynewspaper-web:episodes-spacing-20261030` (`ad8e9d750baa`) as
+`mynewsfeed-web`. Public/admin HTTPS health returned 200; runtime environment, key
+mounts, ports, restart policy and aliases were preserved. Deployed broadsheet CSS
+matches source; startup logs had no failure/critical entries. Admin was unchanged.
+Rollback: stopped container `mynewsfeed-web-before-episodes-spacing-20261030` and
+image `mynewspaper-web:before-episodes-spacing-20261030` (`c5ed3f806c1b`).
+
 ## Wide Home polish and public-header search — October 30, 2026 (Central)
 
 Reviewed the second revised wide-screens handoff against the deployed build. The

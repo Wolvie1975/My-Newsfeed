@@ -2554,3 +2554,50 @@ body:has([data-scheme-dialog][open]) {
         max-width: 150px;
     }
 }
+
+/* Home's episode card is a sidebar, rather than the full-width two-show grid. */
+@media (min-width: 1024px) {
+    .pub .bs-home .bs-col--side .d-tv__list {
+        grid-template-columns: minmax(0, 1fr);
+    }
+    .pub .bs-home .bs-col--side .d-tv__show {
+        display: grid;
+        grid-template-columns: 56px minmax(0, 1fr);
+        grid-template-rows: auto 1fr auto;
+        gap: 4px 12px;
+    }
+    .pub .bs-home .bs-col--side .d-tv__show .tv-poster {
+        grid-column: 1;
+        grid-row: 1 / span 2;
+    }
+    .pub .bs-home .bs-col--side .d-tv__body {
+        display: contents;
+    }
+    .pub .bs-home .bs-col--side .d-tv__body > .movie-kind {
+        grid-column: 2;
+        grid-row: 1;
+        margin: 0;
+    }
+    .pub .bs-home .bs-col--side .d-tv__body > .d-vid__title {
+        grid-column: 2;
+        grid-row: 2;
+        display: block;
+        -webkit-line-clamp: unset;
+        overflow: visible;
+    }
+    .pub .bs-home .bs-col--side .d-tv__episodes {
+        grid-column: 1 / -1;
+        grid-row: 3;
+        margin: 12px 0 0;
+    }
+    .pub .bs-home .bs-col--side .d-tv__episodes li {
+        margin: 0;
+        padding: 8px 0;
+        border-top: 1px solid var(--row-border);
+    }
+    .pub .bs-home .bs-col--side .d-tv__episodes a {
+        display: flex;
+        align-items: center;
+        min-height: 44px;
+    }
+}
