@@ -280,7 +280,7 @@ const password = process.env.ADMIN_PASSWORD;
                 }
                 await page.goto(base + '/', { waitUntil: 'networkidle' });
                 if (width >= 1024) {
-                    for (const selector of ['.d-lead__image', '.d-opinion .d-thumb']) {
+                    for (const selector of ['.d-lead__image']) {
                         const media = page.locator(selector).first();
                         assert(await media.count(), selector + ' exists');
                         await media.locator('img').evaluateAll((ns) => ns.forEach((n) => n.remove()));

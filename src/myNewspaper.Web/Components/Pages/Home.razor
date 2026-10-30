@@ -151,7 +151,7 @@
         </div>
 
         <div class="bs-col bs-col--side">
-            <HomeOpinionCard Snapshot="@opinion" />
+            <HomeLatestVideo Item="@latestVideo" Failed="@latestVideoFailed" />
             @if (HomeBoxOfficeSchedule.ShowResults(Dates.TodayAt(nowUtc)))
             {
                 <HomeBoxOfficeResults Rows="homeBoxOffice" Weekend="@HomeBoxOfficeSchedule.ResultsWeekend(Dates.TodayAt(nowUtc))" Failed="homeBoxOfficeFailed" />
@@ -550,13 +550,11 @@
                 }
             </Fold>
         }
-        @if (opinion.Article is { } column)
-        {
-            <Fold Title="Opinion" Section="opinion" Color="mx-c-ink" AllHref="@(opinion.CategoryId is { } id ? $"news/all?category={id}" : "news/all")" AllText="All opinion"
-                  Gist="@($"{Source(column)} · {Title(column)}")">
-                @StoryRow(column)
-            </Fold>
-        }
+        <Fold Title="Latest YouTube video" Section="opinion" Color="mx-c-local" AllHref="videos" AllText="All videos"
+              Gist="@(latestVideo is { } v ? $"{v.ChannelName} · {v.Title}" : latestVideoFailed ? "Temporarily unavailable" : "Follow channels to see their latest video")">
+            <HomeLatestVideo Item="@latestVideo" Failed="@latestVideoFailed" Embedded="true" />
+        </Fold>
+
     </FoldGroup>
 </div>
 
@@ -590,7 +588,8 @@
     private IReadOnlyList<FeedItem> headlineStories = [];
     private IReadOnlyList<FeedItem> sportsStories = [];
     private IReadOnlyList<FeedItem> entertainmentStories = [];
-    private HomeOpinion opinion = new(null,null,0,60000);
+    private VideoItem? latestVideo;
+    private bool latestVideoFailed;
     private IReadOnlyList<VideoItem> videos = [];
     private IReadOnlyList<BoxOfficeMovie> homeBoxOffice = [];
     private bool homeBoxOfficeFailed;
@@ -630,11 +629,10 @@
         headlineStories = news.Where(item => item.Id != lead.Article?.Id).Take(4).ToList();
         sportsStories = await FeedQuery.GetHomeNewsAsync(db, HomeShelfCount, "sports");
         entertainmentStories = await FeedQuery.GetHomeNewsAsync(db, HomeShelfCount, "entertainment");
-        try { opinion = await HomeOpinionQuery.GetAsync(db, nowUtc); }
-        catch (Exception ex) when (DataFailures.IsReadFailure(ex)) {
-            Log.LogError(ex, "Could not read home Opinion spotlight.");
-            opinion = new(null,null,nowUtc.Ticks / TimeSpan.TicksPerHour,60000,true);
-        }
+        latestVideo = null; latestVideoFailed = false;
+        try { latestVideo = (await VideosQuery.GetVideosAsync(db, Reader.Viewer, null, null, limit: 1)).Items.FirstOrDefault(); }
+        catch (Exception ex) when (DataFailures.IsReadFailure(ex))
+        { Log.LogError(ex, "Could not read the latest followed YouTube video."); latestVideoFailed = true; }
         videos = await VideosQuery.GetHomeVideosAsync(db, Reader.Viewer);
         homeForecasts = new([], []);
         homeBoxOffice = []; homeBoxOfficeFailed = false;

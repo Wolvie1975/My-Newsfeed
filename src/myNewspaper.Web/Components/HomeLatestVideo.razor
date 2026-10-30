@@ -1,0 +1,52 @@
+@using myNewspaper.Web.Components.Feed
+@inject FeedDates Dates
+
+@* Keep the old section key so existing home visibility/order preferences still apply to this slot. *@
+<section class="d-card home-latest-video @(Embedded ? "home-latest-video--embedded" : null)"
+         data-home-section="@(Embedded ? null : "opinion")" data-home-latest-video
+         aria-label="Latest YouTube video">
+    @if (!Embedded)
+    {
+        <div class="d-card__head">
+            <h2 class="d-card__title">Latest YouTube video</h2>
+            <a class="d-more" href="videos">All videos →</a>
+        </div>
+    }
+    @if (Failed)
+    {
+        <p class="d-empty" role="status">Videos are temporarily unavailable. Refresh to try again.</p>
+    }
+    else if (Item is { } video)
+    {
+        var href = FeedQuery.SafeHref(video.Url);
+        <article class="home-latest-video__story" data-latest-video-id="@video.Id">
+            @if (href is not null)
+            {
+                <a class="home-latest-video__image" href="@href" target="_blank" rel="noopener noreferrer" aria-label="Watch: @video.Title">
+                    @if (VideosText.Thumbnail(video.ThumbnailUrl, video.VideoId, "hqdefault") is { } image)
+                    {
+                        <img src="@image" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()" />
+                    }
+                    <span class="home-latest-video__play" aria-hidden="true">▶</span>
+                </a>
+            }
+            <p class="home-latest-video__channel">@video.ChannelName@if (!string.IsNullOrWhiteSpace(video.Category)) { <span> · @video.Category</span> }</p>
+            <h3 class="home-latest-video__title">
+                @if (href is not null) { <a href="@href" target="_blank" rel="noopener noreferrer">@video.Title</a> }
+                else { @video.Title }
+            </h3>
+            <p class="home-latest-video__date"><time datetime="@video.PublishedAt.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'")">@Dates.Published(video.PublishedAt) · @Dates.Time(video.PublishedAt)</time></p>
+            <div class="home-latest-video__actions"><ShareButton Url="@video.Url" Title="@video.Title" Kind="video" /><VideoSaveButton Item="video" /></div>
+        </article>
+    }
+    else
+    {
+        <p class="d-empty">No videos from your followed channels yet. <a href="settings#channels">Follow channels</a> to see their latest videos here.</p>
+    }
+</section>
+
+@code {
+    [Parameter] public VideoItem? Item { get; set; }
+    [Parameter] public bool Failed { get; set; }
+    [Parameter] public bool Embedded { get; set; }
+}

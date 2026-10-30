@@ -58,7 +58,7 @@ public static class SiteDefaults
     {
         ["lead"] = "Lead story",
         ["watch"] = "Where to watch",
-        ["opinion"] = "Opinion",
+        ["opinion"] = "Latest YouTube video",
         ["news"] = "Headlines",
         ["sports-news"] = "Sports headlines",
         ["entertainment-news"] = "Entertainment headlines",

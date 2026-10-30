@@ -842,3 +842,42 @@ both themes, JavaScript on/off, actual Big 12 story content and controlled compa
 thumbnail checks. Full-width text/publisher, 44px controls and saving/unsaving
 passed; live phone and desktop screenshots inspected. Temporary profile deleted.
 Public/admin healthy, public HTTPS health HTTP 200. Admin was not replaced.
+
+### Latest followed YouTube video replaces Opinion — October 30, 2026
+
+Desktop's side-column Opinion card and the phone Opinion fold are replaced by
+Latest YouTube video. The newest published video across the current profile's
+followed channels/categories is selected with the existing follow-filtered video
+query (publish time descending, row ID descending for ties), independently of the
+rotating video shelf. It includes thumbnail, title, channel/category, publication
+date/time, YouTube link, watch-later and share controls. Empty state links to
+Settings' channels; read failures show a retry message. Refresh reads the latest
+video again. The old `opinion` preference key is retained for this slot so existing
+visibility and order choices survive; its Settings label is updated. Opinion news
+remains available through News. The old Opinion polling script is no longer loaded.
+
+Preview Chromium passed 320, 390, 430, 820, 1024 and 1440px, light/dark, JS on/off,
+phone-fold opening, consistent profile-scoped selection, empty state, links,
+publication text, no horizontal overflow, 44px actions and save/unsave. Phone and
+desktop screenshots inspected; browser artifacts: test-results/browser/latest-video/preview.
+The temporary browser profile was deleted. SQL transaction tests cover newest
+across categories, newer unfollowed exclusion, tied timestamps, unfollow and nobody
+open; targeted video tests passed 36/36. The broader video/ProfileData run was
+52/53: existing Settings_patch_by_key_and_the_browser_import_happens_once assumes
+an empty household base settings document, unlike the configured database. No
+household settings were changed to satisfy it. Solution build passed with zero
+warnings/errors. Changed-JS lint and formatting passed; repository lint excluding
+ignored test artifacts and the pre-existing no-unsafe-finally error in
+no-photo.browser.cjs passed. Physical devices/Safari unavailable.
+
+Deployed public image `mynewspaper-web:latest-video-20261030` (prefix
+`fa00b619f79b`). Live Chromium repeated all six widths/themes with JS on/off,
+empty state, follow changes, current-profile selection, phone fold, links,
+publication text, 44px actions and save/unsave; passed. Production phone/desktop
+screenshots inspected, plus a full phone viewport in the matching preview.
+Temporary verification profile deleted. Both public/admin containers healthy,
+public HTTPS health 200; no fail/critical startup entries observed. Runtime
+configuration and keys preserved. Rollback tag
+`mynewspaper-web:before-latest-video-20261030` and stopped container
+`mynewsfeed-web-before-latest-video-20261030` retain previous image `d93da38f3063`.
+Admin was not redeployed. Live browser artifacts: test-results/browser/latest-video/live.

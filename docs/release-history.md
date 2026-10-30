@@ -6,6 +6,37 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
+## Latest followed YouTube video on Home — October 30, 2026 (Central)
+
+Replaced the desktop Opinion box and phone Opinion fold with the newest collected
+video from the current profile's followed channels across all categories. Includes
+thumbnail, title, channel/category, date/time, external YouTube link, watch-later
+and share controls. Empty state offers Follow channels; failures show a retry
+message. Refresh reads the newest video. The separate rotating video shelf remains.
+The `opinion` settings key retains saved order/visibility; its public Settings label
+now reads Latest YouTube video. Opinion news remains under News. Removed the old
+Opinion polling script from the page and replaced its browser test.
+
+Solution build passed with zero warnings/errors; 36 targeted video/isolation tests
+passed, including cross-category newest selection, unfollowed exclusion and ties.
+Broader video/ProfileData tests were 52/53: the existing browser-import test assumes
+empty household defaults, unlike this database. Changed-JS lint, formatting and diff
+checks passed. Repository lint passed excluding ignored browser artifacts and the
+existing no-unsafe-finally finding in no-photo.browser.cjs. No household settings
+were changed for tests.
+
+Preview and live Chromium passed 320, 390, 430, 820, 1024 and 1440px, light/dark,
+JS on/off, empty state, follow changes, profile-scoped selection, phone-fold opening,
+links, date/channel text, no overflow, 44px actions and save/unsave. Phone/desktop
+screenshots inspected; temporary profiles deleted. Physical devices/Safari unavailable.
+
+Deployed `mynewspaper-web:latest-video-20261030` (image prefix `fa00b619f79b`),
+preserving runtime settings and keys. Rollback tag
+`mynewspaper-web:before-latest-video-20261030` and stopped container
+`mynewsfeed-web-before-latest-video-20261030` retain image `d93da38f3063`.
+Public/admin healthy, public HTTPS health 200, no fail/critical startup entries
+observed. Admin not replaced; no schema or collector changes.
+
 ## Mobile feature story width — October 30, 2026 (Central)
 
 Compact feature thumbnails now share a row with the category below 1024px;

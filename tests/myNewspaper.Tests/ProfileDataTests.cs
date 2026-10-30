@@ -26,6 +26,53 @@ public class ProfileDataTests
         ProfileStore.CreateDeviceAsync(db, ProfileCookies.NewDevice(), "tests", ProfileGate.EveryVisit);
 
     [Fact]
+    public async Task Latest_home_video_is_newest_across_followed_categories_and_never_another_profiles_channel()
+    {
+        await using var db = Create();
+        await using var tx = await db.Database.BeginTransactionAsync();
+        var profile = await NewProfile(db);
+        var tag = Tag();
+        var feeds = Enumerable.Range(0, 3).Select(i => new YoutubeVideoFeed
+        {
+            ChannelId = $"UC{tag}{i}",
+            ChannelName = $"zz {tag} channel {i}",
+            Url = $"https://{tag}.test.invalid/{i}",
+            YoutubeCategory = new YoutubeCategory { CategoryName = $"zz {tag} category {i}", DateAdded = Now }
+        }).ToArray();
+        db.AddRange(feeds);
+        await db.SaveChangesAsync();
+        // Remove household defaults only for this transaction's temporary profile.
+        await db.ProfileChannelFollows.Where(f => f.ProfileId == profile.Id).ExecuteDeleteAsync();
+        var viewer = Viewer.ForProfile(profile.Id);
+        Assert.Empty((await VideosQuery.GetVideosAsync(db, viewer, null, null, limit: 1)).Items);
+        var rows = feeds.Select((feed, i) => new YouTubeVideo
+        {
+            VideoId = $"{tag}{i}",
+            ChannelId = feed.ChannelId,
+            YoutubeVideoFeedId = feed.Id,
+            Title = $"zz {tag} video {i}",
+            Url = $"https://www.youtube.com/watch?v={tag}{i}",
+            PublishedAt = Now.AddMinutes(i),
+            FirstSeenAt = Now,
+            LastSeenAt = Now
+        }).ToArray();
+        db.AddRange(rows);
+        db.ProfileChannelFollows.AddRange(feeds.Take(2).Select(f => new ProfileChannelFollow
+        { ProfileId = profile.Id, YoutubeVideoFeedId = f.Id }));
+        await db.SaveChangesAsync();
+        var latest = Assert.Single((await VideosQuery.GetVideosAsync(db, viewer, null, null, limit: 1)).Items);
+        Assert.Equal(rows[1].Id, latest.Id);
+        Assert.Equal(feeds[1].YoutubeCategory!.CategoryName, latest.Category);
+        // Equal publish times use the higher row ID deterministically.
+        rows[0].PublishedAt = rows[1].PublishedAt;
+        await db.SaveChangesAsync();
+        Assert.Equal(rows[1].Id, Assert.Single((await VideosQuery.GetVideosAsync(db, viewer, null, null, limit: 1)).Items).Id);
+        await db.ProfileChannelFollows.Where(f => f.ProfileId == profile.Id && f.YoutubeVideoFeedId == feeds[1].Id).ExecuteDeleteAsync();
+        Assert.Equal(rows[0].Id, Assert.Single((await VideosQuery.GetVideosAsync(db, viewer, null, null, limit: 1)).Items).Id);
+        Assert.Empty((await VideosQuery.GetVideosAsync(db, Viewer.Nobody, null, null, limit: 1)).Items);
+    }
+
+    [Fact]
     public async Task A_new_visit_starts_after_thirty_minutes_away_and_keeps_its_start_while_reading()
     {
         await using var db = Create();
