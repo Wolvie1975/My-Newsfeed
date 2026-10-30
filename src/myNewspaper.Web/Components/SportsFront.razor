@@ -6,7 +6,7 @@
 @inject ScoreboardRepository Scoreboard
 
 @* Sports front page as in the approved concept: today's scores across the top, then upcoming games, the lead story and
-   headlines, and a side column of Big 12 football standings and the AP Top 25. Phones get the same sections as cards. *@
+   headlines, and a side column of hourly rotating standings and Top 25 polls. Phones get the same sections as cards. *@
 <div class="mx-desktop">
 <div class="ef spf">
     <section class="spf-scores" aria-labelledby="spf-scores-title">
@@ -96,35 +96,39 @@
             <a class="ef-more" href="sports/news">All sports headlines <span aria-hidden="true">→</span></a>
         </div>
 
-        <aside class="ef-side spf-side">
-            @if (standingsGroup is { } group && standingsSource is { } table)
+        <aside class="ef-side spf-side" data-sports-rotation data-rotation-refresh-after="@RotationRefreshAfterMs">
+            @if (standingsGroups.Count > 0 && standingsSource is { } table)
             {
-                var columns = group.Columns.Take(3).ToList();
                 <section class="spf-standings" aria-labelledby="spf-stand-title">
                     <div class="ef-head"><h2 id="spf-stand-title" class="ef-label">@table.DisplayName standings</h2></div>
-                    <table class="spf-table">
-                        <thead><tr><th scope="col">Team</th>@foreach (var (column, index) in columns.Select((c, i) => (c, i))) { <th scope="col">@ColumnLabel(columns, index)</th> }</tr></thead>
-                        <tbody>
-                            @foreach (var team in group.Teams.Take(8))
-                            {
-                                <tr data-sports-teams="@SportsTeamPreferences.Keys(team.Row.TeamName)">
-                                    <th scope="row">@team.Row.TeamName</th>
-                                    @foreach (var column in columns) { <td>@StandingsQuery.StatisticValue(team, column.Name)</td> }
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
+                    @foreach (var group in standingsGroups)
+                    {
+                        var columns = group.Columns.Take(3).ToList();
+                        <table class="spf-table">
+                            <caption>@group.Name</caption>
+                            <thead><tr><th scope="col">Team</th>@foreach (var (column, index) in columns.Select((c, i) => (c, i))) { <th scope="col">@ColumnLabel(columns, index)</th> }</tr></thead>
+                            <tbody>
+                                @foreach (var team in group.Teams)
+                                {
+                                    <tr data-sports-teams="@SportsTeamPreferences.Keys(team.Row.TeamName)">
+                                        <th scope="row">@team.Row.TeamName</th>
+                                        @foreach (var column in columns) { <td>@StandingsQuery.StatisticValue(team, column.Name)</td> }
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
                     <a class="ef-more" href="@($"standings?sourceId={table.Id}")">All standings <span aria-hidden="true">→</span></a>
                 </section>
             }
             @if (rankings.Teams.Count > 0)
             {
                 <section class="spf-rankings" aria-labelledby="spf-rank-title">
-                    <h2 id="spf-rank-title" class="ef-label">@(rankings.Poll?.PollName ?? "Top 25")</h2>
+                    <h2 id="spf-rank-title" class="ef-label">@rankings.Selected?.Sport · @(rankings.Poll?.PollName ?? "Top 25")</h2>
                     <table class="spf-table">
                         <thead class="sr-only"><tr><th scope="col">Rank</th><th scope="col">School</th><th scope="col">Record</th><th scope="col">Move</th></tr></thead>
                         <tbody>
-                            @foreach (var team in rankings.Teams.Take(5))
+                            @foreach (var team in rankings.Teams.Where(t => t.Rank is >= 1 and <= 25))
                             {
                                 <tr class="@(team.IsBig12 == true ? "spf-big12" : null)">
                                     <td class="spf-table__rank">@team.Rank</td>
@@ -135,7 +139,7 @@
                             }
                         </tbody>
                     </table>
-                    <a class="ef-more" href="rankings">All rankings <span aria-hidden="true">→</span></a>
+                    <a class="ef-more" href="@($"rankings?sourceId={rankings.Selected?.Id}")">All rankings <span aria-hidden="true">→</span></a>
                 </section>
             }
         </aside>
@@ -273,10 +277,12 @@
     private IReadOnlyList<FeedItem> stories = [];
     private IReadOnlyList<TonightItem> upcoming = [];
     private myNewspaper.Web.Data.Models.SportsStandingsSource? standingsSource;
-    private StandingGroup? standingsGroup;
+    private IReadOnlyList<StandingGroup> standingsGroups = [];
+    private StandingGroup? standingsGroup => standingsGroups.FirstOrDefault();
     private RankingsPage rankings = new([], null, null, []);
     private bool newsUnavailable;
     private DateTime nowUtc;
+    private long RotationRefreshAfterMs => (long)(TimeSpan.FromHours(1) - TimeSpan.FromTicks(nowUtc.Ticks % TimeSpan.TicksPerHour)).TotalMilliseconds;
     private IReadOnlyList<myNewspaper.Web.Data.ScoreboardGame> board = [];
     private IReadOnlyList<myNewspaper.Web.Data.ScoreboardGame> live = [];
     private F1Page f1 = F1Page.Empty;
@@ -302,22 +308,38 @@
         catch (Exception ex) when (DataFailures.IsReadFailure(ex))
         { upcoming = []; Log.LogError(ex, "Could not read upcoming games."); }
 
-        // Big 12 football standings when that source is enabled.
+        // Read the existing enabled/season-filtered sources. Empty snapshots never consume a rotation slot.
         try
         {
             var hidden = Config.GetSection("Standings:HiddenProviders").Get<string[]>();
             var all = await StandingsQuery.GetAsync(db, null, Log, today, hidden);
-            standingsSource = all.Sources.FirstOrDefault(s => s.ProviderKey == "big12" && s.Sport == "Football");
-            if (standingsSource is not null)
+            var available = new List<StandingsPage>();
+            foreach (var source in all.Sources)
             {
-                var page = await StandingsQuery.GetAsync(db, standingsSource.Id, Log, today, hidden);
-                standingsGroup = page.Groups.FirstOrDefault();
+                var page = source.Id == all.Selected?.Id ? all
+                    : await StandingsQuery.GetAsync(db, source.Id, Log, today, hidden);
+                if (page.Groups.Any(g => g.Teams.Count > 0)) available.Add(page);
             }
+            var selected = SportsFrontRotation.Order(available, p => p.Selected!.Id, nowUtc, "standings").FirstOrDefault();
+            standingsSource = selected?.Selected;
+            standingsGroups = selected?.Groups ?? [];
         }
         catch (Exception ex) when (DataFailures.IsReadFailure(ex))
-        { standingsSource = null; standingsGroup = null; Log.LogError(ex, "Could not read sports front standings."); }
+        { standingsSource = null; standingsGroups = []; Log.LogError(ex, "Could not read sports front standings."); }
 
-        try { rankings = await RankingsQuery.GetAsync(db, null, Log, today); }
+        try
+        {
+            var all = await RankingsQuery.GetAsync(db, null, Log, today);
+            var available = new List<RankingsPage>();
+            foreach (var source in all.Sources)
+            {
+                var page = source.Id == all.Selected?.Id ? all
+                    : await RankingsQuery.GetAsync(db, source.Id, Log, today);
+                if (page.Teams.Any(t => t.Rank is >= 1 and <= 25)) available.Add(page);
+            }
+            rankings = SportsFrontRotation.Order(available, p => p.Selected!.Id, nowUtc, "rankings").FirstOrDefault()
+                ?? new([], null, null, []);
+        }
         catch (Exception ex) when (DataFailures.IsReadFailure(ex))
         { rankings = new([], null, null, []); Log.LogError(ex, "Could not read sports front rankings."); }
 

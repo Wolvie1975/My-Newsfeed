@@ -56,3 +56,29 @@ no-JavaScript category form. No household Saved list is changed by this check.
 
 Release outcomes, image IDs and outstanding verification limits are recorded in
 [release history](release-history.md).
+
+## Complete Sports tables and hourly selection
+
+The Sports front now renders every team and every standings group for its selected
+competition on desktop, plus all teams ranked 1–25 in the selected poll. Tables keep
+provider/rank order. Both full-view links retain the selected source. Phone folds
+keep their five-row summaries and links to the complete views.
+
+Each panel uses a deterministic shuffled cycle over enabled sources with nonempty
+eligible snapshots. Existing hidden-provider and college-season rules still apply.
+Selection advances on the hour and remains consistent for readers within that hour
+while the available sources stay the same. The web clock drives selection; it does
+not start the scraper or depend on a successful scrape. Existing snapshots remain
+the data source. A visible desktop Sports page fetches fresh server-rendered panels
+at the hour, retains the last good tables on network failure, and retries. Hidden
+pages resume when visible; focused links/dialogs defer replacement. Phones and
+no-JavaScript readers pick up the selection on navigation/reload.
+
+Preview verification covered 320/390/430/1024/1440/1920/2560/3840px in light and dark,
+with screenshots reviewed. Checks compared complete standings counts with the
+matching full page, asserted 25 rank-ordered rows, exercised phone folds/full-view
+links, preference persistence, no overflow, automatic panel refresh and the
+no-JavaScript poll link. Rotation tests cover the hour boundary, query-order
+independence, a complete cycle, and empty/single-source inputs. Live evidence is
+recorded with the release in `docs/release-history.md`. No schema/collector changes
+were required; physical devices and non-Chromium browsers were unavailable.

@@ -6,6 +6,42 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
+## Complete Sports tables and hourly rotation — October 30, 2026 (Central)
+
+The Sports front's desktop panels now include every standings team/group and all
+ranked Top 25 teams, retaining provider/rank order. Their selected competition and
+poll advance through shuffled hourly cycles over enabled, nonempty eligible feeds.
+Full-view links retain the selected source. Visible desktop panels refresh at the
+hour without reloading the page; failures retain the last display and retry. Phone
+folds retain five-row summaries and pick up selection on navigation/reload. Selection
+uses the web clock, aligned with hourly collection; no scraper trigger or collector
+change is introduced. No schema migration was needed on sql2025 / WebScraper.
+
+Solution build passed with zero warnings/errors, two rotation tests and five JS unit
+tests passed, and changed-JS/browser-test ESLint, repository formatting and diff
+checks passed. The rotation tests cover stable selection within an hour, the next
+hour, a complete cycle, query-order independence, and empty/single sources. The full
+.NET suite and repository-wide lint were not repeated; their previously recorded
+unrelated failures remain outside this change.
+
+Preview and live Chromium checks covered 320/390/430/1024/1440/1920/2560/3840px in
+light and dark. Assertions compared all standings rows with the matching full page,
+checked all 25 ranks in order, stable selection, phone fold/full-view navigation,
+44px phone fold/link targets, persisted themes, no horizontal overflow, automatic
+panel refresh with an accelerated initial delay, and no-JavaScript full-poll links.
+Screenshots were inspected. Each run used and removed its own temporary reader
+profile. Evidence: `test-results/browser/sports-panels-{preview,live}/` screenshots and
+`test-results/browser/sports-panels-release/{preview,live}.log` full-matrix logs. Physical devices, Safari and
+Firefox were unavailable; no claim is made for those checks.
+
+Public image `mynewspaper-web:sports-panels-20261030` (`4f856d3d0b42`) was deployed as
+`mynewsfeed-web`. Public/admin HTTPS health returned 200; public Docker health is
+healthy. Runtime environment, key mounts, ports, restart policy and network aliases
+were preserved; deployed CSS/JS hashes match source. Startup logs had no failure or
+critical entries. Admin was unchanged. Rollback: stopped container
+`mynewsfeed-web-before-sports-panels-20261030` and image
+`mynewspaper-web:before-sports-panels-20261030` (`40a9579e1b76`).
+
 ## YouTube sidebar — October 30, 2026 (Central)
 
 The YouTube featured front now adds a third column from 2560 CSS px. By channel

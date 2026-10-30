@@ -5004,3 +5004,12 @@ a.tvc-row__show:hover {
         align-items: center;
     }
 }
+
+.pub .spf-table caption {
+    caption-side: top;
+    padding: 12px 4px 6px;
+    color: var(--text-2);
+    font-size: 12px;
+    font-weight: 700;
+    text-align: left;
+}
