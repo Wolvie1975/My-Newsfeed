@@ -82,3 +82,28 @@ no-JavaScript poll link. Rotation tests cover the hour boundary, query-order
 independence, a complete cycle, and empty/single-source inputs. Live evidence is
 recorded with the release in `docs/release-history.md`. No schema/collector changes
 were required; physical devices and non-Chromium browsers were unavailable.
+
+## Compact Home masthead follow-up
+
+From 1920 CSS px, Home shows its existing tile/wordmark in the navigation and hides
+the large centered masthead logo. The date/greeting move to the left, followed by
+a boxless four-period weather row and the existing Live now/Coming up box. The
+heading remains an h1 and Refresh retains its normal navigation behavior. Below
+1920px, the prior masthead and header rules continue to apply.
+
+The revised handoff's unconstrained auto weather track overlapped the greeting
+at 1920px with long summaries. The implementation bounds the three grid tracks,
+reserves enough space for the real site font and Refresh button, scales the greeting
+from about 54px to 72px, and gives each weather period a shrinkable text track.
+The Kansas City link sits below the four periods. Weather aligns with the greeting's
+bottom edge; long summaries wrap without widening the page. Existing weather icons,
+selection logic and data are unchanged. No queries, schema or collector changes
+are required. The 3200px CSS zoom rules remain in effect.
+
+The focused browser test exercises 320/390/430/768/1024/1280/1440/1920/2560/3200/3840px,
+light/dark, additional Monochrome/Cardinals schemes, normal Refresh, profile theme
+persistence, navigation branding, original smaller-screen layouts, phone folds and
+no-JavaScript Refresh/folds. Desktop checks stress a longer greeting and four long
+forecast summaries by changing only the test DOM. Live and preview results and
+limits are recorded in release history; screenshots/logs remain in ignored
+`test-results/browser/home-masthead-*` directories.

@@ -6,6 +6,41 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
+## Compact wide-screen Home masthead — October 30, 2026 (Central)
+
+From 1920 CSS px, Home uses its existing navigation tile/wordmark, a left-aligned
+date and greeting, a boxless four-period weather strip, and the existing Live now/
+Coming up box. The large centered logo is hidden. The greeting scales from about
+54px to 72px. Grid tracks reserve room for the actual site font and Refresh button;
+weather text can shrink/wrap, with the Kansas City link below the four periods.
+This corrects the revised handoff's 1920px long-forecast overlap. All changes are
+scoped to the wide-screen breakpoint; smaller Home layouts remain in place.
+Weather icons/data and scraper behavior are unchanged. No queries, migrations or
+collector changes were needed on sql2025 / WebScraper. Admin was not rebuilt.
+
+Solution build passed with zero warnings/errors. Browser-test ESLint, repository
+formatting and diff checks passed. Full .NET/unit/repository-lint suites were not
+rerun for this CSS-only change; prior unrelated suite failures remain as recorded.
+Preview and live Chromium checks covered 320/390/430/768/1024/1280/1440/1920/2560/
+3200/3840px in light/dark, plus Monochrome and Cardinals at 2560. Assertions covered
+navigation branding, single-row navigation, no horizontal overflow, greeting and
+Refresh clearance, long forecast summaries, theme persistence, unchanged narrower
+mastheads, actual Refresh and phone fold interactions, and no-JavaScript Refresh/
+phone folds. Test-only DOM changes stressed the longer "Good afternoon" greeting
+and four long forecast summaries; production forecasts were not modified.
+Screenshots were inspected. Disposable reader profiles were deleted after each
+run. Evidence is under `test-results/browser/home-masthead-{preview,live}/` and
+`test-results/browser/home-masthead-release/`. Physical devices, Safari and Firefox
+were unavailable; those checks are not claimed.
+
+Deployed public image `mynewspaper-web:home-masthead-20261030` (`f976307bda8d`) as
+`mynewsfeed-web`. Public/admin HTTPS health returned 200. Runtime environment,
+persistent key mounts, ports, restart policy and network aliases were preserved;
+the deployed broadsheet CSS hash matches source. Startup logs had no failure or
+critical entries. Rollback is the stopped container
+`mynewsfeed-web-before-home-masthead-20261030` and image
+`mynewspaper-web:before-home-masthead-20261030` (`4f856d3d0b42`).
+
 ## Complete Sports tables and hourly rotation — October 30, 2026 (Central)
 
 The Sports front's desktop panels now include every standings team/group and all
