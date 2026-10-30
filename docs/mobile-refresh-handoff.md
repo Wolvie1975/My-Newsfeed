@@ -808,3 +808,15 @@ and the temporary workspace hostname mapping were removed after verification.
 
 Evidence: `test-results/browser/scheme-picker/` and `/tmp/scheme-modal-*.log`.
 See release history for rollback. Physical devices and Safari were unavailable.
+
+### Top story divider spacing — October 30, 2026
+
+Local change: the desktop home lead story has 16px top padding so its photo or
+placeholder clears the Top story divider. Chromium preview at localhost:5305
+passed overflow checks at 320, 390, 430, 820, 1024 and 1440px, light/dark, with
+JavaScript on/off. Desktop geometry confirmed the 16px gap. Screenshots inspected
+at 390 and 1440px; artifacts in test-results/browser/lead-spacing. CSS formatting
+passed. Physical devices/Safari were unavailable. Deployed as
+`mynewspaper-web:lead-spacing-20261030`; live Chromium checks passed all six widths
+in both themes, including 16px desktop geometry and screenshot review. The temporary
+verification profile was deleted. Public/admin containers healthy, public health HTTP 200.

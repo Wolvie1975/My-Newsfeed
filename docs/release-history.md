@@ -6,6 +6,22 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
+## Home Top story spacing — October 30, 2026 (Central)
+
+Added 16px top padding to the desktop lead story so its image/placeholder clears
+the section divider. Phone layout is unchanged. CSS formatting and diff checks
+passed. Preview Chromium checks passed 320, 390, 430, 820, 1024 and 1440px in
+light/dark with JavaScript on/off; live checks repeated all six widths and both
+themes with JavaScript enabled. Desktop geometry confirmed the gap; phone and
+desktop screenshots were inspected. Physical devices/Safari were unavailable.
+
+Deployed public image `mynewspaper-web:lead-spacing-20261030` (ID prefix
+`e51c997555cf`), preserving runtime settings and persistent keys. Rollback image
+`mynewspaper-web:before-lead-spacing-20261030` (ID prefix `48accb3ec847`) and stopped
+container `mynewsfeed-web-before-lead-spacing-20261030` retained. Both public and
+admin containers healthy; public HTTPS health returned 200, with no fail/critical
+startup log entries observed. Admin was not replaced. Temporary test profile removed.
+
 ## Header color-scheme modal — October 30, 2026 (Central)
 
 Added a palette shortcut beside the light/dark toggle on mobile and desktop.
