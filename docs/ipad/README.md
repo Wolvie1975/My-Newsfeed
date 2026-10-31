@@ -1,6 +1,6 @@
 # iPad portrait rollout
 
-Guides 00 and 01 are implemented. The remaining guides are separate future changes.
+Guides 00–02 are implemented. The remaining guides are separate future changes.
 The source proposals are retained beside this handoff; implementation notes here
 record adjustments needed for the current app.
 
@@ -17,13 +17,29 @@ are available for subsequent page guides.
 
 ## Where to watch
 
-Only Watch opts in so far. It uses a 48px heading, a full-width labeled search panel,
+Watch was the first page to opt in. It uses a 48px heading, a full-width labeled search panel,
 compact browse/services row, 150px poster shelves with a right fade, and no tablet
 arrows. Manage has a shorter tablet label so six service logos plus the extra count
 fit at 744px. The existing phone ribbon's negative margins are reset only on
 opted-in Watch. Search results already use a readable single-column list, so they
 retain that layout; the phone result-margin override is reset on tablet Watch.
 Desktop arrow controls and phone Watch remain in their existing ranges.
+
+## YouTube
+
+YouTube now opts in at 744–1023px. A shared browse wrapper groups the horizontally
+scrolling category pills and the channel dropdown, with the count below. It uses
+`display: contents` outside the tablet range, preserving the existing desktop flow.
+Two desktop-only `sections.css` blocks start at 744px after checking that none of
+their selectors appear in phone components. Shared section-pill rules were unchanged.
+The phone frame's negative margins are reset only on opted-in content.
+
+Featured spans both tablet columns, with 44px controls, a 30px title and five
+progress/title picks. Latest uses 132px thumbnails beside the By channel / Watch
+later sidebar; sidebar link styles are copied from the 4K rules into the tablet
+scope. Categories keep the sidebar useful when Watch later is empty. When neither
+categories nor saved videos produces an aside, Latest uses the full width. More
+videos uses three columns. Phone layout and 1024px+ layouts retain their ranges.
 
 ## Verification
 
@@ -38,3 +54,9 @@ preferences are untouched. Each run creates and deletes its own reader profile.
 Verification uses Chromium browser emulation, including a touch-enabled context.
 Physical iPads, Safari and Firefox are unavailable. Width changes exercise the
 portrait/landscape breakpoints; no physical-device rotation is claimed.
+
+YouTube verification uses the same phone/tablet breakpoints plus 1920 and 3840px.
+The browser check exercises carousel arrows/picks, rotation only after Play, a touch
+swipe on categories, category/channel filters, paging, row/card Watch later and Share,
+no-aside fallback, no-JavaScript filtering, Watch regression and other-front isolation.
+Release history records actual completed runs and deployment evidence.

@@ -13,9 +13,10 @@
    plain links and a GET form, so every view has a shareable URL. *@
 
 <div class="mx-life-layout">
-<div class="mx-desktop">
+<div class="mx-desktop tab-desktop">
 <PageHeading Title="YouTube" Eyebrow="From your channels" Description="" />
 
+<div class="yt-browse">
 @if (categories.Count > 0)
 {
     @* Channel categories (from the scraper) as pills on desktop; phones use the Category dropdown below. *@
@@ -59,6 +60,7 @@
     {
         <p class="count count--toolbar" aria-live="polite">@(selectedChannel ?? selectedCategory?.Name ?? "All channels") · @listing.Total @(listing.Total == 1 ? "video" : "videos")@(lastUpdated is { } updated ? " · updated " + Dates.Time(updated) : "")</p>
     }
+</div>
 </div>
 
 @if (listing is null || listing.Items.Count == 0)
@@ -183,7 +185,7 @@ else
 </div>
 <PhoneVideos Items="@(listing?.Items ?? [])" Total="@(listing?.Total ?? 0)" Featured="@featured.FirstOrDefault()" Choices="PhoneChoices" Current="@PhoneCurrent" Expanded="@(ViewQuery == "all")" Q="@Q" Category="@selectedCategory?.Slug" Channel="@Channel" />
 @if (listing is not null && (listing.Total > 50 || page > 1)) {
-<nav class="mx-phone mx-video-pages" aria-label="Phone video pages">@if (page > 1) { <a href="@PageHref(page - 1)">← Newer videos</a> } @if (offset + listing.Items.Count < listing.Total) { <a href="@PageHref(page + 1)">More videos →</a> }<span>Showing @(offset + listing.Items.Count) of @listing.Total</span></nav>
+<nav class="mx-phone tab-phone mx-video-pages" aria-label="Phone video pages">@if (page > 1) { <a href="@PageHref(page - 1)">← Newer videos</a> } @if (offset + listing.Items.Count < listing.Total) { <a href="@PageHref(page + 1)">More videos →</a> }<span>Showing @(offset + listing.Items.Count) of @listing.Total</span></nav>
 }
 
 </div>

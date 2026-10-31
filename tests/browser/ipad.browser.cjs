@@ -236,7 +236,7 @@ const shots = process.env.SCREENSHOT_DIR || 'test-results/browser/ipad/';
             }
         }
         await page.setViewportSize({ width: 820, height: 1100 });
-        for (const route of ['/', '/news', '/sports', '/entertainment', '/videos', '/settings']) {
+        for (const route of ['/', '/news', '/sports', '/entertainment', '/settings']) {
             await page.goto(base + route, { waitUntil: 'networkidle' });
             await header(820);
             assert(

@@ -3854,8 +3854,9 @@ a.tvc-row__show:hover {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
-@media (min-width: 1024px) {
-    .pub .page-heading:has(+ .filters--videos) {
+@media (min-width: 744px) {
+    .pub .page-heading:has(+ .filters--videos),
+    .pub .page-heading:has(+ .yt-browse:not(:has(.yt-cats))) {
         margin-bottom: 0;
     }
     /* Desktop: category pills under the heading (as on Sports and Entertainment headlines); the dropdown is for phones. */
@@ -4445,7 +4446,7 @@ a.tvc-row__show:hover {
     color: var(--text-2);
     font-size: 13px;
 }
-@media (min-width: 1024px) {
+@media (min-width: 744px) {
     .pub .yt-top {
         display: grid;
         grid-template-columns: minmax(0, 2fr) minmax(320px, 1fr);
@@ -5012,4 +5013,9 @@ a.tvc-row__show:hover {
     font-size: 12px;
     font-weight: 700;
     text-align: left;
+}
+
+/* Tablet groups the video filters; desktop keeps their original flow. */
+.pub .yt-browse {
+    display: contents;
 }

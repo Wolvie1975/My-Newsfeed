@@ -6,6 +6,43 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
+## iPad YouTube layout — October 30, 2026 (Central)
+
+YouTube now opts in to the 744–1023px tablet layout. Its category strip scrolls beside
+the channel selector, with the count on the next row. Featured spans the page above
+Latest and the By channel / Watch later sidebar; five picks retain their existing
+progress/title presentation. More videos uses three columns. Two desktop-only CSS
+blocks start at 744px after checking phone components, and sidebar link styles are
+copied into tablet scope. The shared browse wrapper uses `display: contents` outside
+tablet widths, including the existing heading spacing when there are no categories.
+Other fronts retain their phone presentation; Watch retains its completed tablet
+layout. No query, schema, collector, carousel-script or admin changes were required.
+
+Solution build passed with zero warnings/errors; browser-test ESLint, repository
+formatting and diff checks passed. Preview/live Chromium checks covered 320/390/430/
+743/744/820/834/1023/1024/1280/1440/1920/2560/3840px in light/dark. Checks covered
+wrapping/overflow, the tablet grid and sidebar, 44px carousel/actions, five picks,
+three tablet card columns, existing desktop column counts, Refresh, saved themes,
+phone menus/folds and no-aside fallback. Monochrome/Cardinals were checked at 820px.
+Interactions exercised arrows/picks, no rotation before Play, Play/Pause rotation,
+a real emulated touch swipe on the category strip at 744px, category/channel filters,
+paging, row/card Watch later persistence/removal and Share with a test clipboard.
+No-JavaScript filtering and phone navigation passed. Watch regression and isolation
+of the remaining fronts were checked. Screenshots were inspected. Tests use their
+own temporary profiles; household Saved lists and preferences were untouched.
+Physical iPads, Safari and Firefox were unavailable; width changes cover orientation
+breakpoints without claiming physical-device rotation.
+
+Evidence: `test-results/browser/ipad-youtube-{preview,live}/` and
+`test-results/browser/ipad-youtube-release/`. Updated [iPad handoff](ipad/README.md);
+Guide 03 remains separate.
+
+Public image `mynewspaper-web:ipad-youtube-20261031` (`2f39c4695ac3`) preserves the
+actual runtime environment, key mount, ports, network aliases and restart policy.
+Both changed deployed stylesheets match source. Public/admin health returned Healthy;
+admin image was unchanged. Rollback container `mynewsfeed-web-before-ipad-youtube-20261031`
+and image `mynewspaper-web:before-ipad-youtube-20261031` (`805c90d1b4b0`) were retained.
+
 ## iPad foundation and Where to watch — October 30, 2026 (Central)
 
 Added the 744–1023px tablet stylesheet and per-page opt-in wrappers. Every public
