@@ -158,3 +158,10 @@ sidebar width, details below the poster, single-line date-only metadata, stacked
 shows, touch targets, calendar navigation, Refresh, theme persistence, no-JavaScript
 links/folds and overflow. Preview/live widths, outcomes, screenshots and browser/
 device limits are recorded in release history. Production episode data is untouched.
+
+## Entertainment navigation cleanup
+
+Where to watch remains in the main navigation and has been removed from the
+Entertainment section tabs/dropdown. Entertainment retains its six section choices.
+The shared list covers phone and desktop layouts. Preview/live widths, navigation
+flows, screenshot checks and browser/device limits are recorded in release history.

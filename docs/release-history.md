@@ -6,6 +6,28 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
+## Entertainment navigation cleanup — October 30, 2026 (Central)
+
+Removed Where to watch from the shared Entertainment section choices, including
+its desktop tabs and phone dropdown. The main navigation retains the standalone
+Where to watch page. No query, schema, scraper, CSS or admin changes were needed.
+
+Solution build passed with zero warnings/errors; diff checks passed. Preview/live
+Chromium verification used a disposable reader profile at 320/390/430/768/1440/
+1920/2560px in light/dark. Checked absence from tabs/options, remaining Movies
+navigation, 44px phone select, no horizontal overflow, persisted themes, Refresh,
+the main Watch link and the no-JavaScript phone select/Go fallback. Representative
+phone/desktop screenshots were inspected. Physical devices, Firefox and Safari
+were unavailable. Evidence and verification script are in
+`test-results/browser/entertainment-nav-{preview,live}/` and
+`test-results/entertainment-nav.cjs`.
+
+Public image `mynewspaper-web:entertainment-nav-20261031` (`a07e6904abab`) preserves
+runtime settings, persistent keys, ports, network aliases and restart policy.
+Public/admin health returned Healthy; admin was unchanged. Retained rollback
+container `mynewsfeed-web-before-entertainment-nav-20261031` and image
+`mynewspaper-web:before-entertainment-nav-20261031` (`4151d3b9a324`).
+
 ## Home sports-only score area — October 30, 2026 (Central)
 
 Removed New tonight from Home's Live now/Coming up area at every width, leaving

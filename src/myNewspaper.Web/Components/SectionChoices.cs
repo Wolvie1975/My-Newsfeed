@@ -14,7 +14,7 @@ public static class SectionChoices
     public static readonly IReadOnlyList<NavigationChoice> Entertainment =
     [
         new("entertainment", "Entertainment home"), new("entertainment/news", "Headlines"), new("movies", "Movies"), new("tv", "TV & streaming"),
-        new("movies/digital", "Digital releases"), new("box-office", "Box office"), new("watch", "Where to watch"),
+        new("movies/digital", "Digital releases"), new("box-office", "Box office"),
     ];
 
     public const string NewsKansasCityCategory = "Kansas City News";
