@@ -1,0 +1,325 @@
+/* iPad portrait foundation: 744–1023px. Page content opts in separately; see docs/ipad/. */
+@media (min-width: 744px) and (max-width: 1023px) {
+    /* ---------- The switch: opted-in pages show their desktop markup on a tablet ---------- */
+    .mx-desktop.tab-desktop {
+        display: contents !important; /* beats mobile.css's `.mx-desktop { display: none !important }` (more specific) */
+    }
+    .mx-phone.tab-phone {
+        display: none !important;
+    }
+    /* Shared components with their own phone/desktop halves (e.g. ScoreboardPanel) follow the page they sit in. */
+    .tab-desktop .mx-desktop {
+        display: contents !important;
+    }
+    .tab-desktop .mx-phone {
+        display: none !important;
+    }
+    /* The page frame on an opted-in page: 24px sides, no 1280 cap. */
+    .pub .page:has(.tab-desktop) {
+        max-width: none;
+        padding: 16px 24px 40px;
+        gap: 16px;
+    }
+
+    /* ---------- Header: two rows ---------- */
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme])) .pub .site-header {
+        flex-wrap: wrap;
+        gap: 0 8px;
+        min-height: 0;
+        height: auto;
+        padding: 6px 16px 0 24px;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme])) .pub .brand {
+        display: inline-flex;
+        width: auto;
+        gap: 10px;
+        min-height: 48px;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme])) .pub .brand-mark,
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme])) .pub .header-clock,
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme])) .pub .mobile-nav,
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme])) .pub .header-watch,
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+        .pub
+        .header-actions
+        > .admin-link,
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+        .pub
+        .edition-chip__name {
+        display: none;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme])) .pub .brand-tile {
+        display: block;
+        flex: none;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme])) .pub .brand-wordmark {
+        display: inline;
+        font-size: 22px;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme])) .pub .header-actions {
+        margin-left: auto;
+        gap: 4px;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+        .pub
+        .header-actions
+        > .settings-link {
+        display: inline-flex;
+        align-items: center;
+        min-height: 44px;
+        padding: 0 8px;
+    }
+    .pub .header-search-link {
+        display: grid;
+        place-items: center;
+        width: 44px;
+        height: 44px;
+        border-radius: 10px;
+        color: inherit;
+    }
+    /* Row 2: the sections. */
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+        .pub
+        .site-nav--inline {
+        display: flex;
+        order: 10;
+        flex: 0 0 100%;
+        gap: 0 22px;
+        margin: 0;
+        padding: 0;
+        overflow-x: auto;
+        scrollbar-width: none;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+        .pub
+        .site-nav--inline
+        a {
+        display: inline-flex;
+        align-items: center;
+        min-height: 44px;
+        padding: 0 2px;
+        border-bottom: 3px solid transparent;
+        border-radius: 0;
+        background: none;
+        font-size: 15px;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+        .pub
+        .site-nav--inline
+        a[aria-current] {
+        border-bottom-color: currentColor;
+        color: inherit;
+        background: none;
+        font-weight: 700;
+    }
+
+    /* ---------- Helper: a strip you swipe sideways (scores, posters, pills, section tabs) ---------- */
+    .pub .tab-desktop .tab-scroll {
+        display: flex;
+        flex-wrap: nowrap;
+        gap: 12px;
+        margin-inline: -24px; /* runs to the screen edge... */
+        padding: 2px 24px 10px; /* ...but starts in line with the page */
+        overflow-x: auto;
+        overscroll-behavior-x: contain;
+        scroll-snap-type: x proximity;
+        scroll-padding-inline: 24px;
+        scrollbar-width: none;
+        -webkit-mask-image: linear-gradient(
+            90deg,
+            #000 calc(100% - 56px),
+            transparent
+        ); /* the fade says "there's more" */
+        mask-image: linear-gradient(90deg, #000 calc(100% - 56px), transparent);
+    }
+    .pub .tab-desktop .tab-scroll::-webkit-scrollbar {
+        display: none;
+    }
+    .pub .tab-desktop .tab-scroll > * {
+        flex: none;
+        scroll-snap-align: start;
+    }
+
+    /* ---------- Helper: two equal columns with a rule between ---------- */
+    .pub .tab-desktop .tab-two {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 0;
+        align-items: start;
+    }
+    .pub .tab-desktop .tab-two > * {
+        min-width: 0;
+    }
+    .pub .tab-desktop .tab-two > :first-child {
+        padding-right: 20px;
+    }
+    .pub .tab-desktop .tab-two > :last-child {
+        padding-left: 20px;
+        border-left: 1px solid var(--row-border);
+    }
+
+    /* ---------- Helper: touch targets ---------- */
+    .pub .tab-desktop :is(a, button, select, summary):not(.tab-inline) {
+        min-height: 44px;
+    }
+
+    /* Tablet actions keep the same 44px targets, including the edition switch. */
+    .pub .settings-link__label {
+        display: none;
+    }
+    .pub .settings-link__icon {
+        display: block;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+        .pub
+        .header-actions
+        > .settings-link {
+        justify-content: center;
+        width: 44px;
+        padding: 0;
+        color: inherit;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+        .pub
+        .header-actions
+        > :is(.saved-link, .theme-toggle, .scheme-toggle) {
+        order: 0;
+    }
+    .pub .header-actions > .header-search-link {
+        order: -3;
+    }
+    .pub .edition-chip {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 44px;
+        height: 44px;
+        order: 2;
+        color: inherit;
+    }
+    .pub .edition-chip__tile {
+        display: grid;
+        place-items: center;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: var(--ed);
+        color: #fff;
+        font-weight: 800;
+    }
+    .pub .settings-panel,
+    .pub .settings-panel > summary,
+    .pub .settings-panel > summary > h2,
+    .pub [data-phone-settings] :is(h2, section[id]) {
+        scroll-margin-top: 120px;
+    }
+    /* ---------- Where to watch (docs/ipad/ipad-01-where-to-watch.md) ---------- */
+    .pub .watch-page .tab-desktop .page-heading > p:last-child {
+        display: block; /* keep the description (the <= 600px rule hides it) */
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .watch-page .tab-desktop .watch-controls {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 14px 16px;
+    }
+    .pub .watch-page .tab-desktop .watch-search {
+        grid-column: 1 / -1; /* full width */
+    }
+    .pub .watch-page .tab-desktop .watch-filters,
+    .pub .watch-page .tab-desktop .watch-mine {
+        border-top: 4px double var(--text);
+        padding-top: 6px;
+    }
+    .pub .watch-page .tab-desktop .watch-mine {
+        justify-self: end;
+    }
+    .pub .watch-page .tab-desktop .watch-mine__logos li {
+        width: 34px;
+        height: 34px;
+    }
+    .pub .watch-page .tab-desktop .watch-controls-note {
+        grid-column: 1 / -1;
+    }
+
+    /* Shelves: swipe, no arrows, run to the screen edge, fade on the right. */
+    .pub .watch-page .tab-desktop .watch-shelf {
+        grid-auto-columns: 150px;
+        gap: 16px;
+        margin-inline: -24px;
+        padding: 2px 24px 10px;
+        scroll-padding-inline: 24px;
+        scroll-snap-type: x proximity;
+        scrollbar-width: none;
+        -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 56px), transparent);
+        mask-image: linear-gradient(90deg, #000 calc(100% - 56px), transparent);
+    }
+    .pub .watch-page .tab-desktop .watch-row__arrow {
+        display: none !important;
+    }
+    .pub .watch-page .tab-desktop .watch-row__head h2 {
+        font-size: 26px;
+    }
+
+    .pub .watch-page .tab-desktop .page-heading h1 {
+        font-size: 48px;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .watch-page .tab-desktop .watch-search-row {
+        flex-direction: row;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .watch-page .tab-desktop .watch-search input {
+        min-width: 0;
+        min-height: 48px;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .watch-page .tab-desktop .watch-search button {
+        min-height: 48px;
+    }
+    .pub .watch-page .tab-desktop .watch-filters,
+    .pub .watch-page .tab-desktop .watch-mine {
+        align-self: stretch;
+        padding: 6px 0 0;
+        border: 0;
+        border-top: 4px double var(--text);
+        border-radius: 0;
+        background: none;
+    }
+    .pub .watch-page .tab-desktop .watch-mine {
+        flex-wrap: wrap;
+        gap: 4px 10px;
+    }
+    .pub .watch-page .tab-desktop .watch-toggle {
+        display: inline-flex;
+        width: auto;
+    }
+
+    /* Cancel the phone ribbon's edge-to-edge frame once Watch has opted in. */
+    .pub .watch-page:has(.tab-desktop) {
+        margin: 0;
+        padding-bottom: 0;
+        min-width: 0;
+    }
+    .pub
+        .watch-page:has(.tab-desktop)
+        > :is(.watch-results-bar, .watch-grid, .watch-results, .watch-tabs, .watch-credits, p) {
+        margin-left: 0;
+        margin-right: 0;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .watch-page .tab-desktop .watch-toggle {
+        display: inline-flex;
+        width: auto;
+    }
+    .pub .watch-page .tab-desktop .watch-filters {
+        min-width: 0;
+    }
+    .pub .watch-page .tab-desktop .watch-mine {
+        max-width: 100%;
+    }
+    .pub .watch-page .tab-desktop .watch-services-link:has(.watch-services-compact) .watch-services-label {
+        display: none;
+    }
+    .pub .watch-page .tab-desktop .watch-services-compact {
+        display: inline;
+    }
+}

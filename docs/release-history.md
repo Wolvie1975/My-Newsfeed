@@ -6,6 +6,39 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
+## iPad foundation and Where to watch — October 30, 2026 (Central)
+
+Added the 744–1023px tablet stylesheet and per-page opt-in wrappers. Every public
+page receives a two-row tablet header with all six main sections, a search shortcut,
+Settings icon and initial-only edition switch. Settings anchor offsets account for
+the taller header. Watch is the first opted-in page: 48px heading, full-width search,
+compact services/browse row and 150px sideways-scrolling poster shelves with a fade.
+Tablet arrows are hidden; desktop arrows and phone Watch remain available. Other
+pages retain their phone content at tablet widths. The foundation was checked before
+Watch opted in. No database, catalog-query, scraper or admin changes were required.
+
+Solution build passed with zero warnings/errors, browser-test ESLint, repository
+formatting and diff checks passed. Chromium preview/live checks covered 320/390/430/
+743/744/820/834/1023/1024/1280/1440/2560px in light/dark, plus Monochrome and
+Cardinals at 744px. Assertions and screenshots cover header rows, 44px targets,
+page overflow, page isolation, theme persistence, Refresh and breakpoint transitions.
+A DOM-only six-logo/+12 fixture checks the crowded services bar. A touch gesture
+scrolls a poster shelf; desktop arrow navigation, Movies/TV tabs, My services,
+Arrival search, automatic sorting and Manage were exercised. No-JavaScript tablet
+search/sort and phone search also passed. Tests create/delete disposable reader
+profiles. Physical iPads, Safari and Firefox were unavailable; viewport changes
+exercise orientation breakpoints without claiming physical rotation.
+
+Evidence: `test-results/browser/ipad-foundation-preview/`,
+`test-results/browser/ipad-{preview,live}/` and `test-results/browser/ipad-release/`.
+Maintained handoff: [iPad rollout](ipad/README.md). Guides 02 onward remain separate.
+
+Public image `mynewspaper-web:ipad-watch-20261031` (`805c90d1b4b0`) preserves the
+actual runtime environment, persistent keys, ports, network aliases and restart
+policy. Both deployed CSS files match source. Public/admin health returned Healthy;
+admin image was unchanged. Rollback container `mynewsfeed-web-before-ipad-watch-20261031`
+and image `mynewspaper-web:before-ipad-watch-20261031` (`a07e6904abab`) were retained.
+
 ## Entertainment navigation cleanup — October 30, 2026 (Central)
 
 Removed Where to watch from the shared Entertainment section choices, including

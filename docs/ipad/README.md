@@ -1,0 +1,40 @@
+# iPad portrait rollout
+
+Guides 00 and 01 are implemented. The remaining guides are separate future changes.
+The source proposals are retained beside this handoff; implementation notes here
+record adjustments needed for the current app.
+
+## Foundation
+
+`tablet.css` loads after headline cards and confines all rules to 744–1023px.
+The header uses two rows on every public page, with six section links and a
+44px search shortcut. Settings uses an icon at tablet widths, and the edition
+switch shows its initial. Phone and desktop presentations remain in their existing
+ranges. The header is about 99px tall at normal text size; Settings anchors use
+120px scroll margins. Content stays in its existing phone presentation until its
+wrappers opt in with `tab-desktop` / `tab-phone`. Shared strip/grid/touch helpers
+are available for subsequent page guides.
+
+## Where to watch
+
+Only Watch opts in so far. It uses a 48px heading, a full-width labeled search panel,
+compact browse/services row, 150px poster shelves with a right fade, and no tablet
+arrows. Manage has a shorter tablet label so six service logos plus the extra count
+fit at 744px. The existing phone ribbon's negative margins are reset only on
+opted-in Watch. Search results already use a readable single-column list, so they
+retain that layout; the phone result-margin override is reset on tablet Watch.
+Desktop arrow controls and phone Watch remain in their existing ranges.
+
+## Verification
+
+The foundation was checked before opting in Watch. Chromium preview checks covered
+320/390/430/744/820/834/1023/1024/1280/1440px in light/dark. Final Watch preview/live
+checks use 320/390/430/743/744/820/834/1023/1024/1280/1440/2560px in light/dark,
+plus Monochrome and Cardinals at 744px. See release history for the completed
+interaction checks, deployment details and evidence. Screenshots include populated
+shelves and a test-only six-logo/+12 services fixture; production follows and
+preferences are untouched. Each run creates and deletes its own reader profile.
+
+Verification uses Chromium browser emulation, including a touch-enabled context.
+Physical iPads, Safari and Firefox are unavailable. Width changes exercise the
+portrait/landscape breakpoints; no physical-device rotation is claimed.

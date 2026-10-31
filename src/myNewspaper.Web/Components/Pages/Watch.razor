@@ -5,7 +5,7 @@
 @inject FeedDates Dates
 <PageTitle>Where to watch · myNewspaper</PageTitle>
 <div class="watch-page">
-<div class="mx-desktop">
+<div class="mx-desktop tab-desktop">
 <PageHeading Title="Where to watch" Eyebrow="MOVIES & TV" Description="Find US streaming, rental and purchase options for your next watch." />
 <section class="watch-controls" aria-label="Search and browse titles">
 <form method="get" action="watch" class="watch-search" role="search">
@@ -23,12 +23,12 @@
 <div class="watch-mine">
 @if(MyServices.Count>0){<ul class="watch-mine__logos" aria-label="My services">@foreach(var service in MyServices.Take(6)){<li title="@service.Name"><span aria-hidden="true">@service.Name[..1]</span>@if(service.Logo is {} logo){<img src="@logo" alt="" width="32" height="32" onerror="this.remove()" />}<span class="sr-only">@service.Name</span></li>}@if(MyServices.Count>6){<li class="watch-mine__more">+@(MyServices.Count-6)</li>}</ul>}
 else if(Selected.Length>0){<span class="updated">@Selected.Length @(Selected.Length==1?"service":"services") selected</span>}
-<a class="watch-services-link" href="settings#my-services">@(Selected.Length>0?"Manage services":"Choose your services") →</a>
+<a class="watch-services-link" href="settings#my-services"><span class="watch-services-label">@(Selected.Length>0?"Manage services":"Choose your services") →</span>@if(Selected.Length>0){<span class="watch-services-compact">Manage →</span>}</a>
 </div>
 @if(!Searching&&Media=="tv"){<p class="updated watch-controls-note">Active and upcoming series. Find ended shows with title search.</p>}
 </section>
 </div>
-<div class="mx-phone" data-phone-watch-ribbon>
+<div class="mx-phone tab-phone" data-phone-watch-ribbon>
 <PhoneRibbon Title="Where to watch" Section="entertainment" Kicker="@($"Movies & TV · {Selected.Length} services chosen")">
 <Extra>
 <form method="get" action="watch" class="mx-ribbon__search" role="search">
@@ -48,7 +48,7 @@ else if(Selected.Length>0){<span class="updated">@Selected.Length @(Selected.Len
 </div>
 @if(Featured){
 <PhoneWatch Movies="trendingMovies" Tv="trendingTv" NewMovies="newMovies" Services="servicesRow" SelectedCount="@Selected.Length" Selection="@Selection" />
-<div class="mx-desktop">
+<div class="mx-desktop tab-desktop">
 <div class="watch-rows">
 @if(Selected.Length>0){<WatchRow Id="watch-row-services" Heading="Popular on your services" Subtitle="@($"Movies and TV on {ServicesLabel}")" SeeAll="@Url("movie",1,true)" Listing="servicesRow" Empty="Nothing popular on your services right now. Try Manage services." />}
 <WatchRow Id="watch-row-movies" Heading="Trending movies this week" Subtitle="Most watched and searched on TMDB" SeeAll="@($"watch?kind=movie&services={Selection}&sort=popular")" Listing="trendingMovies" />

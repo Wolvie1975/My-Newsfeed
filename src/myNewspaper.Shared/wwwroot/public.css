@@ -8332,3 +8332,15 @@
     color: var(--text-2);
     opacity: 1;
 }
+
+.pub .header-search-link {
+    display: none;
+}
+
+.pub .settings-link__icon {
+    display: none;
+}
+
+.pub .watch-services-compact {
+    display: none;
+}
