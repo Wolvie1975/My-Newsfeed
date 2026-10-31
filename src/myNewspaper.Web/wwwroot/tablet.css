@@ -528,4 +528,344 @@
         align-items: center;
         min-height: 44px;
     }
+
+    /* Entertainment desktop rules copied here to keep phone News untouched. */
+
+    .pub .tab-desktop .ef {
+        gap: 0;
+    }
+    .pub .tab-desktop .ef-screen,
+    .pub .tab-desktop .ef-lead,
+    .pub .tab-desktop .ef-headlines,
+    .pub .tab-desktop .ef-box,
+    .pub .tab-desktop .ef-tv,
+    .pub .tab-desktop .ef-theaters {
+        padding: 0;
+        border: 0;
+        border-radius: 0;
+        background: none;
+    }
+    .pub .tab-desktop .ef-screen {
+        padding: 2px 0 18px;
+        border-bottom: 1px solid var(--text);
+    }
+    .pub .tab-desktop .ef-screen .ef-head h2 {
+        font-family: var(--font-serif);
+        font-size: 26px;
+        font-weight: 700;
+    }
+    .pub .tab-desktop .ef-screen__list {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 18px;
+        margin-top: 4px;
+    }
+    .pub .tab-desktop .ef-screen__item {
+        grid-template-columns: 64px minmax(0, 1fr);
+        padding: 0;
+        border: 0;
+    }
+    .pub .tab-desktop .ef-screen__item .ef-poster {
+        width: 64px;
+    }
+    .pub .tab-desktop .ef-screen__item .ef-when {
+        font-size: 12px;
+    }
+    .pub .tab-desktop .ef-screen__title {
+        margin-top: 2px;
+        font-size: 17px;
+    }
+    .pub .tab-desktop .ef-screen__item .ef-where {
+        margin-top: 2px;
+        font-size: 13px;
+    }
+    .pub .tab-desktop .ef-cols {
+        display: grid;
+        grid-template-columns: minmax(0, 2fr) minmax(300px, 1fr);
+        gap: 0;
+        padding-top: 20px;
+    }
+    .pub .tab-desktop .ef-main {
+        gap: 0;
+        padding-right: 28px;
+        border-right: 1px solid var(--row-border);
+    }
+    .pub .tab-desktop .ef-side {
+        gap: 26px;
+        padding-left: 28px;
+    }
+    .pub .tab-desktop .ef-lead > :not(.ef-lead__image) {
+        margin-left: 0;
+        margin-right: 0;
+    }
+    .pub .tab-desktop .ef-lead__image {
+        height: 300px;
+        margin: 0;
+    }
+    .pub .tab-desktop .ef-kicker,
+    .pub .tab-desktop .ef-lead__image + .ef-kicker {
+        margin-top: 12px;
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+    }
+    .pub .tab-desktop .ef-lead__title {
+        margin: 6px 0 8px;
+        font-size: 40px;
+        line-height: 1.08;
+    }
+    .pub .tab-desktop .ef-lead__summary {
+        display: block;
+        margin: 0;
+        color: var(--text-2);
+        font-family: var(--font-serif);
+        font-size: 19px;
+        line-height: 1.5;
+    }
+    .pub .tab-desktop .ef-lead .ef-meta {
+        margin-top: 8px;
+    }
+    .pub .tab-desktop .ef-lead .ef-meta__when {
+        font-size: 13px;
+    }
+    .pub .tab-desktop .ef-main > .ef-label {
+        display: block;
+        margin-top: 20px;
+    }
+    .pub .tab-desktop .ef-headlines {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        column-gap: 24px;
+        padding: 0;
+    }
+    .pub .tab-desktop .ef-headlines li,
+    .pub .tab-desktop .ef-headlines li:last-child {
+        padding: 12px 0 4px;
+        border-bottom: 1px solid var(--row-border);
+    }
+    .pub .tab-desktop .ef-headlines__kicker {
+        display: block;
+        color: var(--accent);
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+    .pub .tab-desktop .ef-headlines__title {
+        margin-top: 3px;
+        font-family: var(--font-serif);
+        font-size: 19px;
+        font-weight: 700;
+        line-height: 1.22;
+    }
+    .pub .tab-desktop .ef-main > .ef-more {
+        margin-top: 8px;
+    }
+    .pub .tab-desktop .ef-box .ef-head h2 {
+        font-family: var(--font-serif);
+        font-size: 28px;
+    }
+    .pub .tab-desktop .ef-box .ef-note {
+        margin: 0 0 8px;
+        font-size: 12px;
+    }
+    .pub .tab-desktop .ef-table {
+        font-size: 14px;
+    }
+    .pub .tab-desktop .ef-table thead {
+        display: table-header-group;
+    }
+    .pub .tab-desktop .ef-table thead th {
+        padding: 4px 0;
+        border-top: 0;
+        border-bottom: 2px solid var(--text);
+        color: var(--text-2);
+        font-size: 11px;
+        font-weight: 800;
+        text-transform: uppercase;
+    }
+    .pub .tab-desktop .ef-table thead th:nth-child(2) {
+        text-align: left;
+    }
+    .pub .tab-desktop .ef-table tbody th,
+    .pub .tab-desktop .ef-table tbody td {
+        padding: 8px 0;
+        border-top: 0;
+        border-bottom: 1px dotted var(--row-border);
+    }
+    .pub .tab-desktop .ef-table tbody th {
+        font-weight: 600;
+    }
+    .pub .tab-desktop .ef-table__rank {
+        font-family: inherit;
+        font-size: 14px;
+        color: var(--text);
+    }
+    .pub .tab-desktop .ef-table__total {
+        display: table-cell;
+        padding-left: 10px !important;
+        color: var(--text-2);
+    }
+    .pub .tab-desktop .ef-tv .ef-label,
+    .pub .tab-desktop .ef-theaters .ef-label {
+        padding-bottom: 4px;
+        border-bottom: 2px solid var(--text);
+        font-size: 12px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+    }
+    .pub .tab-desktop .ef-tv__item {
+        grid-template-columns: 60px minmax(0, 1fr);
+        padding: 8px 0;
+        border: 0;
+    }
+    .pub .tab-desktop .ef-tv__item .ef-poster {
+        width: 60px;
+    }
+    .pub .tab-desktop .ef-tv__item b {
+        font-size: 16px;
+    }
+    .pub .tab-desktop .ef-tv__item .ef-where {
+        margin-top: 2px;
+        font-size: 13px;
+    }
+    /* ---------- Section tabs on opted-in section pages (shared by parts 3–5) ---------- */
+    .pub .tab-desktop .section-tabs {
+        display: flex;
+        flex-wrap: nowrap;
+        gap: 0 4px;
+        margin-inline: -24px;
+        padding: 0 12px;
+        border-bottom: 1px solid var(--text);
+        overflow-x: auto;
+        scrollbar-width: none;
+        -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 56px), transparent);
+        mask-image: linear-gradient(90deg, #000 calc(100% - 56px), transparent);
+    }
+    .pub .tab-desktop .section-tabs a {
+        flex: none;
+        display: flex;
+        align-items: center;
+        min-height: 44px;
+        padding: 0 12px;
+        border-bottom: 3px solid transparent;
+        color: var(--text);
+        font-size: 15px;
+        font-weight: 600;
+        white-space: nowrap;
+        text-decoration: none;
+    }
+    .pub .tab-desktop .section-tabs a[aria-current='page'] {
+        border-bottom-color: var(--accent);
+        color: var(--accent);
+        font-weight: 800;
+    }
+    .pub .tab-desktop .section-nav .section-select {
+        display: none;
+    }
+    /* Scroll the current tab into view: see the note below. */
+
+    /* ---------- Entertainment (docs/ipad/ipad-03-entertainment.md) ---------- */
+    .pub .tab-desktop .ef-screen__list {
+        display: flex;
+        flex-wrap: nowrap;
+        gap: 16px;
+        margin-inline: -24px;
+        padding: 2px 24px 10px;
+        overflow-x: auto;
+        scroll-snap-type: x proximity;
+        scroll-padding-inline: 24px;
+        scrollbar-width: none;
+        -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 56px), transparent);
+        mask-image: linear-gradient(90deg, #000 calc(100% - 56px), transparent);
+    }
+    .pub .tab-desktop .ef-screen__list > li {
+        flex: 0 0 168px;
+        scroll-snap-align: start;
+    }
+    .pub .tab-desktop .ef-screen__item {
+        display: flex;
+        flex-direction: column; /* tall poster on top, text under it */
+        gap: 8px;
+    }
+    .pub .tab-desktop .ef-screen__item .ef-poster {
+        width: 100%;
+        height: auto;
+        aspect-ratio: 2 / 3;
+        border-radius: 10px;
+    }
+
+    /* Lead full width, then two equal columns. */
+    .pub .tab-desktop .ef-cols {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    }
+    /* .ef-main holds, in order: article.ef-lead, h3.ef-label "Latest headlines", ul.ef-headlines, a.ef-more
+       (or a .updated / .ef-empty message). Unwrapping it lets the lead span both columns. */
+    .pub .tab-desktop .ef-main {
+        display: contents;
+    }
+    .pub .tab-desktop .ef-cols .ef-lead {
+        grid-column: 1 / -1;
+        grid-row: 1;
+        padding-bottom: 20px;
+        margin-bottom: 4px;
+        border-bottom: 1px solid var(--text);
+    }
+    .pub .tab-desktop .ef-cols > .ef-main > :not(.ef-lead) {
+        grid-column: 1;
+        padding-right: 20px;
+    }
+    .pub .tab-desktop .ef-cols > .ef-side {
+        grid-column: 2;
+        grid-row: 2 / span 4; /* alongside the label, the list and the "All headlines" link */
+        padding-left: 20px;
+        border-left: 1px solid var(--row-border);
+    }
+    .pub .tab-desktop .ef-tv {
+        display: block; /* sections.css hides it below 1024 */
+    }
+    .pub .tab-desktop .ef-lead__image {
+        width: 100%;
+        height: auto;
+        aspect-ratio: 16 / 9;
+        border-radius: 12px;
+        overflow: hidden;
+    }
+    .pub .tab-desktop .ef-lead__image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .pub .tab-desktop .ef-lead__title {
+        font-size: 36px;
+        line-height: 1.08;
+    }
+
+    .pub .tab-desktop .ef-headlines {
+        grid-template-columns: minmax(0, 1fr);
+    }
+    .pub .tab-desktop .ef-screen__list::-webkit-scrollbar,
+    .pub .tab-desktop .section-tabs::-webkit-scrollbar {
+        display: none;
+    }
+
+    /* The retained lead photo must outrank article-images' compact thumbnail geometry. */
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .tab-desktop
+        .ef-lead[data-article-story='feature']
+        > .ef-lead__image {
+        float: none;
+        width: 100%;
+        max-width: none;
+        max-height: none;
+        height: auto;
+        aspect-ratio: 16 / 9;
+        margin: 0;
+        border-radius: 12px;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .tab-desktop .ef-lead__image img {
+        object-fit: cover;
+    }
 }

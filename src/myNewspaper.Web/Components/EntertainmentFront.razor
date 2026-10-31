@@ -6,7 +6,7 @@
 
 @* Entertainment front page as in the approved concept: On screen, then the lead story and latest headlines beside
    the weekend box office, tonight's TV and Friday's theater releases. Phones get the folded front below. *@
-<div class="mx-desktop">
+<div class="mx-desktop tab-desktop">
 <div class="ef">
     <section class="ef-screen" aria-labelledby="ef-screen-title">
         <div class="ef-head"><h2 id="ef-screen-title">On screen</h2><a href="movies">All releases <span aria-hidden="true">→</span></a></div>
@@ -172,11 +172,14 @@
                 {
                     <p class="ef-empty">No tracked episodes are listed tonight.</p>
                 }
-                @foreach (var episode in episodes.Take(4))
+                @foreach (var show in EntertainmentEpisodeBatch.Group(episodes).Take(4))
                 {
+                    var first = show.First;
                     <a class="ef-tv__item" href="tv">
-                        <MoviePoster Url="@episode.Poster" Title="@episode.SeriesTitle" Class="ef-poster" />
-                        <span><b>@episode.SeriesTitle</b><span class="ef-where">@EpisodeLine(episode)</span></span>
+                        <MoviePoster Url="@first.Poster" Title="@first.SeriesTitle" Class="ef-poster" />
+                        <span><b>@first.SeriesTitle</b><span class="ef-where">@(show.Count > 1
+                            ? string.Join(" · ", new[] { first.Platform, $"{show.Count} new episodes", show.Range }.Where(p => !string.IsNullOrEmpty(p)))
+                            : EpisodeLine(first))</span></span>
                     </a>
                 }
                 <a class="ef-more" href="tv">Track a series <span aria-hidden="true">→</span></a>
@@ -205,7 +208,7 @@
 </div>
 
 @* Phones: the folded Entertainment front (docs/mobile-refresh-handoff.md), from the same data. *@
-<div class="mx-phone">
+<div class="mx-phone tab-phone">
     <PhoneRibbon Kicker="@($"{Dates.TodayLabel(nowUtc)}{(showResults && boxOffice.Count > 0 ? " · weekend box office is in" : "")}")" Title="Entertainment">
         <SectionSelect Id="entertainment-section-m" Label="Section" Choices="@SectionChoices.Entertainment" AlwaysSelect="true" />
     </PhoneRibbon>
@@ -362,7 +365,7 @@
         catch (Exception ex) when (DataFailures.IsReadFailure(ex))
         { newsUnavailable = true; stories = []; Log.LogError(ex, "Could not read entertainment headlines."); }
 
-        // On screen: tonight's tracked episodes first, then the next releases, four in all.
+        // On screen: one card per tracked show, then the next releases, five in all.
         try
         {
             episodes = await TvQuery.GetOnDateAsync(db, Reader.Viewer, Dates, today);
@@ -376,13 +379,20 @@
                 .Concat(movies.Select(m => new TimelineItem(ShortDate(m.Date), m.Title, MoviesQuery.Types.GetValueOrDefault(m.Type, m.Type),
                     m.Platform, "movies", PhoneColors.ForRelease(m.Type))))
                 .Take(4).ToList();
-            onScreen = episodes.Take(2)
-                .Select(e => new ScreenItem(e.SeriesTitle, e.Poster,
-                    "Tonight" + (e.StartsUtc is { } start ? " · " + Dates.Time(start) : ""), EpisodeWhere(e), "tv", true))
+            onScreen = EntertainmentEpisodeBatch.Group(episodes).Take(2)
+                .Select(show =>
+                {
+                    var e = show.First;
+                    var where = show.Count > 1
+                        ? string.Join(" · ", new[] { e.Platform, $"{show.Count} episodes" }.Where(p => !string.IsNullOrEmpty(p)))
+                        : EpisodeWhere(e);
+                    return new ScreenItem(e.SeriesTitle, e.Poster,
+                        "Tonight" + (e.StartsUtc is { } start ? " · " + Dates.Time(start) : ""), where, "tv", true);
+                })
                 .Concat(movies.Select(m => new ScreenItem(m.Title, m.Poster,
                     m.Date?.ToString("ddd, MMM d", System.Globalization.CultureInfo.InvariantCulture) ?? "Date to be announced",
                     m.Platform ?? MoviesQuery.Types.GetValueOrDefault(m.Type, m.Type), "movies", false)))
-                .Take(4).ToList();
+                .Take(5).ToList();
             theaterFriday = MoviesQuery.HomeTheatricalFriday(today);
             theatrical = await MoviesQuery.GetFridayTheatricalAsync(db, today);
         }
@@ -417,5 +427,5 @@
         string.Join(" · ", new[] { EpisodeWhere(episode), episode.StartsUtc is { } start ? Dates.Time(start) : null }.Where(part => !string.IsNullOrEmpty(part)));
 
     private static string? EpisodeCode(TvEpisodeItem episode) =>
-        episode.Season is { } season ? $"S{season:00}" + (episode.Number is { } number ? $" E{number:00}" : "") : null;
+        EntertainmentEpisodeBatch.Code(episode);
 }

@@ -1,6 +1,6 @@
 # iPad portrait rollout
 
-Guides 00–02 are implemented. The remaining guides are separate future changes.
+Guides 00–03 are implemented. The remaining guides are separate future changes.
 The source proposals are retained beside this handoff; implementation notes here
 record adjustments needed for the current app.
 
@@ -44,6 +44,33 @@ later sidebar; sidebar link styles are copied from the 4K rules into the tablet
 scope. Categories keep the sidebar useful when Watch later is empty. When neither
 categories nor saved videos produces an aside, Latest uses the full width. More
 videos uses three columns. Phone layout and 1024px+ layouts retain their ranges.
+
+## Entertainment
+
+The Entertainment front and its heading now opt in; Sports remains unchanged.
+Six existing section tabs scroll horizontally, without reintroducing Where to
+watch. The shared tab helper reveals an off-screen current tab at tablet widths
+using only horizontal scrolling, on initial load, enhanced navigation and resize.
+Linked Movies/TV/Digital/Box office/headlines pages keep their existing layouts and
+phone section dropdowns; this guide does not convert those subpages.
+
+On screen uses tall 168px cards in a swipe strip. The 16:9 lead spans the page above
+a single headline list and the box office/TV/theaters column. Entertainment desktop
+rules were copied into the tablet scope instead of widening the mixed block, keeping
+News phone headlines/meta untouched. The lead overrides the image classifier's
+thumbnail geometry/height cap, while empty/failed photos stay hidden and a P8
+placeholder can fill the frame. Existing desktop geometry is retained.
+
+The desktop/tablet On screen and Tonight on TV summaries group by show, with a title
+fallback when the show ID is unknown. Batches show an episode count; consecutive
+numbered episodes in one season get a compact range. Gaps, cross-season episodes
+and missing numbers avoid a misleading range. Up to five On screen items include
+up to two distinct shows. Phone timelines and episode lists remain unchanged.
+
+Four .NET tests cover grouping/ranges. Browser screenshots use real front data plus
+a DOM-only four-episode Avatar fixture for poster/sidebar spacing, without editing
+production episodes or follows. Release history records completed matrices, flows
+and remaining device/browser limits.
 
 ## Verification
 

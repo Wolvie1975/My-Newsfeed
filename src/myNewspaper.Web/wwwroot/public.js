@@ -1155,3 +1155,20 @@
     document.addEventListener('visibilitychange', updateClock);
     if (window.Blazor) window.Blazor.addEventListener('enhancedload', updateClock);
 })();
+
+// Keep the active tablet section tab visible without scrolling the page vertically.
+(function () {
+    function revealSection() {
+        if (!window.matchMedia('(min-width: 744px) and (max-width: 1023px)').matches) return;
+        document.querySelectorAll('.tab-desktop .section-tabs [aria-current="page"]').forEach((link) => {
+            const nav = link.closest('.section-tabs');
+            const item = link.getBoundingClientRect(),
+                strip = nav.getBoundingClientRect();
+            if (item.left < strip.left || item.right > strip.right)
+                nav.scrollLeft += item.left - strip.left - (strip.width - item.width) / 2;
+        });
+    }
+    revealSection();
+    window.addEventListener('resize', revealSection);
+    if (window.Blazor) window.Blazor.addEventListener('enhancedload', revealSection);
+})();

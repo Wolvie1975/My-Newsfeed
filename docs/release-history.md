@@ -6,6 +6,47 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
+## iPad Entertainment front — October 31, 2026 (Central)
+
+Entertainment now opts in at 744–1023px: scrolling section tabs, tall swipeable
+On screen posters, a full-width 16:9 lead with a 36px headline, then headlines beside
+box office / TV / theater summaries. Entertainment styles were copied into tablet
+scope, preserving News phone styles and the existing desktop grid. The shared tab
+helper reveals an off-screen active tab horizontally on load/navigation/resize,
+without scrolling the page vertically or affecting phone/desktop widths. The six
+Entertainment tabs keep Where to watch separate. Linked subpages retain their
+existing layouts/dropdowns; Sports has not opted in.
+
+On screen and Tonight on TV now group daily episodes by show on desktop/tablet,
+with counts and an ordered range for consecutive episodes in one season. Unknown
+show IDs use title fallback; gaps, cross-season episodes and unknown numbering do
+not invent a range. On screen allows five items. Phone timelines/folds keep their
+individual episode presentation. No query, schema, collector or admin changes.
+
+Solution build passed with zero warnings/errors, four EntertainmentEpisodeBatch
+.NET tests passed, changed JavaScript/browser-test ESLint, repository formatting
+and diff checks passed. Preview/live Chromium matrices covered 320/390/430/743/
+744/820/834/1023/1024/1280/1440/1920/2560px in light/dark; Monochrome/Cardinals
+were checked at 820px. Checks covered overflow, tall posters, full-width lead/photo,
+sidebar columns, headline wrapping, Refresh, saved themes and phone folds. Real
+emulated touch swipes, section navigation, an off-screen active-tab fixture,
+Share/Save persistence/removal, empty-photo/P8 fallbacks, no-JavaScript links/folds,
+Sports/News/Home isolation and Watch/YouTube regressions were exercised. Batch
+poster/TV spacing uses a DOM-only four-episode Avatar fixture, backed by the .NET
+grouping/range tests; production episode dates/follows were not edited. Screenshots
+were inspected. Physical iPads, Safari and Firefox remain unverified.
+
+Evidence: `test-results/browser/ipad-entertainment-{preview,live}/` and
+`test-results/browser/ipad-entertainment-release/`. Updated [iPad handoff](ipad/README.md);
+Guide 04 remains separate.
+
+Public image `mynewspaper-web:ipad-entertainment-20261031` (`68f853f42476`) preserves
+actual runtime settings, persistent keys, ports, network aliases and restart policy.
+Changed CSS/JavaScript match source. Public/admin health returned Healthy; admin
+image was unchanged. Retained rollback container
+`mynewsfeed-web-before-ipad-entertainment-20261031` and image
+`mynewspaper-web:before-ipad-entertainment-20261031` (`ceda4735dc35`).
+
 ## Tablet paper background through gutters — October 31, 2026 (Central)
 
 The user’s iPad/Brave screenshot showed the lighter content paper stopping at the

@@ -307,7 +307,7 @@ const shots = process.env.SCREENSHOT_DIR || 'test-results/browser/ipad-youtube/'
             await geometry();
             await page.screenshot({ path: shots + `youtube-820-${scheme}.png` });
         }
-        for (const route of ['/', '/news', '/sports', '/entertainment']) {
+        for (const route of ['/', '/news', '/sports']) {
             await page.goto(base + route, { waitUntil: 'networkidle' });
             assert((await page.locator('.mx-phone:visible').count()) > 0, 'Other fronts keep phone layout');
         }
