@@ -126,12 +126,10 @@ column, a 2.4fr lead column and four side columns at least 340px wide. Primary l
 use a consistent 12px style at that width to fit on one line; the episode count moves
 just below its heading. TV series titles wrap in full rather than being clamped.
 
-`HomeTonightSummary` groups by show ID (series-name fallback for unknown IDs). A
-single show keeps its platform and adds an episode count for batches; multiple
-shows use `+ N more` and omit the first show's platform. No episodes means no link.
-This also updates the smaller desktop Coming up box. Four rendering tests cover
-empty/single/batch/multiple-show cases and encoded titles. No data/query/schema or
-collector changes are required.
+The Home Live now/Coming up area is reserved for sports scores. The former
+New tonight summary, component, rendering tests and unused styles have been removed.
+TV releases remain in Today’s episodes and the full calendar. No data/query/schema
+or collector changes are required.
 
 The existing masthead browser test now also checks the header search's real GET
 submission and absence on Watch, another five public routes, single-row ticker

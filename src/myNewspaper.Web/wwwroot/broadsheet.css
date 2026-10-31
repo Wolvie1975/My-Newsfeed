@@ -466,27 +466,6 @@
     color: var(--text);
     font-size: 18px;
 }
-.pub .bs-live__tonight {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    min-height: 48px;
-    padding-top: 10px;
-    border-top: 1px solid var(--row-border);
-    color: var(--text);
-    text-decoration: none;
-}
-.pub .bs-live__kicker {
-    color: var(--accent);
-    font-size: 12px;
-    font-weight: 800;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-}
-.pub .bs-live__show {
-    font-size: 16px;
-    font-weight: 700;
-}
 
 /* Today & Tonight as agate rows. */
 .pub .bs-agate {
@@ -838,11 +817,6 @@
         display: inline;
         margin-right: 4px;
         font-size: 20px;
-    }
-    .pub .bs-live__tonight {
-        padding: 12px 0 0;
-        border-top: 1px solid var(--row-border);
-        border-left: 0;
     }
     .pub .bs-front,
     .pub .bs-more {
@@ -2327,15 +2301,6 @@ body:has([data-scheme-dialog][open]) {
     .pub .bs-live__clock::before {
         content: '· ';
     }
-    .pub .bs-live__tonight {
-        order: 2;
-        display: flex;
-        gap: 6px;
-        padding: 0 16px;
-        border: 0;
-        border-left: 1px solid var(--row-border);
-        white-space: nowrap;
-    }
     .pub .bs-live > .d-more {
         order: 3;
         margin-left: auto;
@@ -2343,13 +2308,6 @@ body:has([data-scheme-dialog][open]) {
     .pub .bs-live__list li:nth-child(n + 4) {
         display: none;
     } /* three games max on the line */
-}
-
-/* broadsheet.css, outside any media query: also used by the Coming up box below 1920 */
-.pub .bs-live__more {
-    color: var(--text-2);
-    font-weight: 400;
-    white-space: nowrap;
 }
 
 /* broadsheet.css: 4, the band goes from 1920 (the header has the search now) */
@@ -2458,24 +2416,6 @@ body:has([data-scheme-dialog][open]) {
         overflow: hidden;
         text-overflow: ellipsis;
     }
-    .pub .bs-live__tonight {
-        flex: 0 1 340px;
-        min-width: 0;
-        min-height: 44px;
-        align-items: center;
-    }
-    .pub .bs-live__kicker {
-        flex: 0 1 auto;
-        min-width: 0;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-    .pub .bs-live__show {
-        min-width: 0;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-    .pub .bs-live__more,
     .pub .bs-live > .d-more,
     .pub .bs-live .bs-ear__title {
         flex-shrink: 0;
@@ -2519,12 +2459,6 @@ body:has([data-scheme-dialog][open]) {
     }
 }
 
-@media (min-width: 1920px) {
-    .pub .bs-masthead > .bs-live .bs-live__tonight {
-        flex-direction: row;
-    }
-}
-
 .pub .bs-episodes-count {
     display: none;
 }
@@ -2545,13 +2479,6 @@ body:has([data-scheme-dialog][open]) {
         margin: 8px 0;
         color: var(--text-2);
         font-size: 12px;
-    }
-}
-
-@media (min-width: 1920px) {
-    .pub .bs-masthead > .bs-live .bs-live__kicker {
-        flex: 0 0 auto;
-        max-width: 150px;
     }
 }
 

@@ -70,6 +70,11 @@ const shots = process.env.SCREENSHOT_DIR || 'test-results/browser/home-masthead/
             await response.finished();
         };
         const wide = async () => {
+            assert.equal(
+                await page.locator('.bs-live a[href="tv"]').count(),
+                0,
+                'Refresh keeps score area sports-only',
+            );
             const bounds = await page.evaluate(() => {
                 const box = (s) => {
                     const r = document.querySelector(s).getBoundingClientRect();
@@ -169,6 +174,12 @@ const shots = process.env.SCREENSHOT_DIR || 'test-results/browser/home-masthead/
                 await page.setViewportSize({ width, height: width >= 2560 ? 1440 : 1080 });
                 await visit();
                 assert.equal(await page.locator('html').getAttribute('data-theme'), theme, 'Theme persists');
+                assert.equal(await page.locator('.bs-live a[href="tv"]').count(), 0, 'Score area contains no TV link');
+                assert.equal(
+                    await page.locator('.bs-live__tonight').count(),
+                    0,
+                    'Score area contains no New tonight summary',
+                );
                 assert(
                     await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1),
                     'No horizontal overflow',
@@ -181,20 +192,6 @@ const shots = process.env.SCREENSHOT_DIR || 'test-results/browser/home-masthead/
                     await wide();
                     // Stress only test DOM; production weather data and settings remain untouched.
                     await page.locator('.bs-title__greeting').evaluate((n) => (n.textContent = 'Good afternoon'));
-                    await page.evaluate(() => {
-                        const live = document.querySelector('.bs-live');
-                        let tonight = live.querySelector('.bs-live__tonight');
-                        if (!tonight) {
-                            tonight = document.createElement('a');
-                            tonight.className = 'bs-live__tonight';
-                            tonight.href = 'tv';
-                            tonight.innerHTML =
-                                '<span class="bs-live__kicker">New tonight</span><span class="bs-live__show"></span><span class="bs-live__more">+ 2 more</span>';
-                            live.append(tonight);
-                        }
-                        tonight.querySelector('.bs-live__show').textContent =
-                            'Avatar: Seven Havens — a deliberately long series title';
-                    });
                     await page.evaluate(() => {
                         const section = document.querySelector('.d-episodes');
                         if (!section.querySelector('.d-tv__body')) {
@@ -285,6 +282,7 @@ const shots = process.env.SCREENSHOT_DIR || 'test-results/browser/home-masthead/
         const fallback = await noJs.newPage();
         await fallback.goto(base + '/', { waitUntil: 'networkidle' });
         assert(await fallback.locator('.site-header .brand').isVisible());
+        assert.equal(await fallback.locator('.bs-live a[href="tv"]').count(), 0, 'No-JS score area is sports-only');
         await fallback.locator('#header-watch-query').fill('Arrival');
         await fallback.locator('.header-watch button').click();
         await fallback.waitForURL('**/watch?q=Arrival');

@@ -6,6 +6,28 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
+## Home sports-only score area — October 30, 2026 (Central)
+
+Removed New tonight from Home's Live now/Coming up area at every width, leaving
+that area for sports scores and the Scoreboard link. Today’s episodes and the TV
+calendar remain available. Deleted the unused summary component, its rendering
+tests and its CSS. No data, schema, scraper or admin changes were required.
+
+Solution build passed with zero warnings/errors; changed browser-test ESLint,
+repository formatting and diff checks passed. Preview/live Chromium checks covered
+320/390/430/768/1024/1280/1440/1920/2560/3200/3840px in light/dark, plus wide
+Monochrome/Cardinals themes. Checks covered absence of the TV summary/link, score
+row geometry, overflow, Refresh, saved themes, phone folds and 44px summary targets,
+header search, other public routes and no-JavaScript controls. Representative phone
+and wide screenshots were inspected. No physical-device, Firefox or Safari checks
+were available. Evidence: `test-results/browser/sports-only-{preview,live}/`.
+
+Public image `mynewspaper-web:sports-only-20261031` (`4151d3b9a324`) preserves the
+actual runtime environment, key mount, ports, network aliases and restart policy.
+Public/admin health checks returned Healthy; the admin image was unchanged.
+Rollback container `mynewsfeed-web-before-sports-only-20261031` and image
+`mynewspaper-web:before-sports-only-20261031` (`ad8e9d750baa`) were retained.
+
 ## Home episode-card spacing — October 30, 2026 (Central)
 
 Fixed the sidebar's inherited two-column show grid, which left the episode text
