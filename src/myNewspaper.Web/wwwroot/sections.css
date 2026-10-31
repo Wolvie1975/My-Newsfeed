@@ -2179,7 +2179,7 @@ a.tvc-row__show:hover {
     background: color-mix(in srgb, var(--accent) 8%, var(--surface));
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 744px) {
     .pub .spf-scores {
         padding: 2px 0 16px;
         border-bottom: 1px solid var(--text);

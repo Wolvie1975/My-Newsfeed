@@ -868,4 +868,93 @@
     :root:is([data-color-scheme], :not([data-color-scheme])) .pub .tab-desktop .ef-lead__image img {
         object-fit: cover;
     }
+    /* ---------- Sports and News fronts: the shared .spf-cols frame (docs/ipad/ipad-04-sports.md) ---------- */
+    /* .spf-cols = .spf-upcoming | .ef-main.spf-main (lead, label, headlines, more link) | .ef-side.spf-side
+       Tablet: lead across both columns; Upcoming + headlines on the left; the side column on the right. */
+    .pub .tab-desktop .spf-cols {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        grid-auto-flow: row dense;
+    }
+    .pub .tab-desktop .spf-main {
+        display: contents;
+    }
+    .pub .tab-desktop .spf-cols .ef-lead {
+        grid-column: 1 / -1;
+        grid-row: 1;
+        padding: 0 0 20px;
+        margin-bottom: 4px;
+        border: 0;
+        border-bottom: 1px solid var(--text);
+    }
+    .pub .tab-desktop .spf-cols > .spf-upcoming {
+        grid-column: 1;
+        grid-row: 2;
+        padding: 0 20px 0 0;
+        border: 0;
+    }
+    .pub .tab-desktop .spf-cols > .spf-main > :not(.ef-lead) {
+        grid-column: 1;
+        padding-right: 20px;
+    }
+    .pub .tab-desktop .spf-cols > .spf-side {
+        grid-column: 2;
+        grid-row: 2 / span 5;
+        padding: 0 0 0 20px;
+        border-left: 1px solid var(--row-border);
+    }
+    .pub .tab-desktop .spf-main .ef-lead__image {
+        height: auto;
+        aspect-ratio: 16 / 9;
+    }
+    .pub .tab-desktop .spf-main .ef-lead__title {
+        font-size: 36px;
+        line-height: 1.08;
+    }
+
+    /* ---------- Sports only ---------- */
+    /* Today's scores: swipe sideways, about three cards visible. */
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .tab-desktop .spf-scores .scoreboard-games {
+        display: flex;
+        flex-wrap: nowrap;
+        gap: 12px;
+        margin-inline: -24px;
+        padding: 2px 24px 10px;
+        overflow-x: auto;
+        scroll-snap-type: x proximity;
+        scroll-padding-inline: 24px;
+        scrollbar-width: none;
+        -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 56px), transparent);
+        mask-image: linear-gradient(90deg, #000 calc(100% - 56px), transparent);
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .tab-desktop .spf-scores .scoreboard-game {
+        flex: 0 0 236px;
+        scroll-snap-align: start;
+    }
+    .pub .tab-desktop .spf-scores .scoreboard-games::-webkit-scrollbar {
+        display: none;
+    }
+    .pub .tab-desktop .spf-agate a {
+        min-height: 44px;
+        grid-template-columns: 64px minmax(0, 1fr);
+        column-gap: 8px;
+        row-gap: 2px;
+    }
+    .pub .tab-desktop .spf-agate__time {
+        grid-row: 1 / span 2;
+        align-self: start;
+    }
+    .pub .tab-desktop .spf-agate__tv {
+        grid-column: 2;
+        overflow-wrap: anywhere;
+    }
+    /* Standings and Top 25: first 10 rows; the section's link goes to the full table. */
+    .pub .tab-desktop .spf-standings .spf-table tbody tr:nth-child(n + 11):not(.sports-selected),
+    .pub .tab-desktop .spf-rankings .spf-table tbody tr:nth-child(n + 11):not(.sports-selected) {
+        display: none;
+    }
+    .pub .tab-desktop .spf-side {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+    }
 }

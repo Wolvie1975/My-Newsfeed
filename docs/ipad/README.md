@@ -1,6 +1,6 @@
 # iPad portrait rollout
 
-Guides 00–03 are implemented. The remaining guides are separate future changes.
+Guides 00–04 are implemented. The remaining guides are separate future changes.
 The source proposals are retained beside this handoff; implementation notes here
 record adjustments needed for the current app.
 
@@ -91,3 +91,19 @@ The browser check exercises carousel arrows/picks, rotation only after Play, a t
 swipe on categories, category/channel filters, paging, row/card Watch later and Share,
 no-aside fallback, no-JavaScript filtering, Watch regression and other-front isolation.
 Release history records actual completed runs and deployment evidence.
+
+## Sports
+
+Sports now opts in at 744–1023px, including its section heading and nested desktop
+scoreboard. Scores form a touch-scroll strip with 236px cards; the full-width lead
+uses a 16:9 image and 36px headline. Upcoming games and headlines occupy the left
+column, with standings and rankings on the right. Provider names sit below matchups
+to avoid squeezing teams at narrow tablet widths. Agate links retain 44px targets.
+Each table shows its first ten rows plus any `.sports-selected` favorites below
+the cutoff; links open the complete tables. Desktop retains every row and phones
+retain their existing folds. The Sports desktop block now starts at 744px; News
+still uses its phone presentation pending guide 05. Hourly standings/poll refresh
+and five-minute scoreboard fragment checks retain the tablet layout.
+
+Verification evidence and device limits are recorded in the Sports release entry
+in `docs/release-history.md`. The original proposal is `ipad-04-sports.md`.

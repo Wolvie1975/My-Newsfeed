@@ -7,7 +7,7 @@
 
 @* Sports front page as in the approved concept: today's scores across the top, then upcoming games, the lead story and
    headlines, and a side column of hourly rotating standings and Top 25 polls. Phones get the same sections as cards. *@
-<div class="mx-desktop">
+<div class="mx-desktop tab-desktop">
 <div class="ef spf">
     <section class="spf-scores" aria-labelledby="spf-scores-title">
         <div class="ef-head"><h2 id="spf-scores-title">Today’s scores</h2><a href="scoreboard">Full scoreboard <span aria-hidden="true">→</span></a></div>
@@ -148,7 +148,7 @@
 </div>
 
 @* Phones: the folded Sports front (docs/mobile-refresh-handoff.md), from the same data. *@
-<div class="mx-phone">
+<div class="mx-phone tab-phone">
     <PhoneRibbon Kicker="@($"{Dates.TodayLabel(nowUtc)}{(live.Count > 0 ? $" · {live.Count} live now" : "")}")" Title="Sports">
         <SectionSelect Id="sports-section-m" Label="Section" Choices="@SectionChoices.Sports" MatchPrefix="true" AlwaysSelect="true" />
     </PhoneRibbon>

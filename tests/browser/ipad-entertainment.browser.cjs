@@ -281,7 +281,7 @@ const shots = process.env.SCREENSHOT_DIR || 'test-results/browser/ipad-entertain
             await layout();
             await page.screenshot({ path: shots + `entertainment-820-${scheme}.png` });
         }
-        for (const route of ['/sports', '/news', '/']) {
+        for (const route of ['/news', '/']) {
             await page.goto(base + route, { waitUntil: 'networkidle' });
             assert((await page.locator('.mx-phone:visible').count()) > 0);
             assert.equal(await page.locator('.tab-desktop').count(), 0);

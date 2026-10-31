@@ -6,6 +6,42 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
+## iPad Sports front — October 31, 2026 (Central)
+
+Guide 04 is implemented at 744–1023px. Sports opts into the desktop heading,
+scrolling section tabs and nested scoreboard; 236px score cards swipe sideways.
+A full-width 16:9 lead and 36px headline precede two columns: upcoming games and
+headlines left, standings and rankings right. Provider labels sit below matchups
+so long broadcaster lists cannot squeeze team names at 744px. Each table keeps
+its first ten rows plus highlighted `.sports-selected` favorites below the cutoff.
+Full-table links and desktop's complete tables are retained. News remains in its
+phone presentation until guide 05. No collector, database, admin or refresh logic
+changed. The source proposal is retained under `docs/ipad/`.
+
+Validation: solution build passed with zero warnings/errors; changed browser test
+ESLint and repository Prettier checks passed. Chromium touch emulation covered
+320/390/430/743/744/820/834/1023/1024/1280/1920 in light and dark, with screenshots
+reviewed. Preview's complete matrix passed before the provider-label refinement;
+744/820/834/1023 were repeated afterward. Actual swipes worked before and after
+scoreboard fragment replacement (triggered by the existing online event). The
+hourly panel replacement was tested by shortening only its initial response delay;
+server selection/rank order were unchanged. A persisted team preference kept a
+standings row below tenth visible after reload. Touch scoreboard/schedule/standings/
+rankings links, phone folds, News/Home isolation, Entertainment visibility and the
+no-JavaScript tablet rankings link passed. Disposable profiles were cleaned up.
+Physical iPad/Brave and Safari checks remain unverified; checks used Chromium
+emulation. Evidence: `test-results/browser/ipad-sports-{preview,live}/` and
+`test-results/browser/ipad-sports-release/`.
+
+Deployment: public image `mynewspaper-web:ipad-sports-20261031`; rollback container
+`mynewsfeed-web-before-ipad-sports-20261031` and image
+`mynewspaper-web:before-ipad-sports-20261031` retain the prior Entertainment release.
+Runtime environment, keys/mounts, port bindings, restart policy and network aliases
+are preserved. Public/admin health, deployed asset hashes and live matrix/flows
+passed, including the complete live matrix and all refresh/touch/favorite flows.
+Public image SHA starts `045060208206`; rollback SHA starts `68f853f42476`.
+Public/admin containers are healthy; public fail/critical log entries: zero. No push.
+
 ## iPad Entertainment front — October 31, 2026 (Central)
 
 Entertainment now opts in at 744–1023px: scrolling section tabs, tall swipeable
