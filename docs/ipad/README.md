@@ -11,7 +11,11 @@ The header uses two rows on every public page, with six section links and a
 44px search shortcut. Settings uses an icon at tablet widths, and the edition
 switch shows its initial. Phone and desktop presentations remain in their existing
 ranges. The header is about 99px tall at normal text size; Settings anchors use
-120px scroll margins. Content stays in its existing phone presentation until its
+120px scroll margins. The shell of an opted-in tablet page uses `--surface`, matching
+its content paper through the 24px gutters and behind edge-to-edge strips. This
+also covers short pages through the shell's existing viewport minimum height.
+Unconverted tablet fronts, phones and desktop keep their existing backgrounds.
+Content stays in its existing phone presentation until its
 wrappers opt in with `tab-desktop` / `tab-phone`. Shared strip/grid/touch helpers
 are available for subsequent page guides.
 

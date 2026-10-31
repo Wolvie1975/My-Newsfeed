@@ -14,6 +14,10 @@
     .tab-desktop .mx-phone {
         display: none !important;
     }
+    /* Continue the tablet paper through the gutters and behind edge-to-edge strips. */
+    .pub:has(.page .tab-desktop) {
+        background: var(--surface);
+    }
     /* The page frame on an opted-in page: 24px sides, no 1280 cap. */
     .pub .page:has(.tab-desktop) {
         max-width: none;

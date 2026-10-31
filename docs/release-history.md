@@ -6,6 +6,36 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
+## Tablet paper background through gutters — October 31, 2026 (Central)
+
+The user’s iPad/Brave screenshot showed the lighter content paper stopping at the
+24px gutters, leaving a darker band behind the edge-to-edge poster shelves. The
+744–1023px shell now uses `--surface` when its page contains `tab-desktop`, matching
+the content background across the viewport. The existing shell minimum height also
+covers short pages. The fix applies to Watch and YouTube, and future pages inherit
+it when they opt in. Content spacing, unconverted fronts, phones and desktop retain
+their existing styles. No markup, query, schema, collector or admin changes.
+
+Solution build passed with zero warnings/errors; formatting and diff checks passed.
+Preview/live Chromium verification covered Watch and YouTube at 320/390/430/743/
+744/820/834/1023/1024/1440/2560px in light/dark. Assertions compare computed shell
+colors with the expected surface/background, check layout visibility, overflow,
+saved themes and Refresh. Phone menus, YouTube category navigation, Watch title
+search and no-JavaScript search/navigation were exercised. Monochrome/Cardinals
+were checked at 820px, as were unchanged Home/News/Sports/Entertainment/Settings
+backgrounds and phone content. Screenshots were inspected. Physical iPad/Brave,
+Safari and Firefox follow-up remains unverified; the original screenshot is user
+provided, and the fix checks use browser emulation.
+
+Evidence and disposable-profile verification script:
+`test-results/browser/tablet-paper-{preview,live}/`,
+`test-results/browser/tablet-paper-release/` and `test-results/tablet-paper.cjs`.
+Public image `mynewspaper-web:tablet-paper-20261031` (`ceda4735dc35`) preserves runtime
+settings, persistent keys, ports, network aliases and restart policy. Deployed CSS
+matches source; public/admin health returned Healthy and admin was unchanged.
+Rollback container `mynewsfeed-web-before-tablet-paper-20261031` and image
+`mynewspaper-web:before-tablet-paper-20261031` (`2f39c4695ac3`) were retained.
+
 ## iPad YouTube layout — October 30, 2026 (Central)
 
 YouTube now opts in to the 744–1023px tablet layout. Its category strip scrolls beside
