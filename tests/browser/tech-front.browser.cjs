@@ -1,0 +1,323 @@
+// Tech hub & Tech front verification (docs/tech/tech-01-hub.md, docs/tech/tech-02-front.md):
+// phone (320, 390, 430 × light and dark), iPad (744, 820), and desktop (1024, 1280, 1440).
+const { chromium } = require('playwright');
+const assert = require('node:assert/strict');
+const path = require('node:path');
+const fs = require('node:fs');
+
+const base = process.env.BASE_URL || 'http://localhost:5295';
+const adminBase = process.env.ADMIN_BASE_URL || base;
+const shots = process.env.SCREENSHOT_DIR || path.resolve(__dirname, '../../test-results/browser/tech-front');
+const password = process.env.ADMIN_PASSWORD;
+
+fs.mkdirSync(shots, { recursive: true });
+
+(async () => {
+    const profiles = (await fetch(base + '/editions', { headers: { Accept: 'text/html' } })).status !== 404;
+    if (profiles && !password) {
+        console.log('SKIP: profiles are on here; set ADMIN_PASSWORD so the check can add a throwaway profile.');
+        return;
+    }
+
+    const browser = await chromium.launch();
+    const errors = [];
+    let admin = null,
+        id = null,
+        storageState;
+
+    const contextFor = async (width, { scheme = 'kansas', theme = 'light' } = {}) => {
+        const context = await browser.newContext({
+            viewport: { width, height: 900 },
+            storageState,
+        });
+        await context.addInitScript(
+            ([s, t]) => {
+                try {
+                    localStorage.setItem('mynewsfeed-color-scheme', s);
+                    localStorage.setItem('theme', t);
+                } catch {}
+            },
+            [scheme, theme],
+        );
+        return context;
+    };
+
+    const visit = async (page, urlPath, scheme = 'kansas', theme = 'light') => {
+        await page.goto(base + urlPath, { waitUntil: 'networkidle' });
+        if (!profiles) return;
+        await page.evaluate(
+            ([s, t]) => {
+                window.myNewspaperPrefs.setItem('mynewsfeed-color-scheme', s);
+                window.myNewspaperPrefs.setItem('theme', t);
+            },
+            [scheme, theme],
+        );
+        await page.waitForTimeout(600);
+        await page.reload({ waitUntil: 'networkidle' });
+    };
+
+    const layout = (page, scope) =>
+        page.evaluate((scope) => {
+            const visible = (n) => n.offsetParent !== null || getComputedStyle(n).position === 'fixed';
+            const ids = [...document.querySelectorAll('[id]')].map((n) => n.id);
+            return {
+                over: document.documentElement.scrollWidth - innerWidth,
+                dupes: ids.filter((id, i) => ids.indexOf(id) !== i),
+                small: [...document.querySelectorAll(`${scope} a, ${scope} button:not([hidden]), ${scope} select`)]
+                    .filter(visible)
+                    .filter(
+                        (n) =>
+                            !n.closest(
+                                '.mx-block__title, .mx-top__title, .ef-headlines__title, .ef-lead__title, .ef-note, .spf-agate, .mx-ribbon__kicker, .yt-row__title',
+                            ),
+                    )
+                    .filter((n) => n.getBoundingClientRect().height < 43.9)
+                    .map((n) => `${n.tagName}.${n.className}(${Math.round(n.getBoundingClientRect().height)})`),
+            };
+        }, scope);
+
+    try {
+        if (profiles) {
+            admin = await (await browser.newContext({ viewport: { width: 1440, height: 1000 } })).newPage();
+            await admin.goto(adminBase + '/login?returnUrl=%2Fadmin%2Fprofiles');
+            await admin.locator('#password').fill(password);
+            await admin.getByRole('button', { name: 'Sign in', exact: true }).click();
+            await admin.waitForURL('**/admin/profiles');
+            await admin.waitForLoadState('networkidle');
+            const name = 'zz Tech ' + Date.now().toString(36);
+            await admin.getByRole('button', { name: 'Add profile', exact: true }).first().click();
+            await admin.locator('#add-name').fill(name);
+            await admin.locator('#add-pin').fill('3691');
+            await admin.locator('#add-confirm').fill('3691');
+            await admin.locator('form[aria-labelledby="add-title"] button[type="submit"]').click();
+            await admin.getByText(`Added ${name}.`).waitFor();
+            id = Number(
+                (await admin.locator('.adm-table a.adm-row-title', { hasText: name }).getAttribute('href')).match(
+                    /(\d+)$/,
+                )[1],
+            );
+            const context = await browser.newContext({ viewport: { width: 390, height: 900 } });
+            const p = await context.newPage();
+            await p.goto(base + '/tech');
+            await p.locator(`form[action="profiles/${id}/open"]`).getByRole('button').click();
+            await p.keyboard.type('3691');
+            await p.waitForURL((u) => u.pathname === '/tech');
+            storageState = await context.storageState();
+            await context.close();
+        }
+
+        // 1. Phone widths: 320, 390, 430 in light and dark mode
+        for (const width of [320, 390, 430]) {
+            for (const theme of ['light', 'dark']) {
+                const context = await contextFor(width, { theme });
+                const page = await context.newPage();
+                page.on('pageerror', (e) => errors.push(`phone ${width} ${theme}: ${e.message}`));
+                await visit(page, '/tech', 'kansas', theme);
+
+                const l = await layout(page, '.mx-phone');
+                assert.ok(l.over <= 0, `/tech ${width} ${theme} overflow ${l.over}`);
+                assert.deepEqual(l.dupes, [], `/tech ${width} ${theme} dupes`);
+                assert.deepEqual(l.small, [], `/tech ${width} ${theme} small targets: ${l.small.join(', ')}`);
+
+                const phoneInfo = await page.evaluate(() => {
+                    const ribbon = document.querySelector('.mx-phone .mx-ribbon');
+                    const tilesGrid = document.querySelector('.mx-phone .tc-brief--phone .nf-brief__tiles');
+                    const tiles = [...document.querySelectorAll('.mx-phone .tc-brief--phone .nf-tile')].map((t) => ({
+                        label: t.querySelector('.nf-tile__label')?.textContent.trim(),
+                        cls: t.className,
+                    }));
+                    const topCount = document.querySelectorAll('.mx-phone .mx-top > li').length;
+                    const openFold = document
+                        .querySelector('.mx-phone details.mx-fold[open] .mx-fold__name')
+                        ?.textContent.trim();
+                    const topicsFollowHref = document
+                        .querySelector('.mx-phone .nf-topics a[href*="topics/follow"]')
+                        ?.getAttribute('href');
+                    const videoRail = document.querySelector('.mx-phone .tc-video-rail');
+                    return {
+                        ribbonSection: ribbon?.getAttribute('data-section'),
+                        ribbonBg: ribbon ? getComputedStyle(ribbon).backgroundColor : null,
+                        tileCols: tilesGrid ? getComputedStyle(tilesGrid).gridTemplateColumns.split(' ').length : 0,
+                        tiles,
+                        topCount,
+                        openFold,
+                        topicsFollowHref,
+                        hasVideoRail: Boolean(videoRail),
+                    };
+                });
+
+                assert.equal(phoneInfo.ribbonSection, 'tech', `/tech ${width} ${theme} ribbon section`);
+                assert.equal(phoneInfo.tileCols, 2, `/tech ${width} ${theme} tiles 2x2`);
+                assert.deepEqual(
+                    phoneInfo.tiles.map((t) => t.label),
+                    ['Technology', 'Video Games', 'Linux', 'Tech videos'],
+                );
+                assert.ok(phoneInfo.topCount >= 1 && phoneInfo.topCount <= 5, `/tech ${width} top count`);
+                assert.equal(phoneInfo.openFold, 'Linux', `/tech ${width} Linux fold open by default`);
+                assert.equal(phoneInfo.topicsFollowHref, 'news/topics/follow?hub=tech');
+                assert.ok(phoneInfo.hasVideoRail, `/tech ${width} video rail`);
+
+                await page.screenshot({
+                    path: path.join(shots, `tech-phone-${width}-${theme}.png`),
+                    fullPage: false,
+                });
+                await context.close();
+            }
+        }
+
+        // 2. iPad portrait widths: 744, 820
+        for (const width of [744, 820]) {
+            const context = await contextFor(width, { theme: 'light' });
+            const page = await context.newPage();
+            page.on('pageerror', (e) => errors.push(`ipad ${width}: ${e.message}`));
+            await visit(page, '/tech', 'kansas', 'light');
+
+            const l = await layout(page, '.mx-desktop');
+            assert.ok(l.over <= 0, `/tech ipad ${width} overflow ${l.over}`);
+            assert.deepEqual(l.dupes, [], `/tech ipad ${width} dupes`);
+
+            const ipadInfo = await page.evaluate(() => {
+                const cols = document.querySelector('.spf-cols');
+                const lead = document.querySelector('.spf-cols .ef-lead');
+                return {
+                    colsWidth: cols?.getBoundingClientRect().width ?? 0,
+                    leadWidth: lead?.getBoundingClientRect().width ?? 0,
+                };
+            });
+            assert.ok(
+                Math.abs(ipadInfo.colsWidth - ipadInfo.leadWidth) < 2,
+                `/tech ipad ${width} lead spans full width`,
+            );
+            await page.screenshot({ path: path.join(shots, `tech-ipad-${width}.png`), fullPage: false });
+            await context.close();
+        }
+
+        // 3. Desktop widths: 1024, 1280, 1440 (light and dark at 1280)
+        for (const [width, theme] of [
+            [1024, 'light'],
+            [1280, 'light'],
+            [1280, 'dark'],
+            [1440, 'light'],
+        ]) {
+            const context = await contextFor(width, { theme });
+            const page = await context.newPage();
+            page.on('pageerror', (e) => errors.push(`desktop ${width} ${theme}: ${e.message}`));
+            await visit(page, '/tech', 'kansas', theme);
+
+            const l = await layout(page, '.mx-desktop');
+            assert.ok(l.over <= 0, `/tech desktop ${width} overflow ${l.over}`);
+            assert.deepEqual(l.dupes, [], `/tech desktop ${width} dupes`);
+
+            const desktopInfo = await page.evaluate(() => {
+                const navLinks = [...document.querySelectorAll('.site-nav--inline > a')].map((a) =>
+                    a.textContent.trim(),
+                );
+                const activeNav = document
+                    .querySelector('.site-nav--inline > a[aria-current="page"]')
+                    ?.textContent.trim();
+                const tabs = [...document.querySelectorAll('.page-heading .section-tabs a')].map((a) => ({
+                    text: a.textContent.trim(),
+                    href: a.getAttribute('href'),
+                }));
+                const tiles = [...document.querySelectorAll('.mx-desktop .nf-brief .nf-tile')].map((t) => ({
+                    label: t.querySelector('.nf-tile__label')?.textContent.trim(),
+                    color: getComputedStyle(t.querySelector('.nf-tile__value')).color,
+                }));
+                const desks = [...document.querySelectorAll('.mx-desktop .nf-desks .nf-desk')].map((d) => ({
+                    title: d.querySelector('.ef-label')?.textContent.trim(),
+                    count: d.querySelectorAll('li').length,
+                    moreHref: d.querySelector('.ef-more')?.getAttribute('href'),
+                    labelColor: getComputedStyle(d.querySelector('.ef-label')).color,
+                }));
+                const videoCount = document.querySelectorAll('.mx-desktop .tc-videos .yt-row').length;
+                const topicsHref = document.querySelector('.mx-desktop .nf-topics a.ef-more')?.getAttribute('href');
+                return { navLinks, activeNav, tabs, tiles, desks, videoCount, topicsHref };
+            });
+
+            assert.deepEqual(desktopInfo.navLinks, [
+                'Home',
+                'News',
+                'Sports',
+                'Entertainment',
+                'Tech',
+                'Where to watch',
+                'YouTube',
+            ]);
+            assert.equal(desktopInfo.activeNav, 'Tech');
+            assert.deepEqual(
+                desktopInfo.tabs.map((t) => t.text),
+                ['Tech home', 'All headlines', 'Technology', 'Video Games', 'Linux', 'Videos'],
+            );
+            assert.equal(desktopInfo.tiles.length, 4);
+            // Technology (purple), Video Games (amber), Linux (teal) must have distinct colors in light & dark mode
+            assert.notEqual(desktopInfo.tiles[0].color, desktopInfo.tiles[1].color, 'Tech vs Games tile color');
+            assert.notEqual(desktopInfo.tiles[1].color, desktopInfo.tiles[2].color, 'Games vs Linux tile color');
+            assert.notEqual(desktopInfo.tiles[0].color, desktopInfo.tiles[2].color, 'Tech vs Linux tile color');
+
+            assert.deepEqual(
+                desktopInfo.desks.map((d) => ({ title: d.title, count: d.count, moreHref: d.moreHref })),
+                [
+                    { title: 'Technology', count: 4, moreHref: 'tech/technology' },
+                    { title: 'Video Games', count: 4, moreHref: 'tech/video-games' },
+                    { title: 'Linux', count: 4, moreHref: 'tech/linux' },
+                ],
+            );
+            assert.notEqual(desktopInfo.desks[0].labelColor, desktopInfo.desks[1].labelColor);
+            assert.notEqual(desktopInfo.desks[1].labelColor, desktopInfo.desks[2].labelColor);
+            assert.equal(desktopInfo.videoCount, 3);
+            assert.equal(desktopInfo.topicsHref, 'news/topics/follow?hub=tech');
+
+            await page.screenshot({
+                path: path.join(shots, `tech-desktop-${width}-${theme}.png`),
+                fullPage: false,
+            });
+
+            if (width === 1280 && theme === 'light') {
+                // Check /tech/news and desk routes
+                await visit(page, '/tech/news', 'kansas', 'light');
+                const pills = await page
+                    .locator('.hn-cats a')
+                    .evaluateAll((els) =>
+                        els.map((a) => ({ text: a.textContent.trim(), href: a.getAttribute('href') })),
+                    );
+                assert.deepEqual(pills, [
+                    { text: 'Technology', href: 'tech/technology' },
+                    { text: 'Video Games', href: 'tech/video-games' },
+                    { text: 'Linux', href: 'tech/linux' },
+                ]);
+
+                // Check /videos?categories=tech,video-games
+                await visit(page, '/videos?categories=tech,video-games', 'kansas', 'light');
+                const toolbarText = await page.locator('.count--toolbar').textContent();
+                assert.ok(toolbarText.includes('Tech + Video Games'), `Videos toolbar: ${toolbarText}`);
+
+                // Check /news/topics/follow?hub=tech when profile is open
+                if (profiles) {
+                    await visit(page, '/news/topics/follow?hub=tech', 'kansas', 'light');
+                    const selectedHub = await page.locator('#tp-hub').inputValue();
+                    assert.equal(selectedHub, 'tech', 'TopicFollow pre-selects tech hub');
+                }
+            }
+
+            await context.close();
+        }
+
+        assert.deepEqual(errors, [], `Page errors: ${errors.join('; ')}`);
+        console.log('PASS tech-front.browser.cjs');
+    } finally {
+        if (admin && id) {
+            try {
+                await admin.goto(adminBase + '/admin/profiles/' + id);
+                await admin.waitForLoadState('networkidle');
+                await admin.getByRole('button', { name: 'Delete profile…' }).click();
+                await admin.getByRole('button', { name: 'Delete profile', exact: true }).click();
+                await admin.waitForURL('**/admin/profiles?deleted=*');
+            } catch (e) {
+                console.error(
+                    `Could not delete the throwaway profile ${id}; remove it in Admin · Profiles. ${e.message}`,
+                );
+            }
+        }
+        await browser.close();
+    }
+})();

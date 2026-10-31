@@ -67,9 +67,35 @@ public static partial class FeedText
     }
 
     /// <summary>The single character shown in the small source badge.</summary>
-    public static string SourceMark(string name)
+    public static string SourceMark(string name) => SourceMark(name, 1);
+
+    /// <summary>Up to <paramref name="length"/> characters for a source badge ("9to5Linux" → "9L", "Phoronix" → "PH").</summary>
+    public static string SourceMark(string name, int length)
     {
-        var first = name.FirstOrDefault(char.IsLetterOrDigit);
-        return first == default ? "•" : char.ToUpper(first, CultureInfo.InvariantCulture).ToString();
+        if (string.IsNullOrWhiteSpace(name)) return "•";
+        if (length <= 1)
+        {
+            var first = name.FirstOrDefault(char.IsLetterOrDigit);
+            return first == default ? "•" : char.ToUpper(first, CultureInfo.InvariantCulture).ToString();
+        }
+
+        var initials = new List<char>(length);
+        var seenAlnum = false;
+        for (var i = 0; i < name.Length && initials.Count < length; i++)
+        {
+            var c = name[i];
+            if (!char.IsLetterOrDigit(c)) continue;
+            if (!seenAlnum || !char.IsLetterOrDigit(name[i - 1])
+                || (char.IsUpper(c) && (char.IsLower(name[i - 1]) || char.IsDigit(name[i - 1]))))
+            {
+                initials.Add(char.ToUpper(c, CultureInfo.InvariantCulture));
+            }
+            seenAlnum = true;
+        }
+        if (initials.Count >= length) return new string(initials.ToArray());
+
+        var alnum = name.Where(char.IsLetterOrDigit).Take(length)
+            .Select(c => char.ToUpper(c, CultureInfo.InvariantCulture)).ToArray();
+        return alnum.Length == 0 ? "•" : new string(alnum);
     }
 }

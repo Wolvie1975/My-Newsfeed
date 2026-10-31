@@ -283,7 +283,8 @@
 :root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-home [data-home-section='sports-news'] {
     order: 8;
 }
-:root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-home [data-home-section='entertainment-news'] {
+:root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-home [data-home-section='entertainment-news'],
+:root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-home [data-home-section='tech-news'] {
     order: 9;
 }
 :root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-home [data-home-section='scoreboard'] {

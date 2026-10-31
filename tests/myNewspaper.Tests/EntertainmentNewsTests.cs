@@ -24,6 +24,9 @@ public class EntertainmentNewsTests
     [InlineData("Men's College Basketball News", "sports/news/basketball")]
     [InlineData("Big 12 News", "sports/news/big12")]
     [InlineData("F1 News", "sports/news/f1")]
+    [InlineData("Technology", "tech/technology")]
+    [InlineData("Video Games", "tech/video-games")]
+    [InlineData("Linux", "tech/linux")]
     public void Categories_have_stable_section_routes(string name, string? route) => Assert.Equal(route, NewsSections.RouteFor(name));
 
     [Fact]

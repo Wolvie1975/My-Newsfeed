@@ -8,7 +8,9 @@ public static class PhoneColors
         var n when n.Contains("kansas") || n.Contains("local") => "mx-c-local",
         var n when n.Contains("top headline") || n.Contains("u.s.") || n == "us" || n.Contains("politic") || n.Contains("nation") => "mx-c-us",
         var n when n.Contains("business") || n.Contains("money") || n.Contains("econom") => "mx-c-business",
-        var n when n.Contains("tech") || n.Contains("science") || n.Contains("linux") || n.Contains("game") => "mx-c-tech",
+        var n when n.Contains("game") => "mx-c-games",
+        var n when n.Contains("linux") => "mx-c-linux",
+        var n when n.Contains("tech") || n.Contains("science") => "mx-c-tech",
         var n when n.Contains("opinion") => "mx-c-ink",
         _ => "mx-c-world",
     };
@@ -40,7 +42,7 @@ public static class PhoneColors
         "mx-c-world" => 1,
         "mx-c-us" => 2,
         "mx-c-business" => 3,
-        "mx-c-tech" => 4,
+        "mx-c-tech" or "mx-c-games" or "mx-c-linux" => 4,
         "mx-c-ink" => 6,
         _ => 5,
     };

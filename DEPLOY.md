@@ -69,6 +69,7 @@ Keep scraper-owned `sql/` migrations in their separate repository.
 | [019](db/019_news_category_hubs.sql) | Adds saved category Hub assignment, initially places existing sports/entertainment categories; repeatable, preserves later admin changes; apply before deploying dynamic headline hubs |
 | [020](db/020_profiles.sql) | App-owned profile, device, follow, request and household tables, plus web-owned `YoutubeVideoFeed.IsHouseholdPick`; repeatable; back up first and apply before deploying any web build that maps `IsHouseholdPick` |
 | [023](db/023_news_section.sql) | News section: nullable `MyDailyFeedProfiles.PreviousVisitAt` and the app-owned `MyDailyFeedProfileTopics` table (cascades with its profile); additive and repeatable; apply before deploying any web build that maps them |
+| [024](db/024_tech_hub.sql) | Tech hub (`docs/tech/`): extends `CK_SourceCategories_NewsHub` and `CK_MyDailyFeedProfileTopics_Hub` to allow `tech`, and moves `Technology`, `Video Games` and `Linux` from `headlines` to `tech` (preserving later admin changes); additive and repeatable; run after 019 and 023 before deploying the Tech hub |
 
 Feature prerequisites include SELECT access to scraper-owned standings, ranking,
 movie, TV, box-office and Championship result tables. Apply scraper schema/runtime

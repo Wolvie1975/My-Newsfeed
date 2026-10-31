@@ -21,7 +21,7 @@
     <div class="adm-field">
         <label for="new-category-hub">Hub</label>
         <select id="new-category-hub" class="form-select" @bind="newHub">
-            <option value="headlines">Headlines</option><option value="sports">Sports</option><option value="entertainment">Entertainment</option>
+            <option value="headlines">Headlines</option><option value="sports">Sports</option><option value="entertainment">Entertainment</option><option value="tech">Tech</option>
         </select>
     </div>
     <button type="submit" class="btn btn-primary"><AdminIcon Name="plus" />Add category</button>
@@ -68,7 +68,7 @@ else
                                     <input class="form-control form-control-sm" maxlength="@MaxNameLength"
                                            aria-label="Category name" @bind="editName" />
                                     <select class="form-select" aria-label="Category hub" @bind="editHub">
-                                        <option value="headlines">Headlines</option><option value="sports">Sports</option><option value="entertainment">Entertainment</option>
+                                        <option value="headlines">Headlines</option><option value="sports">Sports</option><option value="entertainment">Entertainment</option><option value="tech">Tech</option>
                                     </select>
                                     <button type="submit" class="btn btn-primary btn-sm">Save</button>
                                     <button type="button" class="btn btn-secondary btn-sm" @onclick="() => editingId = null">Cancel</button>
@@ -122,7 +122,7 @@ else
     private string newName = "";
     private string newHub = "headlines";
     private string editHub = "headlines";
-    private static string HubLabel(string hub) => hub == "sports" ? "Sports" : hub == "entertainment" ? "Entertainment" : "Headlines";
+    private static string HubLabel(string hub) => hub == "sports" ? "Sports" : hub == "entertainment" ? "Entertainment" : hub == "tech" ? "Tech" : "Headlines";
     private int? editingId;
     private string editName = "";
     private string? message;

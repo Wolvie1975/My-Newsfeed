@@ -11,6 +11,7 @@
         'news',
         'sports-news',
         'entertainment-news',
+        'tech-news',
         'sports',
         'scoreboard',
         'tv',

@@ -10,7 +10,7 @@
 @* News front page (docs/news-section-handoff.md, phase 3), built like the Sports front: a briefing strip, then the day
    so far, the lead and top headlines, and a side column of Kansas City and Opinion; In pictures and the three desks
    below. Phones get the same data folded (docs/mobile-refresh-handoff.md). Headlines hub only. *@
-<div class="mx-desktop">
+<div class="mx-desktop tab-desktop">
 <PageHeading Section="news" Choices="newsTabs" SectionCurrent="news" Title="News" Eyebrow="The day’s news, every source" Description="" />
 <div class="ef spf nf">
     <section class="nf-brief" aria-labelledby="nf-brief-title">
@@ -138,7 +138,7 @@
         </section>
     }
 
-    @if (desks.Any(d => Latest(d).Count > 0))
+    @if (desks.Any(d => Latest(d).Count > 0) || fromTech.Count > 0)
     {
         <div class="nf-desks">
             @foreach (var desk in desks.Where(d => Latest(d).Count > 0))
@@ -151,13 +151,23 @@
                     <a class="ef-more" href="@CategoryHref(desk)">More @desk.Name <span aria-hidden="true">→</span></a>
                 </section>
             }
+            @if (fromTech.Count > 0)
+            {
+                <section class="nf-desk" aria-labelledby="nf-desk-tech">
+                    <h2 id="nf-desk-tech" class="ef-label">From Tech</h2>
+                    <ul class="ef-headlines spf-headlines">
+                        @foreach (var item in fromTech) { @Headline(item) }
+                    </ul>
+                    <a class="ef-more" href="tech">Tech <span aria-hidden="true">→</span></a>
+                </section>
+            }
         </div>
     }
 </div>
 </div>
 
 @* Phones: the folded News front, from the same data. *@
-<div class="mx-phone">
+<div class="mx-phone tab-phone">
     <PhoneRibbon Kicker="@RibbonKicker" Title="News">
         <SectionSelect Id="news-section-m" Label="Section" Choices="newsTabs" Current="news" AlwaysSelect="true" />
     </PhoneRibbon>
@@ -251,6 +261,12 @@
                 @foreach (var item in Latest(desk)) { @FoldRow(item) }
             </Fold>
         }
+        @if (fromTech.Count > 0)
+        {
+            <Fold Title="From Tech" Color="mx-c-tech" AllHref="tech" AllText="Tech" Gist="@string.Join(" · ", fromTech.Take(2).Select(Title))">
+                @foreach (var item in fromTech) { @FoldRow(item) }
+            </Fold>
+        }
         @if (photos.Count > 0)
         {
             <Fold Title="In pictures" Color="mx-c-local" Gist="@string.Join(" · ", photos.Take(2).Select(Title))">
@@ -278,6 +294,7 @@
     private IReadOnlyList<FeedItem> day = [];
     private IReadOnlyList<FeedItem> photos = [];
     private IReadOnlyList<FeedItem> electionStories = [];
+    private IReadOnlyList<FeedItem> fromTech = [];
     private IReadOnlyDictionary<int, IReadOnlyList<FeedItem>> latest = new Dictionary<int, IReadOnlyList<FeedItem>>();
     private FeedCategory? kansasCity, opinion;
     private IReadOnlyList<FeedCategory> desks = [];
@@ -326,6 +343,7 @@
                 && await db.Profiles.Where(p => p.Id == Reader.Id).Select(p => p.PreviousVisitAt).FirstOrDefaultAsync() is { } previous)
                 sinceVisit = await FeedQuery.CountSinceAsync(db, previous, kansasCity?.Id);
             topics = Reader.HasProfile ? await myNewspaper.Web.Profiles.TopicQuery.SummariesAsync(db, Reader.Id, nowUtc) : null;
+            fromTech = await FeedQuery.GetHomeNewsAsync(db, 4, "tech");
             electionStories = ElectionDays is not null
                 ? (await FeedQuery.GetFeedAsync(db, null, "election", null, 3, headlinesOnly: true)).Items
                 : [];
@@ -333,7 +351,7 @@
         catch (Exception ex) when (DataFailures.IsReadFailure(ex))
         {
             unavailable = true;
-            stories = day = photos = electionStories = [];
+            stories = day = photos = electionStories = fromTech = [];
             Log.LogError(ex, "Could not read the News front.");
         }
 

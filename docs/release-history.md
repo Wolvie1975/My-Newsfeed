@@ -6,6 +6,40 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
+## Tech hub & Tech front — October 31, 2026 (Central)
+
+Implemented Parts 1 and 2 of the Tech section (`docs/tech/tech-01-hub.md` and
+`docs/tech/tech-02-front.md`). Migration `db/024_tech_hub.sql` ran after backup
+verification against `sql2025` / `WebScraper`, expanding `CK_SourceCategories_NewsHub`
+and `CK_MyDailyFeedProfileTopics_Hub` to allow `tech` and moving `Technology`,
+`Video Games`, and `Linux` to the Tech hub (3 rows affected on run 1, 0 rows on
+run 2). Added `Tech` to main navigation, phone menu, `SectionChoices`, `PageHeading`,
+`PhoneRibbon` (Tech purple `#581c87` → `#6b21a8`), `NewsSections`, `TopicQuery`,
+Admin `CategoryList`, `TopicFollow` (`?hub=tech` pre-selection), `NewsFront`
+("From Tech" desk), `Home` (`tech-news` shelf), and `Videos` multi-category
+filtering (`?categories=tech,video-games`). Built `TechQuery` (`BriefingAsync`,
+`LatestAsync`, `MostCoveredAsync` with Jaccard/digit union-find clustering and
+10-minute `IMemoryCache`, `VideosAsync`) and `TechFront.razor` across desktop,
+iPad (`744–1023px`), and phone (`<=743px`) with Part 4 slots (`TechStatusStrip`
+and `TechJustReleased`).
+
+Validation: solution build passed with zero warnings/errors; 47 Web unit tests
+(including `TechCoveredTests`, `EntertainmentNewsTests`, `CategoryHubRoutingTests`,
+`NewsSectionTests`, `TopicTests`) and 3 Admin tests passed; Prettier check passed.
+Live Playwright verification (`tech-front.browser.cjs`, `news-front.browser.cjs`,
+`topics.browser.cjs`) passed across phone (320, 390, 430px in light and dark mode),
+iPad (744, 820px), and desktop (1024, 1280, 1440px in light and dark mode), with
+screenshots inspected in `test-results/browser/`.
+
+Deployment: public image `mynewspaper-web:tech-front-20261031` (`7f1787bc0631`) and
+admin image `mynewspaper-admin:tech-front-20261031` (`217494bf0c35`); retained
+rollback containers `mynewsfeed-web-before-tech-front-20261031` and
+`mynewspaper-admin-before-tech-front-20261031` and rollback tags
+`mynewspaper-web:before-tech-front-20261031` (`e3943ff1c875`) and
+`mynewspaper-admin:before-tech-front-20261031` (`4e1a75444c26`). Runtime settings,
+key volumes, port bindings, network aliases, and `/healthz` checks are preserved
+and healthy. No push.
+
 ## iPad Sports front — October 31, 2026 (Central)
 
 Guide 04 is implemented at 744–1023px. Sports opts into the desktop heading,

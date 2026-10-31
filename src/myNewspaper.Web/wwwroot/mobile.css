@@ -625,6 +625,14 @@
     --dot: var(--mx-tech);
     --edge: var(--mx-tech);
 }
+.mx-c-games {
+    --dot: var(--mx-business);
+    --edge: var(--mx-business);
+}
+.mx-c-linux {
+    --dot: var(--mx-local);
+    --edge: var(--mx-local);
+}
 .mx-c-gain {
     --dot: var(--mx-gain);
     --edge: var(--mx-gain);
@@ -1513,4 +1521,95 @@ span.mx-stepper__btn {
 }
 .mx-standing-leader .mx-block__title {
     margin: 0;
+}
+
+/* Tech section: purple phone ribbon, 2×2 briefing tiles, and swipeable Tech videos rail. */
+.mx-ribbon[data-section='tech'] {
+    --mx-ribbon-bg: #5b21b6;
+    --mx-ribbon-fg: #ffffff;
+    --mx-ribbon-kicker: #ddd6fe;
+    --mx-live: #ddd6fe;
+}
+:root[data-theme='dark'] .pub .mx-ribbon[data-section='tech'] {
+    --mx-ribbon-bg: color-mix(in srgb, #7c3aed 32%, var(--surface));
+    --mx-ribbon-fg: var(--text);
+    --mx-ribbon-kicker: #c4b5fd;
+    --mx-live: #c4b5fd;
+}
+.pub .tc-brief--phone .nf-brief__tiles {
+    grid-auto-flow: row;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.tc-video-rail {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 220px;
+    gap: 12px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    margin: 10px 0 0;
+    padding: 0 0 8px;
+    list-style: none;
+}
+.tc-video-card {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+    scroll-snap-align: start;
+}
+.tc-video-card__thumb {
+    position: relative;
+    display: block;
+    overflow: hidden;
+    aspect-ratio: 16 / 9;
+    border-radius: 10px;
+    background: var(--mx-block-tile);
+}
+.tc-video-card__thumb img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.tc-video-card__thumb .play {
+    position: absolute;
+    right: 8px;
+    bottom: 8px;
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgb(0 0 0 / 0.65);
+    color: #ffffff;
+}
+.tc-video-card__thumb .play svg {
+    width: 15px;
+    height: 15px;
+}
+.tc-video-card__channel {
+    margin-top: 2px;
+    color: var(--dot, var(--accent));
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+.pub .tc-video-card__title {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    color: var(--text);
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
+    text-decoration: none;
+}
+.tc-video-card__when {
+    color: var(--text-3);
+    font-size: 12px;
 }

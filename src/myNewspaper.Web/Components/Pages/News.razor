@@ -5,6 +5,11 @@
 @page "/sports/mens-college-basketball/news"
 @page "/sports/news/{Topic}"
 @page "/entertainment/news/{Topic}"
+@page "/tech/news"
+@page "/tech/news/{Topic}"
+@page "/tech/technology"
+@page "/tech/video-games"
+@page "/tech/linux"
 @inject NavigationManager Nav
 @layout PublicLayout
 @using myNewspaper.Web.Components.Feed
@@ -18,23 +23,23 @@
    or a later page keeps this layout on every width. *@
 <div class="@(Phone ? "mx-desktop" : SectionNews ? "mx-tool-page mx-section-news" : "mx-contents")">
 @if (SectionNews) {
-    <div class="mx-phone" data-phone-tools="headlines"><PhoneRibbon Title="@Title" Kicker="@($"{(EntertainmentSection ? "Entertainment" : "Sports")} · Every story, every source")">
-        <SectionSelect Id="hub-section-m" Label="Section" Choices="@(EntertainmentSection ? SectionChoices.Entertainment : SectionChoices.Sports)" Current="@(Hub + "/news")" AlwaysSelect="true" />
+    <div class="mx-phone" data-phone-tools="headlines"><PhoneRibbon Title="@Title" Kicker="@($"{HubLabel(Hub)} · Every story, every source")">
+        <SectionSelect Id="hub-section-m" Label="Section" Choices="@(SectionChoices.For(Hub)!)" Current="@SectionNewsCurrent" AlwaysSelect="true" />
     </PhoneRibbon></div>
 }
 <div class="@(SectionNews ? "mx-desktop" : "mx-contents")">
-<PageHeading Section="@(SectionNews ? (EntertainmentSection ? "entertainment" : "sports") : "news")" Choices="@(SectionNews ? null : newsTabs)" SectionCurrent="@(SectionNews ? (EntertainmentSection ? "entertainment/news" : "sports/news") : NewsCurrent)" Title="@Title" Eyebrow="@((SectionNews ? (EntertainmentSection ? "Entertainment" : "Sports") : "News") + " · Every story, every source")" Description="" />
+<PageHeading Section="@(SectionNews ? Hub : "news")" Choices="@(SectionNews ? null : newsTabs)" SectionCurrent="@(SectionNews ? SectionNewsCurrent : NewsCurrent)" Title="@Title" Eyebrow="@((SectionNews ? HubLabel(Hub) : "News") + " · Every story, every source")" Description="" />
 </div>
 @if (SectionNews && HubCategories.Count > 0) {
     @* Categories as pills on desktop (as in the approved concept); phones use the dropdown beside Source. *@
-    <nav class="sec-pills sec-pills--desktop hn-cats" aria-label="@(EntertainmentSection ? "Topic" : "Sport")">
+    <nav class="sec-pills sec-pills--desktop hn-cats" aria-label="@HubCategoryLabel">
         @foreach (var item in HubCategories)
         { <a href="@NewsSections.RouteFor(item)" aria-current="@(Category == item.Id ? "page" : null)">@NewsSections.LabelFor(item.Name)</a> }
     </nav>
 }
 @if (SectionNews) {
     <form class="catselect news-category-select" method="get" action="news/all">
-        <label for="hub-category">@(EntertainmentSection ? "Topic" : "Sport")</label>
+        <label for="hub-category">@HubCategoryLabel</label>
         <select id="hub-category" name="category" onchange="this.form.requestSubmit()" disabled="@(HubCategories.Count == 0)">
             @foreach (var item in HubCategories) {
                 <option value="@item.Id" selected="@(Category == item.Id)">@NewsSections.LabelFor(item.Name)</option>
@@ -100,7 +105,7 @@ else
         <p><a href="@Href(Category, null)">← Back to the newest articles</a></p>
     }
 
-    <div class="news-front @(EntertainmentSection ? "news-front--posters" : null)">
+    <div class="news-front @(Hub == "entertainment" ? "news-front--posters" : null)">
         <div class="news-front__stories">
             <section class="feed paper-feed hc-feed" aria-label="Articles" data-last-day="@lastDay" data-feed-cards="1" data-feed-group-by="@groupBy" data-last-group="@lastGroup">
                 <NewspaperFeed Items="feed.Items" Featured="@(After is null)" PhoneFeatureFirst="SectionNews" Total="@(After is null ? feed.Total : null)" Cards="true" GroupBy="@groupBy" />
@@ -199,17 +204,22 @@ else
 
 @code {
     private string CurrentPath => Nav.ToBaseRelativePath(Nav.Uri).Split('?')[0].TrimEnd('/');
-    private bool EntertainmentSection => CurrentPath.StartsWith("entertainment/", StringComparison.OrdinalIgnoreCase);
+    private string? SectionHubName => CurrentPath.Split('/')[0].ToLowerInvariant() switch
+    {
+        "sports" => "sports", "entertainment" => "entertainment", "tech" => "tech", _ => null
+    };
     [Parameter] public string? Topic { get; set; }
-    private bool SportsSection => CurrentPath.StartsWith("sports/", StringComparison.OrdinalIgnoreCase);
-    private bool SectionNews => EntertainmentSection || SportsSection;
-    private string Hub => EntertainmentSection ? "entertainment" : "sports";
+    private bool SectionNews => SectionHubName is not null;
+    private string Hub => SectionHubName ?? "headlines";
+    private static string HubLabel(string hub) => hub switch { "sports" => "Sports", "entertainment" => "Entertainment", "tech" => "Tech", _ => "News" };
+    private string HubCategoryLabel => Hub switch { "entertainment" => "Topic", "tech" => "Desk", _ => "Sport" };
+    private string SectionNewsCurrent => Hub + "/news";
     private IReadOnlyList<FeedCategory> HubCategories = [];
     private string? SectionCategory => selectedCategory?.Name;
     private FeedCategory? selectedCategory;
     private string BasePath => selectedCategory is {} selected && SectionNews ? NewsSections.RouteFor(selected)! : SectionNews ? Hub + "/news" : "news/all";
     private string FeedView => SectionNews ? Hub + "-hub-news" : "news";
-    private string Title => EntertainmentSection ? "Entertainment headlines" : SportsSection ? "Sports headlines"
+    private string Title => SectionNews ? $"{HubLabel(Hub)} headlines"
         : categories.FirstOrDefault(c => c.Id == Category)?.Name ?? "All headlines";
     private IReadOnlyList<NavigationChoice> newsTabs = [];
     /// <summary>The News tab for this list: All headlines, or the category's own tab.</summary>
@@ -257,8 +267,15 @@ else
             var known = topic switch {
                 "tv-film" => NewsSections.TvFilm, "basketball" => NewsSections.MensBasketball,
                 "big12" => Big12NewsQuery.CategoryName, "f1" => F1NewsQuery.CategoryName,
-                _ => CurrentPath == "entertainment/tv-film" ? NewsSections.TvFilm
-                    : CurrentPath == "sports/mens-college-basketball/news" ? NewsSections.MensBasketball : null
+                "technology" => NewsSections.Technology, "video-games" => NewsSections.VideoGames, "linux" => NewsSections.Linux,
+                _ => CurrentPath.ToLowerInvariant() switch {
+                    "entertainment/tv-film" => NewsSections.TvFilm,
+                    "sports/mens-college-basketball/news" => NewsSections.MensBasketball,
+                    "tech/technology" => NewsSections.Technology,
+                    "tech/video-games" => NewsSections.VideoGames,
+                    "tech/linux" => NewsSections.Linux,
+                    _ => null
+                }
             };
             var requested = topic?.StartsWith("category-") == true && int.TryParse(topic[9..], out var id)
                 ? allCategories.FirstOrDefault(c => c.Id == id)

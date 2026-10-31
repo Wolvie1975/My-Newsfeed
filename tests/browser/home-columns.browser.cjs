@@ -14,6 +14,7 @@ const phoneOrder = [
     'opinion',
     'sports-news',
     'entertainment-news',
+    'tech-news',
     'scoreboard',
     'rankings',
     'videos',

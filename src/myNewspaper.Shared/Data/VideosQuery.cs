@@ -98,10 +98,29 @@ public static class VideosQuery
         : videos.Where(v => v.YoutubeVideoFeed != null && v.YoutubeVideoFeed.YoutubeCategory != null
             && v.YoutubeVideoFeed.YoutubeCategory.CategoryName == category.Name);
 
-    /// <summary>The channels that have videos (optionally in one category tab), alphabetically by their displayed name.</summary>
-    public static async Task<IReadOnlyList<VideoChannel>> GetChannelsAsync(WebScraperContext db, Viewer viewer, VideoCategory? category = null)
+    /// <summary>Keeps the videos in any of <paramref name="categories"/>; empty or null keeps everything.</summary>
+    private static IQueryable<YouTubeVideo> InCategories(IQueryable<YouTubeVideo> videos, IReadOnlyList<VideoCategory>? categories)
     {
-        var rows = await InCategory(FollowQuery.Videos(db, viewer), category)
+        if (categories is null || categories.Count == 0) return videos;
+        if (categories.Count == 1) return InCategory(videos, categories[0]);
+        var names = categories.Where(c => c != Other).Select(c => c.Name).ToArray();
+        var includeOther = categories.Contains(Other);
+        return videos.Where(v =>
+            (includeOther && (v.YoutubeVideoFeed == null || v.YoutubeVideoFeed.YoutubeCategoryId == null))
+            || (v.YoutubeVideoFeed != null && v.YoutubeVideoFeed.YoutubeCategory != null
+                && names.Contains(v.YoutubeVideoFeed.YoutubeCategory.CategoryName)));
+    }
+
+    /// <summary>The channels that have videos (optionally in one or more category tabs), alphabetically by their displayed name.</summary>
+    public static Task<IReadOnlyList<VideoChannel>> GetChannelsAsync(
+        WebScraperContext db, Viewer viewer, VideoCategory? category = null) =>
+        GetChannelsAsync(db, viewer, category is null ? null : [category]);
+
+    /// <summary>The channels that have videos in any of <paramref name="categories"/>, alphabetically by their displayed name.</summary>
+    public static async Task<IReadOnlyList<VideoChannel>> GetChannelsAsync(
+        WebScraperContext db, Viewer viewer, IReadOnlyList<VideoCategory>? categories)
+    {
+        var rows = await InCategories(FollowQuery.Videos(db, viewer), categories)
             .GroupBy(v => v.ChannelId)
             .Select(g => new
             {
@@ -122,12 +141,18 @@ public static class VideosQuery
         await db.YouTubeVideos.AsNoTracking().MaxAsync(v => (DateTime?)v.LastSeenAt);
 
     /// <summary>Newest first. Filters by category tab, channel id and a search over the title and channel name.</summary>
-    public static async Task<VideosPage> GetVideosAsync(
+    public static Task<VideosPage> GetVideosAsync(
         WebScraperContext db, Viewer viewer, string? channelId, string? search, int limit = Limit, int offset = 0,
-        VideoCategory? category = null)
+        VideoCategory? category = null) =>
+        GetVideosAsync(db, viewer, channelId, search, limit, offset, category is null ? null : [category]);
+
+    /// <summary>Newest first. Filters by one or more category tabs, channel id and a search over the title and channel name.</summary>
+    public static async Task<VideosPage> GetVideosAsync(
+        WebScraperContext db, Viewer viewer, string? channelId, string? search, int limit, int offset,
+        IReadOnlyList<VideoCategory>? categories)
     {
         // The follow filter comes first, so an unfollowed channel ID or search looks exactly like an unknown one.
-        var query = InCategory(FollowQuery.Videos(db, viewer), category);
+        var query = InCategories(FollowQuery.Videos(db, viewer), categories);
 
         if (!string.IsNullOrWhiteSpace(channelId))
         {

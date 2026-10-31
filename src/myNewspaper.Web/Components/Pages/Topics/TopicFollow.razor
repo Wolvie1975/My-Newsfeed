@@ -32,16 +32,17 @@
             <div class="tp-field">
                 <label for="tp-hub">Look in</label>
                 <select id="tp-hub" name="hub">
-                    <option value="" selected="@(editing?.Hub is null)">All sections</option>
-                    <option value="headlines" selected="@(editing?.Hub == "headlines")">News</option>
-                    <option value="sports" selected="@(editing?.Hub == "sports")">Sports</option>
-                    <option value="entertainment" selected="@(editing?.Hub == "entertainment")">Entertainment</option>
+                    <option value="" selected="@(SelectedHub is null)">All sections</option>
+                    <option value="headlines" selected="@(SelectedHub == "headlines")">News</option>
+                    <option value="sports" selected="@(SelectedHub == "sports")">Sports</option>
+                    <option value="entertainment" selected="@(SelectedHub == "entertainment")">Entertainment</option>
+                    <option value="tech" selected="@(SelectedHub == "tech")">Tech only</option>
                 </select>
             </div>
         </div>
         <div class="tp-actions">
             <button class="nf-btn nf-btn--primary" type="submit" data-topic-submit disabled="@Full">@(editing is null ? "Follow" : "Save topic")</button>
-            <a class="nf-btn nf-btn--secondary" href="@(editing is null ? "news" : $"news/topics/{editing.Id}")">Cancel</a>
+            <a class="nf-btn nf-btn--secondary" href="@(editing is null ? (SelectedHub == "tech" ? "tech" : "news") : $"news/topics/{editing.Id}")">Cancel</a>
             <span class="tp-help">@count of @TopicQuery.Limit topics used</span>
         </div>
     </form>
@@ -61,8 +62,10 @@
 @code {
     [SupplyParameterFromQuery(Name = "edit")] private int? EditId { get; set; }
     [SupplyParameterFromQuery(Name = "error")] private string? Error { get; set; }
+    [SupplyParameterFromQuery(Name = "hub")] private string? HubQuery { get; set; }
     private ProfileTopic? editing;
     private int count;
+    private string? SelectedHub => editing is not null ? editing.Hub : TopicQuery.ValidHub(HubQuery?.Trim().ToLowerInvariant());
 
     private string Heading => editing is null ? "Follow a topic" : "Edit topic";
     private bool Full => editing is null && count >= TopicQuery.Limit;

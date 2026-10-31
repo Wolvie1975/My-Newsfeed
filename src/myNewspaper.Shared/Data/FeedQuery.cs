@@ -76,12 +76,28 @@ public static class FeedQuery
     private static IQueryable<Models.Page> Visible(WebScraperContext db) =>
         db.Pages.AsNoTracking().Where(p => p.Source.Enabled);
 
-    /// <summary>Visible stories dated from <paramref name="since"/>, in one hub (headlines | sports | entertainment) or all.</summary>
-    internal static IQueryable<Models.Page> VisibleSince(WebScraperContext db, DateTime since, string? hub) =>
-        Visible(db).Where(p => (p.Published ?? p.ScrapedAt) >= since)
+    /// <summary>Visible stories in one hub (headlines | sports | entertainment | tech) or all, optionally in one category.</summary>
+    internal static IQueryable<Models.Page> VisibleInHub(WebScraperContext db, string? hub, string? category = null) =>
+        Visible(db)
             .Where(p => hub == null || (hub == "headlines"
                 ? p.Source.SourceCategory == null || p.Source.SourceCategory.NewsHub == "headlines"
-                : p.Source.SourceCategory != null && p.Source.SourceCategory.NewsHub == hub));
+                : p.Source.SourceCategory != null && p.Source.SourceCategory.NewsHub == hub))
+            .Where(p => category == null || (p.Source.SourceCategory != null && p.Source.SourceCategory.CategoryName == category));
+
+    /// <summary>Visible stories dated from <paramref name="since"/>, in one hub (headlines | sports | entertainment | tech) or all.</summary>
+    internal static IQueryable<Models.Page> VisibleSince(WebScraperContext db, DateTime since, string? hub, string? category = null) =>
+        VisibleInHub(db, hub, category).Where(p => (p.Published ?? p.ScrapedAt) >= since);
+
+    /// <summary>Newest stories in <paramref name="hub"/> (and optional <paramref name="category"/>), in standard feed order.</summary>
+    public static async Task<IReadOnlyList<FeedItem>> GetLatestInHubAsync(
+        WebScraperContext db, string? hub, int take, string? category = null, CancellationToken ct = default) =>
+        await VisibleInHub(db, hub, category)
+            .OrderBy(p => p.Published == null ? 1 : 0)
+            .ThenByDescending(p => p.Published ?? p.ScrapedAt)
+            .ThenByDescending(p => p.Id)
+            .Take(take)
+            .Select(ToFeedItem)
+            .ToListAsync(ct);
 
     public static async Task<IReadOnlyList<FeedCategory>> GetCategoriesAsync(WebScraperContext db) =>
         await db.SourceCategories.AsNoTracking()

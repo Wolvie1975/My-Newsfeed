@@ -1649,7 +1649,8 @@
 .pub .d-sports-headlines {
     order: 3;
 }
-.pub .d-entertainment-headlines {
+.pub .d-entertainment-headlines,
+.pub .d-tech-headlines {
     order: 4;
 }
 .pub .d-opinion {

@@ -5020,3 +5020,75 @@ a.tvc-row__show:hover {
 .pub .yt-browse {
     display: contents;
 }
+
+/* ---------- Tech front (/tech, docs/tech/tech-02-front.md) ---------- */
+.pub :is(.ef-kicker, .ef-headlines__kicker, .yt-kicker)[class*='mx-c-'],
+.pub [class*='mx-c-'] > :is(.ef-kicker, .ef-headlines__kicker, .yt-kicker) {
+    color: var(--dot, var(--accent));
+}
+.pub .nf-desk[class*='mx-c-'] > .ef-label {
+    border-bottom-color: var(--dot, var(--text));
+    color: var(--dot, var(--text));
+}
+.pub .tc-covered .ef-kicker {
+    margin: 0 0 2px;
+    color: var(--dot, var(--accent));
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+.pub .tc-covered .ef-headlines__title {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+}
+.pub .tc-covered__sources {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin: 4px 0 8px;
+    color: var(--text-2);
+    font-size: 12px;
+    line-height: 1.4;
+}
+.pub .tc-covered__sources b {
+    color: var(--text);
+    font-weight: 800;
+}
+.pub .tc-badges {
+    display: inline-flex;
+    align-items: center;
+}
+.pub .tc-badge {
+    display: inline-grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    border: 2px solid var(--surface);
+    border-radius: 999px;
+    background: var(--dot, var(--mx-tech));
+    color: #ffffff;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+}
+:root[data-theme='dark'] .pub .tc-badge {
+    color: #0b1120;
+}
+.pub .tc-badge + .tc-badge {
+    margin-left: -6px;
+}
+.pub .tc-videos .yt-row {
+    grid-template-columns: 96px minmax(0, 1fr);
+    gap: 10px;
+    padding: 10px 0;
+    border-top: 0;
+    border-bottom: 1px dotted var(--row-border);
+}
+.pub .tc-videos .yt-row .vmeta {
+    margin-top: 2px;
+    color: var(--text-2);
+    font-size: 12px;
+}

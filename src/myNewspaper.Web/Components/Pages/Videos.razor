@@ -21,7 +21,7 @@
 {
     @* Channel categories (from the scraper) as pills on desktop; phones use the Category dropdown below. *@
     <nav class="sec-pills sec-pills--desktop yt-cats" aria-label="Category">
-        <a href="@CategoryHref(null)" aria-current="@(selectedCategory is null ? "page" : null)">All</a>
+        <a href="@CategoryHref(null)" aria-current="@(selectedCategories.Count == 0 ? "page" : null)">All</a>
         @foreach (var c in categories)
         { <a href="@CategoryHref(c)" aria-current="@(selectedCategory == c ? "page" : null)">@c.Name</a> }
     </nav>
@@ -58,7 +58,7 @@
     }
     @if (listing is not null)
     {
-        <p class="count count--toolbar" aria-live="polite">@(selectedChannel ?? selectedCategory?.Name ?? "All channels") · @listing.Total @(listing.Total == 1 ? "video" : "videos")@(lastUpdated is { } updated ? " · updated " + Dates.Time(updated) : "")</p>
+        <p class="count count--toolbar" aria-live="polite">@(selectedChannel ?? CategoryLabel ?? "All channels") · @listing.Total @(listing.Total == 1 ? "video" : "videos")@(lastUpdated is { } updated ? " · updated " + Dates.Time(updated) : "")</p>
     }
 </div>
 </div>
@@ -66,7 +66,7 @@
 @if (listing is null || listing.Items.Count == 0)
 {
     <p class="empty">
-        @if (!string.IsNullOrWhiteSpace(Channel) || !string.IsNullOrWhiteSpace(Q) || selectedCategory is not null)
+        @if (!string.IsNullOrWhiteSpace(Channel) || !string.IsNullOrWhiteSpace(Q) || selectedCategories.Count > 0)
         {
             <span>No videos match. <a href="videos">Clear filters</a></span>
         }
@@ -193,19 +193,25 @@ else
 @code {
     [SupplyParameterFromQuery(Name = "page")] private string? PageText { get; set; }
     [SupplyParameterFromQuery(Name = "view")] private string? ViewQuery { get; set; }
-    private string ChannelHref(VideoChannel c) => CategoryHref(selectedCategory) + (CategoryHref(selectedCategory).Contains('?') ? "&" : "?") + "channel=" + Uri.EscapeDataString(c.ChannelId);
-    private string PhoneCurrent => channels.FirstOrDefault(IsSelected) is { } c ? ChannelHref(c) : CategoryHref(selectedCategory);
+    private string CurrentCategoryHref => selectedCategories.Count > 1
+        ? "videos?" + string.Join("&", new[] { "categories=" + string.Join(",", selectedCategories.Select(c => c.Slug)), string.IsNullOrWhiteSpace(Q) ? null : "q=" + Uri.EscapeDataString(Q) }.Where(x => x is not null))
+        : CategoryHref(selectedCategory);
+    private string ChannelHref(VideoChannel c) => CurrentCategoryHref + (CurrentCategoryHref.Contains('?') ? "&" : "?") + "channel=" + Uri.EscapeDataString(c.ChannelId);
+    private string PhoneCurrent => channels.FirstOrDefault(IsSelected) is { } c ? ChannelHref(c) : CurrentCategoryHref;
     private IReadOnlyList<NavigationChoice> PhoneChoices => new[] { new NavigationChoice(CategoryHref(null), "All channels") }
         .Concat(categories.Select(c => new NavigationChoice(CategoryHref(c), "Category: " + c.Name)))
         .Concat(channels.Select(c => new NavigationChoice(ChannelHref(c), c.Name))).ToList();
     private int page;
     private int offset;
-    private string PageHref(int target) => "videos?page=" + target + (ViewQuery == "all" ? "&view=all" : "") + (selectedCategory is null ? "" : "&category=" + selectedCategory.Slug) + (string.IsNullOrWhiteSpace(Q) ? "" : "&q=" + Uri.EscapeDataString(Q)) + (string.IsNullOrWhiteSpace(Channel) ? "" : "&channel=" + Uri.EscapeDataString(Channel));
+    private string PageHref(int target) => "videos?page=" + target + (ViewQuery == "all" ? "&view=all" : "") + (selectedCategories.Count > 1 ? "&categories=" + string.Join(",", selectedCategories.Select(c => c.Slug)) : selectedCategory is null ? "" : "&category=" + selectedCategory.Slug) + (string.IsNullOrWhiteSpace(Q) ? "" : "&q=" + Uri.EscapeDataString(Q)) + (string.IsNullOrWhiteSpace(Channel) ? "" : "&channel=" + Uri.EscapeDataString(Channel));
     [SupplyParameterFromQuery(Name = "channel")] private string? Channel { get; set; }
     [SupplyParameterFromQuery(Name = "q")] private string? Q { get; set; }
     [SupplyParameterFromQuery(Name = "category")] private string? CategoryQuery { get; set; }
+    [SupplyParameterFromQuery(Name = "categories")] private string? CategoriesQuery { get; set; }
     private IReadOnlyList<VideoCategory> categories = [];
-    private VideoCategory? selectedCategory;
+    private IReadOnlyList<VideoCategory> selectedCategories = [];
+    private VideoCategory? selectedCategory => selectedCategories.Count == 1 ? selectedCategories[0] : null;
+    private string? CategoryLabel => selectedCategories.Count == 0 ? null : string.Join(" + ", selectedCategories.Select(c => c.Name));
     // A category tab keeps the search and starts again from all of its channels.
     private string CategoryHref(VideoCategory? c) => "videos" + (c is null && string.IsNullOrWhiteSpace(Q) ? ""
         : "?" + string.Join("&", new[] { c is null ? null : "category=" + c.Slug, string.IsNullOrWhiteSpace(Q) ? null : "q=" + Uri.EscapeDataString(Q) }.Where(x => x is not null)));
@@ -232,18 +238,23 @@ else
         watchLater = (await SavedArticles.Read(Reader.SavedListProfileId))
             .Where(v => v.Kind == "video" && FeedQuery.SafeHref(v.Url) is not null)
             .OrderByDescending(v => v.SavedAt).ThenBy(v => v.Url, StringComparer.Ordinal).Take(3).ToList();
-        var wanted = CategoryQuery?.Trim().ToLowerInvariant();
-        selectedCategory = categories.FirstOrDefault(c => c.Slug == wanted);
-        channels = await VideosQuery.GetChannelsAsync(db, Reader.Viewer, selectedCategory);
+        var slugs = !string.IsNullOrWhiteSpace(CategoriesQuery)
+            ? CategoriesQuery.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(s => s.ToLowerInvariant()).Distinct(StringComparer.Ordinal).ToArray()
+            : !string.IsNullOrWhiteSpace(CategoryQuery)
+                ? [CategoryQuery.Trim().ToLowerInvariant()]
+                : [];
+        selectedCategories = slugs.Length == 0 ? [] : categories.Where(c => slugs.Contains(c.Slug)).ToList();
+        channels = await VideosQuery.GetChannelsAsync(db, Reader.Viewer, selectedCategories);
         // A channel from another category (an old link) is dropped rather than showing an empty page.
         var channel = channels.Any(IsSelected) ? Channel : null;
         page = int.TryParse(PageText, out var requested) ? Math.Clamp(requested, 1, 1000000) : 1;
         offset = (page - 1) * 50;
-        listing = await VideosQuery.GetVideosAsync(db, Reader.Viewer, channel, Q, limit: 50, offset: offset, category: selectedCategory);
+        listing = await VideosQuery.GetVideosAsync(db, Reader.Viewer, channel, Q, limit: 50, offset: offset, categories: selectedCategories);
         if (offset >= listing.Total && page > 1)
         {
             page = Math.Max(1, (listing.Total + 49) / 50); offset = (page - 1) * 50;
-            listing = await VideosQuery.GetVideosAsync(db, Reader.Viewer, channel, Q, limit: 50, offset: offset, category: selectedCategory);
+            listing = await VideosQuery.GetVideosAsync(db, Reader.Viewer, channel, Q, limit: 50, offset: offset, categories: selectedCategories);
         }
         lastUpdated = await VideosQuery.GetLastUpdatedAsync(db);
         selectedChannel = channels.FirstOrDefault(IsSelected)?.Name;

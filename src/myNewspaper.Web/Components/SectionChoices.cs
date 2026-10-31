@@ -2,7 +2,7 @@ using myNewspaper.Web.Data;
 
 namespace myNewspaper.Web.Components;
 
-/// <summary>The section lists shown under News, Sports and Entertainment page headings (tabs on desktop, a dropdown on phones).</summary>
+/// <summary>The section lists shown under News, Sports, Entertainment and Tech page headings (tabs on desktop, a dropdown on phones).</summary>
 public static class SectionChoices
 {
     public static readonly IReadOnlyList<NavigationChoice> Sports =
@@ -17,10 +17,16 @@ public static class SectionChoices
         new("movies/digital", "Digital releases"), new("box-office", "Box office"),
     ];
 
+    public static readonly IReadOnlyList<NavigationChoice> Tech =
+    [
+        new("tech", "Tech home"), new("tech/news", "All headlines"), new("tech/technology", "Technology"),
+        new("tech/video-games", "Video Games"), new("tech/linux", "Linux"), new("videos?categories=tech,video-games", "Videos"),
+    ];
+
     public const string NewsKansasCityCategory = "Kansas City News";
 
     // Named categories keep the design's order; any other headlines-hub category follows alphabetically.
-    private static readonly string[] NewsOrder = ["Top Headlines", NewsKansasCityCategory, "Opinion", "Technology", "Video Games", "Linux"];
+    private static readonly string[] NewsOrder = ["Top Headlines", NewsKansasCityCategory, "Opinion"];
 
     /// <summary>News tabs: home, all, then each headlines-hub category; Kansas City goes to its own page.</summary>
     public static IReadOnlyList<NavigationChoice> News(IEnumerable<FeedCategory> headlinesCategories) =>
@@ -42,6 +48,7 @@ public static class SectionChoices
     {
         "sports" => Sports,
         "entertainment" => Entertainment,
+        "tech" => Tech,
         _ => null,
     };
 }

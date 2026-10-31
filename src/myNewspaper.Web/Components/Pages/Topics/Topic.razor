@@ -123,7 +123,7 @@
     {
         $"{week} this week",
         t.ExceptTerms is { Length: > 0 } x ? $"except “{x}”" : null,
-        t.Hub switch { "headlines" => "News only", "sports" => "Sports only", "entertainment" => "Entertainment only", _ => "all sections" },
+        t.Hub switch { "headlines" => "News only", "sports" => "Sports only", "entertainment" => "Entertainment only", "tech" => "Tech only", _ => "all sections" },
     }.Where(p => p is not null));
 
     private RenderFragment Row(FeedItem item) =>

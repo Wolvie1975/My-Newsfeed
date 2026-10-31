@@ -7,6 +7,7 @@ public class CategoryHubRoutingTests
     [InlineData("headlines", null)]
     [InlineData("sports", "sports/news/category-42")]
     [InlineData("entertainment", "entertainment/news/category-42")]
+    [InlineData("tech", "tech/news/category-42")]
     public void Arbitrary_categories_route_by_saved_hub_and_stable_id(string hub, string? route) =>
         Assert.Equal(route, NewsSections.RouteFor(new FeedCategory(42, "Any future category", 0, hub)));
     [Fact]

@@ -28,7 +28,7 @@ public static class TopicQuery
     public const int PreviewDays = 7;
     public const int PageDays = 30;
     public const int PageSize = 20;
-    public static readonly string[] Hubs = ["headlines", "sports", "entertainment"];
+    public static readonly string[] Hubs = ["headlines", "sports", "entertainment", "tech"];
 
     public sealed class TooManyTopicsException() : Exception($"A profile can follow {Limit} topics.");
 

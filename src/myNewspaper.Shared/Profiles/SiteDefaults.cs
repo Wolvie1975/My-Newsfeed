@@ -46,7 +46,7 @@ public static class SiteDefaults
     /// <summary>Home page sections in their default order (personal.js).</summary>
     public static readonly IReadOnlyList<string> HomeOrder =
     [
-        "lead", "watch", "opinion", "news", "sports-news", "entertainment-news", "sports", "scoreboard", "tv", "videos",
+        "lead", "watch", "opinion", "news", "sports-news", "entertainment-news", "tech-news", "sports", "scoreboard", "tv", "videos",
         "rankings", "forecasts", "movies", "digital",
     ];
 
@@ -62,6 +62,7 @@ public static class SiteDefaults
         ["news"] = "Headlines",
         ["sports-news"] = "Sports headlines",
         ["entertainment-news"] = "Entertainment headlines",
+        ["tech-news"] = "Tech headlines",
         ["sports"] = "Today & Tonight",
         ["scoreboard"] = "Scoreboard",
         ["tv"] = "Today’s episodes",

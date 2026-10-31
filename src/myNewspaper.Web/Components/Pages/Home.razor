@@ -22,7 +22,7 @@
 
 <p class="empty" data-home-empty hidden>All home sections are hidden. <button type="button" data-home-reset class="nf-btn nf-btn--secondary">Restore default homepage</button></p>
 <p class="updated" data-personal-status role="status"></p>
-<div class="mx-desktop">
+<div class="mx-desktop tab-desktop">
 <div class="bs-home" data-home-grid>
 
     <div class="bs-masthead">
@@ -174,6 +174,8 @@
         <div class="bs-col bs-col--main">
             <HomeHeadlineShelf SectionKey="entertainment-news" Title="Entertainment headlines" HeadingId="h-entertainment-headlines" Href="entertainment/news"
                                CssClass="d-entertainment-headlines" Stories="@entertainmentStories" />
+            <HomeHeadlineShelf SectionKey="tech-news" Title="Tech headlines" HeadingId="h-tech-headlines" Href="tech"
+                               CssClass="d-tech-headlines" Stories="@techStories" />
             <section data-home-section="videos" class="d-card d-vids" aria-labelledby="h-vids">
                 <div class="d-card__head">
                     <h2 class="d-card__title" id="h-vids">Latest videos <span class="d-card__count">Up to <span class="home-limit-desktop">10</span><span class="home-limit-mobile">5</span> channels · rotates hourly</span></h2>
@@ -379,7 +381,7 @@
 
 @* Phones: the folded front (docs/mobile-refresh-handoff.md), from the same data. Its sections carry the same
    data-home-section keys, so a section hidden in Settings disappears here too. *@
-<div class="mx-phone" data-home-grid>
+<div class="mx-phone tab-phone" data-home-grid>
     <PhoneRibbon Kicker="@($"{Dates.TodayAt(nowUtc).ToString("ddd, MMM d", System.Globalization.CultureInfo.InvariantCulture)} · Kansas City edition")" Title="@Dates.Greeting(nowUtc)">
         <Extra>
             @if (weather is { Periods.Count: > 0 } forecast)
@@ -498,6 +500,13 @@
                 @foreach (var item in entertainmentStories.Take(3)) { @StoryRow(item) }
             </Fold>
         }
+        @if (techStories.Count > 0)
+        {
+            <Fold Title="Tech" Section="tech-news" Color="mx-c-tech" AllHref="tech" AllText="Tech"
+                  Gist="@string.Join(" · ", techStories.Take(2).Select(Title))">
+                @foreach (var item in techStories.Take(3)) { @StoryRow(item) }
+            </Fold>
+        }
         @if (homeBoxOffice.Count > 0)
         {
             <Fold Title="Box office" Section="forecasts" Color="mx-c-tech" AllHref="box-office" AllText="Box office"
@@ -584,6 +593,7 @@
     private IReadOnlyList<FeedItem> headlineStories = [];
     private IReadOnlyList<FeedItem> sportsStories = [];
     private IReadOnlyList<FeedItem> entertainmentStories = [];
+    private IReadOnlyList<FeedItem> techStories = [];
     private VideoItem? latestVideo;
     private bool latestVideoFailed;
     private IReadOnlyList<VideoItem> videos = [];
@@ -625,6 +635,7 @@
         headlineStories = news.Where(item => item.Id != lead.Article?.Id).Take(4).ToList();
         sportsStories = await FeedQuery.GetHomeNewsAsync(db, HomeShelfCount, "sports");
         entertainmentStories = await FeedQuery.GetHomeNewsAsync(db, HomeShelfCount, "entertainment");
+        techStories = await FeedQuery.GetHomeNewsAsync(db, HomeShelfCount, "tech");
         latestVideo = null; latestVideoFailed = false;
         try { latestVideo = (await VideosQuery.GetVideosAsync(db, Reader.Viewer, null, null, limit: 1)).Items.FirstOrDefault(); }
         catch (Exception ex) when (DataFailures.IsReadFailure(ex))

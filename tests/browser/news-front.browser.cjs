@@ -249,6 +249,7 @@ const password = process.env.ADMIN_PASSWORD;
                     'News',
                     'Sports',
                     'Entertainment',
+                    'Tech',
                     'Where to watch',
                     'YouTube',
                 ]);

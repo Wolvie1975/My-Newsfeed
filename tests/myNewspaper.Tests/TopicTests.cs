@@ -53,6 +53,7 @@ public class TopicTests
     public void The_form_is_stored_tidied()
     {
         Assert.Equal(("Chiefs stadium, Arrowhead", "Chiefs", "sports"), TopicQuery.Normalize("Chiefs stadium ,Arrowhead", " Chiefs ,", "sports"));
+        Assert.Equal(("Linux, Kernel", "Windows", "tech"), TopicQuery.Normalize("Linux ,Kernel", " Windows ,", "tech"));
         Assert.Equal(("Royals", (string?)null, (string?)null), TopicQuery.Normalize("Royals", "", ""));
     }
 

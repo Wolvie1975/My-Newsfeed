@@ -7,6 +7,7 @@
     var path = Nav.ToBaseRelativePath(Nav.Uri);
     var onSportsHub = path.Split('?')[0].TrimEnd('/').Equals("sports", StringComparison.OrdinalIgnoreCase);
     var onEntertainmentHub = path.Split('?')[0].TrimEnd('/').Equals("entertainment", StringComparison.OrdinalIgnoreCase);
+    var onTechHub = path.Split('?')[0].TrimEnd('/').Equals("tech", StringComparison.OrdinalIgnoreCase);
     var bare = path.Split('?', '#')[0].TrimEnd('/');
     var onNewsHome = bare.Equals("news", StringComparison.OrdinalIgnoreCase);
     var onNewsSection = onNewsHome || bare.StartsWith("news/", StringComparison.OrdinalIgnoreCase);
@@ -37,6 +38,7 @@
     var onHome = path.Length == 0 || path[0] is '?' or '#';
     var onSportsSection = onSportsHub || onSportsNews || onBasketballNews || onScoreboard || onEvents || onResults || onStandings || onRankings || onF1 || onCollege || onBig12News;
     var onEntertainmentSection = onEntertainmentHub || (onMovies && !onWatch) || onTv || onEntertainmentNews || onTvFilmNews || onBoxOffice;
+    var onTechSection = onTechHub || bare.StartsWith("tech/", StringComparison.OrdinalIgnoreCase);
 }
 
 <div class="pub" data-page="@(onHome ? "home" : null)">
@@ -66,6 +68,7 @@
             <a href="news" aria-current="@(onNewsHome ? "page" : onNewsSection ? "true" : null)">News</a>
             <a href="sports" aria-current="@(onSportsHub ? "page" : onSportsSection ? "true" : null)">Sports</a>
             <a href="entertainment" aria-current="@(onEntertainmentHub ? "page" : onEntertainmentSection ? "true" : null)">Entertainment</a>
+            <a href="tech" aria-current="@(onTechHub ? "page" : onTechSection ? "true" : null)">Tech</a>
             <a href="watch" aria-current="@(onWatch ? "page" : null)">Where to watch</a>
             <a href="videos" aria-current="@(onVideos ? "page" : null)">YouTube</a>
         </nav>
@@ -154,6 +157,19 @@
                             <a href="tv" aria-current="@(onTv ? "page" : null)">TV &amp; Streaming</a>
                             <a href="movies/digital" aria-current="@(onDigital ? "page" : null)">Digital releases</a>
                             <a href="box-office" aria-current="@(onBoxOffice ? "page" : null)">Box Office</a>
+                        </div>
+                    </div>
+                    <div class="mobile-nav-group" role="group" aria-labelledby="mobile-tech-heading">
+                        <span class="nav-group-label" id="mobile-tech-heading">Tech</span>
+                        <div class="mobile-subnav">
+                            @foreach (var item in SectionChoices.Tech)
+                            {
+                                var current = item.Href.Contains('?')
+                                    ? path.Equals(item.Href, StringComparison.OrdinalIgnoreCase)
+                                    : bare.Equals(item.Href, StringComparison.OrdinalIgnoreCase)
+                                        || (item.Href == "tech/news" && bare.StartsWith("tech/news/", StringComparison.OrdinalIgnoreCase));
+                                <a href="@item.Href" aria-current="@(current ? "page" : null)">@item.Label</a>
+                            }
                         </div>
                     </div>
                     <a href="watch" aria-current="@(onWatch ? "page" : null)">Where to watch</a>
