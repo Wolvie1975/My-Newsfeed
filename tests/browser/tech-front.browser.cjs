@@ -1,4 +1,4 @@
-// Tech hub & Tech front verification (docs/tech/tech-01-hub.md, docs/tech/tech-02-front.md):
+// Tech section verification (docs/tech/tech-01-hub.md through docs/tech/tech-05-weekly.md):
 // phone (320, 390, 430 × light and dark), iPad (744, 820), and desktop (1024, 1280, 1440).
 const { chromium } = require('playwright');
 const assert = require('node:assert/strict');
@@ -43,17 +43,27 @@ fs.mkdirSync(shots, { recursive: true });
     };
 
     const visit = async (page, urlPath, scheme = 'kansas', theme = 'light') => {
-        await page.goto(base + urlPath, { waitUntil: 'networkidle' });
+        await page.goto(base + urlPath, { waitUntil: 'domcontentloaded' });
+        await page.waitForTimeout(350);
         if (!profiles) return;
-        await page.evaluate(
-            ([s, t]) => {
-                window.myNewspaperPrefs.setItem('mynewsfeed-color-scheme', s);
-                window.myNewspaperPrefs.setItem('theme', t);
-            },
+        const needsPrefSync = await page.evaluate(
+            ([s, t]) =>
+                document.documentElement.getAttribute('data-theme') !== t ||
+                (document.documentElement.getAttribute('data-color-scheme') || 'kansas') !== s,
             [scheme, theme],
         );
-        await page.waitForTimeout(600);
-        await page.reload({ waitUntil: 'networkidle' });
+        if (needsPrefSync) {
+            await page.evaluate(
+                ([s, t]) => {
+                    window.myNewspaperPrefs.setItem('mynewsfeed-color-scheme', s);
+                    window.myNewspaperPrefs.setItem('theme', t);
+                },
+                [scheme, theme],
+            );
+            await page.waitForTimeout(600);
+            await page.reload({ waitUntil: 'domcontentloaded' });
+            await page.waitForTimeout(350);
+        }
     };
 
     const layout = (page, scope) =>
@@ -68,7 +78,7 @@ fs.mkdirSync(shots, { recursive: true });
                     .filter(
                         (n) =>
                             !n.closest(
-                                '.mx-block__title, .mx-top__title, .ef-headlines__title, .ef-lead__title, .ef-note, .spf-agate, .mx-ribbon__kicker, .yt-row__title',
+                                '.mx-block__title, .mx-top__title, .ef-headlines__title, .ef-lead__title, .ef-note, .spf-agate, .mx-ribbon__kicker, .yt-row__title, .tw-biggest__title, .tw-day-card__title, .tw-m-days__top, .td-howto-card__title',
                             ),
                     )
                     .filter((n) => n.getBoundingClientRect().height < 43.9)
@@ -273,7 +283,7 @@ fs.mkdirSync(shots, { recursive: true });
             });
 
             if (width === 1280 && theme === 'light') {
-                // Check /tech/news and desk routes
+                // Check /tech/news (Part 3: All Tech headlines + Jump to by hour + Today by desk)
                 await visit(page, '/tech/news', 'kansas', 'light');
                 const pills = await page
                     .locator('.hn-cats a')
@@ -285,6 +295,26 @@ fs.mkdirSync(shots, { recursive: true });
                     { text: 'Video Games', href: 'tech/video-games' },
                     { text: 'Linux', href: 'tech/linux' },
                 ]);
+                const jumpDesks = await page.locator('.hc-jump__cat').evaluateAll((els) =>
+                    els.map((a) => ({
+                        label: a.querySelector('span')?.textContent.trim(),
+                        href: a.getAttribute('href'),
+                        borderLeftColor: getComputedStyle(a).borderLeftColor,
+                    })),
+                );
+                assert.equal(jumpDesks.length, 3, 'Today by desk has 3 desks');
+                assert.deepEqual(
+                    jumpDesks.map((d) => d.label),
+                    ['Technology', 'Video Games', 'Linux'],
+                );
+                assert.notEqual(jumpDesks[0].borderLeftColor, jumpDesks[1].borderLeftColor);
+                assert.notEqual(jumpDesks[1].borderLeftColor, jumpDesks[2].borderLeftColor);
+
+                // Filter /tech/news by a desk category id
+                const firstDeskHref = jumpDesks[0].href;
+                await visit(page, '/' + firstDeskHref, 'kansas', 'light');
+                const activeDeskChip = await page.locator('.hc-jump__cat[aria-current="page"] span').textContent();
+                assert.equal(activeDeskChip?.trim(), 'Technology');
 
                 // Check /videos?categories=tech,video-games
                 await visit(page, '/videos?categories=tech,video-games', 'kansas', 'light');
@@ -297,6 +327,164 @@ fs.mkdirSync(shots, { recursive: true });
                     const selectedHub = await page.locator('#tp-hub').inputValue();
                     assert.equal(selectedHub, 'tech', 'TopicFollow pre-selects tech hub');
                 }
+            }
+
+            await context.close();
+        }
+
+        // 4. Desk pages (/tech/technology, /tech/video-games, /tech/linux) + /tech/week across phone, iPad, desktop
+        for (const width of [320, 390, 430]) {
+            for (const theme of ['light', 'dark']) {
+                const context = await contextFor(width, { theme });
+                const page = await context.newPage();
+                page.on('pageerror', (e) => errors.push(`desk phone ${width} ${theme}: ${e.message}`));
+
+                const ribbonColors = {};
+                for (const [slug, expectedDesk] of [
+                    ['technology', 'technology'],
+                    ['video-games', 'video-games'],
+                    ['linux', 'linux'],
+                ]) {
+                    await visit(page, `/tech/${slug}`, 'kansas', theme);
+                    const l = await layout(page, '.mx-phone');
+                    assert.ok(l.over <= 0, `/tech/${slug} ${width} ${theme} overflow ${l.over}`);
+                    assert.deepEqual(l.dupes, [], `/tech/${slug} ${width} ${theme} dupes`);
+                    assert.deepEqual(
+                        l.small,
+                        [],
+                        `/tech/${slug} ${width} ${theme} small targets: ${l.small.join(', ')}`,
+                    );
+
+                    const info = await page.evaluate(() => {
+                        const r = document.querySelector('.mx-phone .mx-ribbon');
+                        const pills = document.querySelector('.mx-phone .td-pills--phone');
+                        return {
+                            deskAttr: r?.getAttribute('data-desk') ?? null,
+                            bg: r ? getComputedStyle(r).backgroundColor : null,
+                            pillCount: pills ? pills.querySelectorAll('a.td-pill').length : 0,
+                        };
+                    });
+                    assert.equal(info.deskAttr, expectedDesk, `/tech/${slug} data-desk`);
+                    assert.ok(info.pillCount >= 5, `/tech/${slug} topic pills count`);
+                    ribbonColors[slug] = info.bg;
+
+                    if (width === 390) {
+                        await page.screenshot({
+                            path: path.join(shots, `tech-desk-${slug}-phone-${width}-${theme}.png`),
+                            fullPage: false,
+                        });
+                    }
+                }
+                assert.notEqual(ribbonColors['technology'], ribbonColors['video-games'], 'Phone ribbon Tech vs Games');
+                assert.notEqual(ribbonColors['video-games'], ribbonColors['linux'], 'Phone ribbon Games vs Linux');
+                assert.notEqual(ribbonColors['technology'], ribbonColors['linux'], 'Phone ribbon Tech vs Linux');
+
+                // Check /tech/week and /tech/week/linux on phone
+                for (const weekUrl of ['/tech/week', '/tech/week/linux']) {
+                    await visit(page, weekUrl, 'kansas', theme);
+                    const l = await layout(page, '.mx-phone');
+                    assert.ok(l.over <= 0, `${weekUrl} ${width} ${theme} overflow ${l.over}`);
+                    assert.deepEqual(l.dupes, [], `${weekUrl} ${width} ${theme} dupes`);
+                    assert.deepEqual(l.small, [], `${weekUrl} ${width} ${theme} small targets: ${l.small.join(', ')}`);
+                }
+                if (width === 390) {
+                    await page.screenshot({
+                        path: path.join(shots, `tech-week-phone-${width}-${theme}.png`),
+                        fullPage: false,
+                    });
+                }
+
+                await context.close();
+            }
+        }
+
+        // Desk & Week on iPad (744, 820) and Desktop (1280, 1440)
+        for (const width of [744, 820, 1280, 1440]) {
+            const context = await contextFor(width, { theme: 'light' });
+            const page = await context.newPage();
+            page.on('pageerror', (e) => errors.push(`desk/week ${width}: ${e.message}`));
+
+            for (const slug of ['technology', 'video-games', 'linux']) {
+                await visit(page, `/tech/${slug}`, 'kansas', 'light');
+                const l = await layout(page, '.mx-desktop');
+                assert.ok(l.over <= 0, `/tech/${slug} ${width} overflow ${l.over}`);
+                assert.deepEqual(l.dupes, [], `/tech/${slug} ${width} dupes`);
+
+                if (width === 1280) {
+                    const deskCheck = await page.evaluate(() => {
+                        const allPillText = document
+                            .querySelector('.mx-desktop .td-pills a.td-pill[aria-current="page"]')
+                            ?.textContent.trim();
+                        const sourceCounts = [...document.querySelectorAll('.mx-desktop .td-source-row__count')].map(
+                            (n) => Number(n.textContent.trim()),
+                        );
+                        return { allPillText, sourceCounts };
+                    });
+                    assert.ok(deskCheck.allPillText?.startsWith('All'), `/tech/${slug} default All pill`);
+
+                    await page.screenshot({
+                        path: path.join(shots, `tech-desk-${slug}-desktop-${width}.png`),
+                        fullPage: false,
+                    });
+                }
+            }
+
+            if (width === 1280) {
+                // Verify ?topic= filtering on /tech/technology?topic=ai
+                await visit(page, '/tech/technology?topic=ai', 'kansas', 'light');
+                const activeTopic = await page
+                    .locator('.mx-desktop .td-pills a.td-pill[aria-current="page"]')
+                    .textContent();
+                assert.ok(activeTopic?.includes('AI'), `Active topic pill: ${activeTopic}`);
+
+                // Verify /tech/linux/releases renders cleanly even before Part 4 tables exist
+                await visit(page, '/tech/linux/releases', 'kansas', 'light');
+                const relLayout = await layout(page, 'main');
+                assert.ok(relLayout.over <= 0, `/tech/linux/releases overflow ${relLayout.over}`);
+            }
+
+            // Check /tech/week and /tech/week/linux
+            for (const weekUrl of ['/tech/week', '/tech/week/linux']) {
+                await visit(page, weekUrl, 'kansas', 'light');
+                const l = await layout(page, '.mx-desktop');
+                assert.ok(l.over <= 0, `${weekUrl} ${width} overflow ${l.over}`);
+                assert.deepEqual(l.dupes, [], `${weekUrl} ${width} dupes`);
+
+                if (width === 1280 && weekUrl === '/tech/week') {
+                    const weekInfo = await page.evaluate(() => {
+                        const tiles = [...document.querySelectorAll('.mx-desktop .tw-tiles .nf-tile')].map((t) => ({
+                            label: t.querySelector('.nf-tile__label')?.textContent.trim(),
+                            val: t.querySelector('.nf-tile__value')?.textContent.trim(),
+                        }));
+                        const dayCounts = [
+                            ...document.querySelectorAll('.mx-desktop .tw-day-card[data-day-count]'),
+                        ].map((n) => Number(n.getAttribute('data-day-count')));
+                        const ranks = [...document.querySelectorAll('.mx-desktop .tw-rank')].map((n) =>
+                            Number(n.textContent.trim()),
+                        );
+                        return { tiles, dayCounts, ranks };
+                    });
+                    const storiesTile = Number((weekInfo.tiles[0]?.val ?? '0').replace(/,/g, ''));
+                    const daySum = weekInfo.dayCounts.reduce((a, b) => a + b, 0);
+                    assert.equal(storiesTile, daySum, 'Stories tile equals sum of 7 day counts');
+                    assert.ok(
+                        weekInfo.ranks.every((r, i) => r === i + 1) && weekInfo.ranks.length <= 5,
+                        `Biggest stories ranked 1..N: ${weekInfo.ranks.join(',')}`,
+                    );
+
+                    await page.screenshot({
+                        path: path.join(shots, `tech-week-desktop-${width}.png`),
+                        fullPage: false,
+                    });
+                }
+            }
+
+            if (width === 1280) {
+                // Verify ?week= older than 12 weeks returns 404
+                const oldRes = await page.goto(base + '/tech/week?week=2020-01-05', {
+                    waitUntil: 'domcontentloaded',
+                });
+                assert.equal(oldRes?.status(), 404, 'Week older than 12 weeks returns 404');
             }
 
             await context.close();

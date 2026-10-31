@@ -1,0 +1,166 @@
+@page "/tech/linux/releases"
+@layout PublicLayout
+@using System.Globalization
+@inject IDbContextFactory<WebScraperContext> Factory
+@inject FeedDates Dates
+
+<PageTitle>Linux release history · Tech · myNewspaper</PageTitle>
+
+<div class="mx-desktop tab-desktop mx-c-linux">
+    <div class="td-heading mx-c-linux">
+        <PageHeading Section="tech" SectionCurrent="linux" Title="Linux release history" Eyebrow="TECH DESK · LINUX" Description="Every tracked kernel, desktop, distro and graphics release from the last 12 months." />
+    </div>
+
+    <div class="ef spf nf tc td mx-c-linux">
+        @if (projects.Count > 0)
+        {
+            <div class="td-pills-bar">
+                <nav class="td-pills" aria-label="Filter by project">
+                    <a class="td-pill" href="tech/linux/releases" aria-current="@(string.IsNullOrWhiteSpace(Project) ? "page" : null)">
+                        <span>All projects</span><b>@releases.Count</b>
+                    </a>
+                    @foreach (var p in projects)
+                    {
+                        <a class="td-pill" href="@($"tech/linux/releases?project={Uri.EscapeDataString(p.Slug)}")"
+                           aria-current="@(string.Equals(Project, p.Slug, StringComparison.OrdinalIgnoreCase) ? "page" : null)">
+                            <span>@p.Name</span>
+                        </a>
+                    }
+                </nav>
+                <a class="ef-more" href="tech/linux">← Linux desk</a>
+            </div>
+        }
+
+        @if (releases.Count == 0)
+        {
+            <p class="ef-empty">No tracked releases available yet. <a href="tech/linux">Back to the Linux desk →</a></p>
+        }
+        else
+        {
+            var today = Dates.TodayAt(nowUtc);
+            @foreach (var monthGroup in releases.GroupBy(r => new DateOnly(Dates.TodayAt(r.ReleasedAt).Year, Dates.TodayAt(r.ReleasedAt).Month, 1)))
+            {
+                <section class="td-tracker mx-c-linux" aria-label="@monthGroup.Key.ToString("MMMM yyyy", CultureInfo.InvariantCulture)">
+                    <h2 class="ef-label">@monthGroup.Key.ToString("MMMM yyyy", CultureInfo.InvariantCulture)</h2>
+                    <div class="td-tracker-wrap">
+                        <table class="td-tracker-table">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Project</th>
+                                    <th scope="col">Version</th>
+                                    <th scope="col">Released</th>
+                                    <th scope="col">Source</th>
+                                    <th scope="col">Type</th>
+                                    <th scope="col"><span class="sr-only">Notes</span></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var r in monthGroup)
+                                {
+                                    var relDay = Dates.TodayAt(r.ReleasedAt);
+                                    var isToday = relDay == today;
+                                    <tr class="@(isToday ? "td-tracker-row--today" : null)">
+                                        <td class="td-tracker__proj"><b>@r.Project</b></td>
+                                        <td class="td-tracker__ver">@r.Version</td>
+                                        <td class="td-tracker__when @(isToday ? "td-tracker-today" : null)">@FormatReleased(relDay, today)</td>
+                                        <td class="td-tracker__src">@r.Source</td>
+                                        <td><span class="td-tracker__kind">@r.Kind</span></td>
+                                        <td class="td-tracker__link">
+                                            @if (FeedQuery.SafeHref(r.NotesUrl) is { } notesHref)
+                                            {
+                                                <a href="@notesHref" target="_blank" rel="noopener noreferrer">@r.NotesLabel <span aria-hidden="true">↗</span></a>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            }
+        }
+    </div>
+</div>
+
+<div class="mx-phone tab-phone mx-c-linux">
+    <PhoneRibbon Section="tech" Desk="linux" Kicker="Tech · Linux" Title="Release history" />
+
+    @if (projects.Count > 0)
+    {
+        <nav class="td-pills td-pills--phone" aria-label="Filter by project">
+            <a class="td-pill" href="tech/linux/releases" aria-current="@(string.IsNullOrWhiteSpace(Project) ? "page" : null)">
+                <span>All</span>
+            </a>
+            @foreach (var p in projects)
+            {
+                <a class="td-pill" href="@($"tech/linux/releases?project={Uri.EscapeDataString(p.Slug)}")"
+                   aria-current="@(string.Equals(Project, p.Slug, StringComparison.OrdinalIgnoreCase) ? "page" : null)">
+                    <span>@p.Name</span>
+                </a>
+            }
+        </nav>
+    }
+
+    @if (releases.Count == 0)
+    {
+        <section class="mx-section">
+            <p class="ef-empty">No tracked releases available yet. <a href="tech/linux">Back to Linux →</a></p>
+        </section>
+    }
+    else
+    {
+        var today = Dates.TodayAt(nowUtc);
+        @foreach (var monthGroup in releases.GroupBy(r => new DateOnly(Dates.TodayAt(r.ReleasedAt).Year, Dates.TodayAt(r.ReleasedAt).Month, 1)))
+        {
+            <section class="mx-section mx-c-linux">
+                <div class="mx-head"><h2>@monthGroup.Key.ToString("MMMM yyyy", CultureInfo.InvariantCulture)</h2></div>
+                <ul class="td-tracker-list">
+                    @foreach (var r in monthGroup)
+                    {
+                        var relDay = Dates.TodayAt(r.ReleasedAt);
+                        var isToday = relDay == today;
+                        <li class="td-tracker-list__row @(isToday ? "td-tracker-list__row--today" : null)">
+                            <div class="td-tracker-list__left">
+                                <b>@r.Project</b>
+                                <span>@r.Kind · @r.Source</span>
+                            </div>
+                            <div class="td-tracker-list__right">
+                                @if (FeedQuery.SafeHref(r.NotesUrl) is { } notesHref)
+                                {
+                                    <a class="td-tracker-list__ver" href="@notesHref" target="_blank" rel="noopener noreferrer">@r.Version ↗</a>
+                                }
+                                else
+                                {
+                                    <b class="td-tracker-list__ver">@r.Version</b>
+                                }
+                                <span class="@(isToday ? "td-tracker-today" : null)">@FormatReleased(relDay, today)</span>
+                            </div>
+                        </li>
+                    }
+                </ul>
+            </section>
+        }
+    }
+</div>
+
+@code {
+    [SupplyParameterFromQuery(Name = "project")]
+    private string? Project { get; set; }
+
+    private DateTime nowUtc = DateTime.UtcNow;
+    private IReadOnlyList<(string Slug, string Name)> projects = [];
+    private IReadOnlyList<TrackedRelease> releases = [];
+
+    protected override async Task OnParametersSetAsync()
+    {
+        nowUtc = DateTime.UtcNow;
+        await using var db = await Factory.CreateDbContextAsync();
+        (projects, releases) = await TechQuery.ReleaseHistoryAsync(db, Project);
+    }
+
+    private static string FormatReleased(DateOnly relDay, DateOnly today) =>
+        relDay == today ? "Today"
+        : relDay == today.AddDays(-1) ? "Yesterday"
+        : relDay.ToString("MMM d", CultureInfo.InvariantCulture);
+}
+

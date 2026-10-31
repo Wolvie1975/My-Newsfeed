@@ -1,0 +1,455 @@
+@page "/tech/week"
+@page "/tech/week/{Desk}"
+@layout PublicLayout
+@using System.Globalization
+@using Microsoft.Extensions.Caching.Memory
+@using myNewspaper.Web.Components.Feed
+@inject IDbContextFactory<WebScraperContext> Factory
+@inject FeedDates Dates
+@inject IMemoryCache Cache
+@inject myNewspaper.Web.Profiles.ProfileContext Reader
+@inject ILogger<TechWeek> Log
+
+<PageTitle>@PageHeadingTitle · myNewspaper</PageTitle>
+
+@if (notFound)
+{
+    <div class="mx-contents">
+        <h1>Roundup not found</h1>
+        <p class="ef-empty">That weekly roundup isn’t available. <a href="tech/week">See the latest Tech roundup →</a></p>
+    </div>
+}
+else if (summary is not null)
+{
+    var publishSunday = summary.End.AddDays(1);
+    var eyebrow = $"WEEKLY ROUNDUP · {publishSunday.ToString("dddd, MMMM d", CultureInfo.InvariantCulture)}";
+    var rangeText = $"{summary.Start.ToString("MMMM d", CultureInfo.InvariantCulture)} – {summary.End.ToString("MMMM d, yyyy", CultureInfo.InvariantCulture)}";
+
+    <div class="mx-desktop tab-desktop @ColorClass">
+        <div class="td-heading @ColorClass">
+            <PageHeading Section="tech" SectionCurrent="@(deskDef?.Slug ?? "")" Title="@PageHeadingTitle" Eyebrow="@eyebrow" Description="@rangeText" />
+        </div>
+
+        <div class="ef spf nf tc td tw @ColorClass">
+            <div class="td-pills-bar">
+                <nav class="td-pills" aria-label="Roundup desks">
+                    <a class="td-pill mx-c-tech" href="@DeskHref(null)" aria-current="@(deskDef is null ? "page" : null)">
+                        <span>All of Tech</span><b>@deskCounts.GetValueOrDefault("all", 0)</b>
+                    </a>
+                    @foreach (var d in TechDesks.All)
+                    {
+                        <a class="td-pill @d.ColorClass" href="@DeskHref(d.Slug)" aria-current="@(deskDef?.Slug == d.Slug ? "page" : null)">
+                            <span>@d.Title</span><b>@deskCounts.GetValueOrDefault(d.Slug, 0)</b>
+                        </a>
+                    }
+                </nav>
+            </div>
+
+            <div class="td-cols">
+                <div class="td-main">
+                    <section class="nf-brief tw-tiles" aria-label="Week summary">
+                        <div class="nf-brief__tiles">
+                            <div class="nf-tile @ColorClass">
+                                <span class="nf-tile__label">Stories</span>
+                                <b class="nf-tile__value">@summary.Stories</b>
+                                <span class="nf-tile__sub">from @summary.Sources @(summary.Sources == 1 ? "source" : "sources")</span>
+                            </div>
+                            @if (summary.Releases > 0)
+                            {
+                                <div class="nf-tile mx-c-linux">
+                                    <span class="nf-tile__label">Releases</span>
+                                    <b class="nf-tile__value">@summary.Releases</b>
+                                    <span class="nf-tile__sub">tracked this week</span>
+                                </div>
+                            }
+                            <div class="nf-tile @ColorClass">
+                                <span class="nf-tile__label">Busiest source</span>
+                                <b class="nf-tile__value tw-tile__text">@(summary.BusiestSource ?? "—")</b>
+                                <span class="nf-tile__sub">@summary.BusiestSourceCount @(summary.BusiestSourceCount == 1 ? "story" : "stories")</span>
+                            </div>
+                            <div class="nf-tile @ColorClass">
+                                <span class="nf-tile__label">Busiest day</span>
+                                <b class="nf-tile__value tw-tile__text">@summary.BusiestDay.ToString()</b>
+                                <span class="nf-tile__sub">@summary.BusiestDayCount @(summary.BusiestDayCount == 1 ? "story" : "stories")</span>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="tw-biggest" aria-labelledby="tw-biggest-title">
+                        <div class="ef-head">
+                            <h2 id="tw-biggest-title">The week’s biggest stories</h2>
+                        </div>
+                        @if (summary.Biggest.Count == 0)
+                        {
+                            <p class="ef-empty">No multi-source clusters for this week.</p>
+                        }
+                        else
+                        {
+                            <ol class="tw-biggest__list">
+                                @for (var i = 0; i < summary.Biggest.Count; i++)
+                                {
+                                    var cluster = summary.Biggest[i];
+                                    var itemColor = PhoneColors.ForCategory(cluster.Lead.CategoryName);
+                                    <li class="tw-biggest__row @(i == 0 ? "tw-biggest__row--lead" : null) @itemColor">
+                                        <span class="tw-rank" aria-hidden="true">@(i + 1)</span>
+                                        <div class="tw-biggest__body tc-covered">
+                                            <div class="ef-kicker">@Kicker(cluster.Lead)</div>
+                                            <h3 class="tw-biggest__title"><StoryLink Item="cluster.Lead" /></h3>
+                                            <div class="tc-covered__sources">
+                                                <span class="tc-badges" aria-hidden="true">
+                                                    @foreach (var b in cluster.SourceMarks)
+                                                    {
+                                                        <span class="tc-badge @PhoneColors.ForCategory(b.Category)" title="@b.Name">@b.Mark</span>
+                                                    }
+                                                </span>
+                                                <b>@cluster.Sources sources</b>
+                                                <span>· @string.Join(", ", cluster.SourceNames)</span>
+                                            </div>
+                                            <div class="ef-meta">
+                                                <span class="ef-meta__when">@Dates.Published(cluster.Lead.Date)</span>
+                                                <ShareButton Url="@cluster.Lead.Url" Title="@Title(cluster.Lead)" />
+                                                <SaveButton Item="cluster.Lead" Title="@Title(cluster.Lead)" Source="@Source(cluster.Lead)" Summary="@Summary(cluster.Lead)" />
+                                            </div>
+                                        </div>
+                                    </li>
+                                }
+                            </ol>
+                        }
+                    </section>
+
+                    <section class="tw-days" aria-labelledby="tw-days-title">
+                        <div class="ef-head">
+                            <h2 id="tw-days-title">Day by day</h2>
+                        </div>
+                        <div class="tw-days__grid">
+                            @{
+                                var maxDay = Math.Max(1, summary.BusiestDayCount);
+                            }
+                            @foreach (var d in summary.Days)
+                            {
+                                var pct = (int)Math.Round(100.0 * d.Count / maxDay);
+                                <article class="tw-day-card @ColorClass" data-day-count="@d.Count">
+                                    <div class="tw-day-card__top">
+                                        <b>@d.Day.ToString("ddd, MMM d", CultureInfo.InvariantCulture)</b>
+                                        <span>@d.Count @(d.Count == 1 ? "story" : "stories")</span>
+                                    </div>
+                                    <div class="td-sources__bar" aria-hidden="true">
+                                        <span style="width: @(pct)%"></span>
+                                    </div>
+                                    @if (d.Top is { } topStory)
+                                    {
+                                        <div class="tw-day-card__story">
+                                            <span class="ef-kicker">@Source(topStory)</span>
+                                            <h3 class="tw-day-card__title"><StoryLink Item="topStory" /></h3>
+                                        </div>
+                                    }
+                                </article>
+                            }
+                        </div>
+                    </section>
+                </div>
+
+                <aside class="ef-side spf-side td-side">
+                    @if (summary.ReleasedThisWeek.Count > 0)
+                    {
+                        <section class="nf-side mx-c-linux" aria-labelledby="tw-releases-title">
+                            <div class="ef-head">
+                                <h2 id="tw-releases-title" class="ef-label">Released this week</h2>
+                                <a href="tech/linux/releases">All <span aria-hidden="true">→</span></a>
+                            </div>
+                            <ul class="tc-just-list">
+                                @foreach (var r in summary.ReleasedThisWeek.Take(6))
+                                {
+                                    <li class="tc-just-row">
+                                        <span class="td-tracker__kind">@r.Kind</span>
+                                        @if (FeedQuery.SafeHref(r.NotesUrl) is { } href)
+                                        {
+                                            <a class="tc-just-row__title" href="@href" target="_blank" rel="noopener noreferrer"><b>@r.Project @r.Version</b></a>
+                                        }
+                                        else
+                                        {
+                                            <b class="tc-just-row__title">@r.Project @r.Version</b>
+                                        }
+                                        <span class="tc-just-row__meta">@r.Source · @Dates.Published(r.ReleasedAt)</span>
+                                    </li>
+                                }
+                            </ul>
+                        </section>
+                    }
+
+                    @if (Reader.Enabled)
+                    {
+                        <section class="nf-side" aria-labelledby="tw-topics-title">
+                            <div class="ef-head">
+                                <h2 id="tw-topics-title" class="ef-label">Your topics this week</h2>
+                                @if (summary.Topics.Count > 0)
+                                {
+                                    <a href="news/topics">Manage <span aria-hidden="true">→</span></a>
+                                }
+                            </div>
+                            @if (summary.Topics.Count == 0)
+                            {
+                                <p class="ef-note">Follow a word or phrase to see how often it appeared this week.</p>
+                                <a class="ef-more" href="news/topics/follow?hub=tech">Follow a topic <span aria-hidden="true">→</span></a>
+                            }
+                            else
+                            {
+                                <ul class="tw-topics-list">
+                                    @foreach (var t in summary.Topics)
+                                    {
+                                        <li>
+                                            <a href="@($"news/topics?q={Uri.EscapeDataString(t.Topic)}")">
+                                                <b>@t.Topic</b>
+                                                <span>@t.Count @(t.Count == 1 ? "story" : "stories")</span>
+                                            </a>
+                                        </li>
+                                    }
+                                </ul>
+                            }
+                        </section>
+                    }
+
+                    @if (earlierWeeks.Count > 0)
+                    {
+                        <section class="nf-side" aria-labelledby="tw-earlier-title">
+                            <h2 id="tw-earlier-title" class="ef-label">Earlier roundups</h2>
+                            <ul class="tw-earlier-list">
+                                @foreach (var w in earlierWeeks)
+                                {
+                                    <li>
+                                        <a href="@WeekHref(w.Start)">
+                                            <b>@($"{w.Start.ToString("MMM d", CultureInfo.InvariantCulture)} – {w.End.ToString("MMM d", CultureInfo.InvariantCulture)}")</b>
+                                            <span>@w.Stories @(w.Stories == 1 ? "story" : "stories")</span>
+                                        </a>
+                                    </li>
+                                }
+                            </ul>
+                        </section>
+                    }
+                </aside>
+            </div>
+        </div>
+    </div>
+
+    <div class="mx-phone tab-phone @ColorClass">
+        <PhoneRibbon Section="tech" Desk="@deskDef?.Slug" Kicker="@rangeText" Title="@PageHeadingTitle" />
+
+        <nav class="td-pills td-pills--phone" aria-label="Roundup desks">
+            <a class="td-pill mx-c-tech" href="@DeskHref(null)" aria-current="@(deskDef is null ? "page" : null)">
+                <span>All of Tech</span><b>@deskCounts.GetValueOrDefault("all", 0)</b>
+            </a>
+            @foreach (var d in TechDesks.All)
+            {
+                <a class="td-pill @d.ColorClass" href="@DeskHref(d.Slug)" aria-current="@(deskDef?.Slug == d.Slug ? "page" : null)">
+                    <span>@d.Title</span><b>@deskCounts.GetValueOrDefault(d.Slug, 0)</b>
+                </a>
+            }
+        </nav>
+
+        <section class="mx-section tc-brief--phone" aria-label="Week summary">
+            <div class="nf-brief__tiles">
+                <div class="nf-tile @ColorClass">
+                    <span class="nf-tile__label">Stories</span>
+                    <b class="nf-tile__value">@summary.Stories</b>
+                    <span class="nf-tile__sub">from @summary.Sources @(summary.Sources == 1 ? "source" : "sources")</span>
+                </div>
+                @if (summary.Releases > 0)
+                {
+                    <div class="nf-tile mx-c-linux">
+                        <span class="nf-tile__label">Releases</span>
+                        <b class="nf-tile__value">@summary.Releases</b>
+                        <span class="nf-tile__sub">tracked this week</span>
+                    </div>
+                }
+                <div class="nf-tile @ColorClass">
+                    <span class="nf-tile__label">Busiest source</span>
+                    <b class="nf-tile__value tw-tile__text">@(summary.BusiestSource ?? "—")</b>
+                    <span class="nf-tile__sub">@summary.BusiestSourceCount @(summary.BusiestSourceCount == 1 ? "story" : "stories")</span>
+                </div>
+                <div class="nf-tile @ColorClass">
+                    <span class="nf-tile__label">Busiest day</span>
+                    <b class="nf-tile__value tw-tile__text">@summary.BusiestDay.ToString()</b>
+                    <span class="nf-tile__sub">@summary.BusiestDayCount @(summary.BusiestDayCount == 1 ? "story" : "stories")</span>
+                </div>
+            </div>
+        </section>
+
+        @if (summary.Biggest.Count > 0)
+        {
+            <section class="mx-section" aria-labelledby="tw-m-biggest-h">
+                <div class="mx-head"><h2 id="tw-m-biggest-h">Biggest stories</h2></div>
+                <ol class="mx-top">
+                    @for (var i = 0; i < summary.Biggest.Count; i++)
+                    {
+                        var cluster = summary.Biggest[i];
+                        <li class="@PhoneColors.ForCategory(cluster.Lead.CategoryName)">
+                            <span class="mx-top__n" aria-hidden="true">@(i + 1)</span>
+                            <span>
+                                <span class="mx-top__title"><StoryLink Item="cluster.Lead" /></span>
+                                <span class="mx-top__meta">@cluster.Sources sources · @string.Join(", ", cluster.SourceNames)</span>
+                            </span>
+                            <span class="mx-top__actions">
+                                <SaveButton Item="cluster.Lead" Title="@Title(cluster.Lead)" Source="@Source(cluster.Lead)" Summary="@Summary(cluster.Lead)" />
+                                <ShareButton Url="@cluster.Lead.Url" Title="@Title(cluster.Lead)" />
+                            </span>
+                        </li>
+                    }
+                </ol>
+            </section>
+        }
+
+        <section class="mx-section" aria-labelledby="tw-m-days-h">
+            <div class="mx-head"><h2 id="tw-m-days-h">Day by day</h2></div>
+            <ul class="tw-m-days">
+                @foreach (var d in summary.Days)
+                {
+                    <li class="tw-m-days__row">
+                        <div class="tw-m-days__meta">
+                            <b>@d.Day.ToString("ddd, MMM d", CultureInfo.InvariantCulture)</b>
+                            <span>@d.Count @(d.Count == 1 ? "story" : "stories")</span>
+                        </div>
+                        @if (d.Top is { } topStory)
+                        {
+                            <div class="tw-m-days__top"><StoryLink Item="topStory" /></div>
+                        }
+                    </li>
+                }
+            </ul>
+        </section>
+
+        @if (summary.ReleasedThisWeek.Count > 0)
+        {
+            <section class="mx-section mx-c-linux" aria-labelledby="tw-m-rel-h">
+                <div class="mx-head"><h2 id="tw-m-rel-h">Released this week</h2></div>
+                <ul class="tc-just-list">
+                    @foreach (var r in summary.ReleasedThisWeek.Take(5))
+                    {
+                        <li class="tc-just-row">
+                            <span class="td-tracker__kind">@r.Kind</span>
+                            <b>@r.Project @r.Version</b>
+                            <span class="tc-just-row__meta">@r.Source · @Dates.Published(r.ReleasedAt)</span>
+                        </li>
+                    }
+                </ul>
+            </section>
+        }
+
+        @if (Reader.Enabled && summary.Topics.Count > 0)
+        {
+            <section class="mx-section" aria-labelledby="tw-m-topics-h">
+                <div class="mx-head"><h2 id="tw-m-topics-h">Your topics</h2></div>
+                <ul class="tw-earlier-list">
+                    @foreach (var t in summary.Topics)
+                    {
+                        <li>
+                            <a href="@($"news/topics?q={Uri.EscapeDataString(t.Topic)}")">
+                                <b>@t.Topic</b>
+                                <span>@t.Count @(t.Count == 1 ? "story" : "stories")</span>
+                            </a>
+                        </li>
+                    }
+                </ul>
+            </section>
+        }
+
+        @if (earlierWeeks.Count > 0)
+        {
+            <section class="mx-section" aria-labelledby="tw-m-earlier-h">
+                <div class="mx-head"><h2 id="tw-m-earlier-h">Earlier roundups</h2></div>
+                <ul class="tw-earlier-list">
+                    @foreach (var w in earlierWeeks)
+                    {
+                        <li>
+                            <a href="@WeekHref(w.Start)">
+                                <b>@($"{w.Start.ToString("MMM d", CultureInfo.InvariantCulture)} – {w.End.ToString("MMM d", CultureInfo.InvariantCulture)}")</b>
+                                <span>@w.Stories @(w.Stories == 1 ? "story" : "stories")</span>
+                            </a>
+                        </li>
+                    }
+                </ul>
+            </section>
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public string? Desk { get; set; }
+
+    [SupplyParameterFromQuery(Name = "week")]
+    private string? WeekQuery { get; set; }
+
+    [CascadingParameter] private HttpContext? Http { get; set; }
+
+    private DateTime nowUtc = DateTime.UtcNow;
+    private DeskDefinition? deskDef;
+    private bool notFound;
+    private WeekSummary? summary;
+    private IReadOnlyDictionary<string, int> deskCounts = new Dictionary<string, int>();
+    private IReadOnlyList<(DateOnly Start, DateOnly End, int Stories)> earlierWeeks = [];
+
+    private string ColorClass => deskDef?.ColorClass ?? "mx-c-tech";
+    private string PageHeadingTitle => deskDef is { } d ? $"This week in {d.Title}" : "This week in Tech";
+
+    protected override async Task OnParametersSetAsync()
+    {
+        nowUtc = DateTime.UtcNow;
+        notFound = false;
+        deskDef = null;
+
+        if (!string.IsNullOrWhiteSpace(Desk))
+        {
+            deskDef = TechDesks.For(Desk);
+            if (deskDef is null)
+            {
+                SetNotFound();
+                return;
+            }
+        }
+
+        if (!TechQuery.TryResolveWeekStart(WeekQuery, nowUtc, Dates, out var weekStart))
+        {
+            SetNotFound();
+            return;
+        }
+
+        try
+        {
+            await using var db = await Factory.CreateDbContextAsync();
+            var deskKey = deskDef?.Slug ?? "all";
+            summary = await TechQuery.WeekAsync(db, Cache, Dates, weekStart, deskKey, Reader.Profile?.Id);
+            deskCounts = await TechQuery.WeekDeskCountsAsync(db, Dates, weekStart);
+            earlierWeeks = await TechQuery.EarlierWeeksAsync(db, Dates, weekStart, deskKey, count: 3);
+        }
+        catch (Exception ex) when (DataFailures.IsReadFailure(ex))
+        {
+            Log.LogWarning(ex, "Tech weekly roundup unavailable for {Desk} {Week}.", Desk, WeekQuery);
+        }
+    }
+
+    private void SetNotFound()
+    {
+        notFound = true;
+        if (Http is not null) Http.Response.StatusCode = StatusCodes.Status404NotFound;
+    }
+
+    private string DeskHref(string? targetDesk)
+    {
+        var basePath = string.IsNullOrWhiteSpace(targetDesk) ? "tech/week" : $"tech/week/{targetDesk}";
+        return string.IsNullOrWhiteSpace(WeekQuery)
+            ? basePath
+            : $"{basePath}?week={Uri.EscapeDataString(WeekQuery)}";
+    }
+
+    private string WeekHref(DateOnly start)
+    {
+        var basePath = deskDef is { } d ? $"tech/week/{d.Slug}" : "tech/week";
+        return $"{basePath}?week={start:yyyy-MM-dd}";
+    }
+
+    private static string Title(FeedItem item) => FeedText.StripEmoji(item.Title) is { Length: > 0 } t ? t : item.Title;
+    private static string Source(FeedItem item) => FeedText.SourceName(item.SourceLabel, item.SourceUrl);
+    private static string Summary(FeedItem item) => FeedText.StripEmoji(FeedQuery.Excerpt(item.Description, 180));
+    private static string Kicker(FeedItem item) =>
+        !string.IsNullOrWhiteSpace(item.CategoryName) ? $"{item.CategoryName} · {Source(item)}" : Source(item);
+}
+

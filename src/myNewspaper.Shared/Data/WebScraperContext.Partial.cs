@@ -44,8 +44,16 @@ public partial class WebScraperContext
     public DbSet<ContentRequest> ContentRequests { get; set; }
     public DbSet<Household> Household { get; set; }
 
+    // Scraper-owned Tech live data tables (docs/tech/tech-04-live-data.md).
+    public DbSet<TechReleaseProject> TechReleaseProjects { get; set; }
+    public DbSet<TechRelease> TechReleases { get; set; }
+    public DbSet<TechDevReadingItem> TechDevReadingItems { get; set; }
+    public DbSet<TechStatusService> TechStatusServices { get; set; }
+    public DbSet<TechServiceStatus> TechServiceStatus { get; set; }
+
     partial void OnModelCreatingPartial(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<TechDevReadingItem>().HasKey(e => new { e.Site, e.Rank });
         modelBuilder.Entity<F1Source>().HasNoKey().ToView("F1Source", "dbo");
         modelBuilder.Entity<F1Race>().HasNoKey().ToView("F1Schedule", "dbo");
         modelBuilder.Entity<F1Classification>().HasNoKey().ToView("F1Results", "dbo");

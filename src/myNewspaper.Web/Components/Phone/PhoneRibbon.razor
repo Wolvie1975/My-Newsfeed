@@ -1,6 +1,6 @@
 @* The phone title band (docs/mobile-refresh-handoff.md): a live line, the page title, and one select passed in as child
    content so each page keeps its own form. *@
-<header class="mx-ribbon" data-section="@Section">
+<header class="mx-ribbon" data-section="@Section" data-desk="@Desk">
     <div>
         <span class="mx-ribbon__kicker">@Kicker</span>
         <h1>@Title</h1>
@@ -18,6 +18,8 @@
     [Parameter, EditorRequired] public string Title { get; set; } = "";
     /// <summary>"sports", "entertainment" or "tech": adds that section's dropdown above the page's own controls.</summary>
     [Parameter] public string? Section { get; set; }
+    /// <summary>Optional desk slug ("technology", "video-games", "linux") for desk-colored phone ribbons.</summary>
+    [Parameter] public string? Desk { get; set; }
     /// <summary>Optional row between the title and the select (date stepper, search box).</summary>
     [Parameter] public RenderFragment? Extra { get; set; }
     /// <summary>The one select, wrapped in &lt;div class="mx-ribbon__field"&gt; (or a form with that class) with its label.</summary>

@@ -152,6 +152,36 @@
             <div class="adm-section-head"><h2 class="adm-h2">Sports feeds</h2><a href="admin/sports-event-types">Manage event feeds</a></div>
             <HealthTable Rows="report.EventFeeds" ItemLabel="Games" ShowUpcoming="true" EditBase="admin/sports-event-types" Empty="No event feeds." />
         </div>
+        @if (techProjects.Count > 0)
+        {
+            <div id="tech-releases">
+                <div class="adm-section-head"><h2 class="adm-h2">Tech release projects</h2></div>
+                <p class="adm-help">Tracked upstream projects for the Linux release tracker (`TechReleaseProjects`).</p>
+                <div class="adm-table-wrap">
+                    <table class="adm-table">
+                        <thead>
+                            <tr>
+                                <th scope="col">Project</th>
+                                <th scope="col">Kind</th>
+                                <th scope="col">Last checked</th>
+                                <th scope="col">Last error</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var p in techProjects)
+                            {
+                                <tr>
+                                    <td><b>@p.Name</b></td>
+                                    <td>@p.Kind</td>
+                                    <td>@Dates.Stamp(p.LastCheckedAt)</td>
+                                    <td>@(string.IsNullOrWhiteSpace(p.LastError) ? "—" : p.LastError)</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
     }
 </AdminContent>
 
@@ -161,6 +191,7 @@
 
     private ScraperHealthReport? report;
     private List<Issue> issues = [];
+    private List<myNewspaper.Web.Data.Models.TechReleaseProject> techProjects = [];
     private int linkableEvents;
     private bool loading;
     private bool busy;
@@ -188,6 +219,9 @@
             await using var db = await Factory.CreateDbContextAsync();
             report = await ScraperHealth.GetReportAsync(
                 db, now, Dates.TodayAt(now), ScraperHealth.StaleAfter(Config["Scraper:StaleAfterHours"]));
+            techProjects = await TechQuery.LiveTablesAsync(db, "releases")
+                ? await db.TechReleaseProjects.AsNoTracking().OrderBy(p => p.SortOrder).ThenBy(p => p.Name).ToListAsync()
+                : [];
             linkableEvents = report.UnlinkedEvents == 0 ? 0 : (await AdminData.PlanSportsEventLinksAsync(db)).Count;
             issues = new[]
                 {

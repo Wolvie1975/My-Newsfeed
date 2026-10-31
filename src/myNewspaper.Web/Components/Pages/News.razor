@@ -7,9 +7,6 @@
 @page "/entertainment/news/{Topic}"
 @page "/tech/news"
 @page "/tech/news/{Topic}"
-@page "/tech/technology"
-@page "/tech/video-games"
-@page "/tech/linux"
 @inject NavigationManager Nav
 @layout PublicLayout
 @using myNewspaper.Web.Components.Feed
@@ -28,7 +25,7 @@
     </PhoneRibbon></div>
 }
 <div class="@(SectionNews ? "mx-desktop" : "mx-contents")">
-<PageHeading Section="@(SectionNews ? Hub : "news")" Choices="@(SectionNews ? null : newsTabs)" SectionCurrent="@(SectionNews ? SectionNewsCurrent : NewsCurrent)" Title="@Title" Eyebrow="@((SectionNews ? HubLabel(Hub) : "News") + " · Every story, every source")" Description="" />
+<PageHeading Section="@(SectionNews ? Hub : "news")" Choices="@(SectionNews ? (Hub == "tech" ? SectionChoices.Tech : null) : newsTabs)" SectionCurrent="@(SectionNews ? (Hub == "tech" ? "headlines" : SectionNewsCurrent) : NewsCurrent)" Title="@Title" Eyebrow="@((SectionNews ? HubLabel(Hub) : "News") + " · Every story, every source")" Description="" />
 </div>
 @if (SectionNews && HubCategories.Count > 0) {
     @* Categories as pills on desktop (as in the approved concept); phones use the dropdown beside Source. *@
@@ -104,8 +101,12 @@ else
     {
         <p><a href="@Href(Category, null)">← Back to the newest articles</a></p>
     }
+    @if (jumpBox is not null && (jumpBox.Groups.Count > 0 || jumpBox.Categories.Count > 0))
+    {
+        <JumpBox Box="jumpBox" Title="@Title" />
+    }
 
-    <div class="news-front @(Hub == "entertainment" ? "news-front--posters" : null)">
+    <div id="top-of-list" class="news-front @(Hub == "entertainment" ? "news-front--posters" : null)">
         <div class="news-front__stories">
             <section class="feed paper-feed hc-feed" aria-label="Articles" data-last-day="@lastDay" data-feed-cards="1" data-feed-group-by="@groupBy" data-last-group="@lastGroup">
                 <NewspaperFeed Items="feed.Items" Featured="@(After is null)" PhoneFeatureFirst="SectionNews" Total="@(After is null ? feed.Total : null)" Cards="true" GroupBy="@groupBy" />
@@ -217,7 +218,7 @@ else
     private IReadOnlyList<FeedCategory> HubCategories = [];
     private string? SectionCategory => selectedCategory?.Name;
     private FeedCategory? selectedCategory;
-    private string BasePath => selectedCategory is {} selected && SectionNews ? NewsSections.RouteFor(selected)! : SectionNews ? Hub + "/news" : "news/all";
+    private string BasePath => selectedCategory is {} selected && SectionNews && Hub != "tech" ? NewsSections.RouteFor(selected)! : SectionNews ? Hub + "/news" : "news/all";
     private string FeedView => SectionNews ? Hub + "-hub-news" : "news";
     private string Title => SectionNews ? $"{HubLabel(Hub)} headlines"
         : categories.FirstOrDefault(c => c.Id == Category)?.Name ?? "All headlines";
@@ -241,6 +242,7 @@ else
     private IReadOnlyList<FeedCategory> foldCategories = [];
     private IReadOnlyDictionary<int, IReadOnlyList<FeedItem>> latestByCategory = new Dictionary<int, IReadOnlyList<FeedItem>>();
     private FeedPage? feed;
+    private JumpBoxModel? jumpBox;
     private string? lastDay;
     // Headline cards: "hour" headings on a busy today, else "day"; and the last card group, for Load more.
     private string groupBy = "day";
@@ -279,26 +281,42 @@ else
             };
             var requested = topic?.StartsWith("category-") == true && int.TryParse(topic[9..], out var id)
                 ? allCategories.FirstOrDefault(c => c.Id == id)
-                : known != null ? allCategories.FirstOrDefault(c => c.Name == known) : null;
+                : known != null ? allCategories.FirstOrDefault(c => c.Name == known)
+                : Hub == "tech" && int.TryParse(CategoryQuery, out var techCatId) ? allCategories.FirstOrDefault(c => c.Id == techCatId)
+                : null;
             if (requested != null && requested.Hub != Hub) {
                 var assignedDestination = NewsSections.RouteFor(requested) ?? "news/all";
                 Nav.NavigateTo(assignedDestination + FeedQuery.QueryString(requested.Hub == "headlines" ? requested.Id : null, Q, After?.ToToken(), int.TryParse(SourceQuery, out var source) ? source : null), forceLoad: true);
                 return;
             }
-            selectedCategory = requested ?? (Topic == null && known == null ? HubCategories.FirstOrDefault() : null);
+            selectedCategory = requested ?? (Topic == null && known == null && Hub != "tech" ? HubCategories.FirstOrDefault() : null);
         }
         Category = SectionNews ? selectedCategory?.Id
             : int.TryParse(CategoryQuery, out var categoryId) ? categoryId : null;
-        sources = SectionNews && Category == null ? [] : await FeedQuery.GetSourcesAsync(db, Category, headlinesOnly: !SectionNews);
+        var emptySection = SectionNews && Category == null && Hub != "tech";
+        var feedHub = SectionNews ? Hub : "headlines";
+        sources = emptySection ? [] : await FeedQuery.GetSourcesAsync(db, Category, headlinesOnly: !SectionNews, hub: feedHub);
         Source = int.TryParse(SourceQuery, out var sourceId) && sources.Any(s => s.Id == sourceId) ? sourceId : null;
-        feed = SectionNews && Category == null ? new FeedPage([], 0, 0, null) : await FeedQuery.GetFeedAsync(
-            db, Category, Q, After, After is null ? FeedQuery.FirstBatch : FeedQuery.MoreBatch, Source, headlinesOnly: !SectionNews);
+        feed = emptySection ? new FeedPage([], 0, 0, null) : await FeedQuery.GetFeedAsync(
+            db, Category, Q, After, After is null ? FeedQuery.FirstBatch : FeedQuery.MoreBatch, Source, headlinesOnly: !SectionNews, hub: feedHub);
         lastDay = feed.Items.Count > 0 ? Dates.DayKey(feed.Items[^1]) : null;
         var nowUtc = DateTime.UtcNow;
         groupBy = feed.Items.Count > 0 && await FeedQuery.CountPublishedSinceAsync(db, Dates.StartOfDayUtc(Dates.TodayAt(nowUtc)),
-            Category, Q, Source, headlinesOnly: !SectionNews) >= FeedQuery.HourGroupingThreshold ? "hour" : "day";
+            Category, Q, Source, headlinesOnly: !SectionNews, hub: feedHub) >= FeedQuery.HourGroupingThreshold ? "hour" : "day";
         lastGroup = feed.Items.Count > 0 ? Dates.CardGroupKey(feed.Items[^1], groupBy, nowUtc) : null;
-        lastUpdated = SectionNews && Category == null ? null : await FeedQuery.GetLastUpdatedAsync(db, headlinesOnly: !SectionNews, categoryId: Category);
+        lastUpdated = emptySection ? null : await FeedQuery.GetLastUpdatedAsync(db, headlinesOnly: !SectionNews, categoryId: Category, hub: feedHub);
+        if (!emptySection && feed.Items.Count > 0)
+        {
+            var recent = await FeedQuery.GetRecentDatesAsync(db, Category, Q, Source, headlinesOnly: !SectionNews, hub: feedHub);
+            var hubRecent = Category is null && Source is null && string.IsNullOrWhiteSpace(Q)
+                ? recent
+                : await FeedQuery.GetRecentDatesAsync(db, null, null, null, headlinesOnly: !SectionNews, hub: feedHub, days: 2);
+            jumpBox = JumpBoxBuilder.Build(recent, hubRecent, SectionNews ? HubCategories : categories, feed.Items, groupBy, feedHub, Category, Href, Dates, nowUtc);
+        }
+        else
+        {
+            jumpBox = null;
+        }
         // The phone folds: every other headline category, local news first and opinion last.
         foldCategories = Phone
             ? categories.Where(c => c.Id != Category).OrderBy(c => PhoneColors.Order(c.Name)).ThenBy(c => c.Name).ToList()

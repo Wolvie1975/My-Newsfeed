@@ -48,7 +48,7 @@ public static class FeedEndpoints
         };
         var hub = NewsSections.HubForView(view);
         FeedCategory? sectionCategory = null;
-        if (hub != null)
+        if (hub != null && (sectionCategoryName != null || categoryId != null || hub != "tech"))
         {
             sectionCategory = await db.SourceCategories.Where(c => c.NewsHub == hub
                     && (sectionCategoryName != null ? c.CategoryName == sectionCategoryName : c.Id == categoryId)
@@ -62,7 +62,8 @@ public static class FeedEndpoints
         if (sourceId is not null && !await db.Sources.AnyAsync(s => s.Id == sourceId && s.Enabled
             && (categoryId == null || s.SourceCategoryId == categoryId))) sourceId = null;
         var page = await FeedQuery.GetFeedAsync(db, categoryId, q, cursor, FeedQuery.MoreBatch, sourceId,
-            headlinesOnly: !boxOffice && !big12News && sectionCategory == null);
+            headlinesOnly: !boxOffice && !big12News && hub == null && sectionCategory == null,
+            hub: boxOffice || big12News ? null : (hub ?? "headlines"));
 
         // Headline cards: the page decides hour or day grouping; the last group stops a repeated heading at the seam.
         var cardMode = cards == "1";
@@ -93,7 +94,7 @@ public static class FeedEndpoints
             }
             else
             {
-                var route = boxOffice ? "box-office" : sectionCategory != null ? NewsSections.RouteFor(sectionCategory)! : "news/all";
+                var route = boxOffice ? "box-office" : hub == "tech" ? "tech/news" : sectionCategory != null ? NewsSections.RouteFor(sectionCategory)! : "news/all";
                 nextHref = route + FeedQuery.QueryString(categoryId, q, token, sourceId,
                     allCategories: !boxOffice && categoryId is null);
             }

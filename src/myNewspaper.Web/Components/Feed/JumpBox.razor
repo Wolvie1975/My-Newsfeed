@@ -1,0 +1,50 @@
+<section class="hc-jump" aria-label="Find your place" data-hc-jump>
+    @if (Box.Groups.Count > 0)
+    {
+        <h2 class="hc-jump__label">Jump to</h2>
+        <nav class="hc-jump__row" aria-label="Jump to an @(Box.GroupBy == "hour" ? "hour" : "day")">
+            @foreach (var (g, i) in Box.Groups.Select((g, i) => (g, i)))
+            {
+                <a class="hc-jump__group" href="@g.Href" data-hc-target="@g.Key" aria-current="@(i == 0 ? "true" : null)">
+                    <b>@g.Label</b><span>@g.Count @(g.Count == 1 ? "story" : "stories")</span>
+                </a>
+            }
+        </nav>
+    }
+    @if (Box.Categories.Count > 0)
+    {
+        <h2 class="hc-jump__label">Today by<br />@(Box.IsTech ? "desk" : "category")</h2>
+        <nav class="hc-jump__row" aria-label="@Box.CategoryAriaLabel">
+            @foreach (var c in Box.Categories)
+            {
+                <a class="hc-jump__cat @c.ColorClass" href="@c.Href" aria-current="@(c.Active ? "page" : null)">
+                    <span>@c.Label</span><b>@c.Count</b>
+                </a>
+            }
+        </nav>
+    }
+</section>
+
+@* The pinned copy. Hidden until headline-jump.js shows it; never shown without JavaScript. *@
+<nav class="hc-bar" aria-label="Jump to" data-hc-bar hidden>
+    <b class="hc-bar__title">@Title</b>
+    @foreach (var g in Box.Groups)
+    {
+        <a href="@g.Href" data-hc-target="@g.Key"><b>@g.ShortLabel</b> <span>@g.Count</span></a>
+    }
+    @if (Box.Categories.Count > 0)
+    {
+        <span class="hc-bar__rule" aria-hidden="true"></span>
+        @foreach (var c in Box.Categories)
+        {
+            <a class="hc-bar__cat @c.ColorClass" href="@c.Href" aria-current="@(c.Active ? "page" : null)">@c.Label <b>@c.Count</b></a>
+        }
+    }
+    <a class="hc-bar__top" href="#top-of-list">Top ↑</a>
+</nav>
+
+@code {
+    [Parameter, EditorRequired] public JumpBoxModel Box { get; set; } = default!;
+    [Parameter, EditorRequired] public string Title { get; set; } = "All headlines";
+}
+

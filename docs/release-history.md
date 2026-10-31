@@ -6,6 +6,48 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
+## Tech desks, live data & weekly roundups — October 31, 2026 (Central)
+
+Implemented Parts 3, 4, and 5 of the Tech section (`docs/tech/tech-03-desks.md`,
+`docs/tech/tech-04-live-data.md`, and `docs/tech/tech-05-weekly.md`).
+
+- **Part 3 (All headlines & desks):** Added `TechDesks` whole-word topic definitions
+  and practical guide/deal classifiers; added `JumpBox` + `headline-jump.js` for
+  `/tech/news` ("Jump to" by hour and "Today by desk" with 4px desk-colored borders
+  that filter `/tech/news?category=<id>`); built `TechDesk.razor` for
+  `/tech/technology`, `/tech/video-games`, and `/tech/linux` with topic pills,
+  `?topic=` filtering, Technology "How-to & guides", Video Games "Deals & sales",
+  Linux "Most covered" (threshold 2 sources) and "Linux gaming", "By source" bars,
+  desk video rails, 3-across "More <desk>" cards, and desk-colored phone ribbons
+  (Technology purple, Video Games amber, Linux teal).
+- **Part 4 (Live data components):** Added read-only EF models (`Tech.cs`) and
+  `TechQuery` queries (`LiveTablesAsync` with 10-minute `OBJECT_ID` caching and
+  graceful fallback when scraper tables are absent, `TrackerAsync`,
+  `JustReleasedAsync`, `ReleaseHistoryAsync`, `DevReadingAsync`,
+  `ServiceStatesAsync`), plus `TechReleaseTracker.razor`,
+  `TechLinuxReleases.razor` (`/tech/linux/releases`), `TechJustReleased.razor`,
+  `TechDevReading.razor`, and `TechStatusStrip.razor`.
+- **Part 5 (Weekly roundups):** Added `TechQuery.WeekAsync` (Sunday–Saturday
+  America/Chicago week window rolling over Sunday 6 AM Central, 24-hour
+  `IMemoryCache`), `TechWeek.razor` (`/tech/week` and `/tech/week/{Desk}` with
+  12-week `?week=yyyy-MM-dd` validation), and the Sunday–Tuesday banner on `/tech`.
+
+Validation: solution build passed with zero warnings/errors; 63 Web unit tests
+(including `TechDesksTests` and `TechCoveredTests`) and 3 Admin tests passed;
+Prettier check passed. Live Playwright verification (`tech-front.browser.cjs`,
+`news-front.browser.cjs`, `topics.browser.cjs`) passed across phone (320, 390,
+430px in light and dark mode), iPad (744, 820px), and desktop (1024, 1280,
+1440px), with screenshots inspected in `test-results/browser/`.
+
+Deployment: public image `mynewspaper-web:tech-complete-20261031` (`3137800a13b2`)
+and admin image `mynewspaper-admin:tech-complete-20261031` (`1122effd36ea`);
+retained rollback images `mynewspaper-web:tech-front-20261031` (`7f1787bc0631`),
+`mynewspaper-admin:tech-front-20261031` (`217494bf0c35`),
+`mynewspaper-web:before-tech-front-20261031` (`e3943ff1c875`), and
+`mynewspaper-admin:before-tech-front-20261031` (`4e1a75444c26`). Runtime settings,
+key volumes, port bindings, network aliases, and `/healthz` checks are preserved
+and healthy. No push.
+
 ## Tech hub & Tech front — October 31, 2026 (Central)
 
 Implemented Parts 1 and 2 of the Tech section (`docs/tech/tech-01-hub.md` and

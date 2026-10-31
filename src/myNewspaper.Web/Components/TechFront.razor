@@ -165,6 +165,14 @@
             }
         </div>
     }
+    @if (weekLinkSummary is { } wk)
+    {
+        <p class="tc-week-banner">
+            <a href="tech/week">
+                This week in Tech: @wk.Stories @(wk.Stories == 1 ? "story" : "stories")@(wk.Releases > 0 ? $", {wk.Releases} {(wk.Releases == 1 ? "release" : "releases")}" : "") <span aria-hidden="true">→</span>
+            </a>
+        </p>
+    }
 </div>
 </div>
 
@@ -172,7 +180,7 @@
 <div class="mx-phone tab-phone">
     <PhoneRibbon Section="tech" Kicker="@RibbonKicker" Title="Tech" />
 
-    <TechStatusStrip />
+    <TechStatusStrip Compact="true" />
 
     <section class="nf-brief nf-brief--phone tc-brief--phone" aria-label="The briefing">
         <div class="nf-brief__tiles">@Tiles</div>
@@ -227,7 +235,7 @@
         </section>
     }
 
-    <TechJustReleased />
+    <TechJustReleased Compact="true" />
 
     <section class="mx-section nf-topics" aria-labelledby="tech-topics-m">
         <div class="mx-head">
@@ -296,6 +304,7 @@
     private IReadOnlyList<VideoItem> videos = [];
     private readonly Dictionary<string, IReadOnlyList<FeedItem>> desks = new(StringComparer.Ordinal);
     private List<TopicSummary> topics = [];
+    private WeekSummary? weekLinkSummary;
     private int total, sourceCount;
 
     protected override async Task OnParametersSetAsync()
@@ -333,6 +342,17 @@
             total = categories.Sum(c => c.Count);
             sourceCount = await db.Sources.AsNoTracking()
                 .CountAsync(s => s.Enabled && s.SourceCategory != null && s.SourceCategory.NewsHub == "tech");
+
+            var todayDow = Dates.TodayAt(nowUtc).DayOfWeek;
+            if (todayDow is DayOfWeek.Sunday or DayOfWeek.Monday or DayOfWeek.Tuesday)
+            {
+                var latestWeek = TechQuery.LatestWeekStart(nowUtc, Dates);
+                weekLinkSummary = await TechQuery.WeekAsync(db, Cache, Dates, latestWeek, "all");
+            }
+            else
+            {
+                weekLinkSummary = null;
+            }
         }
         catch (Exception ex) when (DataFailures.IsReadFailure(ex))
         {
