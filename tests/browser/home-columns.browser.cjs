@@ -84,6 +84,16 @@ const phoneOrder = [
                     0,
                     'digital section absent',
                 );
+                assert.equal(
+                    await page.locator('.bs-front [data-home-latest-video]').count(),
+                    0,
+                    'latest video absent from front',
+                );
+                assert.equal(
+                    await page.locator('.bs-more > .bs-col--side').count(),
+                    0,
+                    'bs-more has no side column',
+                );
                 // Every rendered section is laid out without overlapping another.
                 const sections = await page.locator('.bs-home [data-home-section]:not([hidden])').evaluateAll((ns) =>
                     ns.map((n) => {
@@ -125,14 +135,29 @@ const phoneOrder = [
                         assert(weather.x < title.x && title.x < live.x, 'masthead order');
                     }
                     if (tonight && lead && side) {
-                        // Three columns: Today & Tonight | lead and headlines | side column (video + episodes).
+                        // Three columns: Today & Tonight | lead and headlines | side column (box office + episodes).
                         assert(tonight.x < lead.x && lead.x < side.x, 'front columns');
                         assert(Math.abs(tonight.y - lead.y) < 40 && Math.abs(lead.y - side.y) < 40, 'front row');
                     }
+                    assert.equal(
+                        await page.locator('.bs-front > .bs-col--side :is([data-home-section="forecasts"], [data-home-section="box-office"])').count(),
+                        1,
+                        'box office in front side column',
+                    );
+                    assert.equal(
+                        await page.locator('.bs-front > .bs-col--side [data-home-section="tv"]').count(),
+                        1,
+                        'tv in front side column',
+                    );
 
                     if (width >= 1920) {
                         assert(!(await page.locator('.bs-band').isVisible()), 'band hidden at 1920+');
                         assert(!(await page.locator('.bs-title__name').isVisible()), 'title name hidden at 1920+');
+                        const news = await box('[data-home-section="news"]');
+                        if (lead && news) {
+                            assert(lead.x < news.x, 'lead and news side by side at 1920+');
+                            assert(Math.abs(lead.y - news.y) < 10, 'lead and news share top offset at 1920+');
+                        }
                         const sportsNews = await box('[data-home-section="sports-news"]');
                         const entertainmentNews = await box('[data-home-section="entertainment-news"]');
                         const techNews = await box('[data-home-section="tech-news"]');

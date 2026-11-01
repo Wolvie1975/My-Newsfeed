@@ -832,18 +832,16 @@
         margin-right: 4px;
         font-size: 20px;
     }
-    .pub .bs-front,
-    .pub .bs-more {
+    .pub .bs-front {
         display: grid;
         grid-template-columns: minmax(280px, 1fr) minmax(0, 2fr) minmax(280px, 1fr);
         padding-top: 20px;
     }
-    /* No F1 and no Friday releases: the main column takes the side column's space. */
-    .pub .bs-more:not(:has(> .bs-col--side > :not([hidden]))) {
+    /* .bs-more has no side column (docs/home-wide-rebalance-handoff.md §1.4). */
+    .pub .bs-more {
+        display: grid;
         grid-template-columns: minmax(280px, 1fr) minmax(0, 3fr);
-    }
-    .pub .bs-more:not(:has(> .bs-col--side > :not([hidden]))) > .bs-col--side {
-        display: none;
+        padding-top: 20px;
     }
     .pub .bs-col {
         display: flex;
@@ -2035,37 +2033,53 @@ body:has([data-scheme-dialog][open]) {
         display: none;               /* each band's sections carry their own headings */
     }
 
-    /* Band 1: Today & Tonight + Box office · Top story + More headlines · Latest video + Today's episodes */
+    /* Band 1: Today & Tonight + F1 · Top story + More headlines · Box office + Today's episodes + In theaters */
     .pub .bs-sheet .bs-front {
-        grid-template-columns: 300px minmax(0, 1fr) 420px;
+        grid-template-columns: 300px minmax(0, 1fr) 380px;
         padding: 6px 0 30px;
         border-bottom: 2px solid var(--text);
     }
+
+    /* The middle column splits in two: the lead (60%) and More headlines as a list beside it. */
     .pub .bs-sheet .bs-front > .bs-col--main {
+        display: grid;
+        grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+        column-gap: 32px;
+        align-items: start;
         padding: 0 32px;
     }
 
-    /* The lead: photo beside the headline, not above it, so the band isn't one tall column. */
-    .pub .bs-sheet .d-lead__story {
-        display: grid;
-        grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
-        gap: 28px;
-        align-items: start;
-    }
+    /* The lead: photo above the headline at a sensible size (about 680 px wide at 2000), summary capped at 3 lines. */
     .pub .bs-sheet .d-lead__image {
-        aspect-ratio: 4 / 3;
+        display: block;
+        width: 100%;
+        height: auto;
+        max-height: none;
+        aspect-ratio: 16 / 9;
+        overflow: hidden;
+        border-radius: 10px;
+    }
+    .pub .bs-sheet .d-lead__image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
     }
     .pub .bs-sheet .d-lead__title {
-        font-size: 40px;
-        line-height: 1.08;
+        font-size: 34px;
+        line-height: 1.1;
+    }
+    .pub .bs-sheet .d-lead__summary {
+        display: -webkit-box;
+        max-width: none;
+        overflow: hidden;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 3;
+        line-clamp: 3;
     }
 
-    /* More headlines under the lead: four across, text only. */
+    /* More headlines beside the lead: one column of five. */
     .pub .bs-home .bs-sheet .bs-front .d-news .d-headline-shelf__list {
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-    }
-    .pub .bs-home .bs-sheet .bs-front .d-news .d-headline-shelf__list > li:nth-child(n + 5) {
-        display: none;
+        grid-template-columns: minmax(0, 1fr);
     }
 
     /* Bands 2–4 share one 12-column grid. The left and main columns dissolve so each section is a grid item. */
@@ -2077,8 +2091,7 @@ body:has([data-scheme-dialog][open]) {
     .pub .bs-sheet .bs-more > :is(.bs-col--left, .bs-col--main) {
         display: contents;
     }
-    .pub .bs-sheet .bs-more > .bs-col > .d-card,
-    .pub .bs-sheet .bs-more > .bs-col--side {
+    .pub .bs-sheet .bs-more > .bs-col > .d-card {
         margin: 0;
         padding: 26px 26px 30px;
         border-left: 1px solid var(--row-border);
@@ -2089,31 +2102,23 @@ body:has([data-scheme-dialog][open]) {
     .pub .bs-sheet .bs-more [data-home-section='entertainment-news'] { grid-column: 5 / span 4; grid-row: 1; }
     .pub .bs-sheet .bs-more [data-home-section='tech-news'] { grid-column: 9 / span 4; grid-row: 1; }
 
-    /* Band 3: Scoreboard · Top 25 · F1 / In theaters. */
+    /* Band 3: Scoreboard · Top 25 (the wider one: five columns of schools). */
     .pub .bs-sheet .bs-more [data-home-section='scoreboard'] { grid-column: 1 / span 5; grid-row: 2; }
-    .pub .bs-sheet .bs-more [data-home-section='rankings'] { grid-column: 6 / span 5; grid-row: 2; }
-    .pub .bs-sheet .bs-more > .bs-col--side { grid-column: 11 / span 2; grid-row: 2; }
-    /* Most weeks the side column is empty (no race, not Friday): Scoreboard and Top 25 split the row. */
-    .pub .bs-sheet .bs-more:not(:has(> .bs-col--side > :not([hidden]))) > .bs-col--side { display: none; }
-    .pub .bs-sheet .bs-more:not(:has(> .bs-col--side > :not([hidden]))) [data-home-section='scoreboard'] { grid-column: 1 / span 6; }
-    .pub .bs-sheet .bs-more:not(:has(> .bs-col--side > :not([hidden]))) [data-home-section='rankings'] { grid-column: 7 / span 6; }
+    .pub .bs-sheet .bs-more [data-home-section='rankings'] { grid-column: 6 / span 7; grid-row: 2; }
 
     /* Band 4: videos, full width. */
     .pub .bs-sheet .bs-more [data-home-section='videos'] { grid-column: 1 / -1; grid-row: 3; }
 
     /* Rules: each band ends with a heavy rule; the first item in each row has no left rule. */
     .pub .bs-sheet .bs-more :is([data-home-section='sports-news'], [data-home-section='entertainment-news'],
-        [data-home-section='tech-news'], [data-home-section='scoreboard'], [data-home-section='rankings']),
-    .pub .bs-sheet .bs-more > .bs-col--side {
+        [data-home-section='tech-news'], [data-home-section='scoreboard'], [data-home-section='rankings']) {
         border-bottom: 2px solid var(--text);
     }
     .pub .bs-sheet .bs-more :is([data-home-section='sports-news'], [data-home-section='scoreboard'], [data-home-section='videos']) {
         padding-left: 0;
         border-left: 0;
     }
-    .pub .bs-sheet .bs-more :is([data-home-section='tech-news'], [data-home-section='videos']),
-    .pub .bs-sheet .bs-more > .bs-col--side,
-    .pub .bs-sheet .bs-more:not(:has(> .bs-col--side > :not([hidden]))) [data-home-section='rankings'] {
+    .pub .bs-sheet .bs-more :is([data-home-section='tech-news'], [data-home-section='rankings'], [data-home-section='videos']) {
         padding-right: 0;
     }
 
