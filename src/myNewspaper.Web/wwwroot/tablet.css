@@ -957,4 +957,1211 @@
         flex-direction: column;
         gap: 24px;
     }
+
+    /* News: desktop details copied into opted-in tablet scope to preserve phone briefing. */
+    .pub .tab-desktop .nf-brief {
+        padding: 2px 0 16px;
+        border-bottom: 1px solid var(--text);
+    }
+    .pub .tab-desktop .nf-brief .ef-label {
+        margin-bottom: 10px;
+        padding: 0;
+        border: 0;
+    }
+    .pub .tab-desktop .nf-tile {
+        padding: 12px 14px;
+    }
+    .pub .tab-desktop .nf-tile__value {
+        font-size: 30px;
+    }
+    .pub .tab-desktop .nf-agate .spf-agate__time {
+        color: var(--dot, var(--text-2));
+        font-weight: 700;
+    }
+    .pub .tab-desktop .nf-side .ef-note a {
+        color: var(--text-2);
+    }
+    .pub .tab-desktop .nf-pictures,
+    .pub .tab-desktop .nf-desks {
+        margin-top: 12px;
+        padding-top: 20px;
+        border-top: 1px solid var(--text);
+    }
+    /* ---------- News (docs/ipad/ipad-05-news.md) ---------- */
+    /* The briefing: tiles two across. */
+    .pub .tab-desktop .nf-brief__tiles {
+        display: grid;
+        grid-auto-flow: row;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+    }
+
+    /* Top headlines below both columns, as a two-column list. */
+    .pub .tab-desktop .spf-cols:has(.nf-day) > .spf-side {
+        grid-row: 2; /* only beside The day so far */
+    }
+    .pub .tab-desktop .spf-cols:has(.nf-day) > .spf-main > :not(.ef-lead) {
+        grid-column: 1 / -1;
+        padding-right: 0;
+    }
+    .pub .tab-desktop .spf-cols:has(.nf-day) > .spf-main > .ef-label {
+        margin-top: 24px;
+        padding-top: 4px;
+        border-top: 1px solid var(--text);
+    }
+    .pub .tab-desktop .spf-cols:has(.nf-day) > .spf-main > .ef-headlines {
+        display: block;
+        columns: 2;
+        column-gap: 28px;
+    }
+    .pub .tab-desktop .spf-cols:has(.nf-day) > .spf-main > .ef-headlines > li {
+        break-inside: avoid;
+    }
+
+    /* The day so far: time | headline + source. */
+    .pub .tab-desktop .nf-agate a {
+        display: grid;
+        grid-template-columns: 58px minmax(0, 1fr);
+        gap: 8px;
+    }
+
+    /* Side column: the three boxes stacked with room between. */
+    .pub .tab-desktop .spf-cols:has(.nf-day) > .spf-side {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+    }
+    .pub .tab-desktop .nf-side + .nf-side {
+        padding-top: 0;
+        border-top: 0;
+    }
+
+    /* In pictures and the desks: two across. */
+    .pub .tab-desktop .nf-pictures__grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .pub .tab-desktop .nf-desks {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .pub .tab-desktop .nf-brief--phone {
+        display: none;
+    }
+    .pub .tab-desktop .nf-topics > .ef-more {
+        display: inline-flex;
+        min-height: 44px;
+        align-items: center;
+        padding: 0 14px;
+        border: 1px solid var(--accent);
+        border-radius: 10px;
+    }
+
+    /* Home: scoped desktop column details; desktop templates and header stay in broadsheet.css. */
+    .pub .tab-desktop .bs-agate__row {
+        grid-template-columns: 44px minmax(0, 1fr) auto;
+        gap: 8px;
+        padding: 6px 0;
+        font-size: 14px;
+        line-height: 1.3;
+    }
+    .pub .tab-desktop .bs-agate__time {
+        color: var(--text-2);
+        font-size: 14px;
+        font-weight: 400;
+    }
+    .pub .tab-desktop .bs-agate__half,
+    .pub .tab-desktop .bs-agate__venue {
+        display: none;
+    }
+    .pub .tab-desktop .bs-agate__match {
+        font-size: 14px;
+    }
+    .pub .tab-desktop .bs-agate .tt-team {
+        font-weight: 600;
+    }
+    .pub .tab-desktop .bs-agate .tt-sep {
+        margin: 0 2px;
+        font-size: 14px;
+    }
+    .pub .tab-desktop .bs-agate__kind {
+        display: inline;
+        font-size: 14px;
+    }
+    .pub .tab-desktop .bs-agate__sport::before {
+        content: ' (';
+    }
+    .pub .tab-desktop .bs-agate__sport::after {
+        content: ')';
+    }
+    .pub .tab-desktop .bs-agate__tv {
+        font-size: 13px;
+    }
+    .pub .tab-desktop .bs-agate__tv--stream {
+        min-height: 0;
+        padding: 0;
+        background: none;
+    }
+    .pub .tab-desktop .bs-title__greeting {
+        margin-top: 10px;
+        font-size: 20px;
+        font-style: italic;
+        font-weight: 500;
+    }
+    .pub .tab-desktop .bs-title__date {
+        margin-top: 2px;
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+    }
+    .pub .tab-desktop .bs-title .home-refresh {
+        margin-top: 10px;
+        min-height: 44px;
+    }
+    .pub .tab-desktop .bs-watch {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        align-items: center;
+        gap: 24px;
+        margin-top: 18px;
+        padding: 16px 20px;
+        border: 0;
+        background: var(--btn-bg);
+        color: var(--btn-fg, #ffffff);
+    }
+    .pub .tab-desktop .bs-watch .bs-ear__title {
+        margin: 0;
+        color: var(--btn-fg, #ffffff);
+        font-size: 22px;
+    }
+    .pub .tab-desktop .bs-watch__search {
+        max-width: none;
+        margin: 0;
+    }
+    .pub .tab-desktop .bs-watch input {
+        border: 0;
+        min-height: 50px;
+        font-size: 16px;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .tab-desktop .bs-watch .nf-btn--primary {
+        min-height: 50px;
+        background: var(--selection-bg, #ffd34d);
+        color: var(--selection-fg, #141b2b);
+        font-weight: 800;
+    }
+    .pub .tab-desktop .bs-live {
+        border: 2px solid var(--text);
+        background: transparent;
+    }
+    .pub .tab-desktop .bs-glance {
+        grid-template-columns: minmax(0, 1fr);
+        align-self: stretch;
+        align-content: start;
+        gap: 12px;
+        padding: 14px 16px 16px;
+        border: 2px solid var(--text);
+        border-radius: 16px;
+        background: transparent;
+    }
+    .pub .tab-desktop .bs-glance__title {
+        position: static;
+        width: auto;
+        height: auto;
+        overflow: visible;
+        clip: auto;
+        grid-column: 1 / -1;
+        margin: 0;
+        font-family: var(--font-serif);
+        font-size: 22px;
+        font-weight: 700;
+    }
+    .pub .tab-desktop .bs-glance__weather {
+        grid-template-columns: minmax(0, 1fr);
+        align-items: start;
+        gap: 10px;
+    }
+    .pub .tab-desktop .bs-glance__periods {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px 16px;
+    }
+    .pub .tab-desktop .bs-glance__reading {
+        font-size: 14px;
+    }
+    .pub .tab-desktop .bs-glance__reading b {
+        display: inline;
+        margin-right: 4px;
+        font-size: 20px;
+    }
+    .pub .tab-desktop .bs-col {
+        display: flex;
+        flex-direction: column;
+        gap: 28px;
+        min-width: 0;
+        padding: 0 24px;
+    }
+    .pub .tab-desktop .bs-col:first-child {
+        padding-left: 0;
+    }
+    .pub .tab-desktop .bs-col:last-child {
+        padding-right: 0;
+    }
+    .pub .tab-desktop .bs-col + .bs-col {
+        border-left: 1px solid var(--row-border);
+    }
+    .pub .tab-desktop .bs-col--side .d-movies .d-list {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 14px;
+        padding: 8px 0 0;
+    }
+    .pub .tab-desktop .bs-col--side .d-movie {
+        flex-direction: row;
+        align-items: flex-start;
+    }
+    .pub .tab-desktop .bs-col--side .d-movie__poster {
+        flex: none;
+        width: 56px;
+    }
+    .pub .tab-desktop .bs-col--side .d-movie__body {
+        flex: 1 1 auto;
+    }
+    .pub .tab-desktop .bs-band {
+        display: block;
+        margin: 40px 0 0;
+        padding: 10px 0;
+        border-top: 4px double var(--text);
+        border-bottom: 1px solid var(--text);
+        font-family: var(--font-serif);
+        font-size: 28px;
+        font-weight: 800;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .tab-desktop .bs-home .d-card {
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        overflow: visible;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .tab-desktop .bs-home .d-card__head {
+        min-height: 44px;
+        padding: 0 0 4px;
+    }
+    .pub .tab-desktop .bs-home .bs-agate,
+    .pub .tab-desktop .bs-home .bs-agate__note,
+    .pub .tab-desktop .bs-home .d-headline-shelf__list {
+        padding-left: 0;
+        padding-right: 0;
+    }
+    .pub .tab-desktop .bs-home .d-tonight-title,
+    .pub .tab-desktop .bs-home .bs-tonight .d-card__title {
+        font-family: var(--font-serif);
+        font-size: 28px;
+        letter-spacing: 0;
+        text-transform: none;
+    }
+    .pub .tab-desktop .bs-home .bs-tonight .d-card__head {
+        border-bottom: 0;
+    }
+    .pub .tab-desktop .bs-home .d-headline-shelf__title,
+    .pub .tab-desktop .bs-home .d-headline-shelf__list a {
+        font-family: var(--font-serif);
+        font-size: 19px;
+        font-weight: 700;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .tab-desktop .bs-home .d-card__count {
+        font-size: 12px;
+        font-weight: 400;
+        letter-spacing: 0;
+        text-transform: none;
+    }
+    .pub .tab-desktop .bs-home .d-lead__story {
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        padding-top: 16px;
+    }
+    .pub .tab-desktop .bs-home .d-lead__body {
+        display: contents;
+    }
+    .pub .tab-desktop .bs-home .d-lead__source {
+        order: 1;
+        margin: 4px 0 8px;
+    }
+    .pub .tab-desktop .bs-home .d-lead__title {
+        order: 2;
+        margin: 0 0 10px;
+        font-size: 48px;
+        line-height: 1.05;
+    }
+    .pub .tab-desktop .bs-home .d-lead__summary {
+        order: 3;
+        margin: 0 0 14px;
+        font-family: var(--font-serif);
+        font-size: 20px;
+        line-height: 1.45;
+    }
+    .pub .tab-desktop .bs-home .d-lead__image {
+        order: 4;
+        height: 300px;
+        min-height: 0;
+        aspect-ratio: auto;
+    }
+    .pub .tab-desktop .bs-home .d-lead__image:not(:has(img, .ph)) {
+        display: none;
+    }
+    .pub .tab-desktop .bs-home .d-lead__meta {
+        order: 5;
+        margin-top: 6px;
+    }
+    .pub .tab-desktop .bs-home .d-opinion .d-story {
+        display: block;
+        padding: 8px 0 0;
+    }
+    .pub .tab-desktop .bs-home .d-opinion .d-thumb {
+        display: none;
+    }
+    .pub .tab-desktop .bs-home .d-opinion .d-thumb:has(> .ph):not(:has(> img)) {
+        display: block;
+        float: right;
+        width: 96px;
+        height: 72px;
+        margin: 8px 0 8px 12px;
+    }
+    .pub .tab-desktop .bs-home .d-opinion .d-src {
+        padding: 0;
+        background: none;
+        color: var(--text-2);
+        font-size: 12px;
+    }
+    .pub .tab-desktop .bs-home .bs-col--main .d-headline-shelf__list {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        column-gap: 24px;
+    }
+    .pub .tab-desktop .bs-home .bs-col--main .d-headline-shelf__list > li {
+        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-rows: auto auto;
+        align-items: end;
+        align-content: start;
+        padding: 14px 0 6px;
+    }
+    .pub .tab-desktop .bs-home .bs-col--main .d-headline-shelf__body {
+        display: contents;
+    }
+    .pub .tab-desktop .bs-home .bs-col--main .d-headline-shelf__body > :not(.d-headline-shelf__source) {
+        grid-column: 1 / -1;
+    }
+    .pub .tab-desktop .bs-home .bs-col--main .d-headline-shelf__source {
+        align-self: center;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .tab-desktop
+        .bs-home
+        .bs-col--side
+        [data-home-section='sports-news'] {
+        order: 14;
+    }
+    .pub .tab-desktop .bs-home .bs-col--side .d-headline-shelf__list a {
+        font-family: inherit;
+        font-size: 14px;
+        font-weight: 600;
+        line-height: 1.35;
+    }
+    .pub .tab-desktop .bs-home .bs-tonight .d-f1--embedded .d-card__title {
+        font-family: inherit;
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+    }
+    .pub .tab-desktop .bs-home .bs-tonight .d-f1--embedded .d-card__head {
+        margin-top: 16px;
+        border-bottom: 2px solid var(--text);
+    }
+    .pub .tab-desktop .bs-home .d-opinion .d-story__title {
+        font-size: 22px;
+        font-style: italic;
+        font-weight: 500;
+        line-height: 1.3;
+    }
+    .pub .tab-desktop .bs-home .bs-col--side .boxoffice-movie:nth-child(n + 4),
+    .pub .tab-desktop .bs-home .bs-col--side .d-forecasts > .updated,
+    .pub .tab-desktop .bs-home .bs-col--side .boxoffice-movie-body > :not(h4, dl),
+    .pub .tab-desktop .bs-home .bs-col--side .boxoffice-stats > :not(:first-child),
+    .pub .tab-desktop .bs-home .bs-col--side .boxoffice-stats dt {
+        display: none;
+    }
+    .pub .tab-desktop .bs-home .bs-col--side .boxoffice-chart {
+        padding: 0;
+    }
+    .pub .tab-desktop .bs-home .bs-col--side .boxoffice-forecast-date {
+        margin: 8px 0 2px;
+        color: var(--text-2);
+        font-size: 13px;
+        font-weight: 700;
+    }
+    .pub .tab-desktop .bs-home .bs-col--side .boxoffice-movie-body {
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+        min-width: 0;
+    }
+    .pub .tab-desktop .bs-home .bs-col--side .boxoffice-movie-body h4 {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+    .pub .tab-desktop .bs-home .bs-col--side .boxoffice-chart {
+        gap: 0;
+    }
+    .pub .tab-desktop .bs-home .bs-col--side .boxoffice-movie {
+        align-items: baseline;
+        gap: 10px;
+        padding: 9px 0;
+        border: 0;
+        border-bottom: 1px dotted var(--row-border);
+        border-radius: 0;
+        background: transparent;
+    }
+    .pub .tab-desktop .bs-home .bs-col--side .boxoffice-poster,
+    .pub .tab-desktop .bs-home .bs-col--side .boxoffice-movie .updated {
+        display: none;
+    }
+    .pub .tab-desktop .bs-home .bs-col--side .boxoffice-rank {
+        width: 22px;
+        color: var(--accent);
+        font-family: var(--font-serif);
+        font-size: 18px;
+        font-weight: 800;
+    }
+    .pub .tab-desktop .bs-home .bs-col--side .boxoffice-movie h4 {
+        margin: 0 0 2px;
+        font-size: 15px;
+    }
+    .pub .tab-desktop .bs-home .bs-col--side .boxoffice-stats {
+        display: block;
+        margin: 0;
+        font-variant-numeric: tabular-nums;
+    }
+    .pub .tab-desktop .bs-home .bs-col--side .boxoffice-stats dt {
+        margin: 0;
+        font-size: 11px;
+    }
+    .pub .tab-desktop .bs-home .bs-col--side .boxoffice-stats dd {
+        font-size: 14px;
+    }
+    .pub .tab-desktop .bs-home .d-vids .d-list {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0 24px;
+    }
+    .pub .tab-desktop .bs-home .d-vid {
+        grid-template-columns: minmax(0, 1fr);
+        padding: 14px 0;
+    }
+    .pub .tab-desktop .bs-home .bs-col--left .d-f1__body {
+        grid-template-columns: minmax(0, 1fr);
+        padding: 12px 0;
+    }
+    .pub .tab-desktop .bs-home .bs-col--side .d-tv__show {
+        gap: 12px;
+        padding: 12px 0;
+    }
+    .pub .tab-desktop .bs-home .bs-col--side .d-tv__show .tv-poster {
+        flex: 0 0 56px;
+        width: 56px;
+    }
+    .pub .tab-desktop .bs-home .bs-col--side .d-tv__body {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .tab-desktop .bs-more .d-scoreboard .scoreboard-note,
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .tab-desktop .bs-more .d-scoreboard p.updated,
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .tab-desktop
+        .bs-more
+        .d-scoreboard
+        .scoreboard-home-filter,
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .tab-desktop .bs-more .d-rankings__body,
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .tab-desktop .bs-more .d-tv__credit {
+        margin-left: 0;
+        margin-right: 0;
+        padding-left: 0;
+        padding-right: 0;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .tab-desktop .bs-more .d-rankings__table table {
+        width: 100%;
+        min-width: 0;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .tab-desktop .bs-more .d-rankings__table th,
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .tab-desktop .bs-more .d-rankings__table td {
+        padding-left: 4px;
+        padding-right: 4px;
+        font-size: 13px;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .tab-desktop
+        .bs-more
+        .d-scoreboard
+        .scoreboard-games {
+        display: block;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .tab-desktop .bs-more .d-scoreboard .scoreboard-game {
+        margin: 0;
+        padding: 8px 0;
+        border: 0;
+        border-bottom: 1px dotted var(--row-border);
+        border-radius: 0;
+        background: transparent;
+        box-shadow: none;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .tab-desktop
+        .bs-more
+        .d-scoreboard
+        .scoreboard-game-heading,
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .tab-desktop
+        .bs-more
+        .d-scoreboard
+        .scoreboard-matchup,
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .tab-desktop
+        .bs-more
+        .d-scoreboard
+        .scoreboard-context,
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .tab-desktop
+        .bs-more
+        .d-scoreboard
+        .scoreboard-footer {
+        margin: 0;
+        padding: 0;
+        border: 0;
+        background: transparent;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .tab-desktop
+        .bs-more
+        .d-scoreboard
+        .scoreboard-game-heading {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 2px;
+        color: var(--text-2);
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .tab-desktop
+        .bs-more
+        .d-scoreboard
+        .scoreboard-status {
+        padding: 0;
+        border-radius: 0;
+        background: none;
+        color: var(--text-2);
+        font-size: 11px;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .tab-desktop .bs-more .d-scoreboard .scoreboard-live {
+        color: var(--live, #b0001e);
+    }
+    :root[data-theme='dark'] .pub .tab-desktop .bs-more .d-scoreboard .scoreboard-live {
+        color: #ff8a99;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .tab-desktop
+        .bs-more
+        .d-scoreboard
+        .scoreboard-matchup {
+        display: grid;
+        gap: 0;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .tab-desktop .bs-more .d-scoreboard .scoreboard-team {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 8px;
+        min-height: 0;
+        padding: 1px 0;
+        font-size: 14px;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .tab-desktop .bs-more .d-scoreboard .team-badge {
+        width: 18px;
+        height: 18px;
+        flex: none;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .tab-desktop .bs-more .d-scoreboard .team__name {
+        font-size: 14px;
+        font-weight: 600;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .tab-desktop
+        .bs-more
+        .d-scoreboard
+        .scoreboard-winner
+        .team__name,
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .tab-desktop
+        .bs-more
+        .d-scoreboard
+        .scoreboard-winner
+        .scoreboard-score {
+        font-weight: 800;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .tab-desktop
+        .bs-more
+        .d-scoreboard
+        .scoreboard-score {
+        font-size: 15px;
+        font-variant-numeric: tabular-nums;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .tab-desktop .bs-more .d-scoreboard .team-record,
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .tab-desktop
+        .bs-more
+        .d-scoreboard
+        .scoreboard-favorite,
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .tab-desktop
+        .bs-more
+        .d-scoreboard
+        .scoreboard-context
+        p
+        + p,
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .tab-desktop
+        .bs-more
+        .d-scoreboard
+        .scoreboard-updated {
+        display: none;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .tab-desktop
+        .bs-more
+        .d-scoreboard
+        .scoreboard-context
+        p {
+        margin: 2px 0 0;
+        color: var(--text-2);
+        font-size: 12px;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .tab-desktop
+        .bs-more
+        .d-scoreboard
+        .scoreboard-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0 14px;
+        margin-top: 2px;
+        font-size: 12px;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .tab-desktop
+        .bs-more
+        .d-scoreboard
+        .scoreboard-actions
+        a {
+        min-height: 0;
+        padding: 0;
+    }
+    .pub .tab-desktop .bs-home .bs-col--side .d-tv__list {
+        grid-template-columns: minmax(0, 1fr);
+    }
+    .pub .tab-desktop .bs-home .bs-col--side .d-tv__show {
+        display: grid;
+        grid-template-columns: 56px minmax(0, 1fr);
+        grid-template-rows: auto 1fr auto;
+        gap: 4px 12px;
+    }
+    .pub .tab-desktop .bs-home .bs-col--side .d-tv__show .tv-poster {
+        grid-column: 1;
+        grid-row: 1 / span 2;
+    }
+    .pub .tab-desktop .bs-home .bs-col--side .d-tv__body {
+        display: contents;
+    }
+    .pub .tab-desktop .bs-home .bs-col--side .d-tv__body > .movie-kind {
+        grid-column: 2;
+        grid-row: 1;
+        margin: 0;
+    }
+    .pub .tab-desktop .bs-home .bs-col--side .d-tv__body > .d-vid__title {
+        grid-column: 2;
+        grid-row: 2;
+        display: block;
+        -webkit-line-clamp: unset;
+        overflow: visible;
+    }
+    .pub .tab-desktop .bs-home .bs-col--side .d-tv__episodes {
+        grid-column: 1 / -1;
+        grid-row: 3;
+        margin: 12px 0 0;
+    }
+    .pub .tab-desktop .bs-home .bs-col--side .d-tv__episodes li {
+        margin: 0;
+        padding: 8px 0;
+        border-top: 1px solid var(--row-border);
+    }
+    .pub .tab-desktop .bs-home .bs-col--side .d-tv__episodes a {
+        display: flex;
+        align-items: center;
+        min-height: 44px;
+    }
+    /* ---------- Home (docs/ipad/ipad-06-home.md) ---------- */
+    /* Header: the big centred logo isn't shown; the header's logo is on row 1. */
+    .pub .tab-desktop .bs-title__name {
+        display: none;
+    }
+
+    /* Masthead: date + Refresh, greeting, weather four across. */
+    .pub .tab-desktop .bs-title {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        grid-template-areas: 'date refresh' 'greeting greeting';
+        align-items: center;
+        gap: 4px 10px;
+        text-align: left;
+    }
+    .pub .tab-desktop .bs-title__date {
+        grid-area: date;
+        margin: 0;
+        color: var(--accent);
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+    }
+    .pub .tab-desktop .bs-title__greeting {
+        grid-area: greeting;
+        margin: 0;
+        font-size: 48px;
+        font-style: normal;
+        font-weight: 700;
+        line-height: 1;
+        letter-spacing: -0.015em;
+    }
+    .pub .tab-desktop .bs-title .home-refresh {
+        grid-area: refresh;
+        justify-self: start;
+        min-height: 32px;
+        margin: 0;
+        padding: 0 10px;
+        border: 0;
+        border-radius: 8px;
+        background: color-mix(in srgb, var(--accent) 10%, transparent);
+        font-size: 13px;
+        position: relative;
+    }
+    .pub .tab-desktop .bs-title .home-refresh::after {
+        /* 44px tap target around the 32px pill */
+        content: '';
+        position: absolute;
+        inset: -6px;
+    }
+    .pub .tab-desktop .bs-glance {
+        padding: 0;
+        border: 0;
+        border-radius: 0;
+    }
+    .pub .tab-desktop .bs-glance__title {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+    }
+    .pub .tab-desktop .bs-glance__periods {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 0;
+        margin-inline: -12px;
+    }
+    .pub .tab-desktop .bs-glance__periods li {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        grid-template-areas: 'name name' 'icon temp';
+        align-items: center;
+        gap: 2px 8px;
+        padding: 0 12px;
+        border-left: 1px solid var(--row-border);
+    }
+    .pub .tab-desktop .bs-glance__name {
+        grid-area: name;
+    }
+    .pub .tab-desktop .bs-glance__periods .weather-icon {
+        grid-area: icon;
+        width: 30px;
+        height: 30px;
+        margin: 0;
+    }
+    .pub .tab-desktop .bs-glance__reading {
+        grid-area: temp;
+        display: flex;
+        flex-direction: column;
+        font-size: 12px;
+    }
+    .pub .tab-desktop .bs-glance__reading b {
+        display: block;
+        font-family: var(--font-serif);
+        font-size: 24px;
+        line-height: 1.1;
+    }
+
+    /* Order: title, weather, Where to watch, Live now, then the sheet. */
+    .pub .tab-desktop .bs-home .bs-title {
+        order: 0;
+    }
+    .pub .tab-desktop .bs-home .bs-glance {
+        order: 1;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .tab-desktop .bs-home [data-home-section='watch'] {
+        order: 2;
+    }
+    .pub .tab-desktop .bs-home .bs-live {
+        order: 3;
+    }
+    .pub .tab-desktop .bs-home .bs-sheet {
+        order: 4;
+    }
+
+    /* Live now: cards you swipe sideways; New tonight under them. */
+    .pub .tab-desktop .bs-live {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        align-items: center;
+        gap: 8px 0;
+        padding: 12px 0 14px;
+        border: 0;
+        border-top: 4px double var(--text);
+        border-bottom: 1px solid var(--row-border);
+        border-radius: 0;
+    }
+    .pub .tab-desktop .bs-live .bs-ear__title {
+        margin: 0;
+        color: var(--live, #b0001e);
+        font-size: 12px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+    }
+    .pub .tab-desktop .bs-live__list {
+        grid-column: 1 / -1;
+        display: flex;
+        gap: 12px;
+        margin: 0 -24px;
+        padding: 0 24px 4px;
+        overflow-x: auto;
+        scroll-snap-type: x proximity;
+        scroll-padding-inline: 24px;
+        scrollbar-width: none;
+        -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 56px), transparent);
+        mask-image: linear-gradient(90deg, #000 calc(100% - 56px), transparent);
+    }
+    .pub .tab-desktop .bs-live__list li {
+        flex: 0 0 230px;
+        scroll-snap-align: start;
+        border: 0;
+    }
+    .pub .tab-desktop .bs-live__list a {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        height: 100%;
+        padding: 10px 12px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: var(--surface);
+    }
+    .pub .tab-desktop .bs-live__score {
+        font-weight: 700;
+    }
+    .pub .tab-desktop .bs-live__clock {
+        color: var(--text-2);
+        font-size: 12px;
+    }
+
+    /* The sheet: lead across both columns, then two columns, then More from today. */
+    .pub .tab-desktop .bs-sheet {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        align-items: start;
+        padding-top: 20px;
+    }
+    .pub .tab-desktop .bs-sheet .bs-front,
+    .pub .tab-desktop .bs-sheet .bs-more,
+    .pub .tab-desktop .bs-sheet .bs-front > .bs-col--main {
+        display: contents;
+    }
+    .pub .tab-desktop .bs-sheet .bs-col {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+        min-width: 0;
+        padding: 0;
+        border: 0;
+    }
+    .pub .tab-desktop .bs-sheet .d-lead {
+        /* HomeLeadStory */
+        grid-column: 1 / -1;
+        grid-row: 1;
+        padding-bottom: 20px;
+        margin-bottom: 4px;
+        border-bottom: 1px solid var(--text);
+    }
+    .pub .tab-desktop .bs-sheet .bs-front > .bs-col--left {
+        grid-column: 1;
+        grid-row: 2 / span 2;
+        padding-right: 20px;
+    }
+    .pub .tab-desktop .bs-sheet .bs-front > .bs-col--main > :not(.d-lead) {
+        /* More headlines */
+        grid-column: 2;
+        grid-row: 2;
+        padding-left: 20px;
+        border-left: 1px solid var(--row-border);
+    }
+    .pub .tab-desktop .bs-sheet .bs-front > .bs-col--side {
+        grid-column: 2;
+        grid-row: 3;
+        padding: 24px 0 0 20px;
+        border-left: 1px solid var(--row-border);
+    }
+    .pub .tab-desktop .bs-sheet .bs-band {
+        display: block;
+        grid-column: 1 / -1;
+        grid-row: 4;
+        margin: 28px 0 8px;
+    }
+    .pub .tab-desktop .bs-sheet .bs-more > .bs-col--main {
+        grid-column: 1;
+        grid-row: 5 / span 2;
+        padding-right: 20px;
+    }
+    .pub .tab-desktop .bs-sheet .bs-more > .bs-col--side {
+        grid-column: 2;
+        grid-row: 5;
+        padding-left: 20px;
+        border-left: 1px solid var(--row-border);
+    }
+    .pub .tab-desktop .bs-sheet .bs-more > .bs-col--left {
+        /* Scoreboard + Top 25 */
+        grid-column: 2;
+        grid-row: 6;
+        padding: 24px 0 0 20px;
+        border-left: 1px solid var(--row-border);
+    }
+
+    /* Lead: photo on top, 36px headline. */
+    .pub .tab-desktop .bs-home .d-lead__story {
+        display: flex;
+        flex-direction: column;
+    }
+    .pub .tab-desktop .bs-home .d-lead__image {
+        order: 0;
+        width: 100%;
+        height: auto;
+        aspect-ratio: 16 / 9;
+        margin-bottom: 14px;
+    }
+    .pub .tab-desktop .bs-home .d-lead__image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .pub .tab-desktop .bs-home .d-lead__source {
+        order: 1;
+        margin: 0 0 6px;
+    }
+    .pub .tab-desktop .bs-home .d-lead__title {
+        order: 2;
+        font-size: 36px;
+        line-height: 1.08;
+    }
+    .pub .tab-desktop .bs-home .d-lead__summary {
+        order: 3;
+        font-size: 18px;
+    }
+    .pub .tab-desktop .bs-home .d-lead__meta {
+        order: 4;
+    }
+
+    /* Column headings: one style everywhere (as in the 4K guide 2.4). */
+    .pub .tab-desktop .bs-home .bs-tonight .d-card__title {
+        font-family: inherit;
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+    }
+    .pub .tab-desktop .bs-home .home-latest-video__title {
+        font-size: 19px;
+        line-height: 1.22;
+    }
+
+    .pub .tab-desktop .bs-home {
+        display: flex;
+        flex-direction: column;
+    }
+    .pub .tab-desktop .bs-masthead {
+        display: contents;
+    }
+    .pub .tab-desktop .bs-title__date {
+        position: static;
+        width: auto;
+        height: auto;
+        overflow: visible;
+        clip: auto;
+    }
+    .pub .tab-desktop .bs-home .d-lead__body {
+        display: contents;
+    }
+    .pub .tab-desktop .bs-live {
+        min-width: 0;
+        grid-template-columns: minmax(0, 1fr) auto;
+    }
+    .pub .tab-desktop .bs-live__list {
+        min-width: 0;
+        list-style: none;
+    }
+    .pub .tab-desktop .bs-live__list::-webkit-scrollbar {
+        display: none;
+    }
+    .pub .tab-desktop .bs-live__list a {
+        box-sizing: border-box;
+    }
+    .pub .tab-desktop .bs-live > .d-empty {
+        grid-column: 1 / -1;
+    }
+    .pub .tab-desktop .bs-home .d-card__title {
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+    }
+    .pub .tab-desktop .bs-home .d-card__head {
+        border-bottom: 2px solid var(--text);
+    }
+    .pub .tab-desktop .bs-home .bs-col--main .d-headline-shelf__list {
+        grid-template-columns: minmax(0, 1fr);
+    }
+    .pub .tab-desktop .bs-home .bs-agate__row {
+        grid-template-columns: 56px minmax(0, 1fr);
+        column-gap: 8px;
+        row-gap: 2px;
+    }
+    .pub .tab-desktop .bs-home .bs-agate__time {
+        grid-row: 1 / span 2;
+        align-self: start;
+    }
+    .pub .tab-desktop .bs-home .bs-agate__tv {
+        grid-column: 2;
+        overflow-wrap: anywhere;
+    }
+    .pub .tab-desktop .bs-home .bs-agate__tv--stream {
+        min-height: 44px;
+    }
+    .pub .tab-desktop .bs-home .scoreboard-actions a {
+        min-height: 44px;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .tab-desktop
+        .bs-home
+        .d-lead__story[data-article-story] {
+        display: flex;
+        flex-direction: column;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .tab-desktop
+        .bs-home
+        .d-lead__image[data-article-media] {
+        float: none;
+        width: 100%;
+        max-width: none;
+        max-height: none;
+        height: auto;
+        aspect-ratio: 16 / 9;
+        margin: 0 0 14px;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .tab-desktop .bs-home .d-lead__image img {
+        object-fit: cover;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .tab-desktop
+        .bs-home
+        .d-lead__story[data-article-story]
+        > .d-lead__body {
+        display: contents;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .tab-desktop
+        .bs-home
+        .d-lead__story[data-article-story]
+        .d-lead__title {
+        font-size: 36px;
+        line-height: 1.08;
+    }
+
+    /* Tablet columns need real grids rather than the base phone flex shelves. */
+    .pub .tab-desktop .bs-home .d-movies .d-list {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        overflow: visible;
+    }
+    .pub .tab-desktop .bs-home .d-vids .d-list {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .pub .tab-desktop .bs-home .d-movie__body {
+        min-width: 0;
+    }
+    .pub .tab-desktop .bs-home .d-movie__body .nf-btn {
+        height: auto;
+        white-space: normal;
+    }
+    .pub .tab-desktop .bs-home .home-limit-mobile {
+        display: none;
+    }
+    .pub .tab-desktop .bs-home .home-limit-desktop {
+        display: inline;
+    }
+    .pub .tab-desktop .bs-home .d-vids > .d-list > li:nth-child(n + 6) {
+        display: grid;
+    }
+    .pub .tab-desktop .bs-sheet {
+        grid-template-rows: auto max-content auto auto max-content auto;
+    }
+    .pub .tab-desktop .bs-home .bs-agate__match {
+        grid-column: 2;
+        grid-row: 1;
+    }
+    .pub .tab-desktop .bs-home .bs-agate__kind {
+        display: block;
+    }
+    .pub .tab-desktop .bs-home .bs-agate__tv {
+        grid-column: 2;
+        grid-row: 2;
+        justify-self: start;
+        text-align: left;
+    }
 }

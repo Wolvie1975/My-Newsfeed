@@ -10,7 +10,7 @@ const shots = process.env.SCREENSHOT_DIR || 'test-results/browser/ipad-entertain
     fs.mkdirSync(shots, { recursive: true });
     const profiles = (await fetch(base + '/editions')).status !== 404;
     assert(profiles, 'Use profiles-enabled preview; this test never writes to a household Saved list');
-    const browser = await chromium.launch();
+    const browser = await chromium.launch({ args: ['--disable-web-security'] });
     let admin = null,
         id = null,
         storageState;
@@ -74,9 +74,15 @@ const shots = process.env.SCREENSHOT_DIR || 'test-results/browser/ipad-entertain
             await response.finished();
         };
         await context.addInitScript(() => {
+            window.copied = null;
+            Object.defineProperty(window, 'isSecureContext', { value: true });
             Object.defineProperty(navigator, 'clipboard', {
                 value: { writeText: async (value) => (window.copied = value) },
             });
+            document.execCommand = () => {
+                window.copied = document.querySelector('dialog textarea')?.value;
+                return true;
+            };
         });
         const visitFront = async () => {
             await page.goto(base + '/entertainment', { waitUntil: 'networkidle' });
@@ -263,7 +269,13 @@ const shots = process.env.SCREENSHOT_DIR || 'test-results/browser/ipad-entertain
         // Missing-photo classification remains hidden; a P8 placeholder still fills the hero frame.
         await page.locator('.ef-lead').evaluate((n) => {
             n.dataset.imageLayout = 'none';
-            n.querySelector('.ef-lead__image')?.replaceChildren();
+            let img = n.querySelector('.ef-lead__image');
+            if (!img) {
+                img = document.createElement('a');
+                img.className = 'ef-lead__image';
+                n.prepend(img);
+            }
+            img.replaceChildren();
         });
         assert(!(await page.locator('.ef-lead__image').isVisible()));
         await page.locator('.ef-lead__image').evaluate((n) => {
@@ -281,7 +293,7 @@ const shots = process.env.SCREENSHOT_DIR || 'test-results/browser/ipad-entertain
             await layout();
             await page.screenshot({ path: shots + `entertainment-820-${scheme}.png` });
         }
-        for (const route of ['/news', '/']) {
+        for (const route of ['/settings']) {
             await page.goto(base + route, { waitUntil: 'networkidle' });
             assert((await page.locator('.mx-phone:visible').count()) > 0);
             assert.equal(await page.locator('.tab-desktop').count(), 0);

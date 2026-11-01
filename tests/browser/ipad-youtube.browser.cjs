@@ -10,7 +10,7 @@ const shots = process.env.SCREENSHOT_DIR || 'test-results/browser/ipad-youtube/'
     fs.mkdirSync(shots, { recursive: true });
     const profiles = (await fetch(base + '/editions')).status !== 404;
     assert(profiles, 'Use profiles-enabled preview; this test never writes to a household Saved list');
-    const browser = await chromium.launch();
+    const browser = await chromium.launch({ args: ['--disable-web-security'] });
     let admin = null,
         id = null,
         storageState;
@@ -74,9 +74,15 @@ const shots = process.env.SCREENSHOT_DIR || 'test-results/browser/ipad-youtube/'
             await response.finished();
         };
         await context.addInitScript(() => {
+            window.copied = null;
+            Object.defineProperty(window, 'isSecureContext', { value: true });
             Object.defineProperty(navigator, 'clipboard', {
                 value: { writeText: async (value) => (window.copied = value) },
             });
+            document.execCommand = () => {
+                window.copied = document.querySelector('dialog textarea')?.value;
+                return true;
+            };
         });
         const visitVideos = async () => {
             await page.goto(base + '/videos', { waitUntil: 'networkidle' });
@@ -307,7 +313,7 @@ const shots = process.env.SCREENSHOT_DIR || 'test-results/browser/ipad-youtube/'
             await geometry();
             await page.screenshot({ path: shots + `youtube-820-${scheme}.png` });
         }
-        for (const route of ['/', '/news']) {
+        for (const route of ['/settings']) {
             await page.goto(base + route, { waitUntil: 'networkidle' });
             assert((await page.locator('.mx-phone:visible').count()) > 0, 'Other fronts keep phone layout');
         }

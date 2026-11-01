@@ -10,7 +10,7 @@ const shots = process.env.SCREENSHOT_DIR || 'test-results/browser/ipad-sports/';
     fs.mkdirSync(shots, { recursive: true });
     const profiles = (await fetch(base + '/editions')).status !== 404;
     assert(profiles, 'Use profiles-enabled preview; this test never writes to a household Saved list');
-    const browser = await chromium.launch();
+    const browser = await chromium.launch({ args: ['--disable-web-security'] });
     let admin = null,
         id = null,
         storageState;
@@ -192,7 +192,7 @@ const shots = process.env.SCREENSHOT_DIR || 'test-results/browser/ipad-sports/';
             await page.waitForURL(base + '/' + href);
             await page.waitForLoadState('networkidle');
         }
-        for (const route of ['/news', '/']) {
+        for (const route of ['/settings']) {
             await page.goto(base + route, { waitUntil: 'networkidle' });
             assert.equal(await page.locator('.tab-desktop').count(), 0);
         }
