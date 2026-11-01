@@ -592,3 +592,4 @@ rows to `26px`.
 | `Components/SportsFront.razor`, `Components/ScoreboardPanel.razor` | 4 |
 | `wwwroot/mobile.css` | 4 |
 | `tests/browser/tech-front.browser.cjs`, an iPad headlines browser test | 1, 2 |
+
