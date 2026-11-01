@@ -130,8 +130,8 @@
             {
                 <section class="mx-block" aria-labelledby="scoreboard-live-m">
                     <h2 class="mx-live" id="scoreboard-live-m">Live now</h2>
-                    <PhoneScoreTiles Games="@live.Take(4).ToList()" />
-                    @if (live.Count > 4) { <p class="mx-block__note">@(live.Count - 4) more live in the leagues below.</p> }
+                    <PhoneScoreTiles Games="@live.Take(8).ToList()" />
+                    @if (live.Count > 8) { <p class="mx-block__note">@(live.Count - 8) more live in the leagues below.</p> }
                 </section>
             }
             @if (upcoming.Count > 0)

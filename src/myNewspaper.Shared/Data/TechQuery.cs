@@ -625,21 +625,6 @@ public static class TechQuery
             store.Set(cacheKey, cached, TimeSpan.FromHours(24));
         }
 
-        if (profileId is { } pid)
-        {
-            var startUtc = dates.StartOfDayUtc(weekStart);
-            var endUtc = dates.StartOfDayUtc(weekStart.AddDays(7));
-            var profileTopics = await TopicQuery.ListAsync(db, pid, ct);
-            var topicMatches = new List<(string Topic, int Count, string Hub)>();
-            foreach (var t in profileTopics.Where(t => string.IsNullOrEmpty(t.Hub) || t.Hub == "tech"))
-            {
-                var (matches, _) = await TopicQuery.MatchAsync(db, t.Terms, t.ExceptTerms, t.Hub, startUtc, cap: 200, ct: ct);
-                var inWeek = matches.Count(m => m.Date < endUtc);
-                topicMatches.Add((TopicQuery.NameOf(t), inWeek, t.Hub ?? "all"));
-            }
-            return cached with { Topics = topicMatches };
-        }
-
         return cached;
     }
 

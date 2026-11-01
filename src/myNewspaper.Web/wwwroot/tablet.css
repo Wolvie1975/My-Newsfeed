@@ -2164,4 +2164,79 @@
         justify-self: start;
         text-align: left;
     }
+
+    /* ---------- Headline sub-pages: All headlines for News, Sports, Entertainment, Tech (docs/tech-fixes-handoff.md §1) ---------- */
+
+    /* The wrapper: undo mobile.css's full-bleed tool-page frame; the foundation's page frame takes over. */
+    .pub .page > .mx-tool-page.tab-desktop {
+        display: contents;
+        margin: 0;
+        padding: 0;
+        background: none;
+    }
+
+    /* One way to pick a desk: the pills. The phone dropdown goes. */
+    .pub .tab-desktop .news-category-select {
+        display: none;
+    }
+    .pub .tab-desktop .hn-cats {
+        gap: 8px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid var(--row-border);
+    }
+    .pub .tab-desktop .hn-cats a {
+        display: inline-flex;
+        align-items: center;
+        min-height: 44px;
+        padding: 0 16px;
+    }
+
+    /* Source filter: compact, on one line with the count. */
+    .pub .tab-desktop .news-front-filters {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 12px;
+    }
+    .pub .tab-desktop .news-front-filters .catselect select {
+        width: 240px;
+        min-height: 44px;
+    }
+    .pub .tab-desktop .news-front-filters .count--toolbar {
+        margin-left: auto;
+    }
+
+    /* Jump to: labels above their rows, not in a column of their own. */
+    .pub .tab-desktop .hc-jump {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 8px;
+    }
+    .pub .tab-desktop .hc-jump__label br {
+        display: none;                       /* "Today by desk" on one line */
+    }
+    .pub .tab-desktop .hc-jump__row + .hc-jump__label {
+        margin-top: 8px;
+    }
+
+    /* Top section: one column. Lead across the width with a shorter photo, the two "under" cards side by side,
+       Latest as full-width rows. (The desktop 2fr/1fr split leaves a ~250px side column at 820.) */
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .tab-desktop .hc-feed .hc-top {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: none;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .tab-desktop .hc-feed :is(.hc-lead, .hc-under, .hc-latest) {
+        grid-column: 1;
+        grid-row: auto;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .tab-desktop .hc-feed .hc-lead .hc-card [data-article-media] {
+        aspect-ratio: 21 / 9;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .tab-desktop .hc-feed .hc-lead .hc-card .title {
+        font-size: 32px;
+    }
+
+    /* The pinned Jump to bar: in line with the page's 24px sides. */
+    .pub .hc-bar {
+        padding: 0 24px;
+    }
 }

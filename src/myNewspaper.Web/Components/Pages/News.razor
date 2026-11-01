@@ -18,7 +18,7 @@
 <PageTitle>@Title · myNewspaper</PageTitle>
 @* Phones get the folded front (docs/mobile-refresh-handoff.md) for the plain Headlines view; a search, a source filter
    or a later page keeps this layout on every width. *@
-<div class="@(Phone ? "mx-desktop" : SectionNews ? "mx-tool-page mx-section-news" : "mx-contents")">
+<div class="@(Phone ? "mx-desktop tab-desktop" : SectionNews ? "mx-tool-page mx-section-news tab-desktop" : "mx-contents tab-desktop")">
 @if (SectionNews) {
     <div class="mx-phone" data-phone-tools="headlines"><PhoneRibbon Title="@Title" Kicker="@($"{HubLabel(Hub)} · Every story, every source")">
         <SectionSelect Id="hub-section-m" Label="Section" Choices="@(SectionChoices.For(Hub)!)" Current="@SectionNewsCurrent" AlwaysSelect="true" />
@@ -29,7 +29,7 @@
 </div>
 @if (SectionNews && HubCategories.Count > 0) {
     @* Categories as pills on desktop (as in the approved concept); phones use the dropdown beside Source. *@
-    <nav class="sec-pills sec-pills--desktop hn-cats" aria-label="@HubCategoryLabel">
+    <nav class="sec-pills sec-pills--desktop hn-cats tab-scroll" aria-label="@HubCategoryLabel">
         @foreach (var item in HubCategories)
         { <a href="@NewsSections.RouteFor(item)" aria-current="@(Category == item.Id ? "page" : null)">@NewsSections.LabelFor(item.Name)</a> }
     </nav>
@@ -132,7 +132,7 @@ else
     var latest = front.Items.Skip(4).Take(3).ToArray();
     var shown = front.Items.Take(7).ToArray();
     var folds = foldCategories.Where(c => latestByCategory.TryGetValue(c.Id, out var items) && items.Count > 0).ToArray();
-    <div class="mx-phone">
+    <div class="mx-phone tab-phone">
         <PhoneRibbon Kicker="@RibbonKicker(front)" Title="@PhoneTitle">
             <SectionSelect Id="news-section-m" Label="Section" Choices="newsTabs" Current="@NewsCurrent" AlwaysSelect="true" />
         </PhoneRibbon>

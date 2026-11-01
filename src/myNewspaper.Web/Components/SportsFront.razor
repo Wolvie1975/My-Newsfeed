@@ -181,7 +181,7 @@
             @if (live.Count > 0)
             {
                 <h3 class="mx-live">Live now</h3>
-                <PhoneScoreTiles Games="@live.Take(3).ToList()" />
+                <PhoneScoreTiles Games="@live.Take(8).ToList()" />
             }
             @if (live.Count > 0 && upcoming.Count > 0) { <h3 class="mx-subhead">Up next</h3> }
         </PhoneTimeline>

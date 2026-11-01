@@ -95,27 +95,6 @@
         <aside class="ef-side spf-side">
             <TechJustReleased />
 
-            <section class="nf-side nf-topics" aria-labelledby="tc-topics-title">
-                <h2 id="tc-topics-title" class="ef-label">Your topics</h2>
-                @if (topics.Count == 0)
-                {
-                    <p class="ef-note">Follow a word or phrase and see every story that mentions it. Only you see your topics.</p>
-                }
-                else
-                {
-                    <ul class="nf-topics__list">
-                        @foreach (var topic in topics)
-                        {
-                            <li><a href="@($"news/topics/{topic.Topic.Id}")"><span>@topic.Name</span><b class="@(topic.New > 0 ? "nf-topics__new" : null)">@(topic.New > 0 ? $"{topic.New} new" : "none new")</b></a></li>
-                        }
-                    </ul>
-                }
-                @if (topics.Count < TopicQuery.Limit)
-                {
-                    <a class="ef-more" href="news/topics/follow?hub=tech">Follow a topic <span aria-hidden="true">→</span></a>
-                }
-            </section>
-
             <section class="nf-side tc-videos" aria-labelledby="tc-videos-title">
                 <h2 id="tc-videos-title" class="ef-label">Tech videos</h2>
                 @if (videos.Count == 0)
@@ -237,26 +216,6 @@
 
     <TechJustReleased Compact="true" />
 
-    <section class="mx-section nf-topics" aria-labelledby="tech-topics-m">
-        <div class="mx-head">
-            <h2 id="tech-topics-m">Your topics</h2>
-            @if (topics.Count < TopicQuery.Limit) { <a href="news/topics/follow?hub=tech">Follow a topic →</a> }
-        </div>
-        @if (topics.Count == 0)
-        {
-            <p class="ef-note">Follow a word or phrase and see every story that mentions it. Only you see your topics.</p>
-        }
-        else
-        {
-            <ul class="nf-topics__list">
-                @foreach (var topic in topics)
-                {
-                    <li><a href="@($"news/topics/{topic.Topic.Id}")"><span>@topic.Name</span><b class="@(topic.New > 0 ? "nf-topics__new" : null)">@(topic.New > 0 ? $"{topic.New} new" : "none new")</b></a></li>
-                }
-            </ul>
-        }
-    </section>
-
     <FoldGroup Name="tech-desks" Heading="Desks" Foot="All tech headlines" FootHref="tech/news">
         @foreach (var category in NewsSections.TechCategories)
         {
@@ -303,7 +262,6 @@
     private IReadOnlyList<CoveredStory> covered = [];
     private IReadOnlyList<VideoItem> videos = [];
     private readonly Dictionary<string, IReadOnlyList<FeedItem>> desks = new(StringComparer.Ordinal);
-    private List<TopicSummary> topics = [];
     private WeekSummary? weekLinkSummary;
     private int total, sourceCount;
 
@@ -332,12 +290,6 @@
             foreach (var category in NewsSections.TechCategories)
                 desks[category] = await TechQuery.LatestAsync(db, 4, category);
 
-            topics = Reader.HasProfile
-                ? (await TopicQuery.SummariesAsync(db, Reader.Id, nowUtc))
-                    .Where(t => string.IsNullOrEmpty(t.Topic.Hub) || t.Topic.Hub == "tech")
-                    .ToList()
-                : [];
-
             var categories = (await FeedQuery.GetCategoriesAsync(db)).Where(c => c.Hub == "tech").ToList();
             total = categories.Sum(c => c.Count);
             sourceCount = await db.Sources.AsNoTracking()
@@ -361,7 +313,6 @@
             covered = [];
             videos = [];
             desks.Clear();
-            topics = [];
             Log.LogError(ex, "Could not read the Tech front.");
         }
     }

@@ -4,7 +4,7 @@
 .pub .hc-bar {
     display: none;
 }
-@media (max-width: 1023px) {
+@media (max-width: 743px) {
     .pub .hc-top,
     .pub .hc-top > section,
     .pub .hc-grid {
@@ -143,12 +143,15 @@
     .pub .hc-bar__rule {
         display: none;
     }
+    /* Each row splits evenly by its own count: 5 hours, 3 desks. No orphan cell. */
     .pub .hc-jump__row {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-template-columns: none;
+        grid-auto-flow: column;
+        grid-auto-columns: minmax(0, 1fr);
     }
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 744px) {
     :root:is([data-color-scheme], :not([data-color-scheme])) .pub .hc-feed {
         display: block;
     }
@@ -348,7 +351,7 @@
 .pub .hc-latest .hc-row:not(.hc-row--first) {
     display: none;
 }
-@media (min-width: 1024px) {
+@media (min-width: 744px) {
     :root:is([data-color-scheme], :not([data-color-scheme])) .pub .hc-feed {
         & .hc-top {
             gap: 24px;

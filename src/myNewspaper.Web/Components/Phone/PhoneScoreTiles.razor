@@ -1,14 +1,15 @@
 @using myNewspaper.Web.Data
 @inject FeedDates Dates
 @* Live games as small score cards: dark cards on a light band, or lighter ones inside the dark block. *@
-<div class="mx-scores">
+<div class="mx-scores mx-scores--strip">
     @foreach (var game in Games)
     {
         var href = FeedQuery.SafeHref(game.SourceUrl) ?? "scoreboard";
         var external = FeedQuery.SafeHref(game.SourceUrl) is not null;
         <a class="mx-score" href="@href" target="@(external ? "_blank" : null)" rel="@(external ? "noopener noreferrer" : null)"
            aria-label="@($"{ScoreboardPanel.CompetitionLabel(game.Sport, game.League)}, {PhoneText.Clock(game, Dates)}: {game.AwayName} {ScoreboardGame.Score(game.AwayScore)}, {game.HomeName} {ScoreboardGame.Score(game.HomeScore)}")">
-            <span class="mx-score__top" aria-hidden="true"><span>@ScoreboardPanel.CompetitionLabel(game.Sport, game.League)</span><span class="mx-score__clock">@PhoneText.CompactClock(game, Dates)</span></span>
+            <span class="mx-score__league" aria-hidden="true">@PhoneText.TileLeague(game.Sport, game.League)</span>
+            <span class="mx-score__clock" aria-hidden="true">@PhoneText.CompactClock(game, Dates)</span>
             <span class="mx-score__team" aria-hidden="true"><span>@game.AwayName</span><b>@ScoreboardGame.Score(game.AwayScore)</b></span>
             <span class="mx-score__team" aria-hidden="true"><span>@game.HomeName</span><b>@ScoreboardGame.Score(game.HomeScore)</b></span>
         </a>

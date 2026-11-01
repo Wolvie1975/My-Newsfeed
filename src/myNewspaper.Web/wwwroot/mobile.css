@@ -670,29 +670,63 @@
     padding: 12px;
     background: var(--mx-block-tile);
 }
-.mx-score__top {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    gap: 6px;
-    font-size: 10px;
-    font-weight: 800;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--mx-block-3);
+/* Live tiles: four fixed lines (league, clock, away, home), so every tile is the same height. */
+.pub .mx-score {
+    display: grid;
+    grid-template-rows: 16px 18px 24px 24px;
+    row-gap: 4px;
 }
-.mx-score__top > span:first-child {
+.mx-score__league,
+.mx-score__clock {
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+.mx-score__league {
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    color: var(--mx-block-3);
 }
 .mx-score__clock {
-    flex: none;
-    max-width: 100%;
-    white-space: normal;
-    overflow-wrap: anywhere;
+    font-size: 12px;
+    letter-spacing: 0.04em;
     color: var(--mx-block-accent);
+}
+.mx-score__team b {
+    font-variant-numeric: tabular-nums;   /* 1 and 45 line up across tiles */
+}
+
+/* The strip: fixed-width tiles you swipe sideways, running to the screen edge with a fade. */
+.mx-scores--strip {
+    display: flex;
+    gap: 8px;
+    margin-right: -16px;                  /* to the screen edge… */
+    padding-right: 16px;                  /* …while the last tile can still clear it */
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+    -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 40px), transparent);
+    mask-image: linear-gradient(90deg, #000 calc(100% - 40px), transparent);
+}
+.mx-scores--strip::-webkit-scrollbar {
+    display: none;
+}
+.mx-scores--strip > .mx-score {
+    flex: none;
+    width: 150px;
+    scroll-snap-align: start;
+}
+.mx-block .mx-scores--strip > .mx-score {
+    width: 170px;                          /* the dark lead block's bigger scores */
+}
+/* One or two games: no fade (nothing to scroll to). */
+.mx-scores--strip:not(:has(> :nth-child(3))) {
+    -webkit-mask-image: none;
+    mask-image: none;
 }
 .mx-score__team {
     display: flex;

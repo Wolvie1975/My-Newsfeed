@@ -177,38 +177,6 @@ else if (summary is not null)
                         </section>
                     }
 
-                    @if (Reader.Enabled)
-                    {
-                        <section class="nf-side" aria-labelledby="tw-topics-title">
-                            <div class="ef-head">
-                                <h2 id="tw-topics-title" class="ef-label">Your topics this week</h2>
-                                @if (summary.Topics.Count > 0)
-                                {
-                                    <a href="news/topics">Manage <span aria-hidden="true">→</span></a>
-                                }
-                            </div>
-                            @if (summary.Topics.Count == 0)
-                            {
-                                <p class="ef-note">Follow a word or phrase to see how often it appeared this week.</p>
-                                <a class="ef-more" href="news/topics/follow?hub=tech">Follow a topic <span aria-hidden="true">→</span></a>
-                            }
-                            else
-                            {
-                                <ul class="tw-topics-list">
-                                    @foreach (var t in summary.Topics)
-                                    {
-                                        <li>
-                                            <a href="@($"news/topics?q={Uri.EscapeDataString(t.Topic)}")">
-                                                <b>@t.Topic</b>
-                                                <span>@t.Count @(t.Count == 1 ? "story" : "stories")</span>
-                                            </a>
-                                        </li>
-                                    }
-                                </ul>
-                            }
-                        </section>
-                    }
-
                     @if (earlierWeeks.Count > 0)
                     {
                         <section class="nf-side" aria-labelledby="tw-earlier-title">
@@ -334,24 +302,6 @@ else if (summary is not null)
             </section>
         }
 
-        @if (Reader.Enabled && summary.Topics.Count > 0)
-        {
-            <section class="mx-section" aria-labelledby="tw-m-topics-h">
-                <div class="mx-head"><h2 id="tw-m-topics-h">Your topics</h2></div>
-                <ul class="tw-earlier-list">
-                    @foreach (var t in summary.Topics)
-                    {
-                        <li>
-                            <a href="@($"news/topics?q={Uri.EscapeDataString(t.Topic)}")">
-                                <b>@t.Topic</b>
-                                <span>@t.Count @(t.Count == 1 ? "story" : "stories")</span>
-                            </a>
-                        </li>
-                    }
-                </ul>
-            </section>
-        }
-
         @if (earlierWeeks.Count > 0)
         {
             <section class="mx-section" aria-labelledby="tw-m-earlier-h">
@@ -416,7 +366,7 @@ else if (summary is not null)
         {
             await using var db = await Factory.CreateDbContextAsync();
             var deskKey = deskDef?.Slug ?? "all";
-            summary = await TechQuery.WeekAsync(db, Cache, Dates, weekStart, deskKey, Reader.Profile?.Id);
+            summary = await TechQuery.WeekAsync(db, Cache, Dates, weekStart, deskKey);
             deskCounts = await TechQuery.WeekDeskCountsAsync(db, Dates, weekStart);
             earlierWeeks = await TechQuery.EarlierWeeksAsync(db, Dates, weekStart, deskKey, count: 3);
         }

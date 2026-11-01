@@ -5232,6 +5232,62 @@ a.tvc-row__show:hover {
 .pub .td-more-cards .hc-grid {
     margin-top: 14px;
 }
+/* ---------- More {desk}: framed photo cards (docs/tech-fixes-handoff.md §3) ---------- */
+@media (min-width: 744px) {
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .td-more-cards .hc-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-auto-flow: row dense;           /* photo cards stay packed when a text row spans the width */
+        gap: 16px;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .td-more-cards .hc-card {
+        gap: 0;
+        overflow: hidden;
+        border: 1px solid var(--row-border);
+        border-radius: 14px;
+        background: var(--surface);
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .td-more-cards .hc-card [data-article-media] {
+        border-radius: 0;
+        aspect-ratio: 16 / 9;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .td-more-cards .hc-card .body {
+        gap: 8px;
+        padding: 14px 16px 8px;
+    }
+    /* The desk's own page already says which desk this is. */
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .td-more-cards .hc-card .cat {
+        display: none;
+    }
+
+    /* No usable photo (article-images.js sets data-image-layout="none" and removes the image): a text row. */
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .td-more-cards .hc-card[data-image-layout='none'] {
+        grid-column: 1 / -1;
+        border-width: 1px 0 0;
+        border-radius: 0;
+        background: none;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .td-more-cards
+        .hc-card[data-image-layout='none']
+        :is([data-article-media], .summary) {
+        display: none;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .td-more-cards .hc-card[data-image-layout='none'] .body {
+        padding: 10px 0;
+    }
+}
+@media (min-width: 1024px) {
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .td-more-cards .hc-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));   /* beats headline-cards.css's 3 columns in the narrower main column */
+    }
+}
+@media (min-width: 1180px) {
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .td-more-cards .hc-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 20px;
+    }
+}
 .pub .td-sources__list {
     display: flex;
     flex-direction: column;

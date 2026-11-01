@@ -140,9 +140,7 @@ fs.mkdirSync(shots, { recursive: true });
                     const openFold = document
                         .querySelector('.mx-phone details.mx-fold[open] .mx-fold__name')
                         ?.textContent.trim();
-                    const topicsFollowHref = document
-                        .querySelector('.mx-phone .nf-topics a[href*="topics/follow"]')
-                        ?.getAttribute('href');
+                    const hasTopics = Boolean(document.querySelector('.mx-phone .nf-topics'));
                     const videoRail = document.querySelector('.mx-phone .tc-video-rail');
                     return {
                         ribbonSection: ribbon?.getAttribute('data-section'),
@@ -151,7 +149,7 @@ fs.mkdirSync(shots, { recursive: true });
                         tiles,
                         topCount,
                         openFold,
-                        topicsFollowHref,
+                        hasTopics,
                         hasVideoRail: Boolean(videoRail),
                     };
                 });
@@ -164,7 +162,7 @@ fs.mkdirSync(shots, { recursive: true });
                 );
                 assert.ok(phoneInfo.topCount >= 1 && phoneInfo.topCount <= 5, `/tech ${width} top count`);
                 assert.equal(phoneInfo.openFold, 'Linux', `/tech ${width} Linux fold open by default`);
-                assert.equal(phoneInfo.topicsFollowHref, 'news/topics/follow?hub=tech');
+                assert.equal(phoneInfo.hasTopics, false, `/tech ${width} has no topics on phone`);
                 assert.ok(phoneInfo.hasVideoRail, `/tech ${width} video rail`);
 
                 await page.screenshot({
@@ -240,8 +238,8 @@ fs.mkdirSync(shots, { recursive: true });
                     labelColor: getComputedStyle(d.querySelector('.ef-label')).color,
                 }));
                 const videoCount = document.querySelectorAll('.mx-desktop .tc-videos .yt-row').length;
-                const topicsHref = document.querySelector('.mx-desktop .nf-topics a.ef-more')?.getAttribute('href');
-                return { navLinks, activeNav, tabs, tiles, desks, videoCount, topicsHref };
+                const hasTopics = Boolean(document.querySelector('.mx-desktop .nf-topics'));
+                return { navLinks, activeNav, tabs, tiles, desks, videoCount, hasTopics };
             });
 
             assert.deepEqual(desktopInfo.navLinks, [
@@ -275,7 +273,7 @@ fs.mkdirSync(shots, { recursive: true });
             assert.notEqual(desktopInfo.desks[0].labelColor, desktopInfo.desks[1].labelColor);
             assert.notEqual(desktopInfo.desks[1].labelColor, desktopInfo.desks[2].labelColor);
             assert.equal(desktopInfo.videoCount, 3);
-            assert.equal(desktopInfo.topicsHref, 'news/topics/follow?hub=tech');
+            assert.equal(desktopInfo.hasTopics, false, '/tech has no topics on desktop');
 
             await page.screenshot({
                 path: path.join(shots, `tech-desktop-${width}-${theme}.png`),

@@ -86,14 +86,17 @@ public class PhoneSportsTests
     }
 
     [Theory]
-    [InlineData("1:56 - 4th Quarter", "1:56 · 4Q")]
-    [InlineData("12:00 - 1st Quarter", "12:00 · 1Q")]
-    [InlineData("End of 2nd Quarter", "End of 2Q")]
+    [InlineData("1:56 - 4th Quarter", "4Q 1:56")]
+    [InlineData("12:00 - 1st Quarter", "1Q 12:00")]
+    [InlineData("11:35 - 3rd Period", "3P 11:35")]
+    [InlineData("63' - 2nd Half", "2H 63′")]
+    [InlineData("End of 2nd Quarter", "End 2Q")]
     [InlineData("3RD QUARTER", "3Q")]
-    [InlineData("Halftime", "Halftime")]
+    [InlineData("Halftime", "Half")]
+    [InlineData("Top 5th", "Top 5")]
     [InlineData("51′", "51′")]
-    [InlineData("1:56 - OT", "1:56 - OT")]
-    public void Score_tiles_shorten_quarters_without_changing_other_statuses(string status, string expected)
+    [InlineData("1:56 - OT", "OT 1:56")]
+    public void Score_tiles_format_period_first_and_shorten_clocks(string status, string expected)
     {
         var game = new ScoreboardGame { Status = "live", StatusText = status };
         var dates = FeedDates.Create("America/Chicago");
@@ -101,13 +104,30 @@ public class PhoneSportsTests
         Assert.Equal(status, PhoneText.Clock(game, dates));
     }
 
+    [Theory]
+    [InlineData("football", "college-football", "CFB")]
+    [InlineData("basketball", "mens-college-basketball", "NCAAM")]
+    [InlineData("basketball", "womens-college-basketball", "NCAAW")]
+    [InlineData("soccer", "eng.1", "EPL")]
+    [InlineData("soccer", "eng.2", "EFL")]
+    [InlineData("soccer", "usa.ncaa.w.1", "NCAAW Soccer")]
+    [InlineData("volleyball", "womens-college-volleyball", "NCAAW Volleyball")]
+    [InlineData("basketball", "wnba", "WNBA")]
+    [InlineData("hockey", "nhl", "NHL")]
+    public void Score_tiles_use_short_league_names(string sport, string league, string expected)
+    {
+        Assert.Equal(expected, PhoneText.TileLeague(sport, league));
+    }
+
     [Fact]
     public async Task Score_tiles_preserve_full_status_for_screen_readers()
     {
-        var game = new ScoreboardGame { Status = "live", StatusText = "1:56 - 4th Quarter", AwayName = "Golden State", HomeName = "Atlanta", AwayScore = 64, HomeScore = 77 };
+        var game = new ScoreboardGame { Status = "live", StatusText = "1:56 - 4th Quarter", AwayName = "Golden State", HomeName = "Atlanta", AwayScore = 64, HomeScore = 77, Sport = "basketball", League = "nba" };
         var html = await RenderSports<PhoneScoreTiles>(new() { ["Games"] = new[] { game } });
         Assert.Contains("1:56 - 4th Quarter", html);
-        Assert.Contains("1:56 · 4Q", System.Net.WebUtility.HtmlDecode(html));
+        Assert.Contains("4Q 1:56", System.Net.WebUtility.HtmlDecode(html));
+        Assert.Contains("mx-score__league", html);
+        Assert.Contains("mx-score__clock", html);
     }
 
     [Theory]
