@@ -31,3 +31,22 @@ User direction, October 28, 2026 (America/Chicago): when asked to commit, commit
 locally on `develop` and stop. Don't push, don't create a feature branch first,
 and don't ask about or offer pushing; the user pushes to GitHub themselves.
 Report the commit hashes and say they're local.
+
+## Attached markdown files: review first, then build on approval
+
+User direction, November 1, 2026 (America/Chicago): when the user attaches or
+points to a markdown file (a plan, handoff, spec or notes), review it before
+changing anything.
+
+1. Read the whole file and check it against the current code, `git status` and
+   `git log`.
+2. Reply with a summary: what the file asks for, what is already done, the
+   changes you would make (files and areas touched), open questions or
+   conflicts with the code, and how you would test it.
+3. Stop and wait for approval. Don't edit code, build or deploy yet.
+4. Once the user approves, do all of it without further check-ins: implement,
+   test (.NET tests plus browser checks, including the mobile checks above),
+   deploy per [DEPLOY.md](DEPLOY.md) and verify the live build, then commit
+   locally on `develop` (no push). Tick items off in the file as each is done.
+5. Report what was built, test and live-check results, any gaps, and the
+   local commit hashes.
