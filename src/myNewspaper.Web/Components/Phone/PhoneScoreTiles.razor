@@ -7,11 +7,11 @@
         var href = FeedQuery.SafeHref(game.SourceUrl) ?? "scoreboard";
         var external = FeedQuery.SafeHref(game.SourceUrl) is not null;
         <a class="mx-score" href="@href" target="@(external ? "_blank" : null)" rel="@(external ? "noopener noreferrer" : null)"
-           aria-label="@($"{ScoreboardPanel.CompetitionLabel(game.Sport, game.League)}, {PhoneText.Clock(game, Dates)}: {game.AwayName} {ScoreboardGame.Score(game.AwayScore)}, {game.HomeName} {ScoreboardGame.Score(game.HomeScore)}")">
+           aria-label="@($"{ScoreboardPanel.CompetitionLabel(game.Sport, game.League)}, {PhoneText.Clock(game, Dates)}: {(game.AwayRank is >= 1 and <= 25 ? $"#{game.AwayRank} " : "")}{game.AwayName} {ScoreboardGame.Score(game.AwayScore)}, {(game.HomeRank is >= 1 and <= 25 ? $"#{game.HomeRank} " : "")}{game.HomeName} {ScoreboardGame.Score(game.HomeScore)}")">
             <span class="mx-score__league" aria-hidden="true">@PhoneText.TileLeague(game.Sport, game.League)</span>
             <span class="mx-score__clock" aria-hidden="true">@PhoneText.CompactClock(game, Dates)</span>
-            <span class="mx-score__team" aria-hidden="true"><span>@game.AwayName</span><b>@ScoreboardGame.Score(game.AwayScore)</b></span>
-            <span class="mx-score__team" aria-hidden="true"><span>@game.HomeName</span><b>@ScoreboardGame.Score(game.HomeScore)</b></span>
+            <span class="mx-score__team" aria-hidden="true"><span>@if (game.AwayRank is { } ar and >= 1 and <= 25) { <b class="sb-rank">#@ar</b>@(" ") }@game.AwayName</span><b>@ScoreboardGame.Score(game.AwayScore)</b></span>
+            <span class="mx-score__team" aria-hidden="true"><span>@if (game.HomeRank is { } hr and >= 1 and <= 25) { <b class="sb-rank">#@hr</b>@(" ") }@game.HomeName</span><b>@ScoreboardGame.Score(game.HomeScore)</b></span>
         </a>
     }
 </div>

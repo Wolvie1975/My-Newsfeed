@@ -41,5 +41,18 @@ public class ScoreboardReadTests
             Assert.True(filtered.Available);
             Assert.All(filtered.Games, g => { Assert.Equal(competition.Sport, g.Sport); Assert.Equal(competition.League, g.League); });
         }
+        var top25Snapshot = await repository.ReadAsync(today, true, show: "top25");
+        Assert.True(top25Snapshot.Available);
+        Assert.NotNull(top25Snapshot.Top25Week);
+        Assert.All(top25Snapshot.Games, g =>
+        {
+            Assert.Contains(g.League, new[] { "college-football", "mens-college-basketball" });
+            Assert.True(g.HomeRank != null || g.AwayRank != null);
+        });
+        Assert.All(top25Snapshot.Top25Week, g =>
+        {
+            Assert.Contains(g.League, new[] { "college-football", "mens-college-basketball" });
+            Assert.True(g.HomeRank != null || g.AwayRank != null);
+        });
     }
 }

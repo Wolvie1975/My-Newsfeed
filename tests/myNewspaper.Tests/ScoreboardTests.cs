@@ -115,4 +115,38 @@ public class ScoreboardTests
         Assert.DoesNotContain("2nd occupied", text);
         Assert.Contains("Home periods: 2", text);
     }
+    [Fact]
+    public void Top25_selection_resolves_from_show_and_legacy_competition()
+    {
+        var coverage = new[] { new ScoreboardCoverage { Sport = "basketball", League = "mens-college-basketball" } };
+        var follows = Array.Empty<ScoreboardFollow>();
+        Assert.Equal(new ScoreboardSelection("top25", IsTop25: true), ScoreboardSelection.Resolve("top25", null, null, coverage, follows));
+        Assert.Equal(new ScoreboardSelection("top25", IsTop25: true), ScoreboardSelection.Resolve("TOP25", null, null, coverage, follows));
+        Assert.Equal(new ScoreboardSelection("top25", IsTop25: true), ScoreboardSelection.Resolve(null, "top25", null, coverage, follows));
+    }
+    [Fact]
+    public void PhoneText_Matchup_formats_ranks_correctly_and_ignores_invalid_ranks()
+    {
+        var game = new ScoreboardGame
+        {
+            AwayName = "Oregon",
+            AwayRank = 11,
+            HomeName = "Ohio State",
+            HomeRank = 5,
+            NeutralSite = false
+        };
+        Assert.Equal("#11 Oregon at #5 Ohio State", myNewspaper.Web.Components.Phone.PhoneText.Matchup(game));
+
+        game.NeutralSite = true;
+        Assert.Equal("#11 Oregon vs #5 Ohio State", myNewspaper.Web.Components.Phone.PhoneText.Matchup(game));
+
+        game.AwayRank = null;
+        game.HomeRank = 18;
+        game.NeutralSite = false;
+        Assert.Equal("Oregon at #18 Ohio State", myNewspaper.Web.Components.Phone.PhoneText.Matchup(game));
+
+        game.AwayRank = 0;
+        game.HomeRank = 99;
+        Assert.Equal("Oregon at Ohio State", myNewspaper.Web.Components.Phone.PhoneText.Matchup(game));
+    }
 }

@@ -6,9 +6,11 @@ namespace myNewspaper.Web.Components.Phone;
 /// <summary>Plain-text lines for the phone fronts: matchups, scores and clocks.</summary>
 public static class PhoneText
 {
-    /// <summary>"Away at Home", or "A vs B" at a neutral site.</summary>
+    /// <summary>"Away at Home", or "A vs B" at a neutral site, including #rank for ranked teams.</summary>
     public static string Matchup(ScoreboardGame game) =>
-        $"{game.AwayName}{(game.NeutralSite == true ? " vs " : " at ")}{game.HomeName}";
+        $"{FormatRank(game.AwayRank)}{game.AwayName}{(game.NeutralSite == true ? " vs " : " at ")}{FormatRank(game.HomeRank)}{game.HomeName}";
+
+    private static string FormatRank(byte? rank) => rank is >= 1 and <= 25 ? $"#{rank} " : "";
 
     /// <summary>The same line for a Today &amp; Tonight item (as TonightMatchup, without records).</summary>
     public static string Matchup(TonightItem item)

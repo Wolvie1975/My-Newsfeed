@@ -55,7 +55,7 @@
             <p class="updated">Some coverage is delayed or unavailable. Showing the latest stored scores.</p>
         }
         @if (snapshot.Games.Count == 0) {
-            <p class="empty">@(snapshot.Coverage.Count == 0 ? "No scoreboard coverage is currently enabled." : "No games are currently stored for this day and selection. Coverage may still be updating.")</p>
+            <p class="empty">@(selection.IsTop25 ? "No ranked games are scheduled for this date." : snapshot.Coverage.Count == 0 ? "No scoreboard coverage is currently enabled." : "No games are currently stored for this day and selection. Coverage may still be updating.")</p>
         }
         @if (Compact)
         {
@@ -79,6 +79,39 @@
             </div>
         }
         @if (Compact && homeGames.Count > visibleGames.Count) { <p class="updated">Showing @visibleGames.Count of @homeGames.Count games. <a href="@(homeShow.Length == 0 ? "scoreboard" : "scoreboard?show=" + Uri.EscapeDataString(homeShow))">See all games →</a></p> }
+        @if (!Compact && selection.IsTop25)
+        {
+            var weeklyGames = snapshot.Top25Week ?? [];
+            <section class="sb-top25-week" aria-label="Upcoming ranked games this week">
+                <header class="sb-top25-week__head">
+                    <h2 class="sb-top25-week__title">Upcoming ranked games this week</h2>
+                    <span class="sb-top25-week__count">@weeklyGames.Count @(weeklyGames.Count == 1 ? "game" : "games")</span>
+                </header>
+                <p class="sb-top25-week__note">Ranked matchups across the country this week (excluding Big 12 games).</p>
+                @if (weeklyGames.Count == 0)
+                {
+                    <p class="empty">No remaining ranked games this week.</p>
+                }
+                else
+                {
+                    <div class="sb-groups">
+                        @foreach (var dayGroup in weeklyGames.GroupBy(g => g.ScoreboardDate))
+                        {
+                            var dayDate = dayGroup.Key;
+                            <div class="sb-group" aria-label="@dayDate.ToString("dddd, MMMM d", System.Globalization.CultureInfo.InvariantCulture)">
+                                <h3 class="sb-group__title">
+                                    <span>@dayDate.ToString("dddd, MMMM d", System.Globalization.CultureInfo.InvariantCulture)</span>
+                                    <span class="sb-group__count">@dayGroup.Count() @(dayGroup.Count() == 1 ? "game" : "games")</span>
+                                </h3>
+                                <div class="scoreboard-games">
+                                    @foreach (var game in dayGroup) { @GameCard(game) }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </section>
+        }
     }
     @if (!Compact) { <p class="updated scoreboard-note">Sampled clocks stay fixed between updates. Coverage excludes F1 and unsupported leagues.</p> }
     </div>
@@ -174,7 +207,38 @@
             }
             else if (snapshot.Available)
             {
-                <p class="mx-empty">@(snapshot.Coverage.Count == 0 ? "No scoreboard coverage is currently enabled." : "No games are stored for this day and sport yet. Coverage may still be updating.")</p>
+                <p class="mx-empty">@(selection.IsTop25 ? "No ranked games are scheduled for this date." : snapshot.Coverage.Count == 0 ? "No scoreboard coverage is currently enabled." : "No games are stored for this day and sport yet. Coverage may still be updating.")</p>
+            }
+            @if (selection.IsTop25 && (snapshot.Top25Week ?? []).Count > 0)
+            {
+                var weeklyGames = snapshot.Top25Week!;
+                <FoldGroup Name="scoreboard-top25-week" Heading="Upcoming ranked games this week">
+                    @foreach (var dayGroup in weeklyGames.GroupBy(g => g.ScoreboardDate))
+                    {
+                        var dayLabel = dayGroup.Key.ToString("dddd, MMM d", System.Globalization.CultureInfo.InvariantCulture);
+                        <Fold Title="@dayLabel" Gist="@($"{dayGroup.Count()} {(dayGroup.Count() == 1 ? "game" : "games")}")" Color="@PhoneColors.ForSport(dayGroup.First().Sport)" Open="false" Key="@($"w:{dayGroup.Key:yyyy-MM-dd}")">
+                            @foreach (var game in dayGroup)
+                            {
+                                var href = FeedQuery.SafeHref(game.SourceUrl);
+                                var score = PhoneText.Score(game);
+                                @if (href is not null)
+                                {
+                                    <a class="mx-fold__row" href="@href" target="_blank" rel="noopener noreferrer">
+                                        <span><b>@PhoneText.Matchup(game)</b><small>@RowStatus(game)</small></span>
+                                        @if (score is not null) { <span class="mx-fold__value">@score</span> }
+                                    </a>
+                                }
+                                else
+                                {
+                                    <div class="mx-fold__row">
+                                        <span><b>@PhoneText.Matchup(game)</b><small>@RowStatus(game)</small></span>
+                                        @if (score is not null) { <span class="mx-fold__value">@score</span> }
+                                    </div>
+                                }
+                            }
+                        </Fold>
+                    }
+                </FoldGroup>
             }
         </div>
     }
@@ -237,13 +301,15 @@
             homeGames = homeShow.Length == 0 ? snapshot.Games : snapshot.Games.Where(g => "c:" + g.Sport + "|" + g.League == homeShow).ToList();
         }
         visibleGames = Compact ? homeGames.Take(6).ToList() : snapshot.Games;
-        boxLabels = await BoxScores.AvailableAsync(visibleGames.Where(g => g.Provider == "espn" && g.HasBoxScore).Select(g => new BoxIdentity(g.Sport, g.League, g.EventId)));
+        var allGamesForBox = visibleGames.Concat(snapshot.Top25Week ?? []).Where(g => g.Provider == "espn" && g.HasBoxScore).Select(g => new BoxIdentity(g.Sport, g.League, g.EventId));
+        boxLabels = await BoxScores.AvailableAsync(allGamesForBox);
     }
 
     /// <summary>The Show choices, shared by the desktop filter and the phone ribbon's Sport select.</summary>
     private RenderFragment ShowOptions => __builder =>
     {
         <option value="">All sports</option>
+        <option value="top25" selected="@(selection.Value == "top25")">Top 25</option>
         <optgroup label="Leagues">
             @foreach (var c in snapshot.Coverage.DistinctBy(c => c.Key).OrderBy(c => c.Sport).ThenBy(c => c.League)) {
                 <option value="@("c:" + c.Key)" selected="@(selection.Value == "c:" + c.Key)">@CompetitionLabel(c.Sport, c.League)</option>
@@ -308,12 +374,12 @@
                 </header>
                 <div class="scoreboard-matchup">
                     <div class="scoreboard-team @(game.Status == "final" && game.Completed && game.WinnerSide == "away" ? "scoreboard-winner" : "")">
-                        <myNewspaper.Web.Components.Events.TeamCell Name="@game.AwayName" LogoUrl="@game.AwayLogoUrl" Record="@RecordFor(game, false)" />
+                        <myNewspaper.Web.Components.Events.TeamCell Name="@game.AwayName" LogoUrl="@game.AwayLogoUrl" Record="@RecordFor(game, false)" Rank="@game.AwayRank" />
                         <strong class="scoreboard-score">@ScoreboardGame.Score(game.AwayScore)</strong>
                         @if (game.AwayPreference is {} away) { <button type="button" class="scoreboard-favorite" data-scoreboard-team="@away" aria-label="@($"Highlight {game.AwayName} in this competition")" aria-pressed="false" hidden>☆</button> }
                     </div>
                     <div class="scoreboard-team @(game.Status == "final" && game.Completed && game.WinnerSide == "home" ? "scoreboard-winner" : "")">
-                        <myNewspaper.Web.Components.Events.TeamCell Name="@game.HomeName" LogoUrl="@game.HomeLogoUrl" Record="@RecordFor(game, true)" />
+                        <myNewspaper.Web.Components.Events.TeamCell Name="@game.HomeName" LogoUrl="@game.HomeLogoUrl" Record="@RecordFor(game, true)" Rank="@game.HomeRank" />
                         <strong class="scoreboard-score">@ScoreboardGame.Score(game.HomeScore)</strong>
                         @if (game.HomePreference is {} home) { <button type="button" class="scoreboard-favorite" data-scoreboard-team="@home" aria-label="@($"Highlight {game.HomeName} in this competition")" aria-pressed="false" hidden>☆</button> }
                     </div>

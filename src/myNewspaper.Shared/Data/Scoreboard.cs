@@ -42,6 +42,8 @@ public sealed class ScoreboardGame
     public bool IsStale { get; set; }
     public string? RequestAvailability { get; set; }
     public bool HasBoxScore { get; set; }
+    public byte? HomeRank { get; set; }
+    public byte? AwayRank { get; set; }
     public string Key => $"{Provider}|{Sport}|{League}|{EventId}";
     public string? HomePreference => TeamKey(Sport, League, HomeTeamId);
     public string? AwayPreference => TeamKey(Sport, League, AwayTeamId);
@@ -118,7 +120,7 @@ public sealed record ScoreboardFollow(int Id, string Label, string Sport, string
         _ => false
     };
 }
-public sealed record ScoreboardSelection(string Value, string? Competition = null, int? FollowId = null)
+public sealed record ScoreboardSelection(string Value, string? Competition = null, int? FollowId = null, bool IsTop25 = false)
 {
     public static ScoreboardSelection Resolve(string? show, string? competition, int? followId,
         IReadOnlyList<ScoreboardCoverage> coverage, IReadOnlyList<ScoreboardFollow> follows)
@@ -128,16 +130,18 @@ public sealed record ScoreboardSelection(string Value, string? Competition = nul
             : new("f:" + f.Id, f.Sport + "|" + f.League, f.Id);
         if (show != null)
         {
+            if (string.Equals(show, "top25", StringComparison.OrdinalIgnoreCase)) return new("top25", IsTop25: true);
             if (show.StartsWith("c:", StringComparison.Ordinal) && coverage.Any(c => c.Key == show[2..])) return new(show, show[2..]);
             if (show.StartsWith("f:", StringComparison.Ordinal) && int.TryParse(show[2..], out var id) && follows.FirstOrDefault(f => f.Id == id) is { } f) return ForFollow(f);
             return new("");
         }
         // Old bookmarks select their team/conference in preference to a conflicting league.
         if (follows.FirstOrDefault(f => f.Id == followId) is { } legacy) return ForFollow(legacy);
+        if (string.Equals(competition, "top25", StringComparison.OrdinalIgnoreCase)) return new("top25", IsTop25: true);
         return coverage.Any(c => c.Key == competition) ? new("c:" + competition, competition) : new("");
     }
 }
-public sealed record ScoreboardSnapshot(IReadOnlyList<ScoreboardGame> Games, IReadOnlyList<ScoreboardCoverage> Coverage, bool Available, IReadOnlyList<ScoreboardFollow>? Follows = null);
+public sealed record ScoreboardSnapshot(IReadOnlyList<ScoreboardGame> Games, IReadOnlyList<ScoreboardCoverage> Coverage, bool Available, IReadOnlyList<ScoreboardFollow>? Follows = null, IReadOnlyList<ScoreboardGame>? Top25Week = null);
 
 public sealed class ScoreboardRepository(IDbContextFactory<WebScraperContext> factory, FeedDates dates, ILogger<ScoreboardRepository> log)
 {
@@ -158,15 +162,28 @@ public sealed class ScoreboardRepository(IDbContextFactory<WebScraperContext> fa
             var selectedFollow = follows.FirstOrDefault(f => f.Id == selection.FollowId);
             var selected = coverage.FirstOrDefault(c => c.Key == selection.Competition);
             var window = ResultsWindow.ForDay(day, dates.Zone);
-            var query = db.Database.SqlQueryRaw<ScoreboardGame>("SELECT ID,Provider,Sport,League,EventId,ScoreboardDate,StartsAtUtc,TimeTbd,WasRescheduled,HomeTeamId,AwayTeamId,HomeName,AwayName,HomeLogoUrl,AwayLogoUrl,HomeScore,AwayScore,Status,Completed,ProviderStatus,StatusText,Period,DisplayClock,NeutralSite,HomeShootout,AwayShootout,WinnerSide,Venue,Broadcasts,SourceUrl,LiveDetailsJson,LastObservedAtUtc,IsStale,RequestAvailability,HasBoxScore FROM dbo.SportsScoreboard");
+            var query = db.Database.SqlQueryRaw<ScoreboardGame>("SELECT ID,Provider,Sport,League,EventId,ScoreboardDate,StartsAtUtc,TimeTbd,WasRescheduled,HomeTeamId,AwayTeamId,HomeName,AwayName,HomeLogoUrl,AwayLogoUrl,HomeScore,AwayScore,Status,Completed,ProviderStatus,StatusText,Period,DisplayClock,NeutralSite,HomeShootout,AwayShootout,WinnerSide,Venue,Broadcasts,SourceUrl,LiveDetailsJson,LastObservedAtUtc,IsStale,RequestAvailability,HasBoxScore,HomeRank,AwayRank FROM dbo.SportsScoreboard");
             query = query.Where(g => g.ScoreboardDate == day && (g.TimeTbd || g.StartsAtUtc >= window.StartUtc && g.StartsAtUtc < window.EndUtc)
                 || carryOver && g.ScoreboardDate < day && (g.Status == "live" || g.Status == "delayed" || g.Status == "suspended"));
             query = query.Where(g => g.League != "womens-college-basketball");
-            if (selected != null) query = query.Where(g => g.Sport == selected.Sport && g.League == selected.League);
+            if (selection.IsTop25)
+            {
+                query = query.Where(g => (g.League == "college-football" || g.League == "mens-college-basketball") && (g.HomeRank != null || g.AwayRank != null));
+            }
+            else if (selected != null)
+            {
+                query = query.Where(g => g.Sport == selected.Sport && g.League == selected.League);
+            }
             if (finalsOnly) query = query.Where(g => g.Status == "final" && g.Completed);
             var games = await query.ToListAsync();
             if (selectedFollow != null) games = games.Where(selectedFollow.Matches).ToList();
-            return new(games.DistinctBy(g => g.Key).OrderBy(g => g.Status == "live" ? 0 : g.Active ? 1 : g.Status == "upcoming" ? 2 : 3).ThenBy(g => g.StartsAtUtc).ThenBy(g => g.ID).ToList(), coverage, true, follows);
+            List<ScoreboardGame>? top25Week = null;
+            if (selection.IsTop25)
+            {
+                var weekQuery = db.Database.SqlQueryRaw<ScoreboardGame>("SELECT ID,Provider,Sport,League,EventId,ScoreboardDate,StartsAtUtc,TimeTbd,WasRescheduled,HomeTeamId,AwayTeamId,HomeName,AwayName,HomeLogoUrl,AwayLogoUrl,HomeScore,AwayScore,Status,Completed,ProviderStatus,StatusText,Period,DisplayClock,NeutralSite,HomeShootout,AwayShootout,WinnerSide,Venue,Broadcasts,SourceUrl,LiveDetailsJson,LastObservedAtUtc,IsStale,RequestAvailability,HasBoxScore,HomeRank,AwayRank FROM dbo.SportsScoreboardTop25Week");
+                top25Week = await weekQuery.OrderBy(g => g.ScoreboardDate).ThenBy(g => g.StartsAtUtc).ThenBy(g => g.ID).ToListAsync();
+            }
+            return new(games.DistinctBy(g => g.Key).OrderBy(g => g.Status == "live" ? 0 : g.Active ? 1 : g.Status == "upcoming" ? 2 : 3).ThenBy(g => g.StartsAtUtc).ThenBy(g => g.ID).ToList(), coverage, true, follows, top25Week);
         }
         catch (Exception ex) when (DataFailures.IsReadFailure(ex))
         {

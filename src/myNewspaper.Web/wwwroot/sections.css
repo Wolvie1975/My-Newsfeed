@@ -1990,6 +1990,44 @@ a.tvc-row__show:hover {
     color: var(--text);
 }
 
+/* Rank prefix on scoreboard game cards and matchups */
+.sb-rank {
+    font-size: 0.9em;
+    font-weight: 700;
+    color: var(--accent);
+    margin-right: 2px;
+}
+
+/* Top 25 upcoming ranked games section */
+.pub .sb-top25-week {
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 2px solid var(--border);
+}
+.pub .sb-top25-week__head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 4px;
+}
+.pub .sb-top25-week__title {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+}
+.pub .sb-top25-week__count {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-2);
+}
+.pub .sb-top25-week__note {
+    margin: 0 0 14px;
+    font-size: 13px;
+    color: var(--text-2);
+}
+
 /* ---------- Sports front ---------- */
 .pub .spf-scores .ef-head h2 {
     font-size: 18px;
