@@ -94,6 +94,7 @@
                 @if (tonight.Count == 0) { <p class="d-empty">No remaining games today. View All games for upcoming fixtures.</p> }
                 <p class="d-empty" data-home-teams-empty hidden>No remaining games match your selected teams. <a href="events">Browse all games</a>.</p>
                 @if (tonight.Count > 0) { <p class="bs-agate__note">All times @(Dates.ZoneLabel ?? "local") · TV in bold</p> }
+                @{ var tonightIndex = 0; }
                 <ul class="bs-agate">
                     @foreach (var (heading, items) in TodayTonight.Groups(tonight, Dates))
                     {
@@ -102,7 +103,8 @@
                             <ul>
                             @foreach (var item in items)
                             {
-                                <li class="bs-agate__row" data-home-team-item data-sports-teams="@SportsTeamPreferences.Keys(item.SchoolName, item.OpponentName)">
+                                <li class="bs-agate__row" data-home-team-item data-sports-teams="@SportsTeamPreferences.Keys(item.SchoolName, item.OpponentName)"
+                                    data-home-over="@(tonightIndex++ >= TonightLimit ? "" : null)">
                                     @if (item.StartsUtc is { } starts)
                                     {
                                         var (clock, half) = Dates.ClockParts(starts);
@@ -131,11 +133,12 @@
                         </li>
                     }
                 </ul>
-                @if (FoldF1)
+                @if (tonight.Count > TonightLimit)
                 {
-                    <myNewspaper.Web.Components.F1.F1Home Data="homeF1" Error="@homeF1Error" NowUtc="nowUtc" Embedded="true" />
+                    <a class="d-more bs-tonight__more" href="events" data-home-tonight-more>@(tonight.Count - TonightLimit) more today <span aria-hidden="true">→</span></a>
                 }
             </section>
+            @BoxOffice
         </div>
 
         <div class="bs-col bs-col--main">
@@ -146,17 +149,49 @@
 
         <div class="bs-col bs-col--side">
             <HomeLatestVideo Item="@latestVideo" Failed="@latestVideoFailed" />
-            @if (HomeBoxOfficeSchedule.ShowResults(Dates.TodayAt(nowUtc)))
-            {
-                <HomeBoxOfficeResults Rows="homeBoxOffice" Weekend="@HomeBoxOfficeSchedule.ResultsWeekend(Dates.TodayAt(nowUtc))" Failed="homeBoxOfficeFailed" />
-            }
-            else
-            {
-                <BoxOfficeForecastSection HomeCard="true" Rows="@(homeForecasts.Movies.Where(m => m.Kind == BoxOfficeForecastQuery.Preview).ToList())"
-                    Source="@(homeForecasts.Sources.SingleOrDefault(s => s.Kind == BoxOfficeForecastQuery.Preview))" UtcNow="@nowUtc" />
-            }
-            <HomeHeadlineShelf SectionKey="sports-news" Title="Sports headlines" HeadingId="h-sports-headlines" Href="sports/news"
-                               CssClass="d-sports-headlines" Stories="@sportsStories" />
+            <section data-home-section="tv" class="d-card d-episodes" aria-labelledby="h-tv">
+                <div class="d-card__head">
+                    <h2 class="d-card__title" id="h-tv">Today’s episodes <span class="d-card__count">@episodes.Count @(episodes.Count == 1 ? "episode" : "episodes")</span></h2>
+                    <a class="d-more" href="tv">View calendar <span aria-hidden="true">→</span></a>
+                </div>
+                <p class="bs-episodes-count">@episodes.Count @(episodes.Count == 1 ? "episode" : "episodes")</p>
+                @if (episodes.Count == 0)
+                {
+                    <p class="d-empty">No new episodes from followed series today.</p>
+                }
+                else
+                {
+                    <ul class="d-list d-tv__list">
+                        @foreach (var group in episodes.GroupBy(e => e.ShowId))
+                        {
+                            var series = group.First();
+                            <li class="d-tv__show">
+                                <div class="tv-poster" aria-hidden="true">
+                                    @if (EventsText.LogoUrl(series.Poster) is { } poster)
+                                    { <img src="@poster" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()" /> }
+                                </div>
+                                <div class="d-tv__body">
+                                    <p class="movie-kind">@(series.Platform ?? "Network not announced")</p>
+                                    <h3 class="d-vid__title">@series.SeriesTitle</h3>
+                                    <ul class="d-tv__episodes">
+                                        @foreach (var episode in group)
+                                        {
+                                            var label = episode.Special ? "Special" : episode.Season is { } season && episode.Number is { } number ? $"S{season:00} E{number:00}" : "Episode";
+                                            <li>
+                                                @if (FeedQuery.SafeHref(episode.Url) is { } link)
+                                                { <a href="@link" target="_blank" rel="noopener noreferrer">@label · @(episode.Title ?? "Title to be announced")</a> }
+                                                else { <span>@label · @episode.Title</span> }
+                                                <span class="movie-meta">@(episode.StartsUtc is { } time ? Dates.TimeWithOffset(time) : "Time not confirmed")</span>
+                                            </li>
+                                        }
+                                    </ul>
+                                </div>
+                            </li>
+                        }
+                    </ul>
+                }
+                <p class="d-tv__credit">Episode data and images: <a href="https://www.tvmaze.com" target="_blank" rel="noopener noreferrer">TVmaze</a> · <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener noreferrer">CC BY-SA 4.0</a>. Date-only releases retain their original date; confirmed times use @Dates.Zone.Id.</p>
+            </section>
         </div>
     </div>
 
@@ -172,6 +207,8 @@
         </div>
 
         <div class="bs-col bs-col--main">
+            <HomeHeadlineShelf SectionKey="sports-news" Title="Sports headlines" HeadingId="h-sports-headlines" Href="sports/news"
+                               CssClass="d-sports-headlines" Stories="@sportsStories" />
             <HomeHeadlineShelf SectionKey="entertainment-news" Title="Entertainment headlines" HeadingId="h-entertainment-headlines" Href="entertainment/news"
                                CssClass="d-entertainment-headlines" Stories="@entertainmentStories" />
             <HomeHeadlineShelf SectionKey="tech-news" Title="Tech headlines" HeadingId="h-tech-headlines" Href="tech"
@@ -236,49 +273,10 @@
         </div>
 
         <div class="bs-col bs-col--side">
-            <section data-home-section="tv" class="d-card d-episodes" aria-labelledby="h-tv">
-                <div class="d-card__head">
-                    <h2 class="d-card__title" id="h-tv">Today’s episodes <span class="d-card__count">@episodes.Count @(episodes.Count == 1 ? "episode" : "episodes")</span></h2>
-                    <a class="d-more" href="tv">View calendar <span aria-hidden="true">→</span></a>
-                </div>
-                <p class="bs-episodes-count">@episodes.Count @(episodes.Count == 1 ? "episode" : "episodes")</p>
-                @if (episodes.Count == 0)
-                {
-                    <p class="d-empty">No new episodes from followed series today.</p>
-                }
-                else
-                {
-                    <ul class="d-list d-tv__list">
-                        @foreach (var group in episodes.GroupBy(e => e.ShowId))
-                        {
-                            var series = group.First();
-                            <li class="d-tv__show">
-                                <div class="tv-poster" aria-hidden="true">
-                                    @if (EventsText.LogoUrl(series.Poster) is { } poster)
-                                    { <img src="@poster" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()" /> }
-                                </div>
-                                <div class="d-tv__body">
-                                    <p class="movie-kind">@(series.Platform ?? "Network not announced")</p>
-                                    <h3 class="d-vid__title">@series.SeriesTitle</h3>
-                                    <ul class="d-tv__episodes">
-                                        @foreach (var episode in group)
-                                        {
-                                            var label = episode.Special ? "Special" : episode.Season is { } season && episode.Number is { } number ? $"S{season:00} E{number:00}" : "Episode";
-                                            <li>
-                                                @if (FeedQuery.SafeHref(episode.Url) is { } link)
-                                                { <a href="@link" target="_blank" rel="noopener noreferrer">@label · @(episode.Title ?? "Title to be announced")</a> }
-                                                else { <span>@label · @episode.Title</span> }
-                                                <span class="movie-meta">@(episode.StartsUtc is { } time ? Dates.TimeWithOffset(time) : "Time not confirmed")</span>
-                                            </li>
-                                        }
-                                    </ul>
-                                </div>
-                            </li>
-                        }
-                    </ul>
-                }
-                <p class="d-tv__credit">Episode data and images: <a href="https://www.tvmaze.com" target="_blank" rel="noopener noreferrer">TVmaze</a> · <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener noreferrer">CC BY-SA 4.0</a>. Date-only releases retain their original date; confirmed times use @Dates.Zone.Id.</p>
-            </section>
+            @if (FoldF1)
+            {
+                <myNewspaper.Web.Components.F1.F1Home Data="homeF1" Error="@homeF1Error" NowUtc="nowUtc" />
+            }
             @if (ShowTheatrical)
             {
             <section data-home-section="movies" class="d-card d-movies" aria-labelledby="h-movies">
@@ -322,57 +320,6 @@
                 }
             </section>
             }
-
-            <section data-home-section="digital" class="d-card d-movies d-digital" aria-labelledby="h-digital">
-                <div class="d-card__head">
-                    <h2 class="d-card__title" id="h-digital">Upcoming Digital / VOD
-                        @if (digitalData?.Selected is { } source)
-                        {
-                            <span class="d-card__count">@source.Name · From today onward</span>
-                        }
-                    </h2>
-                    <a class="d-more" href="movies/digital">View all <span aria-hidden="true">→</span></a>
-                </div>
-                @if (digitalData?.Selected is { } digitalSource)
-                {
-                    @if (!string.IsNullOrWhiteSpace(digitalSource.LastError)) { <p class="updated">Latest collection failed; showing previously collected releases when available.</p> }
-                }
-                @if (digitalMovies.Count == 0)
-                {
-                    <p class="d-empty">No confirmed digital releases from the selected source from today onward.</p>
-                }
-                else
-                {
-                    <ul class="d-list" tabindex="0" aria-label="Upcoming Digital / VOD">
-                        @foreach (var movie in digitalMovies)
-                        {
-                            var href = FeedQuery.SafeHref(movie.SourceUrl);
-                            <li class="d-movie">
-                                <MoviePoster Url="@movie.Poster" Title="@movie.Title" Class="d-movie__poster" />
-                                <div class="d-movie__body">
-                                    @if (movie.Date is { } date)
-                                    {
-                                        <p class="d-movie__date"><time datetime="@date.ToString("yyyy-MM-dd")">@date.ToString("ddd, MMM d, yyyy", System.Globalization.CultureInfo.InvariantCulture)</time>@(movie.DateStatus == "estimated" ? " · Estimated" : "")</p>
-                                    }
-                                    <h3 class="d-vid__title">
-                                        @if (href is not null)
-                                        {
-                                            <a href="@href" target="_blank" rel="noopener noreferrer">@movie.Title</a>
-                                        }
-                                        else
-                                        {
-                                            @movie.Title
-                                        }
-                                    </h3>
-                                    <p class="d-vid__meta">VOD / Digital · @movie.Source</p>
-                                    <p class="d-vid__meta">@string.Join(" · ", new[] { movie.Certification, movie.Runtime is { } runtime ? $"{runtime} min" : null, movie.ReRelease ? "Re-release" : null }.Where(x => !string.IsNullOrWhiteSpace(x)))</p>
-                                    <MovieCommerceAction Item="movie" />
-                                </div>
-                            </li>
-                        }
-                    </ul>
-                }
-            </section>
         </div>
     </div>
     </div>
@@ -542,7 +489,6 @@
         @{
             var screens = episodes.Take(2).Select(e => (Title: e.SeriesTitle, Sub: string.Join(" · ", new[] { "Tonight", e.StartsUtc is { } t ? Dates.Time(t) : null, e.Platform }.Where(p => !string.IsNullOrEmpty(p))), Href: "tv"))
                 .Concat((ShowTheatrical ? movies : []).Take(1).Select(m => (Title: m.Title, Sub: "Friday · In theaters", Href: "movies?type=theatrical")))
-                .Concat(digitalMovies.Take(1).Select(m => (Title: m.Title, Sub: string.Join(" · ", new[] { m.Date?.ToString("ddd, MMM d", System.Globalization.CultureInfo.InvariantCulture), "Digital" }.Where(p => !string.IsNullOrEmpty(p))), Href: "movies/digital")))
                 .ToList();
         }
         @if (screens.Count > 0)
@@ -599,10 +545,10 @@
     private IReadOnlyList<VideoItem> videos = [];
     private IReadOnlyList<BoxOfficeMovie> homeBoxOffice = [];
     private bool homeBoxOfficeFailed;
+    private bool showBoxOfficeResults;
+    private DateOnly boxOfficeWeekend;
     private BoxOfficeForecastSnapshot homeForecasts = new([], []);
     private IReadOnlyList<MovieReleaseItem> movies = [];
-    private IReadOnlyList<MovieReleaseItem> digitalMovies = [];
-    private DigitalReleasePage? digitalData;
     private IReadOnlyList<TvEpisodeItem> episodes = [];
     private IReadOnlyList<ScoreboardGame> liveGames = [];
     private IReadOnlyList<ScoreboardGame> upcomingGames = [];
@@ -642,26 +588,30 @@
         { Log.LogError(ex, "Could not read the latest followed YouTube video."); latestVideoFailed = true; }
         videos = await VideosQuery.GetHomeVideosAsync(db, Reader.Viewer);
         homeForecasts = new([], []);
-        homeBoxOffice = []; homeBoxOfficeFailed = false;
-        if (HomeBoxOfficeSchedule.ShowResults(Dates.TodayAt(nowUtc)))
+        homeBoxOffice = []; homeBoxOfficeFailed = false; showBoxOfficeResults = false;
+        var boxToday = Dates.TodayAt(nowUtc);
+        boxOfficeWeekend = HomeBoxOfficeSchedule.ResultsWeekend(boxToday);   // the Friday of the weekend just played
+        var resultsDays = HomeBoxOfficeSchedule.ShowResults(boxToday);
+        if (resultsDays)
         {
             try
             {
-                var weekend = HomeBoxOfficeSchedule.ResultsWeekend(Dates.TodayAt(nowUtc));
-                homeBoxOffice = await BoxOfficeChartQuery.GetAsync(db, weekend);
+                homeBoxOffice = await BoxOfficeChartQuery.GetAsync(db, boxOfficeWeekend);
+                showBoxOfficeResults = homeBoxOffice.Count > 0;
             }
             catch (Exception ex) when (DataFailures.IsReadFailure(ex))
             { Log.LogError(ex, "Could not read home weekend results."); homeBoxOfficeFailed = true; }
         }
-        else
+        if (!showBoxOfficeResults)
         {
-        try { homeForecasts = await BoxOfficeForecastQuery.GetAsync(db, Dates.TodayAt(nowUtc)); }
-        catch (Exception ex) when (DataFailures.IsReadFailure(ex))
-        { Log.LogError(ex, "Could not read home weekend predictions."); }
+            // No results yet: on Sun–Tue, the forecast for the weekend just played (its PeriodEnd is that Sunday,
+            // and the query keeps PeriodEnd >= the date passed); otherwise the coming weekend's.
+            var forecastDay = resultsDays ? boxOfficeWeekend.AddDays(2) : boxToday;
+            try { homeForecasts = await BoxOfficeForecastQuery.GetAsync(db, forecastDay); }
+            catch (Exception ex) when (DataFailures.IsReadFailure(ex))
+            { Log.LogError(ex, "Could not read home weekend predictions."); }
         }
         movies = await MoviesQuery.GetFridayTheatricalAsync(db, Dates.TodayAt(nowUtc));
-        digitalData = await DigitalReleasesQuery.GetAsync(db, Dates.TodayAt(nowUtc), null, take: 5);
-        digitalMovies = digitalData.Items;
         episodes = await TvQuery.GetOnDateAsync(db, Reader.Viewer, Dates, Dates.TodayAt(nowUtc));
         todays = await HomeEventResults.WithoutFinalResultsAsync(db, todays);
         tonight = TodayTonight.Build(todays, Dates);
@@ -713,6 +663,20 @@
         ? "$" + (dollars / 1_000_000m).ToString(dollars >= 100_000_000 ? "0" : "0.0", System.Globalization.CultureInfo.InvariantCulture) + "M"
         : "$" + (dollars / 1_000m).ToString("0", System.Globalization.CultureInfo.InvariantCulture) + "K";
 
+    private RenderFragment BoxOffice => __builder =>
+    {
+        if (showBoxOfficeResults)
+        {
+            <HomeBoxOfficeResults Rows="homeBoxOffice" Weekend="@boxOfficeWeekend" Failed="homeBoxOfficeFailed" />
+        }
+        else
+        {
+            <BoxOfficeForecastSection HomeCard="true" Rows="@(homeForecasts.Movies.Where(m => m.Kind == BoxOfficeForecastQuery.Preview).ToList())"
+                Source="@(homeForecasts.Sources.SingleOrDefault(s => s.Kind == BoxOfficeForecastQuery.Preview))" UtcNow="@nowUtc" />
+        }
+    };
+
+    private const int TonightLimit = 5;
     private const int HomeNewsCount = 15;
-    private const int HomeShelfCount = 4;
+    private const int HomeShelfCount = 5;
 }

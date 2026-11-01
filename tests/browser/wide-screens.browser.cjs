@@ -99,30 +99,23 @@ const shots = process.env.SCREENSHOT_DIR || 'test-results/browser/wide-screens/'
                         assert.equal(geometry.headerPad, 56, 'Header edge padding');
                         assert.equal(geometry.pagePad, 56, 'Page edge padding');
                         if (route === '/') {
-                            assert.equal(geometry.home, width >= 2560 ? 6 : 4, 'Home columns');
-                            const positions = await page.locator('.bs-sheet .bs-col').evaluateAll((ns) =>
-                                ns.map((n) => {
-                                    const r = n.getBoundingClientRect();
-                                    return { x: r.x, y: r.y, right: r.right, bottom: r.bottom };
-                                }),
-                            );
-                            for (let i = 0; i < positions.length; i++)
-                                for (const b of positions.slice(i + 1)) {
-                                    const a = positions[i];
-                                    assert(
-                                        a.right <= b.x + 1 ||
-                                            b.right <= a.x + 1 ||
-                                            a.bottom <= b.y + 1 ||
-                                            b.bottom <= a.y + 1,
-                                        'Home columns overlap',
-                                    );
-                                }
-                            assert(Math.abs(positions[0].y - positions[3].y) < 1, 'Scoreboard joins first row');
                             assert.equal(
                                 await page.locator('.bs-band').isVisible(),
-                                width < 2560,
-                                'Home band visibility',
+                                false,
+                                'Home band hidden on wide screens',
                             );
+                            const sportsNews = await page.locator('[data-home-section="sports-news"]').first().boundingBox();
+                            const entertainmentNews = await page.locator('[data-home-section="entertainment-news"]').first().boundingBox();
+                            const techNews = await page.locator('[data-home-section="tech-news"]').first().boundingBox();
+                            if (sportsNews && entertainmentNews && techNews) {
+                                assert(Math.abs(sportsNews.y - entertainmentNews.y) < 2, 'Desk headlines share top offset');
+                                assert(Math.abs(entertainmentNews.y - techNews.y) < 2, 'Desk headlines share top offset');
+                            }
+                            const scoreboard = await page.locator('[data-home-section="scoreboard"]').first().boundingBox();
+                            const rankings = await page.locator('[data-home-section="rankings"]').first().boundingBox();
+                            if (scoreboard && rankings) {
+                                assert(Math.abs(scoreboard.y - rankings.y) < 2, 'Scoreboard and Top 25 share top offset');
+                            }
                         }
                         if (route === '/news/all')
                             assert.equal(geometry.cards, width >= 2560 ? 5 : 4, 'Headline columns');

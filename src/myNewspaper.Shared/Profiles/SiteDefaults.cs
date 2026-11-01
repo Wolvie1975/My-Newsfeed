@@ -47,7 +47,7 @@ public static class SiteDefaults
     public static readonly IReadOnlyList<string> HomeOrder =
     [
         "lead", "watch", "opinion", "news", "sports-news", "entertainment-news", "tech-news", "sports", "scoreboard", "tv", "videos",
-        "rankings", "forecasts", "movies", "digital",
+        "rankings", "forecasts", "movies",
     ];
 
     /// <summary>Sections that may be hidden: every home section, plus the F1 card inside Sports.</summary>
@@ -70,7 +70,6 @@ public static class SiteDefaults
         ["rankings"] = "Top 25",
         ["forecasts"] = "Box office",
         ["movies"] = "Friday theater releases",
-        ["digital"] = "Upcoming Digital / VOD",
         ["f1"] = "Formula 1",
     };
 

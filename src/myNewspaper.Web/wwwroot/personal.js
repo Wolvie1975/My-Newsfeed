@@ -19,7 +19,6 @@
         'rankings',
         'forecasts',
         'movies',
-        'digital',
     ];
     let storage = true,
         pending = false,
@@ -112,7 +111,7 @@
             // second copy of the page (the folded front, its own [data-home-grid]), so every match is hidden.
             defaults.forEach((key) => {
                 document.querySelectorAll(`[data-home-grid] [data-home-section="${key}"]`).forEach((section) => {
-                    section.hidden = p.hidden.includes(key) || (key === 'digital' && p.hidden.includes('movies'));
+                    section.hidden = p.hidden.includes(key);
                 });
             });
             grid.querySelectorAll('[data-home-f1]').forEach((section) => (section.hidden = p.hidden.includes('f1')));
@@ -120,6 +119,18 @@
             if (empty) empty.hidden = grid.querySelector('[data-home-section]:not([hidden])') !== null;
             const rows = [...grid.querySelectorAll('[data-home-team-item]')];
             rows.forEach((row) => (row.hidden = p.teamsOnly && !matchesTeams(row, selected)));
+            // Today & Tonight: the first five rows still shown, then "N more today" (docs/home-wide-rebalance-handoff.md §3).
+            const TONIGHT_LIMIT = 5;
+            let shown = 0;
+            grid.querySelectorAll('.bs-tonight [data-home-team-item]').forEach((row) => {
+                row.toggleAttribute('data-home-over', !row.hidden && ++shown > TONIGHT_LIMIT);
+            });
+            const more = grid.querySelector('[data-home-tonight-more]');
+            if (more) {
+                const extra = Math.max(0, shown - TONIGHT_LIMIT);
+                more.hidden = extra === 0;
+                more.firstChild.textContent = `${extra} more today `;
+            }
             const noTeams = document.querySelector('[data-home-teams-empty]');
             if (noTeams) noTeams.hidden = !p.teamsOnly || !rows.length || rows.some((row) => !row.hidden);
         }
