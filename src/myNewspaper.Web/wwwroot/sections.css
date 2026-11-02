@@ -210,6 +210,10 @@
 .pub .ef-main > .ef-more {
     align-self: flex-start;
 }
+/* The category lists only appear beside the lead on wide screens (docs/entertainment-front-wide-handoff.md). */
+.pub .ef-cols > .ef-desks {
+    display: none;
+}
 .pub .ef-table {
     width: 100%;
     margin-top: 4px;
@@ -4910,28 +4914,122 @@ a.tvc-row__show:hover {
     }
 }
 
-/* ---------- Entertainment front, 1920px and up (wide-screens-4k-handoff.md) ---------- */
+/* ---------- Tech front, 1920px and up: day so far · lead · desks · Just released + videos (docs/tech/tech-05-front-wide.md) ---------- */
 @media (min-width: 1920px) {
-    .pub .ef-cols {
-        grid-template-columns: minmax(0, 1.6fr) minmax(0, 1.4fr);
-    }
-    .pub .ef-cols > .ef-side {
+    .pub .tc-front {
         display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 0 28px;
-        align-content: start;
+        grid-template-columns: 300px minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1fr);
+        align-items: start;
     }
-    .pub .ef-cols > .ef-side > * {
-        min-width: 0;
-        margin-top: 0;
+    .pub .tc-front > :is(.nf-brief, .tc-week-banner) {
+        grid-column: 1 / -1;
     }
-    .pub .ef-screen__list {
-        grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); /* 4 at 1920, 6 at 2560 */
+    .pub .tc-front > .spf-cols {
+        display: contents;          /* its three children join the .tc-front grid */
+    }
+
+    /* Row 2: the four columns. */
+    .pub .tc-front > .spf-cols > .spf-upcoming {
+        grid-column: 1;
+        grid-row: 2;
+        padding-top: 20px;
+    }
+    .pub .tc-front > .spf-cols > .spf-main {
+        grid-column: 2;
+        grid-row: 2;
+        padding: 20px 26px 0;
+        border-left: 1px solid var(--row-border);
+    }
+    .pub .tc-front > .nf-desks {
+        grid-column: 3;
+        grid-row: 2;
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+        margin: 0;
+        padding: 20px 24px 0;
+        border-top: 0;
+        border-left: 1px solid var(--row-border);
+    }
+    .pub .tc-front > .spf-cols > .spf-side {
+        grid-column: 4;
+        grid-row: 2;
+        display: flex;              /* undo the shared two-inner-column split */
+        flex-direction: column;
+        gap: 26px;
+        padding: 20px 0 0 24px;
+        border-left: 1px solid var(--row-border);
+    }
+    .pub .tc-front > .spf-cols > .spf-side .nf-side + .nf-side {
+        padding-left: 0;            /* the shared rule indents the second box as a second column */
+        border-left: 0;
+    }
+    .pub .tc-front > .tc-week-banner {
+        grid-row: 3;
+    }
+
+    /* Latest headlines: the desks beside the lead already show the newest stories. */
+    .pub .tc-front .spf-main :is(.tc-latest-grid, .ef-label:has(+ .tc-latest-grid)) {
+        display: none;
+    }
+
+    /* Tech videos in a ~460px column: thumbnail above the text rather than beside it. */
+    .pub .tc-front .tc-videos .yt-row {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    .pub .tc-front .tc-videos .yt-row__thumb {
+        width: 100%;
+        aspect-ratio: 16 / 9;
     }
 }
-@media (min-width: 2560px) {
+
+/* ---------- Entertainment front, 1920px and up: lead · categories · box office, TV, theaters (docs/entertainment-front-wide-handoff.md) ---------- */
+@media (min-width: 1920px) {
     .pub .ef-cols {
-        grid-template-columns: minmax(0, 1.4fr) minmax(0, 1.6fr);
+        grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1fr);
+        align-items: start;
+    }
+    .pub .ef-screen__list {
+        grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); /* kept from the old block: 4 at 1920, 6 at 2560 */
+    }
+
+    /* Column 1: the lead at a sensible size; Latest headlines hidden (the categories show the same stories). */
+    .pub .ef-main .ef-lead__image {
+        height: auto;
+        aspect-ratio: 16 / 9;
+    }
+    .pub .ef-main .ef-lead__title {
+        font-size: 34px;
+        line-height: 1.1;
+    }
+    .pub .ef-main :is(.ef-headlines, .ef-label:has(+ .ef-headlines)) {
+        display: none;
+    }
+
+    /* Column 2: the categories, stacked. */
+    .pub .ef-cols > .ef-desks {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+        margin: 0;
+        padding: 0 24px;
+        border-top: 0;
+        border-left: 1px solid var(--row-border);
+    }
+
+    /* Column 3: box office, tonight on TV, Friday in theaters, in one column (undo the old two-column split). */
+    .pub .ef-cols > .ef-side {
+        display: flex;
+        flex-direction: column;
+        gap: 26px;
+        padding-left: 24px;
+        border-left: 1px solid var(--row-border);
+    }
+    .pub .ef-cols > .ef-side > .ef-tv:not(:first-child) {
+        padding-left: 0;
+        border-left: 0;
     }
 }
 
@@ -4964,8 +5062,7 @@ a.tvc-row__show:hover {
 }
 
 @media (min-width: 1920px) {
-    .pub .spf-side > .spf-rankings:not(:first-child),
-    .pub .ef-cols > .ef-side > .ef-tv:not(:first-child) {
+    .pub .spf-side > .spf-rankings:not(:first-child) {
         padding-left: 28px;
         border-left: 1px solid var(--row-border);
     }

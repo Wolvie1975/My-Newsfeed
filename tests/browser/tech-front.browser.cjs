@@ -200,12 +200,13 @@ fs.mkdirSync(shots, { recursive: true });
             await context.close();
         }
 
-        // 3. Desktop widths: 1024, 1280, 1440 (light and dark at 1280)
+        // 3. Desktop widths: 1024, 1280, 1440, 2000 (light and dark at 1280)
         for (const [width, theme] of [
             [1024, 'light'],
             [1280, 'light'],
             [1280, 'dark'],
             [1440, 'light'],
+            [2000, 'light'],
         ]) {
             const context = await contextFor(width, { theme });
             const page = await context.newPage();
@@ -274,6 +275,22 @@ fs.mkdirSync(shots, { recursive: true });
             assert.notEqual(desktopInfo.desks[1].labelColor, desktopInfo.desks[2].labelColor);
             assert.equal(desktopInfo.videoCount, 3);
             assert.equal(desktopInfo.hasTopics, false, '/tech has no topics on desktop');
+
+            if (width >= 1920) {
+                const wideCheck = await page.evaluate(() => {
+                    const front = document.querySelector('.tc-front');
+                    const cols = front ? getComputedStyle(front).gridTemplateColumns.split(' ').length : 0;
+                    const latest = document.querySelector('.tc-latest-grid');
+                    const latestHidden = !latest || getComputedStyle(latest).display === 'none';
+                    const mainBox = document.querySelector('.spf-main')?.getBoundingClientRect();
+                    const desksBox = document.querySelector('.nf-desks')?.getBoundingClientRect();
+                    const aligned = mainBox && desksBox ? Math.abs(mainBox.top - desksBox.top) < 2 : false;
+                    return { cols, latestHidden, aligned };
+                });
+                assert.equal(wideCheck.cols, 4, 'Tech front has 4 columns at 1920+');
+                assert.equal(wideCheck.latestHidden, true, 'Latest headlines hidden at 1920+');
+                assert.equal(wideCheck.aligned, true, 'Desks share top offset with main column at 1920+');
+            }
 
             await page.screenshot({
                 path: path.join(shots, `tech-desktop-${width}-${theme}.png`),

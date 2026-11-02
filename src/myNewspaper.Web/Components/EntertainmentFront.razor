@@ -103,6 +103,39 @@
             <a class="ef-more" href="entertainment/news">All entertainment headlines <span aria-hidden="true">→</span></a>
         </div>
 
+        @if (desks.Count > 0)
+        {
+            @* Wide screens only (1920+): the categories beside the lead. Hidden below that. *@
+            <div class="nf-desks ef-desks">
+                @foreach (var (category, items) in desks)
+                {
+                    var label = NewsSections.LabelFor(category.Name);
+                    <section class="nf-desk @PhoneColors.ForCategory(category.Name)" aria-labelledby="@($"ef-desk-{category.Id}")">
+                        <h2 id="@($"ef-desk-{category.Id}")" class="ef-label">@label</h2>
+                        <ul class="ef-headlines spf-headlines">
+                            @foreach (var item in items)
+                            {
+                                var href = FeedQuery.SafeHref(item.Url);
+                                var title = Title(item);
+                                var source = Source(item);
+                                var summary = FeedText.StripEmoji(FeedQuery.Excerpt(item.Description));
+                                <li data-news-url="@href" data-news-source="@source">
+                                    @if (href is not null) { <a class="ef-headlines__title" href="@href" target="_blank" rel="noopener noreferrer">@title</a> }
+                                    else { <span class="ef-headlines__title">@title</span> }
+                                    <div class="ef-meta">
+                                        <span class="ef-meta__when">@source@(item.Undated ? "" : " · " + Dates.Published(item.Date))</span>
+                                        <ShareButton Url="@item.Url" Title="@title" />
+                                        <SaveButton Item="item" Title="@title" Source="@source" Summary="@summary" />
+                                    </div>
+                                </li>
+                            }
+                        </ul>
+                        <a class="ef-more" href="@(NewsSections.RouteFor(category) ?? "entertainment/news")">All @label <span aria-hidden="true">→</span></a>
+                    </section>
+                }
+            </div>
+        }
+
         <aside class="ef-side">
             <section class="ef-box" aria-labelledby="ef-box-title">
                 <div class="ef-head">
@@ -343,6 +376,7 @@
 
     private DateTime nowUtc;
     private IReadOnlyList<FeedItem> stories = [];
+    private IReadOnlyList<(FeedCategory Category, IReadOnlyList<FeedItem> Items)> desks = [];
     private IReadOnlyList<ScreenItem> onScreen = [];
     private IReadOnlyList<TimelineItem> screenLine = [];
     private IReadOnlyList<MovieReleaseItem> weekMovies = [];
@@ -364,6 +398,23 @@
         try { stories = await FeedQuery.GetHomeNewsAsync(db, 7, "entertainment"); }
         catch (Exception ex) when (DataFailures.IsReadFailure(ex))
         { newsUnavailable = true; stories = []; Log.LogError(ex, "Could not read entertainment headlines."); }
+
+        try
+        {
+            var hubCategories = (await FeedQuery.GetCategoriesAsync(db))
+                .Where(c => c.Hub == "entertainment")
+                .OrderBy(NewsSections.Order).ThenBy(c => c.Name)
+                .ToList();
+            var loaded = new List<(FeedCategory, IReadOnlyList<FeedItem>)>();
+            foreach (var category in hubCategories)
+            {
+                var items = await FeedQuery.GetLatestInHubAsync(db, "entertainment", 4, category.Name);
+                if (items.Count > 0) loaded.Add((category, items));
+            }
+            desks = loaded;
+        }
+        catch (Exception ex) when (DataFailures.IsReadFailure(ex))
+        { desks = []; Log.LogError(ex, "Could not read entertainment category headlines."); }
 
         // On screen: one card per tracked show, then the next releases, five in all.
         try

@@ -8,6 +8,8 @@ public static class PhoneColors
         var n when n.Contains("kansas") || n.Contains("local") => "mx-c-local",
         var n when n.Contains("top headline") || n.Contains("u.s.") || n == "us" || n.Contains("politic") || n.Contains("nation") => "mx-c-us",
         var n when n.Contains("business") || n.Contains("money") || n.Contains("econom") => "mx-c-business",
+        var n when n.Contains("box office") => "mx-c-gain",
+        var n when n.Contains("tv") || n.Contains("film") || n.Contains("movie") => "mx-c-us",
         var n when n.Contains("game") => "mx-c-games",
         var n when n.Contains("linux") => "mx-c-linux",
         var n when n.Contains("tech") || n.Contains("science") => "mx-c-tech",

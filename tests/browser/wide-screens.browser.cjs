@@ -117,6 +117,14 @@ const shots = process.env.SCREENSHOT_DIR || 'test-results/browser/wide-screens/'
                                 assert(Math.abs(scoreboard.y - rankings.y) < 2, 'Scoreboard and Top 25 share top offset');
                             }
                         }
+                        if (route === '/entertainment') {
+                            const efCols = await page.locator('.ef-cols').evaluate((el) => getComputedStyle(el).gridTemplateColumns.split(' ').length);
+                            assert.equal(efCols, 3, 'Entertainment front has 3 columns at 1920+');
+                            const desksVisible = await page.locator('.ef-cols > .ef-desks').isVisible();
+                            assert.equal(desksVisible, true, 'Entertainment desks visible at 1920+');
+                            const latestHeadlinesVisible = await page.locator('.ef-main .ef-headlines').isVisible();
+                            assert.equal(latestHeadlinesVisible, false, 'Entertainment latest headlines hidden at 1920+');
+                        }
                         if (route === '/news/all')
                             assert.equal(geometry.cards, width >= 2560 ? 5 : 4, 'Headline columns');
                         if (route === '/videos') assert.equal(geometry.videos, width >= 2560 ? 6 : 5, 'Video columns');
