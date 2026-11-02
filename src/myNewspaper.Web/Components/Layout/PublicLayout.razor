@@ -127,7 +127,7 @@
                 </summary>
                 <nav aria-label="Main" class="mobile-nav__links">
                     <a href="" aria-current="@(onHome ? "page" : null)">Home</a>
-                    <div class="mobile-nav-group" role="group" aria-labelledby="mobile-news-heading">
+                    <div class="mobile-nav-group" role="group" aria-labelledby="mobile-news-heading" data-section="news">
                         <span class="nav-group-label" id="mobile-news-heading">News</span>
                         <div class="mobile-subnav">
                             <a href="news" aria-current="@(onNewsHome ? "page" : null)">News home</a>
@@ -135,7 +135,7 @@
                             <a href="news/kansas-city" aria-current="@(onKansasCity ? "page" : null)">Kansas City</a>
                         </div>
                     </div>
-                    <div class="mobile-nav-group" role="group" aria-labelledby="mobile-sports-heading">
+                    <div class="mobile-nav-group" role="group" aria-labelledby="mobile-sports-heading" data-section="sports">
                         <span class="nav-group-label" id="mobile-sports-heading">Sports</span>
                         <div class="mobile-subnav">
                             <a href="sports" aria-current="@(onSportsHub ? "page" : null)">Sports home</a>
@@ -148,7 +148,7 @@
                             <a href="f1" aria-current="@(onF1 ? "page" : null)">F1</a>
                         </div>
                     </div>
-                    <div class="mobile-nav-group" role="group" aria-labelledby="mobile-entertainment-heading">
+                    <div class="mobile-nav-group" role="group" aria-labelledby="mobile-entertainment-heading" data-section="entertainment">
                         <span class="nav-group-label" id="mobile-entertainment-heading">Entertainment</span>
                         <div class="mobile-subnav">
                             <a href="entertainment" aria-current="@(onEntertainmentHub ? "page" : null)">Entertainment home</a>
@@ -159,7 +159,7 @@
                             <a href="box-office" aria-current="@(onBoxOffice ? "page" : null)">Box Office</a>
                         </div>
                     </div>
-                    <div class="mobile-nav-group" role="group" aria-labelledby="mobile-tech-heading">
+                    <div class="mobile-nav-group" role="group" aria-labelledby="mobile-tech-heading" data-section="tech">
                         <span class="nav-group-label" id="mobile-tech-heading">Tech</span>
                         <div class="mobile-subnav">
                             @foreach (var item in SectionChoices.Tech)
@@ -172,8 +172,13 @@
                             }
                         </div>
                     </div>
-                    <a href="watch" aria-current="@(onWatch ? "page" : null)">Where to watch</a>
-                    <a href="videos" aria-current="@(onVideos ? "page" : null)">YouTube</a>
+                    <div class="mobile-nav-group" role="group" aria-labelledby="mobile-watch-heading">
+                        <span class="nav-group-label" id="mobile-watch-heading">Watch</span>
+                        <div class="mobile-subnav">
+                            <a href="watch" aria-current="@(onWatch ? "page" : null)">Where to watch</a>
+                            <a href="videos" aria-current="@(onVideos ? "page" : null)">YouTube</a>
+                        </div>
+                    </div>
                     <div class="mobile-nav-group" role="group" aria-labelledby="mobile-tools-heading">
                         <span class="nav-group-label" id="mobile-tools-heading">Tools</span>
                         <div class="mobile-subnav">

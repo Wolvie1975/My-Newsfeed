@@ -1557,19 +1557,64 @@ span.mx-stepper__btn {
     margin: 0;
 }
 
-/* Tech section: purple phone ribbon, 2×2 briefing tiles, and swipeable Tech videos rail. */
-.mx-ribbon[data-section='tech'] {
-    --mx-ribbon-bg: #5b21b6;
+/* Section colors: one hue per section, shared by the phone ribbons and the menu's group markers.
+   --sec is the light-mode band (white text on it); --sec-glow is mixed into the surface in dark mode,
+   the same way the scheme ribbons are. Desk ribbons (below) still override their section. */
+.pub [data-section='news'] {
+    --sec: #1e293b;
+    --sec-kicker: #cbd5e1;
+    --sec-glow: #94a3b8;
+    --sec-kicker-dark: #cbd5e1;
+}
+.pub [data-section='sports'] {
+    --sec: #166534;
+    --sec-kicker: #bbf7d0;
+    --sec-glow: #22c55e;
+    --sec-kicker-dark: #86efac;
+}
+.pub [data-section='entertainment'] {
+    --sec: #be185d;
+    --sec-kicker: #fce7f3;
+    --sec-glow: #ec4899;
+    --sec-kicker-dark: #f9a8d4;
+}
+.pub [data-section='tech'] {
+    --sec: #5b21b6;
+    --sec-kicker: #ddd6fe;
+    --sec-glow: #7c3aed;
+    --sec-kicker-dark: #c4b5fd;
+}
+.mx-ribbon:is([data-section='news'], [data-section='sports'], [data-section='entertainment'], [data-section='tech']) {
+    --mx-ribbon-bg: var(--sec);
     --mx-ribbon-fg: #ffffff;
-    --mx-ribbon-kicker: #ddd6fe;
-    --mx-live: #ddd6fe;
+    --mx-ribbon-kicker: var(--sec-kicker);
+    --mx-live: var(--sec-kicker);
 }
-:root[data-theme='dark'] .pub .mx-ribbon[data-section='tech'] {
-    --mx-ribbon-bg: color-mix(in srgb, #7c3aed 32%, var(--surface));
+:root[data-theme='dark'] .pub .mx-ribbon:is([data-section='news'], [data-section='sports'], [data-section='entertainment'], [data-section='tech']) {
+    --mx-ribbon-bg: color-mix(in srgb, var(--sec-glow) 32%, var(--surface));
     --mx-ribbon-fg: var(--text);
-    --mx-ribbon-kicker: #c4b5fd;
-    --mx-live: #c4b5fd;
+    --mx-ribbon-kicker: var(--sec-kicker-dark);
+    --mx-live: var(--sec-kicker-dark);
 }
+
+/* Menu: a section-colored dot before each section's group heading. It uses the brighter --sec-glow because the
+   menu sits on the colored header bar; the ring uses the header text color so the dot reads on every scheme. */
+.pub .mobile-nav-group[data-section] > .nav-group-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.pub .mobile-nav-group[data-section] > .nav-group-label::before {
+    content: '';
+    flex: none;
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    background: var(--sec-glow);
+    box-shadow: 0 0 0 2px var(--header-fg);
+}
+
+/* Tech section: 2×2 briefing tiles and swipeable Tech videos rail. */
 .mx-ribbon[data-desk='video-games'] {
     --mx-ribbon-bg: #b45309;
     --mx-ribbon-fg: #ffffff;
