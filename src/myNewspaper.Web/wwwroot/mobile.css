@@ -696,15 +696,15 @@
     color: var(--mx-block-accent);
 }
 .mx-score__team b {
-    font-variant-numeric: tabular-nums;   /* 1 and 45 line up across tiles */
+    font-variant-numeric: tabular-nums; /* 1 and 45 line up across tiles */
 }
 
 /* The strip: fixed-width tiles you swipe sideways, running to the screen edge with a fade. */
 .mx-scores--strip {
     display: flex;
     gap: 8px;
-    margin-right: -16px;                  /* to the screen edge… */
-    padding-right: 16px;                  /* …while the last tile can still clear it */
+    margin-right: -16px; /* to the screen edge… */
+    padding-right: 16px; /* …while the last tile can still clear it */
     overflow-x: auto;
     overscroll-behavior-x: contain;
     scroll-snap-type: x proximity;
@@ -721,7 +721,7 @@
     scroll-snap-align: start;
 }
 .mx-block .mx-scores--strip > .mx-score {
-    width: 170px;                          /* the dark lead block's bigger scores */
+    width: 170px; /* the dark lead block's bigger scores */
 }
 /* One or two games: no fade (nothing to scroll to). */
 .mx-scores--strip:not(:has(> :nth-child(3))) {
@@ -1584,34 +1584,69 @@ span.mx-stepper__btn {
     --sec-glow: #7c3aed;
     --sec-kicker-dark: #c4b5fd;
 }
-.mx-ribbon:is([data-section='news'], [data-section='sports'], [data-section='entertainment'], [data-section='tech']) {
+.pub [data-section='watch'] {
+    --sec: #b45309;
+    --sec-kicker: #fef3c7;
+    --sec-glow: #f59e0b;
+    --sec-kicker-dark: #fde68a;
+}
+.mx-ribbon:is(
+    [data-section='news'],
+    [data-section='sports'],
+    [data-section='entertainment'],
+    [data-section='tech'],
+    [data-section='watch']
+) {
     --mx-ribbon-bg: var(--sec);
     --mx-ribbon-fg: #ffffff;
     --mx-ribbon-kicker: var(--sec-kicker);
     --mx-live: var(--sec-kicker);
 }
-:root[data-theme='dark'] .pub .mx-ribbon:is([data-section='news'], [data-section='sports'], [data-section='entertainment'], [data-section='tech']) {
+:root[data-theme='dark']
+    .pub
+    .mx-ribbon:is(
+        [data-section='news'],
+        [data-section='sports'],
+        [data-section='entertainment'],
+        [data-section='tech'],
+        [data-section='watch']
+    ) {
     --mx-ribbon-bg: color-mix(in srgb, var(--sec-glow) 32%, var(--surface));
     --mx-ribbon-fg: var(--text);
     --mx-ribbon-kicker: var(--sec-kicker-dark);
     --mx-live: var(--sec-kicker-dark);
 }
 
-/* Menu: a section-colored dot before each section's group heading. It uses the brighter --sec-glow because the
-   menu sits on the colored header bar; the ring uses the header text color so the dot reads on every scheme. */
-.pub .mobile-nav-group[data-section] > .nav-group-label {
+/* Menu: completely highlighted section header row with the section color. */
+:root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+    .pub
+    .mobile-nav-group
+    .nav-group-label {
     display: flex;
     align-items: center;
-    gap: 10px;
+    padding: 6px 10px;
+    margin: 8px 0 6px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    background: color-mix(in srgb, var(--text) 8%, var(--surface));
+    color: var(--text-2);
 }
-.pub .mobile-nav-group[data-section] > .nav-group-label::before {
-    content: '';
-    flex: none;
-    width: 10px;
-    height: 10px;
-    border-radius: 999px;
-    background: var(--sec-glow);
-    box-shadow: 0 0 0 2px var(--header-fg);
+:root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+    .pub
+    .mobile-nav-group[data-section]
+    > .nav-group-label {
+    background: var(--sec);
+    color: #ffffff;
+}
+:root[data-theme='dark'] .pub .mobile-nav-group[data-section] > .nav-group-label {
+    background: color-mix(in srgb, var(--sec-glow) 28%, var(--surface));
+    color: var(--sec-kicker-dark);
+}
+.pub .mobile-nav-group > .nav-group-label::before {
+    content: none !important;
 }
 
 /* Tech section: 2×2 briefing tiles and swipeable Tech videos rail. */
