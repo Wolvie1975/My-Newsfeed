@@ -74,7 +74,7 @@
         const railList = document.getElementById('sb-rail-your-teams-list');
         if (railList) {
             if (yourCount === 0) {
-                railList.innerHTML = '<p class="sb-rail__empty">Star teams to track them here.</p>';
+                railList.innerHTML = '<p class="sb-rail__empty">Click ☆ next to any team to track them here.</p>';
             } else {
                 const items = [...yourTeamsGrid.querySelectorAll('.sb-card')].map((card) => {
                     const teams = [...card.querySelectorAll('.sb-card__team')];
@@ -96,6 +96,15 @@
             const active = selected.has(button.dataset.scoreboardTeam);
             button.setAttribute('aria-pressed', String(active));
             button.textContent = active ? '★' : '☆';
+            const teamName = button.dataset.teamName;
+            if (teamName) {
+                const label = active
+                    ? `Remove ${teamName} from Your teams`
+                    : `Pin ${teamName} to Your teams`;
+                button.setAttribute('title', label);
+                button.setAttribute('aria-label', label);
+            }
+            button.closest('.sb-card__team')?.classList.toggle('sb-card__team--starred', active);
         });
         document.querySelectorAll('.scoreboard-game').forEach((game) => {
             game.classList.toggle(

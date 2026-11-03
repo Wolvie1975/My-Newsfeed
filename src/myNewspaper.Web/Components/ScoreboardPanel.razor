@@ -22,6 +22,7 @@
                 <div class="sb-toolbar__notes" tabindex="0" role="region" aria-label="Scoreboard notes">
                     <button type="button" class="sb-info-trigger" aria-label="Scoreboard notes and season results" aria-describedby="sb-notes-popover">ⓘ</button>
                     <div id="sb-notes-popover" class="sb-notes-popover" role="tooltip">
+                        <p class="sb-note">Star (☆) any team on a game card to pin its games to <strong>Your teams</strong>.</p>
                         <p class="sb-note">Scores update approximately every 10 minutes. <span>Checks every five minutes while visible.</span></p>
                         <p class="sb-note">Records show current-season standings and are hidden during playoffs.</p>
                         <p class="sb-note">Sampled clocks stay fixed between updates. Coverage excludes F1 and unsupported leagues.</p>
@@ -50,6 +51,7 @@
                     </select>
                     <noscript><button class="nf-btn nf-btn--secondary" type="submit">Apply</button></noscript>
                 </form>
+                <span class="sb-toolbar__star-hint"><span aria-hidden="true">☆</span> Star a team for Your teams</span>
                 <div class="sb-view-switch" role="group" aria-label="View layout">
                     <button type="button" class="sb-view-btn" data-sb-view="cards" aria-pressed="true" title="Card grid">Cards</button>
                     <button type="button" class="sb-view-btn" data-sb-view="list" aria-pressed="false" title="Compact list">List</button>
@@ -93,6 +95,7 @@
                         <header class="sb-status__head">
                             <h2 id="sb-head-your-teams">Your teams</h2>
                             <span class="sb-status__count" data-your-teams-count>0 games</span>
+                            <span class="sb-status__hint">★ Starred teams</span>
                             <a href="settings#my-teams-heading" class="sb-status__edit">Edit</a>
                         </header>
                         <div class="sb-grid" id="sb-grid-your-teams"></div>
@@ -186,7 +189,7 @@
                             <a href="settings#my-teams-heading">Manage →</a>
                         </div>
                         <div class="sb-rail__your-teams-list" id="sb-rail-your-teams-list">
-                            <p class="sb-rail__empty">Star teams to track them here.</p>
+                            <p class="sb-rail__empty">Click ☆ next to any team to track them here.</p>
                         </div>
                     </section>
                 </aside>
@@ -522,12 +525,12 @@
                     <div class="scoreboard-team @(game.Status == "final" && game.Completed && game.WinnerSide == "away" ? "scoreboard-winner" : "")">
                         <myNewspaper.Web.Components.Events.TeamCell Name="@game.AwayName" LogoUrl="@game.AwayLogoUrl" Record="@RecordFor(game, false)" Rank="@game.AwayRank" />
                         <strong class="scoreboard-score">@ScoreboardGame.Score(game.AwayScore)</strong>
-                        @if (game.AwayPreference is {} away) { <button type="button" class="scoreboard-favorite" data-scoreboard-team="@away" aria-label="@($"Highlight {game.AwayName} in this competition")" aria-pressed="false" hidden>☆</button> }
+                        @if (game.AwayPreference is {} away) { <button type="button" class="scoreboard-favorite" data-scoreboard-team="@away" data-team-name="@game.AwayName" title="@($"Pin {game.AwayName} to Your teams")" aria-label="@($"Pin {game.AwayName} to Your teams")" aria-pressed="false" hidden>☆</button> }
                     </div>
                     <div class="scoreboard-team @(game.Status == "final" && game.Completed && game.WinnerSide == "home" ? "scoreboard-winner" : "")">
                         <myNewspaper.Web.Components.Events.TeamCell Name="@game.HomeName" LogoUrl="@game.HomeLogoUrl" Record="@RecordFor(game, true)" Rank="@game.HomeRank" />
                         <strong class="scoreboard-score">@ScoreboardGame.Score(game.HomeScore)</strong>
-                        @if (game.HomePreference is {} home) { <button type="button" class="scoreboard-favorite" data-scoreboard-team="@home" aria-label="@($"Highlight {game.HomeName} in this competition")" aria-pressed="false" hidden>☆</button> }
+                        @if (game.HomePreference is {} home) { <button type="button" class="scoreboard-favorite" data-scoreboard-team="@home" data-team-name="@game.HomeName" title="@($"Pin {game.HomeName} to Your teams")" aria-label="@($"Pin {game.HomeName} to Your teams")" aria-pressed="false" hidden>☆</button> }
                     </div>
                 </div>
                 <div class="scoreboard-context">
@@ -614,14 +617,6 @@
                                 </div>
                             </details>
                         }
-                        @if (game.AwayPreference is {} away)
-                        {
-                            <button type="button" class="scoreboard-favorite sb-card__tool" data-scoreboard-team="@away" aria-label="@($"Highlight {game.AwayName}")" aria-pressed="false" hidden>☆</button>
-                        }
-                        @if (game.HomePreference is {} home && home != game.AwayPreference)
-                        {
-                            <button type="button" class="scoreboard-favorite sb-card__tool" data-scoreboard-team="@home" aria-label="@($"Highlight {game.HomeName}")" aria-pressed="false" hidden>☆</button>
-                        }
                     </div>
                 </div>
 
@@ -644,6 +639,10 @@
                         {
                             <strong class="score">@ScoreboardGame.Score(game.AwayScore)</strong>
                         }
+                        @if (game.AwayPreference is {} away)
+                        {
+                            <button type="button" class="scoreboard-favorite sb-card__tool" data-scoreboard-team="@away" data-team-name="@game.AwayName" title="@($"Pin {game.AwayName} to Your teams")" aria-label="@($"Pin {game.AwayName} to Your teams")" aria-pressed="false" hidden>☆</button>
+                        }
                     </div>
 
                     <div class="sb-card__team @(homeWin ? "win" : homeLose ? "lose" : "")">
@@ -663,6 +662,10 @@
                         @if (game.HomeScore != null)
                         {
                             <strong class="score">@ScoreboardGame.Score(game.HomeScore)</strong>
+                        }
+                        @if (game.HomePreference is {} home)
+                        {
+                            <button type="button" class="scoreboard-favorite sb-card__tool" data-scoreboard-team="@home" data-team-name="@game.HomeName" title="@($"Pin {game.HomeName} to Your teams")" aria-label="@($"Pin {game.HomeName} to Your teams")" aria-pressed="false" hidden>☆</button>
                         }
                     </div>
                 </div>

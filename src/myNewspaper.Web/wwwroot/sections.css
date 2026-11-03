@@ -1803,6 +1803,12 @@ a.tvc-row__show:hover {
     padding: 0 28px 0 10px;
     font-size: 14px;
 }
+.pub .sb-toolbar__star-hint {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-2);
+    white-space: nowrap;
+}
 .pub .sb-view-switch {
     display: inline-flex;
     border: 1px solid var(--border);
@@ -1852,6 +1858,7 @@ a.tvc-row__show:hover {
         white-space: nowrap;
         border: 0;
     }
+    .pub .sb-toolbar__star-hint,
     .pub .sb-view-switch {
         display: none;
     }
@@ -1902,6 +1909,11 @@ a.tvc-row__show:hover {
 .pub .sb-status__count {
     color: var(--text-3, var(--text-2));
     font-size: 13px;
+    font-weight: 600;
+}
+.pub .sb-status__hint {
+    color: var(--text-2);
+    font-size: 12px;
     font-weight: 600;
 }
 .pub .sb-status__edit {
@@ -2033,6 +2045,9 @@ a.tvc-row__show:hover {
     font-size: 14px;
     border-radius: 4px;
 }
+.pub .sb-card__tool[hidden] {
+    display: none;
+}
 .pub .sb-card__tool:hover {
     color: var(--accent);
 }
@@ -2076,8 +2091,7 @@ a.tvc-row__show:hover {
     gap: 6px;
 }
 .pub .sb-card__team {
-    display: grid;
-    grid-template-columns: 22px minmax(0, 1fr) auto;
+    display: flex;
     align-items: center;
     gap: 8px;
     min-height: 28px;
@@ -2088,6 +2102,8 @@ a.tvc-row__show:hover {
     flex: none;
 }
 .pub .sb-card__team .name {
+    flex: 1 1 0;
+    min-width: 0;
     font-size: 14px;
     font-weight: 700;
     color: var(--text);
@@ -2097,6 +2113,12 @@ a.tvc-row__show:hover {
     display: flex;
     align-items: baseline;
     gap: 4px;
+}
+.pub .sb-card__team .scoreboard-favorite {
+    position: relative;
+    z-index: 2;
+    flex: none;
+    margin-left: -2px;
 }
 .pub .sb-card__team .team-title {
     overflow: hidden;
