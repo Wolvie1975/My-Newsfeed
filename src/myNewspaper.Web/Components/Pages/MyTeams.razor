@@ -8,7 +8,7 @@
 <PageTitle>Settings · myNewspaper</PageTitle>
 <div class="mx-tool-page" data-phone-settings>
 <div class="mx-desktop"><PageHeading Title="Settings" Eyebrow="Make it yours" Description="Appearance, streaming services and teams. Everything saves as you tap." /></div>
-<div class="mx-phone" data-phone-tools="settings"><PhoneRibbon Title="Settings" Kicker="@(Reader.HasProfile ? "Make it yours · saved to your edition" : "Make it yours · saved in this browser")">
+<div class="mx-phone" data-phone-tools="settings"><PhoneRibbon Section="tools" Title="Settings" Kicker="@(Reader.HasProfile ? "Make it yours · saved to your edition" : "Make it yours · saved in this browser")">
 <form class="mx-ribbon__field" method="get" action="navigate"><label for="settings-jump-m">Jump to</label><select id="settings-jump-m" name="to" required onchange="location.hash = this.value.slice(this.value.indexOf('#'))">
 <option value="" selected disabled>Choose a section</option>
 @if (Reader.HasProfile) { <option value="/settings#profile">Your profile</option> }

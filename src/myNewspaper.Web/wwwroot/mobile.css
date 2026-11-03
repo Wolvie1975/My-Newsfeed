@@ -1590,12 +1590,19 @@ span.mx-stepper__btn {
     --sec-glow: #f59e0b;
     --sec-kicker-dark: #fde68a;
 }
+.pub [data-section='tools'] {
+    --sec: #475569;
+    --sec-kicker: #e2e8f0;
+    --sec-glow: #94a3b8;
+    --sec-kicker-dark: #cbd5e1;
+}
 .mx-ribbon:is(
     [data-section='news'],
     [data-section='sports'],
     [data-section='entertainment'],
     [data-section='tech'],
-    [data-section='watch']
+    [data-section='watch'],
+    [data-section='tools']
 ) {
     --mx-ribbon-bg: var(--sec);
     --mx-ribbon-fg: #ffffff;
@@ -1609,7 +1616,8 @@ span.mx-stepper__btn {
         [data-section='sports'],
         [data-section='entertainment'],
         [data-section='tech'],
-        [data-section='watch']
+        [data-section='watch'],
+        [data-section='tools']
     ) {
     --mx-ribbon-bg: color-mix(in srgb, var(--sec-glow) 32%, var(--surface));
     --mx-ribbon-fg: var(--text);
