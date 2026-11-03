@@ -109,4 +109,19 @@ public class TeamRecordsTests
             new Dictionary<string, object?> { ["Item"] = tonight, ["Records"] = records }))).ToHtmlString());
         Assert.Contains("5-2 (2-1)", homeHtml);
     }
+
+    [Theory]
+    [InlineData("0-0", false)]
+    [InlineData("0-0 (0-0)", false)]
+    [InlineData("0-0-0", false)]
+    [InlineData("0–0–0 W–L–D", false)]
+    [InlineData("1-0", true)]
+    [InlineData("0-1", true)]
+    [InlineData("1-0 (0-0)", true)]
+    [InlineData("10-2", true)]
+    public void Zero_records_indicate_not_played(string text, bool expectedHasPlayed)
+    {
+        var record = new TeamRecordValue(text, Now, false);
+        Assert.Equal(expectedHasPlayed, record.HasPlayed);
+    }
 }

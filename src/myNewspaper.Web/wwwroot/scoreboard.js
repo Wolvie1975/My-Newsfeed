@@ -2,6 +2,7 @@
 (function () {
     'use strict';
     const key = 'mydailyfeed-scoreboard-teams-v1';
+    const viewKey = 'mydailyfeed-scoreboard-view';
     let selected = new Set(),
         pending = false,
         generation = 0;
@@ -15,6 +16,78 @@
             );
         } catch (_) {
             selected = new Set();
+        }
+    }
+    function readView() {
+        try {
+            return localStorage.getItem(viewKey) || 'cards';
+        } catch (_) {
+            return 'cards';
+        }
+    }
+    function setView(view) {
+        const body = document.querySelector('.sb-body');
+        if (body) {
+            body.classList.toggle('sb-body--list', view === 'list');
+        }
+        document.querySelectorAll('[data-sb-view]').forEach((b) => {
+            b.setAttribute('aria-pressed', String(b.dataset.sbView === view));
+        });
+    }
+    function organizeYourTeams() {
+        const yourTeamsSection = document.getElementById('sb-status-your-teams');
+        const yourTeamsGrid = document.getElementById('sb-grid-your-teams');
+        if (!yourTeamsSection || !yourTeamsGrid) return;
+
+        const cards = [...document.querySelectorAll('.sb-card[data-sb-status]')];
+        cards.forEach((card) => {
+            const isStarred = [...card.querySelectorAll('[data-scoreboard-team]')].some((b) =>
+                selected.has(b.dataset.scoreboardTeam),
+            );
+            const status = card.dataset.sbStatus;
+            const targetGrid = isStarred ? yourTeamsGrid : document.getElementById(`sb-grid-${status}`);
+            if (targetGrid && card.parentElement !== targetGrid) {
+                targetGrid.appendChild(card);
+            }
+        });
+
+        const yourCount = yourTeamsGrid.children.length;
+        yourTeamsSection.hidden = yourCount === 0;
+        const countEl = document.querySelector('[data-your-teams-count]');
+        if (countEl) {
+            countEl.textContent = `${yourCount} ${yourCount === 1 ? 'game' : 'games'}`;
+        }
+
+        ['live', 'upcoming', 'final'].forEach((sKey) => {
+            const grid = document.getElementById(`sb-grid-${sKey}`);
+            const section = document.getElementById(`sb-status-${sKey}`);
+            const countLabel = document.getElementById(`sb-count-${sKey}`);
+            if (grid && section) {
+                const count = grid.children.length;
+                section.hidden = count === 0;
+                if (countLabel) {
+                    countLabel.textContent = `${count} ${count === 1 ? 'game' : 'games'}`;
+                }
+            }
+        });
+
+        const railList = document.getElementById('sb-rail-your-teams-list');
+        if (railList) {
+            if (yourCount === 0) {
+                railList.innerHTML = '<p class="sb-rail__empty">Star teams to track them here.</p>';
+            } else {
+                const items = [...yourTeamsGrid.querySelectorAll('.sb-card')].map((card) => {
+                    const teams = [...card.querySelectorAll('.sb-card__team')];
+                    const matchup = teams
+                        .map((t) => t.querySelector('.team-title')?.textContent.trim() || '')
+                        .filter(Boolean)
+                        .join(' at ');
+                    const statusText =
+                        card.querySelector('.sb-pill--live, .sb-card__time, .sb-card__final')?.textContent.trim() || '';
+                    return `<div class="sb-rail__item"><span class="sb-rail__name">${matchup}</span><span class="sb-rail__status">${statusText}</span></div>`;
+                });
+                railList.innerHTML = `<div class="sb-rail__list">${items.join('')}</div>`;
+            }
         }
     }
     function apply() {
@@ -32,6 +105,8 @@
                 ),
             );
         });
+        organizeYourTeams();
+        setView(readView());
     }
     async function refresh() {
         if (pending || document.hidden || document.querySelector('dialog[open]')) return;
@@ -132,6 +207,20 @@
         }
     });
     document.addEventListener('click', (event) => {
+        const viewBtn = event.target.closest('[data-sb-view]');
+        if (viewBtn) {
+            const v = viewBtn.dataset.sbView;
+            try {
+                localStorage.setItem(viewKey, v);
+            } catch (_) {}
+            setView(v);
+            return;
+        }
+        if (!event.target.closest('.scoreboard-info')) {
+            document.querySelectorAll('.sb-card__info[open]').forEach((info) => {
+                info.removeAttribute('open');
+            });
+        }
         const button = event.target.closest('[data-scoreboard-team]');
         if (!button) return;
         const id = button.dataset.scoreboardTeam;

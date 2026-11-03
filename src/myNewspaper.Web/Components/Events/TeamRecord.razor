@@ -1,5 +1,5 @@
 @inject FeedDates Dates
-@if (Value is { } record)
+@if (Value is { } record && record.HasPlayed)
 {
     <span class="team-record" title="@Description(record)">@record.Text@(record.Stale ? " · last available" : "")</span>
 }

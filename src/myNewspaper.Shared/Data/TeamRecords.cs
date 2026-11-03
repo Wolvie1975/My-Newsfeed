@@ -5,7 +5,25 @@ using myNewspaper.Web.Data.Models;
 
 namespace myNewspaper.Web.Data;
 
-public sealed record TeamRecordValue(string Text, DateTime? UpdatedAt, bool Stale, bool IsCollege = false);
+public sealed record TeamRecordValue(string Text, DateTime? UpdatedAt, bool Stale, bool IsCollege = false)
+{
+    public bool HasPlayed => !IsZeroRecord(Text);
+
+    private static bool IsZeroRecord(string? text)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return false;
+        var hasDigit = false;
+        foreach (var c in text)
+        {
+            if (char.IsDigit(c))
+            {
+                if (c != '0') return false;
+                hasDigit = true;
+            }
+        }
+        return hasDigit;
+    }
+}
 
 /// <summary>One standings snapshot per page. Provider-scoped IDs never cross into Big 12 identities.</summary>
 public sealed class TeamRecords

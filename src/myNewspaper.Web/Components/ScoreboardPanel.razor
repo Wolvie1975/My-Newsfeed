@@ -7,34 +7,55 @@
 
 <div data-scoreboard data-scoreboard-compact="@Compact.ToString().ToLowerInvariant()" data-scoreboard-sport-filter="@(SportFilter ? "true" : null)" data-scoreboard-phone="@(PhoneFront ? "true" : null)">
     @* The phone front (docs/mobile-refresh-handoff.md) lives inside the panel, so each refresh replaces both copies. *@
-    <div class="@(PhoneFront ? "mx-desktop" : "mx-contents")">
-    <p class="updated scoreboard-note">Scores update approximately every 10 minutes. <span>Checks every five minutes while visible.</span></p>
+    <div class="@(PhoneFront ? "mx-desktop tab-desktop" : "mx-contents")">
+    @if (Compact)
+    {
+        <p class="updated scoreboard-note">Scores update approximately every 10 minutes. <span>Checks every five minutes while visible.</span></p>
+    }
     @if (!Compact)
     {
-        <p class="updated scoreboard-note">Records show current-season standings and are hidden during playoffs.</p>
-        <div class="scoreboard-season-links">
-            @if (hasMls) { <a href="mls/results">MLS season results →</a> }
-            @if (hasChampionship) { <a href="championship/results">EFL Championship season results →</a> }
+        <div class="sb-toolbar">
+            <nav class="sb-toolbar__dates scoreboard-dates" aria-label="Scoreboard dates">
+                @if (selectedDay > today.AddDays(-1)) { <a class="nf-btn nf-btn--secondary scoreboard-prev sb-toolbar__prev" href="@Href(selectedDay.AddDays(-1))"><span aria-hidden="true">←</span> <span class="sr-only">Previous day,</span> @selectedDay.AddDays(-1).ToString("ddd", System.Globalization.CultureInfo.InvariantCulture)</a> }
+                <strong class="scoreboard-date sb-toolbar__date">@selectedDay.ToString("dddd, MMMM d", System.Globalization.CultureInfo.InvariantCulture)</strong>
+                @if (selectedDay < today.AddDays(7)) { <a class="nf-btn nf-btn--secondary scoreboard-next sb-toolbar__next" href="@Href(selectedDay.AddDays(1))"><span class="sr-only">Next day,</span> @selectedDay.AddDays(1).ToString("ddd", System.Globalization.CultureInfo.InvariantCulture) <span aria-hidden="true">→</span></a> }
+                <div class="sb-toolbar__notes" tabindex="0" role="region" aria-label="Scoreboard notes">
+                    <button type="button" class="sb-info-trigger" aria-label="Scoreboard notes and season results" aria-describedby="sb-notes-popover">ⓘ</button>
+                    <div id="sb-notes-popover" class="sb-notes-popover" role="tooltip">
+                        <p class="sb-note">Scores update approximately every 10 minutes. <span>Checks every five minutes while visible.</span></p>
+                        <p class="sb-note">Records show current-season standings and are hidden during playoffs.</p>
+                        <p class="sb-note">Sampled clocks stay fixed between updates. Coverage excludes F1 and unsupported leagues.</p>
+                        @if (hasMls || hasChampionship)
+                        {
+                            <div class="scoreboard-season-links">
+                                @if (hasMls) { <a href="mls/results">MLS season results →</a> }
+                                @if (hasChampionship) { <a href="championship/results">EFL Championship season results →</a> }
+                            </div>
+                        }
+                    </div>
+                </div>
+                @if (selectedDay != today) { <a class="scoreboard-today sb-toolbar__today" href="@Href(today)">Today</a> }
+            </nav>
+            <div class="sb-toolbar__controls">
+                <form method="get" action="scoreboard" class="catselect scoreboard-filter sb-toolbar__filter">
+                    <input type="hidden" name="day" value="@selectedDay.ToString("yyyy-MM-dd")" />
+                    <label for="scoreboard-show">Show</label>
+                    <select id="scoreboard-show" name="show" aria-label="Show" onchange="this.form.requestSubmit()">
+                        @ShowOptions
+                    </select>
+                    <label for="scoreboard-status">Games</label>
+                    <select id="scoreboard-status" name="status" aria-label="Games" onchange="this.form.requestSubmit()">
+                        <option value="">All statuses</option>
+                        <option value="final" selected="@(Status == "final")">Final scores</option>
+                    </select>
+                    <noscript><button class="nf-btn nf-btn--secondary" type="submit">Apply</button></noscript>
+                </form>
+                <div class="sb-view-switch" role="group" aria-label="View layout">
+                    <button type="button" class="sb-view-btn" data-sb-view="cards" aria-pressed="true" title="Card grid">Cards</button>
+                    <button type="button" class="sb-view-btn" data-sb-view="list" aria-pressed="false" title="Compact list">List</button>
+                </div>
+            </div>
         </div>
-        <nav class="tv-week scoreboard-dates" aria-label="Scoreboard dates">
-            @if (selectedDay > today.AddDays(-1)) { <a class="nf-btn nf-btn--secondary scoreboard-prev" href="@Href(selectedDay.AddDays(-1))"><span aria-hidden="true">←</span> <span class="sr-only">Previous day,</span> @selectedDay.AddDays(-1).ToString("ddd", System.Globalization.CultureInfo.InvariantCulture)</a> }
-            <strong class="scoreboard-date">@selectedDay.ToString("dddd, MMMM d", System.Globalization.CultureInfo.InvariantCulture)</strong>
-            @if (selectedDay < today.AddDays(7)) { <a class="nf-btn nf-btn--secondary scoreboard-next" href="@Href(selectedDay.AddDays(1))"><span class="sr-only">Next day,</span> @selectedDay.AddDays(1).ToString("ddd", System.Globalization.CultureInfo.InvariantCulture) <span aria-hidden="true">→</span></a> }
-            @if (selectedDay != today) { <a class="scoreboard-today" href="@Href(today)">Today</a> }
-        </nav>
-        <form method="get" action="scoreboard" class="catselect scoreboard-filter">
-            <input type="hidden" name="day" value="@selectedDay.ToString("yyyy-MM-dd")" />
-            <label for="scoreboard-show">Show</label>
-            <select id="scoreboard-show" name="show" onchange="this.form.requestSubmit()">
-                @ShowOptions
-            </select>
-            <label for="scoreboard-status">Games</label>
-            <select id="scoreboard-status" name="status" onchange="this.form.requestSubmit()">
-                <option value="">All statuses</option>
-                <option value="final" selected="@(Status == "final")">Final scores</option>
-            </select>
-            <noscript><button class="nf-btn nf-btn--secondary" type="submit">Apply</button></noscript>
-        </form>
     }
     <p class="scoreboard-read-status updated" role="status">@(snapshot.Available ? "" : "Scores are temporarily unavailable. Please retry.")</p>
     @if (snapshot.Available)
@@ -65,55 +86,137 @@
         }
         else
         {
-            @* The full scoreboard groups games by competition, as in the approved concept. *@
-            <div class="sb-groups">
-                @foreach (var group in visibleGames.GroupBy(g => CompetitionLabel(g.Sport, g.League)))
-                {
-                    <section class="sb-group" aria-label="@group.Key">
-                        <h2 class="sb-group__title"><span>@group.Key</span><span class="sb-group__count">@group.Count() @(group.Count() == 1 ? "game" : "games")</span></h2>
-                        <div class="scoreboard-games">
-                            @foreach (var game in group) { @GameCard(game) }
+            <div class="sb-body">
+                <main class="sb-main">
+                    @* "Your teams" section (pinned, hidden if empty; populated client-side by scoreboard.js) *@
+                    <section class="sb-status sb-status--your-teams" id="sb-status-your-teams" aria-labelledby="sb-head-your-teams" hidden>
+                        <header class="sb-status__head">
+                            <h2 id="sb-head-your-teams">Your teams</h2>
+                            <span class="sb-status__count" data-your-teams-count>0 games</span>
+                            <a href="settings#my-teams-heading" class="sb-status__edit">Edit</a>
+                        </header>
+                        <div class="sb-grid" id="sb-grid-your-teams"></div>
+                    </section>
+
+                    @* Status groups: Live, Upcoming, Final *@
+                    @foreach (var group in StatusGroups(visibleGames))
+                    {
+                        <section class="sb-status sb-status--@group.Key" id="sb-status-@group.Key" aria-labelledby="sb-head-@group.Key">
+                            <header class="sb-status__head">
+                                @if (group.Key == "live") { <span class="sb-dot" aria-hidden="true"></span> }
+                                <h2 id="sb-head-@group.Key">@group.Title</h2>
+                                <span class="sb-status__count" id="sb-count-@group.Key">@group.Games.Count @(group.Games.Count == 1 ? "game" : "games")</span>
+                            </header>
+                            <div class="sb-grid" id="sb-grid-@group.Key">
+                                @foreach (var game in group.Games) { @GameCard(game) }
+                            </div>
+                        </section>
+                    }
+
+                    @if (selection.IsTop25)
+                    {
+                        var weeklyGames = snapshot.Top25Week ?? [];
+                        <section class="sb-top25-week" aria-label="Upcoming ranked games this week">
+                            <header class="sb-top25-week__head">
+                                <h2 class="sb-top25-week__title">Upcoming ranked games this week</h2>
+                                <span class="sb-top25-week__count">@weeklyGames.Count @(weeklyGames.Count == 1 ? "game" : "games")</span>
+                            </header>
+                            <p class="sb-top25-week__note">Ranked matchups across the country this week (excluding Big 12 games).</p>
+                            @if (weeklyGames.Count == 0)
+                            {
+                                <p class="empty">No remaining ranked games this week.</p>
+                            }
+                            else
+                            {
+                                <div class="sb-grid">
+                                    @foreach (var game in weeklyGames) { @GameCard(game) }
+                                </div>
+                            }
+                        </section>
+                    }
+                </main>
+
+                <aside class="sb-rail" aria-label="More sports">
+                    @if (railRankings?.Teams is { Count: > 0 } rankedTeams)
+                    {
+                        <section class="sb-rail__panel" aria-labelledby="sb-rail-top25-title">
+                            <div class="sb-rail__head">
+                                <h3 id="sb-rail-top25-title">Top 25</h3>
+                                <a href="rankings">Full poll →</a>
+                            </div>
+                            <ol class="sb-rail__list">
+                                @foreach (var team in rankedTeams.Take(10))
+                                {
+                                    var todayGame = visibleGames.FirstOrDefault(g => g.HomeName == team.TeamName || g.AwayName == team.TeamName);
+                                    <li class="sb-rail__item">
+                                        <span class="sb-rail__rank">@team.Rank</span>
+                                        <span class="sb-rail__team">
+                                            @if (EventsText.LogoUrl(team.LogoUrl) is {} logo)
+                                            {
+                                                <img src="@logo" alt="" width="18" height="18" loading="lazy" decoding="async" />
+                                            }
+                                            <span class="sb-rail__name">@team.TeamName</span>
+                                        </span>
+                                        <span class="sb-rail__status">
+                                            @if (todayGame != null)
+                                            {
+                                                @if (todayGame.Active) { <b class="sb-rail__live">Live</b> }
+                                                else if (todayGame.Status == "final") {
+                                                    var isHome = todayGame.HomeName == team.TeamName;
+                                                    var won = (isHome && todayGame.WinnerSide == "home") || (!isHome && todayGame.WinnerSide == "away");
+                                                    <span class="@(won ? "sb-rail__win" : "sb-rail__lose")">@(won ? "W" : "L") @(isHome ? $"{todayGame.HomeScore}-{todayGame.AwayScore}" : $"{todayGame.AwayScore}-{todayGame.HomeScore}")</span>
+                                                }
+                                                else {
+                                                    <span>@(todayGame.StartsAtUtc != null ? Dates.EventTime(todayGame.StartsAtUtc.Value) : "Today")</span>
+                                                }
+                                            }
+                                            else {
+                                                <span class="sb-rail__record">@(team.Record ?? "")</span>
+                                            }
+                                        </span>
+                                    </li>
+                                }
+                            </ol>
+                        </section>
+                    }
+
+                    <section class="sb-rail__panel" aria-labelledby="sb-rail-standings-title">
+                        <div class="sb-rail__head">
+                            <h3 id="sb-rail-standings-title">Standings</h3>
+                            <a href="standings">All →</a>
+                        </div>
+                        @if (railStandings?.Groups.FirstOrDefault() is { Teams.Count: > 0 } standingsGroup)
+                        {
+                            <ol class="sb-rail__list">
+                                @foreach (var team in standingsGroup.Teams.Take(8))
+                                {
+                                    <li class="sb-rail__item">
+                                        <span class="sb-rail__name">@team.Row.TeamName</span>
+                                        <span class="sb-rail__record">@StandingsQuery.StatisticValue(team, "conf")</span>
+                                    </li>
+                                }
+                            </ol>
+                        }
+                        else
+                        {
+                            <p class="sb-rail__empty">Shown once teams have played a conference game.</p>
+                        }
+                    </section>
+
+                    <section class="sb-rail__panel sb-rail__your-teams" id="sb-rail-your-teams" aria-labelledby="sb-rail-your-teams-title">
+                        <div class="sb-rail__head">
+                            <h3 id="sb-rail-your-teams-title">Your teams</h3>
+                            <a href="settings#my-teams-heading">Manage →</a>
+                        </div>
+                        <div class="sb-rail__your-teams-list" id="sb-rail-your-teams-list">
+                            <p class="sb-rail__empty">Star teams to track them here.</p>
                         </div>
                     </section>
-                }
+                </aside>
             </div>
         }
         @if (Compact && homeGames.Count > visibleGames.Count) { <p class="updated">Showing @visibleGames.Count of @homeGames.Count games. <a href="@(homeShow.Length == 0 ? "scoreboard" : "scoreboard?show=" + Uri.EscapeDataString(homeShow))">See all games →</a></p> }
-        @if (!Compact && selection.IsTop25)
-        {
-            var weeklyGames = snapshot.Top25Week ?? [];
-            <section class="sb-top25-week" aria-label="Upcoming ranked games this week">
-                <header class="sb-top25-week__head">
-                    <h2 class="sb-top25-week__title">Upcoming ranked games this week</h2>
-                    <span class="sb-top25-week__count">@weeklyGames.Count @(weeklyGames.Count == 1 ? "game" : "games")</span>
-                </header>
-                <p class="sb-top25-week__note">Ranked matchups across the country this week (excluding Big 12 games).</p>
-                @if (weeklyGames.Count == 0)
-                {
-                    <p class="empty">No remaining ranked games this week.</p>
-                }
-                else
-                {
-                    <div class="sb-groups">
-                        @foreach (var dayGroup in weeklyGames.GroupBy(g => g.ScoreboardDate))
-                        {
-                            var dayDate = dayGroup.Key;
-                            <div class="sb-group" aria-label="@dayDate.ToString("dddd, MMMM d", System.Globalization.CultureInfo.InvariantCulture)">
-                                <h3 class="sb-group__title">
-                                    <span>@dayDate.ToString("dddd, MMMM d", System.Globalization.CultureInfo.InvariantCulture)</span>
-                                    <span class="sb-group__count">@dayGroup.Count() @(dayGroup.Count() == 1 ? "game" : "games")</span>
-                                </h3>
-                                <div class="scoreboard-games">
-                                    @foreach (var game in dayGroup) { @GameCard(game) }
-                                </div>
-                            </div>
-                        }
-                    </div>
-                }
-            </section>
-        }
     }
-    @if (!Compact) { <p class="updated scoreboard-note">Sampled clocks stay fixed between updates. Coverage excludes F1 and unsupported leagues.</p> }
     </div>
     @if (PhoneFront)
     {
@@ -263,6 +366,8 @@
     [Parameter, SupplyParameterFromQuery(Name="status")] public string? Status { get; set; }
     private TeamRecords records = TeamRecords.Empty;
     private bool hasMls, hasChampionship;
+    private RankingsPage? railRankings;
+    private StandingsPage? railStandings;
     private TeamRecordValue? RecordFor(ScoreboardGame game, bool home) {
         if (game.Provider != "espn") return null;
         var competition = TeamRecords.Competition(game.Sport, game.League);
@@ -283,13 +388,34 @@
         snapshot = await Repository.ReadAsync(selectedDay, selectedDay == today, Compact ? null : Competition, Compact ? null : Follow, !Compact && Status == "final", Compact ? null : Show);
         selection = ScoreboardSelection.Resolve(Compact ? null : Show, Compact ? null : Competition, Compact ? null : Follow, snapshot.Coverage, snapshot.Follows ?? []);
         try {
-        await using var db = await Factory.CreateDbContextAsync();
-        records = await TeamRecords.LoadAsync(db, today, RecordPhases);
-        hasMls = !Compact && await db.SportsEventsTypes.AsNoTracking().AnyAsync(s => s.Enabled && s.ProviderKey == "espn-mls");
-        hasChampionship = !Compact && await db.SportsEventsTypes.AsNoTracking().AnyAsync(s => s.Enabled && s.ProviderKey == "espn-championship");
+            await using var db = await Factory.CreateDbContextAsync();
+            records = await TeamRecords.LoadAsync(db, today, RecordPhases);
+            hasMls = !Compact && await db.SportsEventsTypes.AsNoTracking().AnyAsync(s => s.Enabled && s.ProviderKey == "espn-mls");
+            hasChampionship = !Compact && await db.SportsEventsTypes.AsNoTracking().AnyAsync(s => s.Enabled && s.ProviderKey == "espn-championship");
+            if (!Compact)
+            {
+                try
+                {
+                    railRankings = await RankingsQuery.GetAsync(db, null, Log, today);
+                }
+                catch (Exception ex) when (DataFailures.IsReadFailure(ex))
+                {
+                    railRankings = null;
+                }
+                try
+                {
+                    railStandings = await StandingsQuery.GetAsync(db, null, Log, today);
+                }
+                catch (Exception ex) when (DataFailures.IsReadFailure(ex))
+                {
+                    railStandings = null;
+                }
+            }
         } catch (Exception ex) when (DataFailures.IsReadFailure(ex)) {
             records = TeamRecords.Empty;
             hasMls = hasChampionship = false;
+            railRankings = null;
+            railStandings = null;
             Log.LogWarning(ex, "Optional scoreboard records and season links unavailable");
         }
         if (Compact)
@@ -365,8 +491,61 @@
             PhoneText.Network(game.Broadcasts), href ?? "scoreboard", PhoneColors.ForSport(game.Sport), External: href is not null);
     }
 
+    private sealed record SbGroup(string Key, string Title, IReadOnlyList<ScoreboardGame> Games);
+
+    private IEnumerable<SbGroup> StatusGroups(IReadOnlyList<ScoreboardGame> games)
+    {
+        var live = games.Where(g => g.Active)
+            .OrderByDescending(g => g.Period ?? 0)
+            .ThenBy(g => LiveClockSeconds(g.DisplayClock))
+            .ToList();
+        if (live.Count > 0)
+            yield return new("live", "Live", live);
+
+        var upcoming = games.Where(g => g.Status == "upcoming")
+            .OrderBy(g => g.StartsAtUtc ?? DateTime.MaxValue)
+            .ToList();
+        if (upcoming.Count > 0)
+            yield return new("upcoming", "Upcoming", upcoming);
+
+        var final = games.Where(g => g.Status == "final")
+            .OrderByDescending(g => g.LastObservedAtUtc)
+            .ToList();
+        if (final.Count > 0)
+            yield return new("final", "Final", final);
+    }
+
+    private static int LiveClockSeconds(string? clock)
+    {
+        if (string.IsNullOrWhiteSpace(clock)) return int.MaxValue;
+        var parts = clock.Split(':');
+        if (parts.Length == 2 && int.TryParse(parts[0], out var m) && int.TryParse(parts[1], out var s))
+            return m * 60 + s;
+        return int.MaxValue;
+    }
+
+    private string LiveClockText(ScoreboardGame game)
+    {
+        if (!string.IsNullOrWhiteSpace(game.DisplayClock))
+        {
+            var period = game.Period is {} p ? (p == 1 ? "1st" : p == 2 ? "2nd" : p == 3 ? "3rd" : p == 4 ? "4th" : $"OT{p - 4}") : "";
+            return string.IsNullOrEmpty(period) ? game.DisplayClock : $"{period} · {game.DisplayClock}";
+        }
+        return game.StatusText ?? "Live";
+    }
+
+    private string CardAccessibleLabel(ScoreboardGame game)
+    {
+        var status = game.Active ? LiveClockText(game) : game.Status == "final" ? "Final" : (game.StartsAtUtc != null ? Dates.EventTime(game.StartsAtUtc.Value) : "Upcoming");
+        if (game.AwayScore != null && game.HomeScore != null)
+            return $"{game.AwayName} {ScoreboardGame.Score(game.AwayScore)}, {game.HomeName} {ScoreboardGame.Score(game.HomeScore)}, {status}";
+        return $"{game.AwayName} vs {game.HomeName}, {status}";
+    }
+
     private RenderFragment GameCard(ScoreboardGame game) => __builder =>
     {
+        if (Compact)
+        {
             <article class="scoreboard-game" data-scoreboard-key="@game.Key">
                 <header class="scoreboard-game-heading">
                     <span class="scoreboard-competition">@CompetitionLabel(game.Sport, game.League)</span>
@@ -397,7 +576,7 @@
                     @if (game.ScoreboardDate < today && game.Active) { <p>Continuing from @FeedDates.LongDate(game.ScoreboardDate)</p> }
                     @if (game.HomeShootout != null || game.AwayShootout != null) { <p>Shootout · Away @(game.AwayShootout?.ToString() ?? "—") – Home @(game.HomeShootout?.ToString() ?? "—")</p> }
                 </div>
-                @if (!Compact && (game.Details != null || game.Venue != null || game.NeutralSite == true || game.Broadcasts != null)) {
+                @if (game.Details != null || game.Venue != null || game.NeutralSite == true || game.Broadcasts != null) {
                     <details class="scoreboard-info">
                         <summary>Game info</summary>
                         @if (game.Details is {} details) { <p>@details</p> }
@@ -417,5 +596,125 @@
                     </div>
                 </footer>
             </article>
+        }
+        else
+        {
+            var cardUrl = FeedQuery.SafeHref(game.SourceUrl);
+            var isLive = game.Active;
+            var isFinal = game.Status == "final";
+            var homeWin = (isFinal && game.Completed && game.WinnerSide == "home") || (isFinal && game.Completed && game.WinnerSide == null && game.HomeScore > game.AwayScore) || (isLive && game.HomeScore > game.AwayScore);
+            var awayWin = (isFinal && game.Completed && game.WinnerSide == "away") || (isFinal && game.Completed && game.WinnerSide == null && game.AwayScore > game.HomeScore) || (isLive && game.AwayScore > game.HomeScore);
+            var homeLose = (isFinal && game.Completed && !homeWin && (awayWin || game.HomeScore < game.AwayScore)) || (isLive && awayWin);
+            var awayLose = (isFinal && game.Completed && !awayWin && (homeWin || game.AwayScore < game.HomeScore)) || (isLive && homeWin);
+            var awayLogo = EventsText.LogoUrl(game.AwayLogoUrl);
+            var homeLogo = EventsText.LogoUrl(game.HomeLogoUrl);
+            var awayRecord = RecordFor(game, false);
+            var homeRecord = RecordFor(game, true);
+            var statusKey = isLive ? "live" : game.Status == "upcoming" ? "upcoming" : "final";
+
+            <article class="sb-card scoreboard-game @(isLive ? "sb-card--live" : "")" data-scoreboard-key="@game.Key" data-sb-status="@statusKey">
+                <div class="sb-card__header">
+                    <div class="sb-card__status">
+                        @if (isLive)
+                        {
+                            <span class="sb-pill sb-pill--live">
+                                <span class="sb-dot" aria-hidden="true"></span>
+                                <span>@LiveClockText(game)</span>
+                            </span>
+                        }
+                        else if (game.Status == "upcoming")
+                        {
+                            <span class="sb-card__time">@(game.TimeTbd || game.StartsAtUtc == null ? "Start time TBD" : Dates.EventTime(game.StartsAtUtc.Value))</span>
+                            @if (!string.IsNullOrWhiteSpace(game.Broadcasts))
+                            {
+                                <span class="sb-card__network">@game.Broadcasts</span>
+                            }
+                        }
+                        else
+                        {
+                            <span class="sb-card__final">@(game.StatusText ?? "Final")</span>
+                        }
+                    </div>
+                    <div class="sb-card__tools">
+                        @if (game.Details != null || game.Venue != null || game.NeutralSite == true || game.Broadcasts != null)
+                        {
+                            <details class="scoreboard-info sb-card__info">
+                                <summary class="sb-card__tool sb-card__info-btn" title="Game info" aria-label="Game info">ⓘ</summary>
+                                <div class="sb-card__popover" role="tooltip">
+                                    @if (game.Details is {} details) { <p>@details</p> }
+                                    @if (game.Venue != null || game.NeutralSite == true) { <p>@game.Venue @(game.NeutralSite == true ? "· Neutral site" : "")</p> }
+                                    @if (game.Broadcasts != null) { <p>@game.Broadcasts</p> }
+                                </div>
+                            </details>
+                        }
+                        @if (game.AwayPreference is {} away)
+                        {
+                            <button type="button" class="scoreboard-favorite sb-card__tool" data-scoreboard-team="@away" aria-label="@($"Highlight {game.AwayName}")" aria-pressed="false" hidden>☆</button>
+                        }
+                        @if (game.HomePreference is {} home && home != game.AwayPreference)
+                        {
+                            <button type="button" class="scoreboard-favorite sb-card__tool" data-scoreboard-team="@home" aria-label="@($"Highlight {game.HomeName}")" aria-pressed="false" hidden>☆</button>
+                        }
+                    </div>
+                </div>
+
+                <div class="sb-card__teams">
+                    <div class="sb-card__team @(awayWin ? "win" : awayLose ? "lose" : "")">
+                        <span class="team-badge @(awayLogo is null ? "no-logo" : "")" aria-hidden="true">
+                            <span class="team-badge__fallback">@EventsText.Initials(game.AwayName)</span>
+                            @if (awayLogo is not null)
+                            {
+                                <img src="@awayLogo" alt="" width="22" height="22" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.parentNode.classList.add('is-broken');this.remove()" />
+                            }
+                        </span>
+                        <span class="name">
+                            @if (game.AwayRank is >= 1 and <= 25) { <b class="sb-rank">#@game.AwayRank</b>@(" ") }
+                            <span class="team-title">@game.AwayName</span>
+                            <myNewspaper.Web.Components.Events.TeamRecord Value="@awayRecord" />
+                            @if (awayWin) { <span class="sr-only">@(isFinal ? ", winner" : ", leading")</span> }
+                        </span>
+                        @if (game.AwayScore != null)
+                        {
+                            <strong class="score">@ScoreboardGame.Score(game.AwayScore)</strong>
+                        }
+                    </div>
+
+                    <div class="sb-card__team @(homeWin ? "win" : homeLose ? "lose" : "")">
+                        <span class="team-badge @(homeLogo is null ? "no-logo" : "")" aria-hidden="true">
+                            <span class="team-badge__fallback">@EventsText.Initials(game.HomeName)</span>
+                            @if (homeLogo is not null)
+                            {
+                                <img src="@homeLogo" alt="" width="22" height="22" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.parentNode.classList.add('is-broken');this.remove()" />
+                            }
+                        </span>
+                        <span class="name">
+                            @if (game.HomeRank is >= 1 and <= 25) { <b class="sb-rank">#@game.HomeRank</b>@(" ") }
+                            <span class="team-title">@game.HomeName</span>
+                            <myNewspaper.Web.Components.Events.TeamRecord Value="@homeRecord" />
+                            @if (homeWin) { <span class="sr-only">@(isFinal ? ", winner" : ", leading")</span> }
+                        </span>
+                        @if (game.HomeScore != null)
+                        {
+                            <strong class="score">@ScoreboardGame.Score(game.HomeScore)</strong>
+                        }
+                    </div>
+                </div>
+
+                @if (isFinal && (cardUrl != null || game.HasBoxScore))
+                {
+                    <footer class="sb-card__footer">
+                        <div class="sb-card__links">
+                            @if (cardUrl is {} url) { <a href="@url" target="_blank" rel="noopener noreferrer" class="sb-card__recap">Recap <span aria-hidden="true">↗</span></a> }
+                            <myNewspaper.Web.Components.BoxScores.BoxScoreLink Identity="@(new BoxIdentity(game.Sport, game.League, game.EventId))" Labels="boxLabels" Context="@(game.AwayName + " at " + game.HomeName)" />
+                        </div>
+                    </footer>
+                }
+
+                @if (cardUrl is {} mainHref)
+                {
+                    <a href="@mainHref" class="sb-card__main-link" target="_blank" rel="noopener noreferrer" aria-label="@CardAccessibleLabel(game)"></a>
+                }
+            </article>
+        }
     };
 }
