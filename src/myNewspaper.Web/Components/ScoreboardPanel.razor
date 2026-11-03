@@ -180,29 +180,6 @@
                         </section>
                     }
 
-                    <section class="sb-rail__panel" aria-labelledby="sb-rail-standings-title">
-                        <div class="sb-rail__head">
-                            <h3 id="sb-rail-standings-title">Standings</h3>
-                            <a href="standings">All →</a>
-                        </div>
-                        @if (railStandings?.Groups.FirstOrDefault() is { Teams.Count: > 0 } standingsGroup)
-                        {
-                            <ol class="sb-rail__list">
-                                @foreach (var team in standingsGroup.Teams.Take(8))
-                                {
-                                    <li class="sb-rail__item">
-                                        <span class="sb-rail__name">@team.Row.TeamName</span>
-                                        <span class="sb-rail__record">@StandingsQuery.StatisticValue(team, "conf")</span>
-                                    </li>
-                                }
-                            </ol>
-                        }
-                        else
-                        {
-                            <p class="sb-rail__empty">Shown once teams have played a conference game.</p>
-                        }
-                    </section>
-
                     <section class="sb-rail__panel sb-rail__your-teams" id="sb-rail-your-teams" aria-labelledby="sb-rail-your-teams-title">
                         <div class="sb-rail__head">
                             <h3 id="sb-rail-your-teams-title">Your teams</h3>
@@ -367,7 +344,6 @@
     private TeamRecords records = TeamRecords.Empty;
     private bool hasMls, hasChampionship;
     private RankingsPage? railRankings;
-    private StandingsPage? railStandings;
     private TeamRecordValue? RecordFor(ScoreboardGame game, bool home) {
         if (game.Provider != "espn") return null;
         var competition = TeamRecords.Competition(game.Sport, game.League);
@@ -402,20 +378,11 @@
                 {
                     railRankings = null;
                 }
-                try
-                {
-                    railStandings = await StandingsQuery.GetAsync(db, null, Log, today);
-                }
-                catch (Exception ex) when (DataFailures.IsReadFailure(ex))
-                {
-                    railStandings = null;
-                }
             }
         } catch (Exception ex) when (DataFailures.IsReadFailure(ex)) {
             records = TeamRecords.Empty;
             hasMls = hasChampionship = false;
             railRankings = null;
-            railStandings = null;
             Log.LogWarning(ex, "Optional scoreboard records and season links unavailable");
         }
         if (Compact)
