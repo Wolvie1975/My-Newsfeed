@@ -2246,6 +2246,12 @@ a.tvc-row__show:hover {
     font-size: 13px;
     min-height: 24px;
 }
+.pub .sb-rail__your-teams .sb-rail__item {
+    grid-template-columns: minmax(0, 1fr) auto;
+}
+.pub .sb-rail__your-teams .sb-rail__name {
+    white-space: normal;
+}
 .pub .sb-rail__rank {
     font-size: 12px;
     font-weight: 800;
@@ -2270,6 +2276,7 @@ a.tvc-row__show:hover {
     font-weight: 600;
     color: var(--text-2);
     text-align: right;
+    white-space: nowrap;
 }
 .pub .sb-rail__live {
     color: var(--live, #b0001e);
