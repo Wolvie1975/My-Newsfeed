@@ -1561,10 +1561,10 @@ span.mx-stepper__btn {
    --sec is the light-mode band (white text on it); --sec-glow is mixed into the surface in dark mode,
    the same way the scheme ribbons are. Desk ribbons (below) still override their section. */
 .pub [data-section='news'] {
-    --sec: #1e293b;
-    --sec-kicker: #cbd5e1;
-    --sec-glow: #94a3b8;
-    --sec-kicker-dark: #cbd5e1;
+    --sec: #1d4ed8;
+    --sec-kicker: #dbeafe;
+    --sec-glow: #3b82f6;
+    --sec-kicker-dark: #93c5fd;
 }
 .pub [data-section='sports'] {
     --sec: #166534;
