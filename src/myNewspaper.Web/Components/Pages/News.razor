@@ -20,9 +20,7 @@
    or a later page keeps this layout on every width. *@
 <div class="@(Phone ? "mx-desktop tab-desktop" : SectionNews ? "mx-tool-page mx-section-news tab-desktop" : "mx-contents tab-desktop")">
 @if (SectionNews) {
-    <div class="mx-phone" data-phone-tools="headlines"><PhoneRibbon Title="@Title" Kicker="@($"{HubLabel(Hub)} · Every story, every source")">
-        <SectionSelect Id="hub-section-m" Label="Section" Choices="@(SectionChoices.For(Hub)!)" Current="@SectionNewsCurrent" AlwaysSelect="true" />
-    </PhoneRibbon></div>
+    <div class="mx-phone" data-phone-tools="headlines"><PhoneRibbon Section="@Hub" SectionCurrent="@SectionNewsCurrent" Title="@Title" Kicker="@($"{HubLabel(Hub)} · Every story, every source")" /></div>
 }
 <div class="@(SectionNews ? "mx-desktop" : "mx-contents")">
 <PageHeading Section="@(SectionNews ? Hub : "news")" Choices="@(SectionNews ? (Hub == "tech" ? SectionChoices.Tech : null) : newsTabs)" SectionCurrent="@(SectionNews ? (Hub == "tech" ? "headlines" : SectionNewsCurrent) : NewsCurrent)" Title="@Title" Eyebrow="@((SectionNews ? HubLabel(Hub) : "News") + " · Every story, every source")" Description="" />
@@ -133,7 +131,7 @@ else
     var shown = front.Items.Take(7).ToArray();
     var folds = foldCategories.Where(c => latestByCategory.TryGetValue(c.Id, out var items) && items.Count > 0).ToArray();
     <div class="mx-phone tab-phone">
-        <PhoneRibbon Kicker="@RibbonKicker(front)" Title="@PhoneTitle">
+        <PhoneRibbon Section="news" Kicker="@RibbonKicker(front)" Title="@PhoneTitle">
             <SectionSelect Id="news-section-m" Label="Section" Choices="newsTabs" Current="@NewsCurrent" AlwaysSelect="true" />
         </PhoneRibbon>
 

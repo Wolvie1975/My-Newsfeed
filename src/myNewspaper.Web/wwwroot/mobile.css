@@ -1641,7 +1641,10 @@ span.mx-stepper__btn {
     background: var(--sec);
     color: #ffffff;
 }
-:root[data-theme='dark'] .pub .mobile-nav-group[data-section] > .nav-group-label {
+:root[data-theme='dark']:is([data-color-scheme], :not([data-color-scheme]))
+    .pub
+    .mobile-nav-group[data-section]
+    > .nav-group-label {
     background: color-mix(in srgb, var(--sec-glow) 28%, var(--surface));
     color: var(--sec-kicker-dark);
 }

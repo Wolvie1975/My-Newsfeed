@@ -149,9 +149,7 @@
 
 @* Phones: the folded Sports front (docs/mobile-refresh-handoff.md), from the same data. *@
 <div class="mx-phone tab-phone">
-    <PhoneRibbon Kicker="@($"{Dates.TodayLabel(nowUtc)}{(live.Count > 0 ? $" · {live.Count} live now" : "")}")" Title="Sports">
-        <SectionSelect Id="sports-section-m" Label="Section" Choices="@SectionChoices.Sports" MatchPrefix="true" AlwaysSelect="true" />
-    </PhoneRibbon>
+    <PhoneRibbon Section="sports" Kicker="@($"{Dates.TodayLabel(nowUtc)}{(live.Count > 0 ? $" · {live.Count} live now" : "")}")" Title="Sports" />
 
     @if (stories.Count > 0)
     {

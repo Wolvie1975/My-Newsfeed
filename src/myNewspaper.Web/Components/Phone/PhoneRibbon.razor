@@ -7,7 +7,7 @@
     </div>
     @if (SectionChoices.For(Section) is { } choices)
     {
-        <SectionSelect Id="@($"{Section}-section-m")" Label="Section" Choices="choices" MatchPrefix="true" AlwaysSelect="true" />
+        <SectionSelect Id="@($"{Section}-section-m")" Label="Section" Choices="choices" Current="@SectionCurrent" MatchPrefix="true" AlwaysSelect="true" />
     }
     @Extra
     @ChildContent
@@ -20,6 +20,8 @@
     [Parameter] public string? Section { get; set; }
     /// <summary>Optional desk slug ("technology", "video-games", "linux") for desk-colored phone ribbons.</summary>
     [Parameter] public string? Desk { get; set; }
+    /// <summary>Overrides which section choice is current when the path is ambiguous.</summary>
+    [Parameter] public string? SectionCurrent { get; set; }
     /// <summary>Optional row between the title and the select (date stepper, search box).</summary>
     [Parameter] public RenderFragment? Extra { get; set; }
     /// <summary>The one select, wrapped in &lt;div class="mx-ribbon__field"&gt; (or a form with that class) with its label.</summary>

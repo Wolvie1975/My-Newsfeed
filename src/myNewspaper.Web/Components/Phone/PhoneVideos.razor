@@ -1,7 +1,7 @@
 @using myNewspaper.Web.Components.Feed
 @inject FeedDates Dates
 <div class="mx-phone tab-phone" data-phone-life="videos">
-    <PhoneRibbon Title="YouTube" Kicker="@($"From your channels · {Total} {(Total == 1 ? "video" : "videos")}")">
+    <PhoneRibbon Section="watch" Title="YouTube" Kicker="@($"From your channels · {Total} {(Total == 1 ? "video" : "videos")}")">
         <SectionSelect Id="video-channel-m" Label="Channel" Current="@Current" Choices="Choices" AlwaysSelect="true" />
     </PhoneRibbon>
     @if (Items.Count == 0) {

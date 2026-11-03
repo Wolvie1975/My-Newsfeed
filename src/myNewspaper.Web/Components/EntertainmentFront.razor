@@ -242,9 +242,7 @@
 
 @* Phones: the folded Entertainment front (docs/mobile-refresh-handoff.md), from the same data. *@
 <div class="mx-phone tab-phone">
-    <PhoneRibbon Kicker="@($"{Dates.TodayLabel(nowUtc)}{(showResults && boxOffice.Count > 0 ? " · weekend box office is in" : "")}")" Title="Entertainment">
-        <SectionSelect Id="entertainment-section-m" Label="Section" Choices="@SectionChoices.Entertainment" AlwaysSelect="true" />
-    </PhoneRibbon>
+    <PhoneRibbon Section="entertainment" Kicker="@($"{Dates.TodayLabel(nowUtc)}{(showResults && boxOffice.Count > 0 ? " · weekend box office is in" : "")}")" Title="Entertainment" />
 
     @if (stories.Count > 0)
     {
