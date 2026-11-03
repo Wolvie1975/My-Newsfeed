@@ -7,7 +7,7 @@
 @if (Reader.HasProfile)
 {
     @* Profiles on: following adds the show to this profile's TV calendar (handoff 4.1). *@
-    <PageHeading Title="Follow a TV series" Eyebrow="@("TV & Streaming")" Description="Add a show to your TV calendar. Choose the right series by its premiere year and network; episodes appear after the scraper’s next run." />
+    <PageHeading Section="entertainment" Title="Follow a TV series" Eyebrow="@("TV & Streaming")" Description="Add a show to your TV calendar. Choose the right series by its premiere year and network; episodes appear after the scraper’s next run." />
     @if (myNewspaper.Web.Components.Settings.SettingsMessages.Done(Done) is { } done) { <p class="set-message is-ok" role="status">@done <a href="settings#shows">Your shows →</a></p> }
     @if (myNewspaper.Web.Components.Settings.SettingsMessages.Error(Error, null) is { } error) { <p class="set-message is-bad" role="alert">@error</p> }
     <section id="shows">

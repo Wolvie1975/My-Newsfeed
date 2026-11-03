@@ -148,6 +148,80 @@
         display: none;
     }
 }
+
+/* Page headings: section-colored eyebrow & subnav tabs on desktop */
+:root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+    .pub .page-heading[data-section='news'] .page-eyebrow,
+:root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+    .pub .page-heading[data-section='news'] .section-tabs a[aria-current='page'] {
+    color: #1d4ed8;
+    border-bottom-color: #1d4ed8;
+}
+:root[data-theme='dark']:is([data-color-scheme], :not([data-color-scheme]))
+    .pub .page-heading[data-section='news'] .page-eyebrow,
+:root[data-theme='dark']:is([data-color-scheme], :not([data-color-scheme]))
+    .pub .page-heading[data-section='news'] .section-tabs a[aria-current='page'] {
+    color: #60a5fa;
+    border-bottom-color: #60a5fa;
+}
+:root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+    .pub .page-heading[data-section='sports'] .page-eyebrow,
+:root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+    .pub .page-heading[data-section='sports'] .section-tabs a[aria-current='page'] {
+    color: #166534;
+    border-bottom-color: #166534;
+}
+:root[data-theme='dark']:is([data-color-scheme], :not([data-color-scheme]))
+    .pub .page-heading[data-section='sports'] .page-eyebrow,
+:root[data-theme='dark']:is([data-color-scheme], :not([data-color-scheme]))
+    .pub .page-heading[data-section='sports'] .section-tabs a[aria-current='page'] {
+    color: #4ade80;
+    border-bottom-color: #4ade80;
+}
+:root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+    .pub .page-heading[data-section='entertainment'] .page-eyebrow,
+:root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+    .pub .page-heading[data-section='entertainment'] .section-tabs a[aria-current='page'] {
+    color: #be185d;
+    border-bottom-color: #be185d;
+}
+:root[data-theme='dark']:is([data-color-scheme], :not([data-color-scheme]))
+    .pub .page-heading[data-section='entertainment'] .page-eyebrow,
+:root[data-theme='dark']:is([data-color-scheme], :not([data-color-scheme]))
+    .pub .page-heading[data-section='entertainment'] .section-tabs a[aria-current='page'] {
+    color: #f472b6;
+    border-bottom-color: #f472b6;
+}
+:root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+    .pub .page-heading[data-section='tech'] .page-eyebrow,
+:root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+    .pub .page-heading[data-section='tech'] .section-tabs a[aria-current='page'] {
+    color: #5b21b6;
+    border-bottom-color: #5b21b6;
+}
+:root[data-theme='dark']:is([data-color-scheme], :not([data-color-scheme]))
+    .pub .page-heading[data-section='tech'] .page-eyebrow,
+:root[data-theme='dark']:is([data-color-scheme], :not([data-color-scheme]))
+    .pub .page-heading[data-section='tech'] .section-tabs a[aria-current='page'] {
+    color: #c084fc;
+    border-bottom-color: #c084fc;
+}
+:root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+    .pub .page-heading[data-section='watch'] .page-eyebrow {
+    color: #b45309;
+}
+:root[data-theme='dark']:is([data-color-scheme], :not([data-color-scheme]))
+    .pub .page-heading[data-section='watch'] .page-eyebrow {
+    color: #fbbf24;
+}
+:root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+    .pub .page-heading[data-section='tools'] .page-eyebrow {
+    color: #475569;
+}
+:root[data-theme='dark']:is([data-color-scheme], :not([data-color-scheme]))
+    .pub .page-heading[data-section='tools'] .page-eyebrow {
+    color: #94a3b8;
+}
 @media (max-width: 1023px) {
     .pub .section-nav--few .section-tabs {
         display: grid;
@@ -234,6 +308,57 @@
     }
     :root:is([data-color-scheme], :not([data-color-scheme])) .pub .d-card__head {
         border-bottom: 2px solid var(--text);
+    }
+
+    /* Home section headings: section-colored left accent line on broadsheet cards */
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub .bs-home :is([data-home-section='news'], [data-home-section='lead'], [data-home-section='opinion']) .d-card__title {
+        border-left: 3px solid #1d4ed8;
+        padding-left: 7px;
+    }
+    :root[data-theme='dark']:is([data-color-scheme], :not([data-color-scheme]))
+        .pub .bs-home :is([data-home-section='news'], [data-home-section='lead'], [data-home-section='opinion']) .d-card__title {
+        border-left-color: #60a5fa;
+    }
+
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub .bs-home :is([data-home-section='sports'], [data-home-section='scoreboard'], [data-home-section='sports-news'], [data-home-section='rankings']) .d-card__title {
+        border-left: 3px solid #166534;
+        padding-left: 7px;
+    }
+    :root[data-theme='dark']:is([data-color-scheme], :not([data-color-scheme]))
+        .pub .bs-home :is([data-home-section='sports'], [data-home-section='scoreboard'], [data-home-section='sports-news'], [data-home-section='rankings']) .d-card__title {
+        border-left-color: #4ade80;
+    }
+
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub .bs-home :is([data-home-section='entertainment-news'], [data-home-section='movies'], [data-home-section='tv'], [data-home-section='digital']) .d-card__title {
+        border-left: 3px solid #be185d;
+        padding-left: 7px;
+    }
+    :root[data-theme='dark']:is([data-color-scheme], :not([data-color-scheme]))
+        .pub .bs-home :is([data-home-section='entertainment-news'], [data-home-section='movies'], [data-home-section='tv'], [data-home-section='digital']) .d-card__title {
+        border-left-color: #f472b6;
+    }
+
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub .bs-home [data-home-section='tech-news'] .d-card__title {
+        border-left: 3px solid #5b21b6;
+        padding-left: 7px;
+    }
+    :root[data-theme='dark']:is([data-color-scheme], :not([data-color-scheme]))
+        .pub .bs-home [data-home-section='tech-news'] .d-card__title {
+        border-left-color: #c084fc;
+    }
+
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub .bs-home :is([data-home-section='watch'], [data-home-section='videos']) .d-card__title {
+        border-left: 3px solid #b45309;
+        padding-left: 7px;
+    }
+    :root[data-theme='dark']:is([data-color-scheme], :not([data-color-scheme]))
+        .pub .bs-home :is([data-home-section='watch'], [data-home-section='videos']) .d-card__title {
+        border-left-color: #fbbf24;
     }
 }
 
@@ -1702,6 +1827,56 @@
         a[aria-current] {
         color: var(--accent);
         font-weight: 800;
+    }
+
+    /* Section-colored top navigation on desktop */
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+        .pub .site-nav--inline a[href='news']:is(:hover, [aria-current]) {
+        color: #1d4ed8;
+    }
+    :root[data-theme='dark']:is([data-color-scheme], :not([data-color-scheme]))
+        .pub .site-nav--inline a[href='news']:is(:hover, [aria-current]) {
+        color: #60a5fa;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+        .pub .site-nav--inline a[href='sports']:is(:hover, [aria-current]) {
+        color: #166534;
+    }
+    :root[data-theme='dark']:is([data-color-scheme], :not([data-color-scheme]))
+        .pub .site-nav--inline a[href='sports']:is(:hover, [aria-current]) {
+        color: #4ade80;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+        .pub .site-nav--inline a[href='entertainment']:is(:hover, [aria-current]) {
+        color: #be185d;
+    }
+    :root[data-theme='dark']:is([data-color-scheme], :not([data-color-scheme]))
+        .pub .site-nav--inline a[href='entertainment']:is(:hover, [aria-current]) {
+        color: #f472b6;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+        .pub .site-nav--inline a[href='tech']:is(:hover, [aria-current]) {
+        color: #5b21b6;
+    }
+    :root[data-theme='dark']:is([data-color-scheme], :not([data-color-scheme]))
+        .pub .site-nav--inline a[href='tech']:is(:hover, [aria-current]) {
+        color: #c084fc;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+        .pub .site-nav--inline a:is([href='watch'], [href='videos']):is(:hover, [aria-current]) {
+        color: #b45309;
+    }
+    :root[data-theme='dark']:is([data-color-scheme], :not([data-color-scheme]))
+        .pub .site-nav--inline a:is([href='watch'], [href='videos']):is(:hover, [aria-current]) {
+        color: #fbbf24;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+        .pub :is(.saved-link, .settings-link):is(:hover, [aria-current]) {
+        color: #475569;
+    }
+    :root[data-theme='dark']:is([data-color-scheme], :not([data-color-scheme]))
+        .pub :is(.saved-link, .settings-link):is(:hover, [aria-current]) {
+        color: #94a3b8;
     }
     :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme])) .pub .header-actions {
         display: flex;
