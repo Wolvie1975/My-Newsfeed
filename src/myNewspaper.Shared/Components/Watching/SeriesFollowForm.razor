@@ -55,7 +55,7 @@
             var response = await Tvmaze.SearchAsync(query);
             results = response.Shows; error = response.Error; searched = true;
             await using var db = await Factory.CreateDbContextAsync();
-            followed = (await db.TvTrackedSeries.Where(t => t.Enabled).Select(t => t.TvmazeShowId).ToListAsync()).ToHashSet();
+            followed = (await TvQuery.TrackedShowIdsAsync(db)).ToHashSet();
         }
         finally { busy = false; }
     }

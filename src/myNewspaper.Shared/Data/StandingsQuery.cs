@@ -13,6 +13,11 @@ public sealed record StandingsPage(IReadOnlyList<SportsStandingsSource> Sources,
 
 public static class StandingsQuery
 {
+    /// <summary>The first enabled standings source for a provider, or null.</summary>
+    public static Task<int?> FirstSourceIdAsync(WebScraperContext db, string provider, CancellationToken ct = default) =>
+        db.SportsStandingsSources.AsNoTracking().Where(s => s.Enabled && s.ProviderKey == provider)
+            .OrderBy(s => s.Id).Select(s => (int?)s.Id).FirstOrDefaultAsync(ct);
+
     public static int? ParseSourceId(string? value) => int.TryParse(value, out var id) && id > 0 ? id : null;
 
     public static SportsStandingsSource? SelectSource(IEnumerable<SportsStandingsSource> sources, int? requested)

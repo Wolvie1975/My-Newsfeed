@@ -143,7 +143,7 @@ else
         records = await TeamRecords.LoadAsync(db, Dates.Today, RecordPhases);
         choices = await EventsQuery.GetScheduleChoicesAsync(db, today);
         selectedChoice = choices.FirstOrDefault(c => c.Value == Schedule);
-        selectedProvider = await db.SportsEventsTypes.AsNoTracking().Where(s => s.Enabled && s.Id == School).Select(s => s.ProviderKey).FirstOrDefaultAsync();
+        selectedProvider = await EventsQuery.ProviderOfScheduleAsync(db, School);
         if (selectedChoice is not null) selectedProvider = selectedChoice.Provider;
         pageIndex = int.TryParse(Page, out var page) ? Math.Clamp(page, 0, 10000) : 0;
         listing = await EventsQuery.GetUpcomingAsync(db, today, selectedChoice?.Sport ?? Sport, null, school: selectedChoice is null ? School : null, providerTeamId: selectedProvider == "espn-championship" && Team == 352 ? 352 : null, offset: pageIndex * EventsQuery.Limit, provider: selectedChoice?.Provider, to: today.AddDays(3));

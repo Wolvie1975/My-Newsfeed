@@ -72,6 +72,10 @@ public sealed record WeekSummary(
 /// <summary>Read side of the Tech front (/tech) and Tech desks.</summary>
 public static class TechQuery
 {
+    /// <summary>How many enabled sources feed the Tech hub's categories.</summary>
+    public static Task<int> SourceCountAsync(WebScraperContext db, CancellationToken ct = default) =>
+        db.Sources.AsNoTracking().CountAsync(s => s.Enabled && s.SourceCategory != null && s.SourceCategory.NewsHub == "tech", ct);
+
     public static readonly string[] VideoCategories = ["Tech", "Video Games"];
 
     private static readonly IReadOnlyList<VideoCategory> VideoCategoryTabs =

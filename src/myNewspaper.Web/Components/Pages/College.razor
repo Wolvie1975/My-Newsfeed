@@ -186,7 +186,7 @@ else
                 todayGames = pageIndex == 0 ? events.Items
                     : (await EventsQuery.GetUpcomingAsync(db, Dates.Today, selected.StandingsSport, null,
                         provider: "big12", to: Dates.Today)).Items;
-                updatedAt = await db.SportsEvents.AsNoTracking().Where(e => e.ProviderKey == "big12" && e.Sport == selected.StandingsSport).MaxAsync(e => (DateTime?)e.LastSeenAt);
+                updatedAt = await EventsQuery.LastSeenAsync(db, "big12", selected.StandingsSport);
                 pageIndex = Math.Min(pageIndex, Math.Max(0, (events.Total - 1) / EventsQuery.Limit));
                 // Side column: Big 12 schools in the national poll and the conference leaders, when published.
                 var poll = await RankingsQuery.GetAsync(db, null, Log, Dates.Today, selected.StandingsSport);
@@ -198,7 +198,7 @@ else
             else
             {
                 resultDay = DateOnly.TryParseExact(Day, "yyyy-MM-dd", out var day) && day >= Dates.Today.AddDays(-1) && day <= Dates.Today ? day : Dates.Today;
-                updatedAt = await db.ResultFollows.AsNoTracking().Where(f => f.Enabled && f.League == selected.League).MaxAsync(f => f.LastSyncedAt);
+                updatedAt = await ResultsQuery.LastSyncedAsync(db, selected.League);
                 results = await ResultsQuery.GetResultsAsync(db, null, window: ResultsWindow.ForDay(resultDay, Dates.Zone), collegeLeague: selected.League);
                 boxLabels = await BoxScores.AvailableAsync(results.Items.Select(i=>new BoxIdentity(i.Sport ?? "",i.League ?? "",i.EventId)));
             }

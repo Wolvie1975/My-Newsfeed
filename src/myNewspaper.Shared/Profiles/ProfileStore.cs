@@ -24,6 +24,15 @@ public sealed class ProfileNameTakenException() : ArgumentException("That name i
 /// <summary>The reader side of profiles: devices, opening with a PIN, creating, settings (profiles handoff 2.1 to 2.3).</summary>
 public static class ProfileStore
 {
+    /// <summary>The profile's previous visit (the start of the visit before this one), or null.</summary>
+    public static Task<DateTime?> PreviousVisitAsync(WebScraperContext db, int profileId, CancellationToken ct = default) =>
+        db.Profiles.AsNoTracking().Where(p => p.Id == profileId).Select(p => p.PreviousVisitAt).FirstOrDefaultAsync(ct);
+
+    /// <summary>A visible profile that has no PIN yet, as the first-PIN page shows it; null for any other profile.</summary>
+    public static Task<PinlessProfile?> PinlessAsync(WebScraperContext db, int profileId, CancellationToken ct = default) =>
+        db.Profiles.AsNoTracking().Where(p => p.Id == profileId && !p.Hidden && p.PinHash == null)
+            .Select(p => new PinlessProfile(p.Id, p.Name, p.Color)).SingleOrDefaultAsync(ct);
+
     // Locks the profile row for the rest of the transaction, so parallel wrong PINs can't each read the same count.
     // A context that already tracks the row would hand back its cached copy, so that copy is reloaded under the lock.
     internal static async Task<Profile?> LockAsync(WebScraperContext db, int id, CancellationToken ct)
@@ -256,3 +265,6 @@ public static class ProfileStore
         return settings;
     }
 }
+
+/// <summary>What the first-PIN page needs about a profile.</summary>
+public sealed record PinlessProfile(int Id, string Name, string Color);

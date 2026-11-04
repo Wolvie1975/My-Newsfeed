@@ -22,9 +22,7 @@
         scheduleId = tableId = null;
         if (Provider is not ("espn-championship" or "espn-epl" or "espn-mls")) return;
         await using var db = await Factory.CreateDbContextAsync();
-        scheduleId = await db.SportsEventsTypes.AsNoTracking().Where(s => s.Enabled && s.ProviderKey == Provider)
-            .OrderBy(s => s.Id).Select(s => (int?)s.Id).FirstOrDefaultAsync();
-        tableId = await db.SportsStandingsSources.AsNoTracking().Where(s => s.Enabled && s.ProviderKey == Provider)
-            .OrderBy(s => s.Id).Select(s => (int?)s.Id).FirstOrDefaultAsync();
+        scheduleId = await EventsQuery.FirstScheduleIdAsync(db, Provider);
+        tableId = await StandingsQuery.FirstSourceIdAsync(db, Provider);
     }
 }

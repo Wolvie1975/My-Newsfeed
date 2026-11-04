@@ -50,17 +50,13 @@ public static class FeedEndpoints
         FeedCategory? sectionCategory = null;
         if (hub is not null && (sectionCategoryName is not null || categoryId is not null || hub != "tech"))
         {
-            sectionCategory = await db.SourceCategories.Where(c => c.NewsHub == hub
-                    && (sectionCategoryName != null ? c.CategoryName == sectionCategoryName : c.Id == categoryId)
-                    && db.Sources.Any(s => s.Enabled && s.SourceCategoryId == c.Id))
-                .Select(c => new FeedCategory(c.Id, c.CategoryName, 0, c.NewsHub)).SingleOrDefaultAsync();
+            sectionCategory = await FeedQuery.HubCategoryAsync(db, hub, sectionCategoryName, categoryId, http.RequestAborted);
             if (sectionCategory is null) return Results.NotFound();
             categoryId = sectionCategory.Id;
         }
 
         int? sourceId = int.TryParse(source, out var parsedSource) && parsedSource > 0 ? parsedSource : null;
-        if (sourceId is not null && !await db.Sources.AnyAsync(s => s.Id == sourceId && s.Enabled
-            && (categoryId == null || s.SourceCategoryId == categoryId))) sourceId = null;
+        if (sourceId is { } id && !await FeedQuery.IsEnabledSourceAsync(db, id, categoryId, http.RequestAborted)) sourceId = null;
         var page = await FeedQuery.GetFeedAsync(db, categoryId, q, cursor, FeedQuery.MoreBatch, sourceId,
             headlinesOnly: !boxOffice && !big12News && hub is null && sectionCategory is null,
             hub: boxOffice || big12News ? null : (hub ?? "headlines"));

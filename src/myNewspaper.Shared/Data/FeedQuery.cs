@@ -62,6 +62,21 @@ public sealed record FeedPage(IReadOnlyList<FeedItem> Items, int Total, int Rema
 /// <summary>Read side of the public news feed.</summary>
 public static class FeedQuery
 {
+    /// <summary>
+    /// A hub's category, by name or id, that has at least one enabled source; null when there is none (the caller
+    /// answers 404).
+    /// </summary>
+    public static Task<FeedCategory?> HubCategoryAsync(WebScraperContext db, string hub, string? name, int? id,
+        CancellationToken ct = default) =>
+        db.SourceCategories.AsNoTracking()
+            .Where(c => c.NewsHub == hub && (name != null ? c.CategoryName == name : c.Id == id)
+                && db.Sources.Any(s => s.Enabled && s.SourceCategoryId == c.Id))
+            .Select(c => new FeedCategory(c.Id, c.CategoryName, 0, c.NewsHub)).SingleOrDefaultAsync(ct);
+
+    /// <summary>True when the source is enabled and, if a category is given, belongs to it.</summary>
+    public static Task<bool> IsEnabledSourceAsync(WebScraperContext db, int sourceId, int? categoryId, CancellationToken ct = default) =>
+        db.Sources.AsNoTracking().AnyAsync(s => s.Id == sourceId && s.Enabled && (categoryId == null || s.SourceCategoryId == categoryId), ct);
+
     /// <summary>First batch: the lead article plus twelve, which fills the three-column grid.</summary>
     public const int FirstBatch = 13;
 

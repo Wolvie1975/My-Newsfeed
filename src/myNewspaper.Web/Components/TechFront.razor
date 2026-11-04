@@ -292,8 +292,7 @@
 
             var categories = (await FeedQuery.GetCategoriesAsync(db)).Where(c => c.Hub == "tech").ToList();
             total = categories.Sum(c => c.Count);
-            sourceCount = await db.Sources.AsNoTracking()
-                .CountAsync(s => s.Enabled && s.SourceCategory != null && s.SourceCategory.NewsHub == "tech");
+            sourceCount = await TechQuery.SourceCountAsync(db);
 
             var todayDow = Dates.TodayAt(nowUtc).DayOfWeek;
             if (todayDow is DayOfWeek.Sunday or DayOfWeek.Monday or DayOfWeek.Tuesday)

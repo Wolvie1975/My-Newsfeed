@@ -369,8 +369,8 @@
         try {
             await using var db = await Factory.CreateDbContextAsync();
             records = await TeamRecords.LoadAsync(db, today, RecordPhases);
-            hasMls = !Compact && await db.SportsEventsTypes.AsNoTracking().AnyAsync(s => s.Enabled && s.ProviderKey == "espn-mls");
-            hasChampionship = !Compact && await db.SportsEventsTypes.AsNoTracking().AnyAsync(s => s.Enabled && s.ProviderKey == "espn-championship");
+            hasMls = !Compact && await EventsQuery.HasEnabledProviderAsync(db, "espn-mls");
+            hasChampionship = !Compact && await EventsQuery.HasEnabledProviderAsync(db, "espn-championship");
             if (!Compact)
             {
                 try

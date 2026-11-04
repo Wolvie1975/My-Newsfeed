@@ -13,6 +13,10 @@ public sealed record TvSchedule(IReadOnlyList<TvEpisodeItem> Items, int Total, I
 
 public static class TvQuery
 {
+    /// <summary>TVmaze ids of the enabled tracked series (the shared list used while profiles are off).</summary>
+    public static async Task<IReadOnlyList<int>> TrackedShowIdsAsync(WebScraperContext db, CancellationToken ct = default) =>
+        await db.TvTrackedSeries.AsNoTracking().Where(t => t.Enabled).Select(t => t.TvmazeShowId).ToListAsync(ct);
+
     public static async Task<TvSchedule> GetAsync(WebScraperContext db, Viewer viewer, FeedDates dates, DateOnly start, int? show, int days = 7, string? search = null)
     {
         var end = start.AddDays(days);

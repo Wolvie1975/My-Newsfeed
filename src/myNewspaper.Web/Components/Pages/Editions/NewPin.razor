@@ -1,5 +1,6 @@
 @page "/editions/{Id:int}/new-pin"
 @layout PickerLayout
+@using myNewspaper.Shared.Profiles
 @using myNewspaper.Web.Endpoints
 @inject IDbContextFactory<WebScraperContext> Factory
 
@@ -42,14 +43,14 @@
     [SupplyParameterFromQuery(Name = "returnUrl")] private string? ReturnUrl { get; set; }
     [SupplyParameterFromQuery(Name = "error")] private string? Error { get; set; }
 
-    private myNewspaper.Shared.Data.Models.Profile? profile;
+    private PinlessProfile? profile;
 
     private string Target => ProfileEndpoints.SafeReturnUrl(ReturnUrl);
 
     protected override async Task OnInitializedAsync()
     {
         await using var db = await Factory.CreateDbContextAsync();
-        profile = await db.Profiles.AsNoTracking().SingleOrDefaultAsync(p => p.Id == Id && !p.Hidden && p.PinHash == null);
+        profile = await ProfileStore.PinlessAsync(db, Id);
     }
 
     private static string Initial(string name) => name.Trim() is { Length: > 0 } n ? char.ToUpperInvariant(n[0]).ToString() : "?";

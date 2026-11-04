@@ -35,6 +35,10 @@ public sealed record ResultsPage(IReadOnlyList<ResultItem> Items, int Total);
 /// <summary>Read side of the public results page: finished games of the teams and leagues followed.</summary>
 public static class ResultsQuery
 {
+    /// <summary>The latest sync time across the enabled follows of a league, or null.</summary>
+    public static Task<DateTime?> LastSyncedAsync(WebScraperContext db, string league, CancellationToken ct = default) =>
+        db.ResultFollows.AsNoTracking().Where(f => f.Enabled && f.League == league).MaxAsync(f => f.LastSyncedAt, ct);
+
     /// <summary>A safety cap on one page; older results are cut off rather than paged.</summary>
     public const int Limit = 200;
 

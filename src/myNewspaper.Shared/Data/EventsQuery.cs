@@ -30,6 +30,23 @@ public sealed record EventsPage(IReadOnlyList<EventItem> Items, int Total);
 /// <summary>Read side of the public sports events page.</summary>
 public static class EventsQuery
 {
+    /// <summary>When a provider's events for a sport were last seen by the scraper, or null when it has none.</summary>
+    public static Task<DateTime?> LastSeenAsync(WebScraperContext db, string provider, string sport, CancellationToken ct = default) =>
+        db.SportsEvents.AsNoTracking().Where(e => e.ProviderKey == provider && e.Sport == sport).MaxAsync(e => (DateTime?)e.LastSeenAt, ct);
+
+    /// <summary>The provider key of an enabled schedule (event type), or null.</summary>
+    public static Task<string?> ProviderOfScheduleAsync(WebScraperContext db, int? scheduleId, CancellationToken ct = default) =>
+        db.SportsEventsTypes.AsNoTracking().Where(s => s.Enabled && s.Id == scheduleId).Select(s => s.ProviderKey).FirstOrDefaultAsync(ct);
+
+    /// <summary>True when an enabled schedule uses the provider.</summary>
+    public static Task<bool> HasEnabledProviderAsync(WebScraperContext db, string provider, CancellationToken ct = default) =>
+        db.SportsEventsTypes.AsNoTracking().AnyAsync(s => s.Enabled && s.ProviderKey == provider, ct);
+
+    /// <summary>The first enabled schedule for a provider, or null.</summary>
+    public static Task<int?> FirstScheduleIdAsync(WebScraperContext db, string provider, CancellationToken ct = default) =>
+        db.SportsEventsTypes.AsNoTracking().Where(s => s.Enabled && s.ProviderKey == provider)
+            .OrderBy(s => s.Id).Select(s => (int?)s.Id).FirstOrDefaultAsync(ct);
+
     private static IQueryable<Models.SportsEvent> Visible(WebScraperContext db) => db.SportsEvents.AsNoTracking()
         .Where(e => e.Sport != "Women's Basketball")
         .Where(e => e.ScheduleStatus == null ||
