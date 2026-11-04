@@ -70,7 +70,7 @@ else
     }
 
     private PageForm? form;
-    private Page? existing;
+    private AdminPageDetail? existing;
     private string sourceName = "";
     private bool notFound;
     private bool saving;
@@ -78,14 +78,14 @@ else
     protected override async Task OnParametersSetAsync()
     {
         await using var db = await Factory.CreateDbContextAsync();
-        existing = await db.Pages.AsNoTracking().Include(p => p.Source).FirstOrDefaultAsync(p => p.Id == Id);
+        existing = await AdminQuery.PageAsync(db, Id);
         if (existing is null)
         {
             notFound = true;
             return;
         }
 
-        sourceName = existing.Source.Label ?? existing.Source.Url;
+        sourceName = existing.SourceName;
         form = new PageForm { Title = existing.Title, Description = existing.Description, Published = existing.Published };
     }
 
@@ -100,17 +100,13 @@ else
         try
         {
             await using var db = await Factory.CreateDbContextAsync();
-            var page = await db.Pages.FindAsync(Id);
-            if (page is null)
+            var description = string.IsNullOrWhiteSpace(form.Description) ? null : form.Description.Trim();
+            if (!await AdminStore.UpdatePageAsync(db, Id, form.Title.Trim(), description, form.Published))
             {
                 notFound = true;
                 return;
             }
 
-            page.Title = form.Title.Trim();
-            page.Description = string.IsNullOrWhiteSpace(form.Description) ? null : form.Description.Trim();
-            page.Published = form.Published;
-            await db.SaveChangesAsync();
             Nav.NavigateTo("admin/pages");
         }
         finally

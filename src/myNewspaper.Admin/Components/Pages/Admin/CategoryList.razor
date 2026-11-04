@@ -115,10 +115,8 @@ else
 @code {
     private const int MaxNameLength = 100;
 
-    private sealed record CategoryRow(int Id, string Name, DateTime DateAdded, int SourceCount, string Hub);
-
-    private List<CategoryRow>? rows;
-    private CategoryRow? pendingDelete;
+    private IReadOnlyList<AdminCategoryRow>? rows;
+    private AdminCategoryRow? pendingDelete;
     private string newName = "";
     private string newHub = "headlines";
     private string editHub = "headlines";
@@ -133,10 +131,7 @@ else
     private async Task LoadAsync()
     {
         await using var db = await Factory.CreateDbContextAsync();
-        rows = await db.SourceCategories.AsNoTracking()
-            .OrderBy(c => c.CategoryName)
-            .Select(c => new CategoryRow(c.Id, c.CategoryName, c.DateAdded, c.Sources.Count, c.NewsHub))
-            .ToListAsync();
+        rows = await AdminQuery.CategoriesAsync(db);
     }
 
     private void Fail(string text)
@@ -177,8 +172,7 @@ else
         try
         {
             await using var db = await Factory.CreateDbContextAsync();
-            db.SourceCategories.Add(new SourceCategory { CategoryName = name, NewsHub = newHub });
-            await db.SaveChangesAsync();
+            await AdminStore.AddCategoryAsync(db, name, newHub);
             Succeed($"Added {name}.");
             newName = "";
         }
@@ -190,7 +184,7 @@ else
         await LoadAsync();
     }
 
-    private void StartRename(CategoryRow row)
+    private void StartRename(AdminCategoryRow row)
     {
         message = null;
         pendingDelete = null;
@@ -217,16 +211,12 @@ else
         try
         {
             await using var db = await Factory.CreateDbContextAsync();
-            var category = await db.SourceCategories.FindAsync(id);
-            if (category is null)
+            if (!await AdminStore.UpdateCategoryAsync(db, id, name, editHub))
             {
                 Fail("That category no longer exists.");
             }
             else
             {
-                category.CategoryName = name;
-                category.NewsHub = editHub;
-                await db.SaveChangesAsync();
                 Succeed($"Saved {name} in {HubLabel(editHub)}.");
             }
 
@@ -240,7 +230,7 @@ else
         await LoadAsync();
     }
 
-    private void StartDelete(CategoryRow row)
+    private void StartDelete(AdminCategoryRow row)
     {
         message = null;
         editingId = null;
@@ -257,8 +247,8 @@ else
         try
         {
             await using var db = await Factory.CreateDbContextAsync();
-            var deleted = await db.SourceCategories.Where(c => c.Id == target.Id).ExecuteDeleteAsync();
-            Succeed(deleted > 0 ? $"Deleted {target.Name}." : $"{target.Name} was already deleted.");
+            var deleted = await AdminStore.DeleteCategoryAsync(db, target.Id);
+            Succeed(deleted ? $"Deleted {target.Name}." : $"{target.Name} was already deleted.");
         }
         catch (Exception ex) when (AdminStore.IsForeignKeyViolation(ex))
         {

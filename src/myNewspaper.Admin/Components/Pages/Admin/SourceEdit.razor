@@ -79,7 +79,7 @@
                         <label for="category">Category</label>
                         <InputSelect id="category" class="form-select" @bind-Value="form.SourceCategoryId" aria-describedby="cat-help">
                             <option value="">No category</option>
-                            @foreach (var c in categories) { <option value="@c.Id">@c.CategoryName</option> }
+                            @foreach (var c in categories) { <option value="@c.Id">@c.Name</option> }
                         </InputSelect>
                         <span id="cat-help" class="adm-help">@HubHelp <a href="admin/categories">Manage categories</a></span>
                     </div>
@@ -155,12 +155,12 @@
         public string? SourceCategoryId { get; set; }
     }
 
-    private List<SourceCategory> categories = [];
+    private IReadOnlyList<CategoryOption> categories = [];
     private SourceForm? form;
     private EditContext editContext = default!;
     private DateTime? newest;
     private bool pendingDelete;
-    private Source? existing;
+    private AdminSourceDetail? existing;
     private int pageCount;
     private bool notFound;
     private bool saving;
@@ -171,24 +171,23 @@
     protected override async Task OnParametersSetAsync()
     {
         await using var db = await Factory.CreateDbContextAsync();
-        categories = await db.SourceCategories.AsNoTracking().OrderBy(c => c.CategoryName).ToListAsync();
+        categories = await AdminQuery.CategoryOptionsAsync(db);
 
-        if (IsNew)
+        if (Id is not { } id)
         {
             form = new SourceForm();
             editContext = new EditContext(form);
             return;
         }
 
-        existing =await db.Sources.AsNoTracking().FirstOrDefaultAsync(s => s.Id == Id);
+        existing = await AdminQuery.SourceAsync(db, id);
         if (existing is null)
         {
             notFound = true;
             return;
         }
 
-        pageCount = await db.Pages.CountAsync(p => p.SourceId == Id);
-        newest = await db.Pages.Where(p => p.SourceId == Id).MaxAsync(p => p.Published);
+        (pageCount, newest) = (existing.PageCount, existing.NewestPublished);
         form = new SourceForm
         {
             Url = existing.Url,
@@ -222,26 +221,12 @@
         try
         {
             await using var db = await Factory.CreateDbContextAsync();
-            if (IsNew)
+            if (!await AdminStore.SaveSourceAsync(db, Id, url, label, form.Enabled, categoryId))
             {
-                db.Sources.Add(new Source { Url = url, Label = label, Enabled = form.Enabled, SourceCategoryId = categoryId });
-            }
-            else
-            {
-                var source = await db.Sources.FindAsync(Id);
-                if (source is null)
-                {
-                    notFound = true;
-                    return;
-                }
-
-                source.Url = url;
-                source.Label = label;
-                source.Enabled = form.Enabled;
-                source.SourceCategoryId = categoryId;
+                notFound = true;
+                return;
             }
 
-            await db.SaveChangesAsync();
             Nav.NavigateTo("admin/sources");
         }
         catch (DbUpdateException ex) when (AdminStore.IsUniqueViolation(ex))
@@ -253,7 +238,7 @@
             // The chosen category was deleted after this form loaded.
             error = "That category no longer exists. Pick another one.";
             await using var db = await Factory.CreateDbContextAsync();
-            categories = await db.SourceCategories.AsNoTracking().OrderBy(c => c.CategoryName).ToListAsync();
+            categories = await AdminQuery.CategoryOptionsAsync(db);
             form.SourceCategoryId = null;
         }
         finally
@@ -291,17 +276,14 @@
 
     // Uncategorized sources still show in Headlines' "All categories" (FeedQuery's headlines-only feed includes them).
     private string HubHelp => categories.FirstOrDefault(c => c.Id.ToString(CultureInfo.InvariantCulture) == form?.SourceCategoryId) is { } c
-        ? $"{c.CategoryName} appears in the {char.ToUpperInvariant(c.NewsHub[0])}{c.NewsHub[1..]} hub."
+        ? $"{c.Name} appears in the {char.ToUpperInvariant(c.Hub[0])}{c.Hub[1..]} hub."
         : "Uncategorized sources appear in Headlines under All categories.";
 
     private async Task DisableAsync()
     {
         await using var db = await Factory.CreateDbContextAsync();
-        var source = await db.Sources.FindAsync(Id);
-        if (source is null) { notFound = true; return; }
-        source.Enabled = false;
-        await db.SaveChangesAsync();
-        existing = await db.Sources.AsNoTracking().FirstOrDefaultAsync(s => s.Id == Id);
+        if (Id is not { } id || !await AdminStore.SetSourceEnabledAsync(db, id, enabled: false)) { notFound = true; return; }
+        existing = await AdminQuery.SourceAsync(db, id);
         if (form is not null)
         {
             form.Enabled = false;

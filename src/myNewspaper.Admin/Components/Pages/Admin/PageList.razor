@@ -97,16 +97,13 @@ else
 @code {
     private const int PageSize = 25;
 
-    private sealed record SourceOption(int Id, string Name);
-    private sealed record PageRow(int Id, string Title, string Url, string SourceName, int SourceId, DateTime? Published, DateTime ScrapedAt);
-
     [SupplyParameterFromQuery(Name = "sourceId")] private string? SourceIdText { get; set; }
 
     private int? SourceIdQuery => int.TryParse(SourceIdText, out var id) ? id : null;
 
-    private List<SourceOption> sources = [];
-    private List<PageRow>? rows;
-    private PageRow? pendingDelete;
+    private IReadOnlyList<SourceOption> sources = [];
+    private IReadOnlyList<AdminPageRow>? rows;
+    private AdminPageRow? pendingDelete;
     private string? message;
 
     // sourceFilter is bound to the <select>, so it is a string ("" = all sources).
@@ -121,10 +118,7 @@ else
     protected override async Task OnInitializedAsync()
     {
         await using var db = await Factory.CreateDbContextAsync();
-        sources = await db.Sources.AsNoTracking()
-            .OrderBy(s => s.Label ?? s.Url)
-            .Select(s => new SourceOption(s.Id, s.Label ?? s.Url))
-            .ToListAsync();
+        sources = await AdminQuery.SourceOptionsAsync(db);
 
         if (SourceIdQuery is int id && sources.Any(s => s.Id == id))
         {
@@ -139,40 +133,8 @@ else
     private async Task LoadAsync()
     {
         await using var db = await Factory.CreateDbContextAsync();
-        IQueryable<Page> query = db.Pages.AsNoTracking();
-
-        if (SelectedSourceId is int sourceId)
-        {
-            query = query.Where(p => p.SourceId == sourceId);
-        }
-
-        if (!string.IsNullOrEmpty(search))
-        {
-            query = query.Where(p => p.Title.Contains(search) || p.Url.Contains(search)
-                || (p.Description != null && p.Description.Contains(search)));
-        }
-
-        total = await query.CountAsync();
-
-        // Id is the tiebreaker so paging is stable when the sort column has duplicates or nulls.
-        var ordered = (sortColumn, sortDescending) switch
-        {
-            ("title", false) => query.OrderBy(p => p.Title).ThenBy(p => p.Id),
-            ("title", true) => query.OrderByDescending(p => p.Title).ThenBy(p => p.Id),
-            ("published", false) => query.OrderBy(p => p.Published).ThenBy(p => p.Id),
-            ("published", true) => query.OrderByDescending(p => p.Published).ThenBy(p => p.Id),
-            (_, false) => query.OrderBy(p => p.ScrapedAt).ThenBy(p => p.Id),
-            _ => query.OrderByDescending(p => p.ScrapedAt).ThenBy(p => p.Id),
-        };
-
-        // A delete or filter change can leave the current page past the end.
-        var lastPage = Math.Max(0, (total - 1) / PageSize);
-        pageIndex = Math.Min(pageIndex, lastPage);
-
-        rows = await ordered
-            .Skip(pageIndex * PageSize).Take(PageSize)
-            .Select(p => new PageRow(p.Id, p.Title, p.Url, p.Source.Label ?? p.Source.Url, p.SourceId, p.Published, p.ScrapedAt))
-            .ToListAsync();
+        var list = await AdminQuery.PagesAsync(db, SelectedSourceId, search, sortColumn, sortDescending, pageIndex, PageSize);
+        (rows, total, pageIndex) = (list.Rows, list.Total, list.PageIndex);
     }
 
     private async Task SearchAsync()
@@ -212,7 +174,7 @@ else
         await LoadAsync();
     }
 
-    private void StartDelete(PageRow row)
+    private void StartDelete(AdminPageRow row)
     {
         message = null;
         pendingDelete = row;
@@ -226,7 +188,7 @@ else
         }
 
         await using var db = await Factory.CreateDbContextAsync();
-        await db.Pages.Where(p => p.Id == target.Id).ExecuteDeleteAsync();
+        await AdminStore.DeletePageAsync(db, target.Id);
         message = $"Deleted “{target.Title}”.";
         pendingDelete = null;
         await LoadAsync();

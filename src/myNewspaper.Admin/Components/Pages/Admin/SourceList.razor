@@ -31,7 +31,7 @@
             <option value="none">Uncategorized</option>
             @foreach (var category in categories)
             {
-                <option value="@category.Id">@category.CategoryName</option>
+                <option value="@category.Id">@category.Name</option>
             }
         </select>
         <div class="adm-seg" role="group" aria-label="Status">
@@ -156,22 +156,15 @@
 @code {
     private const int PageSize = 25;
 
-    private sealed record SourceRow(
-        int Id, string Url, string? Label, bool Enabled, DateTime? LastScrapedAt, string? LastError, int PageCount, string? CategoryName)
-    {
-        public string Name => string.IsNullOrWhiteSpace(Label) ? Url : Label;
-        public bool HasProblem => Enabled && !string.IsNullOrEmpty(LastError);
-    }
-
     [SupplyParameterFromQuery(Name = "q")] private string? Q { get; set; }
     [SupplyParameterFromQuery(Name = "categoryId")] private string? CategoryIdText { get; set; }
     [SupplyParameterFromQuery(Name = "status")] private string? Status { get; set; } // enabled | disabled | errors
     [SupplyParameterFromQuery(Name = "page")] private int? PageNumber { get; set; }
     [SupplyParameterFromQuery(Name = "deleted")] private string? DeletedName { get; set; }
 
-    private List<SourceCategory> categories = [];
-    private List<SourceRow>? rows;
-    private SourceRow? pendingDelete;
+    private IReadOnlyList<CategoryOption> categories = [];
+    private IReadOnlyList<AdminSourceRow>? rows;
+    private AdminSourceRow? pendingDelete;
     private string searchInput = "";
     private int pageIndex;
     private int totalRows;
@@ -190,7 +183,7 @@
     protected override async Task OnInitializedAsync()
     {
         await using var db = await Factory.CreateDbContextAsync();
-        categories = await db.SourceCategories.AsNoTracking().OrderBy(c => c.CategoryName).ToListAsync();
+        categories = await AdminQuery.CategoryOptionsAsync(db);
         if (!string.IsNullOrWhiteSpace(DeletedName)) message = $"Deleted {DeletedName}.";
     }
 
@@ -226,33 +219,9 @@
     private async Task LoadAsync()
     {
         await using var db = await Factory.CreateDbContextAsync();
-        IQueryable<Source> query = db.Sources.AsNoTracking();
-        if (CategoryIdText == "none") query = query.Where(s => s.SourceCategoryId == null);
-        else if (int.TryParse(CategoryIdText, out var categoryId)) query = query.Where(s => s.SourceCategoryId == categoryId);
-        var term = Q?.Trim();
-        if (!string.IsNullOrEmpty(term)) query = query.Where(s => s.Url.Contains(term) || (s.Label != null && s.Label.Contains(term)));
-
-        // Counts for the status buttons, within the search and category.
-        countAll = await query.CountAsync();
-        countEnabled = await query.CountAsync(s => s.Enabled);
-        countDisabled = countAll - countEnabled;
-        countErrors = await query.CountAsync(s => s.Enabled && s.LastError != null && s.LastError != "");
-
-        query = Status switch
-        {
-            "enabled" => query.Where(s => s.Enabled),
-            "disabled" => query.Where(s => !s.Enabled),
-            "errors" => query.Where(s => s.Enabled && s.LastError != null && s.LastError != ""),
-            _ => query,
-        };
-        totalRows = await query.CountAsync();
-        pageIndex = Math.Min(pageIndex, Math.Max(0, (totalRows - 1) / PageSize));
-        rows = await query
-            .OrderBy(s => s.Label ?? s.Url).ThenBy(s => s.Id)
-            .Skip(pageIndex * PageSize).Take(PageSize)
-            .Select(s => new SourceRow(s.Id, s.Url, s.Label, s.Enabled, s.LastScrapedAt, s.LastError, s.Pages.Count,
-                s.SourceCategory != null ? s.SourceCategory.CategoryName : null))
-            .ToListAsync();
+        var list = await AdminQuery.SourcesAsync(db, CategoryIdText, Q, Status, pageIndex, PageSize);
+        (rows, totalRows, pageIndex) = (list.Rows, list.Total, list.PageIndex);
+        (countAll, countEnabled, countDisabled, countErrors) = (list.All, list.Enabled, list.Disabled, list.Errors);
     }
 
     private async Task ToggleAsync(int id)
@@ -261,12 +230,7 @@
         try
         {
             await using var db = await Factory.CreateDbContextAsync();
-            var source = await db.Sources.FindAsync(id);
-            if (source is not null)
-            {
-                source.Enabled = !source.Enabled;
-                await db.SaveChangesAsync();
-            }
+            await AdminStore.SetSourceEnabledAsync(db, id, enabled: null);
             await LoadAsync();
         }
         finally
@@ -275,7 +239,7 @@
         }
     }
 
-    private void StartDelete(SourceRow row)
+    private void StartDelete(AdminSourceRow row)
     {
         message = null;
         pendingDelete = row;
@@ -287,12 +251,7 @@
     {
         if (pendingDelete is not { } target) return;
         await using var db = await Factory.CreateDbContextAsync();
-        var source = await db.Sources.FindAsync(target.Id);
-        if (source is not null)
-        {
-            source.Enabled = false;
-            await db.SaveChangesAsync();
-        }
+        await AdminStore.SetSourceEnabledAsync(db, target.Id, enabled: false);
         messageBad = false;
         message = $"Disabled {target.Name}. Its pages were kept.";
         pendingDelete = null;
@@ -319,14 +278,14 @@
         await LoadAsync();
     }
 
-    private RenderFragment StatusFor(SourceRow row) => __builder =>
+    private RenderFragment StatusFor(AdminSourceRow row) => __builder =>
     {
         if (!row.Enabled) { <span class="adm-pill adm-pill--off">Disabled</span> }
         else { <StatusBadge Level="@(row.HasProblem ? HealthLevel.Problem : HealthLevel.Ok)" /> }
     };
 
     // Row menu: <details>, so it opens without JavaScript; Delete lives here, out of the way.
-    private RenderFragment RowMenu(SourceRow row) => __builder =>
+    private RenderFragment RowMenu(AdminSourceRow row) => __builder =>
     {
         <details class="adm-menu">
             <summary aria-label="@($"More actions for {row.Name}")"><AdminIcon Name="more" /></summary>

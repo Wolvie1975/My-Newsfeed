@@ -41,6 +41,81 @@ public static class AdminStore
         return deleted > 0;
     }
 
+    // ---- Sources, categories and pages -------------------------------------------------------------------------------
+
+    /// <summary>
+    /// Adds a source (<paramref name="id"/> null) or updates one. Returns false when the source to update no longer
+    /// exists. A duplicate URL or a deleted category surfaces as <see cref="DbUpdateException"/>
+    /// (<see cref="IsUniqueViolation"/>, <see cref="IsForeignKeyViolation"/>).
+    /// </summary>
+    public static async Task<bool> SaveSourceAsync(WebScraperContext db, int? id, string url, string? label, bool enabled, int? categoryId,
+        CancellationToken ct = default)
+    {
+        if (id is null)
+        {
+            db.Sources.Add(new Models.Source { Url = url, Label = label, Enabled = enabled, SourceCategoryId = categoryId });
+        }
+        else
+        {
+            var source = await db.Sources.FindAsync([id.Value], ct);
+            if (source is null) return false;
+            source.Url = url;
+            source.Label = label;
+            source.Enabled = enabled;
+            source.SourceCategoryId = categoryId;
+        }
+        await db.SaveChangesAsync(ct);
+        return true;
+    }
+
+    /// <summary>Sets a source's Enabled flag, or flips it when <paramref name="enabled"/> is null. False when it doesn't exist.</summary>
+    public static async Task<bool> SetSourceEnabledAsync(WebScraperContext db, int id, bool? enabled, CancellationToken ct = default)
+    {
+        var source = await db.Sources.FindAsync([id], ct);
+        if (source is null) return false;
+        source.Enabled = enabled ?? !source.Enabled;
+        await db.SaveChangesAsync(ct);
+        return true;
+    }
+
+    /// <summary>Adds a category. A duplicate name surfaces as <see cref="DbUpdateException"/> (<see cref="IsUniqueViolation"/>).</summary>
+    public static async Task AddCategoryAsync(WebScraperContext db, string name, string hub, CancellationToken ct = default)
+    {
+        db.SourceCategories.Add(new Models.SourceCategory { CategoryName = name, NewsHub = hub });
+        await db.SaveChangesAsync(ct);
+    }
+
+    /// <summary>Renames a category and sets its hub. False when it no longer exists.</summary>
+    public static async Task<bool> UpdateCategoryAsync(WebScraperContext db, int id, string name, string hub, CancellationToken ct = default)
+    {
+        var category = await db.SourceCategories.FindAsync([id], ct);
+        if (category is null) return false;
+        category.CategoryName = name;
+        category.NewsHub = hub;
+        await db.SaveChangesAsync(ct);
+        return true;
+    }
+
+    /// <summary>Deletes a category; false when it was already gone. In use by a source: <see cref="IsForeignKeyViolation"/>.</summary>
+    public static async Task<bool> DeleteCategoryAsync(WebScraperContext db, int id, CancellationToken ct = default) =>
+        await db.SourceCategories.Where(c => c.Id == id).ExecuteDeleteAsync(ct) > 0;
+
+    /// <summary>Updates a scraped page's title, description and published date. False when it no longer exists.</summary>
+    public static async Task<bool> UpdatePageAsync(WebScraperContext db, int id, string title, string? description, DateTime? published,
+        CancellationToken ct = default)
+    {
+        var page = await db.Pages.FindAsync([id], ct);
+        if (page is null) return false;
+        page.Title = title;
+        page.Description = description;
+        page.Published = published;
+        await db.SaveChangesAsync(ct);
+        return true;
+    }
+
+    public static async Task DeletePageAsync(WebScraperContext db, int id, CancellationToken ct = default) =>
+        await db.Pages.Where(p => p.Id == id).ExecuteDeleteAsync(ct);
+
     // ---- YouTube feeds ------------------------------------------------------------------------------------------------
 
     private const string YoutubeFeedUrlPrefix = "https://www.youtube.com/feeds/videos.xml?channel_id=";
