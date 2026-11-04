@@ -256,18 +256,18 @@ public static class TechQuery
         var key = $"tech-tables:{group}";
         if (FallbackCache.TryGetValue(key, out bool exists)) return exists;
 
-        var sql = group switch
+        FormattableString? sql = group switch
         {
-            "releases" => "SELECT CASE WHEN OBJECT_ID(N'dbo.TechReleaseProjects', N'U') IS NOT NULL AND OBJECT_ID(N'dbo.TechReleases', N'U') IS NOT NULL THEN 1 ELSE 0 END AS [Value]",
-            "devreading" => "SELECT CASE WHEN OBJECT_ID(N'dbo.TechDevReadingItems', N'U') IS NOT NULL THEN 1 ELSE 0 END AS [Value]",
-            "status" => "SELECT CASE WHEN OBJECT_ID(N'dbo.TechStatusServices', N'U') IS NOT NULL AND OBJECT_ID(N'dbo.TechServiceStatus', N'U') IS NOT NULL THEN 1 ELSE 0 END AS [Value]",
+            "releases" => $"SELECT CASE WHEN OBJECT_ID(N'dbo.TechReleaseProjects', N'U') IS NOT NULL AND OBJECT_ID(N'dbo.TechReleases', N'U') IS NOT NULL THEN 1 ELSE 0 END AS [Value]",
+            "devreading" => $"SELECT CASE WHEN OBJECT_ID(N'dbo.TechDevReadingItems', N'U') IS NOT NULL THEN 1 ELSE 0 END AS [Value]",
+            "status" => $"SELECT CASE WHEN OBJECT_ID(N'dbo.TechStatusServices', N'U') IS NOT NULL AND OBJECT_ID(N'dbo.TechServiceStatus', N'U') IS NOT NULL THEN 1 ELSE 0 END AS [Value]",
             _ => null,
         };
         if (sql is null) return false;
 
         try
         {
-            var result = await db.Database.SqlQueryRaw<int>(sql).FirstOrDefaultAsync(ct);
+            var result = await db.Database.SqlQuery<int>(sql).FirstOrDefaultAsync(ct);
             exists = result == 1;
         }
         catch (Exception ex) when (DataFailures.IsReadFailure(ex))

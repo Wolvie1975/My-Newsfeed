@@ -43,6 +43,10 @@ public sealed class SharedArticles(IDbContextFactory<WebScraperContext> factory)
         return uri.AbsoluteUri;
     }
 
+    // Hand-written DbCommand on purpose (general standard section 6): a save is one serializable transaction that reads
+    // the JSON list with UPDLOCK, HOLDLOCK (so two first saves can't both insert), checks the import receipt, then
+    // inserts or updates the row and the receipt on the same command and transaction. Every value is a DbParameter;
+    // the only text that varies is the table name and lock hint, chosen from constants below.
     // profileId is the owner: null is the legacy shared list (MyDailyFeedSavedList, Id = 1), used only while profiles
     // are switched off; otherwise the profile's own row in MyDailyFeedProfileSaved, created on its first save.
     // SharedArticles is a singleton, so callers pass the current profile instead of it being injected.

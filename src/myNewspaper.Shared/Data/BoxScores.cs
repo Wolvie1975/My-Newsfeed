@@ -1,6 +1,5 @@
 using System.Text.Json;
 using System.Text.RegularExpressions;
-using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 
 namespace myNewspaper.Shared.Data;
@@ -91,9 +90,9 @@ public sealed class BoxScoreQuery(IDbContextFactory<WebScraperContext> factory, 
         try
         {
             await using var db = await factory.CreateDbContextAsync();
-            var parameters = ids.Select((id, i) => new SqlParameter("@k" + i, id.Key)).ToArray();
-            var sql = "SELECT Sport,League,EventId,HasBoxScore,Availability,Payload,FetchedAt,SummaryUrl,BoxScoreUrl FROM dbo.SportsBoxScores WHERE Sport+N'|'+League+N'|'+EventId IN (" + string.Join(",", parameters.Select(p => p.ParameterName)) + ")";
-            var rows = await db.Database.SqlQueryRaw<BoxSnapshot>(sql, parameters.Cast<object>().ToArray()).ToListAsync();
+            var keys = ids.Select(id => id.Key).ToList();
+            var rows = await db.Database.SqlQuery<BoxSnapshot>($"SELECT Sport,League,EventId,HasBoxScore,Availability,Payload,FetchedAt,SummaryUrl,BoxScoreUrl FROM dbo.SportsBoxScores")
+                .Where(r => keys.Contains(r.Sport + "|" + r.League + "|" + r.EventId)).ToListAsync();
             // Validate cached JSON in one bounded batch, so corrupt/unsupported entries never advertise a dead action.
             return rows.Where(r => r.HasBoxScore && r.Availability != "unavailable").Select(r => BoxData.Parse(r.Payload, new(r.Sport, r.League, r.EventId)))
                 .OfType<BoxData>().DistinctBy(d => d.Identity.Key).ToDictionary(d => d.Identity.Key, d => d.Label);

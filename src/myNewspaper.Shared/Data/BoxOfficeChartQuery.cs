@@ -1,4 +1,3 @@
-using System.Data;
 using System.Globalization;
 using Microsoft.EntityFrameworkCore;
 
@@ -36,39 +35,40 @@ public static class BoxOfficeChartQuery
     public static string? SafeUrl(string? value) => Uri.TryCreate(value, UriKind.Absolute, out var uri)
         && uri.Scheme is "http" or "https" ? uri.AbsoluteUri : null;
 
-    public static async Task<IReadOnlyList<BoxOfficeMovie>> GetAsync(WebScraperContext db, DateOnly? expectedFriday = null)
+    public static async Task<IReadOnlyList<BoxOfficeMovie>> GetAsync(WebScraperContext db, DateOnly? expectedFriday = null,
+        CancellationToken ct = default)
     {
-        await db.Database.OpenConnectionAsync();
-        try
-        {
-            await using var command = db.Database.GetDbConnection().CreateCommand();
-            command.CommandText = "SELECT TOP (10) Rank, WeekendStart, MovieTitle, WeekendGross, TotalDomesticGross, WeeklyChangePercent, Theaters, MovieUrl, SourceUrl, FetchedAt, PosterUrl, PosterLookupStatus, ResultStatus, COALESCE(StatusSourceUrl, SourceUrl), StatusAsOfUtc FROM dbo.BoxOfficeWeekend"
-                + (expectedFriday.HasValue ? " WHERE WeekendStart = @ExpectedFriday" : "") + " ORDER BY Rank";
-            if (expectedFriday is { } friday)
-            {
-                var parameter = command.CreateParameter();
-                parameter.ParameterName = "@ExpectedFriday"; parameter.DbType = DbType.Date;
-                parameter.Value = friday.ToDateTime(TimeOnly.MinValue); command.Parameters.Add(parameter);
-            }
-            await using var reader = await command.ExecuteReaderAsync();
-            var rows = new List<BoxOfficeMovie>();
-            while (await reader.ReadAsync())
-            {
-                rows.Add(new(Convert.ToInt32(reader.GetValue(0), CultureInfo.InvariantCulture), DateOnly.FromDateTime(reader.GetDateTime(1)),
-                    reader.GetString(2), Convert.ToInt64(reader.GetValue(3), CultureInfo.InvariantCulture), Convert.ToInt64(reader.GetValue(4), CultureInfo.InvariantCulture),
-                    reader.IsDBNull(5) ? null : Convert.ToDecimal(reader.GetValue(5), CultureInfo.InvariantCulture),
-                    reader.IsDBNull(6) ? null : Convert.ToInt32(reader.GetValue(6), CultureInfo.InvariantCulture),
-                    reader.IsDBNull(7) ? null : SafeUrl(reader.GetString(7)),
-                    reader.IsDBNull(8) ? null : SafeUrl(reader.GetString(8)),
-                    DateTime.SpecifyKind(reader.GetDateTime(9), DateTimeKind.Utc),
-                    reader.IsDBNull(10) ? null : SafeUrl(reader.GetString(10)),
-                    reader.IsDBNull(11) ? null : reader.GetString(11),
-                    reader.IsDBNull(12) ? null : reader.GetString(12),
-                    reader.IsDBNull(13) ? null : SafeUrl(reader.GetString(13)),
-                    reader.IsDBNull(14) ? null : DateTime.SpecifyKind(reader.GetDateTime(14), DateTimeKind.Utc)));
-            }
-            return rows;
-        }
-        finally { await db.Database.CloseConnectionAsync(); }
+        var query = db.Database.SqlQuery<WeekendRow>($"""
+            SELECT Rank, WeekendStart, MovieTitle, WeekendGross, TotalDomesticGross, WeeklyChangePercent, Theaters, MovieUrl,
+                   SourceUrl, FetchedAt, PosterUrl, PosterLookupStatus, ResultStatus, StatusSourceUrl, StatusAsOfUtc
+            FROM dbo.BoxOfficeWeekend
+            """);
+        if (expectedFriday is { } friday) query = query.Where(r => r.WeekendStart == friday);
+        var rows = await query.OrderBy(r => r.Rank).Take(10).ToListAsync(ct);
+        return rows.Select(r => new BoxOfficeMovie(r.Rank, r.WeekendStart, r.MovieTitle, r.WeekendGross, r.TotalDomesticGross,
+            r.WeeklyChangePercent is { } change ? (decimal)change : null, r.Theaters, SafeUrl(r.MovieUrl), SafeUrl(r.SourceUrl),
+            DateTime.SpecifyKind(r.FetchedAt, DateTimeKind.Utc), SafeUrl(r.PosterUrl), r.PosterLookupStatus, r.ResultStatus,
+            SafeUrl(r.StatusSourceUrl ?? r.SourceUrl),
+            r.StatusAsOfUtc is { } asOf ? DateTime.SpecifyKind(asOf, DateTimeKind.Utc) : null)).ToList();
+    }
+
+    /// <summary>A row of the scraper-owned <c>dbo.BoxOfficeWeekend</c> table, as stored.</summary>
+    private sealed class WeekendRow
+    {
+        public int Rank { get; set; }
+        public DateOnly WeekendStart { get; set; }
+        public string MovieTitle { get; set; } = "";
+        public long WeekendGross { get; set; }
+        public long TotalDomesticGross { get; set; }
+        public double? WeeklyChangePercent { get; set; }
+        public int? Theaters { get; set; }
+        public string? MovieUrl { get; set; }
+        public string? SourceUrl { get; set; }
+        public DateTime FetchedAt { get; set; }
+        public string? PosterUrl { get; set; }
+        public string? PosterLookupStatus { get; set; }
+        public string? ResultStatus { get; set; }
+        public string? StatusSourceUrl { get; set; }
+        public DateTime? StatusAsOfUtc { get; set; }
     }
 }

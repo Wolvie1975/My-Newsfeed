@@ -75,19 +75,6 @@ public static class AdminStore
 
     public sealed record YoutubeSyncResult(int FeedsCreated, int VideosLinked);
 
-    // Constants only (no user input), so plain SQL text is safe here.
-    private const string CreateMissingFeedsSql =
-        "INSERT INTO dbo.YoutubeVideoFeed (ChannelId, ChannelName, Url) " +
-        "SELECT v.ChannelId, MAX(v.ChannelName), N'" + YoutubeFeedUrlPrefix + "' + v.ChannelId " +
-        "FROM dbo.YouTubeVideos v " +
-        "WHERE NOT EXISTS (SELECT 1 FROM dbo.YoutubeVideoFeed f WHERE f.ChannelId = v.ChannelId) " +
-        "GROUP BY v.ChannelId";
-
-    private const string LinkVideosSql =
-        "UPDATE v SET v.YoutubeVideoFeedId = f.ID " +
-        "FROM dbo.YouTubeVideos v JOIN dbo.YoutubeVideoFeed f ON f.ChannelId = v.ChannelId " +
-        "WHERE v.YoutubeVideoFeedId IS NULL";
-
     /// <summary>
     /// Brings the feed list in line with the videos: creates a feed for every channel that has videos but no feed,
     /// then links every unlinked video to its channel's feed. Additive and safe to repeat. The scraper inserts videos
@@ -98,8 +85,18 @@ public static class AdminStore
         var ownsTransaction = db.Database.CurrentTransaction is null;
         await using var tx = ownsTransaction ? await db.Database.BeginTransactionAsync() : null;
 
-        var created = await db.Database.ExecuteSqlRawAsync(CreateMissingFeedsSql);
-        var linked = await db.Database.ExecuteSqlRawAsync(LinkVideosSql);
+        var created = await db.Database.ExecuteSqlAsync($"""
+            INSERT INTO dbo.YoutubeVideoFeed (ChannelId, ChannelName, Url)
+            SELECT v.ChannelId, MAX(v.ChannelName), {YoutubeFeedUrlPrefix} + v.ChannelId
+            FROM dbo.YouTubeVideos v
+            WHERE NOT EXISTS (SELECT 1 FROM dbo.YoutubeVideoFeed f WHERE f.ChannelId = v.ChannelId)
+            GROUP BY v.ChannelId
+            """);
+        var linked = await db.Database.ExecuteSqlAsync($"""
+            UPDATE v SET v.YoutubeVideoFeedId = f.ID
+            FROM dbo.YouTubeVideos v JOIN dbo.YoutubeVideoFeed f ON f.ChannelId = v.ChannelId
+            WHERE v.YoutubeVideoFeedId IS NULL
+            """);
 
         if (tx is not null)
         {

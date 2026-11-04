@@ -1,4 +1,3 @@
-using System.Data;
 using System.Globalization;
 using Microsoft.EntityFrameworkCore;
 
@@ -53,36 +52,49 @@ public static class BoxOfficeForecastQuery
 
     private sealed record PredictionRow(string MovieTitle, long ForecastLow, long ForecastHigh, int? PredictedRank);
 
-    public static async Task<BoxOfficeForecastSnapshot> GetAsync(WebScraperContext db, DateOnly today)
+    public static async Task<BoxOfficeForecastSnapshot> GetAsync(WebScraperContext db, DateOnly today, CancellationToken ct = default)
     {
-        await db.Database.OpenConnectionAsync();
-        try
-        {
-            await using var command = db.Database.GetDbConnection().CreateCommand();
-            command.CommandText = "SELECT Kind, TargetDate, PeriodEnd, MovieTitle, Distributor, PredictedRank, ForecastLow, ForecastHigh, ForecastAsOf, SourceUrl, FetchedAtUtc, PosterUrl, PosterLookupStatus FROM dbo.BoxOfficeForecasts WHERE PeriodEnd >= @Today ORDER BY Kind, TargetDate, PredictedRank, MovieTitle; SELECT Kind, LastSuccessAt, LastError FROM dbo.BoxOfficeForecastSources;";
-            var parameter = command.CreateParameter();
-            parameter.ParameterName = "@Today"; parameter.DbType = DbType.Date;
-            parameter.Value = today.ToDateTime(TimeOnly.MinValue); command.Parameters.Add(parameter);
-            await using var reader = await command.ExecuteReaderAsync();
-            var movies = new List<BoxOfficeForecast>();
-            while (await reader.ReadAsync())
-                movies.Add(new(reader.GetString(0), DateOnly.FromDateTime(reader.GetDateTime(1)),
-                    DateOnly.FromDateTime(reader.GetDateTime(2)), reader.GetString(3),
-                    reader.IsDBNull(4) ? null : reader.GetString(4),
-                    reader.IsDBNull(5) ? null : Convert.ToInt32(reader.GetValue(5), CultureInfo.InvariantCulture),
-                    Convert.ToInt64(reader.GetValue(6), CultureInfo.InvariantCulture), Convert.ToInt64(reader.GetValue(7), CultureInfo.InvariantCulture),
-                    DateOnly.FromDateTime(reader.GetDateTime(8)),
-                    reader.IsDBNull(9) ? null : BoxOfficeChartQuery.SafeUrl(reader.GetString(9)),
-                    DateTime.SpecifyKind(reader.GetDateTime(10), DateTimeKind.Utc),
-                    reader.IsDBNull(11) ? null : BoxOfficeChartQuery.SafeUrl(reader.GetString(11)),
-                    reader.IsDBNull(12) ? null : reader.GetString(12)));
-            await reader.NextResultAsync();
-            var sources = new List<BoxOfficeForecastSource>();
-            while (await reader.ReadAsync())
-                sources.Add(new(reader.GetString(0), reader.IsDBNull(1) ? null :
-                    DateTime.SpecifyKind(reader.GetDateTime(1), DateTimeKind.Utc), !reader.IsDBNull(2)));
-            return new(movies, sources);
-        }
-        finally { await db.Database.CloseConnectionAsync(); }
+        var rows = await db.Database.SqlQuery<ForecastRow>($"""
+            SELECT Kind, TargetDate, PeriodEnd, MovieTitle, Distributor, PredictedRank, ForecastLow, ForecastHigh, ForecastAsOf,
+                   SourceUrl, FetchedAtUtc, PosterUrl, PosterLookupStatus
+            FROM dbo.BoxOfficeForecasts
+            """)
+            .Where(r => r.PeriodEnd >= today)
+            .OrderBy(r => r.Kind).ThenBy(r => r.TargetDate).ThenBy(r => r.PredictedRank).ThenBy(r => r.MovieTitle)
+            .ToListAsync(ct);
+        var sources = await db.Database.SqlQuery<SourceRow>($"SELECT Kind, LastSuccessAt, LastError FROM dbo.BoxOfficeForecastSources")
+            .ToListAsync(ct);
+        return new(
+            rows.Select(r => new BoxOfficeForecast(r.Kind, r.TargetDate, r.PeriodEnd, r.MovieTitle, r.Distributor, r.PredictedRank,
+                r.ForecastLow, r.ForecastHigh, r.ForecastAsOf, BoxOfficeChartQuery.SafeUrl(r.SourceUrl),
+                DateTime.SpecifyKind(r.FetchedAtUtc, DateTimeKind.Utc), BoxOfficeChartQuery.SafeUrl(r.PosterUrl), r.PosterLookupStatus)).ToList(),
+            sources.Select(s => new BoxOfficeForecastSource(s.Kind,
+                s.LastSuccessAt is { } at ? DateTime.SpecifyKind(at, DateTimeKind.Utc) : null, s.LastError is not null)).ToList());
+    }
+
+    /// <summary>A row of the scraper-owned <c>dbo.BoxOfficeForecasts</c> table, as stored.</summary>
+    private sealed class ForecastRow
+    {
+        public string Kind { get; set; } = "";
+        public DateOnly TargetDate { get; set; }
+        public DateOnly PeriodEnd { get; set; }
+        public string MovieTitle { get; set; } = "";
+        public string? Distributor { get; set; }
+        public int? PredictedRank { get; set; }
+        public long ForecastLow { get; set; }
+        public long ForecastHigh { get; set; }
+        public DateOnly ForecastAsOf { get; set; }
+        public string? SourceUrl { get; set; }
+        public DateTime FetchedAtUtc { get; set; }
+        public string? PosterUrl { get; set; }
+        public string? PosterLookupStatus { get; set; }
+    }
+
+    /// <summary>A row of <c>dbo.BoxOfficeForecastSources</c>.</summary>
+    private sealed class SourceRow
+    {
+        public string Kind { get; set; } = "";
+        public DateTime? LastSuccessAt { get; set; }
+        public string? LastError { get; set; }
     }
 }

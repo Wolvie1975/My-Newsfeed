@@ -5,7 +5,7 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
 # Restore first so the package layer is cached until a .csproj changes.
-COPY myNewspaper.sln Directory.Build.props .editorconfig ./
+COPY myNewspaper.sln Directory.Build.props .editorconfig BannedSymbols.txt ./
 COPY src/myNewspaper.Admin/myNewspaper.Admin.csproj src/myNewspaper.Admin/
 COPY src/myNewspaper.Shared/myNewspaper.Shared.csproj src/myNewspaper.Shared/
 RUN dotnet restore src/myNewspaper.Admin/myNewspaper.Admin.csproj
