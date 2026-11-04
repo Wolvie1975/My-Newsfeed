@@ -1,5 +1,15 @@
 # Project development requirements
 
+## Coding standards
+
+User direction, November 4, 2026 (America/Chicago): all code follows the shared
+[.NET coding standard](docs/dotnet-coding-standard.md) and this repository's
+[coding standards addendum](docs/coding-standards.md). Read both before changing
+code. Don't introduce a new way of doing something the standards already cover;
+if a new pattern is needed, update the standard and its guard in the same change.
+When a change touches one of the problems in the addendum's "Guardrails against
+past drift" table, fix it and update that table's status.
+
 ## Mobile verification is mandatory
 
 User direction, October 24, 2026 (America/Chicago): mobile is a necessary check

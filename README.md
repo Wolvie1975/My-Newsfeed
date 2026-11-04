@@ -26,6 +26,8 @@ See [mobile acceptance checks](docs/interface.md#required-mobile-verification) a
 | [Interface and administration](docs/interface.md) | Settings, appearance, news filtering, F1 News, saved articles, accessibility and admin protections |
 | [Maintenance](docs/maintenance.md) | Review findings, completed repairs, remaining work and documentation provenance |
 | [Release history](docs/release-history.md) | Historical verification, release tags and recorded rollback images |
+| [.NET coding standard](docs/dotnet-coding-standard.md) | General rules for all .NET work: naming, data access, async, errors, security, tests, migrations and the guards that keep them |
+| [Coding standards addendum](docs/coding-standards.md) | What is specific to this repository, including CSS prefixes, breakpoints and the guardrails table |
 
 College Sports has a shared sport selector across Schedule, Results, Standings,
 Rankings and conference-wide News. Football, men’s basketball, women’s volleyball and women’s soccer
