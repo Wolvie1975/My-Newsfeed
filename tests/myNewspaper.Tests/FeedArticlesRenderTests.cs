@@ -187,8 +187,11 @@ public class FeedArticlesRenderTests
     [Fact]
     public async Task The_category_label_links_to_that_category_and_is_omitted_when_there_is_none()
     {
-        var withCategory = await RenderAsync([Item(1, "A", Today, category: "Sports")]);
-        Assert.Contains("<a class=\"cat\" href=\"news/all?category=8\">Sports</a>", withCategory);
+        // A section's own category links to that section (since the Tech hub, Oct 31); any other to the filtered list.
+        var section = await RenderAsync([Item(1, "A", Today, category: "Sports")]);
+        Assert.Contains("<a class=\"cat\" href=\"sports/news\">Sports</a>", section);
+        var other = await RenderAsync([Item(3, "C", Today, category: "World")]);
+        Assert.Contains("<a class=\"cat\" href=\"news/all?category=8\">World</a>", other);
 
         var without = await RenderAsync([Item(2, "B", Today, category: null)]);
         Assert.DoesNotContain("class=\"cat\"", without);

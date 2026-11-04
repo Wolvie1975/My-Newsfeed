@@ -108,9 +108,13 @@ Three checks skip unless given extra input: `category-hubs` changes admin data a
 yesterday (or `RESULTS_PATH`); `basketball-boxscore` needs `BASKETBALL_PREVIEW_FILE`.
 `/healthz` reports `Healthy` or `Unhealthy` (503) from an EF database check.
 
-Integration tests use the configured SQL Server database and application credentials;
-fixtures use rollback transactions or connection-local temporary tables. Use an
-appropriate development/test database.
+Integration tests take the server and credentials from that connection string but always
+use the `WebScraper_Test` database (or `TEST_DATABASE`), never the live `WebScraper`, which
+`TestDatabase` refuses by name. Create or refresh the test copy on the same server with
+[deployment/create-test-database.sql](deployment/create-test-database.sql): a copy-only backup
+of WebScraper restored as WebScraper_Test, with profiles and devices removed and the base
+edition reset. Fixtures use rollback transactions, connection-local temporary tables or
+explicit clean-up. A test fails if a literal connection-string password is ever committed.
 Production configuration is supplied privately through runtime settings; see the
 deployment guide before rebuilding a running container.
 

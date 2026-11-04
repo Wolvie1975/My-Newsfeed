@@ -8,10 +8,7 @@ namespace myNewspaper.Tests;
 // committed, and tags its rows with a unique token so the assertions only see its own data whatever else is stored.
 public class FeedQueryTests
 {
-    private static WebScraperContext Create() => new(
-        new DbContextOptionsBuilder<WebScraperContext>()
-            .UseSqlServer("Server=sql2025,1433;Database=WebScraper;User Id=sa;Password=Fedora_Dev_2025!;Encrypt=False;TrustServerCertificate=True;")
-            .Options);
+    private static WebScraperContext Create() => TestDatabase.CreateContext();
 
     private static Page NewPage(string token, string title, DateTime scraped, DateTime? published = null,
         string? description = null, string? imageUrl = null) => new()

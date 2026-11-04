@@ -9,10 +9,7 @@ namespace myNewspaper.Tests;
 // never committed, so the real data is left untouched.
 public class AdminDataTests
 {
-    private static WebScraperContext Create() => new(
-        new DbContextOptionsBuilder<WebScraperContext>()
-            .UseSqlServer("Server=sql2025,1433;Database=WebScraper;User Id=sa;Password=Fedora_Dev_2025!;Encrypt=False;TrustServerCertificate=True;")
-            .Options);
+    private static WebScraperContext Create() => TestDatabase.CreateContext();
 
     private static Source NewSource(string url, bool enabled = true) => new() { Url = url, Enabled = enabled };
 

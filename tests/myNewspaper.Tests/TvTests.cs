@@ -10,10 +10,7 @@ namespace myNewspaper.Tests;
 
 public class TvTests
 {
-    private static WebScraperContext Create()
-    {
-        return new(new DbContextOptionsBuilder<WebScraperContext>().UseSqlServer(TestDatabase.ConnectionString).Options);
-    }
+    private static WebScraperContext Create() => TestDatabase.CreateContext();
 
     [Fact]
     public async Task Calendar_preserves_batches_specials_date_only_and_local_time_boundaries()

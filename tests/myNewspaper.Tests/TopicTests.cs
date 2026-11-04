@@ -57,8 +57,7 @@ public class TopicTests
         Assert.Equal(("Royals", (string?)null, (string?)null), TopicQuery.Normalize("Royals", "", ""));
     }
 
-    private static WebScraperContext Create() =>
-        new(new DbContextOptionsBuilder<WebScraperContext>().UseSqlServer(TestDatabase.ConnectionString).Options);
+    private static WebScraperContext Create() => TestDatabase.CreateContext();
 
     private static Task<Profile> NewProfile(WebScraperContext db) =>
         ProfileStore.CreateAsync(db, new ProfilePins(new PasswordHasher<Profile>()), "zz " + Guid.NewGuid().ToString("N")[..10], "#0051ba", "1234", null);

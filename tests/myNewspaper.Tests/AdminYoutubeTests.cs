@@ -7,10 +7,7 @@ namespace myNewspaper.Tests;
 // Integration tests against the live WebScraper database. Each test works in a transaction that is never committed.
 public class AdminYoutubeTests
 {
-    private static WebScraperContext Create() => new(
-        new DbContextOptionsBuilder<WebScraperContext>()
-            .UseSqlServer("Server=sql2025,1433;Database=WebScraper;User Id=sa;Password=Fedora_Dev_2025!;Encrypt=False;TrustServerCertificate=True;")
-            .Options);
+    private static WebScraperContext Create() => TestDatabase.CreateContext();
 
     private static string Tag() => Guid.NewGuid().ToString("N")[..10];
 
@@ -181,7 +178,8 @@ public class AdminYoutubeTests
     public async Task No_test_rows_are_left_in_the_youtube_tables()
     {
         await using var db = Create();
-        Assert.False(await db.YouTubeVideos.AnyAsync(v => v.VideoId.StartsWith("zt")));
+        // Real YouTube ids can start with "zt" too (for example ztOKVRxg9GQ), so match this file's titles as well.
+        Assert.False(await db.YouTubeVideos.AnyAsync(v => v.VideoId.StartsWith("zt") && v.Title.StartsWith("Test video ")));
         Assert.False(await db.YoutubeVideoFeeds.AnyAsync(f => f.ChannelId.StartsWith("UCzt")));
     }
     [Fact]

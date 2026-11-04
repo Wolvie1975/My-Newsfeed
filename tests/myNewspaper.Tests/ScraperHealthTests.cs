@@ -93,10 +93,7 @@ public class ScraperHealthTests
 
     // ---- against the database (each test rolls back) -----------------------------------------------------------------
 
-    private static WebScraperContext Create() => new(
-        new DbContextOptionsBuilder<WebScraperContext>()
-            .UseSqlServer("Server=sql2025,1433;Database=WebScraper;User Id=sa;Password=Fedora_Dev_2025!;Encrypt=False;TrustServerCertificate=True;")
-            .Options);
+    private static WebScraperContext Create() => TestDatabase.CreateContext();
 
     private static string Tag() => Guid.NewGuid().ToString("N")[..10];
 

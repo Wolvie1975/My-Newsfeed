@@ -8,10 +8,7 @@ namespace myNewspaper.Tests;
 // transaction that is never committed, so it does not depend on what is currently stored.
 public class WebScraperContextSmokeTests
 {
-    private static WebScraperContext Create() => new(
-        new DbContextOptionsBuilder<WebScraperContext>()
-            .UseSqlServer("Server=sql2025,1433;Database=WebScraper;User Id=sa;Password=Fedora_Dev_2025!;Encrypt=False;TrustServerCertificate=True;")
-            .Options);
+    private static WebScraperContext Create() => TestDatabase.CreateContext();
 
     [Fact]
     public async Task Pages_load_with_their_source()

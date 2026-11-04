@@ -14,8 +14,7 @@ public class ProfileDataTests
     private static readonly ProfilePins Pins = new(new PasswordHasher<Profile>());
     private static readonly DateTime Now = new(2026, 10, 28, 14, 0, 0, DateTimeKind.Utc);
 
-    private static WebScraperContext Create() =>
-        new(new DbContextOptionsBuilder<WebScraperContext>().UseSqlServer(TestDatabase.ConnectionString).Options);
+    private static WebScraperContext Create() => TestDatabase.CreateContext();
 
     private static string Tag() => Guid.NewGuid().ToString("N")[..10];
 

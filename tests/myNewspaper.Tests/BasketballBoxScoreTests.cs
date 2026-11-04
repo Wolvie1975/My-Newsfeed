@@ -13,7 +13,7 @@ public class BasketballBoxScoreTests
     public async Task Championship_sample_retains_team_identity_columns_players_and_supplied_totals()
     {
         var root = Path.GetFullPath("../../../../../", AppContext.BaseDirectory);
-        var payload = await File.ReadAllTextAsync(Path.Combine(root, "new development/mens-college-basketball-boxscore-example.json"));
+        var payload = await File.ReadAllTextAsync(Path.Combine(root, "tests/myNewspaper.Tests/Fixtures/mens-college-basketball-boxscore-example.json"));
         var data = Assert.IsType<BoxData>(BoxData.Parse(payload, new("basketball", "mens-college-basketball", "401856600")));
         Assert.Equal(new[] { "41", "130" }, data.Teams.Select(t => t.Id));
         Assert.Equal(new[] { "29", "34" }, data.Teams[0].Lines.Select(l => l.DisplayValue));

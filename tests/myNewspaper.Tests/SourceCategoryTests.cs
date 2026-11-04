@@ -7,10 +7,7 @@ namespace myNewspaper.Tests;
 // Integration tests against the live WebScraper database, each inside a transaction that is never committed.
 public class SourceCategoryTests
 {
-    private static WebScraperContext Create() => new(
-        new DbContextOptionsBuilder<WebScraperContext>()
-            .UseSqlServer("Server=sql2025,1433;Database=WebScraper;User Id=sa;Password=Fedora_Dev_2025!;Encrypt=False;TrustServerCertificate=True;")
-            .Options);
+    private static WebScraperContext Create() => TestDatabase.CreateContext();
 
     [Fact]
     public async Task A_new_category_gets_a_date_added()

@@ -33,7 +33,13 @@ public sealed class AdminApp(bool enabled) : WebApplicationFactory<myNewspaper.A
 
     public HttpClient Browser()
     {
-        var client = CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false, HandleCookies = true });
+        // HTTPS, as in production: the admin session cookie is Secure, and the client won't send it over plain HTTP.
+        var client = CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false,
+            HandleCookies = true,
+            BaseAddress = new Uri("https://localhost"),
+        });
         client.DefaultRequestHeaders.UserAgent.ParseAdd(UserAgent);
         return client;
     }
