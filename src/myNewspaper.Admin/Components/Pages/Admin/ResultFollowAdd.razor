@@ -125,34 +125,25 @@
         error = result.Error;
     }
 
-    private Task FollowLeagueAsync() =>
-        FollowAsync(new ResultFollow { Kind = FollowKinds.League, Sport = league!.Sport, League = league.League, Name = league.Name });
+    private Task FollowLeagueAsync() => league is { } l ? FollowAsync(FollowKinds.League, l.Sport, l.League, null, l.Name, null) : Task.CompletedTask;
 
-    private Task FollowTeamAsync(EspnTeam team) =>
-        FollowAsync(new ResultFollow
-        {
-            Kind = FollowKinds.Team,
-            Sport = league!.Sport,
-            League = league.League,
-            TeamId = team.Id,
-            Name = team.Name.Length > 200 ? team.Name[..200] : team.Name,
-            LogoUrl = team.LogoUrl,
-        });
+    private Task FollowTeamAsync(EspnTeam team) => league is { } l
+        ? FollowAsync(FollowKinds.Team, l.Sport, l.League, team.Id, team.Name.Length > 200 ? team.Name[..200] : team.Name, team.LogoUrl)
+        : Task.CompletedTask;
 
-    private async Task FollowAsync(ResultFollow follow)
+    private async Task FollowAsync(string kind, string sport, string leagueKey, string? teamId, string name, string? logoUrl)
     {
         error = null;
-        follow.Enabled = true;
         saving = true;
+        int followId;
         try
         {
             await using var db = await Factory.CreateDbContextAsync();
-            db.ResultFollows.Add(follow);
-            await db.SaveChangesAsync();
+            followId = await AdminStore.AddResultFollowAsync(db, kind, sport, leagueKey, teamId, name, logoUrl);
         }
         catch (DbUpdateException ex) when (AdminStore.IsUniqueViolation(ex))
         {
-            error = $"{EspnLeagues.FollowLabel(follow.Kind, follow.Name, follow.Sport, follow.League)} is already followed.";
+            error = $"{EspnLeagues.FollowLabel(kind, name, sport, leagueKey)} is already followed.";
             saving = false;
             return;
         }
@@ -162,7 +153,7 @@
         // The follow is saved either way; if this first fetch fails (ESPN or the network), the background sync retries it.
         try
         {
-            await Sync.SyncNowAsync(follow.Id);
+            await Sync.SyncNowAsync(followId);
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or System.Text.Json.JsonException
             or DbUpdateException || DataFailures.IsReadFailure(ex))

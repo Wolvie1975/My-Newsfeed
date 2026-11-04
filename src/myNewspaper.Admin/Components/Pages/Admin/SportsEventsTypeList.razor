@@ -134,14 +134,8 @@ else
         finally { paging = false; }
     }
 
-    private sealed record TypeRow(int Id, string RssUrl, string EventsTypeName, string? SchoolName, DateTime DateAdded, int EventCount, bool Enabled, DateTime? LastSuccessAt, string? ProviderKey, bool HasSharedEvents = false)
-    {
-        // Feeds from a provider, or with events shared with other feeds, can only be disabled (AdminStore refuses to delete them).
-        public bool CanDelete => ProviderKey is null && !HasSharedEvents;
-    }
-
-    private List<TypeRow>? rows;
-    private TypeRow? pendingDelete;
+    private IReadOnlyList<AdminEventTypeRow>? rows;
+    private AdminEventTypeRow? pendingDelete;
     private string? message;
     private string messageKind = "success";
     private int unlinkedEvents;
@@ -153,16 +147,8 @@ else
     private async Task LoadAsync()
     {
         await using var db = await Factory.CreateDbContextAsync();
-        totalRows = await db.SportsEventsTypes.CountAsync();
-        pageIndex = Math.Min(pageIndex, Math.Max(0, (totalRows - 1) / PageSize));
-        rows = await db.SportsEventsTypes
-            .AsNoTracking()
-            .OrderBy(t => t.EventsTypeName).ThenBy(t => t.Id)
-            .Skip(pageIndex * PageSize).Take(PageSize)
-            .Select(t => new TypeRow(t.Id, t.RssUrl, t.EventsTypeName, t.SchoolName, t.DateAdded, db.SportsEvents.Count(e => e.SportsEventsTypeId == t.Id || e.EventSources.Any(s => s.SportsEventsTypeId == t.Id)), t.Enabled, t.LastSuccessAt, t.ProviderKey, db.SportsEventSources.Any(s => s.SportsEventsTypeId == t.Id)))
-            .ToListAsync();
-
-        unlinkedEvents = await db.SportsEvents.CountAsync(e => e.SportsEventsTypeId == null);
+        var list = await AdminQuery.EventTypesAsync(db, pageIndex, PageSize);
+        (rows, totalRows, pageIndex, unlinkedEvents) = (list.Rows, list.Total, list.PageIndex, list.UnlinkedEvents);
         linkableEvents = unlinkedEvents == 0 ? 0 : (await AdminStore.PlanSportsEventLinksAsync(db)).Count;
     }
 
@@ -184,7 +170,7 @@ else
         await LoadAsync();
     }
 
-    private void StartDelete(TypeRow row)
+    private void StartDelete(AdminEventTypeRow row)
     {
         message = null;
         pendingDelete = row;

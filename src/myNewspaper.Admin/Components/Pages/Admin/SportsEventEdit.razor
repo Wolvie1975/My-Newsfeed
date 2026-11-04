@@ -88,11 +88,11 @@ else
         public string? TypeId { get; set; }
     }
 
-    private sealed record TypeOption(int Id, string Name);
+    
 
     private readonly EventForm form = new();
-    private SportsEvent? existing;
-    private List<TypeOption> types = [];
+    private AdminEventDetail? existing;
+    private IReadOnlyList<EventTypeOption> types = [];
     private bool notFound;
     private bool saving;
     private string? error;
@@ -103,19 +103,15 @@ else
         notFound = false;
         error = null;
         await using var db = await Factory.CreateDbContextAsync();
-        existing = await db.SportsEvents.AsNoTracking().FirstOrDefaultAsync(e => e.Id == Id);
+        existing = await AdminQuery.EventAsync(db, Id);
         if (existing is null)
         {
             notFound = true;
             return;
         }
 
-        attributionLocked = existing.ProviderKey is not null || await db.SportsEventSources.AnyAsync(s => s.SportsEventId == Id);
-        types = await db.SportsEventsTypes.AsNoTracking()
-            .Where(t => t.ProviderKey == null || t.Id == existing.SportsEventsTypeId)
-            .OrderBy(t => t.EventsTypeName)
-            .Select(t => new TypeOption(t.Id, t.EventsTypeName))
-            .ToListAsync();
+        attributionLocked = existing.AttributionLocked;
+        types = await AdminQuery.EventTypeOptionsAsync(db, legacyOnly: true, legacyOnlyExcept: existing.SportsEventsTypeId);
         form.TypeId = existing.SportsEventsTypeId?.ToString();
     }
 
@@ -126,12 +122,7 @@ else
         try
         {
             await using var db = await Factory.CreateDbContextAsync();
-            var sportsEvent = await db.SportsEvents.FindAsync(Id);
-            if (sportsEvent is null)
-            {
-                notFound = true;
-                return;
-            }
+            
 
             if (!await AdminStore.AssignSportsEventTypeAsync(db, Id, int.TryParse(form.TypeId, out var typeId) ? typeId : null))
             { notFound = true; return; }

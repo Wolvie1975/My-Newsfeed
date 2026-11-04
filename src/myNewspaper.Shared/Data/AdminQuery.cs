@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using myNewspaper.Shared.Scores;
 
 namespace myNewspaper.Shared.Data;
 
@@ -68,6 +69,42 @@ public sealed record AdminYoutubeVideoList(IReadOnlyList<AdminYoutubeVideoRow> R
 public sealed record AdminYoutubeVideoDetail(int Id, string VideoId, string ChannelId, string? ChannelName, string Title, string Url,
     DateTime PublishedAt, DateTime? UpdatedAt, string? ThumbnailUrl, string? Description, long? ViewCount, int? RatingCount,
     decimal? RatingAverage, DateTime FirstSeenAt, DateTime LastSeenAt, int? YoutubeVideoFeedId);
+
+/// <summary>A schedule (sports event type) in a pick list.</summary>
+public sealed record EventTypeOption(int Id, string Name);
+
+/// <summary>A row of Admin · Event types.</summary>
+public sealed record AdminEventTypeRow(int Id, string RssUrl, string EventsTypeName, string? SchoolName, DateTime DateAdded, int EventCount,
+    bool Enabled, DateTime? LastSuccessAt, string? ProviderKey, bool HasSharedEvents = false)
+{
+    // Feeds from a provider, or with events shared with other feeds, can only be disabled (AdminStore refuses to delete them).
+    public bool CanDelete => ProviderKey is null && !HasSharedEvents;
+}
+
+/// <summary>One page of Admin · Event types, with the count of events that have no type.</summary>
+public sealed record AdminEventTypeList(IReadOnlyList<AdminEventTypeRow> Rows, int Total, int PageIndex, int UnlinkedEvents);
+
+/// <summary>An event type as its edit page shows it.</summary>
+public sealed record AdminEventTypeDetail(int Id, string RssUrl, string EventsTypeName, string? SchoolName, DateTime DateAdded, bool Enabled,
+    string? ProviderKey, int? ProviderSchoolId, DateTime? LastAttemptAt, DateTime? LastSuccessAt, string? LastError, int? LastEventCount,
+    int? LastIssueCount, int EventCount);
+
+/// <summary>A row of Admin · Events.</summary>
+public sealed record AdminEventRow(
+    int Id, string Url, string Title, string? Sport, string? Opponent, bool? IsAway, string? Location,
+    DateOnly EventDate, DateTime? StartsAtUtc, bool TimeTbd, string? Tv, int? TypeId, string? TypeName, bool AttributionLocked);
+
+/// <summary>One page of Admin · Events.</summary>
+public sealed record AdminEventList(IReadOnlyList<AdminEventRow> Rows, int Total, int PageIndex);
+
+/// <summary>An event as its edit page shows it; attribution is locked for provider and shared-calendar events.</summary>
+public sealed record AdminEventDetail(int Id, string Url, string Title, string? Sport, string? Opponent, bool? IsAway, string? Location,
+    DateOnly EventDate, DateTime? StartsAtUtc, bool TimeTbd, string? Tv, int? SportsEventsTypeId, string? ProviderKey, DateTime FirstSeenAt,
+    DateTime LastSeenAt, bool AttributionLocked);
+
+/// <summary>A row of Admin · Results follows.</summary>
+public sealed record AdminResultFollowRow(int Id, string Kind, string Sport, string League, string Name, string? LogoUrl, bool Enabled,
+    DateTime? LastSyncedAt, string? LastError);
 
 /// <summary>
 /// Reads for the admin site's pages. Writes are in <see cref="AdminStore"/>. Every list is bounded by a page size or by
@@ -253,4 +290,94 @@ public static class AdminQuery
             .Select(v => new AdminYoutubeVideoDetail(v.Id, v.VideoId, v.ChannelId, v.ChannelName, v.Title, v.Url, v.PublishedAt, v.UpdatedAt,
                 v.ThumbnailUrl, v.Description, v.ViewCount, v.RatingCount, v.RatingAverage, v.FirstSeenAt, v.LastSeenAt, v.YoutubeVideoFeedId))
             .FirstOrDefaultAsync(ct);
+
+    // ---- Sports events and Results follows -----------------------------------------------------------------------
+
+    /// <summary>Admin · Event types; an event counts for a type when it is assigned or shared through an event source.</summary>
+    public static async Task<AdminEventTypeList> EventTypesAsync(WebScraperContext db, int pageIndex, int pageSize, CancellationToken ct = default)
+    {
+        var total = await db.SportsEventsTypes.CountAsync(ct);
+        pageIndex = Math.Min(Math.Max(0, pageIndex), Math.Max(0, (total - 1) / pageSize));
+        var rows = await db.SportsEventsTypes.AsNoTracking()
+            .OrderBy(t => t.EventsTypeName).ThenBy(t => t.Id)
+            .Skip(pageIndex * pageSize).Take(pageSize)
+            .Select(t => new AdminEventTypeRow(t.Id, t.RssUrl, t.EventsTypeName, t.SchoolName, t.DateAdded,
+                db.SportsEvents.Count(e => e.SportsEventsTypeId == t.Id || e.EventSources.Any(s => s.SportsEventsTypeId == t.Id)),
+                t.Enabled, t.LastSuccessAt, t.ProviderKey, db.SportsEventSources.Any(s => s.SportsEventsTypeId == t.Id)))
+            .ToListAsync(ct);
+        var unlinked = await db.SportsEvents.CountAsync(e => e.SportsEventsTypeId == null, ct);
+        return new(rows, total, pageIndex, unlinked);
+    }
+
+    public static async Task<AdminEventTypeDetail?> EventTypeAsync(WebScraperContext db, int id, CancellationToken ct = default) =>
+        await db.SportsEventsTypes.AsNoTracking().Where(t => t.Id == id)
+            .Select(t => new AdminEventTypeDetail(t.Id, t.RssUrl, t.EventsTypeName, t.SchoolName, t.DateAdded, t.Enabled, t.ProviderKey,
+                t.ProviderSchoolId, t.LastAttemptAt, t.LastSuccessAt, t.LastError, t.LastEventCount, t.LastIssueCount,
+                db.SportsEvents.Count(e => e.SportsEventsTypeId == t.Id || e.EventSources.Any(s => s.SportsEventsTypeId == t.Id))))
+            .FirstOrDefaultAsync(ct);
+
+    /// <summary>Every event type, or (<paramref name="legacyOnlyExcept"/> given) only the legacy ones plus that type.</summary>
+    public static async Task<IReadOnlyList<EventTypeOption>> EventTypeOptionsAsync(WebScraperContext db, bool legacyOnly = false,
+        int? legacyOnlyExcept = null, CancellationToken ct = default)
+    {
+        var query = db.SportsEventsTypes.AsNoTracking();
+        if (legacyOnly) query = query.Where(t => t.ProviderKey == null || t.Id == legacyOnlyExcept);
+        return await query.OrderBy(t => t.EventsTypeName).Select(t => new EventTypeOption(t.Id, t.EventsTypeName)).ToListAsync(ct);
+    }
+
+    /// <summary>The distinct sports named on events, for the filter list.</summary>
+    public static async Task<IReadOnlyList<string>> EventSportsAsync(WebScraperContext db, CancellationToken ct = default) =>
+        await db.SportsEvents.AsNoTracking().Where(e => e.Sport != null).Select(e => e.Sport ?? "").Distinct().OrderBy(s => s).ToListAsync(ct);
+
+    /// <summary>
+    /// Admin · Events. <paramref name="type"/> is "none", a type id (assigned or shared) or empty; <paramref name="when"/> is
+    /// "upcoming" or "past" relative to <paramref name="today"/> (the display zone's date); sort is "sport", "opponent" or
+    /// (default) "date". Id breaks ties; the page index is clamped to the last page.
+    /// </summary>
+    public static async Task<AdminEventList> EventsAsync(WebScraperContext db, string? type, string? sport, string? when, DateOnly today,
+        string? search, string sortColumn, bool descending, int pageIndex, int pageSize, CancellationToken ct = default)
+    {
+        IQueryable<Models.SportsEvent> query = db.SportsEvents.AsNoTracking();
+        if (type == "none") query = query.Where(e => e.SportsEventsTypeId == null);
+        else if (int.TryParse(type, out var typeId)) query = query.Where(e => e.SportsEventsTypeId == typeId || e.EventSources.Any(s => s.SportsEventsTypeId == typeId));
+        if (!string.IsNullOrEmpty(sport)) query = query.Where(e => e.Sport == sport);
+        if (when == "upcoming") query = query.Where(e => e.EventDate >= today);
+        else if (when == "past") query = query.Where(e => e.EventDate < today);
+        if (!string.IsNullOrEmpty(search))
+            query = query.Where(e => e.Title.Contains(search) || (e.Opponent != null && e.Opponent.Contains(search)) || (e.Location != null && e.Location.Contains(search)));
+
+        var total = await query.CountAsync(ct);
+        var ordered = (sortColumn, descending) switch
+        {
+            ("sport", false) => query.OrderBy(e => e.Sport).ThenBy(e => e.EventDate).ThenBy(e => e.Id),
+            ("sport", true) => query.OrderByDescending(e => e.Sport).ThenBy(e => e.EventDate).ThenBy(e => e.Id),
+            ("opponent", false) => query.OrderBy(e => e.Opponent).ThenBy(e => e.EventDate).ThenBy(e => e.Id),
+            ("opponent", true) => query.OrderByDescending(e => e.Opponent).ThenBy(e => e.EventDate).ThenBy(e => e.Id),
+            (_, false) => query.OrderBy(e => e.EventDate).ThenBy(e => e.StartsAtUtc).ThenBy(e => e.Id),
+            _ => query.OrderByDescending(e => e.EventDate).ThenByDescending(e => e.StartsAtUtc).ThenBy(e => e.Id),
+        };
+        pageIndex = Math.Min(Math.Max(0, pageIndex), Math.Max(0, (total - 1) / pageSize));
+        var rows = await ordered.Skip(pageIndex * pageSize).Take(pageSize)
+            .Select(e => new AdminEventRow(e.Id, e.Url, e.Title, e.Sport, e.Opponent, e.IsAway, e.Location, e.EventDate, e.StartsAtUtc, e.TimeTbd, e.Tv,
+                e.SportsEventsTypeId, e.SportsEventsType != null ? e.SportsEventsType.EventsTypeName : null, e.ProviderKey != null || e.EventSources.Any()))
+            .ToListAsync(ct);
+        return new(rows, total, pageIndex);
+    }
+
+    public static Task<AdminEventDetail?> EventAsync(WebScraperContext db, int id, CancellationToken ct = default) =>
+        db.SportsEvents.AsNoTracking().Where(e => e.Id == id)
+            .Select(e => new AdminEventDetail(e.Id, e.Url, e.Title, e.Sport, e.Opponent, e.IsAway, e.Location, e.EventDate, e.StartsAtUtc, e.TimeTbd, e.Tv,
+                e.SportsEventsTypeId, e.ProviderKey, e.FirstSeenAt, e.LastSeenAt,
+                e.ProviderKey != null || db.SportsEventSources.Any(s => s.SportsEventId == e.Id)))
+            .FirstOrDefaultAsync(ct);
+
+    /// <summary>Every Results follow, in the order Admin lists them: by kind, then name, then league.</summary>
+    public static async Task<IReadOnlyList<AdminResultFollowRow>> ResultFollowsAsync(WebScraperContext db, CancellationToken ct = default) =>
+        (await db.ResultFollows.AsNoTracking()
+            .Select(f => new AdminResultFollowRow(f.Id, f.Kind, f.Sport, f.League, f.Name, f.LogoUrl, f.Enabled, f.LastSyncedAt, f.LastError))
+            .ToListAsync(ct))
+        .OrderBy(f => FollowKinds.Order(f.Kind))
+        .ThenBy(f => f.Name, StringComparer.OrdinalIgnoreCase)
+        .ThenBy(f => EspnLeagues.NameOf(f.Sport, f.League))
+        .ToList();
 }

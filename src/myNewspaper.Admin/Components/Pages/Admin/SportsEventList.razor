@@ -140,19 +140,13 @@ else
 @code {
     private const int PageSize = 25;
 
-    private sealed record TypeOption(int Id, string Name);
-
-    private sealed record EventRow(
-        int Id, string Url, string Title, string? Sport, string? Opponent, bool? IsAway, string? Location,
-        DateOnly EventDate, DateTime? StartsAtUtc, bool TimeTbd, string? Tv, int? TypeId, string? TypeName, bool AttributionLocked);
-
     // Query values arrive as text and are parsed leniently: a hand-edited "?typeId=abc" must not throw.
     [SupplyParameterFromQuery(Name = "typeId")] private string? TypeIdText { get; set; }
 
-    private List<TypeOption> types = [];
-    private List<string> sports = [];
-    private List<EventRow>? rows;
-    private EventRow? pendingDelete;
+    private IReadOnlyList<EventTypeOption> types = [];
+    private IReadOnlyList<string> sports = [];
+    private IReadOnlyList<AdminEventRow>? rows;
+    private AdminEventRow? pendingDelete;
     private string? message;
     private string messageKind = "success";
 
@@ -175,16 +169,8 @@ else
     protected override async Task OnInitializedAsync()
     {
         await using var db = await Factory.CreateDbContextAsync();
-        types = await db.SportsEventsTypes.AsNoTracking()
-            .OrderBy(t => t.EventsTypeName)
-            .Select(t => new TypeOption(t.Id, t.EventsTypeName))
-            .ToListAsync();
-        sports = await db.SportsEvents.AsNoTracking()
-            .Where(e => e.Sport != null)
-            .Select(e => e.Sport!)
-            .Distinct()
-            .OrderBy(s => s)
-            .ToListAsync();
+        types = await AdminQuery.EventTypeOptionsAsync(db);
+        sports = await AdminQuery.EventSportsAsync(db);
 
         if (TypeIdText == "none")
         {
@@ -201,66 +187,13 @@ else
     private async Task LoadAsync()
     {
         await using var db = await Factory.CreateDbContextAsync();
-        IQueryable<SportsEvent> query = db.SportsEvents.AsNoTracking();
-
-        if (typeFilter == "none")
-        {
-            query = query.Where(e => e.SportsEventsTypeId == null);
-        }
-        else if (int.TryParse(typeFilter, out var typeId))
-        {
-            query = query.Where(e => e.SportsEventsTypeId == typeId || e.EventSources.Any(s => s.SportsEventsTypeId == typeId));
-        }
-
-        if (!string.IsNullOrEmpty(sportFilter))
-        {
-            query = query.Where(e => e.Sport == sportFilter);
-        }
-
-        var today = Dates.Today;
-        if (whenFilter == "upcoming")
-        {
-            query = query.Where(e => e.EventDate >= today);
-        }
-        else if (whenFilter == "past")
-        {
-            query = query.Where(e => e.EventDate < today);
-        }
-
-        if (!string.IsNullOrEmpty(search))
-        {
-            query = query.Where(e => e.Title.Contains(search)
-                || (e.Opponent != null && e.Opponent.Contains(search))
-                || (e.Location != null && e.Location.Contains(search)));
-        }
-
-        total = await query.CountAsync();
-
-        // Id is the tiebreaker so paging is stable when the sort column has duplicates or nulls.
-        var ordered = (sortColumn, sortDescending) switch
-        {
-            ("sport", false) => query.OrderBy(e => e.Sport).ThenBy(e => e.EventDate).ThenBy(e => e.Id),
-            ("sport", true) => query.OrderByDescending(e => e.Sport).ThenBy(e => e.EventDate).ThenBy(e => e.Id),
-            ("opponent", false) => query.OrderBy(e => e.Opponent).ThenBy(e => e.EventDate).ThenBy(e => e.Id),
-            ("opponent", true) => query.OrderByDescending(e => e.Opponent).ThenBy(e => e.EventDate).ThenBy(e => e.Id),
-            (_, false) => query.OrderBy(e => e.EventDate).ThenBy(e => e.StartsAtUtc).ThenBy(e => e.Id),
-            _ => query.OrderByDescending(e => e.EventDate).ThenByDescending(e => e.StartsAtUtc).ThenBy(e => e.Id),
-        };
-
-        // A delete or filter change can leave the current page past the end.
-        var lastPage = Math.Max(0, (total - 1) / PageSize);
-        pageIndex = Math.Min(pageIndex, lastPage);
-
-        rows = await ordered
-            .Skip(pageIndex * PageSize).Take(PageSize)
-            .Select(e => new EventRow(
-                e.Id, e.Url, e.Title, e.Sport, e.Opponent, e.IsAway, e.Location, e.EventDate, e.StartsAtUtc, e.TimeTbd, e.Tv,
-                e.SportsEventsTypeId, e.SportsEventsType != null ? e.SportsEventsType.EventsTypeName : null, e.ProviderKey != null || e.EventSources.Any()))
-            .ToListAsync();
+        var list = await AdminQuery.EventsAsync(db, typeFilter, sportFilter, whenFilter, Dates.Today, search, sortColumn, sortDescending,
+            pageIndex, PageSize);
+        (rows, total, pageIndex) = (list.Rows, list.Total, list.PageIndex);
     }
 
     // The feed's time is the host school's, stored as UTC. It is shown in the site's zone with its offset, not as the venue's clock.
-    private string TimeText(EventRow row) =>
+    private string TimeText(AdminEventRow row) =>
         row.TimeTbd ? "Time TBD" : row.StartsAtUtc is DateTime start ? Dates.TimeWithOffset(start) : "—";
 
     private async Task SearchAsync()
@@ -300,7 +233,7 @@ else
         await LoadAsync();
     }
 
-    private void StartDelete(EventRow row)
+    private void StartDelete(AdminEventRow row)
     {
         message = null;
         pendingDelete = row;

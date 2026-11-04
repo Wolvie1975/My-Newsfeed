@@ -100,7 +100,7 @@ else
     }
 
     private TypeForm? form;
-    private SportsEventsType? existing;
+    private AdminEventTypeDetail? existing;
     private int eventCount;
     private bool notFound;
     private bool saving;
@@ -110,21 +110,21 @@ else
 
     protected override async Task OnParametersSetAsync()
     {
-        if (IsNew)
+        if (Id is not { } id)
         {
             form = new TypeForm();
             return;
         }
 
         await using var db = await Factory.CreateDbContextAsync();
-        existing = await db.SportsEventsTypes.AsNoTracking().FirstOrDefaultAsync(t => t.Id == Id);
+        existing = await AdminQuery.EventTypeAsync(db, id);
         if (existing is null)
         {
             notFound = true;
             return;
         }
 
-        eventCount = await db.SportsEvents.CountAsync(e => e.SportsEventsTypeId == Id || e.EventSources.Any(s => s.SportsEventsTypeId == Id));
+        eventCount = existing.EventCount;
         form = new TypeForm { EventsTypeName = existing.EventsTypeName, RssUrl = existing.RssUrl, SchoolName = existing.SchoolName, Enabled = existing.Enabled };
     }
 
@@ -151,26 +151,12 @@ else
         try
         {
             await using var db = await Factory.CreateDbContextAsync();
-            if (IsNew)
+            if (!await AdminStore.SaveSportsEventsTypeAsync(db, Id, name, url, school, form.Enabled))
             {
-                db.SportsEventsTypes.Add(new SportsEventsType { EventsTypeName = name, RssUrl = url, SchoolName = school, Enabled = form.Enabled });
-            }
-            else
-            {
-                var type = await db.SportsEventsTypes.FindAsync(Id);
-                if (type is null)
-                {
-                    notFound = true;
-                    return;
-                }
-
-                type.EventsTypeName = name;
-                type.RssUrl = url;
-                type.SchoolName = school;
-                type.Enabled = form.Enabled;
+                notFound = true;
+                return;
             }
 
-            await db.SaveChangesAsync();
             Nav.NavigateTo("admin/sports-event-types");
         }
         catch (DbUpdateException ex) when (AdminStore.IsUniqueViolation(ex))

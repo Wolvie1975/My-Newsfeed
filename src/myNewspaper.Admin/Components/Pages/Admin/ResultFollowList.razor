@@ -108,8 +108,8 @@ else
 
 @code {
     [SupplyParameterFromQuery(Name = "syncPending")] private string? SyncPending { get; set; }
-    private List<ResultFollow>? rows;
-    private ResultFollow? pendingDelete;
+    private IReadOnlyList<AdminResultFollowRow>? rows;
+    private AdminResultFollowRow? pendingDelete;
     private string? message;
     private string messageKind = "success";
     private bool syncing;
@@ -119,14 +119,10 @@ else
     private async Task LoadAsync()
     {
         await using var db = await Factory.CreateDbContextAsync();
-        rows = (await db.ResultFollows.AsNoTracking().ToListAsync())
-            .OrderBy(f => FollowKinds.Order(f.Kind))
-            .ThenBy(f => f.Name, StringComparer.OrdinalIgnoreCase)
-            .ThenBy(f => EspnLeagues.NameOf(f.Sport, f.League))
-            .ToList();
+        rows = await AdminQuery.ResultFollowsAsync(db);
     }
 
-    private static string Label(ResultFollow f) => EspnLeagues.FollowLabel(f.Kind, f.Name, f.Sport, f.League);
+    private static string Label(AdminResultFollowRow f) => EspnLeagues.FollowLabel(f.Kind, f.Name, f.Sport, f.League);
 
     private async Task SyncAsync(int? followId)
     {
@@ -148,15 +144,15 @@ else
         await LoadAsync();
     }
 
-    private async Task SetEnabledAsync(ResultFollow row, bool enabled)
+    private async Task SetEnabledAsync(AdminResultFollowRow row, bool enabled)
     {
         await using var db = await Factory.CreateDbContextAsync();
-        await db.ResultFollows.Where(f => f.Id == row.Id).ExecuteUpdateAsync(s => s.SetProperty(f => f.Enabled, enabled));
+        await AdminStore.SetResultFollowEnabledAsync(db, row.Id, enabled);
         message = null;
         await LoadAsync();
     }
 
-    private void StartDelete(ResultFollow row)
+    private void StartDelete(AdminResultFollowRow row)
     {
         message = null;
         pendingDelete = row;
@@ -170,9 +166,9 @@ else
         }
 
         await using var db = await Factory.CreateDbContextAsync();
-        var deleted = await db.ResultFollows.Where(f => f.Id == target.Id).ExecuteDeleteAsync();
-        messageKind = deleted > 0 ? "success" : "warning";
-        message = deleted > 0 ? $"Stopped following {Label(target)}." : $"{Label(target)} was already removed.";
+        var deleted = await AdminStore.DeleteResultFollowAsync(db, target.Id);
+        messageKind = deleted ? "success" : "warning";
+        message = deleted ? $"Stopped following {Label(target)}." : $"{Label(target)} was already removed.";
         pendingDelete = null;
         await LoadAsync();
     }

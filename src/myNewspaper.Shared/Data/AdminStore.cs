@@ -219,6 +219,62 @@ public static class AdminStore
 
     // ---- Sports event types -------------------------------------------------------------------------------------------
 
+    /// <summary>
+    /// Adds a legacy RSS event type (<paramref name="id"/> null) or updates one. False when the type to update no longer
+    /// exists. A duplicate feed address surfaces as <see cref="DbUpdateException"/> (<see cref="IsUniqueViolation"/>).
+    /// </summary>
+    public static async Task<bool> SaveSportsEventsTypeAsync(WebScraperContext db, int? id, string name, string rssUrl, string? school,
+        bool enabled, CancellationToken ct = default)
+    {
+        if (id is null)
+        {
+            db.SportsEventsTypes.Add(new Models.SportsEventsType { EventsTypeName = name, RssUrl = rssUrl, SchoolName = school, Enabled = enabled });
+        }
+        else
+        {
+            var type = await db.SportsEventsTypes.FindAsync([id.Value], ct);
+            if (type is null) return false;
+            type.EventsTypeName = name;
+            type.RssUrl = rssUrl;
+            type.SchoolName = school;
+            type.Enabled = enabled;
+        }
+        await db.SaveChangesAsync(ct);
+        return true;
+    }
+
+    // ---- Results follows ---------------------------------------------------------------------------------------------
+
+    /// <summary>
+    /// Follows a league (<paramref name="teamId"/> null) or a team, enabled, and returns the new follow's id. Already
+    /// followed: <see cref="DbUpdateException"/> (<see cref="IsUniqueViolation"/>).
+    /// </summary>
+    public static async Task<int> AddResultFollowAsync(WebScraperContext db, string kind, string sport, string league, string? teamId, string name,
+        string? logoUrl, CancellationToken ct = default)
+    {
+        var follow = new Models.ResultFollow
+        {
+            Kind = kind,
+            Sport = sport,
+            League = league,
+            TeamId = teamId,
+            Name = name,
+            LogoUrl = logoUrl,
+            Enabled = true,
+        };
+        db.ResultFollows.Add(follow);
+        await db.SaveChangesAsync(ct);
+        return follow.Id;
+    }
+
+    public static async Task SetResultFollowEnabledAsync(WebScraperContext db, int id, bool enabled, CancellationToken ct = default) =>
+        await db.ResultFollows.Where(f => f.Id == id).ExecuteUpdateAsync(s => s.SetProperty(f => f.Enabled, enabled), ct);
+
+    /// <summary>Stops following; false when it was already removed.</summary>
+    public static async Task<bool> DeleteResultFollowAsync(WebScraperContext db, int id, CancellationToken ct = default) =>
+        await db.ResultFollows.Where(f => f.Id == id).ExecuteDeleteAsync(ct) > 0;
+
+
     /// <summary>The website part of an address, lower-cased and without a leading "www.", or null when it isn't a URL.</summary>
     public static string? HostOf(string? url)
     {
