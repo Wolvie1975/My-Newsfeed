@@ -1,4 +1,4 @@
-/* The public design lives in wwwroot/public.css. Only the framework's error banner is styled here. */
+/* The framework's error banner (BlazorErrorUi.razor): hidden until Blazor reports an error. */
 #blazor-error-ui {
     color-scheme: light only;
     background: lightyellow;
