@@ -1,9 +1,9 @@
 using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore;
-using myNewspaper.Web.Data;
-using myNewspaper.Web.Data.Models;
+using myNewspaper.Shared.Data;
+using myNewspaper.Shared.Data.Models;
 
-namespace myNewspaper.Web.Profiles;
+namespace myNewspaper.Shared.Profiles;
 
 /// <summary>One part of a title for display: plain text, or a matched term to wrap in &lt;mark&gt;.</summary>
 public sealed record TopicSpan(string Text, bool Match);

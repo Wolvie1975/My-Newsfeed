@@ -2,8 +2,8 @@
 @layout PublicLayout
 @inject IDbContextFactory<WebScraperContext> Factory
 @inject FeedDates Dates
-@inject myNewspaper.Web.Saved.SharedArticles SavedArticles
-@inject myNewspaper.Web.Profiles.ProfileContext Reader
+@inject myNewspaper.Shared.Saved.SharedArticles SavedArticles
+@inject myNewspaper.Shared.Profiles.ProfileContext Reader
 
 <PageTitle>YouTube · myNewspaper</PageTitle>
 
@@ -226,7 +226,7 @@ else
     private VideosPage? listing;
     private DateTime? lastUpdated;
     private IReadOnlyDictionary<string, int> categoryCounts = new Dictionary<string, int>();
-    private IReadOnlyList<myNewspaper.Web.Saved.SavedArticle> watchLater = [];
+    private IReadOnlyList<myNewspaper.Shared.Saved.SavedArticle> watchLater = [];
 
     protected override async Task OnParametersSetAsync()
     {

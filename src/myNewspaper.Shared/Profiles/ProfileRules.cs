@@ -1,7 +1,7 @@
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace myNewspaper.Web.Profiles;
+namespace myNewspaper.Shared.Profiles;
 
 /// <summary>What a profile's name, color and PIN may be, and when wrong PINs lock it (profiles handoff, decision 2).</summary>
 public static partial class ProfileRules

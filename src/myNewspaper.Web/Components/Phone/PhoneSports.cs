@@ -1,8 +1,8 @@
 using System.Globalization;
 using System.Text.Json.Nodes;
-using myNewspaper.Web.Data;
-using myNewspaper.Web.Data.Models;
-using myNewspaper.Web.Profiles;
+using myNewspaper.Shared.Data;
+using myNewspaper.Shared.Data.Models;
+using myNewspaper.Shared.Profiles;
 
 namespace myNewspaper.Web.Components.Phone;
 

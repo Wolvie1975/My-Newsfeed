@@ -2,10 +2,10 @@ using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.StaticAssets;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using myNewspaper.Web.Data;
-using myNewspaper.Web.Data.Models;
+using myNewspaper.Shared.Data;
+using myNewspaper.Shared.Data.Models;
 
-namespace myNewspaper.Web.Profiles;
+namespace myNewspaper.Shared.Profiles;
 
 /// <summary>
 /// Identifies the device, loads its profile into <see cref="ProfileContext"/>, and sends anyone without a profile to

@@ -1,9 +1,9 @@
 using System.Globalization;
 using Microsoft.EntityFrameworkCore;
-using myNewspaper.Web.Data.Models;
-using myNewspaper.Web.Profiles;
+using myNewspaper.Shared.Data.Models;
+using myNewspaper.Shared.Profiles;
 
-namespace myNewspaper.Web.Data;
+namespace myNewspaper.Shared.Data;
 
 public sealed record VideoItem(
     int Id,

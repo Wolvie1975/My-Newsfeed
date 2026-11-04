@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 
-namespace myNewspaper.Web.Data;
+namespace myNewspaper.Shared.Data;
 
 public sealed record FeedItem(
     int Id,

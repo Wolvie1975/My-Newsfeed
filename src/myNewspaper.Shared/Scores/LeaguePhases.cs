@@ -1,10 +1,10 @@
 using System.Collections.Concurrent;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
-using myNewspaper.Web.Data;
-using myNewspaper.Web.Data.Models;
+using myNewspaper.Shared.Data;
+using myNewspaper.Shared.Data.Models;
 
-namespace myNewspaper.Web.Scores;
+namespace myNewspaper.Shared.Scores;
 
 public enum LeaguePhase { Unknown, RegularSeason, Postseason }
 

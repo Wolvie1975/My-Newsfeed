@@ -1,8 +1,8 @@
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
-using myNewspaper.Web.Data.Models;
+using myNewspaper.Shared.Data.Models;
 
-namespace myNewspaper.Web.Data;
+namespace myNewspaper.Shared.Data;
 
 public sealed record StandingStatistic(string Name, string DisplayName, string DisplayValue, double? Value = null);
 public sealed record StandingColumn(string Name, string Label);

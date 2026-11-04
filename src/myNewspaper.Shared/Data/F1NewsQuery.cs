@@ -1,4 +1,4 @@
-namespace myNewspaper.Web.Data;
+namespace myNewspaper.Shared.Data;
 
 /// <summary>The F1 headline category, shown as the F1 topic in Sports headlines.</summary>
 public static class F1NewsQuery

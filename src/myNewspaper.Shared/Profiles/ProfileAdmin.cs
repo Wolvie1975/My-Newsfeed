@@ -1,9 +1,9 @@
 using System.Text.Json.Nodes;
 using Microsoft.EntityFrameworkCore;
-using myNewspaper.Web.Data;
-using myNewspaper.Web.Data.Models;
+using myNewspaper.Shared.Data;
+using myNewspaper.Shared.Data.Models;
 
-namespace myNewspaper.Web.Profiles;
+namespace myNewspaper.Shared.Profiles;
 
 /// <summary>
 /// What the admin sees of a profile (decision 3): who it is, whether it's locked or hidden, its devices and its

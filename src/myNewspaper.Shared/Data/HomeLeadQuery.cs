@@ -1,4 +1,4 @@
-namespace myNewspaper.Web.Data;
+namespace myNewspaper.Shared.Data;
 
 public sealed record HomeLeadSnapshot(FeedItem? Article, long Hour, int RefreshAfterMs, bool Failed = false);
 

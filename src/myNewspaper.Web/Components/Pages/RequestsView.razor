@@ -1,9 +1,9 @@
 @page "/requests"
 @layout PublicLayout
-@using myNewspaper.Web.Requests
+@using myNewspaper.Shared.Requests
 @inject IDbContextFactory<WebScraperContext> Factory
-@inject myNewspaper.Web.Profiles.ProfileContext Reader
-@inject myNewspaper.Hosting.SiteLinks Sites
+@inject myNewspaper.Shared.Profiles.ProfileContext Reader
+@inject myNewspaper.Shared.Hosting.SiteLinks Sites
 @inject FeedDates Dates
 @inject NavigationManager Nav
 @inject ILogger<RequestsView> Log
@@ -28,7 +28,7 @@
             <ul class="rq-list">
                 @foreach (var p in o.LockedProfiles)
                 {
-                    <li class="rq-item"><strong>@p.Name is locked</strong><p>@myNewspaper.Web.Profiles.ProfileRules.MaxWrongPins wrong PINs@(p.Device is null ? "" : " on " + p.Device) · @Dates.Published(p.LockedAt)</p>
+                    <li class="rq-item"><strong>@p.Name is locked</strong><p>@myNewspaper.Shared.Profiles.ProfileRules.MaxWrongPins wrong PINs@(p.Device is null ? "" : " on " + p.Device) · @Dates.Published(p.LockedAt)</p>
                         <a class="rq-open" href="@(Sites.Admin + $"/profiles/{p.ProfileId}#pin")">Open in Admin →</a></li>
                 }
                 @foreach (var r in o.Requests)

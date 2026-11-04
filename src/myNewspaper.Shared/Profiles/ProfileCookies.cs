@@ -3,7 +3,7 @@ using System.Security.Cryptography;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.WebUtilities;
 
-namespace myNewspaper.Web.Profiles;
+namespace myNewspaper.Shared.Profiles;
 
 public sealed record DeviceToken(Guid DeviceId, byte[] Secret)
 {

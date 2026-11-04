@@ -62,10 +62,10 @@
 
 @code {
     [Parameter] public RankingsPage Data { get; set; } = new([], null, null, []);
-    private IEnumerable<myNewspaper.Web.Data.Models.SportsRankingTeam> RankedTeams =>
+    private IEnumerable<myNewspaper.Shared.Data.Models.SportsRankingTeam> RankedTeams =>
         Data.Teams.Where(t => t.Rank is >= 1 and <= 25).OrderBy(t => t.Rank).ThenBy(t => t.TeamName);
 
     // The short sport name, unless two polls share a sport; then the full name tells them apart.
-    private string PillLabel(myNewspaper.Web.Data.Models.SportsRankingSource source) =>
+    private string PillLabel(myNewspaper.Shared.Data.Models.SportsRankingSource source) =>
         !string.IsNullOrWhiteSpace(source.Sport) && Data.Sources.Count(s => s.Sport == source.Sport) == 1 ? source.Sport : source.DisplayName;
 }

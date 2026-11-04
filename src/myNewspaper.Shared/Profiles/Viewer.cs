@@ -1,4 +1,4 @@
-namespace myNewspaper.Web.Profiles;
+namespace myNewspaper.Shared.Profiles;
 
 /// <summary>
 /// Who a public TV or YouTube read is for. <see cref="Household"/> is today's behavior (everything collected) and exists

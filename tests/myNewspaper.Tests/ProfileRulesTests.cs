@@ -1,4 +1,4 @@
-using myNewspaper.Web.Profiles;
+using myNewspaper.Shared.Profiles;
 
 namespace myNewspaper.Tests;
 

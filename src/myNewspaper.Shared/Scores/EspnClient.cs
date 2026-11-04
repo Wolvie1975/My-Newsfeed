@@ -3,7 +3,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Options;
 
-namespace myNewspaper.Web.Scores;
+namespace myNewspaper.Shared.Scores;
 
 /// <summary>Settings for the results sync (section "Results").</summary>
 public sealed class ScoresOptions

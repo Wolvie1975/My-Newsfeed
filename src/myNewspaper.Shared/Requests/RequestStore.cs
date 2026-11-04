@@ -1,10 +1,10 @@
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
-using myNewspaper.Web.Data;
-using myNewspaper.Web.Data.Models;
-using myNewspaper.Web.Profiles;
+using myNewspaper.Shared.Data;
+using myNewspaper.Shared.Data.Models;
+using myNewspaper.Shared.Profiles;
 
-namespace myNewspaper.Web.Requests;
+namespace myNewspaper.Shared.Requests;
 
 /// <summary>What a requester sees of their own request: never the checker's findings, only the status and any reply.</summary>
 public sealed record MyRequest(int Id, string Kind, string Name, string Status, DateTime CreatedAt, DateTime? DecidedAt, string? AdminReply);

@@ -1,4 +1,4 @@
-namespace myNewspaper.Web.Data;
+namespace myNewspaper.Shared.Data;
 
 /// <summary>Bound user-entered text used by individual listing filters.</summary>
 public static class QueryText

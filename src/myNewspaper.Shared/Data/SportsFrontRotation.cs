@@ -1,7 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 
-namespace myNewspaper.Web.Data;
+namespace myNewspaper.Shared.Data;
 
 /// <summary>A shuffled cycle shared by every reader, advancing at each UTC hour boundary.</summary>
 public static class SportsFrontRotation

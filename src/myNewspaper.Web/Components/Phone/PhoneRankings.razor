@@ -42,6 +42,6 @@
 @code {
     [Parameter] public RankingsPage Data { get; set; } = new([], null, null, []);
     [Parameter] public string RetryHref { get; set; } = "rankings";
-    private IReadOnlyList<myNewspaper.Web.Data.Models.SportsRankingTeam> Movers => Data.Teams.Where(t => PhoneSports.Movement(t) > 0).OrderByDescending(t => PhoneSports.Movement(t)).Take(2)
+    private IReadOnlyList<myNewspaper.Shared.Data.Models.SportsRankingTeam> Movers => Data.Teams.Where(t => PhoneSports.Movement(t) > 0).OrderByDescending(t => PhoneSports.Movement(t)).Take(2)
         .Concat(Data.Teams.Where(t => PhoneSports.Movement(t) < 0).OrderBy(t => PhoneSports.Movement(t)).Take(1)).ToList();
 }

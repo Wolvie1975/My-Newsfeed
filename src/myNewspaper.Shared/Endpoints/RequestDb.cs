@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-using myNewspaper.Web.Data;
+using myNewspaper.Shared.Data;
 
-namespace myNewspaper.Web.Endpoints;
+namespace myNewspaper.Shared.Endpoints;
 
 /// <summary>A database context for one admin request, disposed with the request, plus its clock and cancellation.</summary>
 public sealed class RequestDb(WebScraperContext context, DateTime now, CancellationToken ct) : IAsyncDisposable

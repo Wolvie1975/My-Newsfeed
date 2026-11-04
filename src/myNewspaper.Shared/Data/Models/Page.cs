@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
-namespace myNewspaper.Web.Data.Models;
+namespace myNewspaper.Shared.Data.Models;
 
 [Index("SourceId", Name = "IX_Pages_SourceId")]
 [Index("UrlHash", Name = "UQ_Pages_UrlHash", IsUnique = true)]

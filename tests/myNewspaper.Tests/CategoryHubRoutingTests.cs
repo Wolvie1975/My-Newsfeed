@@ -1,4 +1,4 @@
-using myNewspaper.Web.Data;
+using myNewspaper.Shared.Data;
 namespace myNewspaper.Tests;
 
 public class CategoryHubRoutingTests

@@ -2,10 +2,10 @@ using System.Security.Cryptography;
 using System.Text.Json.Nodes;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
-using myNewspaper.Web.Data;
-using myNewspaper.Web.Data.Models;
+using myNewspaper.Shared.Data;
+using myNewspaper.Shared.Data.Models;
 
-namespace myNewspaper.Web.Profiles;
+namespace myNewspaper.Shared.Profiles;
 
 public enum OpenOutcome { Opened, WrongPin, Locked, NeedsPin, NotFound, NoDevice }
 

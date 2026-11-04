@@ -1,13 +1,14 @@
 using Microsoft.AspNetCore.DataProtection;
-using myNewspaper.Hosting;
+using myNewspaper.Shared.Hosting;
+using myNewspaper.Shared.Saved;
 using myNewspaper.Web.Components;
-using myNewspaper.Web.Data;
+using myNewspaper.Shared.Data;
 using myNewspaper.Web.Endpoints;
-using myNewspaper.Web.Profiles;
-using myNewspaper.Web.Requests;
+using myNewspaper.Shared.Profiles;
+using myNewspaper.Shared.Requests;
 using myNewspaper.Web.Saved;
-using myNewspaper.Web.Scores;
-using myNewspaper.Web.Watching;
+using myNewspaper.Shared.Scores;
+using myNewspaper.Shared.Watching;
 
 var builder = WebApplication.CreateBuilder(args);
 

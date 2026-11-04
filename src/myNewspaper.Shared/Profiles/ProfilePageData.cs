@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
-namespace myNewspaper.Web.Profiles;
+namespace myNewspaper.Shared.Profiles;
 
 /// <summary>
 /// What the page tells its scripts (profiles handoff 2.5): the site defaults, and the open profile's settings when there

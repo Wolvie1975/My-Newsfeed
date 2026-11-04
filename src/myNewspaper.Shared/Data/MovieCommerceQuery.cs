@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.WebUtilities;
 using System.Text.RegularExpressions;
 
-namespace myNewspaper.Web.Data;
+namespace myNewspaper.Shared.Data;
 
 [Keyless]
 public sealed class MovieCommerceRow

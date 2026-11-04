@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
-namespace myNewspaper.Web.Data.Models;
+namespace myNewspaper.Shared.Data.Models;
 
 [Index("EventDate", Name = "IX_SportsEvents_EventDate")]
 [Index("SportsEventsTypeId", Name = "IX_SportsEvents_SportsEventsTypeId")]

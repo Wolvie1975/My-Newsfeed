@@ -1,6 +1,6 @@
 using System.Data.Common;
 
-namespace myNewspaper.Web.Data;
+namespace myNewspaper.Shared.Data;
 
 public static class DataFailures
 {

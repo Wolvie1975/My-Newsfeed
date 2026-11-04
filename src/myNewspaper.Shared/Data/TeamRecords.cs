@@ -1,9 +1,9 @@
 using System.Globalization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
-using myNewspaper.Web.Data.Models;
+using myNewspaper.Shared.Data.Models;
 
-namespace myNewspaper.Web.Data;
+namespace myNewspaper.Shared.Data;
 
 public sealed record TeamRecordValue(string Text, DateTime? UpdatedAt, bool Stale, bool IsCollege = false)
 {
@@ -31,7 +31,7 @@ public sealed class TeamRecords
     private readonly List<(string Provider, string Sport, string Id, string Name, TeamRecordValue Record)> entries = [];
     public static TeamRecords Empty => new();
 
-    public static async Task<TeamRecords> LoadAsync(WebScraperContext db, DateOnly today, myNewspaper.Web.Scores.LeaguePhases phases)
+    public static async Task<TeamRecords> LoadAsync(WebScraperContext db, DateOnly today, myNewspaper.Shared.Scores.LeaguePhases phases)
     {
         var sources = await db.SportsStandingsSources.AsNoTracking().Where(s => s.Enabled).ToListAsync();
         sources = sources.Where(s => phases.IsRegular(s, DateTime.UtcNow)).ToList();

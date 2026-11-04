@@ -274,17 +274,17 @@
 @code {
     private IReadOnlyList<FeedItem> stories = [];
     private IReadOnlyList<TonightItem> upcoming = [];
-    private myNewspaper.Web.Data.Models.SportsStandingsSource? standingsSource;
+    private myNewspaper.Shared.Data.Models.SportsStandingsSource? standingsSource;
     private IReadOnlyList<StandingGroup> standingsGroups = [];
     private StandingGroup? standingsGroup => standingsGroups.FirstOrDefault();
     private RankingsPage rankings = new([], null, null, []);
     private bool newsUnavailable;
     private DateTime nowUtc;
     private long RotationRefreshAfterMs => (long)(TimeSpan.FromHours(1) - TimeSpan.FromTicks(nowUtc.Ticks % TimeSpan.TicksPerHour)).TotalMilliseconds;
-    private IReadOnlyList<myNewspaper.Web.Data.ScoreboardGame> board = [];
-    private IReadOnlyList<myNewspaper.Web.Data.ScoreboardGame> live = [];
+    private IReadOnlyList<myNewspaper.Shared.Data.ScoreboardGame> board = [];
+    private IReadOnlyList<myNewspaper.Shared.Data.ScoreboardGame> live = [];
     private F1Page f1 = F1Page.Empty;
-    private myNewspaper.Web.Data.Models.F1Race? f1Race;
+    private myNewspaper.Shared.Data.Models.F1Race? f1Race;
 
     protected override async Task OnParametersSetAsync()
     {
@@ -359,7 +359,7 @@
     private TimelineItem UpNext(TonightItem item) => new(item.StartsUtc is { } starts ? Dates.Time(starts) : item.TimeLabel,
         PhoneText.Matchup(item), item.Kind, item.Tv, item.Url ?? "events", PhoneColors.ForSport(item.Kind), External: item.Url is not null);
 
-    private static string? MoveWords(myNewspaper.Web.Data.Models.SportsRankingTeam team) =>
+    private static string? MoveWords(myNewspaper.Shared.Data.Models.SportsRankingTeam team) =>
         team.PreviouslyUnranked ? "new"
         : team.PreviousRank is { } previous && team.Rank is { } rank && previous != rank
             ? previous > rank ? $"up {previous - rank}" : $"down {rank - previous}" : null;
@@ -376,7 +376,7 @@
 
     private string When(FeedItem item) => item.Undated ? "" : $"{Dates.Published(item.Date)} · {Dates.Time(item.Date)}";
 
-    private static string Move(myNewspaper.Web.Data.Models.SportsRankingTeam team) =>
+    private static string Move(myNewspaper.Shared.Data.Models.SportsRankingTeam team) =>
         team.PreviouslyUnranked ? "New"
         : team.PreviousRank is { } previous && team.Rank is { } rank
             ? previous > rank ? $"▲{previous - rank}" : previous < rank ? $"▼{rank - previous}" : "—"

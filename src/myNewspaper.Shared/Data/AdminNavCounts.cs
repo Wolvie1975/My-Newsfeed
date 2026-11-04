@@ -1,4 +1,4 @@
-namespace myNewspaper.Web.Data;
+namespace myNewspaper.Shared.Data;
 
 /// <summary>
 /// The admin menu's red "needs attention" counts. Built from the same report as the Scraper status page, so the two

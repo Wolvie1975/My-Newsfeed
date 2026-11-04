@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
-namespace myNewspaper.Web.Data.Models;
+namespace myNewspaper.Shared.Data.Models;
 
 [Table("SportsEventsType")]
 [Index("RssUrl", Name = "UQ_SportsEventsType_RssUrl", IsUnique = true)]

@@ -1,6 +1,6 @@
-@using myNewspaper.Web.Data.Models
+@using myNewspaper.Shared.Data.Models
 @inject FeedDates Dates
-@inject myNewspaper.Web.Profiles.ProfileContext Reader
+@inject myNewspaper.Shared.Profiles.ProfileContext Reader
 <div class="mx-phone" data-phone-sports="college">
     <PhoneCollegeRibbon Selected="Selected" />
     @if (Error) { <p class="mx-note" role="status">College sports are temporarily unavailable. <a href="@CollegeHub.Href("schedule", Selected)">Try again</a></p> }

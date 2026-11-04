@@ -1,6 +1,6 @@
 using System.Net;
 using myNewspaper.Web.Components;
-using myNewspaper.Web.Data;
+using myNewspaper.Shared.Data;
 
 namespace myNewspaper.Tests;
 

@@ -1,8 +1,8 @@
 @page "/editions/new"
 @layout PickerLayout
 @using System.Text.Json.Nodes
-@using myNewspaper.Web.Profiles
-@using myNewspaper.Web.Watching
+@using myNewspaper.Shared.Profiles
+@using myNewspaper.Shared.Watching
 @inject IDbContextFactory<WebScraperContext> Factory
 @inject WatchCatalog Catalog
 @inject ILogger<NewEdition> Log

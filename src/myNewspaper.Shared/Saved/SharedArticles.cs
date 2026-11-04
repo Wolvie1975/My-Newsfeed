@@ -1,9 +1,9 @@
 using System.Data;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
-using myNewspaper.Web.Data;
+using myNewspaper.Shared.Data;
 
-namespace myNewspaper.Web.Saved;
+namespace myNewspaper.Shared.Saved;
 
 public sealed record SavedArticle(string Url, string Title, string Source = "", string? Image = null,
     string Summary = "", string? Date = null, string? DateLabel = null, DateTimeOffset? SavedAt = null, bool Read = false, string Kind = "article");

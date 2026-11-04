@@ -1,7 +1,7 @@
 using System.Net;
 using System.Text.Json;
 using Microsoft.Extensions.Configuration;
-using myNewspaper.Web.Watching;
+using myNewspaper.Shared.Watching;
 namespace myNewspaper.Tests;
 
 public class WatchPagingTests

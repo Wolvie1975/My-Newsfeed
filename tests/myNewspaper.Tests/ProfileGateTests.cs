@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http;
-using myNewspaper.Web.Profiles;
+using myNewspaper.Shared.Profiles;
 
 namespace myNewspaper.Tests;
 

@@ -1,4 +1,4 @@
-namespace myNewspaper.Web.Profiles;
+namespace myNewspaper.Shared.Profiles;
 
 /// <summary>
 /// The site's built-in settings, in one place (profiles handoff, "Profile settings JSON"). A profile key that's missing

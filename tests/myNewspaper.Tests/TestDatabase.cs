@@ -1,7 +1,7 @@
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
-using myNewspaper.Web.Data;
+using myNewspaper.Shared.Data;
 
 namespace myNewspaper.Tests;
 

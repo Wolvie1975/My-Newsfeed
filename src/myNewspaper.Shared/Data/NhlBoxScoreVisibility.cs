@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
-using myNewspaper.Web.Data.Models;
-namespace myNewspaper.Web.Data;
+using myNewspaper.Shared.Data.Models;
+namespace myNewspaper.Shared.Data;
 
 /// <summary>Season-cache visibility for NHL detail when no ordinary followed result exists.</summary>
 public static class NhlBoxScoreVisibility

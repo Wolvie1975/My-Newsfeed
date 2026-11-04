@@ -1,6 +1,6 @@
 @page "/tv/track"
 @layout PublicLayout
-@inject myNewspaper.Web.Profiles.ProfileContext Reader
+@inject myNewspaper.Shared.Profiles.ProfileContext Reader
 @inject IDbContextFactory<WebScraperContext> Factory
 <PageTitle>Track a TV series · myNewspaper</PageTitle>
 <p><a href="watch?kind=tv">← Where to watch</a></p>
@@ -26,12 +26,12 @@ else
     [SupplyParameterFromQuery(Name="done")]public string? Done {get;set;}
     [SupplyParameterFromQuery(Name="error")]public string? Error {get;set;}
     private IReadOnlySet<int> followed = new HashSet<int>();
-    private string ReturnHere => "/tv/track?tvq=" + Uri.EscapeDataString(myNewspaper.Web.Data.QueryText.Term(Query ?? InitialQuery));
+    private string ReturnHere => "/tv/track?tvq=" + Uri.EscapeDataString(myNewspaper.Shared.Data.QueryText.Term(Query ?? InitialQuery));
     protected override async Task OnInitializedAsync()
     {
         if (Reader.Profile is not { } me) return;
         await using var db = await Factory.CreateDbContextAsync();
-        followed = (await myNewspaper.Web.Profiles.FollowQuery.TrackedSeries(db, myNewspaper.Web.Profiles.Viewer.ForProfile(me.Id))
+        followed = (await myNewspaper.Shared.Profiles.FollowQuery.TrackedSeries(db, myNewspaper.Shared.Profiles.Viewer.ForProfile(me.Id))
             .Select(t => t.TvmazeShowId).ToListAsync()).ToHashSet();
     }
 }

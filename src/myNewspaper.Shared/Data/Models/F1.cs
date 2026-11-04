@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
-namespace myNewspaper.Web.Data.Models;
+namespace myNewspaper.Shared.Data.Models;
 
 [Keyless]
 public sealed class F1Source

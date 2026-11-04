@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
 using myNewspaper.Web.Components;
-using myNewspaper.Web.Data;
+using myNewspaper.Shared.Data;
 
 namespace myNewspaper.Web.Endpoints;
 

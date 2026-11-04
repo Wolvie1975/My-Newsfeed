@@ -31,7 +31,7 @@ else
     {
         if (loading) return;
         loading = true; error = null;
-        try { await using var db = await Factory.CreateDbContextAsync(); rows = await myNewspaper.Web.Data.ScheduleCoverage.GetAsync(db); }
+        try { await using var db = await Factory.CreateDbContextAsync(); rows = await myNewspaper.Shared.Data.ScheduleCoverage.GetAsync(db); }
         catch (Exception) { error = "Could not read coverage. Please try again."; }
         finally { loading = false; }
     }

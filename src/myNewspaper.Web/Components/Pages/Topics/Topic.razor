@@ -1,8 +1,8 @@
 @page "/news/topics/{Id:int}"
 @layout PublicLayout
 @using myNewspaper.Web.Components.Feed
-@using myNewspaper.Web.Profiles
-@using myNewspaper.Web.Data.Models
+@using myNewspaper.Shared.Profiles
+@using myNewspaper.Shared.Data.Models
 @inject IDbContextFactory<WebScraperContext> Factory
 @inject ProfileContext Reader
 @inject FeedDates Dates

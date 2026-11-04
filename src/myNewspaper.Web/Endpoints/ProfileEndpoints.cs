@@ -4,10 +4,11 @@ using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
-using myNewspaper.Web.Auth;
-using myNewspaper.Web.Data;
-using myNewspaper.Web.Profiles;
-using myNewspaper.Web.Requests;
+using myNewspaper.Shared.Auth;
+using myNewspaper.Shared.Data;
+using myNewspaper.Shared.Endpoints;
+using myNewspaper.Shared.Profiles;
+using myNewspaper.Shared.Requests;
 
 namespace myNewspaper.Web.Endpoints;
 

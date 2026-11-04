@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Caching.Memory;
-namespace myNewspaper.Web.Watching;
+namespace myNewspaper.Shared.Watching;
 
 public sealed record WatchTitle(int Id, string Kind, string Name, string? Year, string? Poster, string Overview, IReadOnlyList<string>? MatchingServices = null, DateOnly? ReleaseDate = null, double? Popularity = null, IReadOnlyList<WatchOffer>? Offers = null, string? WatchLink = null, bool OffersUnavailable = false, IReadOnlyList<WatchProvider>? MatchingProviders = null);
 public sealed record WatchListing(IReadOnlyList<WatchTitle> Items, int Pages, bool Failed = false, bool CanContinue = false);

@@ -1,6 +1,6 @@
-@using myNewspaper.Web.Watching
+@using myNewspaper.Shared.Watching
 @inject WatchCatalog Catalog
-@inject myNewspaper.Web.Profiles.ProfileContext Reader
+@inject myNewspaper.Shared.Profiles.ProfileContext Reader
 <details class="settings-panel" open="@(Selected.Length > 0)" id="my-services" data-settings-section="services" aria-labelledby="watch-services-heading">
 <summary id="watch-services-heading"><h2>My services</h2></summary>
 <p>Choose up to 20 US services. Where to watch prioritizes subscription and free/ad-supported matches on each results page.</p>

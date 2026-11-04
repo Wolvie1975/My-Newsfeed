@@ -1,12 +1,13 @@
-using Db = myNewspaper.Web.Endpoints.RequestDb;
+using Db = myNewspaper.Shared.Endpoints.RequestDb;
 using System.Text.Json.Nodes;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.EntityFrameworkCore;
-using myNewspaper.Web.Data;
-using myNewspaper.Web.Profiles;
-using myNewspaper.Web.Requests;
+using myNewspaper.Shared.Data;
+using myNewspaper.Shared.Endpoints;
+using myNewspaper.Shared.Profiles;
+using myNewspaper.Shared.Requests;
 
-namespace myNewspaper.Web.Endpoints;
+namespace myNewspaper.Admin.Endpoints;
 
 public sealed record AdminProfileAdd(string? Name, string? Color, string? Pin, string? PinConfirm);
 public sealed record AdminProfileEdit(string? Name, string? Color, bool Hidden);

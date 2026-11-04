@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
-using myNewspaper.Web.Data.Models;
+using myNewspaper.Shared.Data.Models;
 
-namespace myNewspaper.Web.Data;
+namespace myNewspaper.Shared.Data;
 
 public partial class WebScraperContext : DbContext
 {

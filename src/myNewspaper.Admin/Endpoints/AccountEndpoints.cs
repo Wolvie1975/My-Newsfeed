@@ -1,9 +1,10 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
-using myNewspaper.Web.Auth;
+using myNewspaper.Shared.Auth;
+using myNewspaper.Shared.Endpoints;
 
-namespace myNewspaper.Web.Endpoints;
+namespace myNewspaper.Admin.Endpoints;
 
 public static class AccountEndpoints
 {

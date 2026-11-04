@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Options;
-using myNewspaper.Web.Data.Models;
+using myNewspaper.Shared.Data.Models;
 
-namespace myNewspaper.Web.Profiles;
+namespace myNewspaper.Shared.Profiles;
 
 /// <summary>
 /// The device and profile behind the current request, filled in by <see cref="ProfileGateMiddleware"/>. Stays empty

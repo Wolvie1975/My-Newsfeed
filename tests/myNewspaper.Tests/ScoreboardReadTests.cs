@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
-using myNewspaper.Web.Data;
+using myNewspaper.Shared.Data;
 
 namespace myNewspaper.Tests;
 

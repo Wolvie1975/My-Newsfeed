@@ -2,9 +2,9 @@ using System.Globalization;
 using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
-using myNewspaper.Web.Profiles;
+using myNewspaper.Shared.Profiles;
 
-namespace myNewspaper.Web.Data;
+namespace myNewspaper.Shared.Data;
 
 public sealed record TechBriefing(int Technology, int VideoGames, int Linux, int Videos);
 

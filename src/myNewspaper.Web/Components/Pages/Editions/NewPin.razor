@@ -42,7 +42,7 @@
     [SupplyParameterFromQuery(Name = "returnUrl")] private string? ReturnUrl { get; set; }
     [SupplyParameterFromQuery(Name = "error")] private string? Error { get; set; }
 
-    private myNewspaper.Web.Data.Models.Profile? profile;
+    private myNewspaper.Shared.Data.Models.Profile? profile;
 
     private string Target => ProfileEndpoints.SafeReturnUrl(ReturnUrl);
 

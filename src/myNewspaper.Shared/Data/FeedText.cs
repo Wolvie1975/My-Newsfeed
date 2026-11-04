@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Text.RegularExpressions;
 
-namespace myNewspaper.Web.Data;
+namespace myNewspaper.Shared.Data;
 
 /// <summary>Display-time text clean-up for the public feed. The stored data is never changed.</summary>
 public static partial class FeedText

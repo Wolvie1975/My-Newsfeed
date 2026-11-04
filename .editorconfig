@@ -46,6 +46,9 @@ dotnet_sort_system_directives_first = true
 # in RepositoryHygieneTests covers it, because EF expression trees still need it (CS8122).
 dotnet_style_prefer_is_null_check_over_reference_equality_method = true:warning
 dotnet_diagnostic.IDE0041.severity = warning
+# Namespace = project RootNamespace (its assembly name) + folder path (IDE0130).
+dotnet_style_namespace_match_folder = true:warning
+dotnet_diagnostic.IDE0130.severity = warning
 
 # Naming: PascalCase types and members, camelCase locals, parameters and private fields
 dotnet_naming_rule.types_and_members_are_pascal.symbols = types_and_members
@@ -65,6 +68,9 @@ dotnet_diagnostic.CA1859.severity = suggestion
 dotnet_diagnostic.CA1861.severity = suggestion
 dotnet_diagnostic.CA1822.severity = suggestion
 dotnet_diagnostic.CA1720.severity = suggestion
+# CA1716 still checks type and member names, but not namespaces: the Shared project's namespace is myNewspaper.Shared
+# (assembly name + folder), and "Shared" is only reserved in Visual Basic, which nothing here is consumed from.
+dotnet_code_quality.CA1716.analyzed_symbol_kinds = NamedType, Method, Property, Event, Parameter
 
 [tests/**.cs]
 # Test method names may use underscores for readability.

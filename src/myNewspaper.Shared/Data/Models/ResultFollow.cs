@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
-namespace myNewspaper.Web.Data.Models;
+namespace myNewspaper.Shared.Data.Models;
 
 [Index("Sport", "League", "TeamId", "GroupId", Name = "UQ_ResultFollows_Team", IsUnique = true)]
 public partial class ResultFollow

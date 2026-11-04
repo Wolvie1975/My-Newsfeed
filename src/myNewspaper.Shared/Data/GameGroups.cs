@@ -1,4 +1,4 @@
-namespace myNewspaper.Web.Data;
+namespace myNewspaper.Shared.Data;
 
 public sealed record GameLeague<T>(string Name, IReadOnlyList<T> Games);
 

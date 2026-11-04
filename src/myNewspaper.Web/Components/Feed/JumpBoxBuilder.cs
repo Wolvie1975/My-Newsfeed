@@ -1,6 +1,6 @@
 using System.Globalization;
 using myNewspaper.Web.Components.Phone;
-using myNewspaper.Web.Data;
+using myNewspaper.Shared.Data;
 
 namespace myNewspaper.Web.Components.Feed;
 

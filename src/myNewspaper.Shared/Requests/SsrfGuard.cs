@@ -1,7 +1,7 @@
 using System.Net;
 using System.Net.Sockets;
 
-namespace myNewspaper.Web.Requests;
+namespace myNewspaper.Shared.Requests;
 
 /// <summary>
 /// Keeps request links from reaching inside the network (profiles handoff 5.2). The address is checked when the socket

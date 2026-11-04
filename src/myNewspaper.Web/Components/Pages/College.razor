@@ -9,7 +9,7 @@
 @inject NavigationManager Nav
 @inject IDbContextFactory<WebScraperContext> Factory
 @inject FeedDates Dates
-@inject myNewspaper.Web.Scores.LeaguePhases RecordPhases
+@inject myNewspaper.Shared.Scores.LeaguePhases RecordPhases
 @inject ILogger<College> Log
 
 <PageTitle>College Sports · @selected.Name · myNewspaper</PageTitle>
@@ -157,7 +157,7 @@ else
     private DateTime? updatedAt;
     private int pageIndex;
     private DateOnly resultDay;
-    private IReadOnlyList<myNewspaper.Web.Data.Models.SportsRankingTeam> pollTeams = [];
+    private IReadOnlyList<myNewspaper.Shared.Data.Models.SportsRankingTeam> pollTeams = [];
     private string? pollName;
     private IReadOnlyList<EventItem> todayGames = [];
     private RankingsPage phonePoll = new([], null, null, []);

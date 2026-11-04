@@ -1,10 +1,11 @@
 using System.Globalization;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
-using myNewspaper.Web.Data;
-using myNewspaper.Web.Profiles;
-using myNewspaper.Web.Requests;
-using myNewspaper.Web.Tv;
+using myNewspaper.Shared.Data;
+using myNewspaper.Shared.Endpoints;
+using myNewspaper.Shared.Profiles;
+using myNewspaper.Shared.Requests;
+using myNewspaper.Shared.Tv;
 
 namespace myNewspaper.Web.Endpoints;
 

@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
-using myNewspaper.Web.Data.Models;
-namespace myNewspaper.Web.Data;
+using myNewspaper.Shared.Data.Models;
+namespace myNewspaper.Shared.Data;
 
 public sealed record MlsResultsPage(SportsEventsType? Source, int? Season,
     IReadOnlyList<SportsMatchResult> Items, int Total, int PageIndex);

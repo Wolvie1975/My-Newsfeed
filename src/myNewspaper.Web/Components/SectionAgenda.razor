@@ -1,6 +1,6 @@
 @inject IDbContextFactory<WebScraperContext> Factory
 @inject FeedDates Dates
-@inject myNewspaper.Web.Profiles.ProfileContext Reader
+@inject myNewspaper.Shared.Profiles.ProfileContext Reader
 @inject ILogger<SectionAgenda> Log
 
 @if (unavailable) {
@@ -57,7 +57,7 @@
     [Parameter] public bool Strip { get; set; }
     [Parameter] public bool Entertainment { get; set; }
     [Parameter] public string? CategoryName { get; set; }
-    private IReadOnlyList<myNewspaper.Web.Data.Models.F1Race> races = [];
+    private IReadOnlyList<myNewspaper.Shared.Data.Models.F1Race> races = [];
     private bool unavailable;
     private IReadOnlyList<EventItem> games = [];
     private IReadOnlyList<MovieReleaseItem> movies = [];

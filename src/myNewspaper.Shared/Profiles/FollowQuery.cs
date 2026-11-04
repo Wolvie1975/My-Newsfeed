@@ -1,8 +1,8 @@
 using Microsoft.EntityFrameworkCore;
-using myNewspaper.Web.Data;
-using myNewspaper.Web.Data.Models;
+using myNewspaper.Shared.Data;
+using myNewspaper.Shared.Data.Models;
 
-namespace myNewspaper.Web.Profiles;
+namespace myNewspaper.Shared.Profiles;
 
 public sealed record ProfileFollows(IReadOnlySet<int> TvTrackedSeriesIds, IReadOnlySet<int> YoutubeVideoFeedIds);
 

@@ -3,7 +3,7 @@
 @layout PublicLayout
 @inject IDbContextFactory<WebScraperContext> Factory
 @inject ILogger<MyTeams> Log
-@inject myNewspaper.Web.Profiles.ProfileContext Reader
+@inject myNewspaper.Shared.Profiles.ProfileContext Reader
 
 <PageTitle>Settings · myNewspaper</PageTitle>
 <div class="mx-tool-page" data-phone-settings>
@@ -121,7 +121,7 @@
     [SupplyParameterFromQuery(Name="service")]public int[]? ChosenServices {get;set;}
     [SupplyParameterFromQuery(Name="services")]public string? Services {get;set;}
     private string ServiceSelection=>string.Join(",",new[]{Services??"",string.Join(",",ChosenServices??[])});
-    private readonly IReadOnlyList<myNewspaper.Web.Profiles.SiteDefaults.SchemeChoice> schemes = myNewspaper.Web.Profiles.SiteDefaults.ColorSchemeChoices;
+    private readonly IReadOnlyList<myNewspaper.Shared.Profiles.SiteDefaults.SchemeChoice> schemes = myNewspaper.Shared.Profiles.SiteDefaults.ColorSchemeChoices;
     private IReadOnlyList<SportsTeamChoice> choices = SportsTeamPreferences.GetChoices();
     private string? error;
     protected override async Task OnInitializedAsync()

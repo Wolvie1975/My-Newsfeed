@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-using myNewspaper.Web.Scores;
+using myNewspaper.Shared.Scores;
 
-namespace myNewspaper.Web.Data;
+namespace myNewspaper.Shared.Data;
 
 public sealed record ResultItem(
     string EventId,

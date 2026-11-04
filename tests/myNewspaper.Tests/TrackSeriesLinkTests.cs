@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using myNewspaper.Web.Components.Watching;
-using myNewspaper.Web.Watching;
+using myNewspaper.Shared.Watching;
 namespace myNewspaper.Tests;
 
 public class TrackSeriesLinkTests

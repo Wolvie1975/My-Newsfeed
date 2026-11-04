@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-using myNewspaper.Web.Data.Models;
+using myNewspaper.Shared.Data.Models;
 
-namespace myNewspaper.Web.Data;
+namespace myNewspaper.Shared.Data;
 
 /// <summary>Home-page filtering only; stored schedules and results remain intact.</summary>
 public static class HomeEventResults

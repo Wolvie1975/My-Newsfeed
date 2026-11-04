@@ -50,8 +50,8 @@
     [Parameter] public DateTime NowUtc { get; set; }
     private F1Page data => Data;
     private string? error => Error;
-    private myNewspaper.Web.Data.Models.F1Race? nextRace;
-    private myNewspaper.Web.Data.Models.F1Race? latestRace;
+    private myNewspaper.Shared.Data.Models.F1Race? nextRace;
+    private myNewspaper.Shared.Data.Models.F1Race? latestRace;
     private F1ResultChoice? latest;
     private F1Session? nextSession;
     protected override void OnParametersSet()

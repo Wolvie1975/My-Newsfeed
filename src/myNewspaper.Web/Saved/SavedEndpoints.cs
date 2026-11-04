@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Mvc;
-using myNewspaper.Web.Profiles;
+using myNewspaper.Shared.Profiles;
+using myNewspaper.Shared.Saved;
 
 namespace myNewspaper.Web.Saved;
 

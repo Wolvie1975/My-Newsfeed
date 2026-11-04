@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
-namespace myNewspaper.Web.Profiles;
+namespace myNewspaper.Shared.Profiles;
 
 /// <summary>
 /// The settings document stored in <c>Profiles.Settings</c> and <c>Household.BaseSettings</c>. Values keep the shapes the

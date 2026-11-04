@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
-namespace myNewspaper.Web.Data.Models;
+namespace myNewspaper.Shared.Data.Models;
 
 [Index("ChannelId", "PublishedAt", Name = "IX_YouTubeVideos_Channel_PublishedAt", IsDescending = new[] { false, true })]
 [Index("YoutubeVideoFeedId", Name = "IX_YouTubeVideos_YoutubeVideoFeedId")]

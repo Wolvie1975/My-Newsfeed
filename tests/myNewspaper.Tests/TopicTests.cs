@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using myNewspaper.Web.Data;
-using myNewspaper.Web.Data.Models;
-using myNewspaper.Web.Profiles;
+using myNewspaper.Shared.Data;
+using myNewspaper.Shared.Data.Models;
+using myNewspaper.Shared.Profiles;
 
 namespace myNewspaper.Tests;
 

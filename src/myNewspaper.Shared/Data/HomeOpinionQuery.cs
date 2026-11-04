@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-namespace myNewspaper.Web.Data;
+namespace myNewspaper.Shared.Data;
 
 public sealed record HomeOpinion(int? CategoryId, FeedItem? Article, long Hour, int RefreshAfterMs, bool Failed = false);
 public static class HomeOpinionQuery

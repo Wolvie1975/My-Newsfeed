@@ -1,4 +1,4 @@
-namespace myNewspaper.Web.Data;
+namespace myNewspaper.Shared.Data;
 
 public sealed record CollegeSport(string Key, string Name, string StandingsSport, string League);
 

@@ -1,5 +1,5 @@
 using System.Text.Json.Nodes;
-using myNewspaper.Web.Profiles;
+using myNewspaper.Shared.Profiles;
 
 namespace myNewspaper.Tests;
 
@@ -38,7 +38,7 @@ public class ProfileSettingsTests
     public void The_page_data_escapes_stored_text_so_it_cannot_close_its_script_tag()
     {
         var reader = new ProfileContext(Microsoft.Extensions.Options.Options.Create(new ProfilesOptions { Enabled = true }));
-        var profile = new myNewspaper.Web.Data.Models.Profile { Id = 1, Name = "</script><b>x", Settings = """{"theme":"dark","colorScheme":"kansas","teams":["</script>"]}""" };
+        var profile = new myNewspaper.Shared.Data.Models.Profile { Id = 1, Name = "</script><b>x", Settings = """{"theme":"dark","colorScheme":"kansas","teams":["</script>"]}""" };
         // The gate middleware sets the open profile; its setters are internal to the app.
         typeof(ProfileContext).GetProperty(nameof(ProfileContext.Profile))!.SetValue(reader, profile);
         typeof(ProfileContext).GetProperty(nameof(ProfileContext.IsUnlocked))!.SetValue(reader, true);
@@ -64,7 +64,7 @@ public class ProfileSettingsTests
     {
         // On the picker the device's last edition is known (for "Sign this device out"), but its PIN hasn't been entered.
         var reader = new ProfileContext(Microsoft.Extensions.Options.Options.Create(new ProfilesOptions { Enabled = true }));
-        var profile = new myNewspaper.Web.Data.Models.Profile { Id = 1, Name = "Jo", Settings = """{"theme":"dark","teams":["kansas"]}""" };
+        var profile = new myNewspaper.Shared.Data.Models.Profile { Id = 1, Name = "Jo", Settings = """{"theme":"dark","teams":["kansas"]}""" };
         typeof(ProfileContext).GetProperty(nameof(ProfileContext.Profile))!.SetValue(reader, profile);
 
         Assert.Null(JsonNode.Parse(ProfilePageData.Json(reader))!["profile"]);

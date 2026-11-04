@@ -1,9 +1,9 @@
-@inject myNewspaper.Hosting.SiteLinks SiteLinks
+@inject myNewspaper.Shared.Hosting.SiteLinks SiteLinks
 @page "/editions"
 @layout PickerLayout
 @using myNewspaper.Web.Endpoints
-@using myNewspaper.Web.Profiles
-@using myNewspaper.Web.Saved
+@using myNewspaper.Shared.Profiles
+@using myNewspaper.Shared.Saved
 @inject IDbContextFactory<WebScraperContext> Factory
 @inject SharedArticles Saved
 @inject FeedDates Dates

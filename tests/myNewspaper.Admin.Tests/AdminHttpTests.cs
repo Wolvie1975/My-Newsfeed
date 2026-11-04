@@ -9,11 +9,12 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.StaticAssets;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using myNewspaper.Web.Data;
-using myNewspaper.Web.Data.Models;
-using myNewspaper.Web.Profiles;
+using myNewspaper.Shared.Data;
+using myNewspaper.Shared.Data.Models;
+using myNewspaper.Shared.Profiles;
+using myNewspaper.Tests;
 
-namespace myNewspaper.Tests;
+namespace myNewspaper.Admin.Tests;
 
 /// <summary>Starts the real app against the test database with profiles switched on or off.</summary>
 public sealed class AdminApp(bool enabled) : WebApplicationFactory<myNewspaper.Admin.AdminProgram>

@@ -1,7 +1,7 @@
 using System.Net;
 using System.Text.Json;
 
-namespace myNewspaper.Web.Tv;
+namespace myNewspaper.Shared.Tv;
 
 public sealed record TvmazeShow(int Id, string Name, string? Premiere, string? Platform, string? Poster, string? Url);
 public sealed record TvmazeResponse(IReadOnlyList<TvmazeShow> Shows, string? Error);

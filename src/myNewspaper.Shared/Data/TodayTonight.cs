@@ -1,4 +1,4 @@
-namespace myNewspaper.Web.Data;
+namespace myNewspaper.Shared.Data;
 
 public sealed record TonightItem(string Kind, string Title, DateTime? StartsUtc, string TimeLabel, string? Url,
     string? HomeTeam = null, string? AwayTeam = null,

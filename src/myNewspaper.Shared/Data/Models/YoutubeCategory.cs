@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
-namespace myNewspaper.Web.Data.Models;
+namespace myNewspaper.Shared.Data.Models;
 
 /// <summary>A YouTube channel category (Sports, Tech…), separate from the news SourceCategories. Owned by the scraper.</summary>
 [Table("YoutubeCategories")]

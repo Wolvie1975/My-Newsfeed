@@ -1,7 +1,7 @@
-@inject myNewspaper.Hosting.SiteLinks SiteLinks
+@inject myNewspaper.Shared.Hosting.SiteLinks SiteLinks
 @inherits LayoutComponentBase
 @inject NavigationManager Nav
-@inject myNewspaper.Web.Profiles.ProfileContext Reader
+@inject myNewspaper.Shared.Profiles.ProfileContext Reader
 
 @{
     var path = Nav.ToBaseRelativePath(Nav.Uri);

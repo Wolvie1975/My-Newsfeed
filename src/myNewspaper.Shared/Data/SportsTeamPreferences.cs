@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 
-namespace myNewspaper.Web.Data;
+namespace myNewspaper.Shared.Data;
 
 public sealed record SportsTeamChoice(string Key, string Name, string Group);
 

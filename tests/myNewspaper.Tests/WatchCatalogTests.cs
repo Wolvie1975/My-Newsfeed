@@ -1,6 +1,6 @@
 using System.Net;
 using Microsoft.Extensions.Configuration;
-using myNewspaper.Web.Watching;
+using myNewspaper.Shared.Watching;
 namespace myNewspaper.Tests;
 
 public class WatchCatalogTests

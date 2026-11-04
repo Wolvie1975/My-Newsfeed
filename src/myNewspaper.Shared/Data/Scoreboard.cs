@@ -1,9 +1,9 @@
 using System.Globalization;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
-using myNewspaper.Web.Scores;
+using myNewspaper.Shared.Scores;
 
-namespace myNewspaper.Web.Data;
+namespace myNewspaper.Shared.Data;
 
 public sealed class ScoreboardGame
 {

@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 
-namespace myNewspaper.Web.Data;
+namespace myNewspaper.Shared.Data;
 
 public static class LocalNewsQuery
 {

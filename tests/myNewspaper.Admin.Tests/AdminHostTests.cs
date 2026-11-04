@@ -7,11 +7,11 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using myNewspaper.Admin;
-using myNewspaper.Web.Profiles;
-using myNewspaper.Web.Requests;
-using myNewspaper.Web.Scores;
+using myNewspaper.Shared.Profiles;
+using myNewspaper.Shared.Requests;
+using myNewspaper.Shared.Scores;
 
-namespace myNewspaper.Tests;
+namespace myNewspaper.Admin.Tests;
 
 public class AdminHostTests
 {

@@ -1,8 +1,8 @@
 using System.Threading.Channels;
 using Microsoft.EntityFrameworkCore;
-using myNewspaper.Web.Data;
+using myNewspaper.Shared.Data;
 
-namespace myNewspaper.Web.Requests;
+namespace myNewspaper.Shared.Requests;
 
 /// <summary>Request IDs waiting for <see cref="RequestCheckerService"/>. In memory; the service re-queues on startup.</summary>
 public sealed class RequestBacklog

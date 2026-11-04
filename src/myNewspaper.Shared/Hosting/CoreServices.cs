@@ -4,15 +4,15 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using myNewspaper.Web.Data;
-using myNewspaper.Web.Data.Models;
-using myNewspaper.Web.Profiles;
-using myNewspaper.Web.Requests;
-using myNewspaper.Web.Scores;
-using myNewspaper.Web.Tv;
-using myNewspaper.Web.Watching;
+using myNewspaper.Shared.Data;
+using myNewspaper.Shared.Data.Models;
+using myNewspaper.Shared.Profiles;
+using myNewspaper.Shared.Requests;
+using myNewspaper.Shared.Scores;
+using myNewspaper.Shared.Tv;
+using myNewspaper.Shared.Watching;
 
-namespace myNewspaper.Hosting;
+namespace myNewspaper.Shared.Hosting;
 
 /// <summary>
 /// How a host describes itself to outside services, in the User-Agent of its request-check and ESPN calls.

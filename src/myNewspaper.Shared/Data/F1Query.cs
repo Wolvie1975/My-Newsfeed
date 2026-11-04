@@ -2,9 +2,9 @@ using System.Data;
 using System.Globalization;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
-using myNewspaper.Web.Data.Models;
+using myNewspaper.Shared.Data.Models;
 
-namespace myNewspaper.Web.Data;
+namespace myNewspaper.Shared.Data;
 
 public sealed record F1Session(string Name, DateOnly Date, DateTime? StartsUtc);
 public sealed record F1ResultChoice(int Round, string SessionType)

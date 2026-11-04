@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-using myNewspaper.Web.Data.Models;
+using myNewspaper.Shared.Data.Models;
 
-namespace myNewspaper.Web.Data;
+namespace myNewspaper.Shared.Data;
 
 // Hand-written half of the scaffolded context; survives re-scaffolding with --force.
 public partial class WebScraperContext

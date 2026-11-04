@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using myNewspaper.Web.Components.BoxScores;
-using myNewspaper.Web.Data;
+using myNewspaper.Shared.Data;
 namespace myNewspaper.Tests;
 
 public class BasketballBoxScoreTests

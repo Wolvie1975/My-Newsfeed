@@ -1,8 +1,8 @@
 using System.Globalization;
 using Microsoft.EntityFrameworkCore;
-using myNewspaper.Web.Data.Models;
+using myNewspaper.Shared.Data.Models;
 
-namespace myNewspaper.Web.Data;
+namespace myNewspaper.Shared.Data;
 
 public sealed record RankingsPage(IReadOnlyList<SportsRankingSource> Sources, SportsRankingSource? Selected,
     SportsRankingPoll? Poll, IReadOnlyList<SportsRankingTeam> Teams, string? AvailabilityError = null);

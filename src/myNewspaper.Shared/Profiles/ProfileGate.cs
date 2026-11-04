@@ -1,4 +1,4 @@
-namespace myNewspaper.Web.Profiles;
+namespace myNewspaper.Shared.Profiles;
 
 /// <summary>The gate's rules, separate from HTTP so they can be tested with a fake clock (profiles handoff 2.1 and 2.2).</summary>
 public static class ProfileGate

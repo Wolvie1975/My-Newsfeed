@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-using myNewspaper.Web.Data;
+using myNewspaper.Shared.Data;
 
-namespace myNewspaper.Web.Profiles;
+namespace myNewspaper.Shared.Profiles;
 
 /// <summary>
 /// Turns household channels on for every profile (decision 11, handoff 4.2). A household channel is any YouTube feed

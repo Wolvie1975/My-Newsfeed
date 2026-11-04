@@ -1,8 +1,8 @@
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
-using myNewspaper.Web.Data;
-using myNewspaper.Web.Saved;
+using myNewspaper.Shared.Data;
+using myNewspaper.Shared.Saved;
 
 namespace myNewspaper.Tests;
 

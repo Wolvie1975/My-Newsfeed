@@ -1,4 +1,4 @@
-namespace myNewspaper.Web.Profiles;
+namespace myNewspaper.Shared.Profiles;
 
 public sealed class ProfilesOptions
 {

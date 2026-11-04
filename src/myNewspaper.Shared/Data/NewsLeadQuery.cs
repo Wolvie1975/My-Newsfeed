@@ -1,4 +1,4 @@
-namespace myNewspaper.Web.Data;
+namespace myNewspaper.Shared.Data;
 
 /// <summary>
 /// The News front's lead: the newest hard-news story, so a deal post or opinion piece never leads the page because

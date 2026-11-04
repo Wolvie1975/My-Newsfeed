@@ -1,5 +1,5 @@
 using Microsoft.Extensions.Options;
-namespace myNewspaper.Hosting;
+namespace myNewspaper.Shared.Hosting;
 
 public sealed class SiteLinkOptions
 {

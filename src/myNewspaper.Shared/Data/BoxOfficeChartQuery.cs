@@ -2,7 +2,7 @@ using System.Data;
 using System.Globalization;
 using Microsoft.EntityFrameworkCore;
 
-namespace myNewspaper.Web.Data;
+namespace myNewspaper.Shared.Data;
 
 public sealed record BoxOfficeMovie(int Rank, DateOnly WeekendStart, string Title, long WeekendGross,
     long TotalDomesticGross, decimal? WeeklyChangePercent, int? Theaters, string? MovieUrl,

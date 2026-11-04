@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Antiforgery;
 
-namespace myNewspaper.Web.Endpoints;
+namespace myNewspaper.Shared.Endpoints;
 
 /// <summary>
 /// Antiforgery for form posts that bind no form fields. UseAntiforgery only records the result for such endpoints, and

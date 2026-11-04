@@ -6,9 +6,9 @@ using System.Text.RegularExpressions;
 using System.Xml;
 using System.Xml.Linq;
 using Microsoft.EntityFrameworkCore;
-using myNewspaper.Web.Data;
+using myNewspaper.Shared.Data;
 
-namespace myNewspaper.Web.Requests;
+namespace myNewspaper.Shared.Requests;
 
 public sealed record FetchResult(Uri Url, string Body, string? ContentType);
 

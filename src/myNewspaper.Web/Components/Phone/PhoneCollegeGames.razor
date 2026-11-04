@@ -1,5 +1,5 @@
 @inject FeedDates Dates
-@inject myNewspaper.Web.Profiles.ProfileContext Reader
+@inject myNewspaper.Shared.Profiles.ProfileContext Reader
 @foreach (var game in Games)
 {
     var yours = PhoneSports.Yours(PhoneSports.Teams(Reader), game.SchoolName, game.Opponent);

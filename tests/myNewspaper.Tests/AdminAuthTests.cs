@@ -1,4 +1,4 @@
-using myNewspaper.Web.Auth;
+using myNewspaper.Shared.Auth;
 
 namespace myNewspaper.Tests;
 

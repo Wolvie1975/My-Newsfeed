@@ -9,7 +9,7 @@
     <p id="scheme-picker-help">Choose a look. Light and dark mode work with every scheme.</p>
     <fieldset class="settings-schemes scheme-picker__choices">
         <legend class="sr-only">Choose a color scheme</legend>
-        @foreach (var scheme in myNewspaper.Web.Profiles.SiteDefaults.ColorSchemeChoices)
+        @foreach (var scheme in myNewspaper.Shared.Profiles.SiteDefaults.ColorSchemeChoices)
         {
             <label class="settings-scheme">
                 <input type="radio" name="header-color-scheme" value="@scheme.Key" data-color-scheme />

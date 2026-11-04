@@ -3,7 +3,7 @@
 @inject ILogger<ScoreboardPanel> Log
 @inject FeedDates Dates
 @inject IDbContextFactory<WebScraperContext> Factory
-@inject myNewspaper.Web.Scores.LeaguePhases RecordPhases
+@inject myNewspaper.Shared.Scores.LeaguePhases RecordPhases
 
 <div data-scoreboard data-scoreboard-compact="@Compact.ToString().ToLowerInvariant()" data-scoreboard-sport-filter="@(SportFilter ? "true" : null)" data-scoreboard-phone="@(PhoneFront ? "true" : null)">
     @* The phone front (docs/mobile-refresh-handoff.md) lives inside the panel, so each refresh replaces both copies. *@

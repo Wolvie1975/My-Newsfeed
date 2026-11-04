@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 
-namespace myNewspaper.Web.Data;
+namespace myNewspaper.Shared.Data;
 
 public sealed record MovieReleaseItem(int Id, string Title, short? Year, string? Description, string? Poster,
     string? Certification, short? Runtime, DateOnly? Date, string DateStatus, string Type, string? Platform,

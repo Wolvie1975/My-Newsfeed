@@ -5,7 +5,7 @@
 @inject IConfiguration Config
 @inject LocalWeather Weather
 @inject ILogger<NewsFront> Log
-@inject myNewspaper.Web.Profiles.ProfileContext Reader
+@inject myNewspaper.Shared.Profiles.ProfileContext Reader
 
 @* News front page (docs/news-section-handoff.md, phase 3), built like the Sports front: a briefing strip, then the day
    so far, the lead and top headlines, and a side column of Kansas City and Opinion; In pictures and the three desks
@@ -113,7 +113,7 @@
                             <li><a href="@($"news/topics/{topic.Topic.Id}")"><span>@topic.Name</span><b class="@(topic.New > 0 ? "nf-topics__new" : null)">@(topic.New > 0 ? $"{topic.New} new" : "none new")</b></a></li>
                         }
                     </ul>
-                    @if (mine.Count < myNewspaper.Web.Profiles.TopicQuery.Limit) { <a class="ef-more" href="news/topics/follow">Follow a topic <span aria-hidden="true">→</span></a> }
+                    @if (mine.Count < myNewspaper.Shared.Profiles.TopicQuery.Limit) { <a class="ef-more" href="news/topics/follow">Follow a topic <span aria-hidden="true">→</span></a> }
                 </section>
             }
         </aside>
@@ -218,7 +218,7 @@
         <PhoneTimeline Heading="The day so far" Sub="newest first" Items="@day.Take(3).Select(Timeline).ToList()" MoreText="All headlines" MoreHref="news/all" />
     }
 
-    <FoldGroup Name="news-more" Heading="More News" Foot="@(topics is { Count: < myNewspaper.Web.Profiles.TopicQuery.Limit } ? "Follow a topic" : null)" FootHref="news/topics/follow">
+    <FoldGroup Name="news-more" Heading="More News" Foot="@(topics is { Count: < myNewspaper.Shared.Profiles.TopicQuery.Limit } ? "Follow a topic" : null)" FootHref="news/topics/follow">
         @if (topics is { Count: > 0 } followed)
         {
             <Fold Title="Your topics" Color="mx-c-world" AllHref="news/topics/follow" AllText="Follow a topic"
@@ -302,7 +302,7 @@
     private LocalWeatherPage? weather;
     private (int Total, int Local)? sinceVisit;
     // The open profile's topics; null without a profile (profiles off), when the box doesn't show.
-    private List<myNewspaper.Web.Profiles.TopicSummary>? topics;
+    private List<myNewspaper.Shared.Profiles.TopicSummary>? topics;
 
     // The desks below the columns, in the design's order.
     private static readonly string[] DeskNames = ["Technology", "Linux", "Video Games"];
@@ -342,7 +342,7 @@
             if (Reader.HasProfile
                 && await db.Profiles.Where(p => p.Id == Reader.Id).Select(p => p.PreviousVisitAt).FirstOrDefaultAsync() is { } previous)
                 sinceVisit = await FeedQuery.CountSinceAsync(db, previous, kansasCity?.Id);
-            topics = Reader.HasProfile ? await myNewspaper.Web.Profiles.TopicQuery.SummariesAsync(db, Reader.Id, nowUtc) : null;
+            topics = Reader.HasProfile ? await myNewspaper.Shared.Profiles.TopicQuery.SummariesAsync(db, Reader.Id, nowUtc) : null;
             fromTech = await FeedQuery.GetHomeNewsAsync(db, 4, "tech");
             electionStories = ElectionDays is not null
                 ? (await FeedQuery.GetFeedAsync(db, null, "election", null, 3, headlinesOnly: true)).Items

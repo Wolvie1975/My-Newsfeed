@@ -1,9 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using myNewspaper.Web.Data;
-using myNewspaper.Web.Data.Models;
+using myNewspaper.Shared.Data;
+using myNewspaper.Shared.Data.Models;
 
-namespace myNewspaper.Web.Scores;
+namespace myNewspaper.Shared.Scores;
 
 /// <param name="Synced">Follows whose games were fetched and saved.</param>
 /// <param name="Failed">Follows with a failed request; each has its LastError set.</param>

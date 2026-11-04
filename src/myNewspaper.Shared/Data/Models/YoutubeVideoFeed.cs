@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
-namespace myNewspaper.Web.Data.Models;
+namespace myNewspaper.Shared.Data.Models;
 
 [Table("YoutubeVideoFeed")]
 [Index("ChannelId", Name = "UQ_YoutubeVideoFeed_ChannelId", IsUnique = true)]

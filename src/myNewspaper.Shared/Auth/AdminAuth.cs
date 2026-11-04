@@ -2,7 +2,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.Cookies;
 
-namespace myNewspaper.Web.Auth;
+namespace myNewspaper.Shared.Auth;
 
 public static class AdminAuth
 {

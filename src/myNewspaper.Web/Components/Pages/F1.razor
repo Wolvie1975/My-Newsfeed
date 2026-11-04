@@ -212,10 +212,10 @@ else
     private string ViewLabel => view == "results" ? "Results" : view == "standings" ? "Standings" : "Schedule";
     private F1Page championship = F1Page.Empty;
     private F1Page data = F1Page.Empty;
-    private IReadOnlyList<myNewspaper.Web.Data.Models.F1Race> visibleRaces = [];
-    private myNewspaper.Web.Data.Models.F1Race? selectedRace;
+    private IReadOnlyList<myNewspaper.Shared.Data.Models.F1Race> visibleRaces = [];
+    private myNewspaper.Shared.Data.Models.F1Race? selectedRace;
     private int? standingsRound;
-    private IReadOnlyList<myNewspaper.Web.Data.Models.F1DriverStanding> drivers = [];
+    private IReadOnlyList<myNewspaper.Shared.Data.Models.F1DriverStanding> drivers = [];
     private string? error;
     private string ChoiceLabel(F1ResultChoice choice) => $"Round {choice.Round} · {data.Races.First(r => r.Round == choice.Round).RaceName} · {(choice.SessionType == "Race" ? "Grand Prix" : "Sprint")}";
 

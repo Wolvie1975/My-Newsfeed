@@ -1,4 +1,4 @@
-@using myNewspaper.Web.Data
+@using myNewspaper.Shared.Data
 
 <section class="standings-group @(Provider is "espn-nhl" or "espn-nfl" ? "nhl-division" : IsBasketball ? "basketball-standings" : IsSoccer ? "soccer-standings" : IsCollegeRecordTable ? "football-standings" : null)" aria-labelledby="@HeadingId">
     @if (Provider is not ("espn-nhl" or "espn-nfl")) { <h3 id="@HeadingId">@Group.Name</h3> }

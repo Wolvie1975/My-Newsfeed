@@ -2,7 +2,7 @@ using System.Data;
 using System.Globalization;
 using Microsoft.EntityFrameworkCore;
 
-namespace myNewspaper.Web.Data;
+namespace myNewspaper.Shared.Data;
 
 public sealed record BoxOfficeForecast(string Kind, DateOnly TargetDate, DateOnly PeriodEnd,
     string Title, string? Distributor, int? PredictedRank, long Low, long High,

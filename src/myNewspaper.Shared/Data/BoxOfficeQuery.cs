@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 
-namespace myNewspaper.Web.Data;
+namespace myNewspaper.Shared.Data;
 
 public sealed record NewsPublisher(int Id, string Label, DateTime? LastChecked, bool Failed);
 public sealed record BoxOfficePage(int? CategoryId, IReadOnlyList<NewsPublisher> Publishers, int? SelectedSource,

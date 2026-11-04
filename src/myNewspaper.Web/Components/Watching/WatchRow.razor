@@ -1,4 +1,4 @@
-@using myNewspaper.Web.Watching
+@using myNewspaper.Shared.Watching
 <section class="watch-row" aria-labelledby="@($"{Id}-heading")" data-watch-row>
 <div class="watch-row__head"><h2 id="@($"{Id}-heading")">@Heading</h2>@if(Listing.Items.Count>0){<a href="@SeeAll" aria-label="@($"See all: {Heading}")">See all →</a>}</div>
 <p class="updated watch-row__sub">@Subtitle</p>

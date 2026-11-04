@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
-namespace myNewspaper.Web.Data.Models;
+namespace myNewspaper.Shared.Data.Models;
 
 [Index("Sport", "League", "AwayTeamId", Name = "IX_ResultGames_AwayTeam")]
 [Index("Sport", "League", "HomeTeamId", Name = "IX_ResultGames_HomeTeam")]

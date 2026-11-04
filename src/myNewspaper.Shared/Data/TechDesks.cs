@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
 
-namespace myNewspaper.Web.Data;
+namespace myNewspaper.Shared.Data;
 
 public sealed record DeskTopic(string Slug, string Label, string[] Words);
 public sealed record DeskDefinition(string Slug, string Category, string Title, string Description, string ColorClass, IReadOnlyList<DeskTopic> Topics);

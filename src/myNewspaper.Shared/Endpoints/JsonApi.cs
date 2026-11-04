@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Diagnostics;
-using myNewspaper.Web.Profiles;
+using myNewspaper.Shared.Profiles;
 
-namespace myNewspaper.Web.Endpoints;
+namespace myNewspaper.Shared.Endpoints;
 
 /// <summary>Shared by the JSON APIs: no caching, antiforgery on every write, and safe messages for bad input.</summary>
 public static class JsonApi

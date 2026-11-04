@@ -1,6 +1,6 @@
 using System.Text.Json;
-using myNewspaper.Web.Data.Models;
-using myNewspaper.Web.Scores;
+using myNewspaper.Shared.Data.Models;
+using myNewspaper.Shared.Scores;
 
 namespace myNewspaper.Tests;
 

@@ -1,4 +1,4 @@
-using myNewspaper.Web.Data;
+using myNewspaper.Shared.Data;
 using System.Text.RegularExpressions;
 
 namespace myNewspaper.Web.Components.Phone;

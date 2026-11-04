@@ -1,8 +1,8 @@
 using System.Net;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
-using myNewspaper.Web.Data;
-using myNewspaper.Web.Requests;
+using myNewspaper.Shared.Data;
+using myNewspaper.Shared.Requests;
 
 namespace myNewspaper.Tests;
 

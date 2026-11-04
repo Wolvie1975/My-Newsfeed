@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-using myNewspaper.Web.Data.Models;
+using myNewspaper.Shared.Data.Models;
 
-namespace myNewspaper.Web.Data;
+namespace myNewspaper.Shared.Data;
 
 public sealed record CoverageRow(int FeedId, string Feed, string Sport, bool Enabled, string Status,
     DateTime? LastSynced, string? Error);

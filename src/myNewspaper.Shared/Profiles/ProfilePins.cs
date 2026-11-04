@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Identity;
-using myNewspaper.Web.Data.Models;
+using myNewspaper.Shared.Data.Models;
 
-namespace myNewspaper.Web.Profiles;
+namespace myNewspaper.Shared.Profiles;
 
 /// <summary>Hashes and checks 4-digit PINs with ASP.NET Core's password hasher (PBKDF2); no Identity database.</summary>
 public sealed class ProfilePins(PasswordHasher<Profile> hasher)

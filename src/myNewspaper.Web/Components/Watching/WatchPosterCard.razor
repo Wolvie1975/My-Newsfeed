@@ -1,4 +1,4 @@
-@using myNewspaper.Web.Watching
+@using myNewspaper.Shared.Watching
 <li class="watch-card">
 <a data-watch-title href="@($"watch/{Title.Kind}/{Title.Id}")" aria-label="@($"Where to watch {Title.Name}")">
 <span class="watch-card__poster">@if(Title.Poster is {} poster){<img src="@poster" alt="" loading="lazy" width="200" height="300" />}else{<span class="watch-no-poster" aria-hidden="true">▷</span>}

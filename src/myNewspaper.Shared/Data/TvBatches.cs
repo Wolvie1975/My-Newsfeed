@@ -1,4 +1,4 @@
-namespace myNewspaper.Web.Data;
+namespace myNewspaper.Shared.Data;
 
 /// <summary>
 /// Groups a day's episodes so a batch drop — several episodes of one season released at the same moment, as streaming

@@ -1,4 +1,4 @@
-@using myNewspaper.Web.Data
+@using myNewspaper.Shared.Data
 @* An article title linking out to the story (scraped URLs are checked, as everywhere else); plain text when unsafe. *@
 @if (FeedQuery.SafeHref(Item.Url) is { } href)
 {

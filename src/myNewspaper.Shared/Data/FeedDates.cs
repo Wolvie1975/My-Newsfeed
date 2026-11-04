@@ -1,6 +1,6 @@
 using System.Globalization;
 
-namespace myNewspaper.Web.Data;
+namespace myNewspaper.Shared.Data;
 
 /// <summary>
 /// Turns stored UTC times into what people see. Every stored time is UTC and is converted here, at display time, into

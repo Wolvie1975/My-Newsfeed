@@ -3,8 +3,8 @@ using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using myNewspaper.Web.Components.Phone;
-using myNewspaper.Web.Data;
-using myNewspaper.Web.Data.Models;
+using myNewspaper.Shared.Data;
+using myNewspaper.Shared.Data.Models;
 
 namespace myNewspaper.Tests;
 
@@ -178,7 +178,7 @@ public class PhoneSportsTests
     {
         await using var services = new ServiceCollection().AddLogging().AddSingleton(FeedDates.Create("America/Chicago"))
             .AddSingleton<NavigationManager>(new TestNavigation())
-            .AddSingleton(new myNewspaper.Web.Profiles.ProfileContext(Microsoft.Extensions.Options.Options.Create(new myNewspaper.Web.Profiles.ProfilesOptions())))
+            .AddSingleton(new myNewspaper.Shared.Profiles.ProfileContext(Microsoft.Extensions.Options.Options.Create(new myNewspaper.Shared.Profiles.ProfilesOptions())))
             .BuildServiceProvider();
         await using var renderer = new HtmlRenderer(services, services.GetRequiredService<ILoggerFactory>());
         return await renderer.Dispatcher.InvokeAsync(async () => (await renderer.RenderComponentAsync<T>(ParameterView.FromDictionary(parameters))).ToHtmlString());

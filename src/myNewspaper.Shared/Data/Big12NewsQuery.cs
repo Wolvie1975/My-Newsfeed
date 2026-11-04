@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 
-namespace myNewspaper.Web.Data;
+namespace myNewspaper.Shared.Data;
 
 public sealed record Big12NewsPage(int? CategoryId, IReadOnlyList<FeedSource> Sources, int? SourceId, FeedPage Feed, DateTime? Updated);
 

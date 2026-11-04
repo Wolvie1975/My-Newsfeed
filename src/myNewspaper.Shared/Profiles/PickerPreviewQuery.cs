@@ -1,8 +1,8 @@
 using Microsoft.EntityFrameworkCore;
-using myNewspaper.Web.Data;
-using myNewspaper.Web.Saved;
+using myNewspaper.Shared.Data;
+using myNewspaper.Shared.Saved;
 
-namespace myNewspaper.Web.Profiles;
+namespace myNewspaper.Shared.Profiles;
 
 /// <summary>One column on the edition picker: counts and team games, never a show or channel name (handoff 4.3 and 6.1).</summary>
 public sealed record PickerEdition(int Id, string Name, string Color, bool Locked, bool NeedsPin, DateTime? LastReadAt,
