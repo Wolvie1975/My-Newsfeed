@@ -6,6 +6,34 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
+## Clean-up step 2: shared host setup — November 4, 2026 (America/Chicago)
+
+Commits `c0fcdae` (step 1, tests only) and `23c8eb1` (step 2). Both hosts now register their shared services (database,
+clock, display dates, PIN hashing, site links, request checker, Where to watch, ESPN, TVmaze, forwarded headers)
+through one `AddMyNewspaperCore()` in Shared. A before/after dump of both hosts' registrations and outbound
+`HttpClient` settings matched exactly, except Admin's duplicate `TimeProvider`, which `TryAddSingleton` now skips. No
+behaviour change and no database change.
+
+Validation: build 0 warnings; all 1096 .NET tests passed against `WebScraper_Test`.
+
+Deployment: public `mynewspaper-web:shared-setup-20261104` (`4f0ab5370963`) via `docker compose up -d --no-build web`
+(environment hash unchanged); admin `mynewspaper-admin:shared-setup-20261104` (`d2fdd8417a3e`) as a new
+`mynewspaper-admin` container with the previous container's exact environment (hash-compared), port 8086, `dev-bridge`
+alias `admin`, keys volume, health check and restart policy. Rollback: images
+`mynewspaper-web:before-shared-setup-20261104` (`412a0843967d`) and `mynewspaper-admin:before-shared-setup-20261104`
+(`d0b61c5f99ba`); stopped container `mynewspaper-admin-before-shared-setup-20261104`.
+
+Live verification over the production HTTPS addresses, with one temporary `zz release` profile created through
+`/editions/new`: `/healthz` 200 `Healthy` on both; `/`, `/news`, `/scoreboard`, `/results`, `/events`, `/standings`,
+`/rankings`, `/watch`, `/tv/track`, `/settings`, `/tech`, `/entertainment`, `/movies`, `/movies/digital`,
+`/box-office`, `/saved` and `/editions` at 320, 390, 430 and 1440px in light and dark, 136/136 passed (status below
+400, no horizontal overflow, no script errors, no error banner), with phone screenshots of Home, Where to watch, TV
+search, Scoreboard and Settings inspected. Shared clients: Where to watch search returned 14 titles (`watch-catalog`),
+TV search 8 results (TVmaze), ESPN league-phase checks logged after startup, and in Admin the request checker resolved
+a filed YouTube request to its channel and Test feed read 15 items. Admin signed in over HTTPS with the `Secure`,
+`HttpOnly` session cookie. Clean-up: the profile (and its request and device) was deleted through Admin; afterwards 1
+profile (Jason, admin), 6 devices, 1 unassigned, as before.
+
 ## Security quick fixes and picker error banner — November 4, 2026 (America/Chicago)
 
 From the November 4 security review (commits `6121778`, `3e97b9d`):
