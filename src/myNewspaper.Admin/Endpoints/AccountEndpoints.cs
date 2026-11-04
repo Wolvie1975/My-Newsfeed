@@ -30,6 +30,6 @@ public static class AccountEndpoints
         {
             await http.SignOutAsync(AdminAuth.Scheme);
             return Results.LocalRedirect("/login");
-        });
+        }).RequireAntiforgery();
     }
 }

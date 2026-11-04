@@ -14,7 +14,8 @@ public static class ProfilePageData
 
     public static string Json(ProfileContext reader)
     {
-        var profile = reader.Enabled ? reader.Profile : null;
+        // Only an unlocked profile: on the picker the device's last edition is known, but its PIN hasn't been entered.
+        var profile = reader.Enabled && reader.IsUnlocked ? reader.Profile : null;
         return JsonSerializer.Serialize(new
         {
             defaults = new
@@ -45,7 +46,7 @@ public static class ProfilePageData
 
     private static string? Setting(ProfileContext reader, string key, IReadOnlyList<string> allowed, string fallback)
     {
-        if (!reader.Enabled || reader.Profile is not { } profile) return null;
+        if (!reader.Enabled || !reader.IsUnlocked || reader.Profile is not { } profile) return null;
         return ProfileSettings.Parse(profile.Settings)[key] is JsonValue v && v.TryGetValue<string>(out var value) && allowed.Contains(value)
             ? value : fallback;
     }

@@ -63,12 +63,14 @@ public sealed class ProfileGateMiddleware(RequestDelegate next, IOptions<Profile
                 cookies.WriteDevice(http, fresh);
             }
 
+            var needsPicker = device is null
+                || ProfileGate.NeedsPicker(profile?.Id, device.PickerMode, cookies.ReadGate(http), device.Id, now, dates.Zone);
             context.Device = device;
             context.Profile = profile;
-            context.IsHouseholdAdmin = profile is not null && profile.Id == household.AdminProfileId;
+            context.IsUnlocked = profile is not null && !needsPicker;
+            context.IsHouseholdAdmin = context.IsUnlocked && profile!.Id == household.AdminProfileId;
 
-            if (!ProfileGate.IsExempt(path) && (device is null
-                || ProfileGate.NeedsPicker(profile?.Id, device.PickerMode, cookies.ReadGate(http), device.Id, now, dates.Zone)))
+            if (!ProfileGate.IsExempt(path) && needsPicker)
             {
                 context.Profile = null;
                 context.IsHouseholdAdmin = false;

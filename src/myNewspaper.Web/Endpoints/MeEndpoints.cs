@@ -78,7 +78,7 @@ public static class MeEndpoints
         {
             await MyFollows.UnfollowShowAsync(db.Context, reader.Id, trackingId, db.Ct);
             return Back("shows", done: "show-unfollowed");
-        });
+        }).RequireAntiforgery();
 
         me.MapPost("/channels/{feedId:int}", async (int feedId, [FromForm] string? follow, ProfileContext reader, RequestDb db) =>
         {
@@ -151,12 +151,12 @@ public static class MeEndpoints
         me.MapPost("/topics/{id:int}/read", async (int id, ProfileContext reader, RequestDb db) =>
             await TopicQuery.MarkReadAsync(db.Context, reader.Id, id, db.Now, db.Ct)
                 ? Results.LocalRedirect($"/news/topics/{id}?done=topic-read")
-                : Results.NotFound());
+                : Results.NotFound()).RequireAntiforgery();
 
         me.MapPost("/topics/{id:int}/delete", async (int id, ProfileContext reader, RequestDb db) =>
             await TopicQuery.DeleteAsync(db.Context, reader.Id, id, db.Ct)
                 ? Results.LocalRedirect("/news?done=topic-removed")
-                : Results.NotFound());
+                : Results.NotFound()).RequireAntiforgery();
     }
 
     public const string TopicFollowPath = "/news/topics/follow";

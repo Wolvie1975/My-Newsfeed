@@ -73,10 +73,18 @@
 
         const railList = document.getElementById('sb-rail-your-teams-list');
         if (railList) {
+            // Built with DOM APIs: team names and status come from provider data and must stay text, never markup.
+            const el = (tag, className, text) => {
+                const node = document.createElement(tag);
+                node.className = className;
+                if (text !== undefined) node.textContent = text;
+                return node;
+            };
             if (yourCount === 0) {
-                railList.innerHTML = '<p class="sb-rail__empty">Click ☆ next to any team to track them here.</p>';
+                railList.replaceChildren(el('p', 'sb-rail__empty', 'Click ☆ next to any team to track them here.'));
             } else {
-                const items = [...yourTeamsGrid.querySelectorAll('.sb-card')].map((card) => {
+                const list = el('div', 'sb-rail__list');
+                for (const card of yourTeamsGrid.querySelectorAll('.sb-card')) {
                     const teams = [...card.querySelectorAll('.sb-card__team')];
                     const matchup = teams
                         .map((t) => t.querySelector('.team-title')?.textContent.trim() || '')
@@ -84,9 +92,11 @@
                         .join(' at ');
                     const statusText =
                         card.querySelector('.sb-pill--live, .sb-card__time, .sb-card__final')?.textContent.trim() || '';
-                    return `<div class="sb-rail__item"><span class="sb-rail__name">${matchup}</span><span class="sb-rail__status">${statusText}</span></div>`;
-                });
-                railList.innerHTML = `<div class="sb-rail__list">${items.join('')}</div>`;
+                    const item = el('div', 'sb-rail__item');
+                    item.append(el('span', 'sb-rail__name', matchup), el('span', 'sb-rail__status', statusText));
+                    list.append(item);
+                }
+                railList.replaceChildren(list);
             }
         }
     }
@@ -98,9 +108,7 @@
             button.textContent = active ? '★' : '☆';
             const teamName = button.dataset.teamName;
             if (teamName) {
-                const label = active
-                    ? `Remove ${teamName} from Your teams`
-                    : `Pin ${teamName} to Your teams`;
+                const label = active ? `Remove ${teamName} from Your teams` : `Pin ${teamName} to Your teams`;
                 button.setAttribute('title', label);
                 button.setAttribute('aria-label', label);
             }

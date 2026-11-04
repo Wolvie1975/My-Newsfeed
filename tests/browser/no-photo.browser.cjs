@@ -313,7 +313,8 @@ const password = process.env.ADMIN_PASSWORD;
         console.log('P8 responsive fixtures, dynamic failures, Home, actions, themes and no-JS passed.');
     } finally {
         if (id) {
-            try {
+            // A function, so the throw below leaves the helper rather than the finally block.
+            const deleteThrowawayProfile = async () => {
                 await admin.goto(adminBase + '/admin/profiles/' + id);
                 await admin.waitForLoadState('networkidle');
                 const confirm = admin.getByRole('button', { name: 'Delete profile', exact: true });
@@ -327,6 +328,9 @@ const password = process.env.ADMIN_PASSWORD;
                 }
                 await confirm.click();
                 await admin.waitForURL('**/admin/profiles?deleted=*');
+            };
+            try {
+                await deleteThrowawayProfile();
             } catch (e) {
                 process.exitCode = 1;
                 console.error(

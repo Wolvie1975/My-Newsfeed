@@ -9,6 +9,9 @@ module.exports = [
             'src/myNewspaper.Shared/wwwroot/lib/**',
             'new development/**',
             'node_modules/**',
+            // Generated test output and scratch scripts (git-ignored).
+            'test-results/**',
+            'TestResults/**',
         ],
     },
     js.configs.recommended,

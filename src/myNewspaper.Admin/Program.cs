@@ -32,6 +32,10 @@ public partial class AdminProgram
         {
             options.Cookie.Name = "myNewspaper.Admin.Session";
             options.Cookie.HttpOnly = true;
+            // Admin is served to browsers over HTTPS (Tailscale, port 8443): the session cookie is never sent in cleartext.
+            // Only the session cookie: antiforgery refuses to run at all with SecurePolicy.Always when the app itself
+            // sees plain HTTP behind the proxy.
+            options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
             options.LoginPath = "/login";
             options.AccessDeniedPath = "/login";
             options.ExpireTimeSpan = TimeSpan.FromHours(8);

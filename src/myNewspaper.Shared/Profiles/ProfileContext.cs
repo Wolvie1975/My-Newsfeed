@@ -14,6 +14,13 @@ public sealed class ProfileContext(IOptions<ProfilesOptions> options)
     public Profile? Profile { get; internal set; }
     public ProfileDevice? Device { get; internal set; }
     public bool HasProfile => Profile is not null;
+
+    /// <summary>
+    /// Whether this device has passed the picker (and PIN, when needed) for <see cref="Profile"/> on this request. False
+    /// on picker pages before the PIN is entered: there <see cref="Profile"/> only names the device's last edition, and
+    /// its settings must not be sent to the page.
+    /// </summary>
+    public bool IsUnlocked { get; internal set; }
     public int Id => Profile?.Id ?? throw new InvalidOperationException("No profile selected.");
 
     /// <summary>The open profile is the household admin's (Manage profile), so its pages show "Admin sign in".</summary>

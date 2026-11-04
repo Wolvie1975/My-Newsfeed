@@ -33,7 +33,7 @@ public static class ProfileEndpoints
         profiles.MapPost("/{id:int}/open", OpenAsync);
         profiles.MapPost("/{id:int}/new-pin", NewPinAsync);
         profiles.MapPost("/new", CreateAsync);
-        profiles.MapPost("/signout", SignOutAsync);
+        profiles.MapPost("/signout", SignOutAsync).RequireAntiforgery();
 
         var me = app.MapGroup("/api/me");
         me.AddEndpointFilter(JsonApi.Filter);
@@ -176,12 +176,8 @@ public static class ProfileEndpoints
         }
     }
 
-    private static async Task<IResult> SignOutAsync(HttpContext http, ProfileContext reader, IDbContextFactory<WebScraperContext> factory,
-        IAntiforgery antiforgery)
+    private static async Task<IResult> SignOutAsync(HttpContext http, ProfileContext reader, IDbContextFactory<WebScraperContext> factory)
     {
-        // No form fields to bind, so antiforgery is checked here rather than by form binding.
-        try { await antiforgery.ValidateRequestAsync(http); }
-        catch (AntiforgeryValidationException) { return Results.BadRequest(new { error = "Refresh the page and try again." }); }
         if (reader.Device is not null)
         {
             await using var db = await factory.CreateDbContextAsync(http.RequestAborted);

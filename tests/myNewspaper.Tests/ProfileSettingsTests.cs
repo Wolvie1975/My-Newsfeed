@@ -39,8 +39,9 @@ public class ProfileSettingsTests
     {
         var reader = new ProfileContext(Microsoft.Extensions.Options.Options.Create(new ProfilesOptions { Enabled = true }));
         var profile = new myNewspaper.Web.Data.Models.Profile { Id = 1, Name = "</script><b>x", Settings = """{"theme":"dark","colorScheme":"kansas","teams":["</script>"]}""" };
-        // The gate middleware sets the open profile; its setter is internal to the app.
+        // The gate middleware sets the open profile; its setters are internal to the app.
         typeof(ProfileContext).GetProperty(nameof(ProfileContext.Profile))!.SetValue(reader, profile);
+        typeof(ProfileContext).GetProperty(nameof(ProfileContext.IsUnlocked))!.SetValue(reader, true);
         var json = ProfilePageData.Json(reader);
         Assert.DoesNotContain("</script>", json, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("<b>", json);
@@ -56,6 +57,19 @@ public class ProfileSettingsTests
         // A damaged stored value falls back to the site default rather than reaching the page.
         profile.Settings = """{"theme":"neon","colorScheme":7}""";
         Assert.Equal(("system", "ribbon"), (ProfilePageData.ThemeMode(reader), ProfilePageData.ColorScheme(reader)));
+    }
+
+    [Fact]
+    public void The_picker_does_not_send_a_locked_profiles_settings_to_the_page()
+    {
+        // On the picker the device's last edition is known (for "Sign this device out"), but its PIN hasn't been entered.
+        var reader = new ProfileContext(Microsoft.Extensions.Options.Options.Create(new ProfilesOptions { Enabled = true }));
+        var profile = new myNewspaper.Web.Data.Models.Profile { Id = 1, Name = "Jo", Settings = """{"theme":"dark","teams":["kansas"]}""" };
+        typeof(ProfileContext).GetProperty(nameof(ProfileContext.Profile))!.SetValue(reader, profile);
+
+        Assert.Null(JsonNode.Parse(ProfilePageData.Json(reader))!["profile"]);
+        Assert.Null(ProfilePageData.ThemeMode(reader));
+        Assert.Null(ProfilePageData.ColorScheme(reader));
     }
 
     [Fact]
