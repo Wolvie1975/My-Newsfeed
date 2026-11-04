@@ -1,10 +1,12 @@
 @using System.Globalization
+@using Microsoft.Extensions.Caching.Memory
 @using myNewspaper.Shared.Profiles
 @using myNewspaper.Web.Components.Feed
 @inject IDbContextFactory<WebScraperContext> Factory
 @inject FeedDates Dates
 @inject IConfiguration Config
 @inject LocalWeather Weather
+@inject IMemoryCache Cache
 @inject ILogger<NewsFront> Log
 @inject myNewspaper.Shared.Profiles.ProfileContext Reader
 
@@ -70,9 +72,14 @@
                     </div>
                 </article>
 
+                @if (covered.Count > 0)
+                {
+                    <CoveredList Items="@covered.Take(3).ToList()" />
+                }
+
                 @if (stories.Count > 1)
                 {
-                    <h3 class="ef-label">Top headlines</h3>
+                    <h3 class="ef-label">More headlines</h3>
                     <ul class="ef-headlines spf-headlines">
                         @foreach (var item in stories.Skip(1)) { @Headline(item, withCategory: true) }
                     </ul>
@@ -81,14 +88,14 @@
             <a class="ef-more" href="news/all">All headlines <span aria-hidden="true">→</span></a>
         </div>
 
-        <aside class="ef-side spf-side">
+        <aside class="ef-side spf-side nw-cascade">
             @if (kansasCity is { } kc)
             {
                 <section class="nf-side" aria-labelledby="nf-kc-title">
                     <h2 id="nf-kc-title" class="ef-label">Kansas City</h2>
                     @if (WeatherLine is { } line) { <p class="ef-note"><a href="news/kansas-city#local-weather">@line</a></p> }
                     <ul class="ef-headlines spf-headlines">
-                        @foreach (var item in Latest(kc)) { @Headline(item) }
+                        @foreach (var item in Latest(kc).Take(5)) { @Headline(item) }
                     </ul>
                     <a class="ef-more" href="news/kansas-city">Kansas City news <span aria-hidden="true">→</span></a>
                 </section>
@@ -98,7 +105,7 @@
                 <section class="nf-side nf-opinion" aria-labelledby="nf-op-title">
                     <h2 id="nf-op-title" class="ef-label">Opinion</h2>
                     <ul class="ef-headlines spf-headlines">
-                        @foreach (var item in Latest(op).Take(2)) { @Headline(item) }
+                        @foreach (var item in Latest(op).Take(4)) { @Headline(item) }
                     </ul>
                     <a class="ef-more" href="@CategoryHref(op)">All opinion <span aria-hidden="true">→</span></a>
                 </section>
@@ -115,6 +122,36 @@
                         }
                     </ul>
                     @if (mine.Count < TopicQuery.Limit) { <a class="ef-more" href="news/topics/follow">Follow a topic <span aria-hidden="true">→</span></a> }
+                </section>
+            }
+            @if (trending.Count > 0)
+            {
+                <section class="nw-trending" aria-labelledby="nw-trending-title">
+                    <h2 id="nw-trending-title" class="ef-label">Trending in headlines</h2>
+                    <p class="nw-trending__sub">Most-used names and phrases today</p>
+                    <ul class="nw-trending__list">
+                        @foreach (var phrase in trending)
+                        {
+                            <li class="nw-chip">
+                                <a class="nw-chip__text" href="@($"news/all?q={Uri.EscapeDataString(phrase.Text)}")">@phrase.Text</a>
+                                <span class="nw-chip__count">@phrase.Stories</span>
+                                @if (Reader.HasProfile)
+                                {
+                                    <a class="nw-chip__follow" href="@($"news/topics/follow?terms={Uri.EscapeDataString(phrase.Text)}&hub=headlines")" aria-label="@($"Follow {phrase.Text}")">+</a>
+                                }
+                            </li>
+                        }
+                    </ul>
+                </section>
+            }
+            @foreach (var desk in desks.Where(d => Latest(d).Count > 0))
+            {
+                <section class="nf-desk" aria-labelledby="@($"nf-desk-cascade-{desk.Id}")">
+                    <h2 id="@($"nf-desk-cascade-{desk.Id}")" class="ef-label">@desk.Name</h2>
+                    <ul class="ef-headlines spf-headlines">
+                        @foreach (var item in Latest(desk).Take(4)) { @Headline(item) }
+                    </ul>
+                    <a class="ef-more" href="@CategoryHref(desk)">More @desk.Name <span aria-hidden="true">→</span></a>
                 </section>
             }
         </aside>
@@ -139,7 +176,7 @@
         </section>
     }
 
-    @if (desks.Any(d => Latest(d).Count > 0) || fromTech.Count > 0)
+    @if (desks.Any(d => Latest(d).Count > 0))
     {
         <div class="nf-desks">
             @foreach (var desk in desks.Where(d => Latest(d).Count > 0))
@@ -147,19 +184,9 @@
                 <section class="nf-desk" aria-labelledby="@($"nf-desk-{desk.Id}")">
                     <h2 id="@($"nf-desk-{desk.Id}")" class="ef-label">@desk.Name</h2>
                     <ul class="ef-headlines spf-headlines">
-                        @foreach (var item in Latest(desk)) { @Headline(item) }
+                        @foreach (var item in Latest(desk).Take(4)) { @Headline(item) }
                     </ul>
                     <a class="ef-more" href="@CategoryHref(desk)">More @desk.Name <span aria-hidden="true">→</span></a>
-                </section>
-            }
-            @if (fromTech.Count > 0)
-            {
-                <section class="nf-desk" aria-labelledby="nf-desk-tech">
-                    <h2 id="nf-desk-tech" class="ef-label">From Tech</h2>
-                    <ul class="ef-headlines spf-headlines">
-                        @foreach (var item in fromTech) { @Headline(item) }
-                    </ul>
-                    <a class="ef-more" href="tech">Tech <span aria-hidden="true">→</span></a>
                 </section>
             }
         </div>
@@ -200,7 +227,7 @@
     @if (stories.Count > 1)
     {
         <section class="mx-section" aria-labelledby="news-top-m">
-            <div class="mx-head"><h2 id="news-top-m">Top headlines</h2><a href="news/all">All headlines →</a></div>
+            <div class="mx-head"><h2 id="news-top-m">More headlines</h2><a href="news/all">All headlines →</a></div>
             <ol class="mx-top">
                 @foreach (var (item, i) in stories.Skip(1).Take(3).Select((s, i) => (s, i)))
                 {
@@ -211,6 +238,14 @@
                     </li>
                 }
             </ol>
+        </section>
+    }
+
+    @if (covered.Count > 0)
+    {
+        <section class="mx-section" aria-labelledby="news-covered-m">
+            <div class="mx-head"><h2 id="news-covered-m">Most covered</h2></div>
+            <CoveredList Items="@covered.Take(1).ToList()" ShowHeading="false" />
         </section>
     }
 
@@ -232,6 +267,25 @@
                     </a>
                 }
             </Fold>
+        }
+        @if (trending.Count > 0)
+        {
+            <div class="nw-trending--phone" aria-labelledby="news-trending-m">
+                <div class="mx-head"><h2 id="news-trending-m">Trending in headlines</h2></div>
+                <ul class="nw-chips-rail">
+                    @foreach (var phrase in trending)
+                    {
+                        <li class="nw-chip">
+                            <a class="nw-chip__text" href="@($"news/all?q={Uri.EscapeDataString(phrase.Text)}")">@phrase.Text</a>
+                            <span class="nw-chip__count">@phrase.Stories</span>
+                            @if (Reader.HasProfile)
+                            {
+                                <a class="nw-chip__follow" href="@($"news/topics/follow?terms={Uri.EscapeDataString(phrase.Text)}&hub=headlines")" aria-label="@($"Follow {phrase.Text}")">+</a>
+                            }
+                        </li>
+                    }
+                </ul>
+            </div>
         }
         @if (kansasCity is { } kc && Latest(kc).Count > 0)
         {
@@ -262,12 +316,6 @@
                 @foreach (var item in Latest(desk)) { @FoldRow(item) }
             </Fold>
         }
-        @if (fromTech.Count > 0)
-        {
-            <Fold Title="From Tech" Color="mx-c-tech" AllHref="tech" AllText="Tech" Gist="@string.Join(" · ", fromTech.Take(2).Select(Title))">
-                @foreach (var item in fromTech) { @FoldRow(item) }
-            </Fold>
-        }
         @if (photos.Count > 0)
         {
             <Fold Title="In pictures" Color="mx-c-local" Gist="@string.Join(" · ", photos.Take(2).Select(Title))">
@@ -295,7 +343,10 @@
     private IReadOnlyList<FeedItem> day = [];
     private IReadOnlyList<FeedItem> photos = [];
     private IReadOnlyList<FeedItem> electionStories = [];
-    private IReadOnlyList<FeedItem> fromTech = [];
+    private IReadOnlyList<CoveredStory> covered = [];
+    private CoveredStory? mostCoveredLead;
+    private IReadOnlyList<TrendingPhrase> trending = [];
+    private IReadOnlyList<WeatherAlert> alerts = [];
     private IReadOnlyDictionary<int, IReadOnlyList<FeedItem>> latest = new Dictionary<int, IReadOnlyList<FeedItem>>();
     private FeedCategory? kansasCity, opinion;
     private IReadOnlyList<FeedCategory> desks = [];
@@ -305,8 +356,9 @@
     // The open profile's topics; null without a profile (profiles off), when the box doesn't show.
     private List<myNewspaper.Shared.Profiles.TopicSummary>? topics;
 
-    // The desks below the columns, in the design's order.
-    private static readonly string[] DeskNames = ["Technology", "Linux", "Video Games"];
+    // The desks below (or, from 1920px, inside) the side column, in the design's order. A desk shows when its
+    // category exists in the headlines hub and has stories; World appears once its category exists (step 2b).
+    private static readonly string[] DeskNames = ["U.S. News", "Top Headlines", "World"];
 
     protected override async Task OnParametersSetAsync()
     {
@@ -328,14 +380,14 @@
             stories = NewsLeadQuery.Select(candidates) is { } lead
                 ? [lead, .. rotation.Where(s => s.Id != lead.Id).Take(6)]
                 : rotation;
-            // The day so far leaves out what the lead and Top headlines already show.
+            // The day so far leaves out what the lead and More headlines already show.
             var shown = stories.Select(s => s.Id).ToHashSet();
-            var feed = await FeedQuery.GetFeedAsync(db, null, null, null, 10 + shown.Count, headlinesOnly: true);
+            var feed = await FeedQuery.GetFeedAsync(db, null, null, null, 14 + shown.Count, headlinesOnly: true);
             total = feed.Total;
-            day = feed.Items.Where(i => !shown.Contains(i.Id)).Take(10).ToList();
+            day = feed.Items.Where(i => !shown.Contains(i.Id)).Take(14).ToList();
             sourceCount = (await FeedQuery.GetSourcesAsync(db, null, headlinesOnly: true)).Count;
             latest = await FeedQuery.GetLatestByCategoryAsync(db,
-                new[] { kansasCity, opinion }.OfType<FeedCategory>().Concat(desks).Select(c => c.Id));
+                new[] { kansasCity, opinion }.OfType<FeedCategory>().Concat(desks).Select(c => c.Id), take: 5);
             // In pictures leaves out the lead, whose photo is already the biggest on the page.
             photos = (await FeedQuery.GetPhotosAsync(db, nowUtc, 6)).Where(p => stories.Count == 0 || p.Id != stories[0].Id).Take(5).ToList();
             // Since your last visit: read fresh, because the gate moves PreviousVisitAt as this request starts a visit.
@@ -344,7 +396,9 @@
                 && await ProfileStore.PreviousVisitAsync(db, Reader.Id) is { } previous)
                 sinceVisit = await FeedQuery.CountSinceAsync(db, previous, kansasCity?.Id);
             topics = Reader.HasProfile ? await TopicQuery.SummariesAsync(db, Reader.Id, nowUtc) : null;
-            fromTech = await FeedQuery.GetHomeNewsAsync(db, 4, "tech");
+            covered = await CoveredQuery.MostCoveredAsync(db, Cache, "headlines", nowUtc.AddHours(-24), minSources: 3, take: 3);
+            mostCoveredLead = covered.FirstOrDefault();
+            trending = await TrendingQuery.TodayAsync(db, Cache, nowUtc.AddHours(-24), 6);
             electionStories = ElectionDays is not null
                 ? (await FeedQuery.GetFeedAsync(db, null, "election", null, 3, headlinesOnly: true)).Items
                 : [];
@@ -352,18 +406,24 @@
         catch (Exception ex) when (DataFailures.IsReadFailure(ex))
         {
             unavailable = true;
-            stories = day = photos = electionStories = fromTech = [];
+            stories = day = photos = electionStories = [];
+            covered = [];
+            trending = [];
+            alerts = [];
+            mostCoveredLead = null;
             Log.LogError(ex, "Could not read the News front.");
         }
 
         weather = null;
+        alerts = [];
         try
         {
             using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(3));
             weather = await Weather.GetAsync(timeout.Token);
+            alerts = await Weather.GetAlertsAsync(timeout.Token);
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or OperationCanceledException or System.Text.Json.JsonException or InvalidOperationException)
-        { Log.LogWarning(ex, "News front forecast unavailable."); }
+        { Log.LogWarning(ex, "News front forecast or alerts unavailable."); }
     }
 
     private IReadOnlyList<FeedItem> Latest(FeedCategory category) => latest.TryGetValue(category.Id, out var items) ? items : [];
@@ -377,11 +437,34 @@
         sourceCount > 0 ? $"{sourceCount} {(sourceCount == 1 ? "source" : "sources")}" : null,
     }.Where(p => p is not null));
 
-    // ---------- Briefing tiles: Since your last visit (an open profile's second visit on), Kansas City now, Election Day ----------
+    // ---------- Briefing tiles: Since your last visit, Kansas City now, Your top topic, Most covered, Election Day, Weather alert ----------
 
     private LocalForecast? Now => weather?.Periods.FirstOrDefault();
     private string? WeatherLine => Now is { } now ? $"{now.Name}: {now.Temperature}° · {now.Summary}" : null;
     private string? WeatherShort => Now is { } now ? $"{now.Temperature}° {now.Summary}" : null;
+
+    private TopicSummary? TopTopic => topics?
+        .Where(t => t.New > 0)
+        .OrderByDescending(t => t.New)
+        .ThenByDescending(t => t.Topic.Id)
+        .FirstOrDefault();
+
+    private WeatherAlert? ActiveAlert => alerts.FirstOrDefault();
+    private static string AlertColor(WeatherAlert alert) =>
+        alert.Severity is "Severe" or "Extreme" ? "mx-c-us" : "mx-c-alert";
+    private string AlertSub(WeatherAlert alert) =>
+        alert.Ends is { } ends ? $"until {Dates.Time(ends.UtcDateTime)}"
+        : !string.IsNullOrWhiteSpace(alert.Headline) ? alert.Headline
+        : "National Weather Service";
+
+    private static string HubColor(string? hub) => (hub ?? "").ToLowerInvariant() switch
+    {
+        "headlines" or "news" => "mx-c-us",
+        "sports" => "mx-c-local",
+        "entertainment" => "mx-c-gain",
+        "tech" => "mx-c-tech",
+        _ => "mx-c-tech",
+    };
 
     /// <summary>Days until the configured Election Day (0 on the day); null when it isn't set or has passed.</summary>
     private int? ElectionDays => DateOnly.TryParse(Config["News:ElectionDay"], CultureInfo.InvariantCulture, out var day)
@@ -397,7 +480,19 @@
                 since.Total == 0 ? "nothing new yet" : since.Local > 0 ? $"new · {since.Local} local" : "new")
         }
         @Tile("news/kansas-city#local-weather", "mx-c-local", "Kansas City now", Now is { } now ? $"{now.Temperature}°" : "Forecast", Now?.Summary ?? "National Weather Service")
+        @if (TopTopic is { } topTopic)
+        {
+            @Tile($"news/topics/{topTopic.Topic.Id}", HubColor(topTopic.Topic.Hub), "Your top topic", topTopic.Name, $"{topTopic.New} new since your last visit")
+        }
+        @if (mostCoveredLead is { } mc)
+        {
+            @Tile(FeedQuery.SafeHref(mc.Lead.Url) ?? "news/all", "mx-c-us", "Most covered", $"{mc.Sources} sources", Title(mc.Lead))
+        }
         @if (ElectionDays is { } days) { @Tile("news/all?q=election", "mx-c-us", "Election Day", ElectionValue(days), ElectionDate) }
+        @if (ActiveAlert is { } alert)
+        {
+            @Tile("news/kansas-city#local-weather", AlertColor(alert), "Weather alert", alert.Event, AlertSub(alert))
+        }
     </text>;
 
     private static RenderFragment Tile(string href, string color, string label, string value, string sub) =>

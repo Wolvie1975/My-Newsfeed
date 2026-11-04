@@ -109,6 +109,8 @@ reviewer. Existing code is being brought into line in the clean-up steps listed 
 | `dg-` | Digital releases |
 | `rk-` | Rankings |
 | `adm-` | Admin (use this, not `admin-`, for new admin styles) |
+| `cv-` | Most covered lists (News, Tech) |
+| `nw-` | News front additions: trending, cascade |
 
 ## JavaScript
 

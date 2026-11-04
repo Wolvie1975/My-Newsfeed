@@ -26,7 +26,7 @@ public static class SectionChoices
     public const string NewsKansasCityCategory = "Kansas City News";
 
     // Named categories keep the design's order; any other headlines-hub category follows alphabetically.
-    private static readonly string[] NewsOrder = ["Top Headlines", NewsKansasCityCategory, "Opinion"];
+    private static readonly string[] NewsOrder = ["Top Headlines", NewsKansasCityCategory, "Opinion", "U.S. News", "World"];
 
     /// <summary>News tabs: home, all, then each headlines-hub category; Kansas City goes to its own page.</summary>
     public static IReadOnlyList<NavigationChoice> News(IEnumerable<FeedCategory> headlinesCategories) =>

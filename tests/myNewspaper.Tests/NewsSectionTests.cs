@@ -14,7 +14,7 @@ public class NewsSectionTests
             new FeedCategory(2627, "U.S. News", 0), new FeedCategory(5950, "Kansas City News", 0),
             new FeedCategory(6444, "Business", 0), new FeedCategory(5877, "Top Headlines", 0), new FeedCategory(6022, "Opinion", 0),
         ]);
-        Assert.Equal(["News home", "All headlines", "Top Headlines", "Kansas City", "Opinion", "Business", "U.S. News"],
+        Assert.Equal(["News home", "All headlines", "Top Headlines", "Kansas City", "Opinion", "U.S. News", "Business"],
             tabs.Select(t => t.Label));
         Assert.Equal(["news", "news/all", "news/all?category=5877", "news/kansas-city", "news/all?category=6022"],
             tabs.Take(5).Select(t => t.Href));

@@ -1,0 +1,40 @@
+@using myNewspaper.Shared.Data
+@using myNewspaper.Web.Components.Phone
+
+@if (Items.Count > 0)
+{
+    @if (ShowHeading)
+    {
+        <h3 class="ef-label">@Heading</h3>
+    }
+    <ul class="cv-list">
+        @foreach (var story in Items)
+        {
+            <li class="cv-item @PhoneColors.ForCategory(story.Lead.CategoryName)">
+                <p class="ef-kicker">@Desk(story.Lead)</p>
+                <a class="ef-headlines__title" href="@Href(story.Lead)" target="_blank" rel="noopener noreferrer">@Title(story.Lead)</a>
+                <span class="cv-item__sources">
+                    <span class="cv-badges" aria-hidden="true">
+                        @foreach (var s in story.SourceMarks.Take(5))
+                        {
+                            <span class="cv-badge @PhoneColors.ForCategory(s.Category)">@s.Mark</span>
+                        }
+                    </span>
+                    <b>@story.Sources sources</b> · @string.Join(", ", story.SourceNames)
+                </span>
+            </li>
+        }
+    </ul>
+}
+
+@code {
+    [Parameter] public IReadOnlyList<CoveredStory> Items { get; set; } = [];
+    [Parameter] public bool Compact { get; set; }
+    [Parameter] public string Heading { get; set; } = "Most covered";
+    [Parameter] public bool ShowHeading { get; set; } = true;
+
+    private static string Href(FeedItem item) => FeedQuery.SafeHref(item.Url) ?? "news/all";
+    private static string Desk(FeedItem item) => item.CategoryName ?? "News";
+    private static string Title(FeedItem item) => FeedText.StripEmoji(item.Title) is { Length: > 0 } title ? title : item.Title;
+}
+

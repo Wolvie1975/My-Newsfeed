@@ -21,7 +21,7 @@
         }
         <div class="tp-field">
             <label for="tp-terms">Words or phrase</label>
-            <input id="tp-terms" name="terms" type="text" required maxlength="300" autocomplete="off" value="@editing?.Terms" aria-describedby="tp-terms-help" />
+            <input id="tp-terms" name="terms" type="text" required maxlength="300" autocomplete="off" value="@(editing?.Terms ?? TermsQuery)" aria-describedby="tp-terms-help" />
             <span id="tp-terms-help" class="tp-help">Whole words, any capitals. Separate alternatives with commas: <i>Chiefs stadium, Arrowhead</i></span>
         </div>
         <div class="tp-row">
@@ -63,6 +63,7 @@
     [SupplyParameterFromQuery(Name = "edit")] private int? EditId { get; set; }
     [SupplyParameterFromQuery(Name = "error")] private string? Error { get; set; }
     [SupplyParameterFromQuery(Name = "hub")] private string? HubQuery { get; set; }
+    [SupplyParameterFromQuery(Name = "terms")] private string? TermsQuery { get; set; }
     private ProfileTopic? editing;
     private int count;
     private string? SelectedHub => editing is not null ? editing.Hub : TopicQuery.ValidHub(HubQuery?.Trim().ToLowerInvariant());

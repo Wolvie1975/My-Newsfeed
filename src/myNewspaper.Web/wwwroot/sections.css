@@ -1824,9 +1824,11 @@ a.tvc-row__show:hover {
     font-weight: 700;
     color: var(--text-2);
     cursor: pointer;
-    transition: background 0.15s, color 0.15s;
+    transition:
+        background 0.15s,
+        color 0.15s;
 }
-.pub .sb-view-btn[aria-pressed="true"] {
+.pub .sb-view-btn[aria-pressed='true'] {
     background: var(--text);
     color: var(--bg);
 }
@@ -1936,8 +1938,15 @@ a.tvc-row__show:hover {
     animation: sb-pulse 2s infinite ease-in-out;
 }
 @keyframes sb-pulse {
-    0%, 100% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.3); opacity: 0.6; }
+    0%,
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.3);
+        opacity: 0.6;
+    }
 }
 
 /* Card Grid */
@@ -1963,7 +1972,9 @@ a.tvc-row__show:hover {
     display: flex;
     flex-direction: column;
     gap: 8px;
-    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    transition:
+        border-color 0.15s ease,
+        box-shadow 0.15s ease;
 }
 .pub .sb-card:hover {
     border-color: var(--accent);
@@ -2051,7 +2062,7 @@ a.tvc-row__show:hover {
 .pub .sb-card__tool:hover {
     color: var(--accent);
 }
-.pub .sb-card__tool.scoreboard-favorite[aria-pressed="true"] {
+.pub .sb-card__tool.scoreboard-favorite[aria-pressed='true'] {
     color: #f5b301;
 }
 .pub .sb-card__info {
@@ -2146,7 +2157,7 @@ a.tvc-row__show:hover {
     min-width: 32px;
 }
 .pub .sb-card__team.win .score::before {
-    content: "▸";
+    content: '▸';
     position: absolute;
     right: 100%;
     top: 50%;
@@ -3054,7 +3065,8 @@ a.tvc-row__show:hover {
         border: 0;
     }
     .pub .nf-brief__tiles {
-        grid-auto-columns: minmax(0, 220px);
+        grid-auto-columns: minmax(0, 300px); /* tiles keep their size; the row doesn't stretch */
+        justify-content: start;
         gap: 12px;
     }
     .pub .nf-tile {
@@ -3111,6 +3123,74 @@ a.tvc-row__show:hover {
 }
 .pub .nf-topics__list b.nf-topics__new {
     color: var(--accent);
+}
+
+/* ---------- News front: Trending in headlines (nw-trending) ---------- */
+.pub .nw-trending {
+    margin-top: 16px;
+}
+.pub .nw-trending .ef-label {
+    margin-bottom: 2px;
+}
+.pub .nw-trending__sub {
+    margin: 0 0 10px;
+    font-size: 13px;
+    color: var(--text-2);
+}
+.pub .nw-trending__list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+.pub .nw-chip {
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--surface);
+    line-height: 1;
+}
+.pub .nw-chip__text {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 8px 0 14px;
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+}
+.pub .nw-chip__text:hover {
+    text-decoration: underline;
+}
+.pub .nw-chip__count {
+    display: inline-flex;
+    align-items: center;
+    color: var(--text-3);
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+    padding-right: 8px;
+}
+.pub .nw-chip:not(:has(.nw-chip__follow)) .nw-chip__count {
+    padding-right: 12px;
+}
+.pub .nw-chip__follow {
+    display: inline-grid;
+    place-items: center;
+    min-width: 44px;
+    min-height: 44px;
+    margin-left: -4px;
+    color: var(--accent);
+    font-size: 20px;
+    font-weight: 700;
+    text-decoration: none;
+    border-radius: 999px;
+}
+.pub .nw-chip__follow:hover {
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
 }
 .pub mark {
     padding: 0 2px;
@@ -5470,9 +5550,6 @@ a.tvc-row__show:hover {
         min-width: 0;
         margin-top: 0;
     }
-    .pub .nf-brief__tiles {
-        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    }
 }
 @media (min-width: 2560px) {
     .pub .spf-cols {
@@ -5492,6 +5569,39 @@ a.tvc-row__show:hover {
     }
 }
 
+/* ---------- News front, 1920px and up: the side region cascades (news-front-revised-handoff.md) ---------- */
+.pub .nw-cascade > .nf-desk {
+    display: none; /* below 1920 the desks sit in the row under the columns */
+}
+@media (min-width: 1920px) {
+    .pub .spf-side.nw-cascade {
+        display: block; /* undo the 1920 grid */
+        column-count: 2;
+        column-gap: 40px;
+        column-rule: 1px solid var(--row-border);
+    }
+    .pub .nw-cascade > * {
+        break-inside: avoid;
+        margin: 0 0 28px;
+    }
+    .pub .nw-cascade > .nf-desk {
+        display: block;
+    }
+    .pub .spf-cols:has(.nw-cascade) ~ .nf-desks {
+        display: none; /* the desks are in the cascade now */
+    }
+    /* The 4K guide's left rule between side-by-side boxes isn't needed with column rules. */
+    .pub .nw-cascade .nf-side + .nf-side {
+        padding-left: 0;
+        border-left: 0;
+    }
+}
+@media (min-width: 2560px) {
+    .pub .spf-side.nw-cascade {
+        column-count: 3;
+    }
+}
+
 /* ---------- Tech front, 1920px and up: day so far · lead · desks · Just released + videos (docs/tech/tech-05-front-wide.md) ---------- */
 @media (min-width: 1920px) {
     .pub .tc-front {
@@ -5503,7 +5613,7 @@ a.tvc-row__show:hover {
         grid-column: 1 / -1;
     }
     .pub .tc-front > .spf-cols {
-        display: contents;          /* its three children join the .tc-front grid */
+        display: contents; /* its three children join the .tc-front grid */
     }
 
     /* Row 2: the four columns. */
@@ -5532,14 +5642,14 @@ a.tvc-row__show:hover {
     .pub .tc-front > .spf-cols > .spf-side {
         grid-column: 4;
         grid-row: 2;
-        display: flex;              /* undo the shared two-inner-column split */
+        display: flex; /* undo the shared two-inner-column split */
         flex-direction: column;
         gap: 26px;
         padding: 20px 0 0 24px;
         border-left: 1px solid var(--row-border);
     }
     .pub .tc-front > .spf-cols > .spf-side .nf-side + .nf-side {
-        padding-left: 0;            /* the shared rule indents the second box as a second column */
+        padding-left: 0; /* the shared rule indents the second box as a second column */
         border-left: 0;
     }
     .pub .tc-front > .tc-week-banner {
@@ -5570,19 +5680,22 @@ a.tvc-row__show:hover {
         align-items: start;
     }
     .pub .ef-screen__list {
-        grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); /* kept from the old block: 4 at 1920, 6 at 2560 */
+        grid-template-columns: repeat(
+            auto-fill,
+            minmax(380px, 1fr)
+        ); /* kept from the old block: 4 at 1920, 6 at 2560 */
     }
 
     /* Column 1: the lead at a sensible size; Latest headlines hidden (the categories show the same stories). */
-    .pub .ef-main .ef-lead__image {
+    .pub .ef-cols > .ef-main .ef-lead__image {
         height: auto;
         aspect-ratio: 16 / 9;
     }
-    .pub .ef-main .ef-lead__title {
+    .pub .ef-cols > .ef-main .ef-lead__title {
         font-size: 34px;
         line-height: 1.1;
     }
-    .pub .ef-main :is(.ef-headlines, .ef-label:has(+ .ef-headlines)) {
+    .pub .ef-cols > .ef-main :is(.ef-headlines, .ef-label:has(+ .ef-headlines)) {
         display: none;
     }
 
@@ -5743,7 +5856,19 @@ a.tvc-row__show:hover {
     border-bottom-color: var(--dot, var(--text));
     color: var(--dot, var(--text));
 }
-.pub .tc-covered .ef-kicker {
+.pub .cv-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+.pub .cv-item {
+    padding: 8px 0 0;
+    border-bottom: 1px solid var(--row-border);
+}
+.pub .cv-item:last-child {
+    border-bottom: 0;
+}
+.pub :is(.cv-item, .tc-covered) .ef-kicker {
     margin: 0 0 2px;
     color: var(--dot, var(--accent));
     font-size: 11px;
@@ -5751,12 +5876,12 @@ a.tvc-row__show:hover {
     letter-spacing: 0.08em;
     text-transform: uppercase;
 }
-.pub .tc-covered .ef-headlines__title {
+.pub :is(.cv-item, .tc-covered) .ef-headlines__title {
     display: inline-flex;
     align-items: center;
     min-height: 44px;
 }
-.pub .tc-covered__sources {
+.pub :is(.cv-item__sources, .tc-covered__sources) {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
@@ -5766,15 +5891,15 @@ a.tvc-row__show:hover {
     font-size: 12px;
     line-height: 1.4;
 }
-.pub .tc-covered__sources b {
+.pub :is(.cv-item__sources, .tc-covered__sources) b {
     color: var(--text);
     font-weight: 800;
 }
-.pub .tc-badges {
+.pub :is(.cv-badges, .tc-badges) {
     display: inline-flex;
     align-items: center;
 }
-.pub .tc-badge {
+.pub :is(.cv-badge, .tc-badge) {
     display: inline-grid;
     place-items: center;
     width: 22px;
@@ -5787,10 +5912,10 @@ a.tvc-row__show:hover {
     font-weight: 800;
     letter-spacing: 0.02em;
 }
-:root[data-theme='dark'] .pub .tc-badge {
+:root[data-theme='dark'] .pub :is(.cv-badge, .tc-badge) {
     color: #0b1120;
 }
-.pub .tc-badge + .tc-badge {
+.pub :is(.cv-badge, .tc-badge) + :is(.cv-badge, .tc-badge) {
     margin-left: -6px;
 }
 .pub .tc-videos .yt-row {
@@ -5949,7 +6074,7 @@ a.tvc-row__show:hover {
 @media (min-width: 744px) {
     :root:is([data-color-scheme], :not([data-color-scheme])) .pub .td-more-cards .hc-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
-        grid-auto-flow: row dense;           /* photo cards stay packed when a text row spans the width */
+        grid-auto-flow: row dense; /* photo cards stay packed when a text row spans the width */
         gap: 16px;
     }
     :root:is([data-color-scheme], :not([data-color-scheme])) .pub .td-more-cards .hc-card {
@@ -5986,13 +6111,20 @@ a.tvc-row__show:hover {
         :is([data-article-media], .summary) {
         display: none;
     }
-    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .td-more-cards .hc-card[data-image-layout='none'] .body {
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .td-more-cards
+        .hc-card[data-image-layout='none']
+        .body {
         padding: 10px 0;
     }
 }
 @media (min-width: 1024px) {
     :root:is([data-color-scheme], :not([data-color-scheme])) .pub .td-more-cards .hc-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));   /* beats headline-cards.css's 3 columns in the narrower main column */
+        grid-template-columns: repeat(
+            2,
+            minmax(0, 1fr)
+        ); /* beats headline-cards.css's 3 columns in the narrower main column */
     }
 }
 @media (min-width: 1180px) {

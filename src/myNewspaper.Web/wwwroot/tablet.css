@@ -1031,6 +1031,12 @@
         flex-direction: column;
         gap: 24px;
     }
+    .pub .tab-desktop .nw-cascade {
+        column-count: 1;
+    }
+    .pub .tab-desktop .nw-cascade > .nf-desk {
+        display: none;
+    }
     .pub .tab-desktop .nf-side + .nf-side {
         padding-top: 0;
         border-top: 0;
@@ -2212,7 +2218,7 @@
         gap: 8px;
     }
     .pub .tab-desktop .hc-jump__label br {
-        display: none;                       /* "Today by desk" on one line */
+        display: none; /* "Today by desk" on one line */
     }
     .pub .tab-desktop .hc-jump__row + .hc-jump__label {
         margin-top: 8px;
@@ -2224,11 +2230,21 @@
         grid-template-columns: minmax(0, 1fr);
         grid-template-rows: none;
     }
-    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .tab-desktop .hc-feed :is(.hc-lead, .hc-under, .hc-latest) {
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .tab-desktop
+        .hc-feed
+        :is(.hc-lead, .hc-under, .hc-latest) {
         grid-column: 1;
         grid-row: auto;
     }
-    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .tab-desktop .hc-feed .hc-lead .hc-card [data-article-media] {
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .tab-desktop
+        .hc-feed
+        .hc-lead
+        .hc-card
+        [data-article-media] {
         aspect-ratio: 21 / 9;
     }
     :root:is([data-color-scheme], :not([data-color-scheme])) .pub .tab-desktop .hc-feed .hc-lead .hc-card .title {

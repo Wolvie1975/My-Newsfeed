@@ -6,6 +6,7 @@ namespace myNewspaper.Shared.Data;
 
 public sealed record LocalForecast(string Name, int Temperature, string Unit, string Summary, string Wind, DateTimeOffset Starts, bool IsDaytime = true);
 public sealed record LocalWeatherPage(IReadOnlyList<LocalForecast> Periods, DateTimeOffset? Updated, bool Stale, string Location = "Kansas City", double Latitude = 39.0997, double Longitude = -94.5786);
+public sealed record WeatherAlert(string Event, string Headline, string Severity, DateTimeOffset? Ends);
 
 public sealed class LocalWeather(IHttpClientFactory clients, IMemoryCache cache, ILogger<LocalWeather> logger) : IDisposable
 {
@@ -73,5 +74,57 @@ public sealed class LocalWeather(IHttpClientFactory clients, IMemoryCache cache,
             }
         }
         finally { gate.Release(); }
+    }
+
+    /// <summary>Active NWS alerts for the forecast point; empty on any failure. Cached 5 minutes.</summary>
+    public async Task<IReadOnlyList<WeatherAlert>> GetAlertsAsync(CancellationToken cancellationToken, double? latitude = null, double? longitude = null)
+    {
+        var (lat, lon) = Coordinates(latitude, longitude);
+        var custom = latitude is not null;
+        var key = custom ? FormattableString.Invariant($"alerts:{lat:F2}:{lon:F2}") : "kc-alerts";
+        if (cache.TryGetValue<IReadOnlyList<WeatherAlert>>(key, out var cached) && cached is not null)
+            return cached;
+
+        try
+        {
+            var http = clients.CreateClient("local-weather");
+            var pointUrl = "https://api.weather.gov/alerts/active?point=" + lat.ToString(CultureInfo.InvariantCulture) + "," + lon.ToString(CultureInfo.InvariantCulture);
+            if (!Uri.TryCreate(pointUrl, UriKind.Absolute, out var uri) || uri.Scheme != "https" || uri.Host != "api.weather.gov")
+                return [];
+
+            using var response = await http.GetAsync(uri, cancellationToken);
+            if (!response.IsSuccessStatusCode)
+                return [];
+
+            using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync(cancellationToken));
+            var root = doc.RootElement;
+            if (!root.TryGetProperty("features", out var features) || features.ValueKind != JsonValueKind.Array)
+                return [];
+
+            var list = new List<WeatherAlert>();
+            foreach (var feature in features.EnumerateArray())
+            {
+                if (!feature.TryGetProperty("properties", out var props)) continue;
+                var evt = props.TryGetProperty("event", out var e) ? e.GetString() ?? "" : "";
+                var headline = props.TryGetProperty("headline", out var h) ? h.GetString() ?? "" : "";
+                var severity = props.TryGetProperty("severity", out var s) ? s.GetString() ?? "" : "";
+                DateTimeOffset? ends = null;
+                if (props.TryGetProperty("ends", out var endEl) && endEl.TryGetDateTimeOffset(out var endDate))
+                    ends = endDate;
+                else if (props.TryGetProperty("expires", out var expEl) && expEl.TryGetDateTimeOffset(out var expDate))
+                    ends = expDate;
+
+                list.Add(new WeatherAlert(evt, headline, severity, ends));
+            }
+
+            IReadOnlyList<WeatherAlert> result = list;
+            cache.Set(key, result, TimeSpan.FromMinutes(5));
+            return result;
+        }
+        catch (Exception ex) when (ex is HttpRequestException or JsonException or InvalidOperationException or KeyNotFoundException || ex is OperationCanceledException && !cancellationToken.IsCancellationRequested)
+        {
+            logger.LogWarning(ex, "Weather alerts unavailable");
+            return [];
+        }
     }
 }

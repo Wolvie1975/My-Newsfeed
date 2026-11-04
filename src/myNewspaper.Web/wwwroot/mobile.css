@@ -22,6 +22,7 @@
     --mx-business: #b45309;
     --mx-tech: #6d28d9;
     --mx-gain: #15803d;
+    --mx-alert: #b45309;
     --mx-serif: 'Newsreader', Georgia, serif;
 }
 :root[data-theme='dark'] .pub {
@@ -36,6 +37,7 @@
     --mx-business: #fbbf24;
     --mx-tech: #c4b5fd;
     --mx-gain: #4ade80;
+    --mx-alert: #fbbf24;
 }
 
 /* Phone-only and desktop-only wrappers. The desktop wrapper takes no box of its own, so the page's flex gaps still
@@ -640,6 +642,10 @@
 .mx-c-ink {
     --dot: var(--text);
     --edge: var(--text);
+}
+.mx-c-alert {
+    --dot: var(--mx-alert, #b45309);
+    --edge: var(--mx-alert, #b45309);
 }
 
 /* ---------------------------------------------------------------- Release 2: Home, Sports, Scoreboard */
@@ -1859,4 +1865,25 @@ span.mx-stepper__btn {
 .tc-video-card__when {
     color: var(--text-3);
     font-size: 12px;
+}
+
+/* News front: Trending in headlines (phone) */
+.pub .nw-trending--phone {
+    padding: 16px 16px 4px;
+}
+.pub .nw-trending--phone .mx-head {
+    margin-bottom: 8px;
+}
+.pub .nw-chips-rail {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    padding: 2px 0 8px;
+    margin: 0;
+    list-style: none;
+    -webkit-overflow-scrolling: touch;
+}
+.pub .nw-chips-rail .nw-chip {
+    flex: none;
 }

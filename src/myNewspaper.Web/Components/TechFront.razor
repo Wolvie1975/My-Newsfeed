@@ -73,13 +73,7 @@
                     </div>
                 </article>
 
-                @if (covered.Count > 0)
-                {
-                    <h3 class="ef-label">Most covered</h3>
-                    <ul class="ef-headlines spf-headlines tc-covered-list">
-                        @foreach (var story in covered.Take(2)) { @CoveredRow(story) }
-                    </ul>
-                }
+                <CoveredList Items="@covered.Take(2).ToList()" />
 
                 @if (stories.Count > 1)
                 {
@@ -208,9 +202,7 @@
     {
         <section class="mx-section" aria-labelledby="tech-covered-m">
             <div class="mx-head"><h2 id="tech-covered-m">Most covered</h2></div>
-            <ul class="ef-headlines spf-headlines tc-covered-list">
-                @CoveredRow(covered[0])
-            </ul>
+            <CoveredList Items="@covered.Take(1).ToList()" ShowHeading="false" />
         </section>
     }
 
@@ -348,16 +340,6 @@
 
     private static RenderFragment Tile(string href, string color, string label, string value, string sub) =>
         @<a class="nf-tile @color" href="@href"><span class="nf-tile__label">@label</span><b class="nf-tile__value">@value</b><span class="nf-tile__sub">@sub</span></a>;
-
-    private RenderFragment CoveredRow(CoveredStory story) =>
-        @<li class="tc-covered @PhoneColors.ForCategory(story.Lead.CategoryName)">
-            <p class="ef-kicker">@Desk(story.Lead)</p>
-            <a class="ef-headlines__title" href="@Href(story.Lead)" target="_blank" rel="noopener noreferrer">@Title(story.Lead)</a>
-            <span class="tc-covered__sources">
-                <span class="tc-badges" aria-hidden="true">@foreach (var s in story.SourceMarks.Take(5)) { <span class="tc-badge @PhoneColors.ForCategory(s.Category)">@s.Mark</span> }</span>
-                <b>@story.Sources sources</b> · @string.Join(", ", story.SourceNames)
-            </span>
-        </li>;
 
     private RenderFragment Headline(FeedItem item, bool withCategory = false) =>
         @<li class="@PhoneColors.ForCategory(item.CategoryName)" data-news-url="@FeedQuery.SafeHref(item.Url)" data-news-source="@Source(item)">
