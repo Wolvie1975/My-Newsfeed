@@ -6,6 +6,40 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
+## Public Bootstrap subset — November 4, 2026 (America/Chicago)
+
+The public site now loads `lib/bootstrap/bootstrap-public-subset.css` (21 KB: Bootstrap 5.3.3's root variables, base
+element reset, and the classes used by `SeriesFollowForm` and the error page, copied unchanged) instead of
+`bootstrap.min.css` (233 KB). The 42 unreferenced vendored Bootstrap files were removed; the admin site still loads
+the full `bootstrap.min.css`, which is kept with its source map. Commit `dad7e2e`. No database change.
+
+Validation before deployment (local build against the live database, profiles off unless noted):
+
+- Computed styles of every element and `::before`/`::after`, subset vs full Bootstrap, on all 49 static public routes
+  at 390 and 1440px in light and dark: 194/196 identical. The two differences were content timing (a new lead
+  story; image-size variables set after a photo loaded) and were identical on recheck. Profile-only routes returned
+  404 with profiles off.
+- `/tv/track` after a real search (alert, results table, focused input, Follow buttons not clicked) at 320, 390, 430
+  and 1440px in light and dark: identical computed styles and pixel-identical screenshots.
+- `/editions` and `/editions/new` with profiles on: identical. The 16 device rows created were deleted.
+- Solution build: 0 warnings. .NET tests: 1023 passed; 71 integration tests not run (no test database configured).
+
+Deployment: public image `mynewspaper-web:bootstrap-subset-20261104` (`abb0f306a35c`) via `docker compose up -d
+--no-build web`; Compose settings matched the live container (environment, ports, `/keys` volume, network aliases,
+restart policy) before rollout. Rollback image `mynewspaper-web:before-bootstrap-subset-20261104` (`385a5c5d90f8`).
+Admin container unchanged.
+
+Live verification (`http://mynewsfeed-web:8080`, signed in with a temporary `zz bootstrap check` profile created
+through `/editions/new`): `/healthz` 200; `/`, `/news`, `/scoreboard`, `/watch`, `/tv/track`, `/settings`, `/tech`,
+`/entertainment` and `/editions` at 320, 390, 430 and 1440px in light and dark, 72/72 passed: subset stylesheet
+loaded, no horizontal overflow, no script errors, computed styles identical to full Bootstrap. With profiles on,
+`/tv/track` renders the newer search list (not `SeriesFollowForm`); a live search returned 7 results at 390px.
+Deleted removed-file URLs return 401/404 as expected; the admin site still serves `bootstrap.min.css`. Clean-up:
+the temporary `zz` profiles (2433, 2434) and every device created during the checks were deleted; afterwards the
+household had 1 profile (Jason, still the admin profile), 6 devices, 1 unassigned, as before the checks.
+
+Not verified live: `/requests` and `/news/topics/follow` (no Bootstrap classes; same element-level rules).
+
 ## Tech desks, live data & weekly roundups — October 31, 2026 (Central)
 
 Implemented Parts 3, 4, and 5 of the Tech section (`docs/tech/tech-03-desks.md`,
