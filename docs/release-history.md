@@ -6,6 +6,33 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
+## Clean-up step 3: null checks, namespaces and class names — November 4, 2026 (America/Chicago)
+
+Commits `ad70d35`, `707a6c4`, `4ad6b1a`, `2eace14`. No behaviour change and no database change:
+
+- `== null` → `is null` on 95 lines. The 158 lines left are in EF expression trees, where `is null` doesn't compile
+  (CS8122). Guards: `IDE0041` at warning, and a `RepositoryHygieneTests` ratchet on the `== null` count.
+- Shared namespaces `myNewspaper.Web.*` and `myNewspaper.Hosting` → `myNewspaper.Shared.*`; `RootNamespace`
+  `myNewspaper.Shared`; Admin endpoints and tests moved to `myNewspaper.Admin.*`. Guard: `IDE0130` at warning.
+- `BoxScoresRepository` → `BoxScoreQuery`, `ScoreboardRepository` → `ScoreboardQuery`, `AdminData` → `AdminStore`,
+  `MyFollows` → `FollowStore`, `ProfilePageData` → `ProfilePageSettings`. Guard: a hygiene test rejects classes named
+  `…Repository`, `…Manager`, `…Helper(s)`, `…Data`, `…Util(s)`.
+
+Validation: build 0 warnings; 1098 .NET tests passed against `WebScraper_Test`; `dotnet format --verify-no-changes`
+clean apart from its known CS8618 noise on `WebScraperContext`.
+
+Deployment: public `mynewspaper-web:cleanup3-20261104` (`28fe86970c4d`) via Compose (environment hash unchanged);
+admin `mynewspaper-admin:cleanup3-20261104` (`4de9de53f996`) by container swap (environment hash-compared; port,
+alias, keys volume, health check and restart policy preserved). Rollback: `mynewspaper-web:before-cleanup3-20261104`
+(`4f0ab5370963`), `mynewspaper-admin:before-cleanup3-20261104` (`d2fdd8417a3e`), stopped container
+`mynewspaper-admin-before-cleanup3-20261104`.
+
+Live verification, the same checks as step 2: `/healthz` 200 on both; 17 public pages at 320, 390, 430 and 1440px in
+light and dark, 136/136 passed; Where to watch 14 titles, TV search 8 results, admin request checker and Test feed
+(15 items); admin HTTPS sign-in with the `Secure`, `HttpOnly` session cookie. Every admin page (19 routes) at 390 and
+1440px opened with no error UI, script errors or overflow (38/38). Clean-up: the temporary profile, its request and
+device were deleted through Admin; afterwards 1 profile (Jason, admin), 6 devices, 1 unassigned.
+
 ## Clean-up step 2: shared host setup — November 4, 2026 (America/Chicago)
 
 Commits `c0fcdae` (step 1, tests only) and `23c8eb1` (step 2). Both hosts now register their shared services (database,
