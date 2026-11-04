@@ -2,6 +2,5 @@
   <PropertyGroup><BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException><UserSecretsId>myNewspaper.Admin</UserSecretsId></PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../myNewspaper.Shared/myNewspaper.Shared.csproj" />
-    <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" Version="10.0.12" />
   </ItemGroup>
 </Project>

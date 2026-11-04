@@ -18,8 +18,9 @@ reviewer. Existing code is being brought into line in the clean-up steps listed 
 | `src/myNewspaper.Shared` | Data model, queries, stores, profiles, endpoints helpers, shared components and `wwwroot` | Used by both hosts. |
 
 - **[Review]** Code used by both hosts goes in Shared. Host-only code stays in its host. Registrations that both
-  hosts need belong in one Shared `IServiceCollection` extension; the current duplication between the two
-  `Program.cs` files is a known clean-up item.
+  hosts need go in `AddMyNewspaperCore()` (`src/myNewspaper.Shared/Hosting/CoreServices.cs`); each `Program.cs`
+  adds only what is specific to that host. Per-host wording (outbound User-Agents) is passed in as
+  `CoreHostLabels`, not copied.
 - **[Review]** Namespaces: Shared code currently uses `myNewspaper.Web.<Folder>`, and new Shared files keep
   that prefix so a folder doesn't mix two namespaces. Renaming Shared to `myNewspaper.Shared.<Folder>` (and setting
   its `RootNamespace` to match) is a planned single-purpose commit; until then, don't start a third scheme.
@@ -142,7 +143,7 @@ quietly come back. Update the **Status** column as each guard lands, and don't r
 | About 60 read methods with no `CancellationToken`; `CreateDbContextAsync()` without a token | General §4 | `CA2016` at `warning`; review checklist | Planned (step 5) |
 | Clock read three ways inside queries; `nowUtc`/`utcNow`/`now` parameter names | General §4 | Banned-API list blocks `DateTime.Now`, `DateTime.UtcNow`, `DateTimeOffset.UtcNow` outside the edge | Planned (step 6) |
 | Shared code in `myNewspaper.Web.*` with `RootNamespace` `myNewspaper.Common` | General §2; Solution shape above | `IDE0130` at `warning`; `RootNamespace` matches the assembly | Planned (step 3) |
-| `Web` and `Admin` `Program.cs` duplicating about 60 lines that had drifted | Solution shape above; general §5 | One `AddMyNewspaperCore()` in Shared; reviewers reject copied registrations | Planned (step 2) |
+| `Web` and `Admin` `Program.cs` duplicating about 60 lines that had drifted | Solution shape above; general §5 | One `AddMyNewspaperCore()` in Shared (`Hosting/CoreServices.cs`); reviewers reject copied registrations | Done November 4, 2026: both hosts' registrations and outbound client settings compared identical before and after, apart from Admin's duplicate `TimeProvider` registration now removed |
 | 35 breakpoint widths, an `admin-`/`adm-` split, three visually-hidden patterns | CSS section above | `tools/check-css.cjs` (run by CI) fails on unregistered widths, unregistered prefixes and copies of the clip pattern | Planned (step 8) |
 | `sa` password hard-coded in 10 test files; integration tests writing to the live database | Tests section above; general §12 | `RepositoryHygieneTests` fails on a literal `Password=`/`Pwd=` in any tracked file; `TestDatabase` always targets `WebScraper_Test` and refuses `WebScraper`; [create-test-database.sql](../deployment/create-test-database.sql) rebuilds the copy | Done November 4, 2026 for the tests. Still open: rotate the `sa` password (in Git history until October 25) and give the apps their own least-privilege SQL logins |
 | 89 browser checks with 10 viewport sets, several base-URL defaults (one production), and copied clean-up code | Tests section above; AGENTS.md | Shared `tests/browser/lib.cjs`; the check script fails on any `*.browser.cjs` that doesn't use it | Planned (step 7) |

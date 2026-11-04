@@ -1,19 +1,8 @@
-using System.Net;
 using Microsoft.AspNetCore.DataProtection;
-using Microsoft.AspNetCore.HttpOverrides;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 using myNewspaper.Admin.Components;
 using myNewspaper.Hosting;
 using myNewspaper.Web.Auth;
-using myNewspaper.Web.Data;
-using myNewspaper.Web.Data.Models;
 using myNewspaper.Web.Endpoints;
-using myNewspaper.Web.Profiles;
-using myNewspaper.Web.Requests;
-using myNewspaper.Web.Scores;
-using myNewspaper.Web.Tv;
-using myNewspaper.Web.Watching;
 
 namespace myNewspaper.Admin;
 
@@ -47,50 +36,9 @@ public partial class AdminProgram
         var protection = builder.Services.AddDataProtection().SetApplicationName("myNewspaper.Admin");
         if (builder.Configuration["DataProtection:KeysPath"] is { Length: > 0 } keys)
             protection.PersistKeysToFileSystem(new DirectoryInfo(keys));
-        builder.Services.AddDbContextFactory<WebScraperContext>(options =>
-            options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-        builder.Services.AddHealthChecks().AddDbContextCheck<WebScraperContext>();
-        builder.Services.AddSingleton(sp => FeedDates.Create(sp.GetRequiredService<IConfiguration>()["Display:TimeZone"]));
-        builder.Services.AddSingleton(TimeProvider.System);
-        builder.Services.AddMemoryCache();
-        builder.Services.Configure<ProfilesOptions>(builder.Configuration.GetSection(ProfilesOptions.Section));
-        builder.Services.AddSingleton<PasswordHasher<Profile>>();
-        builder.Services.AddSingleton<ProfilePins>();
-        builder.Services.Configure<SiteLinkOptions>(builder.Configuration.GetSection("Sites"));
-        builder.Services.AddSingleton<SiteLinks>();
-        builder.Services.AddSingleton<RequestChecks>();
-        builder.Services.AddHttpClient(RequestChecks.ClientName, client =>
-        {
-            client.Timeout = TimeSpan.FromSeconds(10);
-            client.DefaultRequestHeaders.UserAgent.ParseAdd("myNewspaper/1.0 (admin request check)");
-        }).ConfigurePrimaryHttpMessageHandler(SsrfGuard.CreateHandler);
-        builder.Services.AddSingleton<WatchCatalog>();
-        builder.Services.AddHttpClient("watch-catalog", client =>
-        {
-            client.BaseAddress = new Uri("https://api.themoviedb.org/3/");
-            client.Timeout = TimeSpan.FromSeconds(10);
-        });
-        builder.Services.Configure<ScoresOptions>(builder.Configuration.GetSection(ScoresOptions.Section));
-        builder.Services.AddHttpClient<EspnClient>(client =>
-        {
-            client.Timeout = TimeSpan.FromSeconds(30);
-            client.DefaultRequestHeaders.UserAgent.ParseAdd("myNewspaper/1.0 (admin results)");
-        }).ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AutomaticDecompression = DecompressionMethods.All });
-        builder.Services.AddSingleton<LeaguePhases>();
-        builder.Services.AddTransient<ScoresSync>();
-        builder.Services.AddHttpClient<TvmazeClient>(client =>
-        {
-            client.BaseAddress = new Uri("https://api.tvmaze.com/");
-            client.Timeout = TimeSpan.FromSeconds(15);
-            client.DefaultRequestHeaders.UserAgent.ParseAdd("myNewspaper/1.0");
-        });
-        // Only explicit admin actions use these services; scheduled workers remain in the public host.
-        builder.Services.Configure<ForwardedHeadersOptions>(options =>
-        {
-            options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
-            foreach (var proxy in builder.Configuration.GetSection("ReverseProxy:KnownProxies").GetChildren())
-                if (IPAddress.TryParse(proxy.Value, out var address)) options.KnownProxies.Add(address);
-        });
+        // Shared with the public host. Only explicit admin actions use the sync and request services here; scheduled
+        // workers remain in the public host.
+        builder.Services.AddMyNewspaperCore(builder.Configuration, CoreHostLabels.Admin);
         var app = builder.Build();
         app.UseForwardedHeaders();
         if (!app.Environment.IsDevelopment())

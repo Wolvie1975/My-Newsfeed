@@ -9,7 +9,7 @@ namespace myNewspaper.Tests;
 /// </summary>
 public partial class RepositoryHygieneTests
 {
-    // Connection-string style "Password=value" / "Pwd=value". Code that reads a setting (password = process.env…)
+    // Connection-string style "Password=<value>" / "Pwd=<value>". Code that reads a setting (password = process.env…)
     // has spaces around '=' and isn't matched; CHANGE_ME is the documented placeholder in .env.example.
     [GeneratedRegex(@"(?i)(?<![\w])(password|pwd)=(?!CHANGE_ME\b)([^;""'`\s<>*{}]{3,})")]
     private static partial Regex LiteralPassword();
