@@ -61,7 +61,7 @@ else
                 <option value="">No category (shown under Other)</option>
                 @foreach (var category in categories)
                 {
-                    <option value="@category.Id">@category.CategoryName</option>
+                    <option value="@category.Id">@category.Name</option>
                 }
             </InputSelect>
             <div class="form-text">The YouTube page's category tabs. Categories themselves are added by the scraper.</div>
@@ -115,10 +115,10 @@ else
         public bool IsHouseholdPick { get; set; }
     }
 
-    private IReadOnlyList<YoutubeCategory> categories = [];
+    private IReadOnlyList<YoutubeCategoryOption> categories = [];
 
     private FeedForm? form;
-    private YoutubeVideoFeed? existing;
+    private AdminYoutubeFeedDetail? existing;
     private int videoCount;
     private bool notFound;
     private bool saving;
@@ -130,21 +130,21 @@ else
     protected override async Task OnParametersSetAsync()
     {
         await using var db = await Factory.CreateDbContextAsync();
-        categories = await db.YoutubeCategories.AsNoTracking().OrderBy(c => c.CategoryName).ToListAsync();
-        if (IsNew)
+        categories = await AdminQuery.YoutubeCategoryOptionsAsync(db);
+        if (Id is not { } id)
         {
             form = new FeedForm();
             return;
         }
 
-        existing = await db.YoutubeVideoFeeds.AsNoTracking().FirstOrDefaultAsync(f => f.Id == Id);
+        existing = await AdminQuery.YoutubeFeedAsync(db, id);
         if (existing is null)
         {
             notFound = true;
             return;
         }
 
-        videoCount = await db.YouTubeVideos.CountAsync(v => v.YoutubeVideoFeedId == Id);
+        videoCount = existing.VideoCount;
         channelLocked = videoCount > 0;
         form = new FeedForm
         {
@@ -180,34 +180,12 @@ else
         try
         {
             await using var db = await Factory.CreateDbContextAsync();
-            if (IsNew)
+            if (!await AdminStore.SaveYoutubeFeedAsync(db, Id, channelId, name, url, categoryId, form.IsHouseholdPick, keepChannelId: channelLocked))
             {
-                db.YoutubeVideoFeeds.Add(new YoutubeVideoFeed
-                {
-                    ChannelId = channelId, ChannelName = name, Url = url, YoutubeCategoryId = categoryId, IsHouseholdPick = form.IsHouseholdPick,
-                });
-            }
-            else
-            {
-                var feed = await db.YoutubeVideoFeeds.FindAsync(Id);
-                if (feed is null)
-                {
-                    notFound = true;
-                    return;
-                }
-
-                if (!channelLocked)
-                {
-                    feed.ChannelId = channelId;
-                }
-
-                feed.ChannelName = name;
-                feed.Url = url;
-                feed.YoutubeCategoryId = categoryId;
-                feed.IsHouseholdPick = form.IsHouseholdPick;
+                notFound = true;
+                return;
             }
 
-            await db.SaveChangesAsync();
             // A new feed is a household channel: turn it on for everyone now rather than at the next 15-minute pass.
             await myNewspaper.Shared.Profiles.HouseholdChannels.RunOnceAsync(db);
             Nav.NavigateTo("admin/youtube-feeds");

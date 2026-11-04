@@ -45,9 +45,9 @@ else
             <dd class="col-sm-9 text-break">@existing.VideoId</dd>
             <dt class="col-sm-3">Channel</dt>
             <dd class="col-sm-9">
-                @(currentFeed?.ChannelName ?? "No feed") <span class="text-break text-muted">(@existing.ChannelId)</span>
+                @(currentFeed?.Name ?? "No feed") <span class="text-break text-muted">(@existing.ChannelId)</span>
                 @if (!string.IsNullOrWhiteSpace(existing.ChannelName)
-                    && !string.Equals(existing.ChannelName, currentFeed?.ChannelName, StringComparison.OrdinalIgnoreCase))
+                    && !string.Equals(existing.ChannelName, currentFeed?.Name, StringComparison.OrdinalIgnoreCase))
                 {
                     <div class="text-muted">YouTube author: @existing.ChannelName</div>
                 }
@@ -74,7 +74,7 @@ else
                 <option value="">No feed</option>
                 @foreach (var feed in feeds)
                 {
-                    <option value="@feed.Id">@feed.ChannelName (@feed.ChannelId)</option>
+                    <option value="@feed.Id">@feed.Name (@feed.ChannelId)</option>
                 }
             </InputSelect>
             @if (feeds.Count == 0)
@@ -104,34 +104,30 @@ else
         public string? FeedId { get; set; }
     }
 
-    private sealed record FeedOption(int Id, string ChannelId, string ChannelName);
+    
 
     private readonly VideoForm form = new();
-    private YouTubeVideo? existing;
-    private List<FeedOption> feeds = [];
+    private AdminYoutubeVideoDetail? existing;
+    private IReadOnlyList<YoutubeFeedOption> feeds = [];
     private bool notFound;
     private bool saving;
     private string? error;
 
-    private FeedOption? currentFeed => feeds.FirstOrDefault(f => f.Id == existing?.YoutubeVideoFeedId);
+    private YoutubeFeedOption? currentFeed => feeds.FirstOrDefault(f => f.Id == existing?.YoutubeVideoFeedId);
 
     protected override async Task OnParametersSetAsync()
     {
         notFound = false;
         error = null;
         await using var db = await Factory.CreateDbContextAsync();
-        existing = await db.YouTubeVideos.AsNoTracking().FirstOrDefaultAsync(v => v.Id == Id);
+        existing = await AdminQuery.YoutubeVideoAsync(db, Id);
         if (existing is null)
         {
             notFound = true;
             return;
         }
 
-        feeds = await db.YoutubeVideoFeeds.AsNoTracking()
-            .Where(f => f.ChannelId == existing.ChannelId)
-            .OrderBy(f => f.ChannelName ?? f.ChannelId)
-            .Select(f => new FeedOption(f.Id, f.ChannelId, f.ChannelName ?? f.ChannelId))
-            .ToListAsync();
+        feeds = await AdminQuery.YoutubeFeedOptionsAsync(db, existing.ChannelId);
 
         form.FeedId = existing.YoutubeVideoFeedId?.ToString();
     }
@@ -143,12 +139,7 @@ else
         try
         {
             await using var db = await Factory.CreateDbContextAsync();
-            var video = await db.YouTubeVideos.FindAsync(Id);
-            if (video is null)
-            {
-                notFound = true;
-                return;
-            }
+            
 
             if (!await AdminStore.AssignYoutubeVideoFeedAsync(db, Id, int.TryParse(form.FeedId, out var feedId) ? feedId : null))
             { notFound = true; return; }

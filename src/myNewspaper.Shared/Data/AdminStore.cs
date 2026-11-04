@@ -181,6 +181,42 @@ public static class AdminStore
         return new YoutubeSyncResult(created, linked);
     }
 
+    /// <summary>
+    /// Adds a feed (<paramref name="id"/> null) or updates one; <paramref name="keepChannelId"/> leaves an existing
+    /// feed's channel unchanged (it already has videos). False when the feed to update no longer exists. A duplicate
+    /// channel surfaces as <see cref="DbUpdateException"/> (<see cref="IsUniqueViolation"/>).
+    /// </summary>
+    public static async Task<bool> SaveYoutubeFeedAsync(WebScraperContext db, int? id, string channelId, string? name, string url,
+        int? categoryId, bool householdPick, bool keepChannelId, CancellationToken ct = default)
+    {
+        if (id is null)
+        {
+            db.YoutubeVideoFeeds.Add(new Models.YoutubeVideoFeed
+            {
+                ChannelId = channelId,
+                ChannelName = name,
+                Url = url,
+                YoutubeCategoryId = categoryId,
+                IsHouseholdPick = householdPick,
+            });
+        }
+        else
+        {
+            var feed = await db.YoutubeVideoFeeds.FindAsync([id.Value], ct);
+            if (feed is null) return false;
+            if (!keepChannelId) feed.ChannelId = channelId;
+            feed.ChannelName = name;
+            feed.Url = url;
+            feed.YoutubeCategoryId = categoryId;
+            feed.IsHouseholdPick = householdPick;
+        }
+        await db.SaveChangesAsync(ct);
+        return true;
+    }
+
+    public static async Task DeleteYoutubeVideoAsync(WebScraperContext db, int id, CancellationToken ct = default) =>
+        await db.YouTubeVideos.Where(v => v.Id == id).ExecuteDeleteAsync(ct);
+
     // ---- Sports event types -------------------------------------------------------------------------------------------
 
     /// <summary>The website part of an address, lower-cased and without a leading "www.", or null when it isn't a URL.</summary>

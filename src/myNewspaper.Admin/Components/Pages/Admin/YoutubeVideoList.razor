@@ -137,20 +137,18 @@ else
 @code {
     private const int PageSize = 25;
 
-    private sealed record FeedOption(int Id, string Name);
+    
 
-    private sealed record VideoRow(
-        int Id, string VideoId, string Title, string Url, string? ThumbnailUrl, string? ChannelName,
-        int? FeedId, string? FeedName, DateTime PublishedAt, long? Views, decimal? RatingAverage, int? RatingCount);
+    
 
     // Query values arrive as text and are parsed leniently: a hand-edited "?feedId=abc" must not throw.
     [SupplyParameterFromQuery(Name = "feedId")] private string? FeedIdText { get; set; }
 
     private int? FeedIdQuery => int.TryParse(FeedIdText, out var id) ? id : null;
 
-    private List<FeedOption> feeds = [];
-    private List<VideoRow>? rows;
-    private VideoRow? pendingDelete;
+    private IReadOnlyList<YoutubeFeedOption> feeds = [];
+    private IReadOnlyList<AdminYoutubeVideoRow>? rows;
+    private AdminYoutubeVideoRow? pendingDelete;
     private string? message;
 
     // feedFilter is bound to the <select>: "" = all feeds, "none" = videos with no feed, otherwise a feed ID.
@@ -165,10 +163,7 @@ else
     protected override async Task OnInitializedAsync()
     {
         await using var db = await Factory.CreateDbContextAsync();
-        feeds = await db.YoutubeVideoFeeds.AsNoTracking()
-            .OrderBy(f => f.ChannelName ?? f.ChannelId)
-            .Select(f => new FeedOption(f.Id, f.ChannelName ?? f.ChannelId))
-            .ToListAsync();
+        feeds = await AdminQuery.YoutubeFeedOptionsAsync(db);
 
         if (FeedIdQuery is int id && feeds.Any(f => f.Id == id))
         {
@@ -181,52 +176,8 @@ else
     private async Task LoadAsync()
     {
         await using var db = await Factory.CreateDbContextAsync();
-        IQueryable<YouTubeVideo> query = db.YouTubeVideos.AsNoTracking();
-
-        if (feedFilter == "none")
-        {
-            query = query.Where(v => v.YoutubeVideoFeedId == null);
-        }
-        else if (int.TryParse(feedFilter, out var feedId))
-        {
-            query = query.Where(v => v.YoutubeVideoFeedId == feedId);
-        }
-
-        if (!string.IsNullOrEmpty(search))
-        {
-            query = query.Where(v => v.Title.Contains(search) || v.VideoId.Contains(search)
-                || (v.ChannelName != null && v.ChannelName.Contains(search))
-                || (v.YoutubeVideoFeed != null && v.YoutubeVideoFeed.ChannelName != null
-                    && v.YoutubeVideoFeed.ChannelName.Contains(search)));
-        }
-
-        total = await query.CountAsync();
-
-        // Id is the tiebreaker so paging is stable when the sort column has duplicates or nulls.
-        var ordered = (sortColumn, sortDescending) switch
-        {
-            ("title", false) => query.OrderBy(v => v.Title).ThenBy(v => v.Id),
-            ("title", true) => query.OrderByDescending(v => v.Title).ThenBy(v => v.Id),
-            ("channel", false) => query.OrderBy(v => v.YoutubeVideoFeed != null ? (v.YoutubeVideoFeed.ChannelName ?? v.YoutubeVideoFeed.ChannelId) : v.ChannelName).ThenBy(v => v.Id),
-            ("channel", true) => query.OrderByDescending(v => v.YoutubeVideoFeed != null ? (v.YoutubeVideoFeed.ChannelName ?? v.YoutubeVideoFeed.ChannelId) : v.ChannelName).ThenBy(v => v.Id),
-            ("views", false) => query.OrderBy(v => v.ViewCount).ThenBy(v => v.Id),
-            ("views", true) => query.OrderByDescending(v => v.ViewCount).ThenBy(v => v.Id),
-            (_, false) => query.OrderBy(v => v.PublishedAt).ThenBy(v => v.Id),
-            _ => query.OrderByDescending(v => v.PublishedAt).ThenBy(v => v.Id),
-        };
-
-        // A delete or filter change can leave the current page past the end.
-        var lastPage = Math.Max(0, (total - 1) / PageSize);
-        pageIndex = Math.Min(pageIndex, lastPage);
-
-        rows = await ordered
-            .Skip(pageIndex * PageSize).Take(PageSize)
-            .Select(v => new VideoRow(
-                v.Id, v.VideoId, v.Title, v.Url, v.ThumbnailUrl, v.ChannelName,
-                v.YoutubeVideoFeedId,
-                v.YoutubeVideoFeed != null ? (v.YoutubeVideoFeed.ChannelName ?? v.YoutubeVideoFeed.ChannelId) : null,
-                v.PublishedAt, v.ViewCount, v.RatingAverage, v.RatingCount))
-            .ToListAsync();
+        var list = await AdminQuery.YoutubeVideosAsync(db, feedFilter, search, sortColumn, sortDescending, pageIndex, PageSize);
+        (rows, total, pageIndex) = (list.Rows, list.Total, list.PageIndex);
     }
 
     private async Task SearchAsync()
@@ -266,7 +217,7 @@ else
         await LoadAsync();
     }
 
-    private void StartDelete(VideoRow row)
+    private void StartDelete(AdminYoutubeVideoRow row)
     {
         message = null;
         pendingDelete = row;
@@ -280,7 +231,7 @@ else
         }
 
         await using var db = await Factory.CreateDbContextAsync();
-        await db.YouTubeVideos.Where(v => v.Id == target.Id).ExecuteDeleteAsync();
+        await AdminStore.DeleteYoutubeVideoAsync(db, target.Id);
         message = $"Deleted “{target.Title}”.";
         pendingDelete = null;
         await LoadAsync();

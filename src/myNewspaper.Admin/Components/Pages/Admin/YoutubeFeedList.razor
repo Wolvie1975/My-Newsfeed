@@ -127,13 +127,9 @@ else
         finally { paging = false; }
     }
 
-    private sealed record FeedRow(int Id, string ChannelId, string? ChannelName, string Url, DateTime DateAdded, int VideoCount, string? Category = null)
-    {
-        public string Name => string.IsNullOrWhiteSpace(ChannelName) ? ChannelId : ChannelName;
-    }
 
-    private List<FeedRow>? rows;
-    private FeedRow? pendingDelete;
+    private IReadOnlyList<AdminYoutubeFeedRow>? rows;
+    private AdminYoutubeFeedRow? pendingDelete;
     private string? message;
     private string messageKind = "success";
     private int unlinkedVideos;
@@ -145,22 +141,8 @@ else
     private async Task LoadAsync()
     {
         await using var db = await Factory.CreateDbContextAsync();
-        totalRows = await db.YoutubeVideoFeeds.CountAsync();
-        pageIndex = Math.Min(pageIndex, Math.Max(0, (totalRows - 1) / PageSize));
-        rows = await db.YoutubeVideoFeeds
-            .AsNoTracking()
-            .OrderBy(f => f.ChannelName ?? f.ChannelId).ThenBy(f => f.Id)
-            .Skip(pageIndex * PageSize).Take(PageSize)
-            .Select(f => new FeedRow(f.Id, f.ChannelId, f.ChannelName, f.Url, f.DateAdded, f.YouTubeVideos.Count,
-                f.YoutubeCategory != null ? f.YoutubeCategory.CategoryName : null))
-            .ToListAsync();
-
-        unlinkedVideos = await db.YouTubeVideos.CountAsync(v => v.YoutubeVideoFeedId == null);
-        channelsWithoutFeed = await db.YouTubeVideos
-            .Where(v => !db.YoutubeVideoFeeds.Any(f => f.ChannelId == v.ChannelId))
-            .Select(v => v.ChannelId)
-            .Distinct()
-            .CountAsync();
+        var list = await AdminQuery.YoutubeFeedsAsync(db, pageIndex, PageSize);
+        (rows, totalRows, pageIndex, unlinkedVideos, channelsWithoutFeed) = (list.Rows, list.Total, list.PageIndex, list.UnlinkedVideos, list.ChannelsWithoutFeed);
     }
 
     private async Task SyncAsync()
@@ -181,7 +163,7 @@ else
         await LoadAsync();
     }
 
-    private void StartDelete(FeedRow row)
+    private void StartDelete(AdminYoutubeFeedRow row)
     {
         message = null;
         pendingDelete = row;
