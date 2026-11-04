@@ -6,6 +6,46 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
+## Security quick fixes and picker error banner — November 4, 2026 (America/Chicago)
+
+From the November 4 security review (commits `6121778`, `3e97b9d`):
+
+- **Antiforgery on no-field form posts.** `UseAntiforgery` only records the result for endpoints that bind no form
+  fields, so `/me/tv/{id}/unfollow`, `/me/topics/{id}/read`, `/me/topics/{id}/delete` and admin `/account/logout`
+  accepted posts without a token. A shared `RequireAntiforgery()` endpoint filter now validates them (and replaces
+  profile sign-out's hand-written check). An audit of every POST/PUT/DELETE in both apps found no others.
+- **Scoreboard "Your teams" rail** is built with DOM APIs instead of `innerHTML`, so provider team names and status
+  can't inject markup.
+- **Admin session cookie** is `Secure` (admin is served over HTTPS on 8443). Admin sign-in therefore no longer works
+  over plain `http://<host>:8086`. The antiforgery cookie is unchanged: with `SecurePolicy.Always` ASP.NET refuses to
+  issue tokens when the app sees HTTP behind the proxy, which the admin host tests caught.
+- **Picker no longer sends a locked profile's settings.** On `/editions` before the PIN, the page data, theme
+  attributes and admin link no longer include the device's last profile (`ProfileContext.IsUnlocked`); the "Sign this
+  device out" link still names it. New test: `The_picker_does_not_send_a_locked_profiles_settings_to_the_page`.
+- **Picker error banner.** `PickerLayout` copied Blazor's `#blazor-error-ui` markup without the scoped style that hides
+  it, so every picker visit showed "An unhandled error has occurred" (since `fb9d61e`). Both layouts now use one
+  `BlazorErrorUi` component carrying the markup and its style.
+- DEPLOY.md lists migrations 018, 021 and 022; ESLint ignores generated test output and is clean.
+
+Validation: build 0 warnings; .NET tests 1024 passed, 71 not run or failing for existing reasons (70 need the test
+database; one reads a sample from the git-ignored `new development/`). ESLint clean.
+
+Deployment: public `mynewspaper-web:security-20261104` (`412a0843967d`) via Compose; admin
+`mynewspaper-admin:security-20261104` (`d0b61c5f99ba`) as a new `mynewspaper-admin` container with the previous
+container's exact environment (hash-compared), port 8086, `dev-bridge` alias `admin`, keys volume, health check and
+restart policy. Rollback: images `mynewspaper-web:before-security-20261104` (`abb0f306a35c`) and
+`mynewspaper-admin:before-security-20261104` (`1122effd36ea`); stopped container
+`mynewspaper-admin-before-security-20261104` (rename it back to restore admin).
+
+Live verification over the production HTTPS addresses with temporary `zz` profiles: the four endpoints and
+`/profiles/signout` return 400 without a token, and 302/404 (reaching the handler) with a real form token; the
+scoreboard rail lists a starred game as text and shows its empty message after unstarring, with no script errors;
+the locked picker at 320/390/430px in light and dark sends `profile: null`, no theme attribute, still offers "Sign
+this device out", has no overflow and no error banner (also checked for a brand-new browser and a signed-in device);
+admin signs in over HTTPS with a `Secure`, `HttpOnly` session cookie, refuses logout without a token, and the real
+logout button signs out. All temporary profiles and the devices created (including one from a `curl` check) were
+deleted; afterwards: 1 profile (Jason, admin), 6 devices, 1 unassigned, as before.
+
 ## Public Bootstrap subset — November 4, 2026 (America/Chicago)
 
 The public site now loads `lib/bootstrap/bootstrap-public-subset.css` (21 KB: Bootstrap 5.3.3's root variables, base
