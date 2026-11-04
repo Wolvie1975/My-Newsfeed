@@ -50,3 +50,31 @@ changing anything.
    locally on `develop` (no push). Tick items off in the file as each is done.
 5. Report what was built, test and live-check results, any gaps, and the
    local commit hashes.
+
+## Browser tests clean up their own data
+
+User direction, November 4, 2026 (America/Chicago): every browser test run must
+delete the data it creates when it finishes, against any database, live
+included. On November 4, 383 leftover device rows and a stray
+`zz Columns` profile had to be removed by hand.
+
+- Run cleanup in teardown (`finally`, `after`/`afterAll`) so it also runs when a
+  check fails or the run is interrupted. If cleanup can't run, report what was
+  left behind and remove it before calling the work done.
+- Temporary profiles get a `zz ` name prefix. Delete them through Admin's profile
+  delete, which also removes their devices, follows, Saved list, topics and
+  requests.
+- Devices: any page visit from a browser without a device cookie creates a
+  `MyDailyFeedProfileDevices` row with no profile (`ProfileGateMiddleware`), so
+  every fresh browser context adds one. Reuse one context or saved storage state
+  where you can. Record the UTC start time of the run, and at the end delete the
+  unassigned devices (`ProfileId IS NULL`) created since then. Deleting a profile
+  does not remove devices that never picked one.
+- Put back anything the run changed: the household admin profile
+  (`AdminProfileId`, currently Jason), household settings, picker mode, real
+  profiles' settings and follows, request statuses, and Admin switches.
+- Never delete or change real household profiles (currently only Jason) or data
+  the run didn't create.
+- After cleanup, check the database (no `zz ` profiles, no new unassigned
+  devices, admin profile intact). Record the result in the handoff and release
+  evidence. Don't claim a cleanup you didn't verify.
