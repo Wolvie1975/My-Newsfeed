@@ -6,6 +6,39 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
+## Clean-up step 4: data access — November 4, 2026 (America/Chicago)
+
+Commits `13ce9da`, `8b0a46a`, `285b027`, `1ac3b1b`, `aadf942`, `a1db369`, `1e844c0`. No behaviour change and no
+database change:
+
+- Raw SQL only through the interpolated APIs: seven `SqlQueryRaw`/`ExecuteSqlRawAsync` uses converted, the box office
+  reads moved from `DbCommand` to `SqlQuery`, `SharedArticles` keeps its `DbCommand` with the reason. Guard:
+  `BannedSymbols.txt` (BannedApiAnalyzers, RS0030) in the application projects; both Dockerfiles copy it.
+- Inline queries moved out of 9 Web and 20 Admin files into query/store classes (new `AdminQuery` for admin reads,
+  returning records; writes in `AdminStore`). `BoxScoreQuery` and `ScoreboardQuery` are static. Guard: a hygiene test
+  fails on `db.<DbSet>` in any `.razor` file or Web/Admin host code.
+
+Validation: build 0 warnings; 1099 .NET tests passed against `WebScraper_Test`. Before deployment, old and new builds
+ran side by side against `WebScraper_Test` and rendered identically: about 250 public pages (including box scores and
+`/feed/more`) and every admin list and edit page (with a temporary profile, requests and a lock seeded, then
+removed). Admin writes were exercised on the new build and restored.
+
+Deployment: public `mynewspaper-web:data-access-20261104` (`daaf6d31b6b2`) via Compose (environment hash unchanged);
+admin `mynewspaper-admin:data-access-20261104` (`91dabf3643c9`) by container swap (environment hash-compared; port,
+alias, keys volume, health check and restart policy preserved). Rollback: `mynewspaper-web:before-data-access-20261104`
+(`28fe86970c4d`), `mynewspaper-admin:before-data-access-20261104` (`4de9de53f996`), stopped container
+`mynewspaper-admin-before-data-access-20261104`.
+
+Live verification over the production HTTPS addresses with temporary `zz` profiles: `/healthz` 200 on both; 19 public
+pages (adding College, Events, MLS and Championship results to the step 3 set) at 320, 390, 430 and 1440px in light and
+dark, 152/152 passed; three box score pages plus Sports and final scores, 40/40; Where to watch 14 titles, TV search 8
+results, admin request checker and Test feed; admin HTTPS sign-in. Admin: 19 list pages and 8 edit pages (source, page,
+feed, video, event type, event, profile, all requests) at 390 and 1440px, 53/54 passed. The one failure, video
+36379's edit page overflowing 55px at 390px, also happens on the previous build (checked side by side read-only
+against the live database): its content, not this release. Phone screenshots of Home and Scoreboard inspected.
+Clean-up: the temporary profiles (with their request and devices) were deleted through Admin; afterwards 1 profile
+(Jason, admin), 6 devices, 1 unassigned.
+
 ## Clean-up step 3: null checks, namespaces and class names — November 4, 2026 (America/Chicago)
 
 Commits `ad70d35`, `707a6c4`, `4ad6b1a`, `2eace14`. No behaviour change and no database change:
