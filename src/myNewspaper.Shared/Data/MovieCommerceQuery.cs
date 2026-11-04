@@ -1,6 +1,6 @@
-using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.WebUtilities;
 using System.Text.RegularExpressions;
+using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.EntityFrameworkCore;
 
 namespace myNewspaper.Shared.Data;
 

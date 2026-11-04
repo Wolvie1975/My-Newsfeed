@@ -1,10 +1,10 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.DependencyInjection;
-using myNewspaper.Web.Components;
-using myNewspaper.Web.Components.Events;
 using myNewspaper.Shared.Data;
 using myNewspaper.Shared.Data.Models;
+using myNewspaper.Web.Components;
+using myNewspaper.Web.Components.Events;
 
 namespace myNewspaper.Tests;
 

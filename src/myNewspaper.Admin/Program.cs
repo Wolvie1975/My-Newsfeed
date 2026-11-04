@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.DataProtection;
 using myNewspaper.Admin.Components;
 using myNewspaper.Admin.Endpoints;
-using myNewspaper.Shared.Hosting;
 using myNewspaper.Shared.Auth;
 using myNewspaper.Shared.Endpoints;
+using myNewspaper.Shared.Hosting;
 
 namespace myNewspaper.Admin;
 

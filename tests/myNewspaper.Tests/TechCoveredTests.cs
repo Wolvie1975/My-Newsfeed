@@ -1,5 +1,5 @@
-using myNewspaper.Web.Components.Phone;
 using myNewspaper.Shared.Data;
+using myNewspaper.Web.Components.Phone;
 using Xunit;
 
 namespace myNewspaper.Tests;

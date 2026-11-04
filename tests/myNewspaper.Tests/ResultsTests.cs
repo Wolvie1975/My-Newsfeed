@@ -7,10 +7,10 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using myNewspaper.Web.Components.Events;
 using myNewspaper.Shared.Data;
 using myNewspaper.Shared.Data.Models;
 using myNewspaper.Shared.Scores;
+using myNewspaper.Web.Components.Events;
 
 namespace myNewspaper.Tests;
 

@@ -2,8 +2,8 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using myNewspaper.Web.Components.Watching;
 using myNewspaper.Shared.Watching;
+using myNewspaper.Web.Components.Watching;
 namespace myNewspaper.Tests;
 
 public class TrackSeriesLinkTests

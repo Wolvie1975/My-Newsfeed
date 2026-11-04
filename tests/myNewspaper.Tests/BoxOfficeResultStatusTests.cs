@@ -2,8 +2,8 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using myNewspaper.Web.Components;
 using myNewspaper.Shared.Data;
+using myNewspaper.Web.Components;
 namespace myNewspaper.Tests;
 
 public class BoxOfficeResultStatusTests

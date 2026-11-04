@@ -1,4 +1,3 @@
-using Db = myNewspaper.Shared.Endpoints.RequestDb;
 using System.Text.Json.Nodes;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.EntityFrameworkCore;
@@ -6,6 +5,7 @@ using myNewspaper.Shared.Data;
 using myNewspaper.Shared.Endpoints;
 using myNewspaper.Shared.Profiles;
 using myNewspaper.Shared.Requests;
+using Db = myNewspaper.Shared.Endpoints.RequestDb;
 
 namespace myNewspaper.Admin.Endpoints;
 

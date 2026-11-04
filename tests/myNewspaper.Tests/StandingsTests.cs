@@ -5,9 +5,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using myNewspaper.Web.Components.Standings;
 using myNewspaper.Shared.Data;
 using myNewspaper.Shared.Data.Models;
+using myNewspaper.Web.Components.Standings;
 
 namespace myNewspaper.Tests;
 

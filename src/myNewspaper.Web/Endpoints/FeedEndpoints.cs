@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.EntityFrameworkCore;
-using myNewspaper.Web.Components.Feed;
 using myNewspaper.Shared.Data;
+using myNewspaper.Web.Components.Feed;
 
 namespace myNewspaper.Web.Endpoints;
 

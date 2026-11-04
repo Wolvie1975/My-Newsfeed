@@ -1,5 +1,5 @@
-using myNewspaper.Shared.Data;
 using System.Text.RegularExpressions;
+using myNewspaper.Shared.Data;
 
 namespace myNewspaper.Web.Components.Phone;
 
