@@ -39,7 +39,7 @@ public partial class RepositoryHygieneTests
     // are inside EF expression trees, where C# can't use an `is` pattern (CS8122). No analyzer tells the two apart, so
     // the total is a ratchet: it may go down, never up. Moving a query between files doesn't change it. If a new
     // LINQ-to-EF predicate needs one, raise the constant in the same change and say why in the commit.
-    private const int AllowedExpressionTreeNullComparisons = 158;
+    private const int AllowedExpressionTreeNullComparisons = 160;
 
     [GeneratedRegex(@"[!=]=\s*null\b")]
     private static partial Regex EqualityNullCheck();

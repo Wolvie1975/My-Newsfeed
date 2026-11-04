@@ -95,8 +95,7 @@
         try
         {
             await using var db = await Factory.CreateDbContextAsync();
-            lockedProfiles = await db.Profiles.CountAsync(p => p.LockedAt != null);
-            waitingRequests = await db.ContentRequests.CountAsync(r => r.Status == "waiting");
+            (lockedProfiles, waitingRequests) = await AdminQuery.AlertCountsAsync(db);
         }
         catch (Exception ex) when (DataFailures.IsReadFailure(ex))
         {

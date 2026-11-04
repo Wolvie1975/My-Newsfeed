@@ -106,6 +106,16 @@ public sealed record AdminEventDetail(int Id, string Url, string Title, string? 
 public sealed record AdminResultFollowRow(int Id, string Kind, string Sport, string League, string Name, string? LogoUrl, bool Enabled,
     DateTime? LastSyncedAt, string? LastError);
 
+/// <summary>What the admin header alert counts: locked profiles and requests waiting for an answer.</summary>
+public sealed record AdminAlertCounts(int LockedProfiles, int WaitingRequests);
+
+/// <summary>A row of Admin · TV series: a tracked TVmaze show, titled from the matched series once there is one.</summary>
+public sealed record AdminTvSeriesRow(int Id, int TvmazeShowId, string Title, bool Enabled, int? EpisodeCount, DateTime? LastSuccessAt,
+    string? LastError, string? NetworkName, string? WebChannelName);
+
+/// <summary>One page of Admin · TV series.</summary>
+public sealed record AdminTvSeriesList(IReadOnlyList<AdminTvSeriesRow> Rows, int Total, int PageIndex);
+
 /// <summary>
 /// Reads for the admin site's pages. Writes are in <see cref="AdminStore"/>. Every list is bounded by a page size or by
 /// the size of a configuration table (categories, sources).
@@ -380,4 +390,23 @@ public static class AdminQuery
         .ThenBy(f => f.Name, StringComparer.OrdinalIgnoreCase)
         .ThenBy(f => EspnLeagues.NameOf(f.Sport, f.League))
         .ToList();
+
+    // ---- Header alert and TV -------------------------------------------------------------------------------------
+
+    public static async Task<AdminAlertCounts> AlertCountsAsync(WebScraperContext db, CancellationToken ct = default) =>
+        new(await db.Profiles.CountAsync(p => p.LockedAt != null, ct), await db.ContentRequests.CountAsync(r => r.Status == "waiting", ct));
+
+    /// <summary>Admin · TV series: followed shows first, then by expected title. The page index is clamped to the last page.</summary>
+    public static async Task<AdminTvSeriesList> TvSeriesAsync(WebScraperContext db, int pageIndex, int pageSize, CancellationToken ct = default)
+    {
+        var total = await db.TvTrackedSeries.CountAsync(ct);
+        pageIndex = Math.Min(Math.Max(0, pageIndex), Math.Max(0, (total - 1) / pageSize));
+        var rows = await db.TvTrackedSeries.AsNoTracking()
+            .OrderByDescending(t => t.Enabled).ThenBy(t => t.ExpectedTitle).ThenBy(t => t.Id)
+            .Skip(pageIndex * pageSize).Take(pageSize)
+            .Select(t => new AdminTvSeriesRow(t.Id, t.TvmazeShowId, t.Series != null ? t.Series.Title : t.ExpectedTitle, t.Enabled, t.EpisodeCount,
+                t.LastSuccessAt, t.LastError, t.Series != null ? t.Series.NetworkName : null, t.Series != null ? t.Series.WebChannelName : null))
+            .ToListAsync(ct);
+        return new(rows, total, pageIndex);
+    }
 }

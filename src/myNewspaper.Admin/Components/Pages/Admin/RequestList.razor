@@ -145,7 +145,7 @@
                                 <label class="adm-label" for="req-ycat">YouTube category</label>
                                 <select id="req-ycat" class="form-select" @bind="categoryId">
                                     <option value="">No category (shown under Other)</option>
-                                    @foreach (var c in youtubeCategories) { <option value="@c.Id">@c.CategoryName</option> }
+                                    @foreach (var c in youtubeCategories) { <option value="@c.Id">@c.Name</option> }
                                 </select>
                             </div>
                         </div>
@@ -199,7 +199,7 @@
                                 <label class="adm-label" for="req-scat">Category</label>
                                 <select id="req-scat" class="form-select" @bind="categoryId" aria-describedby="req-scat-d">
                                     <option value="">Uncategorized</option>
-                                    @foreach (var c in sourceCategories) { <option value="@c.Id">@c.CategoryName</option> }
+                                    @foreach (var c in sourceCategories) { <option value="@c.Id">@c.Name</option> }
                                 </select>
                                 <span id="req-scat-d" class="adm-help">@HubHelp</span>
                             </div>
@@ -237,8 +237,8 @@
     private IReadOnlyList<AdminRequestRow>? rows;
     private AdminRequestRow? selected;
     private AdminRequestCounts counts = new(0, 0, 0, 0);
-    private IReadOnlyList<YoutubeCategory> youtubeCategories = [];
-    private IReadOnlyList<SourceCategory> sourceCategories = [];
+    private IReadOnlyList<YoutubeCategoryOption> youtubeCategories = [];
+    private IReadOnlyList<CategoryOption> sourceCategories = [];
     private int? loadedFor;
     private bool busy;
     private string? message;
@@ -275,8 +275,8 @@
         await using var db = await Factory.CreateDbContextAsync();
         if (youtubeCategories.Count == 0)
         {
-            youtubeCategories = await db.YoutubeCategories.AsNoTracking().OrderBy(c => c.CategoryName).ToListAsync();
-            sourceCategories = await db.SourceCategories.AsNoTracking().OrderBy(c => c.CategoryName).ToListAsync();
+            youtubeCategories = await AdminQuery.YoutubeCategoryOptionsAsync(db);
+            sourceCategories = await AdminQuery.CategoryOptionsAsync(db);
         }
         counts = await RequestStore.CountsAsync(db);
         rows = await RequestStore.ListAsync(db, StatusKey == "all" ? null : StatusKey);
@@ -340,7 +340,7 @@
         Uri.TryCreate(link, UriKind.Absolute, out var uri) ? (uri.Host.StartsWith("www.", StringComparison.OrdinalIgnoreCase) ? uri.Host[4..] : uri.Host) + uri.PathAndQuery.TrimEnd('/') : link;
 
     private string HubHelp => sourceCategories.FirstOrDefault(c => c.Id.ToString(CultureInfo.InvariantCulture) == categoryId) is { } c
-        ? $"{c.CategoryName} appears in the {char.ToUpperInvariant(c.NewsHub[0])}{c.NewsHub[1..]} hub for everyone."
+        ? $"{c.Name} appears in the {char.ToUpperInvariant(c.Hub[0])}{c.Hub[1..]} hub for everyone."
         : "Uncategorized sources appear in Headlines under All categories.";
 
     private int? CategoryId => int.TryParse(categoryId, NumberStyles.None, CultureInfo.InvariantCulture, out var id) ? id : null;

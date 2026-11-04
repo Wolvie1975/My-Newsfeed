@@ -72,6 +72,11 @@ public sealed record WeekSummary(
 /// <summary>Read side of the Tech front (/tech) and Tech desks.</summary>
 public static class TechQuery
 {
+    /// <summary>The tracked upstream projects of the Linux release tracker, for the admin status page.</summary>
+    public static async Task<IReadOnlyList<TechReleaseProjectRow>> ReleaseProjectsAsync(WebScraperContext db, CancellationToken ct = default) =>
+        await db.TechReleaseProjects.AsNoTracking().OrderBy(p => p.SortOrder).ThenBy(p => p.Name)
+            .Select(p => new TechReleaseProjectRow(p.Name, p.Kind, p.LastCheckedAt, p.LastError)).ToListAsync(ct);
+
     /// <summary>How many enabled sources feed the Tech hub's categories.</summary>
     public static Task<int> SourceCountAsync(WebScraperContext db, CancellationToken ct = default) =>
         db.Sources.AsNoTracking().CountAsync(s => s.Enabled && s.SourceCategory != null && s.SourceCategory.NewsHub == "tech", ct);
@@ -720,3 +725,6 @@ public static class TechQuery
             : item.SourceUrl.Trim();
     }
 }
+
+/// <summary>A tracked release project as the admin status page lists it.</summary>
+public sealed record TechReleaseProjectRow(string Name, string Kind, DateTime? LastCheckedAt, string? LastError);

@@ -21,6 +21,15 @@ public sealed record HouseholdSettings(string DefaultPickerMode, int? ForgetDevi
 
 public static class ProfileAdmin
 {
+    /// <summary>A profile as Manage profile shows it, or null when it doesn't exist.</summary>
+    public static Task<AdminProfileView?> ProfileAsync(WebScraperContext db, int profileId, CancellationToken ct = default) =>
+        db.Profiles.AsNoTracking().Where(p => p.Id == profileId)
+            .Select(p => new AdminProfileView(p.Id, p.Name, p.Color, p.Hidden, p.LockedAt, p.CreatedAt)).SingleOrDefaultAsync(ct);
+
+    /// <summary>The profile's devices that are still signed in (not revoked), which Manage profile can sign out.</summary>
+    public static async Task<IReadOnlySet<Guid>> OpenDeviceIdsAsync(WebScraperContext db, int profileId, CancellationToken ct = default) =>
+        (await db.ProfileDevices.Where(d => d.ProfileId == profileId && d.RevokedAt == null).Select(d => d.Id).ToListAsync(ct)).ToHashSet();
+
     public const int MaxForgetDevicesDays = 3650;
 
     public static async Task<IReadOnlyList<AdminProfileRow>> ListAsync(WebScraperContext db, CancellationToken ct = default)
@@ -220,3 +229,6 @@ public static class ProfileAdmin
     private static Task EnsureHouseholdAsync(WebScraperContext db, CancellationToken ct) => db.Database.ExecuteSqlAsync(
         $"IF NOT EXISTS (SELECT 1 FROM dbo.MyDailyFeedHousehold WHERE Id = 1) INSERT dbo.MyDailyFeedHousehold(Id) VALUES (1)", ct);
 }
+
+/// <summary>A profile as Manage profile shows it.</summary>
+public sealed record AdminProfileView(int Id, string Name, string Color, bool Hidden, DateTime? LockedAt, DateTime CreatedAt);

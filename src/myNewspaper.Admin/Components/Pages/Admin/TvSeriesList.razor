@@ -43,7 +43,7 @@ else
         {
             <tr class="@(row.Enabled ? null : "text-muted")">
                 <td><a href="https://www.tvmaze.com/shows/@row.TvmazeShowId" target="_blank" rel="noopener noreferrer">@TitleOf(row)</a><div class="small">TVmaze @row.TvmazeShowId</div></td>
-                <td>@(row.Series?.WebChannelName ?? row.Series?.NetworkName ?? "Pending import")</td>
+                <td>@(row.WebChannelName ?? row.NetworkName ?? "Pending import")</td>
                 <td><AdminSwitch Checked="row.Enabled" Disabled="busy" Label="@($"Following: {TitleOf(row)}")" OnChange="_ => ToggleAsync(row)" /></td><td>@(row.EpisodeCount?.ToString() ?? "—")</td>
                 <td>@Dates.Stamp(row.LastSuccessAt)</td>
                 <td class="small text-break">@row.LastError @if (row.LastSuccessAt is null && row.Enabled) { <span>Awaiting first import</span> }</td>
@@ -79,28 +79,27 @@ else
         finally { paging = false; }
     }
 
-    private List<TvTrackedSeries>? rows;
+    private IReadOnlyList<AdminTvSeriesRow>? rows;
     private bool busy;
     private string? error;
     private string? message;
-    private TvTrackedSeries? pendingDelete;
-    private static string TitleOf(TvTrackedSeries row) => row.Series?.Title ?? row.ExpectedTitle;
+    private AdminTvSeriesRow? pendingDelete;
+    private static string TitleOf(AdminTvSeriesRow row) => row.Title;
     protected override Task OnInitializedAsync() => LoadAsync();
     private async Task LoadAsync()
     {
         await using var db = await Factory.CreateDbContextAsync();
-        totalRows = await db.TvTrackedSeries.CountAsync();
-        pageIndex = Math.Min(pageIndex, Math.Max(0, (totalRows - 1) / PageSize));
-        rows = await db.TvTrackedSeries.AsNoTracking().Include(t => t.Series).OrderByDescending(t => t.Enabled).ThenBy(t => t.ExpectedTitle).ThenBy(t => t.Id).Skip(pageIndex * PageSize).Take(PageSize).ToListAsync();
+        var list = await AdminQuery.TvSeriesAsync(db, pageIndex, PageSize);
+        (rows, totalRows, pageIndex) = (list.Rows, list.Total, list.PageIndex);
     }
-    private async Task ToggleAsync(TvTrackedSeries row)
+    private async Task ToggleAsync(AdminTvSeriesRow row)
     {
         busy = true; error = null; message = null;
         try { await using var db = await Factory.CreateDbContextAsync(); await TvQuery.SetEnabledAsync(db, row.Id, !row.Enabled); await LoadAsync(); }
         catch (DbUpdateException) { error = "Could not update tracking. Please try again."; }
         finally { busy = false; }
     }
-    private void StartDelete(TvTrackedSeries row) { error = null; message = null; pendingDelete = row; }
+    private void StartDelete(AdminTvSeriesRow row) { error = null; message = null; pendingDelete = row; }
     private async Task StopInsteadAsync()
     {
         if (pendingDelete is not { } target) return;

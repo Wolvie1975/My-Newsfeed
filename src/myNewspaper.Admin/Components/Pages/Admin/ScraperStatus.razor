@@ -191,7 +191,7 @@
 
     private ScraperHealthReport? report;
     private List<Issue> issues = [];
-    private List<myNewspaper.Shared.Data.Models.TechReleaseProject> techProjects = [];
+    private IReadOnlyList<TechReleaseProjectRow> techProjects = [];
     private int linkableEvents;
     private bool loading;
     private bool busy;
@@ -220,7 +220,7 @@
             report = await ScraperHealth.GetReportAsync(
                 db, now, Dates.TodayAt(now), ScraperHealth.StaleAfter(Config["Scraper:StaleAfterHours"]));
             techProjects = await TechQuery.LiveTablesAsync(db, "releases")
-                ? await db.TechReleaseProjects.AsNoTracking().OrderBy(p => p.SortOrder).ThenBy(p => p.Name).ToListAsync()
+                ? await TechQuery.ReleaseProjectsAsync(db)
                 : [];
             linkableEvents = report.UnlinkedEvents == 0 ? 0 : (await AdminStore.PlanSportsEventLinksAsync(db)).Count;
             issues = new[]

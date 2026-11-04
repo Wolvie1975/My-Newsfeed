@@ -216,13 +216,13 @@
     }
 
     // Only what decision 3 allows: no settings, follows, Saved list or reading times.
-    private sealed record ProfileView(int Id, string Name, string Color, bool Hidden, DateTime? LockedAt, DateTime CreatedAt);
+    
 
-    private ProfileView? profile;
+    private AdminProfileView? profile;
     private ProfileForm? form;
     private EditContext editContext = default!;
     private IReadOnlyList<AdminDeviceRow> devices = [];
-    private HashSet<Guid> openDevices = [];
+    private IReadOnlySet<Guid> openDevices = new HashSet<Guid>();
     private IReadOnlyList<AdminRequestRow> requests = [];
     private string? lockDevice;
     private string newPin = "", newPinConfirm = "";
@@ -239,12 +239,11 @@
     private async Task LoadAsync(bool resetForm)
     {
         await using var db = await Factory.CreateDbContextAsync();
-        profile = await db.Profiles.AsNoTracking().Where(p => p.Id == Id)
-            .Select(p => new ProfileView(p.Id, p.Name, p.Color, p.Hidden, p.LockedAt, p.CreatedAt)).SingleOrDefaultAsync();
+        profile = await ProfileAdmin.ProfileAsync(db, Id);
         if (profile is null) { notFound = true; return; }
         devices = await ProfileAdmin.DevicesAsync(db, Id) ?? [];
         // The lock's device may belong to someone else or nobody; only this profile's devices can be signed out here.
-        openDevices = (await db.ProfileDevices.Where(d => d.ProfileId == Id && d.RevokedAt == null).Select(d => d.Id).ToListAsync()).ToHashSet();
+        openDevices = await ProfileAdmin.OpenDeviceIdsAsync(db, Id);
         lockDevice = devices.FirstOrDefault(d => d.CausedLock)?.Label;
         requests = await RequestStore.ListAsync(db, profileId: Id);
         isAdminProfile = await ProfileAdmin.GetAdminProfileAsync(db) == Id;
