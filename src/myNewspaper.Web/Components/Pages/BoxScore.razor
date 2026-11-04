@@ -13,6 +13,6 @@
     private BoxDetail? detail;
     protected override async Task OnParametersSetAsync() {
         detail=await Repository.GetAsync(new(Sport,League,EventId));
-        if(detail==null && Http!=null && !Http.Response.HasStarted)Http.Response.StatusCode=404;
+        if(detail is null && Http is not null && !Http.Response.HasStarted)Http.Response.StatusCode=404;
     }
 }

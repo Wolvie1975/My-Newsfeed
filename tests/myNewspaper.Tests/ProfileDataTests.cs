@@ -503,7 +503,7 @@ public class ProfileDataTests
         Assert.Contains(summary.Locked, l => l.ProfileId == a.Id && l.Device == device.Label);
 
         await RequestStore.MarkSeenAsync(db, DateTime.UtcNow.AddMinutes(1));
-        Assert.Contains(await db.Profiles.Where(p => p.Id == a.Id).Select(p => p.LockedAt).ToListAsync(), l => l != null);
+        Assert.Contains(await db.Profiles.Where(p => p.Id == a.Id).Select(p => p.LockedAt).ToListAsync(), l => l is not null);
         Assert.True(await RequestStore.AlertCountAsync(db) >= 1);
         await ProfileAdmin.UnlockAsync(db, a.Id);
         Assert.Equal(0, await RequestStore.AlertCountAsync(db) - await db.Profiles.CountAsync(p => p.LockedAt != null));

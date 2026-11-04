@@ -31,7 +31,7 @@ else
     @if (data.Feed.Items.Count == 0)
     {
         <p class="empty">
-            @if (data.SourceId != null || !string.IsNullOrWhiteSpace(Q) || After != null)
+            @if (data.SourceId is not null || !string.IsNullOrWhiteSpace(Q) || After is not null)
             { <span>No articles match. <a href="@CollegeHub.Href("news", CollegeHub.Resolve(Sport))">Clear filters</a></span> }
             else
             { <span>No Big 12 articles available yet. Please check back soon.</span> }
@@ -39,7 +39,7 @@ else
     }
     else
     {
-        @if (After != null) { <p><a href="@Href(null)">← Back to the newest articles</a></p> }
+        @if (After is not null) { <p><a href="@Href(null)">← Back to the newest articles</a></p> }
         <section class="feed" aria-label="Big 12 articles" data-last-day="@lastDay">
             <FeedArticles Items="data.Feed.Items" LeadFirst="@(After is null)" Total="@(After is null ? data.Feed.Total : null)" />
         </section>

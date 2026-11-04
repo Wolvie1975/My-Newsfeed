@@ -29,7 +29,7 @@ public static class ScheduleCoverage
     {
         var mapping = Map(feed.ProviderKey, sport);
         if (mapping is not { } m || !follow.Enabled || follow.Sport != m.Sport || follow.League != m.League) return false;
-        return follow.Kind == "league" || (follow.Kind == "conference" && m.Group != null && follow.GroupId == m.Group)
+        return follow.Kind == "league" || (follow.Kind == "conference" && m.Group is not null && follow.GroupId == m.Group)
             || (follow.Kind == "team" && (feed.ProviderKey == "espn-nwsl" ? follow.TeamId == "20907"
                 : feed.ProviderKey == "big12" && TeamNames.Matches(feed.SchoolName, follow.Name)));
     }
@@ -48,9 +48,9 @@ public static class ScheduleCoverage
             {
                 var covered = follows.Where(f => Covers(feed, sport, f)).ToList();
                 var error = string.Join("; ", covered.Where(f => !string.IsNullOrWhiteSpace(f.LastError)).Select(f => f.LastError));
-                var status = !feed.Enabled ? "Feed disabled" : Map(feed.ProviderKey, sport) == null ? "Unmapped sport"
+                var status = !feed.Enabled ? "Feed disabled" : Map(feed.ProviderKey, sport) is null ? "Unmapped sport"
                     : covered.Count == 0 ? "Missing enabled results follow" : error.Length > 0 ? "Results sync error"
-                    : covered.Any(f => f.LastSyncedAt == null) ? "Awaiting first sync" : "Covered";
+                    : covered.Any(f => f.LastSyncedAt is null) ? "Awaiting first sync" : "Covered";
                 rows.Add(new(feed.Id, feed.EventsTypeName, sport ?? feed.ProviderKey ?? "No games yet", feed.Enabled, status,
                     covered.Count == 0 ? null : covered.Min(f => f.LastSyncedAt), error.Length == 0 ? null : error));
             }

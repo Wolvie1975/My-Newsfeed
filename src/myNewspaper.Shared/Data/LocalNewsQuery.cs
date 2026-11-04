@@ -11,6 +11,6 @@ public static class LocalNewsQuery
         var category = await db.SourceCategories.AsNoTracking()
             .Where(c => c.CategoryName == "Kansas City News" && c.Sources.Any(s => s.Enabled))
             .Select(c => (int?)c.Id).FirstOrDefaultAsync();
-        return (await FeedQuery.GetFeedAsync(db, category, category == null ? "Kansas City" : null, after, take: 12), category != null);
+        return (await FeedQuery.GetFeedAsync(db, category, category is null ? "Kansas City" : null, after, take: 12), category is not null);
     }
 }

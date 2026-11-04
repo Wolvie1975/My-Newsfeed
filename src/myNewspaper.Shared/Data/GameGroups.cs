@@ -27,8 +27,8 @@ public static class GameGroups
     public static IReadOnlyList<GameLeague<EventItem>> Schedule(IEnumerable<EventItem> games) =>
         games.GroupBy(ScheduleLeague).OrderBy(g => g.Key, StringComparer.OrdinalIgnoreCase)
             .Select(g => new GameLeague<EventItem>(g.Key, g
-                .OrderBy(e => e.TimeTbd || e.StartsAtUtc == null || EventsText.StatusLabel(e.ScheduleStatus) != null)
-                .ThenBy(e => e.TimeTbd || EventsText.StatusLabel(e.ScheduleStatus) != null ? null : e.StartsAtUtc)
+                .OrderBy(e => e.TimeTbd || e.StartsAtUtc is null || EventsText.StatusLabel(e.ScheduleStatus) is not null)
+                .ThenBy(e => e.TimeTbd || EventsText.StatusLabel(e.ScheduleStatus) is not null ? null : e.StartsAtUtc)
                 .ThenBy(e => e.Id).ToList())).ToList();
 
     public static IReadOnlyList<GameLeague<ResultItem>> Results(IEnumerable<ResultItem> games) =>

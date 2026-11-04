@@ -62,7 +62,7 @@ public sealed partial class WatchCatalog(IHttpClientFactory factory, IConfigurat
     {
         if (cache.TryGetValue<WatchListing>(key, out var saved)) return saved!;
         using var doc = await Fetch(path);
-        if (doc == null) return Save(key, new WatchListing([], 0, true), TimeSpan.FromSeconds(30));
+        if (doc is null) return Save(key, new WatchListing([], 0, true), TimeSpan.FromSeconds(30));
         try
         {
             var root = doc.RootElement;
@@ -170,7 +170,7 @@ public sealed partial class WatchCatalog(IHttpClientFactory factory, IConfigurat
         var key = $"watch:detail:{kind}:{id}";
         if (cache.TryGetValue<WatchAvailability>(key, out var saved)) return saved;
         using var title = await Fetch($"{kind}/{id}"); using var providers = await Fetch($"{kind}/{id}/watch/providers");
-        if (title == null || providers == null) return null;
+        if (title is null || providers is null) return null;
         try
         {
             if (title.RootElement.TryGetProperty("adult", out var adult) && adult.ValueKind == JsonValueKind.True) return null;
@@ -201,7 +201,7 @@ public sealed partial class WatchCatalog(IHttpClientFactory factory, IConfigurat
         }
         return offers;
     }
-    private static string? ProviderLogo(string? path) => path != null && TmdbImagePath().IsMatch(path)
+    private static string? ProviderLogo(string? path) => path is not null && TmdbImagePath().IsMatch(path)
         ? "https://image.tmdb.org/t/p/w92" + path : null;
     private static string? ProviderLink(JsonElement us) => Uri.TryCreate(Text(us, "link"), UriKind.Absolute, out var uri)
         && uri.Scheme == "https" && uri.Host == "www.themoviedb.org" ? uri.AbsoluteUri : null;
@@ -293,7 +293,7 @@ public sealed partial class WatchCatalog(IHttpClientFactory factory, IConfigurat
     private static WatchTitle Title(JsonElement e, string kind)
     {
         var date = Text(e, kind == "movie" ? "release_date" : "first_air_date"); var poster = Text(e, "poster_path");
-        var image = poster != null && TmdbImagePath().IsMatch(poster) ? "https://image.tmdb.org/t/p/w342" + poster : null;
+        var image = poster is not null && TmdbImagePath().IsMatch(poster) ? "https://image.tmdb.org/t/p/w342" + poster : null;
         return new(e.GetProperty("id").GetInt32(), kind, Text(e, kind == "movie" ? "title" : "name") ?? "", date?.Length >= 4 ? date[..4] : null, image, Text(e, "overview") ?? "", ReleaseDate: DateOnly.TryParseExact(date, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var released) ? released : null, Popularity: e.TryGetProperty("popularity", out var pop) && pop.TryGetDouble(out var value) ? value : null);
     }
 }

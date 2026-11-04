@@ -54,7 +54,7 @@ public static class TvQuery
         var items = rows.Select(e => new TvEpisodeItem(e.TvmazeEpisodeId, e.Show, e.PosterUrl, e.Platform, e.Title,
             e.SeasonNumber, e.EpisodeNumber, e.IsSpecial, e.IsDateOnly ? e.Airdate!.Value : DateOnly.Parse(dates.DayKey(e.StartsAtUtc!.Value), CultureInfo.InvariantCulture),
             e.IsDateOnly ? null : e.StartsAtUtc, e.SourceUrl, e.ShowId))
-            .OrderBy(e => e.Date).ThenBy(e => e.StartsUtc == null).ThenBy(e => e.StartsUtc)
+            .OrderBy(e => e.Date).ThenBy(e => e.StartsUtc is null).ThenBy(e => e.StartsUtc)
             .ThenBy(e => e.SeriesTitle).ThenBy(e => e.Season).ThenBy(e => e.Number).ThenBy(e => e.ProviderId).ToList();
         var today = dates.Today;
         var unannounced = await enabled.Where(t => (show == null || t.TvmazeShowId == show)

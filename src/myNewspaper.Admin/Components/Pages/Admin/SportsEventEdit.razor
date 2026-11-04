@@ -110,7 +110,7 @@ else
             return;
         }
 
-        attributionLocked = existing.ProviderKey != null || await db.SportsEventSources.AnyAsync(s => s.SportsEventId == Id);
+        attributionLocked = existing.ProviderKey is not null || await db.SportsEventSources.AnyAsync(s => s.SportsEventId == Id);
         types = await db.SportsEventsTypes.AsNoTracking()
             .Where(t => t.ProviderKey == null || t.Id == existing.SportsEventsTypeId)
             .OrderBy(t => t.EventsTypeName)

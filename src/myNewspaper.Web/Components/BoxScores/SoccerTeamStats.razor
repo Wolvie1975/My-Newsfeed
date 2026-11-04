@@ -1,6 +1,6 @@
 <section class="soccer-stats" aria-label="Soccer team comparison">
 <h3>Team statistics</h3>
-@foreach(var group in Data.Teams.SelectMany(t=>t.Statistics).Where(s=>s.Value!=null).GroupBy(s=>s.Group)) {
+@foreach(var group in Data.Teams.SelectMany(t=>t.Statistics).Where(s=>s.Value is not null).GroupBy(s=>s.Group)) {
     <div class="soccer-stats-panel">
     <div class="box-table-scroll" tabindex="0" role="region" aria-label="@(group.Key ?? "Team statistics")">
     <table class="soccer-comparison">

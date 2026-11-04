@@ -19,6 +19,6 @@ public static class NhlBoxScoreVisibility
         var visible = Visible(db, source.Id, source.ProviderSchoolId);
         // Like MLS/Championship, retain the latest validated stored season during import failures.
         var season = await visible.MaxAsync(r => (int?)r.Season);
-        return season != null && await visible.AnyAsync(r => r.Season == season && r.GameId == gameId);
+        return season is not null && await visible.AnyAsync(r => r.Season == season && r.GameId == gameId);
     }
 }

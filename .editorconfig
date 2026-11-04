@@ -42,6 +42,10 @@ csharp_style_var_elsewhere = true:suggestion
 csharp_style_prefer_primary_constructors = true:suggestion
 dotnet_style_prefer_collection_expression = when_types_loosely_match:suggestion
 dotnet_sort_system_directives_first = true
+# Null checks: `is null`, not ReferenceEquals or an object cast (IDE0041). Plain `x == null` has no analyzer; a ratchet
+# in RepositoryHygieneTests covers it, because EF expression trees still need it (CS8122).
+dotnet_style_prefer_is_null_check_over_reference_equality_method = true:warning
+dotnet_diagnostic.IDE0041.severity = warning
 
 # Naming: PascalCase types and members, camelCase locals, parameters and private fields
 dotnet_naming_rule.types_and_members_are_pascal.symbols = types_and_members

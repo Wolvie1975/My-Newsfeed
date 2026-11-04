@@ -279,19 +279,19 @@ else
             };
             var requested = topic?.StartsWith("category-") == true && int.TryParse(topic[9..], out var id)
                 ? allCategories.FirstOrDefault(c => c.Id == id)
-                : known != null ? allCategories.FirstOrDefault(c => c.Name == known)
+                : known is not null ? allCategories.FirstOrDefault(c => c.Name == known)
                 : Hub == "tech" && int.TryParse(CategoryQuery, out var techCatId) ? allCategories.FirstOrDefault(c => c.Id == techCatId)
                 : null;
-            if (requested != null && requested.Hub != Hub) {
+            if (requested is not null && requested.Hub != Hub) {
                 var assignedDestination = NewsSections.RouteFor(requested) ?? "news/all";
                 Nav.NavigateTo(assignedDestination + FeedQuery.QueryString(requested.Hub == "headlines" ? requested.Id : null, Q, After?.ToToken(), int.TryParse(SourceQuery, out var source) ? source : null), forceLoad: true);
                 return;
             }
-            selectedCategory = requested ?? (Topic == null && known == null && Hub != "tech" ? HubCategories.FirstOrDefault() : null);
+            selectedCategory = requested ?? (Topic is null && known is null && Hub != "tech" ? HubCategories.FirstOrDefault() : null);
         }
         Category = SectionNews ? selectedCategory?.Id
             : int.TryParse(CategoryQuery, out var categoryId) ? categoryId : null;
-        var emptySection = SectionNews && Category == null && Hub != "tech";
+        var emptySection = SectionNews && Category is null && Hub != "tech";
         var feedHub = SectionNews ? Hub : "headlines";
         sources = emptySection ? [] : await FeedQuery.GetSourcesAsync(db, Category, headlinesOnly: !SectionNews, hub: feedHub);
         Source = int.TryParse(SourceQuery, out var sourceId) && sources.Any(s => s.Id == sourceId) ? sourceId : null;

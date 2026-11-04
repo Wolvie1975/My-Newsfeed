@@ -46,7 +46,7 @@ public sealed record BoxData(BoxIdentity Identity, IReadOnlyList<BoxTeam> Teams,
             var teams = Array(root, "teams").Select(t => new BoxTeam(Text(t, "id") ?? "", Text(t, "name") ?? "Team", Text(t, "homeAway"),
                 Array(t, "statistics").Where(s => !string.IsNullOrWhiteSpace(Text(s, "key")) && !string.IsNullOrWhiteSpace(Text(s, "label")))
                     .Select(s => new BoxStat(Text(s, "group"), Text(s, "key")!, Text(s, "label")!, Text(s, "value"))).ToList(),
-                Array(t, "lineScores").Select(s => new BoxLine(s.ValueKind == JsonValueKind.Object && s.TryGetProperty("period", out var period) && period.ValueKind == JsonValueKind.Number ? period.GetRawText() : Text(s, "period"), Text(s, "displayValue"))).Where(s => s.DisplayValue != null).ToList()))
+                Array(t, "lineScores").Select(s => new BoxLine(s.ValueKind == JsonValueKind.Object && s.TryGetProperty("period", out var period) && period.ValueKind == JsonValueKind.Number ? period.GetRawText() : Text(s, "period"), Text(s, "displayValue"))).Where(s => s.DisplayValue is not null).ToList()))
                 .OrderBy(t => t.HomeAway == "away" ? 0 : t.HomeAway == "home" ? 1 : 2).ToList();
             var players = new List<BoxPlayers>();
             foreach (var group in Array(root, "playerGroups"))
@@ -60,11 +60,11 @@ public sealed record BoxData(BoxIdentity Identity, IReadOnlyList<BoxTeam> Teams,
                 IReadOnlyList<string?> SelectValues(IReadOnlyList<string?> values) => columns.Select(c => c.Index < values.Count ? values[c.Index] : null).ToList();
                 var athletes = Array(group, "athletes").Where(a => !string.IsNullOrWhiteSpace(Text(a, "name"))).Select(a => new BoxAthlete(Text(a, "name")!, Text(a, "position"),
                     a.TryGetProperty("starter", out var starter) && starter.ValueKind is JsonValueKind.True or JsonValueKind.False ? starter.GetBoolean() : null,
-                    SelectValues(Values(a, "stats")))).Where(a => a.Stats.Any(v => v != null)).ToList();
+                    SelectValues(Values(a, "stats")))).Where(a => a.Stats.Any(v => v is not null)).ToList();
                 var totals = SelectValues(Values(group, "totals"));
-                if (athletes.Count > 0 || totals.Any(v => v != null)) players.Add(new(team, Text(group, "name") ?? "Players", columns.Select(c => c.Column).ToList(), athletes, totals));
+                if (athletes.Count > 0 || totals.Any(v => v is not null)) players.Add(new(team, Text(group, "name") ?? "Players", columns.Select(c => c.Column).ToList(), athletes, totals));
             }
-            return teams.Any(t => t.Statistics.Any(s => s.Value != null)) || players.Count > 0 ? new(id, teams, players) : null;
+            return teams.Any(t => t.Statistics.Any(s => s.Value is not null)) || players.Count > 0 ? new(id, teams, players) : null;
         }
         catch (Exception ex) when (ex is JsonException or InvalidOperationException or FormatException) { return null; }
     }
@@ -114,8 +114,8 @@ public sealed class BoxScoresRepository(IDbContextFactory<WebScraperContext> fac
             var seasonVisible = false;
             if (!ordinary && id.Sport == "soccer" && int.TryParse(id.EventId, out var gameId))
             {
-                if (id.League == "usa.1") { var page = await MlsResultsQuery.GetAsync(db); seasonVisible = page.Source != null && await MlsResultsQuery.Visible(db, page.Source.Id).AnyAsync(g => g.Season == page.Season && g.GameId == gameId); }
-                if (id.League == "eng.2") { var page = await ChampionshipResultsQuery.GetAsync(db, false); seasonVisible = page.Source != null && await ChampionshipResultsQuery.Visible(db, page.Source.Id).AnyAsync(g => g.Season == page.Season && g.GameId == gameId); }
+                if (id.League == "usa.1") { var page = await MlsResultsQuery.GetAsync(db); seasonVisible = page.Source is not null && await MlsResultsQuery.Visible(db, page.Source.Id).AnyAsync(g => g.Season == page.Season && g.GameId == gameId); }
+                if (id.League == "eng.2") { var page = await ChampionshipResultsQuery.GetAsync(db, false); seasonVisible = page.Source is not null && await ChampionshipResultsQuery.Visible(db, page.Source.Id).AnyAsync(g => g.Season == page.Season && g.GameId == gameId); }
             }
             if (!ordinary && !seasonVisible && id.Sport == "hockey" && id.League == "nhl"
                 && int.TryParse(id.EventId, out var nhlGameId))

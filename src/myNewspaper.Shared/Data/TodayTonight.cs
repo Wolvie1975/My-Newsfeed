@@ -10,7 +10,7 @@ public static class TodayTonight
 {
     public static IReadOnlyList<TonightItem> Build(IReadOnlyList<EventItem> games, FeedDates dates) =>
         games.Where(IncludeGame).Select(g => new TonightItem(g.Sport ?? "Sports", EventsText.Matchup(g.SchoolName, g.Opponent, g.IsNeutral == true ? null : g.IsAway),
-            g.TimeTbd || EventsText.StatusLabel(g.ScheduleStatus) != null ? null : g.StartsAtUtc,
+            g.TimeTbd || EventsText.StatusLabel(g.ScheduleStatus) is not null ? null : g.StartsAtUtc,
             EventsText.TimeLabel(g, dates), FeedQuery.SafeHref(g.LiveStatsUrl) ?? FeedQuery.SafeHref(g.Url),
             TeamNames.Key(g.SchoolName), TeamNames.Key(g.Opponent),
             EventsText.LogoUrl(g.TeamLogoUrl), EventsText.LogoUrl(g.OpponentLogoUrl),
@@ -19,7 +19,7 @@ public static class TodayTonight
             g.IsNeutral != true && g.IsAway == true ? "@" : "vs",
             string.IsNullOrWhiteSpace(g.Location) ? null : g.Location.Trim(),
             string.IsNullOrWhiteSpace(g.Tv) ? null : g.Tv.Trim(), FeedQuery.SafeHref(g.StreamUrl), g.IsAway, g.IsNeutral == true, g.ProviderKey, g.SchoolId, g.OpponentSchoolId))
-        .OrderBy(i => i.StartsUtc == null).ThenBy(i => i.StartsUtc).ThenBy(i => i.Title).ToList();
+        .OrderBy(i => i.StartsUtc is null).ThenBy(i => i.StartsUtc).ThenBy(i => i.Title).ToList();
 
     /// <summary>
     /// Splits the timeline into agate groups by part of day in the display zone ("Morning", "Afternoon", "Evening");

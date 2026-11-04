@@ -142,8 +142,8 @@ public static class FeedQuery
     private static IQueryable<Models.Page> Filtered(
         WebScraperContext db, int? categoryId, string? search, int? sourceId, bool headlinesOnly, string? hub = null)
     {
-        var query = hub != null ? VisibleInHub(db, hub) : Visible(db);
-        if (hub == null && headlinesOnly) query = query.Where(p => p.Source.SourceCategory == null || p.Source.SourceCategory.NewsHub == "headlines");
+        var query = hub is not null ? VisibleInHub(db, hub) : Visible(db);
+        if (hub is null && headlinesOnly) query = query.Where(p => p.Source.SourceCategory == null || p.Source.SourceCategory.NewsHub == "headlines");
 
         if (categoryId is int cid)
         {

@@ -88,7 +88,7 @@ public sealed class ScoreboardGame
                     if (period.ValueKind != JsonValueKind.Object) continue;
                     var value = period.TryGetProperty("displayValue", out var display) && display.ValueKind == JsonValueKind.String ? display.GetString()
                         : period.TryGetProperty("score", out var score) && score.ValueKind == JsonValueKind.Number ? score.GetRawText() : null;
-                    if (value != null) values.Add(value);
+                    if (value is not null) values.Add(value);
                 }
                 if (values.Count > 0) parts.Add($"{label} periods: {string.Join(" · ", values)}");
             }
@@ -116,7 +116,7 @@ public sealed record ScoreboardFollow(int Id, string Label, string Sport, string
     {
         "league" => true,
         "team" => !string.IsNullOrEmpty(TeamId) && (game.HomeTeamId == TeamId || game.AwayTeamId == TeamId),
-        "conference" => game.HomeTeamId != null && Members.Contains(game.HomeTeamId) || game.AwayTeamId != null && Members.Contains(game.AwayTeamId),
+        "conference" => game.HomeTeamId is not null && Members.Contains(game.HomeTeamId) || game.AwayTeamId is not null && Members.Contains(game.AwayTeamId),
         _ => false
     };
 }
@@ -128,7 +128,7 @@ public sealed record ScoreboardSelection(string Value, string? Competition = nul
         ScoreboardSelection ForFollow(ScoreboardFollow f) => f.Kind == "league"
             ? new("c:" + f.Sport + "|" + f.League, f.Sport + "|" + f.League)
             : new("f:" + f.Id, f.Sport + "|" + f.League, f.Id);
-        if (show != null)
+        if (show is not null)
         {
             if (string.Equals(show, "top25", StringComparison.OrdinalIgnoreCase)) return new("top25", IsTop25: true);
             if (show.StartsWith("c:", StringComparison.Ordinal) && coverage.Any(c => c.Key == show[2..])) return new(show, show[2..]);
@@ -170,13 +170,13 @@ public sealed class ScoreboardRepository(IDbContextFactory<WebScraperContext> fa
             {
                 query = query.Where(g => (g.League == "college-football" || g.League == "mens-college-basketball") && (g.HomeRank != null || g.AwayRank != null));
             }
-            else if (selected != null)
+            else if (selected is not null)
             {
                 query = query.Where(g => g.Sport == selected.Sport && g.League == selected.League);
             }
             if (finalsOnly) query = query.Where(g => g.Status == "final" && g.Completed);
             var games = await query.ToListAsync();
-            if (selectedFollow != null) games = games.Where(selectedFollow.Matches).ToList();
+            if (selectedFollow is not null) games = games.Where(selectedFollow.Matches).ToList();
             List<ScoreboardGame>? top25Week = null;
             if (selection.IsTop25)
             {

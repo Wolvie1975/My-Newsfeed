@@ -125,7 +125,7 @@ public static class ScraperHealth
 
     public static (HealthLevel, string?) ClassifyScheduleFeed(bool providerBacked, DateTime? lastSuccess,
         int items, int upcoming, DateTime nowUtc, TimeSpan staleAfter) =>
-        providerBacked && items == 0 && lastSuccess != null && !IsStale(lastSuccess, nowUtc, staleAfter)
+        providerBacked && items == 0 && lastSuccess is not null && !IsStale(lastSuccess, nowUtc, staleAfter)
             ? (HealthLevel.Warning, "No upcoming games") : ClassifyFeed(lastSuccess, items, upcoming, nowUtc, staleAfter);
 
     /// <summary>Movie sources record successful checks even when no releases are found.</summary>
@@ -246,12 +246,12 @@ public static class ScraperHealth
 
         var feedRows = feeds.Select(f =>
         {
-            var lastSeen = f.ProviderKey == null ? f.LastSeen : f.LastSuccessAt;
-            var (level, note) = ClassifyScheduleFeed(f.ProviderKey != null, lastSeen, f.Events, f.Upcoming, nowUtc, staleAfter);
+            var lastSeen = f.ProviderKey is null ? f.LastSeen : f.LastSuccessAt;
+            var (level, note) = ClassifyScheduleFeed(f.ProviderKey is not null, lastSeen, f.Events, f.Upcoming, nowUtc, staleAfter);
             if (!f.Enabled) { level = HealthLevel.Ok; note = "Disabled"; }
-            else if (f.LastError != null && (f.LastSuccessAt == null || f.LastAttemptAt > f.LastSuccessAt))
+            else if (f.LastError is not null && (f.LastSuccessAt is null || f.LastAttemptAt > f.LastSuccessAt))
             { level = HealthLevel.Problem; note = "Last import failed"; }
-            else if (level != HealthLevel.Problem && (f.LastIssueCount > 0 || f.LastError != null))
+            else if (level != HealthLevel.Problem && (f.LastIssueCount > 0 || f.LastError is not null))
             { level = HealthLevel.Warning; note = $"Imported with {f.LastIssueCount ?? 0} issues"; }
             return new HealthRow(f.Id, f.EventsTypeName, f.Enabled, lastSeen, f.Events, f.Upcoming,
                 f.Enabled ? f.LastError : null, level, note);
@@ -268,7 +268,7 @@ public static class ScraperHealth
         {
             var (level, note) = ClassifySource(t.Enabled, true, t.LastSuccessAt, null, t.Episodes, nowUtc, staleAfter);
             if (t.Enabled && !string.IsNullOrWhiteSpace(t.LastError)
-                && (t.LastSuccessAt == null || t.LastAttemptAt > t.LastSuccessAt))
+                && (t.LastSuccessAt is null || t.LastAttemptAt > t.LastSuccessAt))
             { level = HealthLevel.Problem; note = "Last episode import failed"; }
             else if (t.Enabled && level != HealthLevel.Problem && (t.LastIssueCount > 0 || !string.IsNullOrWhiteSpace(t.LastError)))
             { level = HealthLevel.Warning; note = $"Imported with {t.LastIssueCount ?? 0} issues"; }

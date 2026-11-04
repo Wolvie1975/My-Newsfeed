@@ -8,7 +8,7 @@ public static class HomeOpinionQuery
     {
         var categoryId = await db.SourceCategories.Where(c => c.CategoryName == "Opinion")
             .Select(c => (int?)c.Id).SingleOrDefaultAsync();
-        var candidates = categoryId == null ? [] : await FeedQuery.GetLatestPerSourceAsync(db, int.MaxValue, categoryId);
+        var candidates = categoryId is null ? [] : await FeedQuery.GetLatestPerSourceAsync(db, int.MaxValue, categoryId);
         return Snapshot(categoryId, candidates, utcNow);
     }
     public static HomeOpinion Snapshot(int? categoryId, IEnumerable<FeedItem> candidates, DateTime utcNow)

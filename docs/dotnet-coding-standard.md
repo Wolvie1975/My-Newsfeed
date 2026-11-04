@@ -64,7 +64,8 @@ Every solution starts with these files, copied from My-Newsfeed and adjusted:
   from methods or held in records are `IReadOnlyList<T>`, not `List<T>` or arrays.
 - **[Review]** Mark classes `sealed` unless they are designed for inheritance. EF entity classes included.
 - **[Review]** Prefer `var`, primary constructors, collection expressions (`[]`), target-typed `new()`, switch
-  expressions and pattern matching. Use `is null` / `is not null`, never `== null`.
+  expressions and pattern matching. Use `is null` / `is not null`, never `== null`, except inside expression trees
+  (EF LINQ predicates), where an `is` pattern doesn't compile (CS8122).
 - **[Review]** Expression-bodied members for one-liners; block bodies once a method needs more than one statement.
 - **[Review]** Regular expressions are `[GeneratedRegex]` partial methods, not `new Regex` or `Regex.IsMatch(…, pattern)`.
 - **[Review]** Parse and format with `CultureInfo.InvariantCulture` for anything that isn't shown to a reader.

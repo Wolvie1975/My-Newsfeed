@@ -10,13 +10,13 @@ public static class HomeEventResults
         WebScraperContext db, IReadOnlyList<EventItem> games)
     {
         if (games.Count == 0) return games;
-        var keys = games.Select(Identity).Where(k => k != null).Cast<string>().Distinct().ToArray();
-        var starts = games.Where(g => !g.TimeTbd && g.StartsAtUtc != null)
+        var keys = games.Select(Identity).Where(k => k is not null).Cast<string>().Distinct().ToArray();
+        var starts = games.Where(g => !g.TimeTbd && g.StartsAtUtc is not null)
             .Select(g => g.StartsAtUtc!.Value).Distinct().ToArray();
         var results = await db.ResultGames.AsNoTracking()
             .Where(r => r.Completed && (keys.Contains("espn:" + r.League + ":" + r.EventId) || starts.Contains(r.StartsAtUtc)))
             .ToListAsync();
-        var ids = games.Where(g => g.GameId != null).Select(g => g.GameId!.Value).Distinct().ToArray();
+        var ids = games.Where(g => g.GameId is not null).Select(g => g.GameId!.Value).Distinct().ToArray();
         var seasonResults = await db.SportsMatchResults.AsNoTracking()
             .Where(r => ids.Contains(r.GameId) && r.HomeScore >= 0 && r.AwayScore >= 0
                 && (r.ScheduleStatus == "STATUS_FULL_TIME" || r.ScheduleStatus.StartsWith("STATUS_FINAL")))
@@ -67,6 +67,6 @@ public static class HomeEventResults
             "espn-nhl" => "nhl",
             _ => null
         };
-        return league != null && game.GameId is { } id ? $"espn:{league}:{id}" : null;
+        return league is not null && game.GameId is { } id ? $"espn:{league}:{id}" : null;
     }
 }

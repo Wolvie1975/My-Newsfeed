@@ -92,7 +92,7 @@ public sealed class TeamRecords
         {
             var overall = Record(stats.FirstOrDefault(s => s.DisplayName is "Overall" or "Overall Record")?.DisplayValue);
             var conference = Record(stats.FirstOrDefault(s => s.DisplayName is "Conf" or "Big 12 Record" or "Conference Record")?.DisplayValue);
-            var parts = new[] { overall, conference is null ? null : $"({conference})" }.Where(p => p != null);
+            var parts = new[] { overall, conference is null ? null : $"({conference})" }.Where(p => p is not null);
             var label = string.Join(" ", parts);
             return label.Length == 0 ? null : label;
         }

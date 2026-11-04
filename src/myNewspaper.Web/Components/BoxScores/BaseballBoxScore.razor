@@ -15,10 +15,10 @@
             </table></div>
         }
     }
-    @if(Data.Teams.SelectMany(t=>t.Lines).Any(l=>l.Period==null)){<p class="updated baseball-note">Inning labels were not supplied. Period scores appear in collected order.</p>}
+    @if(Data.Teams.SelectMany(t=>t.Lines).Any(l=>l.Period is null)){<p class="updated baseball-note">Inning labels were not supplied. Period scores appear in collected order.</p>}
 </div>
 @foreach(var kind in new[]{"batting","pitching"}) {
-    var teams=Data.Teams.Where(t=>Data.Players.Any(g=>g.TeamId==t.Id && g.Name.Equals(kind,StringComparison.OrdinalIgnoreCase)) || t.Statistics.Any(s=>s.Group==kind && s.Value!=null)).ToList();
+    var teams=Data.Teams.Where(t=>Data.Players.Any(g=>g.TeamId==t.Id && g.Name.Equals(kind,StringComparison.OrdinalIgnoreCase)) || t.Statistics.Any(s=>s.Group==kind && s.Value is not null)).ToList();
     @if(teams.Count>0){
         <div class="baseball-team-grid" aria-label="@(kind=="batting" ? "Team hitting tables" : "Team pitching tables")">
         @foreach(var team in teams){
@@ -31,9 +31,9 @@
                     <PlayerStatsTable Group="group" Indices="primary" Title="@title" />
                     @if(extras.Count>0){<details class="baseball-extra"><summary>Additional @(kind=="batting" ? "hitting" : "pitching") statistics</summary><PlayerStatsTable Group="group" Indices="extras" Title="@(title + " · Additional statistics")" /></details>}
                 }
-                @if(team.Statistics.Any(s=>s.Group==kind && s.Value!=null)){
+                @if(team.Statistics.Any(s=>s.Group==kind && s.Value is not null)){
                     <details class="baseball-extra" open="@(groups.Count==0)"><summary>Team @(kind=="batting" ? "batting" : "pitching") details</summary>
-                    <dl class="baseball-stat-list">@foreach(var stat in team.Statistics.Where(s=>s.Group==kind && s.Value!=null)){<div><dt>@stat.Label</dt><dd>@stat.Value</dd></div>}</dl>
+                    <dl class="baseball-stat-list">@foreach(var stat in team.Statistics.Where(s=>s.Group==kind && s.Value is not null)){<div><dt>@stat.Label</dt><dd>@stat.Value</dd></div>}</dl>
                     </details>
                 }
             </section>
@@ -45,9 +45,9 @@
     var title=Data.Teams.First(t=>t.Id==group.TeamId).Name + " · " + group.Name;
     <section class="baseball-panel"><h3>@title</h3><PlayerStatsTable Group="group" Indices="Enumerable.Range(0,group.Columns.Count).ToList()" Title="@title" /></section>
 }
-@if(Data.Teams.Any(t=>t.Statistics.Any(s=>s.Group!="batting" && s.Group!="pitching" && s.Value!=null))){
+@if(Data.Teams.Any(t=>t.Statistics.Any(s=>s.Group!="batting" && s.Group!="pitching" && s.Value is not null))){
     <details class="baseball-panel baseball-extra"><summary>Fielding and other team statistics</summary><div class="baseball-team-grid">
-    @foreach(var team in Data.Teams){<section><h3>@team.Name</h3><dl class="baseball-stat-list">@foreach(var stat in team.Statistics.Where(s=>s.Group!="batting" && s.Group!="pitching" && s.Value!=null)){<div><dt>@stat.Label</dt><dd>@stat.Value</dd></div>}</dl></section>}
+    @foreach(var team in Data.Teams){<section><h3>@team.Name</h3><dl class="baseball-stat-list">@foreach(var stat in team.Statistics.Where(s=>s.Group!="batting" && s.Group!="pitching" && s.Value is not null)){<div><dt>@stat.Label</dt><dd>@stat.Value</dd></div>}</dl></section>}
     </div></details>
 }
 </section>

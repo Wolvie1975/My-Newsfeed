@@ -36,7 +36,7 @@ public static class F1Query
         choices = choices.Where(c => races.Any(r => r.Round == c.Round)).OrderByDescending(c => c.Round)
             .ThenBy(c => c.SessionType == "Race" ? 0 : 1).ToList();
         var selected = Select(choices, selection);
-        var results = view == "results" && selected != null
+        var results = view == "results" && selected is not null
             ? await db.Set<F1Classification>().AsNoTracking().Where(r => r.Season == season && r.Round == selected.Round && r.SessionType == selected.SessionType)
                 .OrderBy(r => r.Position).ThenBy(r => r.DriverId).ToListAsync() : [];
         var drivers = view == "standings"

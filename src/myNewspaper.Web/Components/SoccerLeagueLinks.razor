@@ -12,8 +12,8 @@
             var choices = new List<NavigationChoice>();
             if (scheduleId is {} feed) choices.Add(new($"events?school={feed}", "Schedule"));
             if (tableId is {} table) choices.Add(new($"standings?sourceId={table}", "Table"));
-            if (scheduleId != null && Provider == "espn-championship") choices.Add(new("championship/results", "Season results"));
-            if (scheduleId != null && Provider == "espn-mls") choices.Add(new("mls/results", "Season results"));
+            if (scheduleId is not null && Provider == "espn-championship") choices.Add(new("championship/results", "Season results"));
+            if (scheduleId is not null && Provider == "espn-mls") choices.Add(new("mls/results", "Season results"));
             return choices;
         }
     }

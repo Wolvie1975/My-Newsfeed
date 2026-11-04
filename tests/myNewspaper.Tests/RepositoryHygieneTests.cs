@@ -5,7 +5,7 @@ namespace myNewspaper.Tests;
 
 /// <summary>
 /// Guards from the November 4, 2026 audit (docs/coding-standards.md, "Guardrails against past drift"): the SA password
-/// had been hard-coded in ten test files and, earlier, in appsettings.json.
+/// had been hard-coded in ten test files and, earlier, in appsettings.json; null checks were written two ways.
 /// </summary>
 public partial class RepositoryHygieneTests
 {
@@ -32,6 +32,35 @@ public partial class RepositoryHygieneTests
 
         Assert.True(offenders.Count == 0,
             "Literal passwords in tracked files (use user secrets or environment variables): " + string.Join(", ", offenders));
+    }
+
+    // Null checks use `is null` / `is not null` (general standard section 3). The only equality null comparisons left
+    // are inside EF expression trees, where C# can't use an `is` pattern (CS8122). No analyzer tells the two apart, so
+    // the total is a ratchet: it may go down, never up. Moving a query between files doesn't change it. If a new
+    // LINQ-to-EF predicate needs one, raise the constant in the same change and say why in the commit.
+    private const int AllowedExpressionTreeNullComparisons = 158;
+
+    [GeneratedRegex(@"[!=]=\s*null\b")]
+    private static partial Regex EqualityNullCheck();
+
+    [Fact]
+    public void Null_checks_use_is_null_outside_expression_trees()
+    {
+        var root = RepositoryRoot();
+        var hits = TrackedFiles(root)
+            .Where(f => (f.StartsWith("src/", StringComparison.Ordinal) || f.StartsWith("tests/", StringComparison.Ordinal))
+                && (f.EndsWith(".cs", StringComparison.Ordinal) || f.EndsWith(".razor", StringComparison.Ordinal))
+                && !f.EndsWith("/RepositoryHygieneTests.cs", StringComparison.Ordinal))
+            .Where(f => File.Exists(Path.Combine(root, f)))
+            .SelectMany(f => File.ReadLines(Path.Combine(root, f)).Select((line, i) => (f, line: i + 1, text: line)))
+            .Where(l => EqualityNullCheck().IsMatch(l.text))
+            .Select(l => $"{l.f}:{l.line}")
+            .ToList();
+
+        Assert.True(hits.Count <= AllowedExpressionTreeNullComparisons,
+            $"{hits.Count} lines compare with == null / != null; at most {AllowedExpressionTreeNullComparisons} are allowed (EF " +
+            "expression trees, where `is null` doesn't compile). Use `is null` / `is not null` everywhere else. Lines: " +
+            string.Join(", ", hits));
     }
 
     private static string RepositoryRoot()

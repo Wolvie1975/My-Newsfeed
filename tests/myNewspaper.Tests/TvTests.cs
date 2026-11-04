@@ -58,8 +58,8 @@ public class TvTests
         Assert.Equal(4, calendar.Total);
         Assert.Equal(4, calendar.Items.Select(e => e.ProviderId).Distinct().Count());
         Assert.All(calendar.Items, e => Assert.Equal(today, e.Date));
-        Assert.Equal(3, calendar.Items.Count(e => e.StartsUtc == null));
-        Assert.Single(calendar.Items, e => e.Special && e.Number == null);
+        Assert.Equal(3, calendar.Items.Count(e => e.StartsUtc is null));
+        Assert.Single(calendar.Items, e => e.Special && e.Number is null);
         db.Add(Episode(7, today.AddDays(1)));
         await db.SaveChangesAsync();
         var todays = (await TvQuery.GetOnDateAsync(db, Viewer.Household, dates, today)).Where(e => e.ShowId == id).ToList();

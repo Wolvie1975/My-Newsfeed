@@ -48,13 +48,13 @@ public static class FeedEndpoints
         };
         var hub = NewsSections.HubForView(view);
         FeedCategory? sectionCategory = null;
-        if (hub != null && (sectionCategoryName != null || categoryId != null || hub != "tech"))
+        if (hub is not null && (sectionCategoryName is not null || categoryId is not null || hub != "tech"))
         {
             sectionCategory = await db.SourceCategories.Where(c => c.NewsHub == hub
                     && (sectionCategoryName != null ? c.CategoryName == sectionCategoryName : c.Id == categoryId)
                     && db.Sources.Any(s => s.Enabled && s.SourceCategoryId == c.Id))
                 .Select(c => new FeedCategory(c.Id, c.CategoryName, 0, c.NewsHub)).SingleOrDefaultAsync();
-            if (sectionCategory == null) return Results.NotFound();
+            if (sectionCategory is null) return Results.NotFound();
             categoryId = sectionCategory.Id;
         }
 
@@ -62,7 +62,7 @@ public static class FeedEndpoints
         if (sourceId is not null && !await db.Sources.AnyAsync(s => s.Id == sourceId && s.Enabled
             && (categoryId == null || s.SourceCategoryId == categoryId))) sourceId = null;
         var page = await FeedQuery.GetFeedAsync(db, categoryId, q, cursor, FeedQuery.MoreBatch, sourceId,
-            headlinesOnly: !boxOffice && !big12News && hub == null && sectionCategory == null,
+            headlinesOnly: !boxOffice && !big12News && hub is null && sectionCategory is null,
             hub: boxOffice || big12News ? null : (hub ?? "headlines"));
 
         // Headline cards: the page decides hour or day grouping; the last group stops a repeated heading at the seam.
@@ -94,7 +94,7 @@ public static class FeedEndpoints
             }
             else
             {
-                var route = boxOffice ? "box-office" : hub == "tech" ? "tech/news" : sectionCategory != null ? NewsSections.RouteFor(sectionCategory)! : "news/all";
+                var route = boxOffice ? "box-office" : hub == "tech" ? "tech/news" : sectionCategory is not null ? NewsSections.RouteFor(sectionCategory)! : "news/all";
                 nextHref = route + FeedQuery.QueryString(categoryId, q, token, sourceId,
                     allCategories: !boxOffice && categoryId is null);
             }

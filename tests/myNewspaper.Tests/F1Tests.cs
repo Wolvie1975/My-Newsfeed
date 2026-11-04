@@ -23,7 +23,7 @@ public class F1Tests
     {
         var utc = F1Query.StartsUtc(new DateOnly(2026, 10, 18), time);
         Assert.Equal(expected, utc?.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'"));
-        if (utc != null) Assert.Equal(DateTimeKind.Utc, utc.Value.Kind);
+        if (utc is not null) Assert.Equal(DateTimeKind.Utc, utc.Value.Kind);
     }
 
     [Fact]

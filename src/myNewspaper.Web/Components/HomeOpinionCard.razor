@@ -16,14 +16,14 @@
         <ul class="d-list"><li class="d-story @PhoneColors.ForCategory("Opinion")" data-article-story="row" data-image-layout="compact" data-news-url="@href" data-news-source="@source" data-opinion-article="@item.Id">
             <a class="d-thumb" data-article-media href="@href" target="_blank" rel="noopener noreferrer" tabindex="-1" aria-hidden="true">
                 <NoPhoto Source="@source" Category="Opinion" />
-                @if (image != null) { <img src="@image" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()" /> }
+                @if (image is not null) { <img src="@image" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()" /> }
             </a>
             <div class="d-story__body">
                 <div class="d-story__top"><span class="d-src">@source</span><span class="d-story__tools">
                     <ShareButton Url="@item.Url" Title="@title" />
                     <SaveButton Item="item" Title="@title" Source="@source" Summary="@summary" />
                 </span></div>
-                <h3 class="d-story__title">@if(href != null) { <a href="@href" target="_blank" rel="noopener noreferrer">@title</a> } else { @title }</h3>
+                <h3 class="d-story__title">@if(href is not null) { <a href="@href" target="_blank" rel="noopener noreferrer">@title</a> } else { @title }</h3>
                 @if(!item.Undated) { <p class="d-story__date"><time datetime="@item.Date.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'")" title="@Dates.PublishedFull(item.Date)">Published @Dates.Published(item.Date) · @Dates.Time(item.Date)</time></p> }
                 @if(!string.IsNullOrEmpty(summary)) { <p class="d-story__sum">@summary</p> }
             </div>

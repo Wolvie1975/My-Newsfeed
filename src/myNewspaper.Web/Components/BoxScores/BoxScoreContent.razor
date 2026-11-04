@@ -25,7 +25,7 @@
         <SoccerTeamStats Data="data" />
     } else {
     var firstTeamGroup = true;
-    @foreach(var group in data.Teams.SelectMany(t=>t.Statistics).Where(s=>s.Value!=null).GroupBy(s=>s.Group)) {
+    @foreach(var group in data.Teams.SelectMany(t=>t.Statistics).Where(s=>s.Value is not null).GroupBy(s=>s.Group)) {
         <details class="box-score-section" open="@(data.Players.Count==0 && firstTeamGroup)"><summary>@(group.Key is null ? "Team statistics" : "Team statistics · " + group.Key)</summary><div class="box-table-scroll" tabindex="0" role="region" aria-label="Team statistics">
             <table class="standings-table"><caption>@(group.Key ?? "Team statistics")</caption><thead><tr><th scope="col">Statistic</th>@foreach(var team in data.Teams){<th scope="col">@team.Name</th>}</tr></thead>
             <tbody>@foreach(var stat in group.DistinctBy(s=>s.Key)){<tr><th scope="row">@stat.Label</th>@foreach(var team in data.Teams){<td>@(team.Statistics.FirstOrDefault(s=>s.Group==group.Key && s.Key==stat.Key)?.Value ?? "—")</td>}</tr>}</tbody></table>
@@ -43,7 +43,7 @@
         <section><h3>@name · @group.Name</h3><div class="box-table-scroll" tabindex="0" role="region" aria-label="@($"{name} {group.Name} player statistics")">
             <table class="standings-table"><caption>@name · @group.Name</caption><thead><tr><th scope="col">Player</th>@foreach(var col in group.Columns){<th scope="col" title="@col.Description">@col.Label</th>}</tr></thead>
             <tbody>@foreach(var athlete in group.Athletes){<tr><th scope="row">@athlete.Name @if(athlete.Position is {} position){<span class="updated"> · @position</span>} @if(athlete.Starter==true){<span class="updated"> · Starter</span>}</th>@foreach(var value in athlete.Stats){<td>@(value ?? "—")</td>}</tr>}</tbody>
-            @if(group.Totals.Any(v=>v!=null)){<tfoot><tr><th scope="row">Totals</th>@foreach(var value in group.Totals){<td>@(value ?? "—")</td>}</tr></tfoot>}
+            @if(group.Totals.Any(v=>v is not null)){<tfoot><tr><th scope="row">Totals</th>@foreach(var value in group.Totals){<td>@(value ?? "—")</td>}</tr></tfoot>}
             </table>
         </div></section>
     }

@@ -47,12 +47,12 @@ public class ScoreboardReadTests
         Assert.All(top25Snapshot.Games, g =>
         {
             Assert.Contains(g.League, new[] { "college-football", "mens-college-basketball" });
-            Assert.True(g.HomeRank != null || g.AwayRank != null);
+            Assert.True(g.HomeRank is not null || g.AwayRank is not null);
         });
         Assert.All(top25Snapshot.Top25Week, g =>
         {
             Assert.Contains(g.League, new[] { "college-football", "mens-college-basketball" });
-            Assert.True(g.HomeRank != null || g.AwayRank != null);
+            Assert.True(g.HomeRank is not null || g.AwayRank is not null);
         });
     }
 }

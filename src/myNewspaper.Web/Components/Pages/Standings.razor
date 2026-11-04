@@ -54,7 +54,7 @@ else
     <details class="ranking-info"><summary>About these standings</summary>
     @if (selected.LastSuccessAt is { } refreshed)
     { <p class="updated">Last refreshed <time datetime="@refreshed.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'")">@Dates.PublishedFull(refreshed)</time></p> }
-    @if (rows.Select(r => FeedQuery.SafeHref(r.SourceUrl)).FirstOrDefault(u => u != null) is { } sourceUrl)
+    @if (rows.Select(r => FeedQuery.SafeHref(r.SourceUrl)).FirstOrDefault(u => u is not null) is { } sourceUrl)
     { <p><a href="@sourceUrl" target="_blank" rel="noopener noreferrer">View source table ↗</a></p> }
     <p class="updated">Tables retain the published season and provider order. Refresh times describe collection by myNewspaper.</p>
     </details>
