@@ -1,5 +1,5 @@
-@inject ScoreboardQuery Repository
-@inject BoxScoreQuery BoxScores
+
+
 @inject ILogger<ScoreboardPanel> Log
 @inject FeedDates Dates
 @inject IDbContextFactory<WebScraperContext> Factory
@@ -364,7 +364,8 @@
     protected override async Task OnParametersSetAsync() {
         today = Dates.Today;
         selectedDay = !Compact && DateOnly.TryParseExact(Day, "yyyy-MM-dd", out var day) && day >= today.AddDays(-1) && day <= today.AddDays(7) ? day : today;
-        snapshot = await Repository.ReadAsync(selectedDay, selectedDay == today, Compact ? null : Competition, Compact ? null : Follow, !Compact && Status == "final", Compact ? null : Show);
+        await using var boardDb = await Factory.CreateDbContextAsync();
+        snapshot = await ScoreboardQuery.ReadAsync(boardDb, Dates, Log, selectedDay, selectedDay == today, Compact ? null : Competition, Compact ? null : Follow, !Compact && Status == "final", Compact ? null : Show);
         selection = ScoreboardSelection.Resolve(Compact ? null : Show, Compact ? null : Competition, Compact ? null : Follow, snapshot.Coverage, snapshot.Follows ?? []);
         try {
             await using var db = await Factory.CreateDbContextAsync();
@@ -398,7 +399,7 @@
         }
         visibleGames = Compact ? homeGames.Take(6).ToList() : snapshot.Games;
         var allGamesForBox = visibleGames.Concat(snapshot.Top25Week ?? []).Where(g => g.Provider == "espn" && g.HasBoxScore).Select(g => new BoxIdentity(g.Sport, g.League, g.EventId));
-        boxLabels = await BoxScores.AvailableAsync(allGamesForBox);
+        boxLabels = await BoxScoreQuery.AvailableAsync(boardDb, allGamesForBox, Log);
     }
 
     /// <summary>The Show choices, shared by the desktop filter and the phone ribbon's Sport select.</summary>

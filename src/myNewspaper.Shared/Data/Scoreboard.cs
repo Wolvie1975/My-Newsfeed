@@ -143,13 +143,14 @@ public sealed record ScoreboardSelection(string Value, string? Competition = nul
 }
 public sealed record ScoreboardSnapshot(IReadOnlyList<ScoreboardGame> Games, IReadOnlyList<ScoreboardCoverage> Coverage, bool Available, IReadOnlyList<ScoreboardFollow>? Follows = null, IReadOnlyList<ScoreboardGame>? Top25Week = null);
 
-public sealed class ScoreboardQuery(IDbContextFactory<WebScraperContext> factory, FeedDates dates, ILogger<ScoreboardQuery> log)
+/// <summary>The scoreboard read: a failure is logged and reported as an unavailable snapshot, never thrown.</summary>
+public static class ScoreboardQuery
 {
-    public async Task<ScoreboardSnapshot> ReadAsync(DateOnly day, bool carryOver = false, string? competition = null, int? followId = null, bool finalsOnly = false, string? show = null)
+    public static async Task<ScoreboardSnapshot> ReadAsync(WebScraperContext db, FeedDates dates, ILogger log, DateOnly day, bool carryOver = false,
+        string? competition = null, int? followId = null, bool finalsOnly = false, string? show = null)
     {
         try
         {
-            await using var db = await factory.CreateDbContextAsync();
             var coverage = await db.Database.SqlQuery<ScoreboardCoverage>($"SELECT ID,SourceKind,OriginId,Sport,League,Label,LastAttemptAt,LastSuccessAt,Availability FROM dbo.SportsScoreboardCoverage").Where(c => c.League != "womens-college-basketball").ToListAsync();
             var origins = await db.ResultFollows.AsNoTracking().Where(f => f.Enabled && f.League != "womens-college-basketball").ToListAsync();
             var originIds = origins.Select(f => f.Id).ToArray();

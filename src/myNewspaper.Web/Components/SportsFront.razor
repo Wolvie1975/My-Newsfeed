@@ -3,7 +3,7 @@
 @inject FeedDates Dates
 @inject IConfiguration Config
 @inject ILogger<SportsFront> Log
-@inject ScoreboardQuery Scoreboard
+
 
 @* Sports front page as in the approved concept: today's scores across the top, then upcoming games, the lead story and
    headlines, and a side column of hourly rotating standings and Top 25 polls. Phones get the same sections as cards. *@
@@ -343,7 +343,7 @@
 
         // Phones: live scores for the Today's games band, and the next F1 round for its fold. The scoreboard read
         // reports its own failures; F1 just drops its fold.
-        board = (await Scoreboard.ReadAsync(today, carryOver: true)).Games;
+        board = (await ScoreboardQuery.ReadAsync(db, Dates, Log, today, carryOver: true)).Games;
         live = board.Where(g => g.Active).ToList();
         try
         {

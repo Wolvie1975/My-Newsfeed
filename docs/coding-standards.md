@@ -33,9 +33,10 @@ reviewer. Existing code is being brought into line in the clean-up steps listed 
     `YoutubeVideoFeed.IsHouseholdPick`, `SourceCategories.NewsHub`).
   - **App-owned** tables are prefixed `MyDailyFeed` (profiles, devices, follows, topics, saved lists, requests,
     household). The app creates them in `db/` migrations.
-- **[Review]** Components inject `IDbContextFactory<WebScraperContext>` as `Factory` and call `XxxQuery`/`XxxStore`
-  methods. Admin pages currently run LINQ inline (about 18 files); move it into query/store classes when a page is
-  next changed.
+- **[Enforced]** Components inject `IDbContextFactory<WebScraperContext>` as `Factory`, create the context as `db`
+  and call `XxxQuery`/`XxxStore` methods, which return records rather than entities. Admin reads are in `AdminQuery`
+  and writes in `AdminStore`. `RepositoryHygieneTests` fails on `db.<DbSet>` in any `.razor` file or in Web/Admin host
+  code; it reads the DbSet names from `WebScraperContext` and keys on the `db` name, so keep that name.
 - **[Enforced]** Raw SQL goes through `FromSql`, `SqlQuery<T>` or `ExecuteSql(Async)` with an interpolated string. The
   `*Raw` overloads are in [BannedSymbols.txt](../BannedSymbols.txt) (RS0030) for application projects; test fixtures
   may run SQL text. New banned APIs go in that file with a message saying what to use instead.
@@ -142,7 +143,7 @@ quietly come back. Update the **Status** column as each guard lands, and don't r
 
 | Problem found | Rule | Guard that stops it recurring | Status |
 | --- | --- | --- | --- |
-| The same data job done four ways: inline LINQ in about 25 components; `SqlQueryRaw`, `ExecuteSqlRaw`, `DbCommand` and interpolated SQL side by side | Data section above; general §6 | Banned-API list blocks the `*Raw` APIs. A check script fails on `db.<Table>` LINQ inside `.razor` files. Remaining `DbCommand` uses each carry a "why" comment. | In progress (step 4). Done November 4, 2026: `BannedSymbols.txt` (RS0030, application projects) refuses every `ExecuteSqlRaw`, `SqlQueryRaw` and `FromSqlRaw` overload; the seven uses became `SqlQuery`/`ExecuteSqlAsync`; the box office reads moved from `DbCommand` to `SqlQuery`; `SharedArticles` keeps its `DbCommand` with the reason. Still to do: inline LINQ in components, and its check |
+| The same data job done four ways: inline LINQ in about 25 components; `SqlQueryRaw`, `ExecuteSqlRaw`, `DbCommand` and interpolated SQL side by side | Data section above; general §6 | Banned-API list blocks the `*Raw` APIs. A check script fails on `db.<Table>` LINQ inside `.razor` files. Remaining `DbCommand` uses each carry a "why" comment. | Done November 4, 2026: `BannedSymbols.txt` (RS0030, application projects) refuses every `ExecuteSqlRaw`, `SqlQueryRaw` and `FromSqlRaw` overload, and the seven uses became `SqlQuery`/`ExecuteSqlAsync`; the box office reads moved from `DbCommand` to `SqlQuery`, and `SharedArticles` keeps its `DbCommand` with the reason; the inline queries in 9 Web and 20 Admin files moved to query/store classes (new `AdminQuery`), and `BoxScoreQuery`/`ScoreboardQuery` became static; `RepositoryHygieneTests` fails on `db.<DbSet>` in components and host code. The check is a hygiene test rather than a script |
 | About 60 read methods with no `CancellationToken`; `CreateDbContextAsync()` without a token | General §4 | `CA2016` at `warning`; review checklist | Planned (step 5) |
 | Clock read three ways inside queries; `nowUtc`/`utcNow`/`now` parameter names | General §4 | Banned-API list blocks `DateTime.Now`, `DateTime.UtcNow`, `DateTimeOffset.UtcNow` outside the edge | Planned (step 6) |
 | Shared code in `myNewspaper.Web.*` with `RootNamespace` `myNewspaper.Common` | General §2; Solution shape above | `IDE0130` at `warning`; `RootNamespace` matches the assembly | Done November 4, 2026: Shared is `myNewspaper.Shared.*` (and `myNewspaper.Hosting` became `myNewspaper.Shared.Hosting`), its `RootNamespace` is `myNewspaper.Shared`, and Admin's endpoints and tests moved out of `myNewspaper.Web.Endpoints`/`myNewspaper.Tests` |

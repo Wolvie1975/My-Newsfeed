@@ -81,50 +81,53 @@ public sealed class BoxSnapshot
     public string? BoxScoreUrl { get; set; }
 }
 public sealed record BoxDetail(BoxData Data, DateTime? Updated, string? ProviderUrl);
-public sealed class BoxScoreQuery(IDbContextFactory<WebScraperContext> factory, ILogger<BoxScoreQuery> log)
+/// <summary>
+/// Optional box score reads: a failure is logged and reported as "none", so a page never fails because box scores are
+/// unavailable.
+/// </summary>
+public static class BoxScoreQuery
 {
-    public async Task<IReadOnlyDictionary<string, string>> AvailableAsync(IEnumerable<BoxIdentity> identities)
+    public static async Task<IReadOnlyDictionary<string, string>> AvailableAsync(WebScraperContext db, IEnumerable<BoxIdentity> identities, ILogger log,
+        CancellationToken ct = default)
     {
         var ids = identities.Where(i => i.Valid).Distinct().Take(200).ToList();
         if (ids.Count == 0) return new Dictionary<string, string>();
         try
         {
-            await using var db = await factory.CreateDbContextAsync();
             var keys = ids.Select(id => id.Key).ToList();
             var rows = await db.Database.SqlQuery<BoxSnapshot>($"SELECT Sport,League,EventId,HasBoxScore,Availability,Payload,FetchedAt,SummaryUrl,BoxScoreUrl FROM dbo.SportsBoxScores")
-                .Where(r => keys.Contains(r.Sport + "|" + r.League + "|" + r.EventId)).ToListAsync();
+                .Where(r => keys.Contains(r.Sport + "|" + r.League + "|" + r.EventId)).ToListAsync(ct);
             // Validate cached JSON in one bounded batch, so corrupt/unsupported entries never advertise a dead action.
             return rows.Where(r => r.HasBoxScore && r.Availability != "unavailable").Select(r => BoxData.Parse(r.Payload, new(r.Sport, r.League, r.EventId)))
                 .OfType<BoxData>().DistinctBy(d => d.Identity.Key).ToDictionary(d => d.Identity.Key, d => d.Label);
         }
         catch (Exception ex) when (DataFailures.IsReadFailure(ex)) { log.LogWarning(ex, "Optional box score availability unavailable"); return new Dictionary<string, string>(); }
     }
-    public async Task<BoxDetail?> GetAsync(BoxIdentity id)
+    public static async Task<BoxDetail?> GetAsync(WebScraperContext db, BoxIdentity id, ILogger log, CancellationToken ct = default)
     {
         if (!id.Valid) return null;
         try
         {
-            await using var db = await factory.CreateDbContextAsync();
             // Match only games which are still public through existing followed results or current season source queries.
             var ordinary = await db.ResultGames.AsNoTracking().AnyAsync(g => g.Sport == id.Sport && g.League == id.League && g.EventId == id.EventId && g.Completed
                 && db.ResultFollows.Any(f => f.Enabled && f.Sport == g.Sport && f.League == g.League && (f.Kind == "league"
                     || f.Kind == "team" && (f.TeamId == g.HomeTeamId || f.TeamId == g.AwayTeamId)
-                    || f.Kind == "conference" && db.ResultFollowTeams.Any(t => t.FollowId == f.Id && (t.TeamId == g.HomeTeamId || t.TeamId == g.AwayTeamId)))));
+                    || f.Kind == "conference" && db.ResultFollowTeams.Any(t => t.FollowId == f.Id && (t.TeamId == g.HomeTeamId || t.TeamId == g.AwayTeamId)))), ct);
             var seasonVisible = false;
             if (!ordinary && id.Sport == "soccer" && int.TryParse(id.EventId, out var gameId))
             {
-                if (id.League == "usa.1") { var page = await MlsResultsQuery.GetAsync(db); seasonVisible = page.Source is not null && await MlsResultsQuery.Visible(db, page.Source.Id).AnyAsync(g => g.Season == page.Season && g.GameId == gameId); }
-                if (id.League == "eng.2") { var page = await ChampionshipResultsQuery.GetAsync(db, false); seasonVisible = page.Source is not null && await ChampionshipResultsQuery.Visible(db, page.Source.Id).AnyAsync(g => g.Season == page.Season && g.GameId == gameId); }
+                if (id.League == "usa.1") { var page = await MlsResultsQuery.GetAsync(db); seasonVisible = page.Source is not null && await MlsResultsQuery.Visible(db, page.Source.Id).AnyAsync(g => g.Season == page.Season && g.GameId == gameId, ct); }
+                if (id.League == "eng.2") { var page = await ChampionshipResultsQuery.GetAsync(db, false); seasonVisible = page.Source is not null && await ChampionshipResultsQuery.Visible(db, page.Source.Id).AnyAsync(g => g.Season == page.Season && g.GameId == gameId, ct); }
             }
             if (!ordinary && !seasonVisible && id.Sport == "hockey" && id.League == "nhl"
                 && int.TryParse(id.EventId, out var nhlGameId))
                 seasonVisible = await NhlBoxScoreVisibility.ContainsAsync(db, nhlGameId);
             if (!ordinary && !seasonVisible)
             {
-                var publicScoreboard = await db.Database.SqlQuery<int>($"SELECT COUNT(*) AS Value FROM dbo.SportsScoreboard WHERE Sport={id.Sport} AND League={id.League} AND EventId={id.EventId} AND Provider='espn'").SingleAsync();
+                var publicScoreboard = await db.Database.SqlQuery<int>($"SELECT COUNT(*) AS Value FROM dbo.SportsScoreboard WHERE Sport={id.Sport} AND League={id.League} AND EventId={id.EventId} AND Provider='espn'").SingleAsync(ct);
                 if (publicScoreboard == 0) return null;
             }
-            var row = await db.Database.SqlQuery<BoxSnapshot>($"SELECT Sport,League,EventId,HasBoxScore,Availability,Payload,FetchedAt,SummaryUrl,BoxScoreUrl FROM dbo.SportsBoxScores WHERE Sport={id.Sport} AND League={id.League} AND EventId={id.EventId}").SingleOrDefaultAsync();
+            var row = await db.Database.SqlQuery<BoxSnapshot>($"SELECT Sport,League,EventId,HasBoxScore,Availability,Payload,FetchedAt,SummaryUrl,BoxScoreUrl FROM dbo.SportsBoxScores WHERE Sport={id.Sport} AND League={id.League} AND EventId={id.EventId}").SingleOrDefaultAsync(ct);
             if (row?.HasBoxScore != true || row.Availability == "unavailable" || BoxData.Parse(row.Payload, id) is not { } data) return null;
             return new(data, row.FetchedAt, ProviderUrl(row.BoxScoreUrl, id) ?? ProviderUrl(row.SummaryUrl, id));
         }

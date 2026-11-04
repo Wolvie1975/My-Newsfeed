@@ -1,4 +1,4 @@
-@inject BoxScoreQuery BoxScores
+
 @page "/college"
 @page "/college/results"
 @page "/college/standings"
@@ -200,7 +200,7 @@ else
                 resultDay = DateOnly.TryParseExact(Day, "yyyy-MM-dd", out var day) && day >= Dates.Today.AddDays(-1) && day <= Dates.Today ? day : Dates.Today;
                 updatedAt = await ResultsQuery.LastSyncedAsync(db, selected.League);
                 results = await ResultsQuery.GetResultsAsync(db, null, window: ResultsWindow.ForDay(resultDay, Dates.Zone), collegeLeague: selected.League);
-                boxLabels = await BoxScores.AvailableAsync(results.Items.Select(i=>new BoxIdentity(i.Sport ?? "",i.League ?? "",i.EventId)));
+                boxLabels = await BoxScoreQuery.AvailableAsync(db, results.Items.Select(i=>new BoxIdentity(i.Sport ?? "",i.League ?? "",i.EventId)), Log);
             }
         }
         catch (Exception ex) when (DataFailures.IsReadFailure(ex))

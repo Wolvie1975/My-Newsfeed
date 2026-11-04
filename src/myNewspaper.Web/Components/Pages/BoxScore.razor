@@ -1,6 +1,7 @@
 @page "/box-score/{Sport}/{League}/{EventId}"
 @layout PublicLayout
-@inject BoxScoreQuery Repository
+@inject IDbContextFactory<WebScraperContext> Factory
+@inject ILogger<BoxScore> Log
 <PageTitle>Game statistics · myNewspaper</PageTitle>
 <PageHeading Section="sports" SectionCurrent="scoreboard" Title="Game statistics" Eyebrow="SPORTS RESULTS" Description="Available collected team and player statistics." />
 <p><a href="scoreboard">← Scoreboard</a></p>
@@ -12,7 +13,8 @@
     [CascadingParameter] private HttpContext? Http {get;set;}
     private BoxDetail? detail;
     protected override async Task OnParametersSetAsync() {
-        detail=await Repository.GetAsync(new(Sport,League,EventId));
+        await using var db = await Factory.CreateDbContextAsync();
+        detail = await BoxScoreQuery.GetAsync(db, new(Sport, League, EventId), Log);
         if(detail is null && Http is not null && !Http.Response.HasStarted)Http.Response.StatusCode=404;
     }
 }

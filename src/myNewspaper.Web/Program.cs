@@ -16,8 +16,8 @@ var builder = WebApplication.CreateBuilder(args);
 // Where to watch, ESPN results, TVmaze and forwarded headers.
 builder.Services.AddMyNewspaperCore(builder.Configuration, CoreHostLabels.Public);
 
-builder.Services.AddScoped<BoxScoreQuery>();
-builder.Services.AddScoped<ScoreboardQuery>();
+
+
 builder.Services.AddSingleton<SharedArticles>();
 builder.Services.AddAntiforgery(options => options.HeaderName = "X-Saved-CSRF");
 builder.Services.AddSingleton<LocalWeather>();

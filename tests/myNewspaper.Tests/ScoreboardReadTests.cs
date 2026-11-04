@@ -11,11 +11,12 @@ public class ScoreboardReadTests
     [Fact]
     public async Task Enabled_views_materialize_and_competition_filters_preserve_canonical_identity()
     {
-        var factory = new PooledDbContextFactory<WebScraperContext>(new DbContextOptionsBuilder<WebScraperContext>()
-            .UseSqlServer(TestDatabase.ConnectionString).Options);
-        var repository = new ScoreboardQuery(factory, FeedDates.Create(FeedDates.SiteTimeZoneId), NullLogger<ScoreboardQuery>.Instance);
+        await using var db = TestDatabase.CreateContext();
+        var dates = FeedDates.Create(FeedDates.SiteTimeZoneId);
+        Task<ScoreboardSnapshot> Read(DateOnly day, bool carryOver, string? competition = null, bool finalsOnly = false, string? show = null) =>
+            ScoreboardQuery.ReadAsync(db, dates, NullLogger.Instance, day, carryOver, competition, null, finalsOnly, show);
         var today = FeedDates.Create("America/Chicago").Today;
-        var snapshot = await repository.ReadAsync(today, true);
+        var snapshot = await Read(today, true);
         Assert.True(snapshot.Available);
         Assert.DoesNotContain(snapshot.Coverage, c => c.League == "womens-college-basketball");
         Assert.DoesNotContain(snapshot.Follows ?? [], f => f.League == "womens-college-basketball");
@@ -26,22 +27,22 @@ public class ScoreboardReadTests
             Assert.Contains(snapshot.Coverage, c => c.Sport == g.Sport && c.League == g.League);
             Assert.True(g.ScoreboardDate == today || g.ScoreboardDate < today && g.Active);
         });
-        var finals = await repository.ReadAsync(today, true, finalsOnly: true);
+        var finals = await Read(today, true, finalsOnly: true);
         Assert.True(finals.Available);
         Assert.Equal(snapshot.Games.Where(g => g.Completed && g.Status == "final").Select(g => g.Key).Order(), finals.Games.Select(g => g.Key).Order());
         foreach (var follow in snapshot.Follows ?? [])
         {
-            var filtered = await repository.ReadAsync(today, true, show: "f:" + follow.Id);
+            var filtered = await Read(today, true, show: "f:" + follow.Id);
             Assert.True(filtered.Available);
             Assert.Equal(snapshot.Games.Where(follow.Matches).Select(g => g.Key).Order(), filtered.Games.Select(g => g.Key).Order());
         }
         foreach (var competition in snapshot.Coverage.DistinctBy(c => c.Key).Take(3))
         {
-            var filtered = await repository.ReadAsync(today, true, competition.Key);
+            var filtered = await Read(today, true, competition.Key);
             Assert.True(filtered.Available);
             Assert.All(filtered.Games, g => { Assert.Equal(competition.Sport, g.Sport); Assert.Equal(competition.League, g.League); });
         }
-        var top25Snapshot = await repository.ReadAsync(today, true, show: "top25");
+        var top25Snapshot = await Read(today, true, show: "top25");
         Assert.True(top25Snapshot.Available);
         Assert.NotNull(top25Snapshot.Top25Week);
         Assert.All(top25Snapshot.Games, g =>

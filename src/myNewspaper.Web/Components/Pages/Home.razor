@@ -5,7 +5,7 @@
 @inject myNewspaper.Shared.Profiles.ProfileContext Reader
 @inject NavigationManager Nav
 @inject ILogger<Home> Log
-@inject ScoreboardQuery Scoreboard
+
 @inject LocalWeather Weather
 @using myNewspaper.Web.Components.Feed
 
@@ -613,7 +613,7 @@
         tonight = TodayTonight.Build(todays, Dates);
 
         // Masthead ear: what is live, otherwise what starts next. The scoreboard read reports failures itself.
-        var board = await Scoreboard.ReadAsync(Dates.TodayAt(nowUtc), carryOver: true);
+        var board = await ScoreboardQuery.ReadAsync(db, Dates, Log, Dates.TodayAt(nowUtc), carryOver: true);
         boardGames = board.Games;
         liveGames = board.Games.Where(g => g.Active).Take(3).ToList();
         upcomingGames = board.Games.Where(g => g.Status == "upcoming").Take(3).ToList();
