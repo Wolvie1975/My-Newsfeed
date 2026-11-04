@@ -71,20 +71,20 @@ public static class MeEndpoints
             // Check the show with TVmaze rather than trusting the title in the form.
             var response = await tvmaze.GetShowAsync(show.Value);
             if (response.Error is not null || response.Shows.Count != 1) return To(back, "shows", error: "show-unavailable");
-            await MyFollows.FollowShowAsync(db.Context, reader.Id, show.Value, response.Shows[0].Name, db.Ct);
+            await FollowStore.FollowShowAsync(db.Context, reader.Id, show.Value, response.Shows[0].Name, db.Ct);
             return To(back, "shows", done: "show-followed");
         });
 
         me.MapPost("/tv/{trackingId:int}/unfollow", async (int trackingId, ProfileContext reader, RequestDb db) =>
         {
-            await MyFollows.UnfollowShowAsync(db.Context, reader.Id, trackingId, db.Ct);
+            await FollowStore.UnfollowShowAsync(db.Context, reader.Id, trackingId, db.Ct);
             return Back("shows", done: "show-unfollowed");
         }).RequireAntiforgery();
 
         me.MapPost("/channels/{feedId:int}", async (int feedId, [FromForm] string? follow, ProfileContext reader, RequestDb db) =>
         {
             var on = follow == "on";
-            return await MyFollows.SetChannelAsync(db.Context, reader.Id, feedId, on, db.Ct)
+            return await FollowStore.SetChannelAsync(db.Context, reader.Id, feedId, on, db.Ct)
                 ? Back("channels", done: on ? "channel-on" : "channel-off")
                 : Back("channels", error: "channel-unknown");
         });

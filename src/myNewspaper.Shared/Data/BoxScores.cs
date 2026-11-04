@@ -82,7 +82,7 @@ public sealed class BoxSnapshot
     public string? BoxScoreUrl { get; set; }
 }
 public sealed record BoxDetail(BoxData Data, DateTime? Updated, string? ProviderUrl);
-public sealed class BoxScoresRepository(IDbContextFactory<WebScraperContext> factory, ILogger<BoxScoresRepository> log)
+public sealed class BoxScoreQuery(IDbContextFactory<WebScraperContext> factory, ILogger<BoxScoreQuery> log)
 {
     public async Task<IReadOnlyDictionary<string, string>> AvailableAsync(IEnumerable<BoxIdentity> identities)
     {

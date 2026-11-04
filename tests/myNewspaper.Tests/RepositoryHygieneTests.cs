@@ -5,7 +5,8 @@ namespace myNewspaper.Tests;
 
 /// <summary>
 /// Guards from the November 4, 2026 audit (docs/coding-standards.md, "Guardrails against past drift"): the SA password
-/// had been hard-coded in ten test files and, earlier, in appsettings.json; null checks were written two ways.
+/// had been hard-coded in ten test files and, earlier, in appsettings.json; null checks were written two ways; and some
+/// classes had role-less names (BoxScoresRepository, AdminData).
 /// </summary>
 public partial class RepositoryHygieneTests
 {
@@ -61,6 +62,29 @@ public partial class RepositoryHygieneTests
             $"{hits.Count} lines compare with == null / != null; at most {AllowedExpressionTreeNullComparisons} are allowed (EF " +
             "expression trees, where `is null` doesn't compile). Use `is null` / `is not null` everywhere else. Lines: " +
             string.Join(", ", hits));
+    }
+
+    // Class names say their role (general standard section 2): XxxQuery, XxxStore, XxxEndpoints, XxxService,
+    // XxxClient, XxxOptions. Records are DTOs and aren't checked.
+    [GeneratedRegex(@"\b(class|interface)\s+(?<name>\w*(Repository|Manager|Helpers?|Data|Utils?|Utilities))\b")]
+    private static partial Regex RolelessTypeName();
+
+    [Fact]
+    public void Classes_are_not_named_repository_manager_helper_or_data()
+    {
+        var root = RepositoryRoot();
+        var offenders = TrackedFiles(root)
+            .Where(f => f.StartsWith("src/", StringComparison.Ordinal)
+                && (f.EndsWith(".cs", StringComparison.Ordinal) || f.EndsWith(".razor", StringComparison.Ordinal)))
+            .Where(f => File.Exists(Path.Combine(root, f)))
+            .SelectMany(f => File.ReadLines(Path.Combine(root, f))
+                .Select(l => RolelessTypeName().Match(l))
+                .Where(m => m.Success)
+                .Select(m => $"{f}: {m.Groups["name"].Value}"))
+            .ToList();
+
+        Assert.True(offenders.Count == 0,
+            "Name classes by role (XxxQuery, XxxStore, XxxEndpoints, XxxService, XxxClient, XxxOptions): " + string.Join(", ", offenders));
     }
 
     private static string RepositoryRoot()

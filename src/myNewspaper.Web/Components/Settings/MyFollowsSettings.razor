@@ -149,7 +149,7 @@
     {
         if (Reader.Profile is not { } me) return;
         await using var db = await Factory.CreateDbContextAsync();
-        page = await MyFollows.GetAsync(db, me.Id);
+        page = await FollowStore.GetAsync(db, me.Id);
         followedShows = page.Shows.Select(s => s.TvmazeShowId).ToHashSet();
         requests = await RequestStore.MineAsync(db, me.Id);
     }

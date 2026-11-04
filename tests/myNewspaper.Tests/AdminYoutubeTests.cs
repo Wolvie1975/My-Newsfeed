@@ -26,7 +26,7 @@ public class AdminYoutubeTests
     [InlineData("  UCabc-_123  ", "https://www.youtube.com/feeds/videos.xml?channel_id=UCabc-_123")]
     [InlineData("UC a&b", "https://www.youtube.com/feeds/videos.xml?channel_id=UC%20a%26b")]
     public void Feed_url_is_the_standard_atom_address_for_the_channel(string channelId, string expected) =>
-        Assert.Equal(expected, AdminData.YoutubeFeedUrl(channelId));
+        Assert.Equal(expected, AdminStore.YoutubeFeedUrl(channelId));
 
     [Fact]
     public async Task Sync_creates_a_feed_for_a_channel_that_has_none_and_links_its_videos()
@@ -39,12 +39,12 @@ public class AdminYoutubeTests
         db.YouTubeVideos.AddRange(Video(tag, channel, "Older name", 1), Video(tag, channel, "Newer name", 2));
         await db.SaveChangesAsync();
 
-        var result = await AdminData.SyncYoutubeFeedsAsync(db);
+        var result = await AdminStore.SyncYoutubeFeedsAsync(db);
 
         Assert.True(result.FeedsCreated >= 1);
         Assert.True(result.VideosLinked >= 2);
         var feed = await db.YoutubeVideoFeeds.AsNoTracking().SingleAsync(f => f.ChannelId == channel);
-        Assert.Equal(AdminData.YoutubeFeedUrl(channel), feed.Url);
+        Assert.Equal(AdminStore.YoutubeFeedUrl(channel), feed.Url);
         Assert.False(string.IsNullOrEmpty(feed.ChannelName));   // taken from the videos
         Assert.True(feed.DateAdded > DateTime.UtcNow.AddMinutes(-5));
         Assert.Equal(2, await db.YouTubeVideos.CountAsync(v => v.ChannelId == channel && v.YoutubeVideoFeedId == feed.Id));
@@ -63,7 +63,7 @@ public class AdminYoutubeTests
         db.YouTubeVideos.Add(Video(tag, channel, "Name on the video"));
         await db.SaveChangesAsync();
 
-        await AdminData.SyncYoutubeFeedsAsync(db);
+        await AdminStore.SyncYoutubeFeedsAsync(db);
 
         Assert.Equal(1, await db.YoutubeVideoFeeds.CountAsync(f => f.ChannelId == channel));
         var saved = await db.YoutubeVideoFeeds.AsNoTracking().SingleAsync(f => f.ChannelId == channel);
@@ -71,8 +71,8 @@ public class AdminYoutubeTests
         Assert.Equal("https://example.test/my-feed", saved.Url);
         Assert.Equal(feed.Id, (await db.YouTubeVideos.AsNoTracking().SingleAsync(v => v.ChannelId == channel)).YoutubeVideoFeedId);
 
-        var again = await AdminData.SyncYoutubeFeedsAsync(db);
-        Assert.Equal(new AdminData.YoutubeSyncResult(0, 0), again);         // nothing left to do
+        var again = await AdminStore.SyncYoutubeFeedsAsync(db);
+        Assert.Equal(new AdminStore.YoutubeSyncResult(0, 0), again);         // nothing left to do
     }
 
     [Fact]
@@ -90,7 +90,7 @@ public class AdminYoutubeTests
         db.AddRange(chosen, matching, video);
         await db.SaveChangesAsync();
 
-        await AdminData.SyncYoutubeFeedsAsync(db);
+        await AdminStore.SyncYoutubeFeedsAsync(db);
 
         Assert.Equal(chosen.Id, (await db.YouTubeVideos.AsNoTracking().SingleAsync(v => v.Id == video.Id)).YoutubeVideoFeedId);
     }
@@ -104,8 +104,8 @@ public class AdminYoutubeTests
         db.YoutubeVideoFeeds.Add(feed);
         await db.SaveChangesAsync();
 
-        Assert.True(await AdminData.DeleteYoutubeFeedAsync(db, feed.Id, includeVideos: false));
-        Assert.False(await AdminData.DeleteYoutubeFeedAsync(db, feed.Id, includeVideos: false));   // already gone
+        Assert.True(await AdminStore.DeleteYoutubeFeedAsync(db, feed.Id, includeVideos: false));
+        Assert.False(await AdminStore.DeleteYoutubeFeedAsync(db, feed.Id, includeVideos: false));   // already gone
     }
 
     [Fact]
@@ -125,11 +125,11 @@ public class AdminYoutubeTests
         db.YouTubeVideos.Add(bystander);
         await db.SaveChangesAsync();
 
-        var blocked = await Assert.ThrowsAnyAsync<Exception>(() => AdminData.DeleteYoutubeFeedAsync(db, feed.Id, includeVideos: false));
-        Assert.True(AdminData.IsForeignKeyViolation(blocked));
+        var blocked = await Assert.ThrowsAnyAsync<Exception>(() => AdminStore.DeleteYoutubeFeedAsync(db, feed.Id, includeVideos: false));
+        Assert.True(AdminStore.IsForeignKeyViolation(blocked));
         Assert.Equal(2, await db.YouTubeVideos.CountAsync(v => v.YoutubeVideoFeedId == feed.Id));
 
-        Assert.True(await AdminData.DeleteYoutubeFeedAsync(db, feed.Id, includeVideos: true));
+        Assert.True(await AdminStore.DeleteYoutubeFeedAsync(db, feed.Id, includeVideos: true));
         Assert.False(await db.YoutubeVideoFeeds.AnyAsync(f => f.Id == feed.Id));
         Assert.Equal(0, await db.YouTubeVideos.CountAsync(v => v.YoutubeVideoFeedId == feed.Id));
         Assert.True(await db.YouTubeVideos.AnyAsync(v => v.Id == bystander.Id));
@@ -146,7 +146,7 @@ public class AdminYoutubeTests
 
         db.YoutubeVideoFeeds.Add(new YoutubeVideoFeed { ChannelId = channel.ToLowerInvariant(), Url = "https://example.test/2" });
         var ex = await Assert.ThrowsAsync<DbUpdateException>(() => db.SaveChangesAsync());
-        Assert.True(AdminData.IsUniqueViolation(ex));   // the database ignores letter case, so this counts as the same channel
+        Assert.True(AdminStore.IsUniqueViolation(ex));   // the database ignores letter case, so this counts as the same channel
     }
 
     [Fact]
@@ -171,7 +171,7 @@ public class AdminYoutubeTests
 
         video.YoutubeVideoFeedId = 2_000_000_000;
         var ex = await Assert.ThrowsAsync<DbUpdateException>(() => db.SaveChangesAsync());
-        Assert.True(AdminData.IsForeignKeyViolation(ex));
+        Assert.True(AdminStore.IsForeignKeyViolation(ex));
     }
 
     [Fact]
@@ -189,18 +189,18 @@ public class AdminYoutubeTests
         await using var tx = await db.Database.BeginTransactionAsync();
         var tag = Tag();
         var channel = $"UCzt{tag}";
-        var matching = new YoutubeVideoFeed { ChannelId = channel, ChannelName = "Matching", Url = AdminData.YoutubeFeedUrl(channel) };
-        var other = new YoutubeVideoFeed { ChannelId = channel + "other", ChannelName = "Other", Url = AdminData.YoutubeFeedUrl(channel + "other") };
+        var matching = new YoutubeVideoFeed { ChannelId = channel, ChannelName = "Matching", Url = AdminStore.YoutubeFeedUrl(channel) };
+        var other = new YoutubeVideoFeed { ChannelId = channel + "other", ChannelName = "Other", Url = AdminStore.YoutubeFeedUrl(channel + "other") };
         var video = Video(tag, channel);
         db.AddRange(matching, other, video);
         await db.SaveChangesAsync();
-        await Assert.ThrowsAsync<InvalidOperationException>(() => AdminData.AssignYoutubeVideoFeedAsync(db, video.Id, other.Id));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => AdminStore.AssignYoutubeVideoFeedAsync(db, video.Id, other.Id));
         Assert.Null(await db.YouTubeVideos.Where(v => v.Id == video.Id).Select(v => v.YoutubeVideoFeedId).SingleAsync());
-        Assert.True(await AdminData.AssignYoutubeVideoFeedAsync(db, video.Id, matching.Id));
+        Assert.True(await AdminStore.AssignYoutubeVideoFeedAsync(db, video.Id, matching.Id));
         Assert.Equal(matching.Id, await db.YouTubeVideos.Where(v => v.Id == video.Id).Select(v => v.YoutubeVideoFeedId).SingleAsync());
-        Assert.True(await AdminData.AssignYoutubeVideoFeedAsync(db, video.Id, null));
+        Assert.True(await AdminStore.AssignYoutubeVideoFeedAsync(db, video.Id, null));
         Assert.Null(await db.YouTubeVideos.Where(v => v.Id == video.Id).Select(v => v.YoutubeVideoFeedId).SingleAsync());
-        Assert.False(await AdminData.AssignYoutubeVideoFeedAsync(db, -1, matching.Id));
+        Assert.False(await AdminStore.AssignYoutubeVideoFeedAsync(db, -1, matching.Id));
     }
 
 }

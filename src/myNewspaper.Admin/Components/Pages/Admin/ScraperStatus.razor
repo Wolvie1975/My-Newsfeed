@@ -222,7 +222,7 @@
             techProjects = await TechQuery.LiveTablesAsync(db, "releases")
                 ? await db.TechReleaseProjects.AsNoTracking().OrderBy(p => p.SortOrder).ThenBy(p => p.Name).ToListAsync()
                 : [];
-            linkableEvents = report.UnlinkedEvents == 0 ? 0 : (await AdminData.PlanSportsEventLinksAsync(db)).Count;
+            linkableEvents = report.UnlinkedEvents == 0 ? 0 : (await AdminStore.PlanSportsEventLinksAsync(db)).Count;
             issues = new[]
                 {
                     report.Sources.Select(r => new Issue(r, "News source", $"admin/sources/{r.Id}/edit")),
@@ -254,7 +254,7 @@
         try
         {
             await using var db = await Factory.CreateDbContextAsync();
-            var result = await AdminData.SyncYoutubeFeedsAsync(db);
+            var result = await AdminStore.SyncYoutubeFeedsAsync(db);
             message = $"Created {result.FeedsCreated} {(result.FeedsCreated == 1 ? "feed" : "feeds")} and linked {result.VideosLinked} {(result.VideosLinked == 1 ? "video" : "videos")}.";
         }
         catch (Exception ex) when (ex is DbUpdateException || DataFailures.IsReadFailure(ex))
@@ -275,7 +275,7 @@
         try
         {
             await using var db = await Factory.CreateDbContextAsync();
-            var linked = await AdminData.LinkSportsEventsBySiteAsync(db);
+            var linked = await AdminStore.LinkSportsEventsBySiteAsync(db);
             message = $"Linked {linked} {(linked == 1 ? "event" : "events")} to {(linked == 1 ? "its feed" : "their feeds")}.";
         }
         catch (Exception ex) when (ex is DbUpdateException || DataFailures.IsReadFailure(ex))

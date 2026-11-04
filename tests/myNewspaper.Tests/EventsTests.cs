@@ -375,7 +375,7 @@ public class EventsTests
         await db.SaveChangesAsync();
         Assert.Empty((await EventsQuery.GetUpcomingAsync(db, today, null, tag, school: second.Id)).Items);
         Assert.Single((await EventsQuery.GetUpcomingAsync(db, today, null, tag)).Items);
-        await Assert.ThrowsAsync<InvalidOperationException>(() => AdminData.DeleteSportsEventsTypeAsync(db, first.Id, true));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => AdminStore.DeleteSportsEventsTypeAsync(db, first.Id, true));
         first.Enabled = false;
         await db.SaveChangesAsync();
         Assert.Empty((await EventsQuery.GetUpcomingAsync(db, today, null, tag)).Items);

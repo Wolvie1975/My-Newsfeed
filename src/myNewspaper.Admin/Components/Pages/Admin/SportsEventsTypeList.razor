@@ -136,7 +136,7 @@ else
 
     private sealed record TypeRow(int Id, string RssUrl, string EventsTypeName, string? SchoolName, DateTime DateAdded, int EventCount, bool Enabled, DateTime? LastSuccessAt, string? ProviderKey, bool HasSharedEvents = false)
     {
-        // Feeds from a provider, or with events shared with other feeds, can only be disabled (AdminData refuses to delete them).
+        // Feeds from a provider, or with events shared with other feeds, can only be disabled (AdminStore refuses to delete them).
         public bool CanDelete => ProviderKey is null && !HasSharedEvents;
     }
 
@@ -163,7 +163,7 @@ else
             .ToListAsync();
 
         unlinkedEvents = await db.SportsEvents.CountAsync(e => e.SportsEventsTypeId == null);
-        linkableEvents = unlinkedEvents == 0 ? 0 : (await AdminData.PlanSportsEventLinksAsync(db)).Count;
+        linkableEvents = unlinkedEvents == 0 ? 0 : (await AdminStore.PlanSportsEventLinksAsync(db)).Count;
     }
 
     private async Task LinkAsync()
@@ -172,7 +172,7 @@ else
         try
         {
             await using var db = await Factory.CreateDbContextAsync();
-            var linked = await AdminData.LinkSportsEventsBySiteAsync(db);
+            var linked = await AdminStore.LinkSportsEventsBySiteAsync(db);
             messageKind = "success";
             message = $"Linked {linked} {(linked == 1 ? "event" : "events")}.";
         }
@@ -200,17 +200,17 @@ else
         try
         {
             await using var db = await Factory.CreateDbContextAsync();
-            var deleted = await AdminData.DeleteSportsEventsTypeAsync(db, target.Id, includeEvents);
+            var deleted = await AdminStore.DeleteSportsEventsTypeAsync(db, target.Id, includeEvents);
             messageKind = deleted ? "success" : "warning";
             message = deleted ? $"Deleted {target.EventsTypeName}." : $"{target.EventsTypeName} was already deleted.";
         }
         catch (InvalidOperationException ex)
         {
-            // Shared attribution appeared after the list loaded; AdminData refuses the delete and says why.
+            // Shared attribution appeared after the list loaded; AdminStore refuses the delete and says why.
             messageKind = "danger";
             message = ex.Message;
         }
-        catch (Exception ex) when (AdminData.IsForeignKeyViolation(ex))
+        catch (Exception ex) when (AdminStore.IsForeignKeyViolation(ex))
         {
             // Events were linked to this type after the list loaded.
             messageKind = "danger";

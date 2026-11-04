@@ -150,12 +150,12 @@ else
                 return;
             }
 
-            if (!await AdminData.AssignYoutubeVideoFeedAsync(db, Id, int.TryParse(form.FeedId, out var feedId) ? feedId : null))
+            if (!await AdminStore.AssignYoutubeVideoFeedAsync(db, Id, int.TryParse(form.FeedId, out var feedId) ? feedId : null))
             { notFound = true; return; }
             Nav.NavigateTo("admin/youtube-videos");
         }
         catch (InvalidOperationException ex) { error = ex.Message; }
-        catch (Exception ex) when (AdminData.IsForeignKeyViolation(ex))
+        catch (Exception ex) when (AdminStore.IsForeignKeyViolation(ex))
         {
             // The chosen feed was deleted after this form loaded.
             error = "That feed no longer exists. Reload and choose another feed.";

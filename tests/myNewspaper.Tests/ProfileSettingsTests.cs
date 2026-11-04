@@ -42,21 +42,21 @@ public class ProfileSettingsTests
         // The gate middleware sets the open profile; its setters are internal to the app.
         typeof(ProfileContext).GetProperty(nameof(ProfileContext.Profile))!.SetValue(reader, profile);
         typeof(ProfileContext).GetProperty(nameof(ProfileContext.IsUnlocked))!.SetValue(reader, true);
-        var json = ProfilePageData.Json(reader);
+        var json = ProfilePageSettings.Json(reader);
         Assert.DoesNotContain("</script>", json, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("<b>", json);
         var data = JsonNode.Parse(json)!;
         Assert.Equal("</script><b>x", data["profile"]!["name"]!.GetValue<string>());
         Assert.Equal("ribbon", data["defaults"]!["colorScheme"]!.GetValue<string>());
-        Assert.Equal(("dark", "kansas"), (ProfilePageData.ThemeMode(reader), ProfilePageData.ColorScheme(reader)));
+        Assert.Equal(("dark", "kansas"), (ProfilePageSettings.ThemeMode(reader), ProfilePageSettings.ColorScheme(reader)));
 
         // No profile open (the picker, or profiles off): defaults only, and no attributes on <html>.
         var nobody = new ProfileContext(Microsoft.Extensions.Options.Options.Create(new ProfilesOptions { Enabled = true }));
-        Assert.Null(JsonNode.Parse(ProfilePageData.Json(nobody))!["profile"]);
-        Assert.Null(ProfilePageData.ThemeMode(nobody));
+        Assert.Null(JsonNode.Parse(ProfilePageSettings.Json(nobody))!["profile"]);
+        Assert.Null(ProfilePageSettings.ThemeMode(nobody));
         // A damaged stored value falls back to the site default rather than reaching the page.
         profile.Settings = """{"theme":"neon","colorScheme":7}""";
-        Assert.Equal(("system", "ribbon"), (ProfilePageData.ThemeMode(reader), ProfilePageData.ColorScheme(reader)));
+        Assert.Equal(("system", "ribbon"), (ProfilePageSettings.ThemeMode(reader), ProfilePageSettings.ColorScheme(reader)));
     }
 
     [Fact]
@@ -67,9 +67,9 @@ public class ProfileSettingsTests
         var profile = new myNewspaper.Shared.Data.Models.Profile { Id = 1, Name = "Jo", Settings = """{"theme":"dark","teams":["kansas"]}""" };
         typeof(ProfileContext).GetProperty(nameof(ProfileContext.Profile))!.SetValue(reader, profile);
 
-        Assert.Null(JsonNode.Parse(ProfilePageData.Json(reader))!["profile"]);
-        Assert.Null(ProfilePageData.ThemeMode(reader));
-        Assert.Null(ProfilePageData.ColorScheme(reader));
+        Assert.Null(JsonNode.Parse(ProfilePageSettings.Json(reader))!["profile"]);
+        Assert.Null(ProfilePageSettings.ThemeMode(reader));
+        Assert.Null(ProfilePageSettings.ColorScheme(reader));
     }
 
     [Fact]

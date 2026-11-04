@@ -171,7 +171,7 @@ public static class ProfileStore
         profile.SortOrder = (await db.Profiles.MaxAsync(p => (int?)p.SortOrder, ct) ?? 0) + 1;
         db.Profiles.Add(profile);
         try { await db.SaveChangesAsync(ct); }
-        catch (DbUpdateException ex) when (AdminData.IsUniqueViolation(ex)) { throw new ProfileNameTakenException(); }
+        catch (DbUpdateException ex) when (AdminStore.IsUniqueViolation(ex)) { throw new ProfileNameTakenException(); }
         await db.Database.ExecuteSqlAsync($"""
             INSERT dbo.MyDailyFeedProfileChannelFollows (ProfileId, YoutubeVideoFeedId)
             SELECT {profile.Id}, r.YoutubeVideoFeedId FROM dbo.MyDailyFeedChannelRollouts r

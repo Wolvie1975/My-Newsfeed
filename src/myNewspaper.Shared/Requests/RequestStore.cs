@@ -173,7 +173,7 @@ public static class RequestStore
         };
         db.YoutubeVideoFeeds.Add(feed);
         try { await db.SaveChangesAsync(ct); }
-        catch (DbUpdateException ex) when (AdminData.IsUniqueViolation(ex)) { return ApproveOutcome.AlreadyCollected; }
+        catch (DbUpdateException ex) when (AdminStore.IsUniqueViolation(ex)) { return ApproveOutcome.AlreadyCollected; }
         if (followForRequester) db.ProfileChannelFollows.Add(new ProfileChannelFollow { ProfileId = request.ProfileId, YoutubeVideoFeedId = feed.Id });
         request.Status = Added;
         request.YoutubeVideoFeedId = feed.Id;

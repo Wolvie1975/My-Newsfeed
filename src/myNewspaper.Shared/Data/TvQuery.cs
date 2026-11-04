@@ -75,7 +75,7 @@ public static class TvQuery
         var added = new TvTrackedSeries { TvmazeShowId = providerId, ExpectedTitle = title, Enabled = true, SeriesId = series?.Id };
         db.Add(added);
         try { await db.SaveChangesAsync(); }
-        catch (DbUpdateException ex) when (AdminData.IsUniqueViolation(ex))
+        catch (DbUpdateException ex) when (AdminStore.IsUniqueViolation(ex))
         {
             db.Entry(added).State = EntityState.Detached;
             // Another request may have followed it first; preserve the scraper's cache, lease, and status.

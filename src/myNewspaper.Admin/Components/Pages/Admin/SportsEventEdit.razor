@@ -133,12 +133,12 @@ else
                 return;
             }
 
-            if (!await AdminData.AssignSportsEventTypeAsync(db, Id, int.TryParse(form.TypeId, out var typeId) ? typeId : null))
+            if (!await AdminStore.AssignSportsEventTypeAsync(db, Id, int.TryParse(form.TypeId, out var typeId) ? typeId : null))
             { notFound = true; return; }
             Nav.NavigateTo("admin/sports-events");
         }
         catch (InvalidOperationException ex) { error = ex.Message; }
-        catch (Exception ex) when (AdminData.IsForeignKeyViolation(ex))
+        catch (Exception ex) when (AdminStore.IsForeignKeyViolation(ex))
         {
             // The chosen type was deleted after this form loaded.
             error = "That type no longer exists. Reload and choose another type.";

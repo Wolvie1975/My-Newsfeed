@@ -244,11 +244,11 @@
             await db.SaveChangesAsync();
             Nav.NavigateTo("admin/sources");
         }
-        catch (DbUpdateException ex) when (AdminData.IsUniqueViolation(ex))
+        catch (DbUpdateException ex) when (AdminStore.IsUniqueViolation(ex))
         {
             error = "That URL is already a source.";
         }
-        catch (DbUpdateException ex) when (AdminData.IsForeignKeyViolation(ex))
+        catch (DbUpdateException ex) when (AdminStore.IsForeignKeyViolation(ex))
         {
             // The chosen category was deleted after this form loaded.
             error = "That category no longer exists. Pick another one.";
@@ -316,10 +316,10 @@
         try
         {
             await using var db = await Factory.CreateDbContextAsync();
-            await AdminData.DeleteSourceAsync(db, Id!.Value, includePages: pageCount > 0);
+            await AdminStore.DeleteSourceAsync(db, Id!.Value, includePages: pageCount > 0);
             Nav.NavigateTo("admin/sources?deleted=" + Uri.EscapeDataString(name));
         }
-        catch (Exception ex) when (AdminData.IsForeignKeyViolation(ex))
+        catch (Exception ex) when (AdminStore.IsForeignKeyViolation(ex))
         {
             pendingDelete = false;
             error = "The source gained pages since this page loaded, so it was not deleted. Reload and try again.";

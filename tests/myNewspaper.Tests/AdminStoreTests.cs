@@ -7,7 +7,7 @@ namespace myNewspaper.Tests;
 
 // Integration tests against the live WebScraper database. Every test works inside a transaction that is
 // never committed, so the real data is left untouched.
-public class AdminDataTests
+public class AdminStoreTests
 {
     private static WebScraperContext Create() => TestDatabase.CreateContext();
 
@@ -26,7 +26,7 @@ public class AdminDataTests
         db.Sources.Add(NewSource(existingUrl));
         var ex = await Assert.ThrowsAsync<DbUpdateException>(() => db.SaveChangesAsync());
 
-        Assert.True(AdminData.IsUniqueViolation(ex));
+        Assert.True(AdminStore.IsUniqueViolation(ex));
     }
 
     [Fact]
@@ -71,11 +71,11 @@ public class AdminDataTests
         db.Sources.Add(source);
         await db.SaveChangesAsync();
 
-        var blocked = await Assert.ThrowsAnyAsync<Exception>(() => AdminData.DeleteSourceAsync(db, source.Id, includePages: false));
-        Assert.True(AdminData.IsForeignKeyViolation(blocked));
+        var blocked = await Assert.ThrowsAnyAsync<Exception>(() => AdminStore.DeleteSourceAsync(db, source.Id, includePages: false));
+        Assert.True(AdminStore.IsForeignKeyViolation(blocked));
         Assert.Equal(2, await db.Pages.CountAsync(p => p.SourceId == source.Id));
 
-        Assert.True(await AdminData.DeleteSourceAsync(db, source.Id, includePages: true));
+        Assert.True(await AdminStore.DeleteSourceAsync(db, source.Id, includePages: true));
         Assert.Equal(0, await db.Pages.CountAsync(p => p.SourceId == source.Id));
         Assert.False(await db.Sources.AnyAsync(s => s.Id == source.Id));
     }
@@ -90,8 +90,8 @@ public class AdminDataTests
         db.Sources.Add(source);
         await db.SaveChangesAsync();
 
-        Assert.True(await AdminData.DeleteSourceAsync(db, source.Id, includePages: false));
-        Assert.False(await AdminData.DeleteSourceAsync(db, source.Id, includePages: false));
+        Assert.True(await AdminStore.DeleteSourceAsync(db, source.Id, includePages: false));
+        Assert.False(await AdminStore.DeleteSourceAsync(db, source.Id, includePages: false));
     }
 
     [Fact]

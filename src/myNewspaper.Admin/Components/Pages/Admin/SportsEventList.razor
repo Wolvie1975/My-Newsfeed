@@ -316,12 +316,12 @@ else
         await using var db = await Factory.CreateDbContextAsync();
         try
         {
-            var deleted = await AdminData.DeleteSportsEventAsync(db, target.Id);
+            var deleted = await AdminStore.DeleteSportsEventAsync(db, target.Id);
             messageKind = deleted ? "success" : "warning";
             message = deleted ? $"Deleted “{target.Title}”." : "That event was already deleted.";
         }
         catch (InvalidOperationException ex) { messageKind = "warning"; message = ex.Message; }
-        catch (Exception ex) when (AdminData.IsForeignKeyViolation(ex))
+        catch (Exception ex) when (AdminStore.IsForeignKeyViolation(ex))
         { messageKind = "warning"; message = "This event gained shared source references. Disable its feed instead of deleting it."; }
         pendingDelete = null;
         await LoadAsync();

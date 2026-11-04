@@ -150,7 +150,7 @@
             db.ResultFollows.Add(follow);
             await db.SaveChangesAsync();
         }
-        catch (DbUpdateException ex) when (AdminData.IsUniqueViolation(ex))
+        catch (DbUpdateException ex) when (AdminStore.IsUniqueViolation(ex))
         {
             error = $"{EspnLeagues.FollowLabel(follow.Kind, follow.Name, follow.Sport, follow.League)} is already followed.";
             saving = false;

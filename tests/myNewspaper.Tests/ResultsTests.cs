@@ -418,12 +418,12 @@ public class ResultsTests
 
         db.ResultFollows.Add(new ResultFollow { Kind = FollowKinds.League, Sport = "s", League = league, Name = "L again" });
         var ex = await Assert.ThrowsAsync<DbUpdateException>(() => db.SaveChangesAsync());
-        Assert.True(AdminData.IsUniqueViolation(ex));
+        Assert.True(AdminStore.IsUniqueViolation(ex));
         db.ChangeTracker.Clear();
 
         db.ResultFollows.Add(new ResultFollow { Kind = FollowKinds.Team, Sport = "s", League = league, TeamId = "1", Name = "T again" });
         ex = await Assert.ThrowsAsync<DbUpdateException>(() => db.SaveChangesAsync());
-        Assert.True(AdminData.IsUniqueViolation(ex));
+        Assert.True(AdminStore.IsUniqueViolation(ex));
     }
 
     [Fact]
@@ -521,7 +521,7 @@ public class ResultsTests
 
         db.ResultFollows.Add(new ResultFollow { Kind = FollowKinds.Conference, Sport = "s", League = league, GroupId = "8", Name = "Big 12 again" });
         var ex = await Assert.ThrowsAsync<DbUpdateException>(() => db.SaveChangesAsync());
-        Assert.True(AdminData.IsUniqueViolation(ex));
+        Assert.True(AdminStore.IsUniqueViolation(ex));
     }
 
     [Fact]

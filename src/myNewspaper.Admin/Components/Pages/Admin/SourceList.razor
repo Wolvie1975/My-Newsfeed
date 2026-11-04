@@ -305,11 +305,11 @@
         try
         {
             await using var db = await Factory.CreateDbContextAsync();
-            var deleted = await AdminData.DeleteSourceAsync(db, target.Id, includePages);
+            var deleted = await AdminStore.DeleteSourceAsync(db, target.Id, includePages);
             messageBad = !deleted;
             message = deleted ? $"Deleted {target.Name}." : $"{target.Name} was already deleted.";
         }
-        catch (Exception ex) when (AdminData.IsForeignKeyViolation(ex))
+        catch (Exception ex) when (AdminStore.IsForeignKeyViolation(ex))
         {
             // Pages were added after this screen loaded.
             messageBad = true;

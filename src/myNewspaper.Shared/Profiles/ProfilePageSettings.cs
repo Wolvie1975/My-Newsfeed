@@ -8,7 +8,7 @@ namespace myNewspaper.Shared.Profiles;
 /// is one. Rendered into <c>&lt;script id="mnp-profile" type="application/json"&gt;</c> with System.Text.Json's default
 /// encoder, which escapes &lt; and &gt;, so a stored value can't close the tag.
 /// </summary>
-public static class ProfilePageData
+public static class ProfilePageSettings
 {
     private static readonly JsonSerializerOptions Options = new(JsonSerializerDefaults.Web);
 

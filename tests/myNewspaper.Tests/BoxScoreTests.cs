@@ -91,7 +91,7 @@ public class BoxScoreTests
     [InlineData("https://evil.invalid/game/123", false)]
     [InlineData("https://www.espn.com/nfl/boxscore/_/gameId/124", false)]
     [InlineData("https://www.espn.com/nfl/boxscore/_/gameId/123", true)]
-    public void Provider_links_require_https_espn_and_matching_event(string url, bool valid) => Assert.Equal(valid, BoxScoresRepository.ProviderUrl(url, Id) is not null);
+    public void Provider_links_require_https_espn_and_matching_event(string url, bool valid) => Assert.Equal(valid, BoxScoreQuery.ProviderUrl(url, Id) is not null);
     [Fact]
     public async Task Rendered_tables_encode_provider_text_and_preserve_values()
     {

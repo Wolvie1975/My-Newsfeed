@@ -169,7 +169,7 @@ else
         try
         {
             await using var db = await Factory.CreateDbContextAsync();
-            var result = await AdminData.SyncYoutubeFeedsAsync(db);
+            var result = await AdminStore.SyncYoutubeFeedsAsync(db);
             messageKind = "success";
             message = $"Created {result.FeedsCreated} {(result.FeedsCreated == 1 ? "feed" : "feeds")} and linked {result.VideosLinked} {(result.VideosLinked == 1 ? "video" : "videos")}.";
         }
@@ -197,11 +197,11 @@ else
         try
         {
             await using var db = await Factory.CreateDbContextAsync();
-            var deleted = await AdminData.DeleteYoutubeFeedAsync(db, target.Id, includeVideos);
+            var deleted = await AdminStore.DeleteYoutubeFeedAsync(db, target.Id, includeVideos);
             messageKind = deleted ? "success" : "warning";
             message = deleted ? $"Deleted {target.Name}." : $"{target.Name} was already deleted.";
         }
-        catch (Exception ex) when (AdminData.IsForeignKeyViolation(ex))
+        catch (Exception ex) when (AdminStore.IsForeignKeyViolation(ex))
         {
             // Videos were linked to this feed after the list loaded.
             messageKind = "danger";

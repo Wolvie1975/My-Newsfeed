@@ -16,7 +16,7 @@ public sealed record MyFollowsPage(IReadOnlyList<MyShow> Shows, IReadOnlyList<My
 /// everyone), household picks and channels this profile requested are ever listed or followable: another profile's
 /// requested channel never appears, so it can't be discovered from here (4.3).
 /// </summary>
-public static class MyFollows
+public static class FollowStore
 {
     private static string ChannelName(YoutubeVideoFeed f) => string.IsNullOrWhiteSpace(f.ChannelName) ? f.ChannelId : f.ChannelName.Trim();
 
@@ -62,7 +62,7 @@ public static class MyFollows
             var row = new ProfileChannelFollow { ProfileId = profileId, YoutubeVideoFeedId = feedId };
             db.ProfileChannelFollows.Add(row);
             try { await db.SaveChangesAsync(ct); }
-            catch (DbUpdateException ex) when (AdminData.IsUniqueViolation(ex)) { }   // a double tap followed it already
+            catch (DbUpdateException ex) when (AdminStore.IsUniqueViolation(ex)) { }   // a double tap followed it already
             // Unfollowing deletes in SQL, so don't keep a tracked copy that a later follow would collide with.
             db.Entry(row).State = EntityState.Detached;
         }
@@ -78,7 +78,7 @@ public static class MyFollows
         var follow = new ProfileTvFollow { ProfileId = profileId, TvTrackedSeriesId = trackingId };
         db.ProfileTvFollows.Add(follow);
         try { await db.SaveChangesAsync(ct); }
-        catch (DbUpdateException ex) when (AdminData.IsUniqueViolation(ex)) { }
+        catch (DbUpdateException ex) when (AdminStore.IsUniqueViolation(ex)) { }
         db.Entry(follow).State = EntityState.Detached;
     }
 

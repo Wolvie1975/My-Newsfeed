@@ -785,7 +785,7 @@ The earlier separate headline menu entries have been replaced by this single hub
 
 ### Women's college basketball scoreboard exclusion
 
-Women's college basketball is excluded from the shared ScoreboardRepository,
+Women's college basketball is excluded from the shared ScoreboardQuery,
 including coverage choices, enabled follow choices and games. This removes both
 the league and Big 12 women's basketball entries from Show and prevents games
 from appearing in the homepage scoreboard or refresh fragments. Men’s college

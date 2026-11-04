@@ -182,7 +182,7 @@ else
             Succeed($"Added {name}.");
             newName = "";
         }
-        catch (DbUpdateException ex) when (AdminData.IsUniqueViolation(ex))
+        catch (DbUpdateException ex) when (AdminStore.IsUniqueViolation(ex))
         {
             Fail($"A category named “{name}” already exists.");
         }
@@ -232,7 +232,7 @@ else
 
             editingId = null;
         }
-        catch (DbUpdateException ex) when (AdminData.IsUniqueViolation(ex))
+        catch (DbUpdateException ex) when (AdminStore.IsUniqueViolation(ex))
         {
             Fail($"A category named “{name}” already exists.");
         }
@@ -260,7 +260,7 @@ else
             var deleted = await db.SourceCategories.Where(c => c.Id == target.Id).ExecuteDeleteAsync();
             Succeed(deleted > 0 ? $"Deleted {target.Name}." : $"{target.Name} was already deleted.");
         }
-        catch (Exception ex) when (AdminData.IsForeignKeyViolation(ex))
+        catch (Exception ex) when (AdminStore.IsForeignKeyViolation(ex))
         {
             // A source was assigned to this category after the list loaded.
             Fail($"{target.Name} is now in use by a source, so it was not deleted.");

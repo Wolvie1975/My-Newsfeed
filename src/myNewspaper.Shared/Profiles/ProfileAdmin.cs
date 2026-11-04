@@ -62,7 +62,7 @@ public static class ProfileAdmin
         profile.Color = normalizedColor;
         profile.Hidden = hidden;
         try { await db.SaveChangesAsync(ct); }
-        catch (DbUpdateException ex) when (AdminData.IsUniqueViolation(ex)) { throw new ProfileNameTakenException(); }
+        catch (DbUpdateException ex) when (AdminStore.IsUniqueViolation(ex)) { throw new ProfileNameTakenException(); }
         if (hidden) await SignOutEverywhereAsync(db, id, nowUtc, ct);
         if (tx is not null) await tx.CommitAsync(ct);
         return true;

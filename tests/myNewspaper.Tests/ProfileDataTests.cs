@@ -445,19 +445,19 @@ public class ProfileDataTests
         await db.ProfileChannelFollows.Where(f => f.YoutubeVideoFeedId == pick.Id).ExecuteDeleteAsync();
 
         // B can't follow A's requested channel, and never sees it listed; the answer matches an unknown ID.
-        Assert.False(await MyFollows.SetChannelAsync(db, b.Id, requested.Id, follow: true));
-        Assert.False(await MyFollows.SetChannelAsync(db, b.Id, int.MaxValue, follow: true));
-        var bPage = await MyFollows.GetAsync(db, b.Id);
+        Assert.False(await FollowStore.SetChannelAsync(db, b.Id, requested.Id, follow: true));
+        Assert.False(await FollowStore.SetChannelAsync(db, b.Id, int.MaxValue, follow: true));
+        var bPage = await FollowStore.GetAsync(db, b.Id);
         Assert.DoesNotContain(bPage.Household.Concat(bPage.Requested).Concat(bPage.Picks), c => c.FeedId == requested.Id);
         // A can follow its own (approved without the follow), and lists it under its other channels.
-        Assert.True(await MyFollows.SetChannelAsync(db, a.Id, requested.Id, follow: true));
-        Assert.Contains((await MyFollows.GetAsync(db, a.Id)).Requested, c => c.FeedId == requested.Id && c.Following);
+        Assert.True(await FollowStore.SetChannelAsync(db, a.Id, requested.Id, follow: true));
+        Assert.Contains((await FollowStore.GetAsync(db, a.Id)).Requested, c => c.FeedId == requested.Id && c.Following);
         // Household channels switch off and on.
         Assert.Contains(bPage.Household, c => c.FeedId == pick.Id && !c.Following);
-        Assert.True(await MyFollows.SetChannelAsync(db, b.Id, pick.Id, follow: true));
-        Assert.True(await MyFollows.SetChannelAsync(db, b.Id, pick.Id, follow: true));   // a double tap is fine
-        Assert.Contains((await MyFollows.GetAsync(db, b.Id)).Household, c => c.FeedId == pick.Id && c.Following);
-        Assert.True(await MyFollows.SetChannelAsync(db, b.Id, pick.Id, follow: false));
+        Assert.True(await FollowStore.SetChannelAsync(db, b.Id, pick.Id, follow: true));
+        Assert.True(await FollowStore.SetChannelAsync(db, b.Id, pick.Id, follow: true));   // a double tap is fine
+        Assert.Contains((await FollowStore.GetAsync(db, b.Id)).Household, c => c.FeedId == pick.Id && c.Following);
+        Assert.True(await FollowStore.SetChannelAsync(db, b.Id, pick.Id, follow: false));
         Assert.False(await db.ProfileChannelFollows.AnyAsync(f => f.ProfileId == b.Id && f.YoutubeVideoFeedId == pick.Id));
     }
 
@@ -469,21 +469,21 @@ public class ProfileDataTests
         var a = await NewProfile(db);
         var b = await NewProfile(db);
         var showId = Random.Shared.Next(1_500_000_000, 2_000_000_000);
-        await MyFollows.FollowShowAsync(db, a.Id, showId, "zz show");
-        await MyFollows.FollowShowAsync(db, b.Id, showId, "zz show");
-        await MyFollows.FollowShowAsync(db, b.Id, showId, "zz show");   // following twice adds one row
+        await FollowStore.FollowShowAsync(db, a.Id, showId, "zz show");
+        await FollowStore.FollowShowAsync(db, b.Id, showId, "zz show");
+        await FollowStore.FollowShowAsync(db, b.Id, showId, "zz show");   // following twice adds one row
         var tracked = await db.TvTrackedSeries.SingleAsync(t => t.TvmazeShowId == showId);
         Assert.True(tracked.Enabled);
         Assert.Equal(2, await db.ProfileTvFollows.CountAsync(f => f.TvTrackedSeriesId == tracked.Id));
-        Assert.Contains((await MyFollows.GetAsync(db, a.Id)).Shows, s => s.TvmazeShowId == showId);
+        Assert.Contains((await FollowStore.GetAsync(db, a.Id)).Shows, s => s.TvmazeShowId == showId);
 
-        Assert.True(await MyFollows.UnfollowShowAsync(db, a.Id, tracked.Id));
+        Assert.True(await FollowStore.UnfollowShowAsync(db, a.Id, tracked.Id));
         Assert.True(await db.TvTrackedSeries.Where(t => t.Id == tracked.Id).Select(t => t.Enabled).SingleAsync());
-        Assert.False(await MyFollows.UnfollowShowAsync(db, a.Id, tracked.Id));
-        Assert.True(await MyFollows.UnfollowShowAsync(db, b.Id, tracked.Id));
+        Assert.False(await FollowStore.UnfollowShowAsync(db, a.Id, tracked.Id));
+        Assert.True(await FollowStore.UnfollowShowAsync(db, b.Id, tracked.Id));
         Assert.False(await db.TvTrackedSeries.Where(t => t.Id == tracked.Id).Select(t => t.Enabled).SingleAsync());
         // Following again turns collection back on.
-        await MyFollows.FollowShowAsync(db, a.Id, showId, "zz show");
+        await FollowStore.FollowShowAsync(db, a.Id, showId, "zz show");
         Assert.True(await db.TvTrackedSeries.Where(t => t.Id == tracked.Id).Select(t => t.Enabled).SingleAsync());
     }
 

@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace myNewspaper.Shared.Data;
 
-public static class AdminData
+public static class AdminStore
 {
     private const int UniqueIndexViolation = 2601;
     private const int UniqueConstraintViolation = 2627;

@@ -164,7 +164,7 @@ else
         error = null;
         var channelId = form.ChannelId.Trim();
         var name = string.IsNullOrWhiteSpace(form.ChannelName) ? null : form.ChannelName.Trim();
-        var url = string.IsNullOrWhiteSpace(form.Url) ? AdminData.YoutubeFeedUrl(channelId) : form.Url.Trim();
+        var url = string.IsNullOrWhiteSpace(form.Url) ? AdminStore.YoutubeFeedUrl(channelId) : form.Url.Trim();
         // Only a category that still exists; anything else saves as no category.
         int? categoryId = int.TryParse(form.CategoryId, NumberStyles.None, CultureInfo.InvariantCulture, out var picked)
             && categories.Any(c => c.Id == picked) ? picked : null;
@@ -212,7 +212,7 @@ else
             await myNewspaper.Shared.Profiles.HouseholdChannels.RunOnceAsync(db);
             Nav.NavigateTo("admin/youtube-feeds");
         }
-        catch (DbUpdateException ex) when (AdminData.IsUniqueViolation(ex))
+        catch (DbUpdateException ex) when (AdminStore.IsUniqueViolation(ex))
         {
             error = "A feed for that channel already exists.";
         }

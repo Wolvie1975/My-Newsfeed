@@ -173,7 +173,7 @@ else
             await db.SaveChangesAsync();
             Nav.NavigateTo("admin/sports-event-types");
         }
-        catch (DbUpdateException ex) when (AdminData.IsUniqueViolation(ex))
+        catch (DbUpdateException ex) when (AdminStore.IsUniqueViolation(ex))
         {
             error = "That feed address is already a type.";
         }

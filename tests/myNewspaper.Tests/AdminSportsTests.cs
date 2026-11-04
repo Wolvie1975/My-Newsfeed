@@ -18,12 +18,12 @@ public class AdminSportsTests
     [InlineData("", null)]
     [InlineData(null, null)]
     public void HostOf_gives_the_website_without_www(string? url, string? expected) =>
-        Assert.Equal(expected, AdminData.HostOf(url));
+        Assert.Equal(expected, AdminStore.HostOf(url));
 
     [Fact]
     public void An_event_is_linked_when_exactly_one_type_is_on_its_website()
     {
-        var plan = AdminData.PlanSportsEventLinks(
+        var plan = AdminStore.PlanSportsEventLinks(
             unlinkedEvents: [(1, "http://big12sports.com/calendar.aspx?id=1"), (2, "https://www.big12sports.com/calendar.aspx?id=2")],
             types: [(10, "https://big12sports.com/services/calendar.rss?sport_id=0")]);
 
@@ -33,7 +33,7 @@ public class AdminSportsTests
     [Fact]
     public void A_website_with_several_feeds_is_never_guessed()
     {
-        var plan = AdminData.PlanSportsEventLinks(
+        var plan = AdminStore.PlanSportsEventLinks(
             unlinkedEvents: [(1, "http://big12sports.com/calendar.aspx?id=1")],
             types: [(10, "https://big12sports.com/calendar.rss?sport_id=1"), (11, "https://big12sports.com/calendar.rss?sport_id=2")]);
 
@@ -43,7 +43,7 @@ public class AdminSportsTests
     [Fact]
     public void Events_on_other_websites_and_unreadable_addresses_are_left_alone()
     {
-        var plan = AdminData.PlanSportsEventLinks(
+        var plan = AdminStore.PlanSportsEventLinks(
             unlinkedEvents: [(1, "http://other.example.test/game/1"), (2, "garbage"), (3, "http://big12sports.com/g/3")],
             types: [(10, "https://big12sports.com/calendar.rss"), (11, "also garbage")]);
 
@@ -53,7 +53,7 @@ public class AdminSportsTests
     [Fact]
     public void Different_websites_each_get_their_own_type()
     {
-        var plan = AdminData.PlanSportsEventLinks(
+        var plan = AdminStore.PlanSportsEventLinks(
             [(1, "http://a.example.test/1"), (2, "http://b.example.test/2")],
             [(10, "https://a.example.test/rss"), (11, "https://b.example.test/rss")]);
 
@@ -63,8 +63,8 @@ public class AdminSportsTests
     [Fact]
     public void Nothing_to_link_gives_an_empty_plan()
     {
-        Assert.Empty(AdminData.PlanSportsEventLinks([], [(10, "https://a.example.test/rss")]));
-        Assert.Empty(AdminData.PlanSportsEventLinks([(1, "http://a.example.test/1")], []));
+        Assert.Empty(AdminStore.PlanSportsEventLinks([], [(10, "https://a.example.test/rss")]));
+        Assert.Empty(AdminStore.PlanSportsEventLinks([(1, "http://a.example.test/1")], []));
     }
 
     // ---- against the database (each test rolls back) -----------------------------------------------------------------
@@ -101,14 +101,14 @@ public class AdminSportsTests
         db.SportsEvents.AddRange(elsewhere, alreadyLinked);
         await db.SaveChangesAsync();
 
-        var linked = await AdminData.LinkSportsEventsBySiteAsync(db);
+        var linked = await AdminStore.LinkSportsEventsBySiteAsync(db);
 
         Assert.True(linked >= 2);
         Assert.All(mine, e => Assert.Equal(type.Id, db.SportsEvents.AsNoTracking().Single(x => x.Id == e.Id).SportsEventsTypeId));
         Assert.Null(db.SportsEvents.AsNoTracking().Single(x => x.Id == elsewhere.Id).SportsEventsTypeId);
         Assert.Equal(alreadyLinked.SportsEventsTypeId, db.SportsEvents.AsNoTracking().Single(x => x.Id == alreadyLinked.Id).SportsEventsTypeId);
 
-        Assert.Equal(0, await AdminData.LinkSportsEventsBySiteAsync(db));   // nothing left to do
+        Assert.Equal(0, await AdminStore.LinkSportsEventsBySiteAsync(db));   // nothing left to do
     }
 
     [Fact]
@@ -122,7 +122,7 @@ public class AdminSportsTests
         db.SportsEvents.Add(evt);
         await db.SaveChangesAsync();
 
-        await AdminData.LinkSportsEventsBySiteAsync(db);
+        await AdminStore.LinkSportsEventsBySiteAsync(db);
 
         Assert.Null(db.SportsEvents.AsNoTracking().Single(x => x.Id == evt.Id).SportsEventsTypeId);
     }
@@ -136,8 +136,8 @@ public class AdminSportsTests
         db.SportsEventsTypes.Add(type);
         await db.SaveChangesAsync();
 
-        Assert.True(await AdminData.DeleteSportsEventsTypeAsync(db, type.Id, includeEvents: false));
-        Assert.False(await AdminData.DeleteSportsEventsTypeAsync(db, type.Id, includeEvents: false));   // already gone
+        Assert.True(await AdminStore.DeleteSportsEventsTypeAsync(db, type.Id, includeEvents: false));
+        Assert.False(await AdminStore.DeleteSportsEventsTypeAsync(db, type.Id, includeEvents: false));   // already gone
     }
 
     [Fact]
@@ -153,11 +153,11 @@ public class AdminSportsTests
         db.SportsEvents.Add(bystander);
         await db.SaveChangesAsync();
 
-        var blocked = await Assert.ThrowsAnyAsync<Exception>(() => AdminData.DeleteSportsEventsTypeAsync(db, type.Id, includeEvents: false));
-        Assert.True(AdminData.IsForeignKeyViolation(blocked));
+        var blocked = await Assert.ThrowsAnyAsync<Exception>(() => AdminStore.DeleteSportsEventsTypeAsync(db, type.Id, includeEvents: false));
+        Assert.True(AdminStore.IsForeignKeyViolation(blocked));
         Assert.Equal(2, await db.SportsEvents.CountAsync(e => e.SportsEventsTypeId == type.Id));
 
-        Assert.True(await AdminData.DeleteSportsEventsTypeAsync(db, type.Id, includeEvents: true));
+        Assert.True(await AdminStore.DeleteSportsEventsTypeAsync(db, type.Id, includeEvents: true));
         Assert.False(await db.SportsEventsTypes.AnyAsync(t => t.Id == type.Id));
         Assert.Equal(0, await db.SportsEvents.CountAsync(e => e.SportsEventsTypeId == type.Id));
         Assert.True(await db.SportsEvents.AnyAsync(e => e.Id == bystander.Id));
@@ -174,7 +174,7 @@ public class AdminSportsTests
 
         db.SportsEventsTypes.Add(Type(host, "A second name for the same feed"));
         var ex = await Assert.ThrowsAsync<DbUpdateException>(() => db.SaveChangesAsync());
-        Assert.True(AdminData.IsUniqueViolation(ex));
+        Assert.True(AdminStore.IsUniqueViolation(ex));
     }
 
     [Fact]
@@ -211,18 +211,18 @@ public class AdminSportsTests
         await db.SaveChangesAsync();
         foreach (var game in new[] { provider, shared })
         {
-            await Assert.ThrowsAsync<InvalidOperationException>(() => AdminData.DeleteSportsEventAsync(db, game.Id));
-            await Assert.ThrowsAsync<InvalidOperationException>(() => AdminData.AssignSportsEventTypeAsync(db, game.Id, legacyType.Id));
-            await Assert.ThrowsAsync<InvalidOperationException>(() => AdminData.AssignSportsEventTypeAsync(db, game.Id, null));
+            await Assert.ThrowsAsync<InvalidOperationException>(() => AdminStore.DeleteSportsEventAsync(db, game.Id));
+            await Assert.ThrowsAsync<InvalidOperationException>(() => AdminStore.AssignSportsEventTypeAsync(db, game.Id, legacyType.Id));
+            await Assert.ThrowsAsync<InvalidOperationException>(() => AdminStore.AssignSportsEventTypeAsync(db, game.Id, null));
             Assert.True(await db.SportsEvents.AnyAsync(e => e.Id == game.Id));
         }
-        await Assert.ThrowsAsync<InvalidOperationException>(() => AdminData.AssignSportsEventTypeAsync(db, legacy.Id, providerType.Id));
-        Assert.True(await AdminData.AssignSportsEventTypeAsync(db, legacy.Id, null));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => AdminStore.AssignSportsEventTypeAsync(db, legacy.Id, providerType.Id));
+        Assert.True(await AdminStore.AssignSportsEventTypeAsync(db, legacy.Id, null));
         Assert.Null(await db.SportsEvents.Where(e => e.Id == legacy.Id).Select(e => e.SportsEventsTypeId).SingleAsync());
-        Assert.True(await AdminData.AssignSportsEventTypeAsync(db, legacy.Id, legacyType.Id));
-        Assert.True(await AdminData.DeleteSportsEventAsync(db, legacy.Id));
-        Assert.False(await AdminData.DeleteSportsEventAsync(db, legacy.Id));
-        Assert.False(await AdminData.AssignSportsEventTypeAsync(db, legacy.Id, legacyType.Id));
+        Assert.True(await AdminStore.AssignSportsEventTypeAsync(db, legacy.Id, legacyType.Id));
+        Assert.True(await AdminStore.DeleteSportsEventAsync(db, legacy.Id));
+        Assert.False(await AdminStore.DeleteSportsEventAsync(db, legacy.Id));
+        Assert.False(await AdminStore.AssignSportsEventTypeAsync(db, legacy.Id, legacyType.Id));
     }
 
 }

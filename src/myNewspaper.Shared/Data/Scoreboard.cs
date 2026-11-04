@@ -143,7 +143,7 @@ public sealed record ScoreboardSelection(string Value, string? Competition = nul
 }
 public sealed record ScoreboardSnapshot(IReadOnlyList<ScoreboardGame> Games, IReadOnlyList<ScoreboardCoverage> Coverage, bool Available, IReadOnlyList<ScoreboardFollow>? Follows = null, IReadOnlyList<ScoreboardGame>? Top25Week = null);
 
-public sealed class ScoreboardRepository(IDbContextFactory<WebScraperContext> factory, FeedDates dates, ILogger<ScoreboardRepository> log)
+public sealed class ScoreboardQuery(IDbContextFactory<WebScraperContext> factory, FeedDates dates, ILogger<ScoreboardQuery> log)
 {
     public async Task<ScoreboardSnapshot> ReadAsync(DateOnly day, bool carryOver = false, string? competition = null, int? followId = null, bool finalsOnly = false, string? show = null)
     {

@@ -49,7 +49,7 @@ public sealed partial class RequestChecks(IHttpClientFactory clients)
 
     public static bool IsChannelId(string? value) => value is not null && ChannelIdPattern().IsMatch(value);
 
-    public static string FeedUrl(string channelId) => AdminData.YoutubeFeedUrl(channelId);
+    public static string FeedUrl(string channelId) => AdminStore.YoutubeFeedUrl(channelId);
 
     /// <summary>Same comparison as the UQ_Sources_UrlHash index: SHA-256 of the exact nvarchar text.</summary>
     public static byte[] SourceUrlHash(string url) => SHA256.HashData(Encoding.Unicode.GetBytes(url));

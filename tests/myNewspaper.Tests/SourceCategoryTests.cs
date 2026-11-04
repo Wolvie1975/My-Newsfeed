@@ -39,7 +39,7 @@ public class SourceCategoryTests
         db.SourceCategories.Add(new SourceCategory { CategoryName = second });
         var ex = await Assert.ThrowsAsync<DbUpdateException>(() => db.SaveChangesAsync());
 
-        Assert.True(AdminData.IsUniqueViolation(ex));
+        Assert.True(AdminStore.IsUniqueViolation(ex));
     }
 
     [Fact]
@@ -54,7 +54,7 @@ public class SourceCategoryTests
 
         var ex = await Assert.ThrowsAnyAsync<Exception>(
             () => db.SourceCategories.Where(c => c.Id == category.Id).ExecuteDeleteAsync());
-        Assert.True(AdminData.IsForeignKeyViolation(ex));
+        Assert.True(AdminStore.IsForeignKeyViolation(ex));
     }
 
     [Fact]
