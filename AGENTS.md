@@ -127,6 +127,11 @@ delete the data it creates when it finishes, against any database, live
 included. On November 4, 383 leftover device rows and a stray
 `zz Columns` profile had to be removed by hand.
 
+- Browser checks get this from [tests/browser/lib.cjs](tests/browser/lib.cjs):
+  `lib.addProfile`/`lib.deleteProfiles()` for profiles, and the `zz` clean-up
+  when a check exits (once per run under `npm run test:browser`). Tell it the
+  database behind the site with `CLEANUP_DB` (`WebScraper_Test` for a local
+  preview); it assumes `WebScraper` only for the live site.
 - Run cleanup in teardown (`finally`, `after`/`afterAll`) so it also runs when a
   check fails or the run is interrupted. If cleanup can't run, report what was
   left behind and remove it before calling the work done.

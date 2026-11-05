@@ -185,7 +185,7 @@ Run relevant application checks; the full suites are:
 ```bash
 tools/verify.sh                                  # build (warnings fail it), .NET tests, JS unit tests, lint, format
 node tools/compare-builds.cjs <old-ref>          # only for a change that claims no behaviour change
-BASE_URL=<preview> npm run test:browser          # all Playwright checks, serially
+CLEANUP_DB=<db> BASE_URL=<preview> npm run test:browser   # all Playwright checks, serially; zz clean-up in <db>
 ```
 
 After the deploy, `node tools/live-check.cjs` runs the standard live checks and cleans up after itself (see

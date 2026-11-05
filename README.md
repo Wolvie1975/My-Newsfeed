@@ -94,14 +94,20 @@ npm run test:unit                     # Node unit tests (solar calculations), no
 ```
 
 Browser checks need a running site. Each `tests/browser/*.browser.cjs` file is a
-standalone Playwright script; the runner executes them one at a time and keeps logs
-and screenshots in `test-results/browser/`:
+standalone Playwright script built on [tests/browser/lib.cjs](tests/browser/lib.cjs) (addresses,
+widths, themes, screenshots, temporary profiles and clean-up); the runner executes them one at
+a time and keeps logs and screenshots in `test-results/browser/`:
 
 ```bash
-dotnet run --project src/myNewspaper.Web    # http://localhost:5295
-npm run test:browser                        # all checks against BASE_URL (default http://localhost:5295)
-npm run test:browser -- watch scoreboard    # checks whose file names contain a filter
+dotnet run --project src/myNewspaper.Web    # http://localhost:5295 (Admin: src/myNewspaper.Admin, :5297)
+CLEANUP_DB=WebScraper_Test npm run test:browser              # all checks against BASE_URL (default http://localhost:5295)
+CLEANUP_DB=WebScraper_Test npm run test:browser -- watch     # checks whose file names contain a filter
 ```
+
+Checks that add profiles need `ADMIN_PASSWORD` and `ADMIN_BASE_URL`. At the end the runner
+removes `zz ` profiles and unassigned devices created during the run from `CLEANUP_DB` (the
+database behind the site; `WebScraper` is assumed only when `BASE_URL` is the live site) and
+fails the run if it can't.
 
 Three checks skip unless given extra input: `category-hubs` changes admin data and needs
 `CATEGORY_ADMIN_PASSWORD`; `football-boxscore` needs a cached NFL box score from today or

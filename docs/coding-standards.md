@@ -126,11 +126,15 @@ reviewer. Existing code is being brought into line in the clean-up steps listed 
 
 - **[Review]** C# integration tests take their connection string only from `TestDatabase` and run against the
   `WebScraper_Test` database, never the live `WebScraper` database. No connection strings in test files.
-- **[Review]** Browser checks (`tests/browser/*.browser.cjs`) use the shared helper for `BASE_URL` (default
-  `http://localhost:5295`), viewports (at least 320, 390 and 430, plus 768 and 1440 when layout changes), light and
-  dark themes, screenshots under `SCREENSHOT_DIR`, and clean-up of temporary `zz ` profiles and unassigned devices
-  (AGENTS.md). Until that helper exists, new checks copy the conventions from the most recent check rather than
-  older ones.
+- **[Enforced]** Browser checks (`tests/browser/*.browser.cjs`) use [tests/browser/lib.cjs](../tests/browser/lib.cjs)
+  for the site addresses (`lib.base`, default `http://localhost:5295`; `lib.adminBase`, default
+  `http://localhost:5297`) and admin password, screenshots (`lib.shotDir`, `lib.screenshots(name)`), widths and themes
+  (`lib.PHONE_WIDTHS`, `lib.WIDTHS`, `lib.THEMES`, `lib.widths(defaults)`; at least 320, 390 and 430, plus 768 and
+  1440 when layout changes, light and dark), and temporary profiles (`lib.signInAdmin`, `lib.addProfile`,
+  `lib.openProfile`, `lib.deleteProfiles()` in `finally`). The `zz ` clean-up (AGENTS.md) runs when a check exits, or
+  once at the end under `npm run test:browser`; set `CLEANUP_DB` to the database behind a local site.
+  `tests/browser/browser-lib.test.cjs` (in `npm run test:unit`) fails on a check that doesn't require the helper,
+  reads those settings or hard-codes an address itself, or adds or deletes profiles on its own.
 
 ## Documentation
 
@@ -191,7 +195,7 @@ quietly come back. Update the **Status** column as each guard lands, and don't r
 | `Web` and `Admin` `Program.cs` duplicating about 60 lines that had drifted | Solution shape above; general §5 | One `AddMyNewspaperCore()` in Shared (`Hosting/CoreServices.cs`); reviewers reject copied registrations | Done November 4, 2026: both hosts' registrations and outbound client settings compared identical before and after, apart from Admin's duplicate `TimeProvider` registration now removed |
 | 35 breakpoint widths, an `admin-`/`adm-` split, three visually-hidden patterns | CSS section above | `tools/check-css.cjs` (run by CI) fails on unregistered widths, unregistered prefixes and copies of the clip pattern | Planned (step 8) |
 | `sa` password hard-coded in 10 test files; integration tests writing to the live database | Tests section above; general §12 | `RepositoryHygieneTests` fails on a literal `Password=`/`Pwd=` in any tracked file; `TestDatabase` always targets `WebScraper_Test` and refuses `WebScraper`; [create-test-database.sql](../deployment/create-test-database.sql) rebuilds the copy | Done November 4, 2026 for the tests; `sa` rotated November 5. Done November 5, 2026: web, admin and the tests have their own logins (DEPLOY.md, "SQL logins"; `deployment/sql-logins/`); `TestDatabase` prefers `TestConnection` (`mynewspaper_test`, no user in `WebScraper`) |
-| 89 browser checks with 10 viewport sets, several base-URL defaults (one production), and copied clean-up code | Tests section above; AGENTS.md | Shared `tests/browser/lib.cjs`; the check script fails on any `*.browser.cjs` that doesn't use it | Planned (step 7) |
+| 89 browser checks with 10 viewport sets, several base-URL defaults (one production), and copied clean-up code | Tests section above; AGENTS.md | Shared `tests/browser/lib.cjs`; the check script fails on any `*.browser.cjs` that doesn't use it | Done November 5, 2026: all 90 checks require `lib.cjs`; five base-URL defaults (production, two odd ports, a container IP) became one; the profile set-up and delete copied into 34 checks (10 variants, some without the retry for Admin's interactive circuit) became `lib.addProfile`/`openProfile`/`deleteProfiles`; the `zz` clean-up runs on exit or once per suite (`CLEANUP_DB`); `browser-lib.test.cjs` is the guard (a node unit test, so `tools/verify.sh` runs it). Width lists that differ per check stay, behind `lib.widths()` |
 | CI ran only 4 of about 81 test classes and no lint or format checks | General §1 | Both workflows run the full suite (with a SQL service container), `dotnet format --verify-no-changes`, `npm run lint`, `npm run format:check` and the check script | Planned |
 | `== null` and `is null` mixed | General §3 | `IDE0041` and the `is null` preference at `warning` (catches `ReferenceEquals` and object casts); `RepositoryHygieneTests` ratchets the remaining `== null` lines, which are all in EF expression trees where `is null` doesn't compile (CS8122) | Done November 4, 2026: 95 lines converted; 158 expression-tree lines remained (160 after step 4 moved the TV series list into a query), and the test fails if the total rises |
 | Role-less class names (`BoxScoresRepository`, `ScoreboardRepository`, `AdminData`, `MyFollows`, `ProfilePageData`) | General §2 | `RepositoryHygieneTests` fails on a class or interface named `…Repository`, `…Manager`, `…Helper(s)`, `…Data` or `…Util(s)` | Done November 4, 2026: renamed `BoxScoreQuery`, `ScoreboardQuery`, `AdminStore`, `FollowStore`, `ProfilePageSettings`. `BoxScoreQuery` and `ScoreboardQuery` are still injected instances rather than static classes; step 4 reshapes them with the rest of data access |
