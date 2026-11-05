@@ -21,21 +21,21 @@ public static class AdminStore
     /// is set, the database rejects the delete while any page still points at the source.
     /// Returns false when the source no longer exists.
     /// </summary>
-    public static async Task<bool> DeleteSourceAsync(WebScraperContext db, int id, bool includePages)
+    public static async Task<bool> DeleteSourceAsync(WebScraperContext db, int id, bool includePages, CancellationToken ct = default)
     {
         var ownsTransaction = db.Database.CurrentTransaction is null;
-        await using var tx = ownsTransaction ? await db.Database.BeginTransactionAsync() : null;
+        await using var tx = ownsTransaction ? await db.Database.BeginTransactionAsync(ct) : null;
 
         if (includePages)
         {
-            await db.Pages.Where(p => p.SourceId == id).ExecuteDeleteAsync();
+            await db.Pages.Where(p => p.SourceId == id).ExecuteDeleteAsync(ct);
         }
 
-        var deleted = await db.Sources.Where(s => s.Id == id).ExecuteDeleteAsync();
+        var deleted = await db.Sources.Where(s => s.Id == id).ExecuteDeleteAsync(ct);
 
         if (tx is not null)
         {
-            await tx.CommitAsync();
+            await tx.CommitAsync(ct);
         }
 
         return deleted > 0;
@@ -128,21 +128,21 @@ public static class AdminStore
     /// is set, the database rejects the delete while any video still points at the feed.
     /// Returns false when the feed no longer exists.
     /// </summary>
-    public static async Task<bool> DeleteYoutubeFeedAsync(WebScraperContext db, int id, bool includeVideos)
+    public static async Task<bool> DeleteYoutubeFeedAsync(WebScraperContext db, int id, bool includeVideos, CancellationToken ct = default)
     {
         var ownsTransaction = db.Database.CurrentTransaction is null;
-        await using var tx = ownsTransaction ? await db.Database.BeginTransactionAsync() : null;
+        await using var tx = ownsTransaction ? await db.Database.BeginTransactionAsync(ct) : null;
 
         if (includeVideos)
         {
-            await db.YouTubeVideos.Where(v => v.YoutubeVideoFeedId == id).ExecuteDeleteAsync();
+            await db.YouTubeVideos.Where(v => v.YoutubeVideoFeedId == id).ExecuteDeleteAsync(ct);
         }
 
-        var deleted = await db.YoutubeVideoFeeds.Where(f => f.Id == id).ExecuteDeleteAsync();
+        var deleted = await db.YoutubeVideoFeeds.Where(f => f.Id == id).ExecuteDeleteAsync(ct);
 
         if (tx is not null)
         {
-            await tx.CommitAsync();
+            await tx.CommitAsync(ct);
         }
 
         return deleted > 0;
@@ -155,10 +155,10 @@ public static class AdminStore
     /// then links every unlinked video to its channel's feed. Additive and safe to repeat. The scraper inserts videos
     /// without a feed link until it is taught to set one, so this catches up whatever it has added.
     /// </summary>
-    public static async Task<YoutubeSyncResult> SyncYoutubeFeedsAsync(WebScraperContext db)
+    public static async Task<YoutubeSyncResult> SyncYoutubeFeedsAsync(WebScraperContext db, CancellationToken ct = default)
     {
         var ownsTransaction = db.Database.CurrentTransaction is null;
-        await using var tx = ownsTransaction ? await db.Database.BeginTransactionAsync() : null;
+        await using var tx = ownsTransaction ? await db.Database.BeginTransactionAsync(ct) : null;
 
         var created = await db.Database.ExecuteSqlAsync($"""
             INSERT INTO dbo.YoutubeVideoFeed (ChannelId, ChannelName, Url)
@@ -166,16 +166,16 @@ public static class AdminStore
             FROM dbo.YouTubeVideos v
             WHERE NOT EXISTS (SELECT 1 FROM dbo.YoutubeVideoFeed f WHERE f.ChannelId = v.ChannelId)
             GROUP BY v.ChannelId
-            """);
+            """, ct);
         var linked = await db.Database.ExecuteSqlAsync($"""
             UPDATE v SET v.YoutubeVideoFeedId = f.ID
             FROM dbo.YouTubeVideos v JOIN dbo.YoutubeVideoFeed f ON f.ChannelId = v.ChannelId
             WHERE v.YoutubeVideoFeedId IS NULL
-            """);
+            """, ct);
 
         if (tx is not null)
         {
-            await tx.CommitAsync();
+            await tx.CommitAsync(ct);
         }
 
         return new YoutubeSyncResult(created, linked);
@@ -315,13 +315,13 @@ public static class AdminStore
     }
 
     /// <summary>The links <see cref="LinkSportsEventsBySiteAsync"/> would make, without making them.</summary>
-    public static async Task<Dictionary<int, int>> PlanSportsEventLinksAsync(WebScraperContext db)
+    public static async Task<Dictionary<int, int>> PlanSportsEventLinksAsync(WebScraperContext db, CancellationToken ct = default)
     {
-        var types = await db.SportsEventsTypes.AsNoTracking().Select(t => new { t.Id, t.RssUrl }).ToListAsync();
+        var types = await db.SportsEventsTypes.AsNoTracking().Select(t => new { t.Id, t.RssUrl }).ToListAsync(ct);
         var unlinked = await db.SportsEvents.AsNoTracking()
             .Where(e => e.SportsEventsTypeId == null)
             .Select(e => new { e.Id, e.Url })
-            .ToListAsync();
+            .ToListAsync(ct);
 
         return PlanSportsEventLinks(
             unlinked.Select(e => (e.Id, e.Url)), types.Select(t => (t.Id, t.RssUrl)));
@@ -332,16 +332,16 @@ public static class AdminStore
     /// events without a type until it is taught to set one, so this catches up whatever it has added.
     /// Returns how many events were linked.
     /// </summary>
-    public static async Task<int> LinkSportsEventsBySiteAsync(WebScraperContext db)
+    public static async Task<int> LinkSportsEventsBySiteAsync(WebScraperContext db, CancellationToken ct = default)
     {
-        var plan = await PlanSportsEventLinksAsync(db);
+        var plan = await PlanSportsEventLinksAsync(db, ct);
         if (plan.Count == 0)
         {
             return 0;
         }
 
         var ownsTransaction = db.Database.CurrentTransaction is null;
-        await using var tx = ownsTransaction ? await db.Database.BeginTransactionAsync() : null;
+        await using var tx = ownsTransaction ? await db.Database.BeginTransactionAsync(ct) : null;
 
         var linked = 0;
         foreach (var byType in plan.GroupBy(p => p.Value))
@@ -352,13 +352,13 @@ public static class AdminStore
                 var ids = chunk;
                 linked += await db.SportsEvents
                     .Where(e => ids.Contains(e.Id) && e.SportsEventsTypeId == null)
-                    .ExecuteUpdateAsync(s => s.SetProperty(e => e.SportsEventsTypeId, typeId));
+                    .ExecuteUpdateAsync(s => s.SetProperty(e => e.SportsEventsTypeId, typeId), ct);
             }
         }
 
         if (tx is not null)
         {
-            await tx.CommitAsync();
+            await tx.CommitAsync(ct);
         }
 
         return linked;
@@ -369,59 +369,59 @@ public static class AdminStore
     /// is set, the database rejects the delete while any event still points at the type.
     /// Returns false when the type no longer exists.
     /// </summary>
-    public static async Task<bool> DeleteSportsEventsTypeAsync(WebScraperContext db, int id, bool includeEvents)
+    public static async Task<bool> DeleteSportsEventsTypeAsync(WebScraperContext db, int id, bool includeEvents, CancellationToken ct = default)
     {
-        if (await db.SportsEventSources.AnyAsync(s => s.SportsEventsTypeId == id)
-            || await db.SportsEventsTypes.AnyAsync(t => t.Id == id && t.ProviderKey != null))
+        if (await db.SportsEventSources.AnyAsync(s => s.SportsEventsTypeId == id, ct)
+            || await db.SportsEventsTypes.AnyAsync(t => t.Id == id && t.ProviderKey != null, ct))
             throw new InvalidOperationException("This feed has shared event attribution. Disable it instead of deleting it.");
         var ownsTransaction = db.Database.CurrentTransaction is null;
-        await using var tx = ownsTransaction ? await db.Database.BeginTransactionAsync() : null;
+        await using var tx = ownsTransaction ? await db.Database.BeginTransactionAsync(ct) : null;
 
         if (includeEvents)
         {
-            await db.SportsEvents.Where(e => e.SportsEventsTypeId == id).ExecuteDeleteAsync();
+            await db.SportsEvents.Where(e => e.SportsEventsTypeId == id).ExecuteDeleteAsync(ct);
         }
 
-        var deleted = await db.SportsEventsTypes.Where(t => t.Id == id).ExecuteDeleteAsync();
+        var deleted = await db.SportsEventsTypes.Where(t => t.Id == id).ExecuteDeleteAsync(ct);
 
         if (tx is not null)
         {
-            await tx.CommitAsync();
+            await tx.CommitAsync(ct);
         }
 
         return deleted > 0;
     }
 
     /// <summary>Only legacy events without shared attribution can be deleted manually.</summary>
-    public static async Task<bool> DeleteSportsEventAsync(WebScraperContext db, int id)
+    public static async Task<bool> DeleteSportsEventAsync(WebScraperContext db, int id, CancellationToken ct = default)
     {
         var deleted = await db.SportsEvents
             .Where(e => e.Id == id && e.ProviderKey == null && !e.EventSources.Any())
-            .ExecuteDeleteAsync();
-        if (deleted == 0 && await db.SportsEvents.AnyAsync(e => e.Id == id))
+            .ExecuteDeleteAsync(ct);
+        if (deleted == 0 && await db.SportsEvents.AnyAsync(e => e.Id == id, ct))
             throw new InvalidOperationException("This event is maintained by a provider or shared calendar. Disable its feed instead of deleting it.");
         return deleted > 0;
     }
 
     /// <summary>Provider and shared-source attribution is owned by the scraper.</summary>
-    public static async Task<bool> AssignSportsEventTypeAsync(WebScraperContext db, int id, int? typeId)
+    public static async Task<bool> AssignSportsEventTypeAsync(WebScraperContext db, int id, int? typeId, CancellationToken ct = default)
     {
         var updated = await db.SportsEvents.Where(e => e.Id == id && e.ProviderKey == null
                 && !e.EventSources.Any()
                 && (typeId == null || db.SportsEventsTypes.Any(t => t.Id == typeId && t.ProviderKey == null)))
-            .ExecuteUpdateAsync(s => s.SetProperty(e => e.SportsEventsTypeId, typeId));
-        if (updated == 0 && await db.SportsEvents.AnyAsync(e => e.Id == id))
+            .ExecuteUpdateAsync(s => s.SetProperty(e => e.SportsEventsTypeId, typeId), ct);
+        if (updated == 0 && await db.SportsEvents.AnyAsync(e => e.Id == id, ct))
             throw new InvalidOperationException("Only legacy events can be assigned to a legacy type. Provider and shared-calendar attribution is read-only.");
         return updated > 0;
     }
 
     /// <summary>A feed link must refer to the video's own channel.</summary>
-    public static async Task<bool> AssignYoutubeVideoFeedAsync(WebScraperContext db, int id, int? feedId)
+    public static async Task<bool> AssignYoutubeVideoFeedAsync(WebScraperContext db, int id, int? feedId, CancellationToken ct = default)
     {
         var updated = await db.YouTubeVideos.Where(v => v.Id == id
                 && (feedId == null || db.YoutubeVideoFeeds.Any(f => f.Id == feedId && f.ChannelId == v.ChannelId)))
-            .ExecuteUpdateAsync(s => s.SetProperty(v => v.YoutubeVideoFeedId, feedId));
-        if (updated == 0 && await db.YouTubeVideos.AnyAsync(v => v.Id == id))
+            .ExecuteUpdateAsync(s => s.SetProperty(v => v.YoutubeVideoFeedId, feedId), ct);
+        if (updated == 0 && await db.YouTubeVideos.AnyAsync(v => v.Id == id, ct))
             throw new InvalidOperationException("Choose a feed for this video's channel. The selected feed is missing or belongs to another channel.");
         return updated > 0;
     }

@@ -72,7 +72,7 @@ public static class FollowStore
     /// <summary>Follow a TVmaze show: track it for the scraper if nobody does yet, then follow it for this profile.</summary>
     public static async Task FollowShowAsync(WebScraperContext db, int profileId, int tvmazeShowId, string title, CancellationToken ct = default)
     {
-        await TvQuery.FollowAsync(db, tvmazeShowId, title);
+        await TvQuery.FollowAsync(db, tvmazeShowId, title, ct);
         var trackingId = await db.TvTrackedSeries.Where(t => t.TvmazeShowId == tvmazeShowId).Select(t => t.Id).SingleAsync(ct);
         if (await db.ProfileTvFollows.AnyAsync(f => f.ProfileId == profileId && f.TvTrackedSeriesId == trackingId, ct)) return;
         var follow = new ProfileTvFollow { ProfileId = profileId, TvTrackedSeriesId = trackingId };
@@ -90,7 +90,7 @@ public static class FollowStore
     {
         var removed = await db.ProfileTvFollows.Where(f => f.ProfileId == profileId && f.TvTrackedSeriesId == trackingId).ExecuteDeleteAsync(ct);
         if (removed > 0 && !await db.ProfileTvFollows.AnyAsync(f => f.TvTrackedSeriesId == trackingId, ct))
-            await TvQuery.SetEnabledAsync(db, trackingId, false);
+            await TvQuery.SetEnabledAsync(db, trackingId, false, ct);
         return removed > 0;
     }
 }

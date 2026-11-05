@@ -15,11 +15,11 @@ public static class DigitalReleasesQuery
         return enabled.FirstOrDefault(s => s.SourceKey == key)
             ?? enabled.FirstOrDefault(s => s.SourceKey == "movieinsider") ?? enabled.FirstOrDefault();
     }
-    public static async Task<DigitalReleasePage> GetAsync(WebScraperContext db, DateOnly today, string? sourceKey, int? take = null)
+    public static async Task<DigitalReleasePage> GetAsync(WebScraperContext db, DateOnly today, string? sourceKey, int? take = null, CancellationToken ct = default)
     {
         var sources = await db.MovieReleaseSources.AsNoTracking().Where(s => s.Enabled
             && (s.SourceKey == "movieinsider" || s.SourceKey == "whentostream" || s.SourceKey == "dvdsreleasedates"))
-            .OrderBy(s => s.Name).ThenBy(s => s.ID).ToListAsync();
+            .OrderBy(s => s.Name).ThenBy(s => s.ID).ToListAsync(ct);
         var selected = SelectSource(sources, sourceKey);
         if (selected is null) return new(sources, null, today, []);
         var query = (from r in db.MovieReleases.AsNoTracking()
@@ -35,7 +35,7 @@ public static class DigitalReleasesQuery
                          movie.Certification, movie.RuntimeMinutes, r.ReleaseDate, r.DateStatus, r.ReleaseType,
                          r.Platform, r.Format, r.IsReRelease, source.Name, r.SourceUrl));
         if (take is { } limit) query = query.Take(Math.Max(0, limit));
-        var items = await query.ToListAsync();
-        return new(sources, selected, today, await MovieCommerceQuery.EnrichAsync(db, items));
+        var items = await query.ToListAsync(ct);
+        return new(sources, selected, today, await MovieCommerceQuery.EnrichAsync(db, items, ct));
     }
 }

@@ -60,15 +60,15 @@ public static class EventsQuery
             : e.EventSources.Any(s => s.Feed.Enabled)
                 || (!e.EventSources.Any() && (e.SportsEventsType == null || e.SportsEventsType.Enabled)));
 
-    public static async Task<IReadOnlyList<EventSchool>> GetSchoolsAsync(WebScraperContext db) =>
+    public static async Task<IReadOnlyList<EventSchool>> GetSchoolsAsync(WebScraperContext db, CancellationToken ct = default) =>
         await db.SportsEventsTypes.AsNoTracking().Where(t => t.Enabled && (t.SchoolName != null || t.ProviderKey == "espn-nwsl" || t.ProviderKey == "espn-wnba" || t.ProviderKey == "espn-mlb" || t.ProviderKey == "espn-championship" || t.ProviderKey == "espn-epl" || t.ProviderKey == "espn-mls"))
-            .OrderBy(t => t.SchoolName).Select(t => new EventSchool(t.Id, t.ProviderKey == "espn-championship" ? "EFL Championship" : t.ProviderKey == "espn-epl" ? "Premier League" : t.ProviderKey == "espn-mls" ? "MLS" : t.ProviderKey == "espn-mlb" ? "MLB" : t.ProviderKey == "espn-wnba" ? "WNBA" : t.ProviderKey == "espn-nwsl" ? "Kansas City Current" : t.SchoolName!)).ToListAsync();
+            .OrderBy(t => t.SchoolName).Select(t => new EventSchool(t.Id, t.ProviderKey == "espn-championship" ? "EFL Championship" : t.ProviderKey == "espn-epl" ? "Premier League" : t.ProviderKey == "espn-mls" ? "MLS" : t.ProviderKey == "espn-mlb" ? "MLB" : t.ProviderKey == "espn-wnba" ? "WNBA" : t.ProviderKey == "espn-nwsl" ? "Kansas City Current" : t.SchoolName!)).ToListAsync(ct);
 
-    public static async Task<IReadOnlyList<ScheduleChoice>> GetScheduleChoicesAsync(WebScraperContext db, DateOnly today)
+    public static async Task<IReadOnlyList<ScheduleChoice>> GetScheduleChoicesAsync(WebScraperContext db, DateOnly today, CancellationToken ct = default)
     {
         var rows = await Visible(db).Where(e => e.EventDate >= today)
             .Select(e => new { Provider = e.ProviderKey ?? (e.SportsEventsType != null ? e.SportsEventsType.ProviderKey : null), e.Sport })
-            .Distinct().ToListAsync();
+            .Distinct().ToListAsync(ct);
         return rows.Select(r => new ScheduleChoice((r.Provider ?? "") + "|" + r.Sport,
             r.Provider switch
             {
@@ -93,7 +93,7 @@ public static class EventsQuery
     /// <see cref="SportsEvent.EventDate"/>, which is already the host school's calendar date, so "today" is compared
     /// with it directly and never converted.
     /// </summary>
-    public static async Task<IReadOnlyList<string>> GetSportsAsync(WebScraperContext db, DateOnly today, int? school = null, DateOnly? from = null, DateOnly? to = null) =>
+    public static async Task<IReadOnlyList<string>> GetSportsAsync(WebScraperContext db, DateOnly today, int? school = null, DateOnly? from = null, DateOnly? to = null, CancellationToken ct = default) =>
         await Visible(db)
             .Where(e => e.EventDate >= today && (from == null || e.EventDate >= from) && (to == null || e.EventDate <= to) && e.Sport != null
                 && (school == null || e.EventSources.Any(s => s.SportsEventsTypeId == school && s.Feed.Enabled)
@@ -101,18 +101,18 @@ public static class EventsQuery
             .Select(e => e.Sport!)
             .Distinct()
             .OrderBy(s => s)
-            .ToListAsync();
+            .ToListAsync(ct);
 
     /// <summary>When the schedule was last refreshed by the scraper, or null when there are no events.</summary>
-    public static async Task<DateTime?> GetLastUpdatedAsync(WebScraperContext db) =>
-        await db.SportsEvents.AsNoTracking().MaxAsync(e => (DateTime?)e.LastSeenAt);
+    public static async Task<DateTime?> GetLastUpdatedAsync(WebScraperContext db, CancellationToken ct = default) =>
+        await db.SportsEvents.AsNoTracking().MaxAsync(e => (DateTime?)e.LastSeenAt, ct);
 
     /// <summary>
     /// Unfinished, non-canceled games from <paramref name="today"/> onward, soonest first; within a day, games
     /// with a known start time come before games whose time is still to be announced.
     /// </summary>
     public static async Task<EventsPage> GetUpcomingAsync(
-        WebScraperContext db, DateOnly today, string? sport, string? search, int limit = Limit, int? school = null, DateOnly? from = null, DateOnly? to = null, string? team = null, int? providerTeamId = null, int offset = 0, string? provider = null)
+        WebScraperContext db, DateOnly today, string? sport, string? search, int limit = Limit, int? school = null, DateOnly? from = null, DateOnly? to = null, string? team = null, int? providerTeamId = null, int offset = 0, string? provider = null, CancellationToken ct = default)
     {
         var query = Visible(db).Where(e => e.EventDate >= today && (from == null || e.EventDate >= from) && (to == null || e.EventDate <= to));
         if (provider is not null)
@@ -147,7 +147,7 @@ public static class EventsQuery
         }
         if (providerTeamId == 352)
             query = query.Where(e => e.ProviderKey == "espn-championship" && (e.SchoolId == 352 || e.OpponentSchoolId == 352));
-        var total = await query.CountAsync();
+        var total = await query.CountAsync(ct);
         offset = limit > 0 ? Math.Clamp(offset, 0, Math.Max(0, (total - 1) / limit) * limit) : 0;
         var items = await query
             .OrderBy(e => e.EventDate)
@@ -160,7 +160,7 @@ public static class EventsQuery
                 e.Id, e.Url, e.Title, e.Sport, e.Opponent, e.ProviderKey == "espn-championship" || e.ProviderKey == "espn-epl" || e.ProviderKey == "espn-mls" ? false : e.IsAway, e.Location, e.EventDate, e.StartsAtUtc, e.TimeTbd,
                 e.Tv, e.StreamUrl, e.LiveStatsUrl, e.TeamLogoUrl, e.OpponentLogoUrl,
                 e.SchoolName ?? (e.SportsEventsType != null ? e.SportsEventsType.SchoolName : null), e.IsNeutral, e.Radio, e.AudioUrl, e.ScheduleStatus, e.ProviderKey ?? (e.SportsEventsType != null ? e.SportsEventsType.ProviderKey : null), e.CanonicalKey, e.GameId, e.SchoolId, e.OpponentSchoolId))
-            .ToListAsync();
+            .ToListAsync(ct);
 
         return new EventsPage(items, total);
     }
@@ -169,7 +169,7 @@ public static class EventsQuery
     /// Every game on <paramref name="date"/> (the host school's calendar date, never converted), in start order; games
     /// whose time is still to be announced come last.
     /// </summary>
-    public static async Task<IReadOnlyList<EventItem>> GetOnDateAsync(WebScraperContext db, DateOnly date) =>
+    public static async Task<IReadOnlyList<EventItem>> GetOnDateAsync(WebScraperContext db, DateOnly date, CancellationToken ct = default) =>
         await Visible(db)
             .Where(e => e.EventDate == date)
             .OrderBy(e => e.StartsAtUtc == null ? 1 : 0)
@@ -181,7 +181,7 @@ public static class EventsQuery
                 e.Id, e.Url, e.Title, e.Sport, e.Opponent, e.ProviderKey == "espn-mls" ? false : e.IsAway, e.Location, e.EventDate, e.StartsAtUtc, e.TimeTbd,
                 e.Tv, e.StreamUrl, e.LiveStatsUrl, e.TeamLogoUrl, e.OpponentLogoUrl,
                 e.SchoolName ?? (e.SportsEventsType != null ? e.SportsEventsType.SchoolName : null), e.IsNeutral, e.Radio, e.AudioUrl, e.ScheduleStatus, e.ProviderKey ?? (e.SportsEventsType != null ? e.SportsEventsType.ProviderKey : null), e.CanonicalKey, e.GameId, e.SchoolId, e.OpponentSchoolId))
-            .ToListAsync();
+            .ToListAsync(ct);
 
     /// <summary>Builds the query string that keeps the current filters. Empty when nothing is set.</summary>
     public static string QueryString(string? sport, string? search, int? school = null, DateOnly? from = null, DateOnly? to = null)

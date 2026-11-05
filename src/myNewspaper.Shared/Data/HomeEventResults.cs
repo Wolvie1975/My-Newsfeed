@@ -7,7 +7,7 @@ namespace myNewspaper.Shared.Data;
 public static class HomeEventResults
 {
     public static async Task<IReadOnlyList<EventItem>> WithoutFinalResultsAsync(
-        WebScraperContext db, IReadOnlyList<EventItem> games)
+        WebScraperContext db, IReadOnlyList<EventItem> games, CancellationToken ct = default)
     {
         if (games.Count == 0) return games;
         var keys = games.Select(Identity).Where(k => k is not null).Cast<string>().Distinct().ToArray();
@@ -15,12 +15,12 @@ public static class HomeEventResults
             .Select(g => g.StartsAtUtc!.Value).Distinct().ToArray();
         var results = await db.ResultGames.AsNoTracking()
             .Where(r => r.Completed && (keys.Contains("espn:" + r.League + ":" + r.EventId) || starts.Contains(r.StartsAtUtc)))
-            .ToListAsync();
+            .ToListAsync(ct);
         var ids = games.Where(g => g.GameId is not null).Select(g => g.GameId!.Value).Distinct().ToArray();
         var seasonResults = await db.SportsMatchResults.AsNoTracking()
             .Where(r => ids.Contains(r.GameId) && r.HomeScore >= 0 && r.AwayScore >= 0
                 && (r.ScheduleStatus == "STATUS_FULL_TIME" || r.ScheduleStatus.StartsWith("STATUS_FINAL")))
-            .ToListAsync();
+            .ToListAsync(ct);
         return games.Where(g => !results.Any(r => Matches(g, r)) && !seasonResults.Any(r => Matches(g, r))).ToList();
     }
 

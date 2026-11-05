@@ -32,12 +32,12 @@ public static class BoxOfficeForecastQuery
     /// The weekend-preview predictions for one weekend, keyed by a normalised title, so reported results can show what
     /// was predicted. Only the current preview is stored, so older weekends simply have no predictions.
     /// </summary>
-    public static async Task<IReadOnlyDictionary<string, BoxOfficeForecast>> PredictionsAsync(WebScraperContext db, DateOnly friday)
+    public static async Task<IReadOnlyDictionary<string, BoxOfficeForecast>> PredictionsAsync(WebScraperContext db, DateOnly friday, CancellationToken ct = default)
     {
         var rows = await db.Database.SqlQuery<PredictionRow>($"""
             SELECT MovieTitle, ForecastLow, ForecastHigh, PredictedRank
             FROM dbo.BoxOfficeForecasts WHERE Kind = {Preview} AND TargetDate = {friday.ToDateTime(TimeOnly.MinValue)}
-            """).ToListAsync();
+            """).ToListAsync(ct);
         return rows.GroupBy(r => TitleKey(r.MovieTitle)).ToDictionary(g => g.Key, g =>
         {
             var r = g.First();

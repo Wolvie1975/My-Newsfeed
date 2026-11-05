@@ -4,9 +4,9 @@ public sealed record HomeLeadSnapshot(FeedItem? Article, long Hour, int RefreshA
 
 public static class HomeLeadQuery
 {
-    public static async Task<HomeLeadSnapshot> GetAsync(WebScraperContext db, DateTime utcNow)
+    public static async Task<HomeLeadSnapshot> GetAsync(WebScraperContext db, DateTime utcNow, CancellationToken ct = default)
     {
-        var candidates = await FeedQuery.GetLatestPerSourceAsync(db, int.MaxValue, hub: "headlines");
+        var candidates = await FeedQuery.GetLatestPerSourceAsync(db, int.MaxValue, hub: "headlines", ct: ct);
         return Snapshot(candidates, utcNow);
     }
 

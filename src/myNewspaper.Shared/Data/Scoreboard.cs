@@ -147,14 +147,14 @@ public sealed record ScoreboardSnapshot(IReadOnlyList<ScoreboardGame> Games, IRe
 public static class ScoreboardQuery
 {
     public static async Task<ScoreboardSnapshot> ReadAsync(WebScraperContext db, FeedDates dates, ILogger log, DateOnly day, bool carryOver = false,
-        string? competition = null, int? followId = null, bool finalsOnly = false, string? show = null)
+        string? competition = null, int? followId = null, bool finalsOnly = false, string? show = null, CancellationToken ct = default)
     {
         try
         {
-            var coverage = await db.Database.SqlQuery<ScoreboardCoverage>($"SELECT ID,SourceKind,OriginId,Sport,League,Label,LastAttemptAt,LastSuccessAt,Availability FROM dbo.SportsScoreboardCoverage").Where(c => c.League != "womens-college-basketball").ToListAsync();
-            var origins = await db.ResultFollows.AsNoTracking().Where(f => f.Enabled && f.League != "womens-college-basketball").ToListAsync();
+            var coverage = await db.Database.SqlQuery<ScoreboardCoverage>($"SELECT ID,SourceKind,OriginId,Sport,League,Label,LastAttemptAt,LastSuccessAt,Availability FROM dbo.SportsScoreboardCoverage").Where(c => c.League != "womens-college-basketball").ToListAsync(ct);
+            var origins = await db.ResultFollows.AsNoTracking().Where(f => f.Enabled && f.League != "womens-college-basketball").ToListAsync(ct);
             var originIds = origins.Select(f => f.Id).ToArray();
-            var members = await db.ResultFollowTeams.AsNoTracking().Where(m => originIds.Contains(m.FollowId)).ToListAsync();
+            var members = await db.ResultFollowTeams.AsNoTracking().Where(m => originIds.Contains(m.FollowId)).ToListAsync(ct);
             var follows = origins.Where(f => coverage.Any(c => c.Sport == f.Sport && c.League == f.League))
                 .OrderBy(f => FollowKinds.Order(f.Kind)).ThenBy(f => f.Name).ThenBy(f => f.League)
                 .Select(f => new ScoreboardFollow(f.Id, EspnLeagues.FollowLabel(f.Kind, f.Name, f.Sport, f.League), f.Sport, f.League, f.Kind, f.TeamId,
@@ -176,13 +176,13 @@ public static class ScoreboardQuery
                 query = query.Where(g => g.Sport == selected.Sport && g.League == selected.League);
             }
             if (finalsOnly) query = query.Where(g => g.Status == "final" && g.Completed);
-            var games = await query.ToListAsync();
+            var games = await query.ToListAsync(ct);
             if (selectedFollow is not null) games = games.Where(selectedFollow.Matches).ToList();
             List<ScoreboardGame>? top25Week = null;
             if (selection.IsTop25)
             {
                 var weekQuery = db.Database.SqlQuery<ScoreboardGame>($"SELECT ID,Provider,Sport,League,EventId,ScoreboardDate,StartsAtUtc,TimeTbd,WasRescheduled,HomeTeamId,AwayTeamId,HomeName,AwayName,HomeLogoUrl,AwayLogoUrl,HomeScore,AwayScore,Status,Completed,ProviderStatus,StatusText,Period,DisplayClock,NeutralSite,HomeShootout,AwayShootout,WinnerSide,Venue,Broadcasts,SourceUrl,LiveDetailsJson,LastObservedAtUtc,IsStale,RequestAvailability,HasBoxScore,HomeRank,AwayRank FROM dbo.SportsScoreboardTop25Week");
-                top25Week = await weekQuery.OrderBy(g => g.ScoreboardDate).ThenBy(g => g.StartsAtUtc).ThenBy(g => g.ID).ToListAsync();
+                top25Week = await weekQuery.OrderBy(g => g.ScoreboardDate).ThenBy(g => g.StartsAtUtc).ThenBy(g => g.ID).ToListAsync(ct);
             }
             return new(games.DistinctBy(g => g.Key).OrderBy(g => g.Status == "live" ? 0 : g.Active ? 1 : g.Status == "upcoming" ? 2 : 3).ThenBy(g => g.StartsAtUtc).ThenBy(g => g.ID).ToList(), coverage, true, follows, top25Week);
         }

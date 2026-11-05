@@ -21,14 +21,14 @@ public static class MoviesQuery
     };
 
     public static Task<MoviesPage> GetAsync(WebScraperContext db, DateOnly today, string? search,
-        string? type, string? platform, string? period, int offset = 0, int take = 50, DateOnly? onDate = null, DateOnly? through = null) =>
-        GetCoreAsync(db, today, search, type, platform, period, offset, take, onDate, false, through);
+        string? type, string? platform, string? period, int offset = 0, int take = 50, DateOnly? onDate = null, DateOnly? through = null, CancellationToken ct = default) =>
+        GetCoreAsync(db, today, search, type, platform, period, offset, take, onDate, false, through, ct);
 
-    public static async Task<IReadOnlyList<MovieReleaseItem>> GetTodayTimelineAsync(WebScraperContext db, DateOnly today) =>
-        (await GetCoreAsync(db, today, null, null, null, null, 0, 200, today, true)).Items;
+    public static async Task<IReadOnlyList<MovieReleaseItem>> GetTodayTimelineAsync(WebScraperContext db, DateOnly today, CancellationToken ct = default) =>
+        (await GetCoreAsync(db, today, null, null, null, null, 0, 200, today, true, ct: ct)).Items;
 
     private static async Task<MoviesPage> GetCoreAsync(WebScraperContext db, DateOnly today, string? search,
-        string? type, string? platform, string? period, int offset, int take, DateOnly? onDate, bool timelineOnly, DateOnly? through = null)
+        string? type, string? platform, string? period, int offset, int take, DateOnly? onDate, bool timelineOnly, DateOnly? through = null, CancellationToken ct = default)
     {
         var releases = from r in db.MovieReleases.AsNoTracking()
                        join link in db.MovieSourceLinks on r.MovieSourceLinkId equals link.ID
@@ -39,8 +39,8 @@ public static class MoviesQuery
         if (timelineOnly) releases = releases.Where(x => x.r.ReleaseType != "digital"
             && x.r.ReleaseType != "digital_rental" && x.r.ReleaseType != "digital_purchase");
         var platforms = timelineOnly ? new List<string>() : await releases.Where(x => x.r.Platform != null && x.r.Platform != "")
-            .Select(x => x.r.Platform!).Distinct().OrderBy(x => x).ToListAsync();
-        var updated = timelineOnly ? (DateTime?)null : await releases.MaxAsync(x => (DateTime?)x.r.LastSeenAt);
+            .Select(x => x.r.Platform!).Distinct().OrderBy(x => x).ToListAsync(ct);
+        var updated = timelineOnly ? (DateTime?)null : await releases.MaxAsync(x => (DateTime?)x.r.LastSeenAt, ct);
         if (!string.IsNullOrWhiteSpace(search))
         {
             var term = search.Trim();
@@ -66,7 +66,7 @@ public static class MoviesQuery
         // duplicate cards after Take(), which would leave incomplete pages and inflated totals.
         var representatives = releases.GroupBy(x => new { MovieId = x.movie.ID, x.r.ReleaseDate, x.r.ReleaseType, x.r.IsReRelease })
             .Select(g => g.Min(x => x.r.ID));
-        var total = timelineOnly ? 0 : await representatives.CountAsync();
+        var total = timelineOnly ? 0 : await representatives.CountAsync(ct);
         var rows = await releases.Where(x => representatives.Contains(x.r.ID))
             .OrderBy(x => x.r.ReleaseDate == null).ThenBy(x => x.r.ReleaseDate)
             .ThenBy(x => x.movie.Title).ThenBy(x => x.r.ID).Skip(Math.Max(0, offset)).Take(take)
@@ -76,11 +76,11 @@ public static class MoviesQuery
                 Item = new MovieReleaseItem(x.r.ID, x.movie.Title, x.movie.OriginalYear, x.movie.Description,
                 x.movie.PosterUrl, x.movie.Certification, x.movie.RuntimeMinutes, x.r.ReleaseDate, x.r.DateStatus,
                 x.r.ReleaseType, x.r.Platform, x.r.Format, x.r.IsReRelease, x.source.Name, x.r.SourceUrl)
-            }).ToListAsync();
+            }).ToListAsync(ct);
         var movieIds = rows.Select(x => x.MovieId).Distinct().ToArray();
         var variants = await releases.Where(x => movieIds.Contains(x.movie.ID))
             .Select(x => new { MovieId = x.movie.ID, x.r.ReleaseDate, x.r.ReleaseType, x.r.IsReRelease, x.r.Format, x.r.Platform, x.r.DateStatus })
-            .ToListAsync();
+            .ToListAsync(ct);
         var byRelease = variants.ToLookup(x => (x.MovieId, x.ReleaseDate, x.ReleaseType, x.IsReRelease));
         var items = rows.Select(row =>
         {
@@ -92,7 +92,7 @@ public static class MoviesQuery
                 DateStatus = matches.Any(x => x.DateStatus == "announced") ? "announced" : row.Item.DateStatus
             };
         }).ToList();
-        return new(await MovieCommerceQuery.EnrichAsync(db, items), total, platforms, updated);
+        return new(await MovieCommerceQuery.EnrichAsync(db, items, ct), total, platforms, updated);
     }
     private static string? CombineDetails(IEnumerable<string?> values)
     {
@@ -112,7 +112,7 @@ public static class MoviesQuery
 
     /// <summary>Current Friday releases during Thursday–Sunday, one entry per movie across enabled sources.</summary>
     public static async Task<IReadOnlyList<MovieReleaseItem>> GetFridayTheatricalAsync(
-        WebScraperContext db, DateOnly today, int take = 5)
+        WebScraperContext db, DateOnly today, int take = 5, CancellationToken ct = default)
     {
         if (HomeTheatricalFriday(today) is not { } friday) return [];
         var eligible = from r in db.MovieReleases.AsNoTracking()
@@ -128,13 +128,13 @@ public static class MoviesQuery
             .Select(x => new MovieReleaseItem(x.r.ID, x.movie.Title, x.movie.OriginalYear, x.movie.Description,
                 x.movie.PosterUrl, x.movie.Certification, x.movie.RuntimeMinutes, x.r.ReleaseDate, x.r.DateStatus,
                 x.r.ReleaseType, x.r.Platform, x.r.Format, x.r.IsReRelease, x.source.Name, x.r.SourceUrl))
-            .ToListAsync();
-        return await MovieCommerceQuery.EnrichAsync(db, items);
+            .ToListAsync(ct);
+        return await MovieCommerceQuery.EnrichAsync(db, items, ct);
     }
 
     /// <summary>Upcoming dated digital releases, one entry per movie and date across enabled sources.</summary>
     public static async Task<IReadOnlyList<MovieReleaseItem>> GetUpcomingDigitalAsync(
-        WebScraperContext db, DateOnly today, int take = 5)
+        WebScraperContext db, DateOnly today, int take = 5, CancellationToken ct = default)
     {
         var eligible = from r in db.MovieReleases.AsNoTracking()
                        join link in db.MovieSourceLinks on r.MovieSourceLinkId equals link.ID
@@ -150,8 +150,8 @@ public static class MoviesQuery
             .Select(x => new MovieReleaseItem(x.r.ID, x.movie.Title, x.movie.OriginalYear, x.movie.Description,
                 x.movie.PosterUrl, x.movie.Certification, x.movie.RuntimeMinutes, x.r.ReleaseDate, x.r.DateStatus,
                 x.r.ReleaseType, x.r.Platform, x.r.Format, x.r.IsReRelease, x.source.Name, x.r.SourceUrl))
-            .ToListAsync();
-        return await MovieCommerceQuery.EnrichAsync(db, items);
+            .ToListAsync(ct);
+        return await MovieCommerceQuery.EnrichAsync(db, items, ct);
     }
 
 }

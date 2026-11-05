@@ -44,7 +44,7 @@ public static class PickerPreviewQuery
             if (ProfileSettings.Parse(p.Settings)[ProfileSettings.Teams] is System.Text.Json.Nodes.JsonArray chosen && chosen.Count > 0)
             {
                 var keys = chosen.Select(t => t?.GetValue<string>()).OfType<string>().ToHashSet(StringComparer.Ordinal);
-                games ??= TodayTonight.Build(await EventsQuery.GetOnDateAsync(db, today), dates);
+                games ??= TodayTonight.Build(await EventsQuery.GetOnDateAsync(db, today, ct), dates);
                 teamLine = games.FirstOrDefault(g => (g.HomeTeam is { } h && keys.Contains(h)) || (g.AwayTeam is { } a && keys.Contains(a)))
                     is { } game ? $"{game.Title} · {game.TimeLabel}" : "No games today";
             }
@@ -53,7 +53,7 @@ public static class PickerPreviewQuery
         string? lead = null;
         if (editions.Count > 0)
         {
-            try { lead = (await HomeLeadQuery.GetAsync(db, nowUtc)).Article?.Title; }
+            try { lead = (await HomeLeadQuery.GetAsync(db, nowUtc, ct)).Article?.Title; }
             catch (Exception ex) when (DataFailures.IsReadFailure(ex)) { }
         }
         return new(editions, lead);

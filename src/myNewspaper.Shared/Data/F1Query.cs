@@ -21,29 +21,29 @@ public sealed record F1Page(F1Source? Source, int? Season, DateTime? FetchedAt,
 
 public static class F1Query
 {
-    public static async Task<F1Page> GetAsync(WebScraperContext db, string view, string? selection = null)
+    public static async Task<F1Page> GetAsync(WebScraperContext db, string view, string? selection = null, CancellationToken ct = default)
     {
         // All views expand one atomically replaced snapshot. Keep that row stable across these reads.
-        await using var transaction = await db.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead);
-        var source = await db.Set<F1Source>().AsNoTracking().FirstOrDefaultAsync();
+        await using var transaction = await db.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead, ct);
+        var source = await db.Set<F1Source>().AsNoTracking().FirstOrDefaultAsync(ct);
         if (source?.Enabled != true) return F1Page.Empty with { Source = source };
-        var races = await db.Set<F1Race>().AsNoTracking().OrderBy(r => r.Round).ToListAsync();
+        var races = await db.Set<F1Race>().AsNoTracking().OrderBy(r => r.Round).ToListAsync(ct);
         var season = races.Select(r => (int?)r.Season).FirstOrDefault();
         if (season is null) return F1Page.Empty with { Source = source };
         races = races.Where(r => r.Season == season).ToList();
         var choices = await db.Set<F1Classification>().AsNoTracking().Where(r => r.Season == season && (r.SessionType == "Race" || r.SessionType == "Sprint"))
-            .Select(r => new F1ResultChoice(r.Round, r.SessionType)).Distinct().ToListAsync();
+            .Select(r => new F1ResultChoice(r.Round, r.SessionType)).Distinct().ToListAsync(ct);
         choices = choices.Where(c => races.Any(r => r.Round == c.Round)).OrderByDescending(c => c.Round)
             .ThenBy(c => c.SessionType == "Race" ? 0 : 1).ToList();
         var selected = Select(choices, selection);
         var results = view == "results" && selected is not null
             ? await db.Set<F1Classification>().AsNoTracking().Where(r => r.Season == season && r.Round == selected.Round && r.SessionType == selected.SessionType)
-                .OrderBy(r => r.Position).ThenBy(r => r.DriverId).ToListAsync() : [];
+                .OrderBy(r => r.Position).ThenBy(r => r.DriverId).ToListAsync(ct) : [];
         var drivers = view == "standings"
-            ? await db.Set<F1DriverStanding>().AsNoTracking().Where(r => r.Season == season).OrderBy(r => r.Position).ThenBy(r => r.DriverId).ToListAsync() : [];
+            ? await db.Set<F1DriverStanding>().AsNoTracking().Where(r => r.Season == season).OrderBy(r => r.Position).ThenBy(r => r.DriverId).ToListAsync(ct) : [];
         var constructors = view == "standings"
-            ? await db.Set<F1ConstructorStanding>().AsNoTracking().Where(r => r.Season == season).OrderBy(r => r.Position).ThenBy(r => r.ConstructorId).ToListAsync() : [];
-        await transaction.CommitAsync();
+            ? await db.Set<F1ConstructorStanding>().AsNoTracking().Where(r => r.Season == season).OrderBy(r => r.Position).ThenBy(r => r.ConstructorId).ToListAsync(ct) : [];
+        await transaction.CommitAsync(ct);
         return new(source, season, races.Min(r => r.FetchedAt), races, choices, selected, results, drivers, constructors);
     }
 

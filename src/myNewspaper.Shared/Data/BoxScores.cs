@@ -116,12 +116,12 @@ public static class BoxScoreQuery
             var seasonVisible = false;
             if (!ordinary && id.Sport == "soccer" && int.TryParse(id.EventId, out var gameId))
             {
-                if (id.League == "usa.1") { var page = await MlsResultsQuery.GetAsync(db); seasonVisible = page.Source is not null && await MlsResultsQuery.Visible(db, page.Source.Id).AnyAsync(g => g.Season == page.Season && g.GameId == gameId, ct); }
-                if (id.League == "eng.2") { var page = await ChampionshipResultsQuery.GetAsync(db, false); seasonVisible = page.Source is not null && await ChampionshipResultsQuery.Visible(db, page.Source.Id).AnyAsync(g => g.Season == page.Season && g.GameId == gameId, ct); }
+                if (id.League == "usa.1") { var page = await MlsResultsQuery.GetAsync(db, ct: ct); seasonVisible = page.Source is not null && await MlsResultsQuery.Visible(db, page.Source.Id).AnyAsync(g => g.Season == page.Season && g.GameId == gameId, ct); }
+                if (id.League == "eng.2") { var page = await ChampionshipResultsQuery.GetAsync(db, false, ct: ct); seasonVisible = page.Source is not null && await ChampionshipResultsQuery.Visible(db, page.Source.Id).AnyAsync(g => g.Season == page.Season && g.GameId == gameId, ct); }
             }
             if (!ordinary && !seasonVisible && id.Sport == "hockey" && id.League == "nhl"
                 && int.TryParse(id.EventId, out var nhlGameId))
-                seasonVisible = await NhlBoxScoreVisibility.ContainsAsync(db, nhlGameId);
+                seasonVisible = await NhlBoxScoreVisibility.ContainsAsync(db, nhlGameId, ct);
             if (!ordinary && !seasonVisible)
             {
                 var publicScoreboard = await db.Database.SqlQuery<int>($"SELECT COUNT(*) AS Value FROM dbo.SportsScoreboard WHERE Sport={id.Sport} AND League={id.League} AND EventId={id.EventId} AND Provider='espn'").SingleAsync(ct);

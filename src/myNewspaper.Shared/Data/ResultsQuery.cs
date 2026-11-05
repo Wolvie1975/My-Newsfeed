@@ -48,26 +48,26 @@ public static class ResultsQuery
     /// the filter never offers an empty page; <paramref name="selected"/> is kept regardless, so a shared link to it
     /// still shows which follow it is.
     /// </summary>
-    public static async Task<IReadOnlyList<FollowChip>> GetFollowsAsync(WebScraperContext db, int? selected = null, ResultsWindow? window = null)
+    public static async Task<IReadOnlyList<FollowChip>> GetFollowsAsync(WebScraperContext db, int? selected = null, ResultsWindow? window = null, CancellationToken ct = default)
     {
         var follows = await db.ResultFollows.AsNoTracking()
             .Where(f => f.Enabled && f.League != "womens-college-basketball")
             .Select(f => new { f.Id, f.Kind, f.Name, f.Sport, f.League, f.TeamId })
-            .ToListAsync();
+            .ToListAsync(ct);
 
         // Which leagues and which teams in them have a finished game: a few hundred keys, read once.
         var finished = db.ResultGames.AsNoTracking().Where(g => g.Completed);
         if (window is not null) finished = finished.Where(g => g.StartsAtUtc >= window.StartUtc && g.StartsAtUtc < window.EndUtc);
-        var leaguesPlayed = (await finished.Select(g => g.Sport + "|" + g.League).Distinct().ToListAsync()).ToHashSet();
+        var leaguesPlayed = (await finished.Select(g => g.Sport + "|" + g.League).Distinct().ToListAsync(ct)).ToHashSet();
         var teamsPlayed = (await finished.Select(g => g.Sport + "|" + g.League + "|" + g.HomeTeamId)
             .Union(finished.Select(g => g.Sport + "|" + g.League + "|" + g.AwayTeamId))
-            .ToListAsync()).ToHashSet();
+            .ToListAsync(ct)).ToHashSet();
 
         var conferenceIds = follows.Where(f => f.Kind == FollowKinds.Conference).Select(f => f.Id).ToList();
         var members = (await db.ResultFollowTeams.AsNoTracking()
             .Where(m => conferenceIds.Contains(m.FollowId))
             .Select(m => new { m.FollowId, m.TeamId })
-            .ToListAsync()).ToLookup(m => m.FollowId, m => m.TeamId);
+            .ToListAsync(ct)).ToLookup(m => m.FollowId, m => m.TeamId);
 
         return follows
             .Where(f => f.Id == selected || f.Kind switch
@@ -85,28 +85,28 @@ public static class ResultsQuery
     }
 
     /// <summary>When results were last refreshed, or null when never.</summary>
-    public static async Task<DateTime?> GetLastSyncedAsync(WebScraperContext db) =>
-        await db.ResultFollows.AsNoTracking().Where(f => f.Enabled && f.League != "womens-college-basketball").MaxAsync(f => f.LastSyncedAt);
+    public static async Task<DateTime?> GetLastSyncedAsync(WebScraperContext db, CancellationToken ct = default) =>
+        await db.ResultFollows.AsNoTracking().Where(f => f.Enabled && f.League != "womens-college-basketball").MaxAsync(f => f.LastSyncedAt, ct);
 
     /// <summary>
     /// Finished games, newest first, of every enabled follow or only <paramref name="followId"/>. A followed league
     /// matches every game in it; a followed team matches its games in that league; a followed conference matches the
     /// games of its member schools in that league, non-conference games included.
     /// </summary>
-    public static async Task<ResultsPage> GetResultsAsync(WebScraperContext db, int? followId, int limit = Limit, ResultsWindow? window = null, string? team = null, string? collegeLeague = null)
+    public static async Task<ResultsPage> GetResultsAsync(WebScraperContext db, int? followId, int limit = Limit, ResultsWindow? window = null, string? team = null, string? collegeLeague = null, CancellationToken ct = default)
     {
         var follows = await db.ResultFollows.AsNoTracking()
             .Where(f => f.Enabled && f.League != "womens-college-basketball" && (followId == null || f.Id == followId)
                 && (collegeLeague == null || f.League == collegeLeague))
             .Select(f => new { f.Id, f.Kind, f.Sport, f.League, f.TeamId })
-            .ToListAsync();
+            .ToListAsync(ct);
 
         // A conference is its member schools, each matched like a followed team.
         var conferences = follows.Where(f => f.Kind == FollowKinds.Conference).ToDictionary(f => f.Id);
         var members = conferences.Count == 0 ? [] : await db.ResultFollowTeams.AsNoTracking()
             .Where(m => conferences.Keys.Contains(m.FollowId))
             .Select(m => new { m.FollowId, m.TeamId })
-            .ToListAsync();
+            .ToListAsync(ct);
 
         // Keys rather than a chain of ORs, so the query has a fixed shape however many follows there are.
         var leagueKeys = follows.Where(f => f.Kind == FollowKinds.League).Select(f => f.Sport + "|" + f.League).Distinct().ToList();
@@ -131,12 +131,12 @@ public static class ResultsQuery
             var aliases = TeamNames.Aliases(team);
             query = query.Where(g => aliases.Contains(g.HomeName) || aliases.Contains(g.AwayName));
         }
-        var total = await query.CountAsync();
+        var total = await query.CountAsync(ct);
         var rows = await query
             .OrderByDescending(g => g.StartsAtUtc)
             .ThenBy(g => g.League)
             .Take(limit)
-            .ToListAsync();
+            .ToListAsync(ct);
 
         var items = rows.Select(g => new ResultItem(g.EventId, EspnLeagues.NameOf(g.Sport, g.League), EspnLeagues.TagOf(g.Sport, g.League), g.StartsAtUtc, g.StatusText,
                 g.HomeName, g.HomeLogoUrl, g.HomeScore, g.HomeShootout,

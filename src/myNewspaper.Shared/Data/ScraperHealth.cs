@@ -144,12 +144,12 @@ public static class ScraperHealth
 
     /// <param name="today">Today's date in the display zone, compared with EventDate directly (never converted).</param>
     public static async Task<ScraperHealthReport> GetReportAsync(
-        WebScraperContext db, DateTime nowUtc, DateOnly today, TimeSpan staleAfter)
+        WebScraperContext db, DateTime nowUtc, DateOnly today, TimeSpan staleAfter, CancellationToken ct = default)
     {
         // The queries run one after another: one DbContext cannot run two at once.
         var sources = await db.Sources.AsNoTracking()
             .Select(s => new { s.Id, s.Label, s.Url, s.Enabled, s.LastScrapedAt, s.LastError, Pages = s.Pages.Count })
-            .ToListAsync();
+            .ToListAsync(ct);
 
         // Videos are matched to their channel by ChannelId, so videos the scraper has not linked yet still count.
         var channels = await db.YoutubeVideoFeeds.AsNoTracking()
@@ -161,7 +161,7 @@ public static class ScraperHealth
                 Videos = db.YouTubeVideos.Count(v => v.ChannelId == f.ChannelId),
                 LastSeen = db.YouTubeVideos.Where(v => v.ChannelId == f.ChannelId).Max(v => (DateTime?)v.LastSeenAt),
             })
-            .ToListAsync();
+            .ToListAsync(ct);
 
         var feeds = await db.SportsEventsTypes.AsNoTracking()
             .Select(t => new
@@ -180,7 +180,7 @@ public static class ScraperHealth
                     && (e.ScheduleStatus == null || (e.ScheduleStatus != "STATUS_CANCELED" && e.ScheduleStatus != "STATUS_CANCELLED" && e.ScheduleStatus != "STATUS_FULL_TIME" && !e.ScheduleStatus.StartsWith("STATUS_FINAL"))) && (e.SportsEventsTypeId == t.Id || e.EventSources.Any(s => s.SportsEventsTypeId == t.Id))),
                 LastSeen = t.SportsEvents.Max(e => (DateTime?)e.LastSeenAt),
             })
-            .ToListAsync();
+            .ToListAsync(ct);
 
         var movieSources = await db.MovieReleaseSources.AsNoTracking()
             .Select(s => new
@@ -199,7 +199,7 @@ public static class ScraperHealth
                             where link.MovieReleaseSourceId == s.ID && r.CountryCode == "US"
                                 && r.ReleaseStatus == "scheduled" && r.ReleaseDate >= today
                             select r.ID).Count()
-            }).ToListAsync();
+            }).ToListAsync(ct);
 
         var tv = await db.TvTrackedSeries.AsNoTracking().Select(t => new
         {
@@ -212,21 +212,21 @@ public static class ScraperHealth
             t.LastIssueCount,
             Episodes = db.TvEpisodes.Count(e => e.SeriesId == t.SeriesId),
             Upcoming = db.TvEpisodes.Count(e => e.SeriesId == t.SeriesId && e.Airdate >= today)
-        }).ToListAsync();
+        }).ToListAsync(ct);
 
-        var unlinkedVideos = await db.YouTubeVideos.CountAsync(v => v.YoutubeVideoFeedId == null);
-        var unlinkedEvents = await db.SportsEvents.CountAsync(e => e.SportsEventsTypeId == null);
+        var unlinkedVideos = await db.YouTubeVideos.CountAsync(v => v.YoutubeVideoFeedId == null, ct);
+        var unlinkedEvents = await db.SportsEvents.CountAsync(e => e.SportsEventsTypeId == null, ct);
 
         // The overall "last run" looks at every table, linked or not, so it never depends on the link columns.
         var lastRun = new[]
         {
-            await db.Sources.MaxAsync(s => s.LastScrapedAt),
-            await db.YouTubeVideos.MaxAsync(v => (DateTime?)v.LastSeenAt),
-            await db.SportsEvents.MaxAsync(e => (DateTime?)e.LastSeenAt),
-            await db.SportsEventsTypes.Where(t => t.Enabled).MaxAsync(t => t.LastSuccessAt),
-            await db.MovieReleaseSources.Where(s => s.Enabled).MaxAsync(s => s.LastScrapedAt),
-            await db.MovieReleases.MaxAsync(r => (DateTime?)r.LastSeenAt),
-            await db.TvTrackedSeries.Where(t => t.Enabled).MaxAsync(t => t.LastSuccessAt),
+            await db.Sources.MaxAsync(s => s.LastScrapedAt, ct),
+            await db.YouTubeVideos.MaxAsync(v => (DateTime?)v.LastSeenAt, ct),
+            await db.SportsEvents.MaxAsync(e => (DateTime?)e.LastSeenAt, ct),
+            await db.SportsEventsTypes.Where(t => t.Enabled).MaxAsync(t => t.LastSuccessAt, ct),
+            await db.MovieReleaseSources.Where(s => s.Enabled).MaxAsync(s => s.LastScrapedAt, ct),
+            await db.MovieReleases.MaxAsync(r => (DateTime?)r.LastSeenAt, ct),
+            await db.TvTrackedSeries.Where(t => t.Enabled).MaxAsync(t => t.LastSuccessAt, ct),
         }.Max();
 
         var sourceRows = sources.Select(s =>

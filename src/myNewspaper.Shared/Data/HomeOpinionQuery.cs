@@ -4,11 +4,11 @@ namespace myNewspaper.Shared.Data;
 public sealed record HomeOpinion(int? CategoryId, FeedItem? Article, long Hour, int RefreshAfterMs, bool Failed = false);
 public static class HomeOpinionQuery
 {
-    public static async Task<HomeOpinion> GetAsync(WebScraperContext db, DateTime utcNow)
+    public static async Task<HomeOpinion> GetAsync(WebScraperContext db, DateTime utcNow, CancellationToken ct = default)
     {
         var categoryId = await db.SourceCategories.Where(c => c.CategoryName == "Opinion")
-            .Select(c => (int?)c.Id).SingleOrDefaultAsync();
-        var candidates = categoryId is null ? [] : await FeedQuery.GetLatestPerSourceAsync(db, int.MaxValue, categoryId);
+            .Select(c => (int?)c.Id).SingleOrDefaultAsync(ct);
+        var candidates = categoryId is null ? [] : await FeedQuery.GetLatestPerSourceAsync(db, int.MaxValue, categoryId, ct: ct);
         return Snapshot(categoryId, candidates, utcNow);
     }
     public static HomeOpinion Snapshot(int? categoryId, IEnumerable<FeedItem> candidates, DateTime utcNow)

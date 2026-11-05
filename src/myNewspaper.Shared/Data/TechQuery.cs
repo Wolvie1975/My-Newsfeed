@@ -125,7 +125,7 @@ public static class TechQuery
     {
         var page = await VideosQuery.GetVideosAsync(
             db, Viewer.Household, channelId: null, search: null, limit: take, offset: 0,
-            categories: VideoCategoryTabs);
+            categories: VideoCategoryTabs, ct);
         return page.Items;
     }
 
@@ -134,7 +134,7 @@ public static class TechQuery
     {
         var page = await VideosQuery.GetVideosAsync(
             db, Viewer.Household, channelId: null, search: null, limit: take, offset: 0,
-            categories: [new VideoCategory(VideosQuery.Slug(categoryName), categoryName)]);
+            categories: [new VideoCategory(VideosQuery.Slug(categoryName), categoryName)], ct);
         return page.Items;
     }
 

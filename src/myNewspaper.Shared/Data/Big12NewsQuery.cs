@@ -7,30 +7,30 @@ public sealed record Big12NewsPage(int? CategoryId, IReadOnlyList<FeedSource> So
 public static class Big12NewsQuery
 {
     public const string CategoryName = "Big 12 News";
-    public static Task<int?> CategoryIdAsync(WebScraperContext db) => db.SourceCategories.AsNoTracking()
+    public static Task<int?> CategoryIdAsync(WebScraperContext db, CancellationToken ct = default) => db.SourceCategories.AsNoTracking()
         .Where(c => c.CategoryName == CategoryName && db.Sources.Any(s => s.Enabled && s.SourceCategoryId == c.Id))
-        .Select(c => (int?)c.Id).FirstOrDefaultAsync();
+        .Select(c => (int?)c.Id).FirstOrDefaultAsync(ct);
 
-    public static async Task<Big12NewsPage> GetAsync(WebScraperContext db, int? requestedSource, string? search, FeedCursor? after)
+    public static async Task<Big12NewsPage> GetAsync(WebScraperContext db, int? requestedSource, string? search, FeedCursor? after, CancellationToken ct = default)
     {
-        var category = await CategoryIdAsync(db);
+        var category = await CategoryIdAsync(db, ct);
         // Never pass a missing fixed category to the general feed query: null means all categories there.
         if (category is null) return new(null, [], null, new([], 0, 0, null), null);
-        var sources = await FeedQuery.GetSourcesAsync(db, category);
+        var sources = await FeedQuery.GetSourcesAsync(db, category, ct: ct);
         var source = sources.Any(s => s.Id == requestedSource) ? requestedSource : null;
         var feed = await FeedQuery.GetFeedAsync(db, category, search, after,
-            after is null ? FeedQuery.FirstBatch : FeedQuery.MoreBatch, source);
+            after is null ? FeedQuery.FirstBatch : FeedQuery.MoreBatch, source, ct: ct);
         var updated = await db.Sources.AsNoTracking().Where(s => s.Enabled && s.SourceCategoryId == category
-            && (source == null || s.Id == source) && s.LastError == null).MaxAsync(s => s.LastScrapedAt);
+            && (source == null || s.Id == source) && s.LastError == null).MaxAsync(s => s.LastScrapedAt, ct);
         return new(category, sources, source, feed, updated);
     }
 
     /// <summary>The latest Big 12 News headlines for the College front box; empty when category is missing.</summary>
     public static async Task<IReadOnlyList<FeedItem>> LatestAsync(WebScraperContext db, int take = 3, CancellationToken ct = default)
     {
-        var category = await CategoryIdAsync(db);
+        var category = await CategoryIdAsync(db, ct);
         if (category is null) return [];
-        var feed = await FeedQuery.GetFeedAsync(db, category, null, null, take);
+        var feed = await FeedQuery.GetFeedAsync(db, category, null, null, take, ct: ct);
         return feed.Items;
     }
 }

@@ -33,20 +33,20 @@ public static class MlsResultsQuery
                 (r.HomeShootoutScore != null && r.AwayShootoutScore != null && r.HomeShootoutScore >= 0 && r.AwayShootoutScore >= 0
                  && r.HomeShootoutScore != r.AwayShootoutScore)));
 
-    public static async Task<MlsResultsPage> GetAsync(WebScraperContext db, int pageIndex = 0)
+    public static async Task<MlsResultsPage> GetAsync(WebScraperContext db, int pageIndex = 0, CancellationToken ct = default)
     {
         var source = await db.SportsEventsTypes.AsNoTracking().Where(s => s.Enabled && s.ProviderKey == "espn-mls")
-            .OrderBy(s => s.Id).FirstOrDefaultAsync();
+            .OrderBy(s => s.Id).FirstOrDefaultAsync(ct);
         if (source is null) return new(null, null, [], 0, 0);
         var query = Visible(db, source.Id);
         // Keep the latest validated stored season during off-season or failed replacement imports.
-        var season = await query.MaxAsync(r => (int?)r.Season);
+        var season = await query.MaxAsync(r => (int?)r.Season, ct);
         if (season is null) return new(source, null, [], 0, 0);
         query = query.Where(r => r.Season == season);
-        var total = await query.CountAsync();
+        var total = await query.CountAsync(ct);
         pageIndex = Math.Clamp(pageIndex, 0, Math.Max(0, (total - 1) / PageSize));
         var rows = await query.OrderByDescending(r => r.MatchDate).ThenByDescending(r => r.StartsAtUtc).ThenByDescending(r => r.Id)
-            .Skip(pageIndex * PageSize).Take(PageSize).ToListAsync();
+            .Skip(pageIndex * PageSize).Take(PageSize).ToListAsync(ct);
         return new(source, season, rows, total, pageIndex);
     }
 }

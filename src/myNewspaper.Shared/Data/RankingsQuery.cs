@@ -29,10 +29,10 @@ public static class RankingsQuery
         ? "Latest refresh failed; showing last available rankings."
         : source.LastSuccessAt is not { } last || DateTime.SpecifyKind(now, DateTimeKind.Utc) - DateTime.SpecifyKind(last, DateTimeKind.Utc) > TimeSpan.FromHours(2)
             ? "Rankings may be out of date." : null;
-    public static async Task<RankingsPage> GetAsync(WebScraperContext db, int? sourceId, ILogger log, DateOnly? today = null, string? collegeSport = null)
+    public static async Task<RankingsPage> GetAsync(WebScraperContext db, int? sourceId, ILogger log, DateOnly? today = null, string? collegeSport = null, CancellationToken ct = default)
     {
         var sources = await db.SportsRankingSources.AsNoTracking().Where(s => s.Enabled && s.Sport != "Women's Basketball"
-            && (collegeSport == null || s.Sport == collegeSport)).OrderBy(s => s.DisplayName).ThenBy(s => s.Id).ToListAsync();
+            && (collegeSport == null || s.Sport == collegeSport)).OrderBy(s => s.DisplayName).ThenBy(s => s.Id).ToListAsync(ct);
         var day = today ?? FeedDates.Create(FeedDates.SiteTimeZoneId).Today;
         if (sources.Any(s => s.Sport.Contains("Basketball", StringComparison.OrdinalIgnoreCase)))
         {
@@ -40,9 +40,9 @@ public static class RankingsQuery
             var started = (await db.SportsEvents.AsNoTracking().Where(e => e.ProviderKey == "big12"
                 && e.EventDate >= start && e.EventDate <= day
                 && (e.ScheduleStatus == null || (e.ScheduleStatus != "STATUS_CANCELED" && e.ScheduleStatus != "STATUS_CANCELLED")))
-                .Select(e => e.Sport).Distinct().ToListAsync()).ToHashSet(StringComparer.OrdinalIgnoreCase);
+                .Select(e => e.Sport).Distinct().ToListAsync(ct)).ToHashSet(StringComparer.OrdinalIgnoreCase);
             var polls = await db.SportsRankingPolls.AsNoTracking().Where(p => p.IsCurrent)
-                .Select(p => new { p.SourceId, p.PollId, p.SeasonLabel }).ToListAsync();
+                .Select(p => new { p.SourceId, p.PollId, p.SeasonLabel }).ToListAsync(ct);
             sources = sources.Where(s => !s.Sport.Contains("Basketball", StringComparison.OrdinalIgnoreCase)
                 || (started.Contains(s.Sport) && polls.Any(p => p.SourceId == s.Id && p.PollId == s.PollId
                     && CollegeSeasons.Matches(p.SeasonLabel, s.Sport, day)))).ToList();
@@ -53,12 +53,12 @@ public static class RankingsQuery
         {
             var poll = await db.SportsRankingPolls.AsNoTracking().Where(p => p.SourceId == selected.Id && p.IsCurrent && p.PollId == selected.PollId
                 && db.SportsRankingSources.Any(s => s.Id == p.SourceId && s.Enabled))
-                .OrderByDescending(p => p.PublishedAtUtc).ThenByDescending(p => p.Id).FirstOrDefaultAsync();
+                .OrderByDescending(p => p.PublishedAtUtc).ThenByDescending(p => p.Id).FirstOrDefaultAsync(ct);
             if (poll is null) return new(sources, selected, null, []);
             var teams = await db.SportsRankingTeams.AsNoTracking().Where(t => t.PollRowId == poll.Id && t.IsCurrent
                 && db.SportsRankingPolls.Any(p => p.Id == t.PollRowId && p.IsCurrent
                     && db.SportsRankingSources.Any(s => s.Id == p.SourceId && s.Enabled)))
-                .OrderBy(t => t.Rank == null).ThenBy(t => t.Rank).ThenBy(t => t.TeamName).ThenBy(t => t.Id).ToListAsync();
+                .OrderBy(t => t.Rank == null).ThenBy(t => t.Rank).ThenBy(t => t.TeamName).ThenBy(t => t.Id).ToListAsync(ct);
             return new(sources, selected, poll, teams);
         }
         catch (System.Data.Common.DbException ex)

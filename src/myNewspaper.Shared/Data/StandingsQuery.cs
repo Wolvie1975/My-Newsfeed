@@ -170,13 +170,13 @@ public static class StandingsQuery
             System.Globalization.CultureInfo.InvariantCulture, out var display) && double.IsFinite(display) ? display : null;
     }
 
-    public static async Task<StandingsPage> GetAsync(WebScraperContext db, int? sourceId, ILogger logger, DateOnly? today = null, IEnumerable<string>? hiddenProviders = null, string? collegeSport = null)
+    public static async Task<StandingsPage> GetAsync(WebScraperContext db, int? sourceId, ILogger logger, DateOnly? today = null, IEnumerable<string>? hiddenProviders = null, string? collegeSport = null, CancellationToken ct = default)
     {
         var hidden = hiddenProviders?.ToArray() ?? [];
         var sources = await db.SportsStandingsSources.AsNoTracking().Where(s => s.Enabled && !hidden.Contains(s.ProviderKey)
                 && !(s.ProviderKey == "big12" && s.Sport == "Women's Basketball")
                 && (collegeSport == null || (s.ProviderKey == "big12" && s.Sport == collegeSport)))
-            .OrderBy(s => s.DisplayName).ThenBy(s => s.Id).ToListAsync();
+            .OrderBy(s => s.DisplayName).ThenBy(s => s.Id).ToListAsync(ct);
         var day = today ?? FeedDates.Create(FeedDates.SiteTimeZoneId).Today;
         var selected = SelectSource(sources, sourceId);
         if (selected is null) return new(sources, null, []);
@@ -185,7 +185,7 @@ public static class StandingsQuery
             var rows = await db.SportsStandings.AsNoTracking()
                 .Where(r => r.SourceId == selected.Id && r.IsCurrent
                     && db.SportsStandingsSources.Any(s => s.Id == r.SourceId && s.Enabled))
-                .OrderBy(r => r.GroupId).ThenBy(r => r.Position).ThenBy(r => r.TeamName).ThenBy(r => r.Id).ToListAsync();
+                .OrderBy(r => r.GroupId).ThenBy(r => r.Position).ThenBy(r => r.TeamName).ThenBy(r => r.Id).ToListAsync(ct);
             return new(sources, selected, BuildGroups(rows.Where(r => selected.ProviderKey != "big12" || CollegeSeasons.Matches(r.Season, selected.Sport, day)), selected.ProviderKey, logger, selected.Sport));
         }
         catch (System.Data.Common.DbException ex)

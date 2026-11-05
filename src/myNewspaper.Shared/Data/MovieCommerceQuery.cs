@@ -58,18 +58,18 @@ public static partial class MovieCommerceQuery
     [GeneratedRegex(@"^/content/browse/details/[^/]+/[0-9]+/?$")]
     private static partial Regex DigitalPath();
 
-    public static async Task<IReadOnlyList<MovieReleaseItem>> EnrichAsync(WebScraperContext db, IReadOnlyList<MovieReleaseItem> items)
+    public static async Task<IReadOnlyList<MovieReleaseItem>> EnrichAsync(WebScraperContext db, IReadOnlyList<MovieReleaseItem> items, CancellationToken ct = default)
     {
         var ids = items.Where(i => Provider(i.Type) is not null).Select(i => i.Id).Distinct().ToArray();
         if (ids.Length == 0) return items;
         var mappings = await (from release in db.MovieReleases.AsNoTracking()
                               join link in db.MovieSourceLinks on release.MovieSourceLinkId equals link.ID
                               where ids.Contains(release.ID)
-                              select new { ReleaseId = release.ID, link.MovieId }).ToListAsync();
+                              select new { ReleaseId = release.ID, link.MovieId }).ToListAsync(ct);
         var movieIds = mappings.Select(m => m.MovieId).Distinct().ToArray();
         // Query failures propagate; only an absent cache row is a normal fallback case.
         var cache = await db.Set<MovieCommerceRow>().AsNoTracking().Where(c => movieIds.Contains(c.MovieId)
-            && (c.Provider == "fandango" || c.Provider == "fandango-at-home")).ToListAsync();
+            && (c.Provider == "fandango" || c.Provider == "fandango-at-home")).ToListAsync(ct);
         var byRelease = mappings.ToDictionary(m => m.ReleaseId, m => m.MovieId);
         var byMovie = cache.ToDictionary(c => (c.MovieId, c.Provider));
         return items.Select(item =>

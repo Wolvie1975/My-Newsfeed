@@ -114,7 +114,7 @@ public static class FeedQuery
             .Select(ToFeedItem)
             .ToListAsync(ct);
 
-    public static async Task<IReadOnlyList<FeedCategory>> GetCategoriesAsync(WebScraperContext db) =>
+    public static async Task<IReadOnlyList<FeedCategory>> GetCategoriesAsync(WebScraperContext db, CancellationToken ct = default) =>
         await db.SourceCategories.AsNoTracking()
             .Select(c => new
             {
@@ -127,10 +127,10 @@ public static class FeedQuery
             .OrderBy(c => c.CategoryName == "Top Headlines" ? 0 : 1)
             .ThenBy(c => c.CategoryName)
             .Select(c => new FeedCategory(c.Id, c.CategoryName, c.Count, c.NewsHub))
-            .ToListAsync();
+            .ToListAsync(ct);
 
     /// <summary>Enabled sources remain selectable before their first articles arrive.</summary>
-    public static async Task<IReadOnlyList<FeedSource>> GetSourcesAsync(WebScraperContext db, int? categoryId, bool headlinesOnly = false, string? hub = null) =>
+    public static async Task<IReadOnlyList<FeedSource>> GetSourcesAsync(WebScraperContext db, int? categoryId, bool headlinesOnly = false, string? hub = null, CancellationToken ct = default) =>
         await db.Sources.AsNoTracking()
             .Where(s => s.Enabled && (categoryId == null || s.SourceCategoryId == categoryId)
                 && (hub != null
@@ -138,20 +138,20 @@ public static class FeedQuery
                     : (!headlinesOnly || s.SourceCategory == null || s.SourceCategory.NewsHub == "headlines")))
             .OrderBy(s => s.Label ?? s.Url).ThenBy(s => s.Id)
             .Select(s => new FeedSource(s.Id, s.Label ?? s.Url))
-            .ToListAsync();
+            .ToListAsync(ct);
 
     /// <summary>
     /// When the feed was last refreshed: the most recent successful scrape of an enabled source. Sources whose last
     /// attempt failed are ignored, so a broken scraper shows an old time instead of a falsely fresh one.
     /// Null when nothing has been scraped yet.
     /// </summary>
-    public static async Task<DateTime?> GetLastUpdatedAsync(WebScraperContext db, bool headlinesOnly = false, int? categoryId = null, string? hub = null) =>
+    public static async Task<DateTime?> GetLastUpdatedAsync(WebScraperContext db, bool headlinesOnly = false, int? categoryId = null, string? hub = null, CancellationToken ct = default) =>
         await db.Sources.AsNoTracking()
             .Where(s => s.Enabled && s.LastError == null && (categoryId == null || s.SourceCategoryId == categoryId)
                 && (hub != null
                     ? (hub == "headlines" ? s.SourceCategory == null || s.SourceCategory.NewsHub == "headlines" : s.SourceCategory != null && s.SourceCategory.NewsHub == hub)
                     : (!headlinesOnly || s.SourceCategory == null || s.SourceCategory.NewsHub == "headlines")))
-            .MaxAsync(s => s.LastScrapedAt);
+            .MaxAsync(s => s.LastScrapedAt, ct);
 
     /// <summary>The articles a feed list shows (hub, category, source and search), unordered; shared so counts can't disagree with the list.</summary>
     private static IQueryable<Models.Page> Filtered(
@@ -179,8 +179,8 @@ public static class FeedQuery
 
     /// <summary>How many dated articles in this feed list were published since <paramref name="sinceUtc"/>.</summary>
     public static Task<int> CountPublishedSinceAsync(
-        WebScraperContext db, DateTime sinceUtc, int? categoryId, string? search, int? sourceId, bool headlinesOnly, string? hub = null) =>
-        Filtered(db, categoryId, search, sourceId, headlinesOnly, hub).CountAsync(p => p.Published != null && p.Published >= sinceUtc);
+        WebScraperContext db, DateTime sinceUtc, int? categoryId, string? search, int? sourceId, bool headlinesOnly, string? hub = null, CancellationToken ct = default) =>
+        Filtered(db, categoryId, search, sourceId, headlinesOnly, hub).CountAsync(p => p.Published != null && p.Published >= sinceUtc, ct);
 
     /// <summary>Sort dates and category IDs of matching articles from the past <paramref name="days"/> days, for the Jump to box.</summary>
     public static async Task<IReadOnlyList<(DateTime Date, int? CategoryId)>> GetRecentDatesAsync(
@@ -200,10 +200,10 @@ public static class FeedQuery
     /// <paramref name="take"/> articles that come after <paramref name="after"/> (or from the start when it is null).
     /// </summary>
     public static async Task<FeedPage> GetFeedAsync(
-        WebScraperContext db, int? categoryId, string? search, FeedCursor? after, int take = FirstBatch, int? sourceId = null, bool headlinesOnly = false, string? hub = null)
+        WebScraperContext db, int? categoryId, string? search, FeedCursor? after, int take = FirstBatch, int? sourceId = null, bool headlinesOnly = false, string? hub = null, CancellationToken ct = default)
     {
         var query = Filtered(db, categoryId, search, sourceId, headlinesOnly, hub);
-        var total = await query.CountAsync();
+        var total = await query.CountAsync(ct);
 
         var older = query;
         var olderCount = total;
@@ -218,7 +218,7 @@ public static class FeedQuery
                 || ((p.Published == null ? 1 : 0) == undated
                     && ((p.Published ?? p.ScrapedAt) < date
                         || ((p.Published ?? p.ScrapedAt) == date && p.Id < id))));
-            olderCount = await older.CountAsync();
+            olderCount = await older.CountAsync(ct);
         }
 
         var items = await older
@@ -227,7 +227,7 @@ public static class FeedQuery
             .ThenByDescending(p => p.Id)
             .Take(take)
             .Select(ToFeedItem)
-            .ToListAsync();
+            .ToListAsync(ct);
 
         var remaining = olderCount - items.Count;
         var next = remaining > 0 && items.Count > 0 ? new FeedCursor(items[^1].Date, items[^1].Id, items[^1].Undated) : null;
@@ -239,7 +239,7 @@ public static class FeedQuery
     /// One small query per category (there are only a handful), with no counts.
     /// </summary>
     public static async Task<IReadOnlyDictionary<int, IReadOnlyList<FeedItem>>> GetLatestByCategoryAsync(
-        WebScraperContext db, IEnumerable<int> categoryIds, int take = 3)
+        WebScraperContext db, IEnumerable<int> categoryIds, int take = 3, CancellationToken ct = default)
     {
         var latest = new Dictionary<int, IReadOnlyList<FeedItem>>();
         foreach (var id in categoryIds.Distinct())
@@ -249,7 +249,7 @@ public static class FeedQuery
                 .ThenByDescending(p => p.Id)
                 .Take(take)
                 .Select(ToFeedItem)
-                .ToListAsync();
+                .ToListAsync(ct);
         return latest;
     }
 
@@ -269,7 +269,7 @@ public static class FeedQuery
         p.Published == null);
 
     /// <summary>The newest article per enabled source, ordered by story date.</summary>
-    public static async Task<IReadOnlyList<FeedItem>> GetLatestPerSourceAsync(WebScraperContext db, int take = 5, int? categoryId = null, string? hub = null) =>
+    public static async Task<IReadOnlyList<FeedItem>> GetLatestPerSourceAsync(WebScraperContext db, int take = 5, int? categoryId = null, string? hub = null, CancellationToken ct = default) =>
         await Visible(db)
             .Where(p => categoryId == null || p.Source.SourceCategoryId == categoryId)
             .Where(p => hub == null || (hub == "headlines"
@@ -291,7 +291,7 @@ public static class FeedQuery
                 p.ImageUrl, p.Source.Label, p.Source.Url, p.Source.SourceCategoryId,
                 p.Source.SourceCategory != null ? p.Source.SourceCategory.CategoryName : null,
                 p.Published ?? p.ScrapedAt, p.Published == null))
-            .ToListAsync();
+            .ToListAsync(ct);
 
     /// <summary>Headlines-hub stories newer than <paramref name="since"/>: how many, and how many in one category.</summary>
     public static async Task<(int Total, int InCategory)> CountSinceAsync(WebScraperContext db, DateTime since, int? categoryId)
@@ -304,7 +304,7 @@ public static class FeedQuery
     }
 
     /// <summary>The newest headlines-hub articles with a usable image, one per source, for the News front's In pictures.</summary>
-    public static async Task<IReadOnlyList<FeedItem>> GetPhotosAsync(WebScraperContext db, DateTime nowUtc, int take = 5)
+    public static async Task<IReadOnlyList<FeedItem>> GetPhotosAsync(WebScraperContext db, DateTime nowUtc, int take = 5, CancellationToken ct = default)
     {
         var since = nowUtc.AddHours(-36);
         var rows = await Visible(db)
@@ -313,16 +313,16 @@ public static class FeedQuery
             .OrderByDescending(p => p.Published ?? p.ScrapedAt).ThenByDescending(p => p.Id)
             .Take(take * 6)
             .Select(ToFeedItem)
-            .ToListAsync();
+            .ToListAsync(ct);
         return rows.Where(r => SafeHref(r.ImageUrl) is not null && SafeHref(r.Url) is not null)
             .DistinctBy(r => r.SourceUrl).Take(take).ToList();
     }
 
     /// <summary>Rotate Home sources when successful news collection advances to another UTC hour.</summary>
-    public static async Task<IReadOnlyList<FeedItem>> GetHomeNewsAsync(WebScraperContext db, int take = 10, string? hub = null)
+    public static async Task<IReadOnlyList<FeedItem>> GetHomeNewsAsync(WebScraperContext db, int take = 10, string? hub = null, CancellationToken ct = default)
     {
-        var updated = await GetLastUpdatedAsync(db, headlinesOnly: hub == "headlines");
-        var candidates = await GetLatestPerSourceAsync(db, int.MaxValue, hub: hub);
+        var updated = await GetLastUpdatedAsync(db, headlinesOnly: hub == "headlines", ct: ct);
+        var candidates = await GetLatestPerSourceAsync(db, int.MaxValue, hub: hub, ct: ct);
         return SelectHomeNews(candidates, updated ?? DateTime.UnixEpoch, take);
     }
 

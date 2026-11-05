@@ -31,13 +31,13 @@ public sealed class TeamRecords
     private readonly List<(string Provider, string Sport, string Id, string Name, TeamRecordValue Record)> entries = [];
     public static TeamRecords Empty => new();
 
-    public static async Task<TeamRecords> LoadAsync(WebScraperContext db, DateOnly today, myNewspaper.Shared.Scores.LeaguePhases phases)
+    public static async Task<TeamRecords> LoadAsync(WebScraperContext db, DateOnly today, myNewspaper.Shared.Scores.LeaguePhases phases, CancellationToken ct = default)
     {
-        var sources = await db.SportsStandingsSources.AsNoTracking().Where(s => s.Enabled).ToListAsync();
+        var sources = await db.SportsStandingsSources.AsNoTracking().Where(s => s.Enabled).ToListAsync(ct);
         sources = sources.Where(s => phases.IsRegular(s, DateTime.UtcNow)).ToList();
         if (sources.Count == 0) return Empty;
         var ids = sources.Select(s => s.Id).ToArray();
-        var rows = await db.SportsStandings.AsNoTracking().Where(r => r.IsCurrent && ids.Contains(r.SourceId)).ToListAsync();
+        var rows = await db.SportsStandings.AsNoTracking().Where(r => r.IsCurrent && ids.Contains(r.SourceId)).ToListAsync(ct);
         return Build(sources, rows, today, DateTime.UtcNow);
     }
 

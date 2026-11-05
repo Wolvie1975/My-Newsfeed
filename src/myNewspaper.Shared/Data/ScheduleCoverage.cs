@@ -33,13 +33,13 @@ public static class ScheduleCoverage
             || (follow.Kind == "team" && (feed.ProviderKey == "espn-nwsl" ? follow.TeamId == "20907"
                 : feed.ProviderKey == "big12" && TeamNames.Matches(feed.SchoolName, follow.Name)));
     }
-    public static async Task<IReadOnlyList<CoverageRow>> GetAsync(WebScraperContext db)
+    public static async Task<IReadOnlyList<CoverageRow>> GetAsync(WebScraperContext db, CancellationToken ct = default)
     {
-        var feeds = await db.SportsEventsTypes.AsNoTracking().OrderBy(f => f.EventsTypeName).ToListAsync();
+        var feeds = await db.SportsEventsTypes.AsNoTracking().OrderBy(f => f.EventsTypeName).ToListAsync(ct);
         var observations = await db.SportsEvents.AsNoTracking().Select(e => new { FeedId = e.SportsEventsTypeId, e.Sport })
             .Union(db.SportsEventSources.Where(s => s.SportsEventId != null).Select(s => new { FeedId = (int?)s.SportsEventsTypeId, Sport = s.Event!.Sport }))
-            .Distinct().ToListAsync();
-        var follows = await db.ResultFollows.AsNoTracking().ToListAsync();
+            .Distinct().ToListAsync(ct);
+        var follows = await db.ResultFollows.AsNoTracking().ToListAsync(ct);
         var rows = new List<CoverageRow>();
         foreach (var feed in feeds)
         {
