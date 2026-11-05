@@ -57,9 +57,11 @@ changing anything.
    conflicts with the code, and how you would test it.
 3. Stop and wait for approval. Don't edit code, build or deploy yet.
 4. Once the user approves, do all of it without further check-ins: implement,
-   test (.NET tests plus browser checks, including the mobile checks above),
-   deploy per [DEPLOY.md](DEPLOY.md) and verify the live build, then commit
-   locally on `develop` (no push). Tick items off in the file as each is done.
+   test (`tools/verify.sh` plus browser checks, including the mobile checks
+   above), commit locally on `develop` (no push), then deploy that commit with
+   `deployment/deploy.sh` and verify the live build (`node tools/live-check.cjs`
+   plus checks for the change's own flows). Tick items off in the file as each
+   is done. See [coding standards, Releases](docs/coding-standards.md#releases).
 5. Report what was built, test and live-check results, any gaps, and the
    local commit hashes.
 

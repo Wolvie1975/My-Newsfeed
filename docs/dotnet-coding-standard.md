@@ -225,7 +225,7 @@ Every solution starts with these files, copied from My-Newsfeed and adjusted:
   `PK_/FK_/UQ_/CK_/DF_/IX_<Table>_<Column>`; time columns are `datetime2` UTC named `…At` with `SYSUTCDATETIME()`
   defaults; JSON columns are `nvarchar(max)` with an `ISJSON` check constraint.
 
-## 14. Git and documentation
+## 14. Git, releases and documentation
 
 - **[Review]** Commit subjects: imperative, capitalized, no trailing period, at most 72 characters ("Add …",
   "Fix …"). Add a body when the reason isn't obvious from the diff. AI-assisted commits carry the
@@ -237,6 +237,15 @@ Every solution starts with these files, copied from My-Newsfeed and adjusted:
 - **[Review]** Verification tools live in the repository: one command for the pre-commit suite, one for comparing
   two builds' rendered output when a change claims no behaviour change, and one for the post-deploy live check with
   its own clean-up. Handoffs give the command, not instructions for rebuilding a script from a session scratchpad.
+- **[Enforced]** Deploy only committed code: the deploy script refuses a dirty working tree, so every image is built
+  from a commit.
+- **[Enforced]** Every image is tagged with its short commit and labelled `org.opencontainers.image.revision`, and
+  each site serves `/version` (the commit and build time, nothing else). The deploy checks it after recreating.
+- **[Review]** One deploy script and one rollback script per project; the runbook documents those, not hand-run
+  steps. Services run under Compose with their settings in a private env file outside Git, never only inside a
+  running container.
+- **[Enforced]** The deploy script keeps a fixed number of previous images per service for rollback and creates no
+  stopped "before" containers: a container's saved environment holds secrets.
 
 ## 15. Keeping the codebase consistent
 
@@ -261,6 +270,8 @@ and two `Program.cs` files that had quietly diverged. Most of those had a conven
 | Formatting and lint drift | `dotnet format --verify-no-changes`, `npm run lint`, `npm run format:check` in CI |
 | CSS breakpoints, prefixes, hidden-text helpers | A project check script that fails on unregistered `@media` widths, unregistered class prefixes, or copies of the visually-hidden clip pattern |
 | Browser checks without the shared helper | The same check script fails on any `*.browser.cjs` that doesn't load the shared helper |
+| Deploying uncommitted code; a live build nobody can trace to a commit | The deploy script refuses a dirty tree, stamps the commit into the image (tag, revision label) and checks `/version` after recreating |
+| Old rollback containers holding secrets in their saved environment | Images, not containers, are the rollback unit; the deploy script prunes to a fixed number per service |
 | Coding agents' permissions drifting apart, or saving secrets in "always allow" rules | One checked-in list of allowed, asked and refused command prefixes, generated into each agent's settings format, with a test that fails on hand edits or a destructive command in the allow list; database checks run through scripts that pass the password in the environment |
 
 - **New patterns go through the standard first.** Before introducing a new way to do something that already has a
@@ -269,6 +280,6 @@ and two `Program.cs` files that had quietly diverged. Most of those had a conven
 - **Review checklist for every change:** it builds with zero warnings; CI checks pass; new types follow §2 naming;
   async I/O takes and passes `ct`; no clock reads below the edge; UI calls query/store classes; failures degrade and
   log; new CSS uses registered breakpoints, tokens and prefixes; tests clean up after themselves; docs and the
-  migration table are updated.
+  migration table are updated; it was deployed from a commit, and the release-history entry names that commit.
 - **Audit periodically.** Re-run a consistency audit after any large feature or every couple of months, record
   the result, and turn any new repeated deviation into either a rule plus guard or an explicit exception.

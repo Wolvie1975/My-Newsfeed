@@ -97,6 +97,9 @@ API responses or mutations. Admin's offline screen only asks the user to reconne
 
 ## Build, GitHub and deployment
 
+Routine deploys of both sites: `deployment/deploy.sh` ([DEPLOY.md](../DEPLOY.md#build-and-deploy)). Admin runs under
+Compose like the public site; the hand-run admin container swap used until November 5, 2026 is retired.
+
 ```bash
 dotnet build myNewspaper.sln
 dotnet test tests/myNewspaper.Tests/myNewspaper.Tests.csproj

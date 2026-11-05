@@ -138,20 +138,26 @@ Tests need configured SQL access (user secrets or `ConnectionStrings__DefaultCon
 `appsettings.json` carries no credentials); use development/staging for integration
 fixtures. The Docker build copies `Directory.Build.props` and `.editorconfig` before
 restore, so the image compiles with the same analyzer settings as local builds.
-Record the current image ID for rollback. For a Compose-managed deployment whose
-private settings reflect all current runtime overrides:
+Both sites deploy through one script, from a commit (commit locally first; AGENTS.md):
 
 ```bash
-docker image tag "$(docker inspect mynewsfeed-web --format '{{.Image}}')" mynewsfeed-web:before-release
-docker compose up -d --build web
-docker compose ps
+deployment/deploy.sh                 # web and admin; or: deployment/deploy.sh web | admin
+deployment/deploy.sh --dry-run       # print the plan, change nothing
+node tools/live-check.cjs            # then the live checks; paste test-results/live/summary.md into release history
 ```
 
-The Dockerfile publishes the app and verifies `_framework/blazor.web.js` is in the
-static-asset manifest. A failed build must not replace the running service. Preserve
-logs and report the build failure. If Compose settings do not match the live runtime,
-recreate from its preserved configuration through the established deployment process
-rather than discarding settings. Never include runtime secrets in a report.
+`deploy.sh` refuses uncommitted changes, runs `tools/verify.sh --quick` (skip with `--skip-verify` when the full
+suite just passed on the same commit), and builds with `GIT_COMMIT`/`BUILD_TIME` so each image is labelled
+`org.opencontainers.image.revision` and serves its commit at `/version`. It tags the new images
+`mynewspaper-{web,admin}:<sha>` (12 characters) and the running ones `before-<sha>`, recreates with Compose, and
+requires each container to be healthy on the new image, with an unchanged environment hash and `/version`
+reporting the commit; otherwise it rolls back by itself and exits 1. It keeps the newest two `before-<sha>` images
+per service; older hand-named tags are never removed by it. It ends with a block for release history.
+
+Both services run only under Compose. Their settings come from `.env` (ignored by Git) through
+`docker-compose.yml`, never from a hand-started container. The Dockerfile publishes the app and verifies
+`_framework/blazor.web.js` is in the static-asset manifest; a failed build replaces nothing. Never include runtime
+secrets in a report.
 
 ## Validate and troubleshoot
 
@@ -189,18 +195,19 @@ Historical row counts and timestamps are evidence for their original run only.
 
 ## Rollback
 
-For the Compose path, restore the recorded image without rebuilding:
+Put back the images that ran before a deploy, without building:
 
 ```bash
-docker image tag mynewsfeed-web:before-release mynewsfeed-web:latest
-docker compose up -d --no-build --pull never --force-recreate web
+deployment/rollback.sh --list            # the before-<sha> images available
+deployment/rollback.sh <sha>             # both services; or: deployment/rollback.sh <sha> web | admin
+node tools/live-check.cjs
 ```
 
-A preserved previous container can instead be restored using its matching runtime
-configuration. Verify health and affected routes after rollback. Leave additive
-schemas and stored data intact; dropping results/fixtures destroys data and is not
-part of an application image rollback. Check recorded rollback tags still exist
-before relying on them. `before-release` is a runbook example, not a guaranteed tag.
+`<sha>` is the 12-character commit `deploy.sh` printed. Record the rollback in release history. Leave additive
+schemas and stored data intact; dropping results/fixtures destroys data and is not part of an application image
+rollback. Images from before November 5, 2026 carry hand-made tags (`mynewspaper-web:before-data-access-20261104`
+…); restore one by tagging it `latest` and running `docker compose up -d --no-build --pull never --force-recreate
+<service>`.
 
 ## Private HTTPS and Android installation
 
