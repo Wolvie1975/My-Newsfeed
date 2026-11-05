@@ -69,7 +69,7 @@ public static class MeEndpoints
             var back = ProfileEndpoints.SafeReturnUrl(returnUrl);
             if (show is not > 0) return To(back, "shows", error: "show-invalid");
             // Check the show with TVmaze rather than trusting the title in the form.
-            var response = await tvmaze.GetShowAsync(show.Value);
+            var response = await tvmaze.GetShowAsync(show.Value, db.Ct);
             if (response.Error is not null || response.Shows.Count != 1) return To(back, "shows", error: "show-unavailable");
             await FollowStore.FollowShowAsync(db.Context, reader.Id, show.Value, response.Shows[0].Name, db.Ct);
             return To(back, "shows", done: "show-followed");

@@ -16,8 +16,8 @@ public static class PublicEndpoints
         app.MapGet("/home/opinion", async (HttpContext http, IDbContextFactory<WebScraperContext> factory) =>
         {
             http.Response.Headers.CacheControl = "no-store";
-            await using var db = await factory.CreateDbContextAsync();
-            var snapshot = await HomeOpinionQuery.GetAsync(db, DateTime.UtcNow);
+            await using var db = await factory.CreateDbContextAsync(http.RequestAborted);
+            var snapshot = await HomeOpinionQuery.GetAsync(db, DateTime.UtcNow, http.RequestAborted);
             return new RazorComponentResult<HomeOpinionCard>(new { Snapshot = snapshot });
         });
 
@@ -25,8 +25,8 @@ public static class PublicEndpoints
         app.MapGet("/home/lead", async (HttpContext http, IDbContextFactory<WebScraperContext> factory) =>
         {
             http.Response.Headers.CacheControl = "no-store";
-            await using var db = await factory.CreateDbContextAsync();
-            var snapshot = await HomeLeadQuery.GetAsync(db, DateTime.UtcNow);
+            await using var db = await factory.CreateDbContextAsync(http.RequestAborted);
+            var snapshot = await HomeLeadQuery.GetAsync(db, DateTime.UtcNow, http.RequestAborted);
             return new RazorComponentResult<HomeLeadStory>(new { Snapshot = snapshot });
         });
 
@@ -39,8 +39,8 @@ public static class PublicEndpoints
             RankingsPage data;
             try
             {
-                await using var db = await factory.CreateDbContextAsync();
-                data = await RankingsQuery.GetAsync(db, StandingsQuery.ParseSourceId(rankingSourceId), log, dates.TodayAt(DateTime.UtcNow));
+                await using var db = await factory.CreateDbContextAsync(http.RequestAborted);
+                data = await RankingsQuery.GetAsync(db, StandingsQuery.ParseSourceId(rankingSourceId), log, dates.TodayAt(DateTime.UtcNow), ct: http.RequestAborted);
             }
             catch (Exception ex) when (DataFailures.IsReadFailure(ex))
             {

@@ -21,17 +21,17 @@ public static class FeedEndpoints
         }
 
         int? categoryId = int.TryParse(category, out var parsedCategory) ? parsedCategory : null;
-        await using var db = await factory.CreateDbContextAsync();
+        await using var db = await factory.CreateDbContextAsync(http.RequestAborted);
         var boxOffice = view == "box-office";
         var big12News = view == "big12-news";
         if (big12News)
         {
-            categoryId = await Big12NewsQuery.CategoryIdAsync(db);
+            categoryId = await Big12NewsQuery.CategoryIdAsync(db, http.RequestAborted);
             if (categoryId is null) return Results.NotFound();
         }
         if (boxOffice)
         {
-            categoryId = await BoxOfficeQuery.CategoryIdAsync(db);
+            categoryId = await BoxOfficeQuery.CategoryIdAsync(db, http.RequestAborted);
             if (categoryId is null) return Results.NotFound();
             q = null;
         }
@@ -59,7 +59,7 @@ public static class FeedEndpoints
         if (sourceId is { } id && !await FeedQuery.IsEnabledSourceAsync(db, id, categoryId, http.RequestAborted)) sourceId = null;
         var page = await FeedQuery.GetFeedAsync(db, categoryId, q, cursor, FeedQuery.MoreBatch, sourceId,
             headlinesOnly: !boxOffice && !big12News && hub is null && sectionCategory is null,
-            hub: boxOffice || big12News ? null : (hub ?? "headlines"));
+            hub: boxOffice || big12News ? null : (hub ?? "headlines"), ct: http.RequestAborted);
 
         // Headline cards: the page decides hour or day grouping; the last group stops a repeated heading at the seam.
         var cardMode = cards == "1";
