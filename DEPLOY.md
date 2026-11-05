@@ -31,6 +31,31 @@ and runs independently of the results sync interval.
 Rust scraping jobs run separately. A web deployment does not automatically rebuild
 or configure the scraper, register new providers or enable feeds.
 
+## SQL Server container
+
+`sql2025` (SQL Server 2025, `mcr.microsoft.com/mssql/server:2025-latest`, image `2b5b58162112`) is not part of this
+repository's Compose file; it serves every project on `dev-bridge`. Since November 5, 2026 all of `/var/opt/mssql`
+(databases, logs, backups, certificates) lives in the Docker volume **`sql2025-data`**, so removing or recreating the
+container no longer loses data. Before that it lived only in the container's own layer.
+
+It runs as (settings from a private env file with `ACCEPT_EULA`, `MSSQL_PID`, `MSSQL_SA_PASSWORD`,
+`MSSQL_RPC_PORT`; never on the command line):
+
+```bash
+docker run -d --name sql2025 --hostname 6dae60fee94f --restart unless-stopped -p 1433:1433 \
+  --network dev-bridge --ip 172.18.0.6 --env-file <private sql.env> -v sql2025-data:/var/opt/mssql \
+  mcr.microsoft.com/mssql/server:2025-latest
+```
+
+- Keep `--hostname 6dae60fee94f`: SQL Server's `@@SERVERNAME` comes from it. Keep the IP for anything that
+  connects by address; apps use the name `sql2025`.
+- Upgrading the image: back up, stop, recreate with the same command and a newer image; the volume carries the data.
+- `docker stop` waits 90 s and then kills SQL Server (its launcher doesn't pass the stop signal on); the next start
+  runs crash recovery, which is safe. Check `docker logs sql2025` for "Recovery is complete".
+- `MSSQL_SA_PASSWORD` is read only when the data directory is first created; with the volume, an `ALTER LOGIN [sa]`
+  change persists and the variable is ignored.
+- Backups inside the volume (`/var/opt/mssql/backup`) survive the container, not the disk: keep copies elsewhere.
+
 ## Prepare source and database
 
 Inspect `git status --short`; preserve local changes and use the intended release
