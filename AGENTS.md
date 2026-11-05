@@ -83,6 +83,11 @@ in any session. Ask questions when you need an answer, not permission.
 A new chat doesn't reset these. Don't open by asking whether deploy and commit
 are still allowed.
 
+The commands behind these are pre-approved in every agent through one list,
+[tools/agent-permissions.json](tools/agent-permissions.json). To pre-approve
+another routine command, add it there and run `node tools/agent-permissions.cjs`
+(plus `--antigravity`); don't answer "always allow" in a single tool.
+
 **Ask (one round, all questions together, before starting):**
 
 - Requirements are unclear, or a choice is the user's: product, design, wording,

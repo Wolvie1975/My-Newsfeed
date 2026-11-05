@@ -258,6 +258,7 @@ and two `Program.cs` files that had quietly diverged. Most of those had a conven
 | Formatting and lint drift | `dotnet format --verify-no-changes`, `npm run lint`, `npm run format:check` in CI |
 | CSS breakpoints, prefixes, hidden-text helpers | A project check script that fails on unregistered `@media` widths, unregistered class prefixes, or copies of the visually-hidden clip pattern |
 | Browser checks without the shared helper | The same check script fails on any `*.browser.cjs` that doesn't load the shared helper |
+| Coding agents' permissions drifting apart, or saving secrets in "always allow" rules | One checked-in list of allowed, asked and refused command prefixes, generated into each agent's settings format, with a test that fails on hand edits or a destructive command in the allow list; database checks run through scripts that pass the password in the environment |
 
 - **New patterns go through the standard first.** Before introducing a new way to do something that already has a
   rule (a new data-access style, a new breakpoint, a new prefix, a new storage key scheme), update the standard and

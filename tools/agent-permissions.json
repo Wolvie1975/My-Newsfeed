@@ -1,0 +1,89 @@
+{
+    "$comment": "Source of truth for the commands every coding agent (Claude Code, Codex, Antigravity) may run without asking. Edit this file, then run `node tools/agent-permissions.cjs` (add --antigravity for this machine's Antigravity). Never edit the generated files. Each command is a prefix: arguments after it are allowed. allow = run without asking; ask = always ask, even if a broader rule allows it; deny = refused. Anything not listed asks. Raw sqlcmd is deliberately absent: the risk is in the SQL, so routine database work goes through tools/sql/.",
+    "rules": [
+        {
+            "decision": "allow",
+            "why": "Build, test and format: the verify step of every change",
+            "commands": [
+                "dotnet build",
+                "dotnet test",
+                "dotnet format",
+                "dotnet restore",
+                "dotnet publish",
+                "dotnet run",
+                "npm ci",
+                "npm run lint",
+                "npm run format",
+                "npm run format:check",
+                "npm run test:unit",
+                "npm run test:browser"
+            ]
+        },
+        {
+            "decision": "allow",
+            "why": "Read the repository and commit locally on develop (AGENTS.md: commits, not pushes)",
+            "commands": [
+                "git status",
+                "git diff",
+                "git log",
+                "git show",
+                "git branch",
+                "git rev-parse",
+                "git ls-files",
+                "git grep",
+                "git add",
+                "git commit",
+                "git worktree"
+            ]
+        },
+        {
+            "decision": "allow",
+            "why": "Inspect containers and deploy with Compose as DEPLOY.md describes",
+            "commands": [
+                "docker ps",
+                "docker images",
+                "docker inspect",
+                "docker logs",
+                "docker image ls",
+                "docker image inspect",
+                "docker image tag",
+                "docker tag",
+                "docker compose ps",
+                "docker compose logs",
+                "docker compose build",
+                "docker compose up"
+            ]
+        },
+        {
+            "decision": "allow",
+            "why": "Routine database checks and the documented zz clean-up; the password stays out of the command line",
+            "commands": ["tools/sql/household-check.sh", "tools/sql/cleanup-zz.sh"]
+        },
+        {
+            "decision": "ask",
+            "why": "Discards work or removes containers and images: confirm first (AGENTS.md)",
+            "commands": [
+                "git reset",
+                "git clean",
+                "git checkout",
+                "git restore",
+                "docker rm",
+                "docker rmi",
+                "docker image rm",
+                "docker image prune",
+                "docker container prune",
+                "docker stop",
+                "docker compose down",
+                "docker compose rm",
+                "rm -r",
+                "rm -rf",
+                "docker exec sql2025"
+            ]
+        },
+        {
+            "decision": "deny",
+            "why": "The user pushes to GitHub themselves; volumes hold keys and data",
+            "commands": ["git push", "docker system prune", "docker volume rm", "docker volume prune"]
+        }
+    ]
+}

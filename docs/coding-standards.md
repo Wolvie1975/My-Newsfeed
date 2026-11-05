@@ -138,6 +138,20 @@ reviewer. Existing code is being brought into line in the clean-up steps listed 
   [release-history.md](release-history.md), newest first. Handoffs live in `docs/` and are not linked from
   `new development/`, which is ignored by git.
 
+## Agents and database tools
+
+- **[Enforced]** Coding agents (Claude Code, Codex, Antigravity) get their command permissions from one list,
+  [tools/agent-permissions.json](../tools/agent-permissions.json): allow, ask or deny, by command prefix. Run
+  `node tools/agent-permissions.cjs` to regenerate `.claude/settings.json` and `.codex/rules/project.rules`, and add
+  `--antigravity` to merge the allow list into this machine's Antigravity (it has no project file). Never edit a
+  generated file; `npm run test:unit` fails if one is out of date.
+- **[Review]** Pre-approve a routine command by adding it to the list, not by answering "always allow" in one tool.
+  Nothing destructive goes on the allow list, and raw `sqlcmd` stays off it: the risk is in the SQL, not the command.
+- **[Review]** Routine database work goes through [tools/sql/](../tools/sql/): `household-check.sh` (read-only) and
+  `cleanup-zz.sh <start-utc>` (dry run unless `--apply`). Scripts read the connection from `.env` and pass the
+  password as `SQLCMDPASSWORD`. A password never appears on a command line (AGENTS.md). It can't be automated
+  because agents compose commands at run time.
+
 ## Guardrails against past drift
 
 The November 4, 2026 audit found the problems below. Each has a rule above, a clean-up step, and a guard so it can't
@@ -156,5 +170,7 @@ quietly come back. Update the **Status** column as each guard lands, and don't r
 | CI ran only 4 of about 81 test classes and no lint or format checks | General §1 | Both workflows run the full suite (with a SQL service container), `dotnet format --verify-no-changes`, `npm run lint`, `npm run format:check` and the check script | Planned |
 | `== null` and `is null` mixed | General §3 | `IDE0041` and the `is null` preference at `warning` (catches `ReferenceEquals` and object casts); `RepositoryHygieneTests` ratchets the remaining `== null` lines, which are all in EF expression trees where `is null` doesn't compile (CS8122) | Done November 4, 2026: 95 lines converted; 158 expression-tree lines remained (160 after step 4 moved the TV series list into a query), and the test fails if the total rises |
 | Role-less class names (`BoxScoresRepository`, `ScoreboardRepository`, `AdminData`, `MyFollows`, `ProfilePageData`) | General §2 | `RepositoryHygieneTests` fails on a class or interface named `…Repository`, `…Manager`, `…Helper(s)`, `…Data` or `…Util(s)` | Done November 4, 2026: renamed `BoxScoreQuery`, `ScoreboardQuery`, `AdminStore`, `FollowStore`, `ProfilePageSettings`. `BoxScoreQuery` and `ScoreboardQuery` are still injected instances rather than static classes; step 4 reshapes them with the rest of data access |
+
+| Agents' "always allow" answers saved about 25 commands with the `sa` or admin password in plain text (`sqlcmd -P …`), plus broad grants such as bare `sqlcmd`, `docker stop` and `rm -f`; each tool's permissions drifted on its own | Agents and database tools above; AGENTS.md | One list generated into every tool's format, with a unit test that fails on a hand-edited file and on any destructive or raw-SQL command in the allow list; `tools/sql/` scripts keep passwords off command lines | Done November 5, 2026: Antigravity's saved grants cleaned (33 removed, then `docker compose`/`docker image` narrowed to safe subcommands) and the list merged in; `.claude/settings.json` and `.codex/rules/project.rules` generated. Still open: rotate the admin password and `sa` (both were saved there); confirm the Codex rules with `codex execpolicy check` where Codex is installed |
 
 When the audit is repeated, add any new repeated deviation to this table with its rule and guard.
