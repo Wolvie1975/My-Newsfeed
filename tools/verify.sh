@@ -5,8 +5,10 @@
 #   tools/verify.sh            build (0 warnings), all .NET tests against WebScraper_Test, JS unit tests, lint, format
 #   tools/verify.sh --quick    build, JS unit tests and the repository hygiene tests (about a minute)
 #
-# The .NET tests need a connection string: user secrets, ConnectionStrings__DefaultConnection, or (used here when
-# neither is set) SQL_CONNECTION from .env. TestDatabase always switches it to WebScraper_Test.
+# The .NET tests need a connection string. TestDatabase prefers ConnectionStrings:TestConnection (the mynewspaper_test
+# login) over DefaultConnection, from user secrets or the environment. When neither is set, this script uses .env:
+# TEST_SQL_CONNECTION as TestConnection, else SQL_CONNECTION as DefaultConnection. TestDatabase always switches the
+# database to WebScraper_Test.
 # Not included: `dotnet format --verify-no-changes`, which reports CS8618 noise on WebScraperContext (see the handoff).
 
 set -uo pipefail
@@ -15,7 +17,7 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.."
 quick=0
 case "${1:-}" in
     --quick) quick=1 ;;
-    -h | --help) sed -n '2,10p' "$0"; exit 0 ;;
+    -h | --help) sed -n '2,12p' "$0"; exit 0 ;;
     '') ;;
     *) echo "unknown argument '$1'" >&2; exit 2 ;;
 esac
@@ -23,10 +25,16 @@ esac
 logs=test-results/verify
 mkdir -p "$logs"
 
-if [[ -z "${ConnectionStrings__DefaultConnection:-}" && -r .env ]] &&
-    ! dotnet user-secrets list --project src/myNewspaper.Web 2>/dev/null | grep -q '^ConnectionStrings:DefaultConnection'; then
-    ConnectionStrings__DefaultConnection="$(grep -m1 '^SQL_CONNECTION=' .env | cut -d= -f2- | sed "s/^['\"]//; s/['\"]$//")"
-    export ConnectionStrings__DefaultConnection
+env_value() { grep -m1 "^$1=" .env | cut -d= -f2- | sed "s/^['\"]//; s/['\"]$//"; }
+if [[ -z "${ConnectionStrings__TestConnection:-}" && -z "${ConnectionStrings__DefaultConnection:-}" && -r .env ]] &&
+    ! dotnet user-secrets list --project src/myNewspaper.Web 2>/dev/null | grep -qE '^ConnectionStrings:(Test|Default)Connection'; then
+    if grep -q '^TEST_SQL_CONNECTION=' .env; then
+        ConnectionStrings__TestConnection="$(env_value TEST_SQL_CONNECTION)"
+        export ConnectionStrings__TestConnection
+    else
+        ConnectionStrings__DefaultConnection="$(env_value SQL_CONNECTION)"
+        export ConnectionStrings__DefaultConnection
+    fi
 fi
 
 names=()

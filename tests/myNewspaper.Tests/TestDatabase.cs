@@ -6,9 +6,10 @@ using myNewspaper.Shared.Data;
 namespace myNewspaper.Tests;
 
 /// <summary>
-/// The integration tests' database. The server and credentials come from the web app's user secrets or the
-/// ConnectionStrings__DefaultConnection environment variable, so no credentials live in the repository; the database is
-/// always the dedicated test copy (<see cref="DatabaseName"/>, or TEST_DATABASE), never the live WebScraper database.
+/// The integration tests' database. The server and credentials come from the web app's user secrets or environment
+/// variables, so no credentials live in the repository: ConnectionStrings:TestConnection (the mynewspaper_test login,
+/// db_owner of the test copy only) when set, otherwise ConnectionStrings:DefaultConnection. The database is always the
+/// dedicated test copy (<see cref="DatabaseName"/>, or TEST_DATABASE), never the live WebScraper database.
 /// </summary>
 public static class TestDatabase
 {
@@ -26,14 +27,15 @@ public static class TestDatabase
 
     private static string Build()
     {
-        var configured = new ConfigurationBuilder()
+        var configuration = new ConfigurationBuilder()
             .AddUserSecrets(WebUserSecretsId)
             .AddEnvironmentVariables()
-            .Build()
-            .GetConnectionString("DefaultConnection")
+            .Build();
+        var configured = (configuration.GetConnectionString("TestConnection") is { Length: > 0 } test ? test : null)
+            ?? configuration.GetConnectionString("DefaultConnection")
             ?? throw new InvalidOperationException(
-                "Set ConnectionStrings:DefaultConnection with `dotnet user-secrets set` in src/myNewspaper.Web, "
-                + "or the ConnectionStrings__DefaultConnection environment variable.");
+                "Set ConnectionStrings:TestConnection (or DefaultConnection) with `dotnet user-secrets set` in "
+                + "src/myNewspaper.Web, or the ConnectionStrings__TestConnection environment variable.");
         var database = Environment.GetEnvironmentVariable("TEST_DATABASE") is { Length: > 0 } name ? name : DatabaseName;
         if (database.Equals(LiveDatabaseName, StringComparison.OrdinalIgnoreCase))
             throw new InvalidOperationException($"Integration tests never run against the live {LiveDatabaseName} database.");
