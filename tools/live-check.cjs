@@ -227,6 +227,18 @@ async function main() {
                     const overflow = await p.evaluate(() => document.documentElement.scrollWidth - innerWidth);
                     if (overflow > 1) problems.push(`overflows ${overflow}px`);
                     if (await p.locator('#blazor-error-ui').isVisible()) problems.push('error banner');
+                    // Clipping inside a sideways-scrolling strip doesn't overflow the page, so check score cards
+                    // directly (November 5, 2026: long team names pushed scores past the card's edge).
+                    const clipped = await p.$$eval(
+                        '.mx-score',
+                        (tiles) =>
+                            tiles.filter((t) =>
+                                [...t.querySelectorAll('.mx-score__team')].some(
+                                    (r) => r.getBoundingClientRect().right > t.getBoundingClientRect().right + 0.5,
+                                ),
+                            ).length,
+                    );
+                    if (clipped) problems.push(`${clipped} score card(s) with the score past the card's edge`);
                     const actual = await p.locator('html').getAttribute('data-theme');
                     if (actual !== theme) problems.push(`theme ${actual}`);
                     if (errors.length) problems.push(`script error: ${errors[0].slice(0, 80)}`);
@@ -270,6 +282,9 @@ async function main() {
                 if (link && link !== manage && !routes.includes(link)) routes.push(link);
             }
         }
+    } catch (e) {
+        // A step that can't continue (sign-in refused, a page that never loads) still gets teardown and a summary.
+        fail('run', 'aborted', e.message.split('\n')[0]);
     } finally {
         // 5. Teardown: Admin's delete first (removes the profile's devices, follows and requests), then the SQL net.
         if (admin && manage) {
