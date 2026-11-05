@@ -116,7 +116,7 @@
                                 <th scope="col" class="num">Devices</th>
                                 <th scope="col" class="num">Waiting requests</th>
                                 <th scope="col">Picker order</th>
-                                <th scope="col"><span class="adm-sr">Actions</span></th>
+                                <th scope="col"><span class="visually-hidden">Actions</span></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -137,7 +137,7 @@
                                     <td class="num">@if (row.WaitingRequests > 0) { <a href="admin/requests">@row.WaitingRequests</a> } else { @row.WaitingRequests }</td>
                                     <td>@OrderButtons(row, index)</td>
                                     <td class="adm-actions">
-                                        <a class="btn btn-sm btn-outline-secondary" href="@($"admin/profiles/{row.Id}")">Manage<span class="adm-sr"> @row.Name</span></a>
+                                        <a class="btn btn-sm btn-outline-secondary" href="@($"admin/profiles/{row.Id}")">Manage<span class="visually-hidden"> @row.Name</span></a>
                                         @RowMenu(row)
                                     </td>
                                 </tr>

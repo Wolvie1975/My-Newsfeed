@@ -191,17 +191,17 @@ const widths = lib.widths('320,390,430,744,820,1024,1440');
         await p.setViewportSize({ width: 1440, height: 1000 });
         await open('/');
         await p.locator('[data-admin-alert-toggle]').click();
-        const lockedRow = p.locator('[data-admin-alert-list] li.admin-alert__item--locked', { hasText: 'zz requests' });
+        const lockedRow = p.locator('[data-admin-alert-list] li.adm-alert__item--locked', { hasText: 'zz requests' });
         await lockedRow.first().waitFor();
-        const before = await p.locator('[data-admin-alert-list] li.admin-alert__item--locked').count();
+        const before = await p.locator('[data-admin-alert-list] li.adm-alert__item--locked').count();
         await lockedRow.first().getByRole('button', { name: 'Unlock' }).click();
         await p.waitForFunction(
-            (n) => document.querySelectorAll('[data-admin-alert-list] li.admin-alert__item--locked').length === n - 1,
+            (n) => document.querySelectorAll('[data-admin-alert-list] li.adm-alert__item--locked').length === n - 1,
             before,
         );
         await p.getByRole('button', { name: 'Mark all seen' }).click();
         await p.waitForTimeout(800);
-        assert.equal(await p.locator('.admin-alert__new').count(), 0, 'nothing new after Mark all seen');
+        assert.equal(await p.locator('.adm-alert__new').count(), 0, 'nothing new after Mark all seen');
 
         // Readers never get the alert.
         const reader = await browser.newContext();

@@ -23,10 +23,10 @@
     <div class="adm-toolbar">
         <form class="adm-search" role="search" @onsubmit="Search" @onsubmit:preventDefault>
             <AdminIcon Name="search" />
-            <label for="source-search" class="adm-sr">Search sources</label>
+            <label for="source-search" class="visually-hidden">Search sources</label>
             <input id="source-search" type="search" placeholder="Search by name or URL" @bind="searchInput" />
         </form>
-        <label for="category" class="adm-sr">Category</label>
+        <label for="category" class="visually-hidden">Category</label>
         <select id="category" class="form-select" value="@(CategoryIdText ?? "")" @onchange="CategoryChanged">
             <option value="">All categories</option>
             <option value="none">Uncategorized</option>
@@ -102,7 +102,7 @@
                             <th scope="col">Enabled</th>
                             <th scope="col" class="num">Pages</th>
                             <th scope="col">Last scraped</th>
-                            <th scope="col"><span class="adm-sr">Actions</span></th>
+                            <th scope="col"><span class="visually-hidden">Actions</span></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -120,7 +120,7 @@
                                 <td class="num"><a href="admin/pages?sourceId=@row.Id">@row.PageCount.ToString("N0", CultureInfo.InvariantCulture)</a></td>
                                 <td class="nowrap">@Dates.Stamp(row.LastScrapedAt)</td>
                                 <td class="adm-actions">
-                                    <a class="btn btn-sm btn-outline-secondary" href="admin/sources/@row.Id/edit">Edit<span class="adm-sr"> @row.Name</span></a>
+                                    <a class="btn btn-sm btn-outline-secondary" href="admin/sources/@row.Id/edit">Edit<span class="visually-hidden"> @row.Name</span></a>
                                     @RowMenu(row)
                                 </td>
                             </tr>

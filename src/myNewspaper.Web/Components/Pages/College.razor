@@ -70,7 +70,7 @@ else if (view == "schedule")
             <h3 class="group__bar">@FeedDates.LongDate(day.Key)</h3>
             <div class="standings-scroll" role="region" aria-label="College schedule" tabindex="0">
                 <table class="games"><caption class="sr-only">@selected.Name · @FeedDates.LongDate(day.Key)</caption>
-                    <thead><tr><th scope="col">Sport</th><th scope="col">Team / Away</th><th scope="col">Team / Home</th><th scope="col">Time</th><th scope="col">Location</th><th scope="col">Links</th></tr></thead>
+                    <thead class="sr-only"><tr><th scope="col">Sport</th><th scope="col">Team / Away</th><th scope="col">Team / Home</th><th scope="col">Time</th><th scope="col">Location</th><th scope="col">Links</th></tr></thead>
                     <tbody>@foreach (var item in day) { <GameRow Item="item" Records="records" /> }</tbody>
                 </table>
             </div>
@@ -141,7 +141,7 @@ else
         <div class="results-head" aria-hidden="true"><span>Competition</span><span>Away</span><span>Score</span><span>Home</span><span>Venue</span></div>
         <div class="results standings-scroll" role="region" aria-label="College results" tabindex="0">
             <table class="games"><caption class="sr-only">@selected.Name results</caption>
-                <thead><tr><th scope="col">Competition</th><th scope="col">Away</th><th scope="col">Score</th><th scope="col">Home</th><th scope="col">Venue</th></tr></thead>
+                <thead class="sr-only"><tr><th scope="col">Competition</th><th scope="col">Away</th><th scope="col">Score</th><th scope="col">Home</th><th scope="col">Venue</th></tr></thead>
                 <tbody>@foreach (var item in results.Items) { <ResultRow Item="item" Records="records" BoxLabels="boxLabels" /> }</tbody>
             </table>
         </div>

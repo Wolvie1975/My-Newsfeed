@@ -59,35 +59,31 @@
         return node;
     }
     function avatar(name, color) {
-        const node = el('span', 'admin-alert__avatar', (name.trim()[0] || '?').toUpperCase());
+        const node = el('span', 'adm-alert__avatar', (name.trim()[0] || '?').toUpperCase());
         node.setAttribute('aria-hidden', 'true');
         if (/^#[0-9a-fA-F]{6}$/.test(color)) node.style.background = color;
         return node;
     }
     function action(href, text, primary) {
-        const link = el(
-            'a',
-            primary ? 'admin-alert__action admin-alert__action--primary' : 'admin-alert__action',
-            text,
-        );
+        const link = el('a', primary ? 'adm-alert__action adm-alert__action--primary' : 'adm-alert__action', text);
         link.href = href;
         return link;
     }
 
     function lockedItem(p) {
-        const li = el('li', 'admin-alert__item admin-alert__item--locked');
+        const li = el('li', 'adm-alert__item adm-alert__item--locked');
         li.append(avatar(p.name, p.color));
-        const body = el('div', 'admin-alert__body');
-        body.append(el('b', 'admin-alert__name', p.name + ' is locked'));
+        const body = el('div', 'adm-alert__body');
+        body.append(el('b', 'adm-alert__name', p.name + ' is locked'));
         body.append(
             el(
                 'span',
-                'admin-alert__meta',
+                'adm-alert__meta',
                 '5 wrong PINs' + (p.device ? ' on ' + p.device : '') + ' · ' + clock(p.lockedAt),
             ),
         );
-        const actions = el('span', 'admin-alert__actions');
-        const unlock = el('button', 'admin-alert__action admin-alert__action--primary', 'Unlock');
+        const actions = el('span', 'adm-alert__actions');
+        const unlock = el('button', 'adm-alert__action adm-alert__action--primary', 'Unlock');
         unlock.type = 'button';
         unlock.dataset.adminAlertUnlock = p.profileId;
         actions.append(unlock, action('admin/profiles/' + p.profileId + '#pin', 'Reset PIN'));
@@ -98,23 +94,23 @@
 
     function requestItem(r, seenAt) {
         const fresh = !seenAt || utc(r.createdAt) > utc(seenAt);
-        const li = el('li', 'admin-alert__item' + (fresh ? ' is-new' : ''));
+        const li = el('li', 'adm-alert__item' + (fresh ? ' is-new' : ''));
         li.append(avatar(r.profileName, r.profileColor));
-        const body = el('div', 'admin-alert__body');
-        const meta = el('span', 'admin-alert__meta');
-        meta.append(el('span', 'admin-alert__kind', r.kind === 'youtube' ? 'YouTube' : 'News source'));
+        const body = el('div', 'adm-alert__body');
+        const meta = el('span', 'adm-alert__meta');
+        meta.append(el('span', 'adm-alert__kind', r.kind === 'youtube' ? 'YouTube' : 'News source'));
         meta.append(document.createTextNode(' ' + r.profileName + ' · ' + when(r.createdAt)));
-        if (fresh) meta.append(el('span', 'admin-alert__new', 'New'));
-        body.append(meta, el('b', 'admin-alert__name', r.name));
-        if (r.note) body.append(el('span', 'admin-alert__note', '“' + r.note + '”'));
+        if (fresh) meta.append(el('span', 'adm-alert__new', 'New'));
+        body.append(meta, el('b', 'adm-alert__name', r.name));
+        if (r.note) body.append(el('span', 'adm-alert__note', '“' + r.note + '”'));
         body.append(
             el(
                 'span',
-                'admin-alert__check' + (r.checkOk ? ' is-ok' : ''),
+                'adm-alert__check' + (r.checkOk ? ' is-ok' : ''),
                 (r.checkOk ? '✓ ' : '') + (r.checkSummary || 'Not checked yet'),
             ),
         );
-        const actions = el('span', 'admin-alert__actions');
+        const actions = el('span', 'adm-alert__actions');
         actions.append(
             action('admin/requests?id=' + r.id, r.nextAction || 'Review', true),
             action('admin/requests?id=' + r.id + '#decline', 'Decline…'),
@@ -163,7 +159,7 @@
         p.root.classList.add('is-open');
         p.toggle.setAttribute('aria-expanded', 'true');
         p.panel.setAttribute('aria-modal', narrow() ? 'true' : 'false');
-        document.documentElement.classList.toggle('admin-alert-sheet', narrow());
+        document.documentElement.classList.toggle('adm-alert-sheet', narrow());
         p.panel.querySelector('#admin-alert-title').focus();
         load(p);
     }
@@ -172,7 +168,7 @@
         p.panel.hidden = true;
         p.root.classList.remove('is-open');
         p.toggle.setAttribute('aria-expanded', 'false');
-        document.documentElement.classList.remove('admin-alert-sheet');
+        document.documentElement.classList.remove('adm-alert-sheet');
         if (refocus && opener) opener.focus();
     }
 
@@ -212,6 +208,6 @@
     });
     if (window.Blazor?.addEventListener)
         window.Blazor.addEventListener('enhancedload', () =>
-            document.documentElement.classList.remove('admin-alert-sheet'),
+            document.documentElement.classList.remove('adm-alert-sheet'),
         );
 })();

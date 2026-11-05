@@ -1637,7 +1637,7 @@
     :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
         .pub
         .header-actions
-        > .admin-link {
+        > .adm-link {
         display: none;
     }
     :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme])) .pub .header-clock {
@@ -2006,7 +2006,7 @@
     }
     :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme])) .pub .saved-link,
     :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme])) .pub .settings-link,
-    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme])) .pub .admin-link {
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme])) .pub .adm-link {
         display: inline-flex;
         align-items: center;
         gap: 6px;
@@ -2032,7 +2032,7 @@
         .settings-link[aria-current] {
         color: var(--accent);
     }
-    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme])) .pub .admin-link {
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme])) .pub .adm-link {
         color: var(--text-2);
         font-size: 13px;
         font-weight: 500;

@@ -46,7 +46,7 @@
     :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
         .pub
         .header-actions
-        > .admin-link,
+        > .adm-link,
     :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
         .pub
         .edition-chip__name {

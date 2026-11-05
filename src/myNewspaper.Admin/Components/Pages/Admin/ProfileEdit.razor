@@ -158,7 +158,7 @@
                                     @if (renaming == device.Id)
                                     {
                                         <form class="adm-device__rename" @onsubmit="() => RenameAsync(device)" @onsubmit:preventDefault>
-                                            <label class="adm-sr" for="@($"label-{device.Id:N}")">Device name</label>
+                                            <label class="visually-hidden" for="@($"label-{device.Id:N}")">Device name</label>
                                             <input id="@($"label-{device.Id:N}")" class="form-control form-control-sm" maxlength="100" @bind="renameText" />
                                             <button type="submit" class="btn btn-sm btn-primary" disabled="@busy">Save</button>
                                             <button type="button" class="btn btn-sm btn-link" @onclick="() => renaming = null">Cancel</button>
@@ -169,10 +169,10 @@
                                         <span class="adm-device__name"><b>@device.Label</b> <span class="adm-help">@device.Description</span></span>
                                         @if (device.CausedLock) { <span class="adm-pill adm-pill--bad">Caused the lock</span> }
                                         <span class="adm-device__actions">
-                                            <button type="button" class="btn btn-sm btn-link" @onclick="() => StartRename(device)">Rename<span class="adm-sr"> @device.Label</span></button>
+                                            <button type="button" class="btn btn-sm btn-link" @onclick="() => StartRename(device)">Rename<span class="visually-hidden"> @device.Label</span></button>
                                             @if (DeviceIsOpen(device))
                                             {
-                                                <button type="button" class="btn btn-sm btn-outline-secondary" disabled="@busy" @onclick="() => SignOutDeviceAsync(device)">Sign out<span class="adm-sr"> @device.Label</span></button>
+                                                <button type="button" class="btn btn-sm btn-outline-secondary" disabled="@busy" @onclick="() => SignOutDeviceAsync(device)">Sign out<span class="visually-hidden"> @device.Label</span></button>
                                             }
                                         </span>
                                     }

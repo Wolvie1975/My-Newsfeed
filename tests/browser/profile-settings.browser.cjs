@@ -116,7 +116,7 @@ const legacy = {
             'kansas',
         );
         assert.equal(
-            await one.page.locator('.admin-link', { hasText: 'Admin sign in' }).count(),
+            await one.page.locator('.adm-link', { hasText: 'Admin sign in' }).count(),
             1,
             'admin profile gets the link',
         );
@@ -170,7 +170,7 @@ const legacy = {
         assert.equal(diSettings.teams, undefined, 'second profile has no imported teams');
         assert.equal(await one.page.evaluate(() => document.documentElement.getAttribute('data-theme-mode')), 'system');
         assert.equal(
-            await one.page.locator('.admin-link', { hasText: 'Admin sign in' }).count(),
+            await one.page.locator('.adm-link', { hasText: 'Admin sign in' }).count(),
             0,
             'no link for others',
         );
