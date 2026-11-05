@@ -40,6 +40,13 @@ services (also tagged `before-327452fc6ef2`); the remaining rollbacks are `dcf4d
 Not covered live: admin edits (the live check visits admin pages without saving). Admin's writes were covered on
 the test copy by the matrix and the admin browser checks.
 
+Tidy (phase 5), 16:15 UTC: dropped the seven `_bak_20261104_*` tables in `WebScraper` (user approved; the plan had
+named only `_bak_20261104_ContentRequests`). They were the November 4 manual clean-up's safety copy: profiles Jacob,
+Lindsey and `zz Columns` (removed on purpose), 383 devices, 96 channel follows, the rest empty; nothing referenced
+them. They remain in `WebScraper_copyonly_20261105_134436_before-app-logins.bak`. Household unchanged (Jason, admin).
+The stopped myNewspaper rollback containers were already removed on November 5 ~04:30 UTC; `web-scoreboard`'s three
+(Rust project, `webscraper_ingest`) stay by decision. `sql2025-before-volume` is due for removal after a few days.
+
 ## SQL Server: data volume and sa password rotation — November 4, 2026 (America/Chicago)
 
 No code change. `sql2025`'s data (`/var/opt/mssql`, 6.9 GB) moved from the container layer to the Docker volume
