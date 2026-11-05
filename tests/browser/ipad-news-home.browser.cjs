@@ -337,10 +337,7 @@ const shots = process.env.SCREENSHOT_DIR || 'test-results/browser/ipad-news-home
             async (route) => {
                 const response = await route.fetch();
                 const text = await response.text();
-                const replaced = text.replace(
-                    /data-lead-refresh-after="\d+"/,
-                    'data-lead-refresh-after="1000"',
-                );
+                const replaced = text.replace(/data-lead-refresh-after="\d+"/, 'data-lead-refresh-after="1000"');
                 await route.fulfill({
                     response,
                     body: replaced,

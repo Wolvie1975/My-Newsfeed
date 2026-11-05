@@ -79,21 +79,13 @@ const phoneOrder = [
                     await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
                     'overflow ' + width,
                 );
-                assert.equal(
-                    await page.locator('[data-home-section="digital"]').count(),
-                    0,
-                    'digital section absent',
-                );
+                assert.equal(await page.locator('[data-home-section="digital"]').count(), 0, 'digital section absent');
                 assert.equal(
                     await page.locator('.bs-front [data-home-latest-video]').count(),
                     0,
                     'latest video absent from front',
                 );
-                assert.equal(
-                    await page.locator('.bs-more > .bs-col--side').count(),
-                    0,
-                    'bs-more has no side column',
-                );
+                assert.equal(await page.locator('.bs-more > .bs-col--side').count(), 0, 'bs-more has no side column');
                 // Every rendered section is laid out without overlapping another.
                 const sections = await page.locator('.bs-home [data-home-section]:not([hidden])').evaluateAll((ns) =>
                     ns.map((n) => {
@@ -127,7 +119,10 @@ const phoneOrder = [
                         assert(watch.y + watch.height < lead.y && watch.y + watch.height < tonight.y);
                         // Where to watch: a band under the whole masthead, as wide as the page.
                         if (weather && live) {
-                            assert(watch.y >= Math.max(weather.y + weather.height, live.y + live.height), 'Watch band below');
+                            assert(
+                                watch.y >= Math.max(weather.y + weather.height, live.y + live.height),
+                                'Watch band below',
+                            );
                             assert(watch.width >= live.x + live.width - weather.x - 1, 'Watch band full width');
                         }
                     }
@@ -140,7 +135,11 @@ const phoneOrder = [
                         assert(Math.abs(tonight.y - lead.y) < 40 && Math.abs(lead.y - side.y) < 40, 'front row');
                     }
                     assert.equal(
-                        await page.locator('.bs-front > .bs-col--side :is([data-home-section="forecasts"], [data-home-section="box-office"])').count(),
+                        await page
+                            .locator(
+                                '.bs-front > .bs-col--side :is([data-home-section="forecasts"], [data-home-section="box-office"])',
+                            )
+                            .count(),
                         1,
                         'box office in front side column',
                     );
@@ -162,8 +161,14 @@ const phoneOrder = [
                         const entertainmentNews = await box('[data-home-section="entertainment-news"]');
                         const techNews = await box('[data-home-section="tech-news"]');
                         if (sportsNews && entertainmentNews && techNews) {
-                            assert(Math.abs(sportsNews.y - entertainmentNews.y) < 2, 'sports and entertainment share top offset');
-                            assert(Math.abs(entertainmentNews.y - techNews.y) < 2, 'entertainment and tech share top offset');
+                            assert(
+                                Math.abs(sportsNews.y - entertainmentNews.y) < 2,
+                                'sports and entertainment share top offset',
+                            );
+                            assert(
+                                Math.abs(entertainmentNews.y - techNews.y) < 2,
+                                'entertainment and tech share top offset',
+                            );
                         }
                         const scoreboard = await box('[data-home-section="scoreboard"]');
                         const rankings = await box('[data-home-section="rankings"]');
