@@ -63,9 +63,27 @@ public sealed class ScoresSync(
     private async Task<ScoresSyncReport> SyncAsync(List<int> followIds, DateTime nowUtc, CancellationToken ct)
     {
         await SyncGate.WaitAsync(ct);
-        try { return await SyncCoreAsync(followIds, nowUtc, ct); }
+        try
+        {
+            // SyncGate covers this process only. Web's background run and Admin's Sync now are separate processes, so a
+            // database lock serializes them too; otherwise both could insert the same new game (UQ_ResultGames_Event).
+            await using var lockDb = await factory.CreateDbContextAsync(ct);
+            DatabaseLock? held;
+            var waited = false;
+            while ((held = await DatabaseLock.TryAcquireAsync(lockDb, SyncLockName, TimeSpan.FromSeconds(20), ct)) is null)
+            {
+                if (!waited) log.LogInformation("Results sync waiting for another process's sync to finish");
+                waited = true;
+            }
+            await using (held)
+            {
+                return await SyncCoreAsync(followIds, nowUtc, ct);
+            }
+        }
         finally { SyncGate.Release(); }
     }
+
+    private const string SyncLockName = "myNewspaper.ScoresSync";
 
     private async Task<ScoresSyncReport> SyncCoreAsync(List<int> followIds, DateTime nowUtc, CancellationToken ct)
     {
