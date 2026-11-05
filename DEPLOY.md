@@ -154,6 +154,11 @@ requires each container to be healthy on the new image, with an unchanged enviro
 reporting the commit; otherwise it rolls back by itself and exits 1. It keeps the newest two `before-<sha>` images
 per service; older hand-named tags are never removed by it. It ends with a block for release history.
 
+A deliberate settings change, such as a rotated password, is applied the same way: edit `.env`, then
+`deployment/deploy.sh --env-change [web|admin]`. Without `--env-change` a changed environment counts as a mistake and
+is rolled back; with it, the script lists the changed variable names (never values). A container only reads `.env`
+when it's recreated, so editing the file alone changes nothing on the live site.
+
 Both services run only under Compose. Their settings come from `.env` (ignored by Git) through
 `docker-compose.yml`, never from a hand-started container. The Dockerfile publishes the app and verifies
 `_framework/blazor.web.js` is in the static-asset manifest; a failed build replaces nothing. Never include runtime
