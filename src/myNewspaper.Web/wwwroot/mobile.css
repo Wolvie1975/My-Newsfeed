@@ -676,9 +676,12 @@
     padding: 12px;
     background: var(--mx-block-tile);
 }
-/* Live tiles: four fixed lines (league, clock, away, home), so every tile is the same height. */
+/* Live tiles: four fixed lines (league, clock, away, home), so every tile is the same height. The one column may
+   shrink below its content (minmax(0, 1fr)), so a long team name ends in an ellipsis instead of pushing the score
+   past the tile's edge. */
 .pub .mx-score {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     grid-template-rows: 16px 18px 24px 24px;
     row-gap: 4px;
 }
