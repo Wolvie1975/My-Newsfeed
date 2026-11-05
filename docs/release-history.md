@@ -6,6 +6,33 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
+## Reliability findings (November 4 audit) — November 5, 2026 (America/Chicago)
+
+One commit per finding, each with a test that fails on the old code:
+`29602aa` Home: ten unguarded reads now degrade only their section ("… temporarily unavailable"; the scoreboard's own
+unavailable result no longer shows as "No games"); `a45b83f` LocalWeather: one shared NWS fetch per location bounded
+by the client timeout, not the caller's, so its outcome (failures for 2 minutes) is cached even when Home's 3 s wait
+gives up, and alert failures are cached too; `3b44e97` results sync: a SQL Server application lock (`DatabaseLock`)
+serializes Web's background run and Admin's Sync now across processes (`UQ_ResultGames_Event`); `cb1cba9` Tech
+tracker reads each project's latest release in SQL (`ROW_NUMBER`); `fa1e5d7` `GetCategoriesAsync` no longer counts
+all of Pages (only Tech's ribbon used it; now `CountHubStoriesAsync`); `b5b1908` a failed Tech table check is no
+longer cached for 10 minutes; `bdbac93` migrations: 024 moves the tech categories on its first run only, 008 is one
+transaction and only rebuilds 007's layout (a re-run after 020 would have dropped `IsHouseholdPick`). No migration
+was run: both changes only affect future runs.
+
+Verification: `tools/verify.sh` 6/6 (1,137 tests). `compare-builds 59c3a5e`: 300 public and 25 admin pages; 6 Home
+variants differ only in whitespace between block elements, and `--layout` on Home found 14/14 views identical
+(320–1920px, light/dark). Home against an unreadable database (local): 200, each section "temporarily unavailable",
+no overflow, banner or script errors at 320/390/430/1440px light and dark (phone omits empty sections as before).
+Checked first: `mynewspaper_web` can take an application lock on WebScraper.
+
+Deployment: commit `bdbac93f1c7c` via `deployment/deploy.sh web admin` at 23:16:41Z, both healthy, environment
+unchanged, `/version` the commit (web `a6477e833e32`, admin `4887c61821e1`). Rollback `deployment/rollback.sh
+bdbac93f1c7c` → web `63321d44bb27`, admin `b9cebc0ab752` (`eb5447b`, step 8). Retention removed the `b4afe870d55c`
+and `before-678842c1109d` images; rollbacks left: `eb5447b53287`, `678842c1109d`, `college-revised-20261105`. Live
+check (23:17–23:23 UTC): health 2/2, admin 55/55, public 176/176, clean-up 2/2; household Jason (admin), 0 `zz`, 0
+unassigned; no errors in either app log; the background results sync took and released its lock in production.
+
 ## CSS guard, `adm-` classes, one hidden-text class per site (clean-up step 8) — November 5, 2026 (America/Chicago)
 
 Commits `051fc38` (the Requests alert's `admin-alert*` and the public header's `admin-link` became `adm-alert*`/`adm-link`,
