@@ -6,7 +6,11 @@
         <h2 class="d-card__title" id="@HeadingId">@Title</h2>
         <a class="d-more" href="@Href">View all <span aria-hidden="true">→</span></a>
     </div>
-    @if (Stories.Count == 0)
+    @if (Unavailable)
+    {
+        <p class="d-empty">@Title are temporarily unavailable.</p>
+    }
+    else if (Stories.Count == 0)
     {
         <p class="d-empty">@EmptyText</p>
     }
@@ -47,4 +51,6 @@
     [Parameter] public IReadOnlyList<FeedItem> Stories { get; set; } = [];
     /// <summary>Shows each story’s category above its headline (the front page’s headline grid).</summary>
     [Parameter] public bool ShowCategory { get; set; }
+    /// <summary>The read failed: says so instead of the empty text, so a failure isn't mistaken for no stories.</summary>
+    [Parameter] public bool Unavailable { get; set; }
 }

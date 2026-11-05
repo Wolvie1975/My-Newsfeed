@@ -59,7 +59,11 @@
         <section class="bs-ear bs-live" aria-labelledby="h-home-live" data-home-live>
             <h2 class="bs-ear__title" id="h-home-live">@(liveGames.Count > 0 ? "Live now" : "Coming up")</h2>
             <a class="d-more" href="scoreboard">Scoreboard <span aria-hidden="true">→</span></a>
-            @if (liveGames.Count == 0 && upcomingGames.Count == 0)
+            @if (unavailable.Contains(Scoreboard))
+            {
+                <p class="d-empty">Today’s scoreboard is temporarily unavailable.</p>
+            }
+            else if (liveGames.Count == 0 && upcomingGames.Count == 0)
             {
                 <p class="d-empty">No games on today’s scoreboard.</p>
             }
@@ -93,7 +97,8 @@
         <div class="bs-col bs-col--left">
             <section data-home-section="sports" class="d-card d-today bs-tonight" aria-labelledby="h-tonight">
                 <div class="d-card__head"><h2 class="d-card__title" id="h-tonight">Today &amp; Tonight</h2><a class="d-more" href="events">All games <span aria-hidden="true">→</span></a></div>
-                @if (tonight.Count == 0) { <p class="d-empty">No remaining games today. View All games for upcoming fixtures.</p> }
+                @if (unavailable.Contains(Events)) { <p class="d-empty">Today’s games are temporarily unavailable.</p> }
+                else if (tonight.Count == 0) { <p class="d-empty">No remaining games today. View All games for upcoming fixtures.</p> }
                 <p class="d-empty" data-home-teams-empty hidden>No remaining games match your selected teams. <a href="events">Browse all games</a>.</p>
                 @if (tonight.Count > 0) { <p class="bs-agate__note">All times @(Dates.ZoneLabel ?? "local") · TV in bold</p> }
                 @{ var tonightIndex = 0; }
@@ -149,23 +154,29 @@
         <div class="bs-col bs-col--main">
             <HomeLeadStory Snapshot="@lead" />
             <HomeHeadlineShelf SectionKey="news" Title="More headlines" HeadingId="h-news" Href="news/all"
-                               CssClass="d-news" Stories="@headlineStories" ShowCategory="true" EmptyText="More headlines will appear as new stories arrive." />
+                               CssClass="d-news" Stories="@headlineStories" ShowCategory="true" EmptyText="More headlines will appear as new stories arrive."
+                               Unavailable="@unavailable.Contains(Headlines)" />
         </div>
 
         <div class="bs-col bs-col--side">
             @BoxOffice
             <section data-home-section="tv" class="d-card d-episodes" aria-labelledby="h-tv">
                 <div class="d-card__head">
-                    <h2 class="d-card__title" id="h-tv">Today’s episodes <span class="d-card__count">@episodes.Count @(episodes.Count == 1 ? "episode" : "episodes")</span></h2>
+                    <h2 class="d-card__title" id="h-tv">Today’s episodes @if (!unavailable.Contains(Episodes)) { <span class="d-card__count">@episodes.Count @(episodes.Count == 1 ? "episode" : "episodes")</span> }</h2>
                     <a class="d-more" href="tv">View calendar <span aria-hidden="true">→</span></a>
                 </div>
-                <p class="bs-episodes-count">@episodes.Count @(episodes.Count == 1 ? "episode" : "episodes")</p>
-                @if (episodes.Count == 0)
+                @if (unavailable.Contains(Episodes))
                 {
+                    <p class="d-empty">Today’s episodes are temporarily unavailable.</p>
+                }
+                else if (episodes.Count == 0)
+                {
+                    <p class="bs-episodes-count">0 episodes</p>
                     <p class="d-empty">No new episodes from followed series today.</p>
                 }
                 else
                 {
+                    <p class="bs-episodes-count">@episodes.Count @(episodes.Count == 1 ? "episode" : "episodes")</p>
                     <ul class="d-list d-tv__list">
                         @foreach (var group in episodes.GroupBy(e => e.ShowId))
                         {
@@ -204,7 +215,11 @@
                     <h2 class="d-card__title" id="h-movies">Friday theater releases</h2>
                     <a class="d-more" href="movies?type=theatrical">View all <span aria-hidden="true">→</span></a>
                 </div>
-                @if (movies.Count == 0)
+                @if (unavailable.Contains(Movies))
+                {
+                    <p class="d-empty">Theater releases are temporarily unavailable.</p>
+                }
+                else if (movies.Count == 0)
                 {
                     <p class="d-empty">No theater releases announced for this Friday yet.</p>
                 }
@@ -256,17 +271,21 @@
 
         <div class="bs-col bs-col--main">
             <HomeHeadlineShelf SectionKey="sports-news" Title="Sports headlines" HeadingId="h-sports-headlines" Href="sports/news"
-                               CssClass="d-sports-headlines" Stories="@sportsStories" />
+                               CssClass="d-sports-headlines" Stories="@sportsStories" Unavailable="@unavailable.Contains(SportsNews)" />
             <HomeHeadlineShelf SectionKey="entertainment-news" Title="Entertainment headlines" HeadingId="h-entertainment-headlines" Href="entertainment/news"
-                               CssClass="d-entertainment-headlines" Stories="@entertainmentStories" />
+                               CssClass="d-entertainment-headlines" Stories="@entertainmentStories" Unavailable="@unavailable.Contains(EntertainmentNews)" />
             <HomeHeadlineShelf SectionKey="tech-news" Title="Tech headlines" HeadingId="h-tech-headlines" Href="tech"
-                               CssClass="d-tech-headlines" Stories="@techStories" />
+                               CssClass="d-tech-headlines" Stories="@techStories" Unavailable="@unavailable.Contains(TechNews)" />
             <section data-home-section="videos" class="d-card d-vids" aria-labelledby="h-vids">
                 <div class="d-card__head">
                     <h2 class="d-card__title" id="h-vids">Latest videos <span class="d-card__count">Up to <span class="home-limit-desktop">10</span><span class="home-limit-mobile">5</span> channels · rotates hourly</span></h2>
                     <a class="d-more" href="videos">View all <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="m13 6 6 6-6 6"></path></svg></a>
                 </div>
-                @if (videos.Count == 0)
+                @if (unavailable.Contains(Videos))
+                {
+                    <p class="d-empty">Videos are temporarily unavailable.</p>
+                }
+                else if (videos.Count == 0)
                 {
                     <p class="d-empty">No videos yet. Check back soon.</p>
                 }
@@ -570,21 +589,23 @@
         catch (Exception ex) when (DataFailures.IsReadFailure(ex))
         { Log.LogError(ex, "Could not read home rankings."); homeRankings = new([], null, null, [], "Rankings are temporarily unavailable."); }
 
-        // The queries run one after another: one DbContext cannot run two at once.
-        todays = await EventsQuery.GetOnDateAsync(db, Dates.TodayAt(nowUtc), Ct);
+        // The queries run one after another: one DbContext cannot run two at once. Each section reads on its own, so a
+        // failure leaves only that section unavailable (dotnet-coding-standard, error handling).
+        unavailable.Clear();
+        todays = await ReadSectionAsync(Events, () => EventsQuery.GetOnDateAsync(db, Dates.TodayAt(nowUtc), Ct), []);
         try { lead = await HomeLeadQuery.GetAsync(db, nowUtc, Ct); }
         catch (Exception ex) when (DataFailures.IsReadFailure(ex))
         { Log.LogError(ex, "Could not read home lead story."); lead = new(null, nowUtc.Ticks / TimeSpan.TicksPerHour, 60000, true); }
-        news = await FeedQuery.GetHomeNewsAsync(db, HomeNewsCount, "headlines", Ct);
+        news = await ReadSectionAsync(Headlines, () => FeedQuery.GetHomeNewsAsync(db, HomeNewsCount, "headlines", Ct), []);
         headlineStories = news.Where(item => item.Id != lead.Article?.Id).Take(4).ToList();
-        sportsStories = await FeedQuery.GetHomeNewsAsync(db, HomeShelfCount, "sports", Ct);
-        entertainmentStories = await FeedQuery.GetHomeNewsAsync(db, HomeShelfCount, "entertainment", Ct);
-        techStories = await FeedQuery.GetHomeNewsAsync(db, HomeShelfCount, "tech", Ct);
+        sportsStories = await ReadSectionAsync(SportsNews, () => FeedQuery.GetHomeNewsAsync(db, HomeShelfCount, "sports", Ct), []);
+        entertainmentStories = await ReadSectionAsync(EntertainmentNews, () => FeedQuery.GetHomeNewsAsync(db, HomeShelfCount, "entertainment", Ct), []);
+        techStories = await ReadSectionAsync(TechNews, () => FeedQuery.GetHomeNewsAsync(db, HomeShelfCount, "tech", Ct), []);
         latestVideo = null; latestVideoFailed = false;
         try { latestVideo = (await VideosQuery.GetVideosAsync(db, Reader.Viewer, null, null, limit: 1, ct: Ct)).Items.FirstOrDefault(); }
         catch (Exception ex) when (DataFailures.IsReadFailure(ex))
         { Log.LogError(ex, "Could not read the latest followed YouTube video."); latestVideoFailed = true; }
-        videos = await VideosQuery.GetHomeVideosAsync(db, Reader.Viewer, ct: Ct);
+        videos = await ReadSectionAsync(Videos, () => VideosQuery.GetHomeVideosAsync(db, Reader.Viewer, ct: Ct), []);
         homeForecasts = new([], []);
         homeBoxOffice = []; homeBoxOfficeFailed = false; showBoxOfficeResults = false;
         var boxToday = Dates.TodayAt(nowUtc);
@@ -609,14 +630,17 @@
             catch (Exception ex) when (DataFailures.IsReadFailure(ex))
             { Log.LogError(ex, "Could not read home weekend predictions."); }
         }
-        movies = await MoviesQuery.GetFridayTheatricalAsync(db, Dates.TodayAt(nowUtc), ct: Ct);
-        episodes = await TvQuery.GetOnDateAsync(db, Reader.Viewer, Dates, Dates.TodayAt(nowUtc), Ct);
-        todays = await HomeEventResults.WithoutFinalResultsAsync(db, todays, Ct);
+        movies = await ReadSectionAsync(Movies, () => MoviesQuery.GetFridayTheatricalAsync(db, Dates.TodayAt(nowUtc), ct: Ct), []);
+        episodes = await ReadSectionAsync(Episodes, () => TvQuery.GetOnDateAsync(db, Reader.Viewer, Dates, Dates.TodayAt(nowUtc), Ct), []);
+        // Dropping games that already have a final result is a refinement: if it fails, today's list stays as read.
+        var unfiltered = todays;
+        todays = await ReadSectionAsync(EventResults, () => HomeEventResults.WithoutFinalResultsAsync(db, unfiltered, Ct), unfiltered);
         tonight = TodayTonight.Build(todays, Dates);
 
         // Masthead ear: what is live, otherwise what starts next. The scoreboard read reports failures itself.
         var board = await ScoreboardQuery.ReadAsync(db, Dates, Log, Dates.TodayAt(nowUtc), carryOver: true, ct: Ct);
         boardGames = board.Games;
+        if (!board.Available) unavailable.Add(Scoreboard);
         liveGames = board.Games.Where(g => g.Active).Take(3).ToList();
         upcomingGames = board.Games.Where(g => g.Status == "upcoming").Take(3).ToList();
 
@@ -633,6 +657,24 @@
     }
 
     private IReadOnlyList<ScoreboardGame> boardGames = [];
+
+    // Sections whose read failed this render; each shows its "temporarily unavailable" state instead of empty text.
+    private readonly HashSet<string> unavailable = new(StringComparer.Ordinal);
+    private const string Events = "events", Headlines = "headlines", SportsNews = "sports headlines",
+        EntertainmentNews = "entertainment headlines", TechNews = "tech headlines", Videos = "videos",
+        Movies = "theater releases", Episodes = "episodes", EventResults = "event results", Scoreboard = "scoreboard";
+
+    /// <summary>One section's read: a read failure is logged and marks only that section unavailable.</summary>
+    private async Task<T> ReadSectionAsync<T>(string section, Func<Task<T>> read, T fallback)
+    {
+        try { return await read(); }
+        catch (Exception ex) when (DataFailures.IsReadFailure(ex))
+        {
+            Log.LogWarning(ex, "Could not read the home {Section} section", section);
+            unavailable.Add(section);
+            return fallback;
+        }
+    }
 
     private static string Title(FeedItem item) => FeedText.StripEmoji(item.Title) is { Length: > 0 } t ? t : item.Title;
     private static string Source(FeedItem item) => FeedText.SourceName(item.SourceLabel, item.SourceUrl);
