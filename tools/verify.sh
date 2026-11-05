@@ -2,8 +2,9 @@
 # The pre-commit suite in one command, with one pass/fail summary. Run it before every commit (coding-standards.md,
 # Releases). Logs go to test-results/verify/.
 #
-#   tools/verify.sh            build (0 warnings), all .NET tests against WebScraper_Test, JS unit tests, lint, format
-#   tools/verify.sh --quick    build, JS unit tests and the repository hygiene tests (about a minute)
+#   tools/verify.sh            build (0 warnings), all .NET tests against WebScraper_Test, JS unit tests, CSS check,
+#                              lint, format
+#   tools/verify.sh --quick    build, JS unit tests, CSS check and the repository hygiene tests (about a minute)
 #
 # The .NET tests need a connection string. TestDatabase prefers ConnectionStrings:TestConnection (the mynewspaper_test
 # login) over DefaultConnection, from user secrets or the environment. When neither is set, this script uses .env:
@@ -70,6 +71,7 @@ else
     step "dotnet test" dotnet test myNewspaper.sln --no-build
 fi
 step "js unit tests" npm run --silent test:unit
+step "css check" node tools/check-css.cjs
 if [[ $quick -eq 0 ]]; then
     step "lint" npm run --silent lint
     step "format check" npm run --silent format:check

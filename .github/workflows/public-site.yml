@@ -2,9 +2,9 @@ name: Public website
 on:
   push:
     branches: [develop, main]
-    paths: ['src/myNewspaper.Web/**', 'src/myNewspaper.Shared/**', 'tests/myNewspaper.Tests/**', 'Directory.Build.props', '.editorconfig', 'Dockerfile', '.github/workflows/public-site.yml']
+    paths: ['src/myNewspaper.Web/**', 'src/myNewspaper.Shared/**', 'tests/myNewspaper.Tests/**', 'Directory.Build.props', '.editorconfig', 'Dockerfile', '.github/workflows/public-site.yml', 'tools/check-css.cjs']
   pull_request:
-    paths: ['src/myNewspaper.Web/**', 'src/myNewspaper.Shared/**', 'tests/myNewspaper.Tests/**', 'Directory.Build.props', '.editorconfig', 'Dockerfile', '.github/workflows/public-site.yml']
+    paths: ['src/myNewspaper.Web/**', 'src/myNewspaper.Shared/**', 'tests/myNewspaper.Tests/**', 'Directory.Build.props', '.editorconfig', 'Dockerfile', '.github/workflows/public-site.yml', 'tools/check-css.cjs']
 permissions:
   contents: read
 jobs:
@@ -12,6 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - run: node tools/check-css.cjs
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
