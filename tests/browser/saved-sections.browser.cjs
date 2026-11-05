@@ -1,4 +1,5 @@
 const { chromium } = require('playwright');
+const lib = require('./lib.cjs');
 const assert = require('node:assert/strict');
 (async () => {
     const browser = await chromium.launch();
@@ -20,7 +21,7 @@ const assert = require('node:assert/strict');
                     body: JSON.stringify({ articles: items, token: 'test' }),
                 }),
             );
-            await page.goto((process.env.BASE_URL || 'http://localhost:5295') + '/saved');
+            await page.goto(lib.base + '/saved');
             await page.locator('[data-saved-section="article"]').waitFor();
             await page.waitForFunction(() =>
                 document.querySelector('[data-saved-list]').getAttribute('data-rendered')?.startsWith('[true,'),

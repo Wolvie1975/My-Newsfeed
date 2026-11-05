@@ -7,17 +7,18 @@
 // It only declines, approves the already-collected one (which adds a follow, nothing the scraper reads) and unlocks;
 // it never adds a feed or source. Delete the seeded profiles afterwards; their requests go with them.
 const { chromium } = require('playwright');
+const lib = require('./lib.cjs');
 const assert = require('node:assert/strict');
 const { audit } = require('./contrast-audit.cjs');
 
-const base = process.env.ADMIN_BASE_URL || process.env.BASE_URL || 'http://localhost:5297';
-const password = process.env.ADMIN_PASSWORD;
-const shots = process.env.SCREENSHOT_DIR;
+const base = lib.adminBase;
+const password = lib.adminPassword;
+const shots = lib.shotDir;
 if (!password) {
     console.log('SKIP: signs in to admin; set ADMIN_PASSWORD to run it.');
     process.exit(0);
 }
-const widths = (process.env.WIDTHS || '320,390,430,744,820,1024,1440').split(',').map(Number);
+const widths = lib.widths('320,390,430,744,820,1024,1440');
 
 (async () => {
     const browser = await chromium.launch();
@@ -105,7 +106,7 @@ const widths = (process.env.WIDTHS || '320,390,430,744,820,1024,1440').split(','
 
         // Layout at every width and theme: the queue, a picked request, and the header alert on Home.
         const pages = ['/admin/requests', '/admin/requests?status=all'];
-        for (const theme of ['light', 'dark'])
+        for (const theme of lib.THEMES)
             for (const width of widths) {
                 await p.setViewportSize({ width, height: 900 });
                 await p.evaluate((t) => localStorage.setItem('theme', t), theme);

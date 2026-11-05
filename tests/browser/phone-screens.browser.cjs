@@ -1,13 +1,13 @@
 // Release 4: folded Entertainment, Movies, TV & Streaming, Digital releases and Box office; profiles-on runs create and
 // delete a temporary profile.
 const { chromium } = require('playwright');
+const lib = require('./lib.cjs');
 const assert = require('node:assert/strict');
 const { audit } = require('./contrast-audit.cjs');
 
-const base = process.env.BASE_URL || 'http://localhost:5295';
-const adminBase = process.env.ADMIN_BASE_URL || base;
-const shots = process.env.SCREENSHOT_DIR;
-const password = process.env.ADMIN_PASSWORD;
+const base = lib.base;
+const shots = lib.shotDir;
+const password = lib.adminPassword;
 
 const routes = [
     '/entertainment',
@@ -27,9 +27,7 @@ const routes = [
     }
     const browser = await chromium.launch();
     const errors = [];
-    let admin = null,
-        id = null,
-        storageState;
+    let admin, storageState;
     const look = (scheme, theme) => ({ 'mynewsfeed-color-scheme': scheme, theme });
     const contextFor = async (width, settings = {}, js = true) => {
         const context = await browser.newContext({
@@ -77,37 +75,14 @@ const routes = [
     const shown = (p) => p.locator('.mx-phone details.mx-fold').filter({ visible: true });
     try {
         if (profiles) {
-            admin = await (await browser.newContext({ viewport: { width: 1440, height: 1000 } })).newPage();
-            await admin.goto(adminBase + '/login?returnUrl=%2Fadmin%2Fprofiles');
-            await admin.locator('#password').fill(password);
-            await admin.getByRole('button', { name: 'Sign in', exact: true }).click();
-            await admin.waitForURL('**/admin/profiles');
-            await admin.waitForLoadState('networkidle');
-            const name = 'zz Screens ' + Date.now().toString(36);
-            await admin.getByRole('button', { name: 'Add profile', exact: true }).first().click();
-            await admin.locator('#add-name').fill(name);
-            await admin.locator('#add-pin').fill('3691');
-            await admin.locator('#add-confirm').fill('3691');
-            await admin.locator('form[aria-labelledby="add-title"] button[type="submit"]').click();
-            await admin.getByText(`Added ${name}.`).waitFor();
-            id = Number(
-                (await admin.locator('.adm-table a.adm-row-title', { hasText: name }).getAttribute('href')).match(
-                    /(\d+)$/,
-                )[1],
-            );
-            const context = await browser.newContext({ viewport: { width: 390, height: 900 } });
-            const p = await context.newPage();
-            await p.goto(base + '/sports');
-            await p.locator(`form[action="profiles/${id}/open"]`).getByRole('button').click();
-            await p.keyboard.type('3691');
-            await p.waitForURL('**/sports');
-            storageState = await context.storageState();
-            await context.close();
+            admin = await lib.signInAdmin(browser);
+            const profile = await lib.addProfile(admin, 'Screens', { pin: '3691' });
+            storageState = await lib.openProfile(browser, profile, { path: '/sports' });
         }
 
         for (const scheme of ['kansas', 'monochrome', 'cardinals'])
-            for (const theme of ['light', 'dark'])
-                for (const width of [320, 390, 430]) {
+            for (const theme of lib.THEMES)
+                for (const width of lib.PHONE_WIDTHS) {
                     const ctx = await contextFor(width, look(scheme, theme));
                     const p = await ctx.newPage();
                     p.on('pageerror', (e) => errors.push(e.message));
@@ -258,7 +233,7 @@ const routes = [
         }
 
         // Without JavaScript: folds still open and close, and each ribbon select has a Go button.
-        for (const width of [320, 390, 430]) {
+        for (const width of lib.PHONE_WIDTHS) {
             const ctx = await contextFor(width, look('kansas', 'light'), false),
                 p = await ctx.newPage();
             for (const path of routes) {
@@ -293,7 +268,7 @@ const routes = [
 
         // Tablet and desktop keep their layouts.
         for (const width of [1024, 1280, 1440])
-            for (const theme of ['light', 'dark']) {
+            for (const theme of lib.THEMES) {
                 const ctx = await contextFor(width, look('kansas', theme));
                 const p = await ctx.newPage();
                 for (const path of routes) {
@@ -315,19 +290,7 @@ const routes = [
             'Release 4: Entertainment, Movies, TV & Streaming, Digital releases and Box office (three views) at 320/390/430, three schemes, light/dark; contrast, overflow, unique IDs, unsplit titles, 44px targets, 64px summaries, first fold open, exclusive and keyboard folds, lead save/share, week strip, ribbon selects with and without JavaScript, search keeps layout, retained 1024/1280/1440 layouts passed.',
         );
     } finally {
-        if (id) {
-            try {
-                await admin.goto(adminBase + '/admin/profiles/' + id);
-                await admin.waitForLoadState('networkidle');
-                await admin.getByRole('button', { name: 'Delete profile…' }).click();
-                await admin.getByRole('button', { name: 'Delete profile', exact: true }).click();
-                await admin.waitForURL('**/admin/profiles?deleted=*');
-            } catch (e) {
-                console.error(
-                    `Could not delete the throwaway profile ${id}; remove it in Admin · Profiles. ${e.message}`,
-                );
-            }
-        }
+        await lib.deleteProfiles();
         await browser.close();
     }
 })().catch((e) => {

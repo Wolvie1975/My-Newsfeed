@@ -1,7 +1,8 @@
 // Folded phone layouts are covered by phone-fronts.browser.cjs; these checks exercise the retained tablet/desktop controls.
+const lib = require('./lib.cjs');
 const assert = require('node:assert/strict'),
     { chromium } = require('playwright');
-const base = process.env.BASE_URL || 'http://localhost:5295';
+const base = lib.base;
 (async () => {
     const b = await chromium.launch();
     try {
@@ -10,7 +11,7 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
             const errors = [];
             p.on('pageerror', (e) => errors.push(e.message));
             for (const width of [744, 768, 1440])
-                for (const theme of ['light', 'dark']) {
+                for (const theme of lib.THEMES) {
                     await p.setViewportSize({ width, height: 1000 });
                     await p.emulateMedia({ colorScheme: theme });
                     await p.goto(base + '/scoreboard');

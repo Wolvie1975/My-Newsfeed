@@ -7,22 +7,22 @@
 // It needs Profiles:Enabled=true and the admin password: it adds two throwaway profiles, marks one as the household
 // admin, and deletes both at the end, even if a check fails; then it marks the profile that was the admin before.
 const { chromium } = require('playwright');
+const lib = require('./lib.cjs');
 const assert = require('node:assert/strict');
 const { audit } = require('./contrast-audit.cjs');
 
-const base = process.env.BASE_URL || 'http://localhost:5295';
-const adminBase = process.env.ADMIN_BASE_URL || base;
-const password = process.env.ADMIN_PASSWORD;
-const shots = process.env.SCREENSHOT_DIR;
+const base = lib.base;
+const adminBase = lib.adminBase;
+const password = lib.adminPassword;
+const shots = lib.shotDir;
 if (!password) {
     console.log('SKIP: adds profiles in admin; set ADMIN_PASSWORD to run it.');
     process.exit(0);
 }
-const widths = (process.env.WIDTHS || '320,390,430,744,820,1024,1440').split(',').map(Number);
-const tag = Date.now().toString(36);
+const widths = lib.widths('320,390,430,744,820,1024,1440');
 const people = [
-    { name: 'zz Cy ' + tag, pin: '1470' },
-    { name: 'zz Di ' + tag, pin: '2580' },
+    { label: 'Cy', pin: '1470' },
+    { label: 'Di', pin: '2580' },
 ];
 const legacy = {
     theme: 'dark',
@@ -40,7 +40,7 @@ const legacy = {
         return;
     }
     const browser = await chromium.launch();
-    const admin = await (await browser.newContext({ viewport: { width: 1440, height: 1000 } })).newPage();
+    const admin = await lib.signInAdmin(browser);
     const errors = [];
     const settle = async (page) => {
         await page.waitForLoadState('networkidle');
@@ -49,29 +49,14 @@ const legacy = {
     const added = [];
     let previousAdmin = null;
     try {
-        await admin.goto(adminBase + '/login?returnUrl=%2Fadmin%2Fprofiles');
-        await admin.locator('#password').fill(password);
-        await admin.getByRole('button', { name: 'Sign in', exact: true }).click();
-        await admin.waitForURL('**/admin/profiles');
         await settle(admin);
-        for (const person of people) {
-            await admin.getByRole('button', { name: 'Add profile', exact: true }).first().click();
-            await admin.locator('#add-name').fill(person.name);
-            await admin.locator('#add-pin').fill(person.pin);
-            await admin.locator('#add-confirm').fill(person.pin);
-            await admin.locator('form[aria-labelledby="add-title"] button[type="submit"]').click();
-            await admin.getByText(`Added ${person.name}.`).waitFor();
-            const href = await admin
-                .locator('.adm-table a.adm-row-title', { hasText: person.name })
-                .getAttribute('href');
-            added.push({ ...person, id: Number(href.match(/(\d+)$/)[1]) });
-        }
+        for (const person of people) added.push(await lib.addProfile(admin, person.label, person));
         const [cy, di] = added;
         // Note which profile is the household admin now, so it can be put back at the end.
         for (const href of await admin
             .locator('.adm-table a.adm-row-title')
             .evaluateAll((links) => links.map((l) => l.getAttribute('href')))) {
-            await admin.goto(base + '/' + href.replace(/^\//, ''));
+            await admin.goto(adminBase + '/' + href.replace(/^\//, ''));
             await settle(admin);
             if ((await admin.locator('[aria-labelledby="admin-l"]').getAttribute('aria-checked')) === 'true') {
                 previousAdmin = href;
@@ -197,7 +182,7 @@ const legacy = {
 
         // Settings at every width and theme, for Di.
         const p = one.page;
-        for (const theme of ['light', 'dark'])
+        for (const theme of lib.THEMES)
             for (const width of widths) {
                 await p.setViewportSize({ width, height: 900 });
                 if (!(await p.locator('[data-settings-section="appearance"]').evaluate((n) => n.open)))
@@ -226,17 +211,7 @@ const legacy = {
             `Profile settings at ${widths.join('/')}px light/dark: import once, theme on <html>, two devices, clean second profile and the admin link passed.`,
         );
     } finally {
-        for (const person of added) {
-            try {
-                await admin.goto(adminBase + '/admin/profiles/' + person.id);
-                await settle(admin);
-                await admin.getByRole('button', { name: 'Delete profile…' }).click();
-                await admin.getByRole('button', { name: 'Delete profile', exact: true }).click();
-                await admin.waitForURL('**/admin/profiles?deleted=*');
-            } catch (e) {
-                console.error(`Could not delete ${person.name}; remove it in Admin · Profiles. ${e.message}`);
-            }
-        }
+        await lib.deleteProfiles();
         // Deleting Cy cleared the household admin; mark the one that was marked before.
         if (previousAdmin) {
             try {

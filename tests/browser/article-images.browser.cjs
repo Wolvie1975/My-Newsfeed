@@ -1,9 +1,10 @@
 // Read-only preview checks: image requests use controlled fixtures; articles and preferences are not changed.
 const { chromium } = require('playwright');
+const lib = require('./lib.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const base = process.env.BASE_URL || 'http://localhost:5397';
-const shots = process.env.SCREENSHOT_DIR;
+const base = lib.base;
+const shots = lib.shotDir;
 const selector = '[data-article-story="feature"]';
 const fixtures = {
     wide: [1280, 720, '#3b738c'],
@@ -36,7 +37,7 @@ async function ready(page, story, quality) {
     if (shots) fs.mkdirSync(shots, { recursive: true });
     try {
         for (const width of [320, 390, 430, 744, 1440]) {
-            for (const theme of ['light', 'dark']) {
+            for (const theme of lib.THEMES) {
                 for (const kind of ['wide', 'standard', 'square', 'compact', 'portrait', 'tiny', 'broken']) {
                     const context = await browser.newContext({ viewport: { width, height: 1000 }, colorScheme: theme });
                     await context.addInitScript(
@@ -117,7 +118,7 @@ async function ready(page, story, quality) {
             }
         }
         for (const width of [390, 1440])
-            for (const theme of ['light', 'dark'])
+            for (const theme of lib.THEMES)
                 for (const kind of ['wide', 'compact', 'broken']) {
                     const context = await browser.newContext({ viewport: { width, height: 1000 }, colorScheme: theme });
                     await context.addInitScript((theme) => localStorage.setItem('theme', theme), theme);
@@ -329,7 +330,7 @@ async function ready(page, story, quality) {
         await context.close();
         // Blazor enhanced navigation can activate a noscript stylesheet link.
         for (const width of [320, 390, 430, 744, 1440]) {
-            for (const theme of ['light', 'dark']) {
+            for (const theme of lib.THEMES) {
                 const navContext = await browser.newContext({ viewport: { width, height: 1000 }, colorScheme: theme });
                 await navContext.route('**/*', (route) => {
                     if (

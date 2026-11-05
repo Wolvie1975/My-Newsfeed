@@ -1,8 +1,9 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const { chromium } = require('playwright');
-const base = process.env.BASE_URL || 'http://localhost:5295';
-const root = process.env.SCREENSHOT_DIR || 'test-results/';
+const lib = require('./lib.cjs');
+const base = lib.base;
+const root = lib.screenshots('watch-results');
 
 (async () => {
     fs.mkdirSync(root, { recursive: true });
@@ -13,7 +14,7 @@ const root = process.env.SCREENSHOT_DIR || 'test-results/';
             const errors = [];
             page.on('pageerror', (error) => errors.push(error.message));
             for (const width of [320, 390, 430, 768, 1440]) {
-                for (const theme of ['light', 'dark']) {
+                for (const theme of lib.THEMES) {
                     await page.setViewportSize({ width, height: 1000 });
                     await page.emulateMedia({ colorScheme: theme });
                     const response = await page.goto(base + '/watch?q=arrow&sort=popular');

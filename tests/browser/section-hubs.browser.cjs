@@ -1,7 +1,8 @@
+const lib = require('./lib.cjs');
 const assert = require('node:assert/strict'),
     { chromium } = require('playwright');
-const base = process.env.BASE_URL || 'http://localhost:5295',
-    root = process.env.SCREENSHOT_DIR || 'test-results/';
+const base = lib.base,
+    root = lib.screenshots('section-hubs');
 (async () => {
     const b = await chromium.launch();
     try {
@@ -10,7 +11,7 @@ const base = process.env.BASE_URL || 'http://localhost:5295',
         p.on('pageerror', (e) => errors.push(e.message));
         for (const route of ['sports', 'entertainment'])
             for (const width of [768, 1440])
-                for (const theme of ['light', 'dark']) {
+                for (const theme of lib.THEMES) {
                     await p.setViewportSize({ width, height: 950 });
                     await p.emulateMedia({ colorScheme: theme });
                     assert.equal((await p.goto(base + '/' + route)).status(), 200);

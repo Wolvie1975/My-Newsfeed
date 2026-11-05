@@ -1,9 +1,9 @@
+const lib = require('./lib.cjs');
 const assert = require('node:assert/strict'),
     { chromium } = require('playwright');
-const base = process.env.BASE_URL || 'http://localhost:5295',
-    adminBase = process.env.ADMIN_BASE_URL || base,
-    password = process.env.ADMIN_PASSWORD,
-    root = process.env.SCREENSHOT_DIR;
+const base = lib.base,
+    password = lib.adminPassword,
+    root = lib.shotDir;
 const sections = [
     ['sports/news', 'Sports headlines', 'sports-news', '#source'],
     ['sports/news/basketball', 'Sports headlines', 'mens-college-basketball-news', '#source'],
@@ -20,46 +20,17 @@ const sections = [
     const browser = await chromium.launch({
         args: ['--disable-web-security', '--unsafely-treat-insecure-origin-as-secure=' + base],
     });
-    let admin = null;
-    let id = null;
+    let admin;
     let storageState = process.env.STORAGE_STATE;
 
     try {
         if (profiles && !storageState) {
-            admin = await (await browser.newContext({ viewport: { width: 1440, height: 1000 } })).newPage();
-            await admin.goto(adminBase + '/login?returnUrl=%2Fadmin%2Fprofiles');
-            await admin.locator('#password').fill(password);
-            await admin.getByRole('button', { name: 'Sign in', exact: true }).click();
-            await admin.waitForURL('**/admin/profiles');
-            await admin.waitForLoadState('networkidle');
+            admin = await lib.signInAdmin(browser);
 
-            const name = 'zz SportsNews ' + Date.now().toString(36);
-            for (let attempt = 0; attempt < 12 && !(await admin.locator('#add-name').isVisible()); attempt++) {
-                await admin.getByRole('button', { name: 'Add profile', exact: true }).first().click();
-                try {
-                    await admin.locator('#add-name').waitFor({ state: 'visible', timeout: 1500 });
-                } catch {
-                    if (attempt === 11) throw new Error('Admin Add profile did not become interactive');
-                }
-            }
-            await admin.locator('#add-name').fill(name);
-            await admin.locator('#add-pin').fill('3691');
-            await admin.locator('#add-confirm').fill('3691');
-            await admin.locator('form[aria-labelledby="add-title"] button[type="submit"]').click();
-            await admin.getByText(`Added ${name}.`).waitFor();
-
-            id = Number(
-                (await admin.locator('.adm-table a.adm-row-title', { hasText: name }).getAttribute('href')).match(
-                    /(\d+)$/,
-                )[1],
-            );
-
+            const profile = await lib.addProfile(admin, 'SportsNews', { pin: '3691' });
             const context = await browser.newContext({ viewport: { width: 390, height: 900 } });
             const p = await context.newPage();
-            await p.goto(base + '/sports/news');
-            await p.locator(`form[action="profiles/${id}/open"]`).getByRole('button').click();
-            await p.keyboard.type('3691');
-            await p.waitForURL('**/sports/news');
+            await lib.openProfileIn(p, profile, '/sports/news');
             const saved = p.waitForResponse(
                 (r) => new URL(r.url()).pathname === '/api/me/settings' && r.request().method() === 'PUT',
             );
@@ -140,7 +111,7 @@ const sections = [
             await p.waitForURL((u) => u.searchParams.get('source') === ids[0]);
             assert.equal(new URL(p.url()).pathname, '/' + route);
             for (const width of [320, 390, 430, 768, 1440])
-                for (const theme of ['light', 'dark']) {
+                for (const theme of lib.THEMES) {
                     await p.setViewportSize({ width, height: 900 });
                     await p.emulateMedia({ colorScheme: theme });
                     await p.goto(base + '/' + route);
@@ -231,23 +202,7 @@ const sections = [
             'Sports headline category dropdown, existing F1/Big12 readers, legacy links, source filters, scoped JS/no-JS paging, Headlines exclusion and mobile light/dark navigation passed.',
         );
     } finally {
-        if (id && admin) {
-            try {
-                await admin.goto(adminBase + '/admin/profiles/' + id);
-                await admin.waitForLoadState('networkidle');
-                const confirm = admin.getByRole('button', { name: 'Delete profile', exact: true });
-                for (let attempt = 0; attempt < 12 && !(await confirm.isVisible()); attempt++) {
-                    await admin.getByRole('button', { name: 'Delete profile…' }).click();
-                    try {
-                        await confirm.waitFor({ state: 'visible', timeout: 1500 });
-                    } catch {}
-                }
-                await confirm.click();
-                await admin.waitForURL('**/admin/profiles?deleted=*');
-            } catch (e) {
-                console.error(`Could not delete throwaway profile ${id}: ${e.message}`);
-            }
-        }
+        await lib.deleteProfiles();
         await browser.close();
     }
 })().catch((e) => {

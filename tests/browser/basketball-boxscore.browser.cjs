@@ -1,6 +1,7 @@
 // Run the championship rendering test with BASKETBALL_PREVIEW_FILE first.
 // This fixture check uses generated HTML, never a production cache row or route.
 const { chromium } = require('playwright');
+const lib = require('./lib.cjs');
 const assert = require('node:assert/strict');
 const { pathToFileURL } = require('node:url');
 const previewFile = process.env.BASKETBALL_PREVIEW_FILE;
@@ -13,7 +14,7 @@ if (!previewFile) {
     try {
         const page = await browser.newPage();
         await page.goto(pathToFileURL(previewFile).href);
-        for (const theme of ['light', 'dark'])
+        for (const theme of lib.THEMES)
             for (const width of [390, 768, 1440]) {
                 await page.setViewportSize({ width, height: 900 });
                 await page.evaluate((t) => (document.documentElement.dataset.theme = t), theme);
@@ -59,8 +60,7 @@ if (!previewFile) {
                 if (width >= 1000) assert(Math.abs(a.y - b.y) < 2);
                 else assert(b.y >= a.y + a.height);
                 assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
-                if (process.env.SCREENSHOT_DIR)
-                    await page.screenshot({ path: `${process.env.SCREENSHOT_DIR}/basketball-${width}-${theme}.png` });
+                if (lib.shotDir) await page.screenshot({ path: `${lib.shotDir}/basketball-${width}-${theme}.png` });
             }
         console.log(
             'Six championship fixture width/theme layouts passed: team matching, all 13 columns, 17 players, supplied totals, desktop pairing and keyboard-accessible mobile scrolling.',

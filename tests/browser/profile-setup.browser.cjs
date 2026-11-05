@@ -1,13 +1,13 @@
 // U4: new edition setup (/editions/new, profiles handoff 6.2) from the picker's "+ Start a new edition". Needs profiles
 // on and ADMIN_PASSWORD; every profile it creates is deleted through Admin · Profiles at the end.
 const { chromium } = require('playwright');
+const lib = require('./lib.cjs');
 const assert = require('node:assert/strict');
 const { audit } = require('./contrast-audit.cjs');
 
-const base = process.env.BASE_URL || 'http://localhost:5295';
-const adminBase = process.env.ADMIN_BASE_URL || base;
-const shots = process.env.SCREENSHOT_DIR;
-const password = process.env.ADMIN_PASSWORD;
+const base = lib.base;
+const shots = lib.shotDir;
+const password = lib.adminPassword;
 
 (async () => {
     const profiles = (await fetch(base + '/editions', { headers: { Accept: 'text/html' } })).status !== 404;
@@ -36,15 +36,10 @@ const password = process.env.ADMIN_PASSWORD;
         return context;
     };
     try {
-        admin = await (await browser.newContext({ viewport: { width: 1440, height: 1000 } })).newPage();
-        await admin.goto(adminBase + '/login?returnUrl=%2Fadmin%2Fprofiles');
-        await admin.locator('#password').fill(password);
-        await admin.getByRole('button', { name: 'Sign in', exact: true }).click();
-        await admin.waitForURL('**/admin/profiles');
-
+        admin = await lib.signInAdmin(browser);
         // Layout: 320/390/430 light and dark, and the retained wider widths.
         for (const width of [320, 390, 430, 768, 1440])
-            for (const theme of ['light', 'dark']) {
+            for (const theme of lib.THEMES) {
                 const ctx = await contextFor(width, theme);
                 const p = await ctx.newPage();
                 p.on('pageerror', (e) => errors.push(e.message));
@@ -195,20 +190,13 @@ const password = process.env.ADMIN_PASSWORD;
         // Delete every profile this check made (Admin · Profiles, which also removes their devices).
         for (const name of created) {
             try {
-                await admin.goto(adminBase + '/admin/profiles');
-                await admin.waitForLoadState('networkidle');
-                const href = await admin.locator('.adm-table a.adm-row-title', { hasText: name }).getAttribute('href');
-                await admin.goto(adminBase + '/admin/profiles/' + href.match(/(\d+)$/)[1]);
-                await admin.waitForLoadState('networkidle');
-                await admin.getByRole('button', { name: 'Delete profile…' }).click();
-                await admin.getByRole('button', { name: 'Delete profile', exact: true }).click();
-                await admin.waitForURL('**/admin/profiles?deleted=*');
+                await lib.adoptProfile(admin, name);
             } catch (e) {
-                console.error(
-                    `Could not delete the throwaway profile "${name}"; remove it in Admin · Profiles. ${e.message}`,
-                );
+                process.exitCode = 1;
+                console.error(`Could not find the throwaway profile "${name}" in Admin: ${e.message.split('\n')[0]}`);
             }
         }
+        await lib.deleteProfiles();
         await browser.close();
     }
 })().catch((e) => {

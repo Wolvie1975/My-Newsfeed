@@ -1,8 +1,8 @@
+const lib = require('./lib.cjs');
 const assert = require('node:assert/strict'),
     { chromium } = require('playwright');
-const base = process.env.BASE_URL || 'http://localhost:5295',
-    root = process.env.SCREENSHOT_DIR;
-const adminBase = process.env.ADMIN_BASE_URL || base;
+const root = lib.shotDir;
+const adminBase = lib.adminBase;
 if (!process.env.CATEGORY_ADMIN_PASSWORD) {
     console.log('SKIP: changes admin category hubs; set CATEGORY_ADMIN_PASSWORD to run it.');
     process.exit(0);
@@ -18,7 +18,7 @@ if (!process.env.CATEGORY_ADMIN_PASSWORD) {
         await p.getByRole('button', { name: 'Sign in', exact: true }).click();
         await p.waitForURL('**/admin/categories');
         for (const width of [320, 390, 430, 768, 1440])
-            for (const theme of ['light', 'dark']) {
+            for (const theme of lib.THEMES) {
                 await p.setViewportSize({ width, height: 900 });
                 await p.emulateMedia({ colorScheme: theme });
                 await p.goto(adminBase + '/admin/categories');

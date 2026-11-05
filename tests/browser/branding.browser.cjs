@@ -1,7 +1,8 @@
 const { chromium } = require('playwright');
+const lib = require('./lib.cjs');
 const assert = require('node:assert/strict');
-const base = process.env.BASE_URL || 'http://localhost:5295',
-    root = process.env.SCREENSHOT_DIR;
+const base = lib.base,
+    root = lib.shotDir;
 (async () => {
     const browser = await chromium.launch();
     try {
@@ -67,7 +68,7 @@ const base = process.env.BASE_URL || 'http://localhost:5295',
         assert(styles.some((h) => h.includes('myNewspaper.Web.')));
         for (const href of styles) assert.equal((await page.request.get(href)).status(), 200, href);
         for (const width of [320, 390, 430, 768, 1440])
-            for (const theme of ['light', 'dark']) {
+            for (const theme of lib.THEMES) {
                 await page.setViewportSize({ width, height: 900 });
                 await page.emulateMedia({ colorScheme: theme });
                 for (const path of ['/', '/sports/news', '/entertainment/news', '/settings']) {

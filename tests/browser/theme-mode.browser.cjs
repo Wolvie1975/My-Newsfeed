@@ -1,6 +1,7 @@
 // Run against a local app: NODE_PATH=<playwright node_modules> node tests/browser/theme-mode.browser.cjs
 // Optional NEWSFEED_TEST_URL overrides the local preview URL.
 const { chromium } = require('playwright');
+const lib = require('./lib.cjs');
 const assert = require('node:assert/strict');
 (async () => {
     const browser = await chromium.launch({ headless: true });
@@ -10,7 +11,7 @@ const assert = require('node:assert/strict');
         const errors = [];
         page.on('pageerror', (error) => errors.push(error.message));
         await page.clock.install({ time: new Date('2026-06-21T17:00:00Z') });
-        const base = process.env.BASE_URL || 'http://localhost:5295';
+        const base = lib.base;
         await page.goto(base + '/settings');
         const mode = (value) => page.locator('input[data-theme-mode][value="' + value + '"]');
         const theme = () => page.locator('html').getAttribute('data-theme');

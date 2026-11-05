@@ -2,9 +2,10 @@
 // Homepage scoreboard box: the Sport dropdown lists today's leagues, filters in place without moving the page, survives
 // the five-minute refresh and bookmarks, and works without JavaScript.
 const { chromium } = require('playwright');
+const lib = require('./lib.cjs');
 const assert = require('node:assert/strict');
-const base = process.env.BASE_URL || 'http://localhost:5295';
-const shots = process.env.SCREENSHOT_DIR || 'test-results/';
+const base = lib.base;
+const shots = lib.screenshots('home-scoreboard-sport');
 (async () => {
     const browser = await chromium.launch();
     try {
@@ -122,7 +123,7 @@ const shots = process.env.SCREENSHOT_DIR || 'test-results/';
         assert.equal(await box.locator('#home-scoreboard-show').inputValue(), '');
 
         // Phones, light and dark: the dropdown fits, with no sideways scrolling.
-        for (const scheme of ['light', 'dark'])
+        for (const scheme of lib.THEMES)
             for (const width of [1024, 1280]) {
                 const context = await browser.newContext({ viewport: { width, height: 900 }, colorScheme: scheme });
                 const p = await context.newPage();

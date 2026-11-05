@@ -1,8 +1,9 @@
+const lib = require('./lib.cjs');
 const assert = require('node:assert/strict'),
     fs = require('fs'),
     { chromium } = require('playwright');
-const base = process.env.BASE_URL || 'http://172.18.0.5:8080',
-    root = process.env.SCREENSHOT_DIR || 'test-results/';
+const base = lib.base,
+    root = lib.screenshots('publisher-layout');
 (async () => {
     const b = await chromium.launch();
     try {
@@ -12,7 +13,7 @@ const base = process.env.BASE_URL || 'http://172.18.0.5:8080',
                 r.fulfill({ contentType: 'text/css', body: fs.readFileSync(process.env.PREVIEW_CSS, 'utf8') }),
             );
         for (const width of [320, 390, 430, 700, 753, 900, 1024, 1150, 1440])
-            for (const theme of ['light', 'dark'])
+            for (const theme of lib.THEMES)
                 for (const route of ['news/all', 'sports/news', 'entertainment/news']) {
                     // Headlines has its own folded phone front (headlines-phone).
                     if (route === 'news/all' && width < 1024) continue;

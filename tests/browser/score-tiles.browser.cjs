@@ -3,6 +3,7 @@
 // markup, so it doesn't depend on games being live: the strip in the dark lead block (170px cards), the strip on a
 // light band (150px) and the grid, at 320/390/430px. Needs no server; BASE_URL is ignored.
 const { chromium } = require('playwright');
+const lib = require('./lib.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -28,7 +29,7 @@ const layouts = {
     const browser = await chromium.launch();
     try {
         const page = await browser.newPage();
-        for (const width of [320, 390, 430]) {
+        for (const width of lib.PHONE_WIDTHS) {
             await page.setViewportSize({ width, height: 800 });
             for (const [name, markup] of Object.entries(layouts)) {
                 await page.setContent(

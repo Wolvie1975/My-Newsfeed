@@ -1,9 +1,9 @@
 // Folded phone layouts are covered by phone-fronts.browser.cjs; these checks exercise the retained tablet/desktop controls.
 const { chromium } = require('playwright');
+const lib = require('./lib.cjs');
 const assert = require('node:assert/strict');
-const base = process.env.BASE_URL || 'http://localhost:5295';
-const adminBase = process.env.ADMIN_BASE_URL || base;
-const password = process.env.ADMIN_PASSWORD;
+const base = lib.base;
+const password = lib.adminPassword;
 
 (async () => {
     const profiles = (await fetch(base + '/editions', { headers: { Accept: 'text/html' } })).status !== 404;
@@ -15,48 +15,16 @@ const password = process.env.ADMIN_PASSWORD;
     const browser = await chromium.launch({
         args: ['--disable-web-security', '--unsafely-treat-insecure-origin-as-secure=' + base],
     });
-    let admin = null;
-    let id = null;
+    let admin;
     let storageState = process.env.STORAGE_STATE;
 
     try {
         if (profiles && !storageState) {
-            admin = await (await browser.newContext({ viewport: { width: 1440, height: 1000 } })).newPage();
-            await admin.goto(adminBase + '/login?returnUrl=%2Fadmin%2Fprofiles');
-            await admin.locator('#password').fill(password);
-            await admin.getByRole('button', { name: 'Sign in', exact: true }).click();
-            await admin.waitForURL('**/admin/profiles');
-            await admin.waitForLoadState('networkidle');
+            admin = await lib.signInAdmin(browser);
 
-            const name = 'zz HomeTop25 ' + Date.now().toString(36);
-            for (let attempt = 0; attempt < 12 && !(await admin.locator('#add-name').isVisible()); attempt++) {
-                await admin.getByRole('button', { name: 'Add profile', exact: true }).first().click();
-                try {
-                    await admin.locator('#add-name').waitFor({ state: 'visible', timeout: 1500 });
-                } catch {
-                    if (attempt === 11) throw new Error('Admin Add profile did not become interactive');
-                }
-            }
-            await admin.locator('#add-name').fill(name);
-            await admin.locator('#add-pin').fill('3691');
-            await admin.locator('#add-confirm').fill('3691');
-            await admin.locator('form[aria-labelledby="add-title"] button[type="submit"]').click();
-            await admin.getByText(`Added ${name}.`).waitFor();
+            const profile = await lib.addProfile(admin, 'HomeTop25', { pin: '3691' });
 
-            id = Number(
-                (await admin.locator('.adm-table a.adm-row-title', { hasText: name }).getAttribute('href')).match(
-                    /(\d+)$/,
-                )[1],
-            );
-
-            const context = await browser.newContext({ viewport: { width: 390, height: 900 } });
-            const p = await context.newPage();
-            await p.goto(base + '/');
-            await p.locator(`form[action="profiles/${id}/open"]`).getByRole('button').click();
-            await p.keyboard.type('3691');
-            await p.waitForURL(base + '/');
-            storageState = await context.storageState();
-            await context.close();
+            storageState = await lib.openProfile(browser, profile, { path: '/' });
         }
 
         const context = await browser.newContext({ storageState });
@@ -232,23 +200,7 @@ const password = process.env.ADMIN_PASSWORD;
             'Homepage Top 25: desktop sport pills (short names, none on phone/iPad), in-place switch by pill and dropdown (no reload, scroll kept), available source selection, matching full-page link, ranks 1–25, expanded desktop/scrolling mobile table, no standalone F1, responsive widths, no-JS Apply, no JS errors, health 200 passed.',
         );
     } finally {
-        if (id && admin) {
-            try {
-                await admin.goto(adminBase + '/admin/profiles/' + id);
-                await admin.waitForLoadState('networkidle');
-                const confirm = admin.getByRole('button', { name: 'Delete profile', exact: true });
-                for (let attempt = 0; attempt < 12 && !(await confirm.isVisible()); attempt++) {
-                    await admin.getByRole('button', { name: 'Delete profile…' }).click();
-                    try {
-                        await confirm.waitFor({ state: 'visible', timeout: 1500 });
-                    } catch {}
-                }
-                await confirm.click();
-                await admin.waitForURL('**/admin/profiles?deleted=*');
-            } catch (e) {
-                console.error(`Could not delete throwaway profile ${id}: ${e.message}`);
-            }
-        }
+        await lib.deleteProfiles();
         await browser.close();
     }
 })().catch((e) => {

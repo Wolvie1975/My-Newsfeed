@@ -5,13 +5,13 @@
 // Topics belong to a profile, so this needs profiles on and ADMIN_PASSWORD: it adds two throwaway profiles and deletes
 // them (and with them their topics) at the end.
 const { chromium } = require('playwright');
+const lib = require('./lib.cjs');
 const assert = require('node:assert/strict');
 const { audit } = require('./contrast-audit.cjs');
 
-const base = process.env.BASE_URL || 'http://localhost:5295';
-const adminBase = process.env.ADMIN_BASE_URL || base;
-const shots = process.env.SCREENSHOT_DIR;
-const password = process.env.ADMIN_PASSWORD;
+const base = lib.base;
+const shots = lib.shotDir;
+const password = lib.adminPassword;
 
 (async () => {
     const profiles = (await fetch(base + '/editions', { headers: { Accept: 'text/html' } })).status !== 404;
@@ -29,35 +29,11 @@ const password = process.env.ADMIN_PASSWORD;
     }
     const browser = await chromium.launch();
     const errors = [];
-    const ids = [];
     let admin = null;
     const tag = Date.now().toString(36);
     // Adds a profile in Admin and opens it on a new browser; returns that browser's saved state.
-    const openProfile = async (label) => {
-        const name = `zz ${label} ${tag}`;
-        await admin.goto(adminBase + '/admin/profiles', { waitUntil: 'networkidle' });
-        await admin.getByRole('button', { name: 'Add profile', exact: true }).first().click();
-        await admin.locator('#add-name').fill(name);
-        await admin.locator('#add-pin').fill('3691');
-        await admin.locator('#add-confirm').fill('3691');
-        await admin.locator('form[aria-labelledby="add-title"] button[type="submit"]').click();
-        await admin.getByText(`Added ${name}.`).waitFor();
-        const id = Number(
-            (await admin.locator('.adm-table a.adm-row-title', { hasText: name }).getAttribute('href')).match(
-                /(\d+)$/,
-            )[1],
-        );
-        ids.push(id);
-        const context = await browser.newContext({ viewport: { width: 390, height: 900 } });
-        const p = await context.newPage();
-        await p.goto(base + '/news');
-        await p.locator(`form[action="profiles/${id}/open"]`).getByRole('button').click();
-        await p.keyboard.type('3691');
-        await p.waitForURL((u) => u.pathname === '/news');
-        const state = await context.storageState();
-        await context.close();
-        return state;
-    };
+    const openProfile = async (label) =>
+        lib.openProfile(browser, await lib.addProfile(admin, label, { pin: '3691' }), { path: '/news' });
     const layout = (page) =>
         page.evaluate(() => {
             const visible = (n) => n.offsetParent !== null || getComputedStyle(n).position === 'fixed';
@@ -75,11 +51,7 @@ const password = process.env.ADMIN_PASSWORD;
             };
         });
     try {
-        admin = await (await browser.newContext({ viewport: { width: 1440, height: 1000 } })).newPage();
-        await admin.goto(adminBase + '/login?returnUrl=%2Fadmin%2Fprofiles');
-        await admin.locator('#password').fill(password);
-        await admin.getByRole('button', { name: 'Sign in', exact: true }).click();
-        await admin.waitForURL('**/admin/profiles');
+        admin = await lib.signInAdmin(browser);
         const mine = await openProfile('Topics');
         const theirs = await openProfile('Other');
 
@@ -130,7 +102,7 @@ const password = process.env.ADMIN_PASSWORD;
         await p.waitForTimeout(200);
         const hidden = await p.locator('[data-topic-hidden]').innerText();
         if (hidden) assert.match(hidden, /hidden by Except: Chiefs$/);
-        for (const theme of ['light', 'dark'])
+        for (const theme of lib.THEMES)
             for (const width of [320, 390, 430, 1440]) {
                 await p.setViewportSize({ width, height: 900 });
                 await p.emulateMedia({ colorScheme: theme });
@@ -165,7 +137,7 @@ const password = process.env.ADMIN_PASSWORD;
             rows.every(([share, save, mark]) => share && save && mark),
             'Share, Save and the phrase marked on every row',
         );
-        for (const theme of ['light', 'dark'])
+        for (const theme of lib.THEMES)
             for (const width of [320, 390, 430, 1440]) {
                 await p.setViewportSize({ width, height: 900 });
                 await p.evaluate((t) => document.documentElement.setAttribute('data-theme', t), theme);
@@ -243,19 +215,7 @@ const password = process.env.ADMIN_PASSWORD;
             'Your topics: preview verdicts (none, broad, good), chart, marked matches, Except count; follow, topic page (Share/Save/marks, Mark as read), front box and phone fold, edit, another profile 404, no-JS follow and error, stop following; 320/390/430/1440 light/dark overflow, contrast, ids, 44px targets passed.',
         );
     } finally {
-        for (const id of ids) {
-            try {
-                await admin.goto(adminBase + '/admin/profiles/' + id);
-                await admin.waitForLoadState('networkidle');
-                await admin.getByRole('button', { name: 'Delete profile…' }).click();
-                await admin.getByRole('button', { name: 'Delete profile', exact: true }).click();
-                await admin.waitForURL('**/admin/profiles?deleted=*');
-            } catch (e) {
-                console.error(
-                    `Could not delete the throwaway profile ${id}; remove it in Admin · Profiles. ${e.message}`,
-                );
-            }
-        }
+        await lib.deleteProfiles();
         await browser.close();
     }
 })().catch((e) => {

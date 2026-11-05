@@ -3,9 +3,10 @@
 // colour actually behind it — 4.5:1, or 3:1 for large text (24px+, or 18.66px+ bold). Text over pictures is skipped.
 // REPORT=1 prints every failure instead of stopping at the first page with one; SCHEMES and PAGES narrow the run.
 const { chromium } = require('playwright');
+const lib = require('./lib.cjs');
 const assert = require('node:assert/strict');
 const { audit } = require('./contrast-audit.cjs');
-const base = process.env.BASE_URL || 'http://localhost:5295';
+const base = lib.base;
 const report = process.env.REPORT === '1';
 
 const schemes = [
@@ -35,7 +36,7 @@ const widths = [390, 1440];
     let failures = 0;
     try {
         for (const scheme of schemes)
-            for (const theme of ['light', 'dark'])
+            for (const theme of lib.THEMES)
                 for (const width of widths) {
                     const context = await browser.newContext({ viewport: { width, height: 900 } });
                     await context.addInitScript(

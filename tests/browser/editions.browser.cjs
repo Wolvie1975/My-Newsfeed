@@ -7,22 +7,21 @@
 // It needs Profiles:Enabled=true on the site and the admin password: it adds two throwaway profiles in Admin ·
 // Profiles and deletes them again at the end, even if a check fails.
 const { chromium } = require('playwright');
+const lib = require('./lib.cjs');
 const assert = require('node:assert/strict');
 const { audit } = require('./contrast-audit.cjs');
 
-const base = process.env.BASE_URL || 'http://localhost:5295';
-const adminBase = process.env.ADMIN_BASE_URL || base;
-const password = process.env.ADMIN_PASSWORD;
-const shots = process.env.SCREENSHOT_DIR;
+const base = lib.base;
+const password = lib.adminPassword;
+const shots = lib.shotDir;
 if (!password) {
     console.log('SKIP: adds profiles in admin; set ADMIN_PASSWORD to run it.');
     process.exit(0);
 }
-const widths = (process.env.WIDTHS || '320,390,430,744,820,1024,1440').split(',').map(Number);
-const tag = Date.now().toString(36);
+const widths = lib.widths('320,390,430,744,820,1024,1440');
 const people = [
-    { name: 'zz Ann ' + tag, color: 'Teal', pin: '1357' },
-    { name: 'zz Bo ' + tag, color: 'Violet', pin: '2468' },
+    { label: 'Ann', color: 'Teal', pin: '1357' },
+    { label: 'Bo', color: 'Violet', pin: '2468' },
 ];
 
 (async () => {
@@ -31,35 +30,19 @@ const people = [
         return;
     }
     const browser = await chromium.launch();
-    const adminContext = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
-    const admin = await adminContext.newPage();
+    let admin;
     const errors = [];
     const watch = (page) => page.on('pageerror', (e) => errors.push(e.message));
-    watch(admin);
     const settle = async (page) => {
         await page.waitForLoadState('networkidle');
         await page.waitForTimeout(300);
     };
     const added = [];
     try {
-        await admin.goto(adminBase + '/login?returnUrl=%2Fadmin%2Fprofiles');
-        await admin.locator('#password').fill(password);
-        await admin.getByRole('button', { name: 'Sign in', exact: true }).click();
-        await admin.waitForURL('**/admin/profiles');
+        admin = await lib.signInAdmin(browser);
+        watch(admin);
         await settle(admin);
-        for (const person of people) {
-            await admin.getByRole('button', { name: 'Add profile', exact: true }).first().click();
-            await admin.locator('#add-name').fill(person.name);
-            await admin.locator('.adm-swatch', { hasText: person.color }).click();
-            await admin.locator('#add-pin').fill(person.pin);
-            await admin.locator('#add-confirm').fill(person.pin);
-            await admin.locator('form[aria-labelledby="add-title"] button[type="submit"]').click();
-            await admin.getByText(`Added ${person.name}.`).waitFor();
-            const href = await admin
-                .locator('.adm-table a.adm-row-title', { hasText: person.name })
-                .getAttribute('href');
-            added.push({ ...person, id: Number(href.match(/(\d+)$/)[1]) });
-        }
+        for (const person of people) added.push(await lib.addProfile(admin, person.label, person));
 
         // A new device: every page goes to the picker, and coming back lands where it started.
         const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
@@ -110,7 +93,7 @@ const people = [
         );
 
         // Layout at every width and theme, the picker and an opened page with the edition chip.
-        for (const theme of ['light', 'dark'])
+        for (const theme of lib.THEMES)
             for (const width of widths) {
                 await p.setViewportSize({ width, height: 900 });
                 await p.evaluate((t) => localStorage.setItem('theme', t), theme);
@@ -217,17 +200,7 @@ const people = [
             `Editions at ${widths.join('/')}px light/dark: gate, PIN pad, wrong PIN, lockout, no-JS form, chip, menu, script gate and sign-out passed.`,
         );
     } finally {
-        for (const person of added) {
-            try {
-                await admin.goto(adminBase + '/admin/profiles/' + person.id);
-                await settle(admin);
-                await admin.getByRole('button', { name: 'Delete profile…' }).click();
-                await admin.getByRole('button', { name: 'Delete profile', exact: true }).click();
-                await admin.waitForURL('**/admin/profiles?deleted=*');
-            } catch (e) {
-                console.error(`Could not delete ${person.name}; remove it in Admin · Profiles. ${e.message}`);
-            }
-        }
+        await lib.deleteProfiles();
         await browser.close();
     }
 })().catch((e) => {

@@ -1,6 +1,7 @@
 const { chromium } = require('playwright');
+const lib = require('./lib.cjs');
 const assert = require('node:assert/strict');
-const base = process.env.BASE_URL || 'http://localhost:5295';
+const base = lib.base;
 const path = process.env.BASEBALL_PATH || '/box-score/baseball/mlb/401930515';
 (async () => {
     const browser = await chromium.launch();
@@ -8,7 +9,7 @@ const path = process.env.BASEBALL_PATH || '/box-score/baseball/mlb/401930515';
         const page = await browser.newPage(),
             errors = [];
         page.on('pageerror', (e) => errors.push(e.message));
-        for (const theme of ['light', 'dark']) {
+        for (const theme of lib.THEMES) {
             await page.goto(base + path);
             await page.evaluate((t) => localStorage.setItem('theme', t), theme);
             for (const width of [390, 768, 1180, 1440]) {
@@ -40,9 +41,9 @@ const path = process.env.BASEBALL_PATH || '/box-score/baseball/mlb/401930515';
                 assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
                 await page.locator('.baseball-extra summary').first().click();
                 assert(await page.locator('.baseball-extra[open] table').count());
-                if (process.env.SCREENSHOT_DIR)
+                if (lib.shotDir)
                     await page.screenshot({
-                        path: `${process.env.SCREENSHOT_DIR}/baseball-${width}-${theme}.png`,
+                        path: `${lib.shotDir}/baseball-${width}-${theme}.png`,
                         fullPage: true,
                     });
             }

@@ -2,8 +2,9 @@
 // the tabs together hold exactly what All holds (Other catches uncategorized channels), each tab shows only its own
 // videos and channels, phones choose with a dropdown, and a one-video carousel has no controls.
 const { chromium } = require('playwright');
+const lib = require('./lib.cjs');
 const assert = require('node:assert/strict');
-const base = process.env.BASE_URL || 'http://localhost:5295';
+const base = lib.base;
 const total = async (p) => Number((await p.locator('.filters--videos .count').innerText()).match(/(\d+) videos?/)[1]);
 
 (async () => {

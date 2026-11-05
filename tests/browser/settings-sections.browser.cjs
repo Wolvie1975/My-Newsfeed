@@ -7,20 +7,19 @@
 // follows and request go with it). The show it follows is one the household already tracks, so the scraper's list
 // doesn't change.
 const { chromium } = require('playwright');
+const lib = require('./lib.cjs');
 const assert = require('node:assert/strict');
 const { audit } = require('./contrast-audit.cjs');
 
-const base = process.env.BASE_URL || 'http://localhost:5295';
-const adminBase = process.env.ADMIN_BASE_URL || base;
-const password = process.env.ADMIN_PASSWORD;
-const shots = process.env.SCREENSHOT_DIR;
+const base = lib.base;
+const password = lib.adminPassword;
+const shots = lib.shotDir;
 if (!password) {
     console.log('SKIP: adds a profile in admin; set ADMIN_PASSWORD to run it.');
     process.exit(0);
 }
-const widths = (process.env.WIDTHS || '320,390,430,744,820,1024,1440').split(',').map(Number);
 const tag = Date.now().toString(36);
-const person = { name: 'zz Ed ' + tag, pin: '3691' };
+const widths = lib.widths('320,390,430,744,820,1024,1440');
 
 (async () => {
     if ((await fetch(base + '/editions', { headers: { Accept: 'text/html' } })).status === 404) {
@@ -28,7 +27,7 @@ const person = { name: 'zz Ed ' + tag, pin: '3691' };
         return;
     }
     const browser = await chromium.launch();
-    const admin = await (await browser.newContext({ viewport: { width: 1440, height: 1000 } })).newPage();
+    const admin = await lib.signInAdmin(browser, { returnPath: '/admin/tv-series' });
     const errors = [];
     const settle = async (page) => {
         await page.waitForLoadState('networkidle');
@@ -36,29 +35,14 @@ const person = { name: 'zz Ed ' + tag, pin: '3691' };
     };
     let id = null;
     try {
-        await admin.goto(adminBase + '/login?returnUrl=%2Fadmin%2Ftv-series');
-        await admin.locator('#password').fill(password);
-        await admin.getByRole('button', { name: 'Sign in', exact: true }).click();
-        await admin.waitForURL('**/admin/tv-series');
         await settle(admin);
         // A show the household already tracks, from the admin's list.
         const switches = admin.locator('table [role="switch"][aria-checked="true"]');
         assert((await switches.count()) > 0, 'a tracked show to follow');
         const show = (await switches.first().getAttribute('aria-label')).replace(/^Following: /, '');
 
-        await admin.goto(adminBase + '/admin/profiles');
-        await settle(admin);
-        await admin.getByRole('button', { name: 'Add profile', exact: true }).first().click();
-        await admin.locator('#add-name').fill(person.name);
-        await admin.locator('#add-pin').fill(person.pin);
-        await admin.locator('#add-confirm').fill(person.pin);
-        await admin.locator('form[aria-labelledby="add-title"] button[type="submit"]').click();
-        await admin.getByText(`Added ${person.name}.`).waitFor();
-        id = Number(
-            (await admin.locator('.adm-table a.adm-row-title', { hasText: person.name }).getAttribute('href')).match(
-                /(\d+)$/,
-            )[1],
-        );
+        const person = await lib.addProfile(admin, 'Ed', { pin: '3691' });
+        id = person.id;
 
         const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
         const p = await context.newPage();
@@ -148,7 +132,7 @@ const person = { name: 'zz Ed ' + tag, pin: '3691' };
         assert.equal((await mine.locator('.set-status').innerText()).trim(), 'Waiting');
 
         // Layout at every width and theme.
-        for (const theme of ['light', 'dark'])
+        for (const theme of lib.THEMES)
             for (const width of widths) {
                 await p.setViewportSize({ width, height: 900 });
                 await p.goto(base + '/settings');
@@ -191,17 +175,7 @@ const person = { name: 'zz Ed ' + tag, pin: '3691' };
             `Settings sections at ${widths.join('/')}px light/dark: profile, picker, Change PIN, follow and unfollow, Track this show, channel switches and a request passed.`,
         );
     } finally {
-        if (id) {
-            try {
-                await admin.goto(adminBase + '/admin/profiles/' + id);
-                await settle(admin);
-                await admin.getByRole('button', { name: 'Delete profile…' }).click();
-                await admin.getByRole('button', { name: 'Delete profile', exact: true }).click();
-                await admin.waitForURL('**/admin/profiles?deleted=*');
-            } catch (e) {
-                console.error(`Could not delete ${person.name}; remove it in Admin · Profiles. ${e.message}`);
-            }
-        }
+        await lib.deleteProfiles();
         await browser.close();
     }
 })().catch((e) => {

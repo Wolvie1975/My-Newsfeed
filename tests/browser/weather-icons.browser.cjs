@@ -1,6 +1,7 @@
 const { chromium } = require('playwright');
+const lib = require('./lib.cjs');
 const assert = require('node:assert/strict');
-const base = process.env.BASE_URL || 'http://localhost:5295';
+const base = lib.base;
 (async () => {
     const browser = await chromium.launch();
     try {
@@ -23,7 +24,7 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
         await page.route('**/local/weather', (route) =>
             route.fulfill({ json: { periods, updated: new Date().toISOString(), stale: false } }),
         );
-        for (const theme of ['light', 'dark']) {
+        for (const theme of lib.THEMES) {
             await page.goto(base + '/news/kansas-city');
             await page.evaluate((value) => localStorage.setItem('theme', value), theme);
             for (const width of [390, 768, 1440]) {
@@ -46,9 +47,9 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
                 }
                 assert.equal(await page.locator('.weather-period img').count(), 0);
                 assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
-                if (process.env.SCREENSHOT_DIR)
+                if (lib.shotDir)
                     await page.screenshot({
-                        path: `${process.env.SCREENSHOT_DIR}/weather-${width}-${theme}.png`,
+                        path: `${lib.shotDir}/weather-${width}-${theme}.png`,
                         fullPage: true,
                     });
             }

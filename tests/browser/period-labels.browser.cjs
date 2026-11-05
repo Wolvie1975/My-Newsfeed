@@ -1,6 +1,7 @@
 const { chromium } = require('playwright');
+const lib = require('./lib.cjs');
 const assert = require('node:assert/strict');
-const base = process.env.BASE_URL || 'http://localhost:5295';
+const base = lib.base;
 const samples = [
     ['baseball/mlb/401930515', ['1st inning', '9th inning']],
     ['football/nfl/401872988', ['Q1', 'Q4', 'OT']],
@@ -22,7 +23,7 @@ const samples = [
             const text = await page.locator('[data-box-content]').textContent();
             for (const label of labels) assert(text.includes(label), path + ' ' + label);
         }
-        for (const theme of ['light', 'dark'])
+        for (const theme of lib.THEMES)
             for (const width of [390, 1440]) {
                 await page.setViewportSize({ width, height: 900 });
                 await page.evaluate((t) => localStorage.setItem('theme', t), theme);

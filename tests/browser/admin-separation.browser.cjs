@@ -1,15 +1,16 @@
 // The public and admin sites must be separate origins with independent PWA identity and authentication.
 const { chromium } = require('playwright');
+const lib = require('./lib.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const base = process.env.BASE_URL || 'http://localhost:5295';
-const admin = process.env.ADMIN_BASE_URL || 'http://localhost:5297';
-const password = process.env.ADMIN_PASSWORD;
+const base = lib.base;
+const admin = lib.adminBase;
+const password = lib.adminPassword;
 if (!password) throw new Error('Set ADMIN_PASSWORD for the separate admin preview.');
 assert.notEqual(new URL(base).origin, new URL(admin).origin);
 (async () => {
     const browser = await chromium.launch();
-    const shots = process.env.SCREENSHOT_DIR || 'test-results/browser/admin-split/';
+    const shots = lib.screenshots('admin-separation');
     fs.mkdirSync(shots, { recursive: true });
     try {
         const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
@@ -38,7 +39,7 @@ assert.notEqual(new URL(base).origin, new URL(admin).origin);
             assert(!keys.some((k) => k.startsWith(origin === admin ? 'mynewsfeed-pwa-' : 'mynewspaper-admin-pwa-')));
         }
         await page.goto(admin + '/login?returnUrl=%2Fadmin%2Fsources');
-        for (const width of [320, 390, 430]) {
+        for (const width of lib.PHONE_WIDTHS) {
             await page.setViewportSize({ width, height: 950 });
             assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
             await page.screenshot({ path: `${shots}admin-login-${width}.png` });
@@ -52,7 +53,7 @@ assert.notEqual(new URL(base).origin, new URL(admin).origin);
         assert.equal((await context.request.get(admin + '/admin/api/profiles')).status(), 200);
         assert.equal((await context.request.get(base + '/admin/api/profiles')).status(), 404);
         for (const width of [320, 390, 430, 744, 1440]) {
-            for (const theme of ['light', 'dark']) {
+            for (const theme of lib.THEMES) {
                 await page.setViewportSize({ width, height: 1100 });
                 await page.evaluate((t) => localStorage.setItem('theme', t), theme);
                 for (const path of ['/admin/sources', '/admin/profiles', '/admin/requests']) {

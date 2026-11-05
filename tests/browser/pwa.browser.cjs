@@ -1,6 +1,7 @@
 const assert = require('node:assert/strict');
 const { chromium } = require('playwright');
-const base = process.env.BASE_URL || 'https://mynewsfeed-prod.tailbf31bc.ts.net';
+const lib = require('./lib.cjs');
+const base = lib.base;
 // Service-worker caches and geolocation only exist in secure contexts (HTTPS or localhost).
 {
     const { protocol, hostname } = new URL(base);

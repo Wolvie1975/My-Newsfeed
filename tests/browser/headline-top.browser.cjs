@@ -1,14 +1,15 @@
 const { chromium } = require('playwright');
+const lib = require('./lib.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const base = process.env.BASE_URL || 'http://127.0.0.1:5398';
+const base = lib.base;
 (async () => {
     const browser = await chromium.launch();
-    const shots = process.env.SCREENSHOT_DIR || 'test-results/browser/';
+    const shots = lib.screenshots('headline-top');
     fs.mkdirSync(shots, { recursive: true });
     try {
         for (const width of [320, 390, 430, 744, 1024, 1280, 1440]) {
-            for (const theme of ['light', 'dark']) {
+            for (const theme of lib.THEMES) {
                 for (const kind of ['wide', 'compact', 'broken']) {
                     const page = await browser.newPage({
                         viewport: { width, height: 1000 },

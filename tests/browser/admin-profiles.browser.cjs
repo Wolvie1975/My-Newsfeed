@@ -3,17 +3,18 @@
 // bar, and Delete. It adds one throwaway profile and deletes it again; it never saves household settings or the base
 // edition, so it's safe against a shared database.
 const { chromium } = require('playwright');
+const lib = require('./lib.cjs');
 const assert = require('node:assert/strict');
 const { audit } = require('./contrast-audit.cjs');
 
-const base = process.env.ADMIN_BASE_URL || process.env.BASE_URL || 'http://localhost:5297';
-const password = process.env.ADMIN_PASSWORD;
-const shots = process.env.SCREENSHOT_DIR;
+const base = lib.adminBase;
+const password = lib.adminPassword;
+const shots = lib.shotDir;
 if (!password) {
     console.log('SKIP: signs in to admin; set ADMIN_PASSWORD to run it.');
     process.exit(0);
 }
-const widths = (process.env.WIDTHS || '320,390,430,744,820,1024,1440').split(',').map(Number);
+const widths = lib.widths('320,390,430,744,820,1024,1440');
 const name = 'zz browser ' + Date.now().toString(36);
 
 (async () => {
@@ -114,7 +115,7 @@ const name = 'zz browser ' + Date.now().toString(36);
         } else console.log('Note: no service catalog here; service search not checked.');
 
         const pages = ['/admin/profiles', manage, '/admin/profiles/base'];
-        for (const theme of ['light', 'dark'])
+        for (const theme of lib.THEMES)
             for (const width of widths) {
                 await p.setViewportSize({ width, height: 900 });
                 await p.evaluate((t) => localStorage.setItem('theme', t), theme);
@@ -180,15 +181,13 @@ const name = 'zz browser ' + Date.now().toString(36);
         // Leave nothing behind if a check failed halfway.
         if (manage) {
             try {
-                await open(manage);
-                await p.getByRole('button', { name: 'Delete profile…' }).click();
-                await p.getByRole('button', { name: 'Delete profile', exact: true }).click();
-                await p.waitForURL('**/admin/profiles?deleted=*');
-                console.error(`Cleaned up ${name}.`);
+                await lib.adoptProfile(p, name);
             } catch (e) {
-                console.error(`Could not delete ${name}; remove it in Admin · Profiles. ${e.message}`);
+                process.exitCode = 1;
+                console.error(`Could not find ${name} in Admin: ${e.message.split('\n')[0]}`);
             }
         }
+        await lib.deleteProfiles();
         await browser.close();
     }
 })().catch((e) => {

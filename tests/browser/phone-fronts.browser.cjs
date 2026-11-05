@@ -7,13 +7,13 @@
 // With profiles switched on (the live site) it needs ADMIN_PASSWORD: it adds one throwaway profile, opens it, sets the
 // scheme, theme and hidden Home section on that profile, and deletes it at the end.
 const { chromium } = require('playwright');
+const lib = require('./lib.cjs');
 const assert = require('node:assert/strict');
 const { audit } = require('./contrast-audit.cjs');
 
-const base = process.env.BASE_URL || 'http://localhost:5295';
-const adminBase = process.env.ADMIN_BASE_URL || base;
-const shots = process.env.SCREENSHOT_DIR;
-const password = process.env.ADMIN_PASSWORD;
+const base = lib.base;
+const shots = lib.shotDir;
+const password = lib.adminPassword;
 const pages = [
     { path: '/', title: /^Good (morning|afternoon|evening)$/, desktop: '.bs-home' },
     { path: '/sports', title: /^Sports$/, desktop: '.spf' },
@@ -29,9 +29,7 @@ const PERSONAL = 'mynewsfeed-personal-v1';
     }
     const browser = await chromium.launch();
     const errors = [];
-    let admin = null,
-        id = null,
-        storageState;
+    let admin, storageState;
     const contextFor = async (width, settings = {}, js = true) => {
         const context = await browser.newContext({
             viewport: { width, height: 900 },
@@ -69,46 +67,15 @@ const PERSONAL = 'mynewsfeed-personal-v1';
     });
     try {
         if (profiles) {
-            admin = await (await browser.newContext({ viewport: { width: 1440, height: 1000 } })).newPage();
-            await admin.goto(adminBase + '/login?returnUrl=%2Fadmin%2Fprofiles');
-            await admin.locator('#password').fill(password);
-            await admin.getByRole('button', { name: 'Sign in', exact: true }).click();
-            await admin.waitForURL('**/admin/profiles');
-            await admin.waitForLoadState('networkidle');
-            const name = 'zz Fronts ' + Date.now().toString(36);
-            // Admin can finish its interactive circuit after the server-rendered button appears.
-            for (let attempt = 0; attempt < 12 && !(await admin.locator('#add-name').isVisible()); attempt++) {
-                await admin.getByRole('button', { name: 'Add profile', exact: true }).first().click();
-                try {
-                    await admin.locator('#add-name').waitFor({ state: 'visible', timeout: 1500 });
-                } catch {
-                    if (attempt === 11) throw new Error('Admin Add profile did not become interactive');
-                }
-            }
-            await admin.locator('#add-name').fill(name);
-            await admin.locator('#add-pin').fill('3691');
-            await admin.locator('#add-confirm').fill('3691');
-            await admin.locator('form[aria-labelledby="add-title"] button[type="submit"]').click();
-            await admin.getByText(`Added ${name}.`).waitFor();
-            id = Number(
-                (await admin.locator('.adm-table a.adm-row-title', { hasText: name }).getAttribute('href')).match(
-                    /(\d+)$/,
-                )[1],
-            );
-            const context = await browser.newContext({ viewport: { width: 390, height: 900 } });
-            const p = await context.newPage();
-            await p.goto(base + '/sports', { waitUntil: 'domcontentloaded' });
-            await p.locator(`form[action="profiles/${id}/open"]`).getByRole('button').click();
-            await p.keyboard.type('3691');
-            await p.waitForURL('**/sports');
-            storageState = await context.storageState();
-            await context.close();
+            admin = await lib.signInAdmin(browser);
+            const profile = await lib.addProfile(admin, 'Fronts', { pin: '3691' });
+            storageState = await lib.openProfile(browser, profile, { path: '/sports', waitUntil: 'domcontentloaded' });
         }
 
         // Layout, contrast and targets at phone widths.
         for (const scheme of ['kansas', 'monochrome', 'cardinals'])
-            for (const theme of ['light', 'dark'])
-                for (const width of [320, 390, 430]) {
+            for (const theme of lib.THEMES)
+                for (const width of lib.PHONE_WIDTHS) {
                     const context = await contextFor(width, look(scheme, theme));
                     const page = await context.newPage();
                     page.on('pageerror', (e) => errors.push(e.message));
@@ -289,28 +256,7 @@ const PERSONAL = 'mynewsfeed-personal-v1';
             'Home, Sports and Scoreboard phone fronts at 320/390/430px (kansas, monochrome, cardinals; light/dark), folds without JavaScript, the date stepper, Sport and Section selects, a refresh keeping the open fold, a hidden Home section, and 1024/1280/1440px passed.',
         );
     } finally {
-        if (id) {
-            try {
-                await admin.goto(adminBase + '/admin/profiles/' + id);
-                await admin.waitForLoadState('networkidle');
-                const confirm = admin.getByRole('button', { name: 'Delete profile', exact: true });
-                for (let attempt = 0; attempt < 12 && !(await confirm.isVisible()); attempt++) {
-                    await admin.getByRole('button', { name: 'Delete profile…' }).click();
-                    try {
-                        await confirm.waitFor({ state: 'visible', timeout: 1500 });
-                    } catch {
-                        // Retry while the admin circuit becomes interactive.
-                    }
-                }
-                await confirm.click();
-                await admin.waitForURL('**/admin/profiles?deleted=*');
-            } catch (e) {
-                process.exitCode = 1;
-                console.error(
-                    `Could not delete the throwaway profile ${id}; remove it in Admin · Profiles. ${e.message}`,
-                );
-            }
-        }
+        await lib.deleteProfiles();
         await browser.close();
     }
 })().catch((e) => {

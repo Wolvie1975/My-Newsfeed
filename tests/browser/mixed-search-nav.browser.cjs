@@ -1,6 +1,7 @@
 const assert = require('node:assert/strict');
 const { chromium } = require('playwright');
-const base = process.env.BASE_URL || 'http://localhost:5295';
+const lib = require('./lib.cjs');
+const base = lib.base;
 (async () => {
     const browser = await chromium.launch({
         args: process.env.PWA_HOST_IP
@@ -35,7 +36,7 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
             await page.locator('.watch-toggle[aria-label="Content type"] [aria-current=page]').innerText(),
             'TV shows',
         );
-        for (const theme of ['light', 'dark'])
+        for (const theme of lib.THEMES)
             for (const width of [390, 768]) {
                 await page.setViewportSize({ width, height: 900 });
                 await page.goto(base + '/events');
@@ -66,8 +67,7 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
                     assert.equal(await group.evaluate((n) => getComputedStyle(n).borderTopStyle), 'solid');
                 }
                 assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
-                if (process.env.SCREENSHOT_DIR)
-                    await page.screenshot({ path: `${process.env.SCREENSHOT_DIR}/nav-${theme}-${width}.png` });
+                if (lib.shotDir) await page.screenshot({ path: `${lib.shotDir}/nav-${theme}-${width}.png` });
                 await page
                     .getByRole('group', { name: 'Entertainment', exact: true })
                     .getByRole('link', { name: 'Movies', exact: true })

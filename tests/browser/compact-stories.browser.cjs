@@ -1,8 +1,9 @@
+const lib = require('./lib.cjs');
 const fs = require('node:fs'),
     assert = require('node:assert/strict'),
     { chromium } = require('playwright');
-const base = process.env.BASE_URL || 'http://localhost:5295',
-    root = process.env.SCREENSHOT_DIR || 'test-results/';
+const base = lib.base,
+    root = lib.screenshots('compact-stories');
 (async () => {
     const b = await chromium.launch();
     try {
@@ -16,7 +17,7 @@ const base = process.env.BASE_URL || 'http://localhost:5295',
         // Sports and Entertainment have their own front pages (section-hubs); these routes use the newspaper feed (rows from 744px, picture cards on phones).
         for (const route of ['news', 'sports/news', 'entertainment/news'])
             for (const width of [320, 390, 430, 768, 1440])
-                for (const theme of ['light', 'dark']) {
+                for (const theme of lib.THEMES) {
                     // Headlines has its own folded phone front (headlines-phone); the cards stay on the other two.
                     if (route === 'news' && width < 1024) continue;
                     await p.setViewportSize({ width, height: 950 });

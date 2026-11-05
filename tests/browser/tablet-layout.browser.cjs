@@ -1,8 +1,9 @@
 // Phone and iPad portrait widths share the mobile version; desktop starts at 1024px.
 const { chromium } = require('playwright');
+const lib = require('./lib.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const base = process.env.BASE_URL || 'http://localhost:5295';
+const base = lib.base;
 const pages = (
     process.env.PAGES ||
     '/,/news,/news/kansas-city,/sports,/scoreboard,/standings,/rankings,/college,/f1,/entertainment,/movies,/tv,/box-office,/watch,/videos,/saved,/settings'
@@ -12,7 +13,7 @@ const widths = [320, 390, 430, 744, 768, 820, 834, 1023, 1024, 1280, 1440];
 (async () => {
     const browser = await chromium.launch();
     try {
-        for (const theme of ['light', 'dark']) {
+        for (const theme of lib.THEMES) {
             const context = await browser.newContext();
             await context.addInitScript((value) => localStorage.setItem('theme', value), theme);
             // Keep remote image hosts from stalling layout checks; local fonts and scripts still load.
@@ -55,11 +56,11 @@ const widths = [320, 390, 430, 744, 768, 820, 834, 1023, 1024, 1280, 1440];
                             await fold.click();
                         }
                     }
-                    if (process.env.SCREENSHOT_DIR && [390, 768, 820, 834, 1024, 1440].includes(width)) {
-                        fs.mkdirSync(process.env.SCREENSHOT_DIR, { recursive: true });
+                    if (lib.shotDir && [390, 768, 820, 834, 1024, 1440].includes(width)) {
+                        fs.mkdirSync(lib.shotDir, { recursive: true });
                         await page.evaluate(() => scrollTo(0, 0));
                         await page.screenshot({
-                            path: `${process.env.SCREENSHOT_DIR}/${path.replaceAll('/', '_') || 'home'}-${width}-${theme}.png`,
+                            path: `${lib.shotDir}/${path.replaceAll('/', '_') || 'home'}-${width}-${theme}.png`,
                             fullPage: true,
                         });
                     }

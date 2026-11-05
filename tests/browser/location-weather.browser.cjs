@@ -1,6 +1,7 @@
 const { chromium } = require('playwright');
+const lib = require('./lib.cjs');
 const assert = require('node:assert/strict');
-const base = process.env.BASE_URL || 'http://localhost:5295';
+const base = lib.base;
 const data = (location) => ({
     location,
     updated: new Date().toISOString(),

@@ -2,11 +2,12 @@
 // and desktop widths in light and dark, with readable text, a working phone menu, menu counts that agree with the status
 // page, Sources filters in the address and the editor's save bar. Read-only: it never saves or deletes anything.
 const { chromium } = require('playwright');
+const lib = require('./lib.cjs');
 const assert = require('node:assert/strict');
 const { audit } = require('./contrast-audit.cjs');
 
-const base = process.env.ADMIN_BASE_URL || process.env.BASE_URL || 'http://localhost:5297';
-const password = process.env.ADMIN_PASSWORD;
+const base = lib.adminBase;
+const password = lib.adminPassword;
 if (!password) {
     console.log('SKIP: signs in to admin; set ADMIN_PASSWORD to run it.');
     process.exit(0);
@@ -34,7 +35,7 @@ const extras = [
     '/admin/profiles/base',
     '/admin/requests',
 ];
-const widths = (process.env.WIDTHS || '320,390,430,744,820,1024,1440').split(',').map(Number);
+const widths = lib.widths('320,390,430,744,820,1024,1440');
 
 (async () => {
     const browser = await chromium.launch();
@@ -71,7 +72,7 @@ const widths = (process.env.WIDTHS || '320,390,430,744,820,1024,1440').split(','
         }
         const pages = [...lists, ...extras, ...editors];
 
-        for (const theme of ['light', 'dark'])
+        for (const theme of lib.THEMES)
             for (const width of widths) {
                 await p.setViewportSize({ width, height: 900 });
                 await p.evaluate((t) => localStorage.setItem('theme', t), theme);

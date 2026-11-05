@@ -1,7 +1,8 @@
 const { chromium } = require('playwright');
+const lib = require('./lib.cjs');
 const assert = require('node:assert/strict');
-const base = process.env.BASE_URL || 'http://localhost:5295';
-const adminBase = process.env.ADMIN_BASE_URL || base;
+const base = lib.base;
+const adminBase = lib.adminBase;
 (async () => {
     const browser = await chromium.launch();
     try {

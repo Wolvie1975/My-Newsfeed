@@ -1,7 +1,8 @@
 // The phone focal forecast, tiles and full outlook all share one request with the retained wider layout.
 const { chromium } = require('playwright');
+const lib = require('./lib.cjs');
 const assert = require('node:assert/strict');
-const base = process.env.BASE_URL || 'http://localhost:5295';
+const base = lib.base;
 (async () => {
     if ((await fetch(base + '/editions')).status !== 404) {
         console.log('SKIP: this fixture requires a profiles-off preview.');
@@ -9,8 +10,8 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
     }
     const browser = await chromium.launch();
     try {
-        for (const width of [320, 390, 430])
-            for (const theme of ['light', 'dark']) {
+        for (const width of lib.PHONE_WIDTHS)
+            for (const theme of lib.THEMES) {
                 const page = await browser.newPage({ viewport: { width, height: 900 } });
                 await page.addInitScript((t) => localStorage.setItem('theme', t), theme);
                 let mode = 'single',

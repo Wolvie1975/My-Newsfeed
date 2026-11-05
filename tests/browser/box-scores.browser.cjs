@@ -1,6 +1,7 @@
 const { chromium } = require('playwright');
+const lib = require('./lib.cjs');
 const assert = require('node:assert/strict');
-const base = process.env.BASE_URL || 'http://localhost:5295';
+const base = lib.base;
 (async () => {
     const browser = await chromium.launch();
     try {
@@ -39,7 +40,7 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
         const link = page.locator('[data-box-score]:visible').filter({ hasText: 'Box score' }).first();
         assert(await link.count());
         const href = await link.getAttribute('href');
-        for (const theme of ['light', 'dark'])
+        for (const theme of lib.THEMES)
             for (const width of [768, 1440]) {
                 await page.setViewportSize({ width, height: 900 });
                 await page.evaluate((t) => localStorage.setItem('theme', t), theme);
@@ -50,8 +51,7 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
                 const rect = await page.locator('.box-score-dialog').boundingBox();
                 assert(rect.width <= width);
                 assert(await page.locator('.box-score-dialog .box-score-content td').count());
-                if (process.env.SCREENSHOT_DIR)
-                    await page.screenshot({ path: `${process.env.SCREENSHOT_DIR}/box-${width}-${theme}.png` });
+                if (lib.shotDir) await page.screenshot({ path: `${lib.shotDir}/box-${width}-${theme}.png` });
                 await page.locator('.box-score-dialog button').click();
                 await page.waitForSelector('.box-score-dialog', { state: 'detached' });
             }

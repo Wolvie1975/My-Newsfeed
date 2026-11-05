@@ -1,13 +1,13 @@
 // Release 6: phone ribbons on both All headlines pages, Saved and Settings; profiles-on runs create and delete a
 // temporary profile.
 const { chromium } = require('playwright');
+const lib = require('./lib.cjs');
 const assert = require('node:assert/strict');
 const { audit } = require('./contrast-audit.cjs');
 
-const base = process.env.BASE_URL || 'http://localhost:5295';
-const adminBase = process.env.ADMIN_BASE_URL || base;
-const shots = process.env.SCREENSHOT_DIR;
-const password = process.env.ADMIN_PASSWORD;
+const base = lib.base;
+const shots = lib.shotDir;
+const password = lib.adminPassword;
 
 const savedItems = [
     { url: 'https://example.com/a1', title: 'First saved article', source: 'Example News', kind: 'article' },
@@ -23,9 +23,7 @@ const savedItems = [
     }
     const browser = await chromium.launch();
     const errors = [];
-    let admin = null,
-        id = null,
-        storageState;
+    let admin, storageState;
     const look = (scheme, theme) => ({ 'mynewsfeed-color-scheme': scheme, theme });
     const contextFor = async (width, settings = {}, js = true) => {
         const context = await browser.newContext({
@@ -74,38 +72,15 @@ const savedItems = [
     };
     try {
         if (profiles) {
-            admin = await (await browser.newContext({ viewport: { width: 1440, height: 1000 } })).newPage();
-            await admin.goto(adminBase + '/login?returnUrl=%2Fadmin%2Fprofiles');
-            await admin.locator('#password').fill(password);
-            await admin.getByRole('button', { name: 'Sign in', exact: true }).click();
-            await admin.waitForURL('**/admin/profiles');
-            await admin.waitForLoadState('networkidle');
-            const name = 'zz Tools ' + Date.now().toString(36);
-            await admin.getByRole('button', { name: 'Add profile', exact: true }).first().click();
-            await admin.locator('#add-name').fill(name);
-            await admin.locator('#add-pin').fill('3691');
-            await admin.locator('#add-confirm').fill('3691');
-            await admin.locator('form[aria-labelledby="add-title"] button[type="submit"]').click();
-            await admin.getByText(`Added ${name}.`).waitFor();
-            id = Number(
-                (await admin.locator('.adm-table a.adm-row-title', { hasText: name }).getAttribute('href')).match(
-                    /(\d+)$/,
-                )[1],
-            );
-            const context = await browser.newContext({ viewport: { width: 390, height: 900 } });
-            const p = await context.newPage();
-            await p.goto(base + '/sports');
-            await p.locator(`form[action="profiles/${id}/open"]`).getByRole('button').click();
-            await p.keyboard.type('3691');
-            await p.waitForURL('**/sports');
-            storageState = await context.storageState();
-            await context.close();
+            admin = await lib.signInAdmin(browser);
+            const profile = await lib.addProfile(admin, 'Tools', { pin: '3691' });
+            storageState = await lib.openProfile(browser, profile, { path: '/sports' });
         }
 
         const routes = ['/sports/news', '/entertainment/news', '/saved', '/settings'];
         for (const scheme of ['kansas', 'monochrome', 'cardinals'])
-            for (const theme of ['light', 'dark'])
-                for (const width of [320, 390, 430]) {
+            for (const theme of lib.THEMES)
+                for (const width of lib.PHONE_WIDTHS) {
                     const ctx = await contextFor(width, look(scheme, theme));
                     await mockSaved(ctx);
                     const p = await ctx.newPage();
@@ -278,7 +253,7 @@ const savedItems = [
         }
 
         // Without JavaScript: each ribbon select has a Go button that loads the chosen view.
-        for (const width of [320, 390, 430]) {
+        for (const width of lib.PHONE_WIDTHS) {
             const ctx = await contextFor(width, look('kansas', 'light'), false),
                 p = await ctx.newPage();
             for (const path of routes) {
@@ -304,7 +279,7 @@ const savedItems = [
 
         // Tablet and desktop keep their layouts: no ribbon, no dark feature, the old headings and indexes.
         for (const width of [1024, 1280, 1440])
-            for (const theme of ['light', 'dark']) {
+            for (const theme of lib.THEMES) {
                 const ctx = await contextFor(width, look('kansas', theme));
                 await mockSaved(ctx);
                 const p = await ctx.newPage();
@@ -339,19 +314,7 @@ const savedItems = [
             'Release 6: All headlines (Sports, Entertainment), Saved and Settings ribbons at 320/390/430, three schemes, light/dark; contrast, overflow, unique IDs, 44px targets, one first-article feature (also after Load more and removal), counted Show select, Jump to, empty/unreachable Saved, no-JS Go paths, retained 1024/1280/1440 layouts passed.',
         );
     } finally {
-        if (id) {
-            try {
-                await admin.goto(adminBase + '/admin/profiles/' + id);
-                await admin.waitForLoadState('networkidle');
-                await admin.getByRole('button', { name: 'Delete profile…' }).click();
-                await admin.getByRole('button', { name: 'Delete profile', exact: true }).click();
-                await admin.waitForURL('**/admin/profiles?deleted=*');
-            } catch (e) {
-                console.error(
-                    `Could not delete the throwaway profile ${id}; remove it in Admin · Profiles. ${e.message}`,
-                );
-            }
-        }
+        await lib.deleteProfiles();
         await browser.close();
     }
 })().catch((e) => {

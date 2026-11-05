@@ -2,18 +2,19 @@
 // phone and desktop widths in light and dark. It stops and deletes only TV_FIXTURE_TITLE, a throwaway followed series
 // added beforehand with an unused TVmaze ID; real series are only opened and cancelled, never changed.
 const { chromium } = require('playwright');
+const lib = require('./lib.cjs');
 const assert = require('node:assert/strict');
 const { audit } = require('./contrast-audit.cjs');
 
-const base = process.env.ADMIN_BASE_URL || process.env.BASE_URL || 'http://localhost:5297';
-const password = process.env.ADMIN_PASSWORD;
+const base = lib.adminBase;
+const password = lib.adminPassword;
 const title = process.env.TV_FIXTURE_TITLE;
 if (!password || !title) {
     console.log('SKIP: set ADMIN_PASSWORD and TV_FIXTURE_TITLE (a throwaway followed series) to run it.');
     process.exit(0);
 }
-const widths = (process.env.WIDTHS || '320,390,430,744,1024,1440').split(',').map(Number);
-const shots = process.env.SHOTS;
+const widths = lib.widths('320,390,430,744,1024,1440');
+const shots = lib.shotDir;
 
 (async () => {
     const browser = await chromium.launch();
@@ -35,7 +36,7 @@ const shots = process.env.SHOTS;
         await p.getByRole('button', { name: 'Sign in', exact: true }).click();
         await p.waitForURL('**/admin');
 
-        for (const theme of ['light', 'dark']) {
+        for (const theme of lib.THEMES) {
             for (const width of widths) {
                 const label = `${theme} ${width}px`;
                 await p.setViewportSize({ width, height: 900 });

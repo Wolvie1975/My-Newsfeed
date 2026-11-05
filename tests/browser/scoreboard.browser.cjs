@@ -1,6 +1,7 @@
 const assert = require('node:assert/strict');
 const { chromium } = require('playwright');
-const base = process.env.BASE_URL || 'http://localhost:5295';
+const lib = require('./lib.cjs');
+const base = lib.base;
 (async () => {
     const browser = await chromium.launch();
     try {
@@ -8,7 +9,7 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
         const errors = [];
         page.on('pageerror', (e) => errors.push(e.message));
         for (const width of [320, 390, 768, 1440])
-            for (const theme of ['light', 'dark']) {
+            for (const theme of lib.THEMES) {
                 await page.setViewportSize({ width, height: 1000 });
                 await page.goto(base + '/scoreboard');
                 await page.evaluate((t) => {
