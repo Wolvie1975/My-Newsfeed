@@ -180,7 +180,9 @@ public static class TechQuery
         }
         catch (Exception ex) when (DataFailures.IsReadFailure(ex))
         {
-            exists = false;
+            // A failed check says nothing about the tables: caching it hid the Tech sections for 10 minutes after one
+            // database blip. Only answers are cached; the next request asks again.
+            return false;
         }
 
         FallbackCache.Set(key, exists, TimeSpan.FromMinutes(10));

@@ -143,4 +143,22 @@ public class TechDesksTests
         Assert.NotEmpty(expected);
         Assert.Equal(expected, tracker.Select(t => (t.Project, t.Version, t.ReleasedAt)).ToList());
     }
+
+    [Fact]
+    public async Task A_failed_table_check_is_not_cached_so_the_tech_sections_come_back_on_the_next_request()
+    {
+        var missing = new Microsoft.Data.SqlClient.SqlConnectionStringBuilder(TestDatabase.ConnectionString)
+        {
+            InitialCatalog = "myNewspaper_missing_" + Guid.NewGuid().ToString("N")[..8],
+            ConnectTimeout = 5,
+        };
+        await using var broken = new WebScraperContext(new DbContextOptionsBuilder<WebScraperContext>()
+            .UseSqlServer(missing.ConnectionString).Options);
+        await using var db = TestDatabase.CreateContext();
+
+        TechQuery.InvalidateLiveTableCache();
+        await TechQuery.LiveTablesAsync(broken, "releases");   // the blip
+
+        Assert.True(await TechQuery.LiveTablesAsync(db, "releases"));
+    }
 }
