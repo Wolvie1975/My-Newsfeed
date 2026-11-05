@@ -6,6 +6,35 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
+## Release process: verify, compare, deploy and live-check tools — November 4, 2026 (America/Chicago)
+
+Commits `119f748`, `fa322ff`, `7f4c367`, `40ae0ec`, `1c7fdd8`, `832ec75`, `c74c4d7`, `154fb78`, `7745e2a`, `d1159dc`
+(November 5 UTC). One visible change: both sites serve `GET /version` (`{ "commit", "builtAt" }`, anonymous, outside
+the profile gate, no device row). The rest is tooling and documentation: `tools/verify.sh`,
+`tools/compare-builds.cjs`, `tools/live-check.cjs`, `tools/sql/` (household check and `zz` clean-up, password kept
+off the command line), `deployment/deploy.sh` and `rollback.sh` (the only deploy path; admin under Compose, the
+container swap retired), and one agent-permissions list generated for Claude Code, Codex and Antigravity.
+
+Validation: `tools/verify.sh` passed on `d1159dc` (build 0 warnings, 1,120 .NET tests against `WebScraper_Test`,
+8 JS unit tests, lint, format). `compare-builds` reported clean-up step 4 (`c025a8d` → `7370fbf`) identical over 300
+public and 25 admin pages and flagged the College Sports navigation change. `deploy.sh --dry-run` checked before the
+first deploy.
+
+Deployment: commit `d1159dc05981` via `deployment/deploy.sh web admin`, both healthy with environment hashes unchanged
+and `/version` reporting the commit. Rollback round trip tested: `deployment/rollback.sh d1159dc05981` restored
+`0a988e157268` (web) and `204d065d35ec` (admin), healthy; then redeployed. Live images: `mynewspaper-web:d1159dc05981`
+(`ae1b90ba5029`), `mynewspaper-admin:d1159dc05981` (`96c4da823871`). Rollback: `deployment/rollback.sh d1159dc05981`
+→ `before-d1159dc05981` (`0a988e157268`, `204d065d35ec`; these are the College Sports images, also tagged
+`college-revised-20261105`).
+
+Live verification (`tools/live-check.cjs`, production HTTPS addresses, temporary `zz live` profile): after the first
+deploy, health 2/2, admin sign-in with a Secure HttpOnly session cookie and 27 admin pages (19 lists, 8 edit pages)
+at 390 and 1440px 55/55, 22 public pages at 320/390/430/1440px in light and dark 176/176; after the redeploy, 390 and
+1440px 88/88 and admin 55/55. Phone screenshots of Home and Scoreboard inspected. Clean-up through Admin and
+`cleanup-zz.sh`; afterwards 1 profile (Jason, admin), 5 devices, 0 unassigned. Not covered by live-check: feature
+flows (Where to watch search, TV search, admin requests), which stay with each feature's checks. Noticed, not caused
+by this release: the second live-game card's scores are cut off at the right edge at 390px on Home and Scoreboard.
+
 ## Clean-up step 4: data access — November 4, 2026 (America/Chicago)
 
 Commits `13ce9da`, `8b0a46a`, `285b027`, `1ac3b1b`, `aadf942`, `a1db369`, `1e844c0`. No behaviour change and no
