@@ -1,5 +1,6 @@
 @inject FeedDates Dates
 @inject myNewspaper.Shared.Profiles.ProfileContext Reader
+@inject TimeProvider Clock
 <div class="mx-phone" data-phone-sports="standings">
     <PhoneRibbon Title="Standings" Section="sports" Kicker="@($"{Data.Selected?.DisplayName ?? "The league picture"}{(Data.Selected?.LatestSeason is { Length: > 0 } season ? $" · {season} season" : "")}")">
         @if (Data.Sources.Count > 0)
@@ -16,7 +17,7 @@
     else if (Data.Groups.Count == 0) { <p class="mx-note">Current-season standings are not available yet.</p> }
     else
     {
-        @if (StandingsQuery.Freshness(Data.Selected, DateTime.UtcNow) is { } warning) { <p class="mx-note" role="status">@warning</p> }
+        @if (StandingsQuery.Freshness(Data.Selected, Clock.GetUtcNow().UtcDateTime) is { } warning) { <p class="mx-note" role="status">@warning</p> }
         var (group, leader) = Conferences ? MostPoints() : (Data.Groups[0], Data.Groups[0].Teams.FirstOrDefault()); var yours = PhoneSports.Teams(Reader);
         @if (leader is not null)
         {

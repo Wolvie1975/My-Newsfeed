@@ -2,6 +2,7 @@
 @rendermode InteractiveServer
 @inject IDbContextFactory<WebScraperContext> Factory
 @inherits DataComponentBase
+@inject TimeProvider Clock
 
 <PageTitle>TV series</PageTitle>
 <AdminContent>
@@ -115,7 +116,7 @@ else
         try
         {
             await using var db = await Factory.CreateDbContextAsync(CancellationToken.None);
-            switch (await TvQuery.RemoveAsync(db, target.Id, DateTime.UtcNow, CancellationToken.None))
+            switch (await TvQuery.RemoveAsync(db, target.Id, Clock.GetUtcNow().UtcDateTime, CancellationToken.None))
             {
                 case TvRemoveResult.Removed: message = $"Deleted {TitleOf(target)}."; break;
                 case TvRemoveResult.Missing: message = $"{TitleOf(target)} was already deleted."; break;

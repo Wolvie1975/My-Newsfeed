@@ -16,6 +16,7 @@ public sealed class ScoresSync(
     IDbContextFactory<WebScraperContext> factory,
     EspnClient espn,
     IOptions<ScoresOptions> options,
+    TimeProvider clock,
     ILogger<ScoresSync> log)
 {
     /// <summary>ESPN's scoreboard days are US Eastern calendar days.</summary>
@@ -28,9 +29,9 @@ public sealed class ScoresSync(
     private static readonly SemaphoreSlim SyncGate = new(1, 1);
 
     /// <summary>The background run: every enabled follow not synced within SyncIntervalHours, oldest first.</summary>
-    public async Task<ScoresSyncReport> SyncDueAsync(DateTime utcNow, CancellationToken ct = default)
+    public async Task<ScoresSyncReport> SyncDueAsync(DateTime nowUtc, CancellationToken ct = default)
     {
-        var staleBefore = utcNow.AddHours(-settings.SyncIntervalHours);
+        var staleBefore = nowUtc.AddHours(-settings.SyncIntervalHours);
         List<int> due;
         await using (var db = await factory.CreateDbContextAsync(ct))
         {
@@ -41,7 +42,7 @@ public sealed class ScoresSync(
                 .ToListAsync(ct);
         }
 
-        return await SyncAsync(due, utcNow, ct);
+        return await SyncAsync(due, nowUtc, ct);
     }
 
     /// <summary>An admin's "Sync now": one follow, or every enabled one, regardless of when it was last synced.</summary>
@@ -56,17 +57,17 @@ public sealed class ScoresSync(
                 .ToListAsync(ct);
         }
 
-        return await SyncAsync(ids, DateTime.UtcNow, ct);
+        return await SyncAsync(ids, clock.GetUtcNow().UtcDateTime, ct);
     }
 
-    private async Task<ScoresSyncReport> SyncAsync(List<int> followIds, DateTime utcNow, CancellationToken ct)
+    private async Task<ScoresSyncReport> SyncAsync(List<int> followIds, DateTime nowUtc, CancellationToken ct)
     {
         await SyncGate.WaitAsync(ct);
-        try { return await SyncCoreAsync(followIds, utcNow, ct); }
+        try { return await SyncCoreAsync(followIds, nowUtc, ct); }
         finally { SyncGate.Release(); }
     }
 
-    private async Task<ScoresSyncReport> SyncCoreAsync(List<int> followIds, DateTime utcNow, CancellationToken ct)
+    private async Task<ScoresSyncReport> SyncCoreAsync(List<int> followIds, DateTime nowUtc, CancellationToken ct)
     {
         int synced = 0, failed = 0, games = 0, requests = 0;
 
@@ -164,7 +165,7 @@ public sealed class ScoresSync(
             }
             else
             {
-                foreach (var day in DaysToFetch(follow.LastSyncedAt, TodayEastern(utcNow), settings.BackfillDays))
+                foreach (var day in DaysToFetch(follow.LastSyncedAt, TodayEastern(nowUtc), settings.BackfillDays))
                 {
                     var result = await Ask(() => espn.GetScoreboardAsync(follow.Sport, follow.League, day, ct));
                     if (!result.Ok)
@@ -178,10 +179,10 @@ public sealed class ScoresSync(
 
             // Games already fetched are kept even when a later day failed; LastSyncedAt only moves on full success, so
             // the failed days are fetched again next time.
-            games += await UpsertGamesAsync(db, follow.Sport, follow.League, fetched, utcNow, ct);
+            games += await UpsertGamesAsync(db, follow.Sport, follow.League, fetched, nowUtc, ct);
             if (error is null)
             {
-                follow.LastSyncedAt = utcNow;
+                follow.LastSyncedAt = nowUtc;
                 follow.LastError = null;
                 synced++;
             }
@@ -248,7 +249,7 @@ public sealed class ScoresSync(
     /// Returns how many rows were added or changed. Games are never deleted: a postponed game keeps its row.
     /// </summary>
     public static async Task<int> UpsertGamesAsync(
-        WebScraperContext db, string sport, string league, IReadOnlyList<EspnGame> games, DateTime utcNow, CancellationToken ct = default)
+        WebScraperContext db, string sport, string league, IReadOnlyList<EspnGame> games, DateTime nowUtc, CancellationToken ct = default)
     {
         var byId = games.DistinctBy(g => g.EventId).ToDictionary(g => g.EventId);
         var existing = new Dictionary<string, ResultGame>();
@@ -265,12 +266,12 @@ public sealed class ScoresSync(
         {
             if (!existing.TryGetValue(game.EventId, out var row))
             {
-                row = new ResultGame { Sport = sport, League = league, EventId = game.EventId, FirstSeenAt = utcNow };
+                row = new ResultGame { Sport = sport, League = league, EventId = game.EventId, FirstSeenAt = nowUtc };
                 db.ResultGames.Add(row);
             }
 
             Apply(game, row);
-            row.LastSeenAt = utcNow;
+            row.LastSeenAt = nowUtc;
         }
 
         // LastSeenAt changes on every row, so count real changes from the data columns only.
@@ -314,7 +315,7 @@ public sealed class ScoresSync(
 /// nothing due costs one database query and no ESPN request; ESPN is only asked about follows older than
 /// Results:SyncIntervalHours.
 /// </summary>
-public sealed class ScoresSyncService(IServiceScopeFactory scopes, ILogger<ScoresSyncService> log) : BackgroundService
+public sealed class ScoresSyncService(IServiceScopeFactory scopes, TimeProvider clock, ILogger<ScoresSyncService> log) : BackgroundService
 {
     private static readonly TimeSpan StartDelay = TimeSpan.FromMinutes(1);
     private static readonly TimeSpan CheckEvery = TimeSpan.FromMinutes(10);
@@ -330,7 +331,7 @@ public sealed class ScoresSyncService(IServiceScopeFactory scopes, ILogger<Score
                 try
                 {
                     using var scope = scopes.CreateScope();
-                    await scope.ServiceProvider.GetRequiredService<ScoresSync>().SyncDueAsync(DateTime.UtcNow, stoppingToken);
+                    await scope.ServiceProvider.GetRequiredService<ScoresSync>().SyncDueAsync(clock.GetUtcNow().UtcDateTime, stoppingToken);
                 }
                 catch (Exception ex) when (ex is not OperationCanceledException)
                 {

@@ -8,6 +8,7 @@
 @inject ILogger<TechFront> Log
 @inject ProfileContext Reader
 @inherits DataComponentBase
+@inject TimeProvider Clock
 
 @* Tech front page (/tech, docs/tech/tech-02-front.md), sharing the News and Sports fronts' column layout on desktop
    and iPad, and the folded phone layout below 744px. *@
@@ -260,7 +261,7 @@
 
     protected override async Task OnParametersSetAsync()
     {
-        nowUtc = DateTime.UtcNow;
+        nowUtc = Clock.GetUtcNow().UtcDateTime;
         unavailable = false;
         try
         {
@@ -276,7 +277,7 @@
             var latestAll = await TechQuery.LatestAsync(db, 10 + shown.Count, ct: Ct);
             day = latestAll.Where(i => !shown.Contains(i.Id)).Take(10).ToList();
 
-            covered = await TechQuery.MostCoveredAsync(db, Cache, TimeSpan.FromHours(24), minSources: 3, take: 2, ct: Ct);
+            covered = await TechQuery.MostCoveredAsync(db, Cache, nowUtc, TimeSpan.FromHours(24), minSources: 3, take: 2, ct: Ct);
             videos = await TechQuery.VideosAsync(db, 6, Ct);
 
             desks.Clear();

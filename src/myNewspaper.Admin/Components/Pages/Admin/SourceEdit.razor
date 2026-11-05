@@ -6,6 +6,7 @@
 @inject NavigationManager Nav
 @inject IConfiguration Config
 @inherits DataComponentBase
+@inject TimeProvider Clock
 
 <PageTitle>@(IsNew ? "Add source" : $"Edit {SourceName}")</PageTitle>
 
@@ -108,7 +109,7 @@
                         <h2 class="adm-kicker" id="health-title">Source health</h2>
                         <dl class="adm-dl">
                             <dt>Last scraped</dt>
-                            <dd class="@(Stale ? "is-bad" : null)">@Dates.Stamp(existing.LastScrapedAt)@(existing.LastScrapedAt is { } last ? $" ({ScraperHealth.Age(DateTime.UtcNow - DateTime.SpecifyKind(last, DateTimeKind.Utc))} ago)" : "")</dd>
+                            <dd class="@(Stale ? "is-bad" : null)">@Dates.Stamp(existing.LastScrapedAt)@(existing.LastScrapedAt is { } last ? $" ({ScraperHealth.Age(Clock.GetUtcNow().UtcDateTime - DateTime.SpecifyKind(last, DateTimeKind.Utc))} ago)" : "")</dd>
                             <dt>Articles</dt>
                             <dd><a href="admin/pages?sourceId=@existing.Id">@pageCount.ToString("N0", CultureInfo.InvariantCulture) @(pageCount == 1 ? "page" : "pages") →</a></dd>
                             <dt>Newest article</dt>
@@ -250,7 +251,7 @@
 
     private string SourceName => existing is null ? "" : string.IsNullOrWhiteSpace(existing.Label) ? existing.Url : existing.Label;
 
-    private bool Stale => existing?.Enabled == true && ScraperHealth.IsStale(existing.LastScrapedAt, DateTime.UtcNow,
+    private bool Stale => existing?.Enabled == true && ScraperHealth.IsStale(existing.LastScrapedAt, Clock.GetUtcNow().UtcDateTime,
         ScraperHealth.StaleAfter(Config["Scraper:StaleAfterHours"]));
 
     private void SetEnabled(bool value)

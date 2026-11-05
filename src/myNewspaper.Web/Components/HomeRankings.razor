@@ -1,4 +1,5 @@
 @inject FeedDates Dates
+@inject TimeProvider Clock
 
 <section data-home-section="rankings" class="d-card d-rankings" aria-labelledby="h-home-rankings">
     <div class="d-card__head">
@@ -30,8 +31,8 @@
         { <p class="empty">Rankings not available yet for @Data.Selected.DisplayName.</p> }
         else
         {
-            <p class="updated d-rankings__meta"><span>@poll.PollName</span><span>@poll.SeasonLabel</span><span>@(RankingsQuery.OldPoll(poll, DateTime.UtcNow) ? "Latest available poll dated" : "Poll dated") @Dates.Published(poll.PublishedAtUtc)</span></p>
-            @if (RankingsQuery.Freshness(Data.Selected, DateTime.UtcNow) is { } warning)
+            <p class="updated d-rankings__meta"><span>@poll.PollName</span><span>@poll.SeasonLabel</span><span>@(RankingsQuery.OldPoll(poll, Clock.GetUtcNow().UtcDateTime) ? "Latest available poll dated" : "Poll dated") @Dates.Published(poll.PublishedAtUtc)</span></p>
+            @if (RankingsQuery.Freshness(Data.Selected, Clock.GetUtcNow().UtcDateTime) is { } warning)
             { <p class="updated" role="status">@warning</p> }
             <div class="standings-scroll d-rankings__table" role="region" aria-label="Top 25 teams" tabindex="0">
                 <table class="standings-table rankings-table">

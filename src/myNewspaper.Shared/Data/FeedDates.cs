@@ -7,7 +7,7 @@ namespace myNewspaper.Shared.Data;
 /// one configured zone (Display:TimeZone, America/Chicago for this site); nothing converted is ever written back.
 /// The calendar day an article falls on is decided in that zone, so every visitor sees the same date.
 /// </summary>
-public sealed class FeedDates(TimeZoneInfo zone)
+public sealed class FeedDates(TimeZoneInfo zone, TimeProvider? clock = null)
 {
     private static readonly CultureInfo Culture = CultureInfo.InvariantCulture;
 
@@ -19,7 +19,7 @@ public sealed class FeedDates(TimeZoneInfo zone)
     public TimeZoneInfo Zone => zone;
 
     /// <summary>Reads the zone from configuration. An unknown or empty id falls back to UTC.</summary>
-    public static FeedDates Create(string? timeZoneId)
+    public static FeedDates Create(string? timeZoneId, TimeProvider? clock = null)
     {
         var zone = TimeZoneInfo.Utc;
         if (!string.IsNullOrWhiteSpace(timeZoneId))
@@ -28,7 +28,7 @@ public sealed class FeedDates(TimeZoneInfo zone)
             catch (Exception ex) when (ex is TimeZoneNotFoundException or InvalidTimeZoneException) { }
         }
 
-        return new FeedDates(zone);
+        return new FeedDates(zone, clock);
     }
 
     // SQL Server hands back DateTimeKind.Unspecified, which .NET would treat as local time and shift wrongly,
@@ -47,9 +47,10 @@ public sealed class FeedDates(TimeZoneInfo zone)
     }
 
     /// <summary>Today's calendar date in the display zone, given the current UTC time.</summary>
-    public DateOnly TodayAt(DateTime utcNow) => DateOnly.FromDateTime(Local(utcNow));
+    public DateOnly TodayAt(DateTime nowUtc) => DateOnly.FromDateTime(Local(nowUtc));
 
-    public DateOnly Today => TodayAt(DateTime.UtcNow);
+    /// <summary>Today in the display zone, from the injected clock (<see cref="TimeProvider.System"/> when none is given).</summary>
+    public DateOnly Today => TodayAt((clock ?? TimeProvider.System).GetUtcNow().UtcDateTime);
 
     /// <summary>When a site-local day starts, in UTC.</summary>
     public DateTime StartOfDayUtc(DateOnly day) => TimeZoneInfo.ConvertTimeToUtc(day.ToDateTime(TimeOnly.MinValue), zone);
@@ -113,7 +114,7 @@ public sealed class FeedDates(TimeZoneInfo zone)
     };
 
     /// <summary>"Good morning", "Good afternoon" or "Good evening" by the hour in the display zone.</summary>
-    public string Greeting(DateTime utcNow) => Local(utcNow).Hour switch
+    public string Greeting(DateTime nowUtc) => Local(nowUtc).Hour switch
     {
         < 12 => "Good morning",
         < 18 => "Good afternoon",
@@ -121,7 +122,7 @@ public sealed class FeedDates(TimeZoneInfo zone)
     };
 
     /// <summary>Today's date for the home page heading, in the display zone: "Monday, September 21".</summary>
-    public string TodayLabel(DateTime utcNow) => Local(utcNow).ToString("dddd, MMMM d", Culture);
+    public string TodayLabel(DateTime nowUtc) => Local(nowUtc).ToString("dddd, MMMM d", Culture);
 
     /// <summary>A calendar date written out for a heading, for example "Friday, September 25, 2026".</summary>
     public static string LongDate(DateOnly date) => date.ToString("dddd, MMMM d, yyyy", Culture);
@@ -146,27 +147,27 @@ public sealed class FeedDates(TimeZoneInfo zone)
     // ---------- Headline cards (docs/headline-cards-handoff.md): groups by hour (today only) or by day ----------
 
     /// <summary>The card group for an article: "h-2026-10-29-09" for today's hours in hour mode, else "d-2026-10-28" or "d-undated".</summary>
-    public string CardGroupKey(FeedItem item, string groupBy, DateTime utcNow)
+    public string CardGroupKey(FeedItem item, string groupBy, DateTime nowUtc)
     {
         if (item.Undated) return "d-undated";
         var local = Local(item.Date);
-        return groupBy == "hour" && DateOnly.FromDateTime(local) == TodayAt(utcNow)
+        return groupBy == "hour" && DateOnly.FromDateTime(local) == TodayAt(nowUtc)
             ? "h-" + local.ToString("yyyy-MM-dd-HH", Culture)
             : "d-" + local.ToString("yyyy-MM-dd", Culture);
     }
 
     /// <summary>The card group heading: "9 AM hour", "Today", "Yesterday · Wed, Oct 28", "Mon, Oct 26" or "Date unknown".</summary>
-    public string CardGroupLabel(FeedItem item, string groupBy, DateTime utcNow) => CardGroupKey(item, groupBy, utcNow) switch
+    public string CardGroupLabel(FeedItem item, string groupBy, DateTime nowUtc) => CardGroupKey(item, groupBy, nowUtc) switch
     {
         "d-undated" => "Date unknown",
         var key when key.StartsWith("h-", StringComparison.Ordinal) => Local(item.Date).ToString("h tt", Culture) + " hour",
-        _ => DayHeading(DateOnly.FromDateTime(Local(item.Date)), utcNow),
+        _ => DayHeading(DateOnly.FromDateTime(Local(item.Date)), nowUtc),
     };
 
     /// <summary>"Today", "Yesterday · Wed, Oct 28", or "Mon, Oct 26" (with the year when it isn't this year's).</summary>
-    public string DayHeading(DateOnly day, DateTime utcNow)
+    public string DayHeading(DateOnly day, DateTime nowUtc)
     {
-        var today = TodayAt(utcNow);
+        var today = TodayAt(nowUtc);
         var date = day.ToString(day.Year == today.Year ? "ddd, MMM d" : "ddd, MMM d, yyyy", Culture);
         return day == today ? "Today" : day == today.AddDays(-1) ? "Yesterday · " + date : date;
     }

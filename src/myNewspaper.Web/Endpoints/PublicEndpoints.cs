@@ -13,25 +13,25 @@ public static class PublicEndpoints
     public static void MapPublicEndpoints(this WebApplication app)
     {
         // Hourly homepage spotlight; only this card refreshes.
-        app.MapGet("/home/opinion", async (HttpContext http, IDbContextFactory<WebScraperContext> factory) =>
+        app.MapGet("/home/opinion", async (HttpContext http, IDbContextFactory<WebScraperContext> factory, TimeProvider clock) =>
         {
             http.Response.Headers.CacheControl = "no-store";
             await using var db = await factory.CreateDbContextAsync(http.RequestAborted);
-            var snapshot = await HomeOpinionQuery.GetAsync(db, DateTime.UtcNow, http.RequestAborted);
+            var snapshot = await HomeOpinionQuery.GetAsync(db, clock.GetUtcNow().UtcDateTime, http.RequestAborted);
             return new RazorComponentResult<HomeOpinionCard>(new { Snapshot = snapshot });
         });
 
         // Hourly homepage lead; only the lead story card refreshes.
-        app.MapGet("/home/lead", async (HttpContext http, IDbContextFactory<WebScraperContext> factory) =>
+        app.MapGet("/home/lead", async (HttpContext http, IDbContextFactory<WebScraperContext> factory, TimeProvider clock) =>
         {
             http.Response.Headers.CacheControl = "no-store";
             await using var db = await factory.CreateDbContextAsync(http.RequestAborted);
-            var snapshot = await HomeLeadQuery.GetAsync(db, DateTime.UtcNow, http.RequestAborted);
+            var snapshot = await HomeLeadQuery.GetAsync(db, clock.GetUtcNow().UtcDateTime, http.RequestAborted);
             return new RazorComponentResult<HomeLeadStory>(new { Snapshot = snapshot });
         });
 
         // Homepage Top 25 poll picker; only the rankings card is swapped, so the page keeps its scroll position.
-        app.MapGet("/home/rankings", async (HttpContext http, IDbContextFactory<WebScraperContext> factory, ILoggerFactory loggers,
+        app.MapGet("/home/rankings", async (HttpContext http, IDbContextFactory<WebScraperContext> factory, TimeProvider clock, ILoggerFactory loggers,
             FeedDates dates, string? rankingSourceId) =>
         {
             http.Response.Headers.CacheControl = "no-store";
@@ -40,7 +40,7 @@ public static class PublicEndpoints
             try
             {
                 await using var db = await factory.CreateDbContextAsync(http.RequestAborted);
-                data = await RankingsQuery.GetAsync(db, StandingsQuery.ParseSourceId(rankingSourceId), log, dates.TodayAt(DateTime.UtcNow), ct: http.RequestAborted);
+                data = await RankingsQuery.GetAsync(db, StandingsQuery.ParseSourceId(rankingSourceId), log, dates.TodayAt(clock.GetUtcNow().UtcDateTime), ct: http.RequestAborted);
             }
             catch (Exception ex) when (DataFailures.IsReadFailure(ex))
             {

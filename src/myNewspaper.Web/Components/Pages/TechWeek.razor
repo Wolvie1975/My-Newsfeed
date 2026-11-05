@@ -10,6 +10,7 @@
 @inject myNewspaper.Shared.Profiles.ProfileContext Reader
 @inject ILogger<TechWeek> Log
 @inherits DataComponentBase
+@inject TimeProvider Clock
 
 <PageTitle>@PageHeadingTitle · myNewspaper</PageTitle>
 
@@ -331,7 +332,7 @@ else if (summary is not null)
 
     [CascadingParameter] private HttpContext? Http { get; set; }
 
-    private DateTime nowUtc = DateTime.UtcNow;
+    private DateTime nowUtc;
     private DeskDefinition? deskDef;
     private bool notFound;
     private WeekSummary? summary;
@@ -343,7 +344,7 @@ else if (summary is not null)
 
     protected override async Task OnParametersSetAsync()
     {
-        nowUtc = DateTime.UtcNow;
+        nowUtc = Clock.GetUtcNow().UtcDateTime;
         notFound = false;
         deskDef = null;
 

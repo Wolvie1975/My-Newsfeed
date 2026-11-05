@@ -99,7 +99,7 @@ public class ProfileGateTests
     [Fact]
     public void Cookies_round_trip_and_reject_tampering_and_swaps()
     {
-        var cookies = new ProfileCookies(new EphemeralDataProtectionProvider());
+        var cookies = new ProfileCookies(new EphemeralDataProtectionProvider(), TimeProvider.System);
         var token = ProfileCookies.NewDevice();
         var write = new DefaultHttpContext();
         cookies.WriteDevice(write, token);

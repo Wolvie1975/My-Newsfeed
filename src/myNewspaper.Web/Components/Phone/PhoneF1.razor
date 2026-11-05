@@ -1,13 +1,14 @@
 @using myNewspaper.Shared.Data.Models
 @using myNewspaper.Web.Components.F1
 @inject FeedDates Dates
+@inject TimeProvider Clock
 <div class="mx-phone" data-phone-sports="f1">
     <PhoneF1Ribbon Season="Data.Season" />
     @if (Error is not null) { <p class="mx-note" role="status">@Error <a href="f1">Try again</a></p> }
     else if (Data.Source?.Enabled != true) { <p class="mx-note">F1 data is not enabled.</p> }
     else
     {
-        @if (F1Query.Freshness(Data, DateTime.UtcNow) is { } warning) { <p class="mx-note" role="status">@warning</p> }
+        @if (F1Query.Freshness(Data, Clock.GetUtcNow().UtcDateTime) is { } warning) { <p class="mx-note" role="status">@warning</p> }
         @if (Next is { } race)
         {
             var session = Session(race);

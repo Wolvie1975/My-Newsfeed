@@ -1,5 +1,6 @@
 @using myNewspaper.Shared.Data
 @inject FeedDates Dates
+@inject TimeProvider Clock
 @if (Cards)
 {
     @if (Featured && Items.Count > 0)
@@ -22,8 +23,8 @@
             @if (Featured) {
                 <div class="hc-grid__textonly"><FeedArticles Items="@Items.Skip(4).Take(4).ToArray()" Cards="true" GroupBy="@GroupBy" PreviousDay="@PreviousDay" Total="Total" /></div>
             }
-            @if (Featured && Items.Count > 8 && ContinuationGroup == Dates.CardGroupKey(Items[8], GroupBy, DateTime.UtcNow)) {
-                <h3 class="hc-group hc-group--photo">@Dates.CardGroupLabel(Items[8], GroupBy, DateTime.UtcNow)</h3>
+            @if (Featured && Items.Count > 8 && ContinuationGroup == Dates.CardGroupKey(Items[8], GroupBy, Clock.GetUtcNow().UtcDateTime)) {
+                <h3 class="hc-group hc-group--photo">@Dates.CardGroupLabel(Items[8], GroupBy, Clock.GetUtcNow().UtcDateTime)</h3>
             }
             <FeedArticles Items="CardRemaining" PhoneFeatureFirst="@(PhoneFeatureFirst && !Featured)" PreviousDay="@(Featured && Items.Count > 8 ? Dates.DayKey(Items[7]) : PreviousDay)" PreviousGroup="@ContinuationGroup" Total="Total" Cards="true" GroupBy="@GroupBy" />
         </div>
@@ -59,6 +60,6 @@ else
     /// <summary>Cards only: "hour" (a busy today) or "day".</summary>
     [Parameter] public string GroupBy { get; set; } = "day";
     private IReadOnlyList<FeedItem> Remaining => Featured ? Items.Skip(8).ToArray() : Items;
-    private string? ContinuationGroup => Featured && Items.Count > 8 ? Dates.CardGroupKey(Items[7], GroupBy, DateTime.UtcNow) : null;
+    private string? ContinuationGroup => Featured && Items.Count > 8 ? Dates.CardGroupKey(Items[7], GroupBy, Clock.GetUtcNow().UtcDateTime) : null;
     private IReadOnlyList<FeedItem> CardRemaining => Featured ? Items.Skip(8).ToArray() : Items;
 }

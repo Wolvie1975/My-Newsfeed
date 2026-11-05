@@ -4,15 +4,15 @@ public sealed record HomeLeadSnapshot(FeedItem? Article, long Hour, int RefreshA
 
 public static class HomeLeadQuery
 {
-    public static async Task<HomeLeadSnapshot> GetAsync(WebScraperContext db, DateTime utcNow, CancellationToken ct = default)
+    public static async Task<HomeLeadSnapshot> GetAsync(WebScraperContext db, DateTime nowUtc, CancellationToken ct = default)
     {
         var candidates = await FeedQuery.GetLatestPerSourceAsync(db, int.MaxValue, hub: "headlines", ct: ct);
-        return Snapshot(candidates, utcNow);
+        return Snapshot(candidates, nowUtc);
     }
 
-    public static HomeLeadSnapshot Snapshot(IEnumerable<FeedItem> candidates, DateTime utcNow)
+    public static HomeLeadSnapshot Snapshot(IEnumerable<FeedItem> candidates, DateTime nowUtc)
     {
-        var hour = utcNow.Ticks / TimeSpan.TicksPerHour;
+        var hour = nowUtc.Ticks / TimeSpan.TicksPerHour;
         var next = new DateTime((hour + 1) * TimeSpan.TicksPerHour, DateTimeKind.Utc);
         var sources = candidates
             .Where(item => item.CategoryName == "Top Headlines")
@@ -24,6 +24,6 @@ public static class HomeLeadQuery
             .OrderBy(item => item.SourceUrl, StringComparer.Ordinal)
             .ToArray();
         var article = sources.Length == 0 ? null : sources[(int)(hour % sources.Length)];
-        return new(article, hour, (int)Math.Ceiling((next - utcNow).TotalMilliseconds));
+        return new(article, hour, (int)Math.Ceiling((next - nowUtc).TotalMilliseconds));
     }
 }

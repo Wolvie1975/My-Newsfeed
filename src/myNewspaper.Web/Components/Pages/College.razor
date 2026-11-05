@@ -12,6 +12,7 @@
 @inject myNewspaper.Shared.Scores.LeaguePhases RecordPhases
 @inject ILogger<College> Log
 @inherits DataComponentBase
+@inject TimeProvider Clock
 
 <PageTitle>College Sports · @selected.Name · myNewspaper</PageTitle>
 <div class="mx-desktop">
@@ -222,7 +223,7 @@ else
 
             if (view == "standings") return;
 
-            records = await TeamRecords.LoadAsync(db, Dates.Today, RecordPhases, Ct);
+            records = await TeamRecords.LoadAsync(db, Dates.Today, Clock.GetUtcNow().UtcDateTime, RecordPhases, Ct);
             if (view == "schedule")
             {
                 pageIndex = int.TryParse(Page, out var page) ? Math.Clamp(page, 0, 10000) : 0;

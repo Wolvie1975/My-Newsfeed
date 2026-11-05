@@ -5,6 +5,7 @@
 @inject FeedDates Dates
 @inject ILogger<Rankings> Log
 @inherits DataComponentBase
+@inject TimeProvider Clock
 
 @{
     var sportDef = CollegeHub.Resolve(CollegeSport);
@@ -33,7 +34,7 @@
                 </div>
                 @if (data.Poll is { } poll)
                 {
-                    <span class="mv-updated">@poll.PollName · @poll.SeasonLabel · @(RankingsQuery.OldPoll(poll, DateTime.UtcNow) ? "Latest available poll dated" : "Poll dated") @Dates.Published(poll.PublishedAtUtc) · first-place votes in parentheses · Big 12 highlighted · data via ESPN</span>
+                    <span class="mv-updated">@poll.PollName · @poll.SeasonLabel · @(RankingsQuery.OldPoll(poll, Clock.GetUtcNow().UtcDateTime) ? "Latest available poll dated" : "Poll dated") @Dates.Published(poll.PublishedAtUtc) · first-place votes in parentheses · Big 12 highlighted · data via ESPN</span>
                     @if (FeedQuery.SafeHref(poll.SourceUrl) is { } pollUrl) { <a class="rk-source" href="@pollUrl" target="_blank" rel="noopener noreferrer">View source <span aria-hidden="true">↗</span></a> }
                 }
             </div>
@@ -52,7 +53,7 @@
             }
             else
             {
-                @if (RankingsQuery.Freshness(data.Selected, DateTime.UtcNow) is { } warning) { <p class="standing-status" role="status">@warning</p> }
+                @if (RankingsQuery.Freshness(data.Selected, Clock.GetUtcNow().UtcDateTime) is { } warning) { <p class="standing-status" role="status">@warning</p> }
                 <div class="rk-cols">
                     @foreach (var column in data.Teams.Chunk((data.Teams.Count + 1) / 2))
                     {
@@ -151,8 +152,8 @@
     }
     else
     {
-        @if (RankingsQuery.Freshness(data.Selected, DateTime.UtcNow) is { } warning) { <p class="mx-note" role="status">@warning</p> }
-        @if (RankingsQuery.OldPoll(phonePoll, DateTime.UtcNow)) { <p class="mx-note">Latest available poll; published more than two weeks ago.</p> }
+        @if (RankingsQuery.Freshness(data.Selected, Clock.GetUtcNow().UtcDateTime) is { } warning) { <p class="mx-note" role="status">@warning</p> }
+        @if (RankingsQuery.OldPoll(phonePoll, Clock.GetUtcNow().UtcDateTime)) { <p class="mx-note">Latest available poll; published more than two weeks ago.</p> }
         <ol class="rk-list" aria-label="@phonePoll.PollName">
             <li class="rk-row rk-row--head" aria-hidden="true"><span>Rk</span><span>School</span><span>Rec</span><span>Move</span></li>
             @foreach (var team in data.Teams)
@@ -171,7 +172,7 @@
                 </li>
             }
         </ol>
-        <p class="mx-note">@(RankingsQuery.OldPoll(phonePoll, DateTime.UtcNow) ? "Latest available poll dated" : "Poll dated") @Dates.Published(phonePoll.PublishedAtUtc) · Big 12 highlighted · data via ESPN</p>
+        <p class="mx-note">@(RankingsQuery.OldPoll(phonePoll, Clock.GetUtcNow().UtcDateTime) ? "Latest available poll dated" : "Poll dated") @Dates.Published(phonePoll.PublishedAtUtc) · Big 12 highlighted · data via ESPN</p>
         @if (FeedQuery.SafeHref(phonePoll.SourceUrl) is { } sourceUrl)
         {
             <a class="mx-more" href="@sourceUrl" target="_blank" rel="noopener noreferrer">View source table ↗</a>

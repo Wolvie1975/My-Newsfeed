@@ -15,10 +15,10 @@ public sealed class LeaguePhases
     public void Update(SportsStandingsSource source, LeaguePhase phase, DateTime checkedAt) =>
         phases[source.ProviderKey + "|" + source.Sport] = (phase, checkedAt);
 
-    public bool IsRegular(SportsStandingsSource source, DateTime now) =>
+    public bool IsRegular(SportsStandingsSource source, DateTime nowUtc) =>
         phases.TryGetValue(source.ProviderKey + "|" + source.Sport, out var entry)
-        && entry.Phase == LeaguePhase.RegularSeason && now >= entry.Checked
-        && now - entry.Checked <= TimeSpan.FromMinutes(20);
+        && entry.Phase == LeaguePhase.RegularSeason && nowUtc >= entry.Checked
+        && nowUtc - entry.Checked <= TimeSpan.FromMinutes(20);
 
     public static (string Sport, string League)? Competition(SportsStandingsSource source) => source.ProviderKey switch
     {
@@ -63,7 +63,8 @@ public sealed class LeaguePhases
     }
 }
 
-public sealed class LeaguePhaseService(IServiceScopeFactory scopes, LeaguePhases phases, ILogger<LeaguePhaseService> log) : BackgroundService
+public sealed class LeaguePhaseService(IServiceScopeFactory scopes, LeaguePhases phases, TimeProvider clock,
+    ILogger<LeaguePhaseService> log) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -81,7 +82,7 @@ public sealed class LeaguePhaseService(IServiceScopeFactory scopes, LeaguePhases
                     if (LeaguePhases.Competition(source) is not { } competition) continue;
                     var result = await espn.GetLeaguePhaseAsync(competition.Sport, competition.League, stoppingToken);
                     var phase = result.Ok ? result.Value : LeaguePhase.Unknown;
-                    phases.Update(source, phase, DateTime.UtcNow);
+                    phases.Update(source, phase, clock.GetUtcNow().UtcDateTime);
                     if (!result.Ok) log.LogWarning("League phase unavailable for {Provider}/{Sport}: {Error}", source.ProviderKey, source.Sport, result.Error);
                     else log.LogInformation("League phase {Provider}/{Sport}: {Phase}", source.ProviderKey, source.Sport, phase);
                     await Task.Delay(TimeSpan.FromMilliseconds(300), stoppingToken);

@@ -33,7 +33,7 @@ public class LocalWeatherTests
                 }
             })));
         using var cache = new MemoryCache(new MemoryCacheOptions());
-        var service = new LocalWeather(new Clients(handler), cache, NullLogger<LocalWeather>.Instance);
+        var service = new LocalWeather(new Clients(handler), cache, TimeProvider.System, NullLogger<LocalWeather>.Instance);
         var first = await service.GetAsync(default);
         var second = await service.GetAsync(default);
         Assert.Same(first, second); Assert.Equal(2, handler.Calls);
@@ -45,7 +45,7 @@ public class LocalWeatherTests
     {
         var handler = new Handler(_ => Json("""{"properties":{"forecast":"https://other.invalid/forecast"}}"""));
         using var cache = new MemoryCache(new MemoryCacheOptions());
-        var service = new LocalWeather(new Clients(handler), cache, NullLogger<LocalWeather>.Instance);
+        var service = new LocalWeather(new Clients(handler), cache, TimeProvider.System, NullLogger<LocalWeather>.Instance);
         var result = await service.GetAsync(default);
         Assert.Empty(result.Periods); Assert.True(result.Stale); Assert.Equal(1, handler.Calls);
     }
@@ -56,7 +56,7 @@ public class LocalWeatherTests
         using var cache = new MemoryCache(new MemoryCacheOptions());
         var last = new LocalWeatherPage([new("Tonight", 50, "F", "Clear", "Calm", DateTimeOffset.UtcNow)], DateTimeOffset.UtcNow, false);
         cache.Set("kc-weather-last", last, TimeSpan.FromHours(1));
-        var service = new LocalWeather(new Clients(handler), cache, NullLogger<LocalWeather>.Instance);
+        var service = new LocalWeather(new Clients(handler), cache, TimeProvider.System, NullLogger<LocalWeather>.Instance);
         var result = await service.GetAsync(default);
         Assert.True(result.Stale); Assert.Equal(last.Periods, result.Periods);
         Assert.Same(result, await service.GetAsync(default)); Assert.Equal(1, handler.Calls);
@@ -94,7 +94,7 @@ public class LocalWeatherTests
             }));
         });
         using var cache = new MemoryCache(new MemoryCacheOptions());
-        var service = new LocalWeather(new Clients(handler), cache, NullLogger<LocalWeather>.Instance);
+        var service = new LocalWeather(new Clients(handler), cache, TimeProvider.System, NullLogger<LocalWeather>.Instance);
         var kc = await service.GetAsync(default);
         var ny = await service.GetAsync(default, 40.7128, -74.006);
         Assert.Equal("Kansas City", kc.Location); Assert.Equal("New York, NY", ny.Location);
@@ -110,7 +110,7 @@ public class LocalWeatherTests
         var handler = new Handler(_ => new(HttpStatusCode.ServiceUnavailable));
         using var cache = new MemoryCache(new MemoryCacheOptions());
         cache.Set("kc-weather-last", new LocalWeatherPage([new("Today", 70, "F", "Clear", "Calm", DateTimeOffset.UtcNow)], DateTimeOffset.UtcNow, false));
-        var service = new LocalWeather(new Clients(handler), cache, NullLogger<LocalWeather>.Instance);
+        var service = new LocalWeather(new Clients(handler), cache, TimeProvider.System, NullLogger<LocalWeather>.Instance);
         var result = await service.GetAsync(default, 51.5, -0.12);
         Assert.Empty(result.Periods); Assert.Equal("Your location", result.Location);
         Assert.Same(result, await service.GetAsync(default, 51.5, -0.12)); Assert.Equal(1, handler.Calls);

@@ -6,6 +6,7 @@
 @inject NavigationManager Nav
 @inject ILogger<Home> Log
 @inherits DataComponentBase
+@inject TimeProvider Clock
 
 @inject LocalWeather Weather
 @using myNewspaper.Web.Components.Feed
@@ -559,7 +560,7 @@
             return;
         }
 
-        nowUtc = DateTime.UtcNow;
+        nowUtc = Clock.GetUtcNow().UtcDateTime;
         await using var db = await Factory.CreateDbContextAsync(Ct);
         homeF1 = F1Page.Empty; homeF1Error = null;
         try { homeF1 = await F1Query.GetAsync(db, "schedule", ct: Ct); }
@@ -670,7 +671,7 @@
         else
         {
             <BoxOfficeForecastSection HomeCard="true" Rows="@(homeForecasts.Movies.Where(m => m.Kind == BoxOfficeForecastQuery.Preview).ToList())"
-                Source="@(homeForecasts.Sources.SingleOrDefault(s => s.Kind == BoxOfficeForecastQuery.Preview))" UtcNow="@nowUtc" />
+                Source="@(homeForecasts.Sources.SingleOrDefault(s => s.Kind == BoxOfficeForecastQuery.Preview))" NowUtc="@nowUtc" />
         }
     };
 

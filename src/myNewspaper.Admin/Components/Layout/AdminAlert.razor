@@ -6,6 +6,7 @@
 @inject FeedDates Dates
 @inject ILogger<AdminAlert> Log
 @inherits DataComponentBase
+@inject TimeProvider Clock
 
 @* The admin's Requests alert in the public header (profiles handoff 5.4). PublicLayout renders it only inside
    AuthorizeView, so readers never get it. The count is two cheap COUNTs; the panel's list loads from
@@ -59,7 +60,7 @@
             scraperProblem = await Cache.GetOrCreateAsync("admin-alert:scraper", async entry =>
             {
                 entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5);
-                var now = DateTime.UtcNow;
+                var now = Clock.GetUtcNow().UtcDateTime;
                 var report = await ScraperHealth.GetReportAsync(db, now, Dates.TodayAt(now), ScraperHealth.StaleAfter(Config["Scraper:StaleAfterHours"]), Ct);
                 return AdminNavCounts.From(report).Total > 0;
             });

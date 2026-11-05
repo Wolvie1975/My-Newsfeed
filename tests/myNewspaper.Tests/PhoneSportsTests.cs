@@ -171,7 +171,7 @@ public class PhoneSportsTests
 
     private static async Task<string> RenderSports<T>(Dictionary<string, object?> parameters) where T : IComponent
     {
-        await using var services = new ServiceCollection().AddLogging().AddSingleton(FeedDates.Create("America/Chicago"))
+        await using var services = new ServiceCollection().AddLogging().AddSingleton(TimeProvider.System).AddSingleton(FeedDates.Create("America/Chicago"))
             .AddSingleton<NavigationManager>(new TestNavigation())
             .AddSingleton(new myNewspaper.Shared.Profiles.ProfileContext(Microsoft.Extensions.Options.Options.Create(new myNewspaper.Shared.Profiles.ProfilesOptions())))
             .BuildServiceProvider();

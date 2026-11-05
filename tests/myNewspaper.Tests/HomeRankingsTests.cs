@@ -12,7 +12,7 @@ public class HomeRankingsTests
 {
     private static async Task<string> Render(RankingsPage page)
     {
-        await using var services = new ServiceCollection().AddLogging().AddSingleton(FeedDates.Create("America/Chicago")).BuildServiceProvider();
+        await using var services = new ServiceCollection().AddLogging().AddSingleton(TimeProvider.System).AddSingleton(FeedDates.Create("America/Chicago")).BuildServiceProvider();
         await using var renderer = new HtmlRenderer(services, services.GetRequiredService<ILoggerFactory>());
         return await renderer.Dispatcher.InvokeAsync(async () => (await renderer.RenderComponentAsync<HomeRankings>(ParameterView.FromDictionary(new Dictionary<string, object?> { ["Data"] = page }))).ToHtmlString());
     }

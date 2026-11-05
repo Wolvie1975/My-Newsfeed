@@ -8,6 +8,7 @@
 @inject FeedDates Dates
 @inject NavigationManager Nav
 @inherits DataComponentBase
+@inject TimeProvider Clock
 
 @* One of your topics (docs/news-section-handoff.md, phase 5): what's new since it was last marked read, then earlier
    matches from the past 30 days, 20 at a time. Opening the page doesn't mark anything read; only the button does, so
@@ -99,7 +100,7 @@
 
     protected override async Task OnParametersSetAsync()
     {
-        var nowUtc = DateTime.UtcNow;
+        var nowUtc = Clock.GetUtcNow().UtcDateTime;
         await using var db = await Factory.CreateDbContextAsync(Ct);
         // Only the open profile's own topic; anything else answers exactly as an unknown ID does.
         topic = await TopicQuery.GetAsync(db, Reader.Id, Id, Ct);

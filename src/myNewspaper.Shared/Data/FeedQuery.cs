@@ -184,10 +184,10 @@ public static class FeedQuery
 
     /// <summary>Sort dates and category IDs of matching articles from the past <paramref name="days"/> days, for the Jump to box.</summary>
     public static async Task<IReadOnlyList<(DateTime Date, int? CategoryId)>> GetRecentDatesAsync(
-        WebScraperContext db, int? categoryId, string? search, int? sourceId, bool headlinesOnly = false, string? hub = null, int days = 7,
-        CancellationToken ct = default) =>
+        WebScraperContext db, DateTime nowUtc, int? categoryId, string? search, int? sourceId, bool headlinesOnly = false,
+        string? hub = null, int days = 7, CancellationToken ct = default) =>
         (await Filtered(db, categoryId, search, sourceId, headlinesOnly, hub)
-            .Where(p => (p.Published ?? p.ScrapedAt) >= DateTime.UtcNow.AddDays(-days))
+            .Where(p => (p.Published ?? p.ScrapedAt) >= nowUtc.AddDays(-days))
             .Select(p => new { Date = p.Published ?? p.ScrapedAt, p.Source.SourceCategoryId })
             .ToListAsync(ct))
         .Select(r => (r.Date, r.SourceCategoryId)).ToList();

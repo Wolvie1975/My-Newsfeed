@@ -11,6 +11,7 @@
 @inject IMemoryCache Cache
 @inject ILogger<TechDesk> Log
 @inherits DataComponentBase
+@inject TimeProvider Clock
 
 <PageTitle>@desk.Title · Tech · myNewspaper</PageTitle>
 
@@ -390,7 +391,7 @@
     [SupplyParameterFromQuery(Name = "topic")]
     private string? TopicSlug { get; set; }
 
-    private DateTime nowUtc = DateTime.UtcNow;
+    private DateTime nowUtc;
     private DeskDefinition desk = TechDesks.Technology;
     private DeskTopic? activeTopic;
     private int? categoryId;
@@ -412,7 +413,7 @@
 
     protected override async Task OnParametersSetAsync()
     {
-        nowUtc = DateTime.UtcNow;
+        nowUtc = Clock.GetUtcNow().UtcDateTime;
         var path = Nav.ToBaseRelativePath(Nav.Uri).Split('?')[0].TrimEnd('/');
         var slug = path.Split('/').LastOrDefault() ?? "technology";
         desk = TechDesks.For(slug) ?? TechDesks.Technology;
@@ -489,7 +490,7 @@
             }
             else if (desk.Slug == "linux")
             {
-                linuxCovered = await TechQuery.MostCoveredAsync(db, Cache, TimeSpan.FromHours(36), minSources: 2, take: 1, category: NewsSections.Linux, Ct);
+                linuxCovered = await TechQuery.MostCoveredAsync(db, Cache, nowUtc, TimeSpan.FromHours(36), minSources: 2, take: 1, category: NewsSections.Linux, Ct);
                 var gamingTopic = desk.Topics.First(t => t.Slug == "gaming");
                 var weekTech = await TechQuery.DeskItemsSinceAsync(db, nowUtc.AddDays(-7), category: null, take: 400, Ct);
                 linuxGamingStories = weekTech

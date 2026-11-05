@@ -2,6 +2,7 @@
 @inject NavigationManager Nav
 @inject FeedDates Dates
 @inherits DataComponentBase
+@inject TimeProvider Clock
 
 @if (stories.Count > 0)
 {
@@ -35,7 +36,7 @@
         </ol>
         @if (snapshotAt is { } snap)
         {
-            var stale = DateTime.UtcNow - snap > TimeSpan.FromHours(2);
+            var stale = Clock.GetUtcNow().UtcDateTime - snap > TimeSpan.FromHours(2);
             <p class="td-dev__foot">
                 Updated @Dates.Time(snap)@(stale ? " · may be out of date" : "")
             </p>

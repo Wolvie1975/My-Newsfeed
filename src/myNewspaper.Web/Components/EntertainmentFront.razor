@@ -4,6 +4,7 @@
 @inject myNewspaper.Shared.Profiles.ProfileContext Reader
 @inject ILogger<EntertainmentFront> Log
 @inherits DataComponentBase
+@inject TimeProvider Clock
 
 @* Entertainment front page as in the approved concept: On screen, then the lead story and latest headlines beside
    the weekend box office, tonight's TV and Friday's theater releases. Phones get the folded front below. *@
@@ -389,7 +390,7 @@
 
     protected override async Task OnParametersSetAsync()
     {
-        nowUtc = DateTime.UtcNow;
+        nowUtc = Clock.GetUtcNow().UtcDateTime;
         var today = Dates.TodayAt(nowUtc);
         newsUnavailable = agendaUnavailable = boxOfficeUnavailable = false;
         await using var db = await Factory.CreateDbContextAsync(Ct);

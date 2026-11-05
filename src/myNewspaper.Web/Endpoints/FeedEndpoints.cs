@@ -11,7 +11,7 @@ public static class FeedEndpoints
     /// <summary>"Load more" on the public feed: the next batch of article cards, rendered by the same component as the page.</summary>
     public static void MapFeed(this WebApplication app) => app.MapGet("/feed/more", MoreAsync);
 
-    private static async Task<IResult> MoreAsync(HttpContext http, IDbContextFactory<WebScraperContext> factory, ILoggerFactory loggers,
+    private static async Task<IResult> MoreAsync(HttpContext http, IDbContextFactory<WebScraperContext> factory, TimeProvider clock, ILoggerFactory loggers,
         FeedDates dates, string? after, string? category, string? q, string? day, string? source, string? view, string? sport,
         string? cards, string? groupBy, string? group)
     {
@@ -64,7 +64,7 @@ public static class FeedEndpoints
         // Headline cards: the page decides hour or day grouping; the last group stops a repeated heading at the seam.
         var cardMode = cards == "1";
         var grouping = groupBy == "hour" ? "hour" : "day";
-        var nowUtc = DateTime.UtcNow;
+        var nowUtc = clock.GetUtcNow().UtcDateTime;
         await using var renderer = new HtmlRenderer(http.RequestServices, loggers);
         var html = await renderer.Dispatcher.InvokeAsync(async () =>
         {

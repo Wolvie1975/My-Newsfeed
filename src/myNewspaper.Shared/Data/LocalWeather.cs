@@ -8,7 +8,8 @@ public sealed record LocalForecast(string Name, int Temperature, string Unit, st
 public sealed record LocalWeatherPage(IReadOnlyList<LocalForecast> Periods, DateTimeOffset? Updated, bool Stale, string Location = "Kansas City", double Latitude = 39.0997, double Longitude = -94.5786);
 public sealed record WeatherAlert(string Event, string Headline, string Severity, DateTimeOffset? Ends);
 
-public sealed class LocalWeather(IHttpClientFactory clients, IMemoryCache cache, ILogger<LocalWeather> logger) : IDisposable
+public sealed class LocalWeather(IHttpClientFactory clients, IMemoryCache cache, TimeProvider clock, ILogger<LocalWeather> logger)
+    : IDisposable
 {
     private readonly SemaphoreSlim gate = new(1, 1);
     public void Dispose() => gate.Dispose();
@@ -52,14 +53,15 @@ public sealed class LocalWeather(IHttpClientFactory clients, IMemoryCache cache,
                 forecast.EnsureSuccessStatusCode();
                 using var data = JsonDocument.Parse(await forecast.Content.ReadAsStringAsync(cancellationToken));
                 var properties = data.RootElement.GetProperty("properties");
+                var nowUtc = clock.GetUtcNow();
                 var periods = properties.GetProperty("periods").EnumerateArray().Select(p => new LocalForecast(
                     p.GetProperty("name").GetString() ?? "Forecast", p.GetProperty("temperature").GetInt32(),
                     p.GetProperty("temperatureUnit").GetString() ?? "F", p.GetProperty("shortForecast").GetString() ?? "",
                     (p.GetProperty("windSpeed").GetString() ?? "") + " " + (p.GetProperty("windDirection").GetString() ?? ""),
                     p.GetProperty("startTime").GetDateTimeOffset(),
-                    !p.TryGetProperty("isDaytime", out var daytime) || daytime.ValueKind != JsonValueKind.False)).Where(p => p.Starts >= DateTimeOffset.UtcNow.AddHours(-12)).Take(4).ToList();
-                var updated = properties.TryGetProperty("updated", out var stamp) && stamp.TryGetDateTimeOffset(out var date) ? date : DateTimeOffset.UtcNow;
-                var result = new LocalWeatherPage(periods, updated, updated < DateTimeOffset.UtcNow.AddHours(-6), location, lat, lon);
+                    !p.TryGetProperty("isDaytime", out var daytime) || daytime.ValueKind != JsonValueKind.False)).Where(p => p.Starts >= nowUtc.AddHours(-12)).Take(4).ToList();
+                var updated = properties.TryGetProperty("updated", out var stamp) && stamp.TryGetDateTimeOffset(out var date) ? date : nowUtc;
+                var result = new LocalWeatherPage(periods, updated, updated < nowUtc.AddHours(-6), location, lat, lon);
                 cache.Set(key + "-last", result, TimeSpan.FromHours(6));
                 cache.Set(key, result, TimeSpan.FromMinutes(15));
                 return result;

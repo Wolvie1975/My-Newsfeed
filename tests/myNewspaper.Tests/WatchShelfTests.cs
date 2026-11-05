@@ -29,7 +29,7 @@ public class WatchShelfTests
             return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(json) });
         }
     }
-    private static WatchCatalog Catalog(Provider p) => new(p, new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?> { { "Movies:AccessToken", "test" } }).Build());
+    private static WatchCatalog Catalog(Provider p) => new(p, new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?> { { "Movies:AccessToken", "test" } }).Build(), TimeProvider.System);
 
     [Fact]
     public async Task Trending_row_keeps_upstream_order_fills_twelve_eligible_titles_and_caches()

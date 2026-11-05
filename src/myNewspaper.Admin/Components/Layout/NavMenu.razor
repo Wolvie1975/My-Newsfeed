@@ -6,6 +6,7 @@
 @using Microsoft.EntityFrameworkCore
 @using myNewspaper.Shared.Data
 @inherits DataComponentBase
+@inject TimeProvider Clock
 
 @* The admin menu. It renders on the server with each page request, so the red counts (from the same report as Scraper
    status) refresh as you move between pages. A failed count never breaks the menu. *@
@@ -83,7 +84,7 @@
         if (AuthState is null || (await AuthState).User.Identity?.IsAuthenticated != true) return;
         try
         {
-            var now = DateTime.UtcNow;
+            var now = Clock.GetUtcNow().UtcDateTime;
             await using var db = await Factory.CreateDbContextAsync(Ct);
             var report = await ScraperHealth.GetReportAsync(
                 db, now, Dates.TodayAt(now), ScraperHealth.StaleAfter(Config["Scraper:StaleAfterHours"]), Ct);

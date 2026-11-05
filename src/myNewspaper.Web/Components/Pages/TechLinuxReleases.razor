@@ -4,6 +4,7 @@
 @inject IDbContextFactory<WebScraperContext> Factory
 @inject FeedDates Dates
 @inherits DataComponentBase
+@inject TimeProvider Clock
 
 <PageTitle>Linux release history · Tech · myNewspaper</PageTitle>
 
@@ -148,15 +149,15 @@
     [SupplyParameterFromQuery(Name = "project")]
     private string? Project { get; set; }
 
-    private DateTime nowUtc = DateTime.UtcNow;
+    private DateTime nowUtc;
     private IReadOnlyList<(string Slug, string Name)> projects = [];
     private IReadOnlyList<TrackedRelease> releases = [];
 
     protected override async Task OnParametersSetAsync()
     {
-        nowUtc = DateTime.UtcNow;
+        nowUtc = Clock.GetUtcNow().UtcDateTime;
         await using var db = await Factory.CreateDbContextAsync(Ct);
-        (projects, releases) = await TechQuery.ReleaseHistoryAsync(db, Project);
+        (projects, releases) = await TechQuery.ReleaseHistoryAsync(db, nowUtc, Project);
     }
 
     private static string FormatReleased(DateOnly relDay, DateOnly today) =>

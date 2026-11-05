@@ -15,11 +15,11 @@ public static class BoxOfficeForecastQuery
     public const string Preview = "weekend-preview";
     public const string LongRange = "long-range";
     // Hourly collection can miss a few runs without misrepresenting a publication gap.
-    public static bool IsRecent(BoxOfficeForecastSource? source, DateTime utcNow) =>
-        source is { Failed: false, LastSuccess: { } success } && success <= utcNow
-        && utcNow - success <= TimeSpan.FromHours(24);
-    public static string EmptyMessage(string kind, BoxOfficeForecastSource? source, DateTime utcNow) =>
-        IsRecent(source, utcNow)
+    public static bool IsRecent(BoxOfficeForecastSource? source, DateTime nowUtc) =>
+        source is { Failed: false, LastSuccess: { } success } && success <= nowUtc
+        && nowUtc - success <= TimeSpan.FromHours(24);
+    public static string EmptyMessage(string kind, BoxOfficeForecastSource? source, DateTime nowUtc) =>
+        IsRecent(source, nowUtc)
             ? kind == Preview ? "The next weekend preview has not been published yet" : "The next future-film forecasts have not been published yet"
             : kind == Preview ? "Preview data is temporarily unavailable" : "Future-film forecast data is temporarily unavailable";
     public static string Range(long low, long high) => $"{Amount(low)}–{Amount(high)}";

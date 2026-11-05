@@ -6,6 +6,7 @@
 @inject IConfiguration Config
 @inject ILogger<Standings> Log
 @inherits DataComponentBase
+@inject TimeProvider Clock
 
 <div class="@(CollegeSport is null ? "mx-desktop" : "mx-contents")">
 @if (CollegeSport is null)
@@ -63,7 +64,7 @@ else
     { <p class="empty">@(selected.ProviderKey == "big12" ? "Current-season standings are not available yet. This college feed is enabled." : "Standings not available yet.")</p> }
     else
     {
-        @if (StandingsQuery.Freshness(selected, DateTime.UtcNow) is { } message)
+        @if (StandingsQuery.Freshness(selected, Clock.GetUtcNow().UtcDateTime) is { } message)
         { <p class="standing-status" role="status">@message</p> }
         <div class="standings-view">
         @{ var index = 0; }

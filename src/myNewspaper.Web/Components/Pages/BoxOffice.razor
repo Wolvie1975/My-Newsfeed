@@ -7,6 +7,7 @@
 @inject NavigationManager Navigation
 @inject ILogger<BoxOffice> Log
 @inherits DataComponentBase
+@inject TimeProvider Clock
 
 <PageTitle>@Title · myNewspaper</PageTitle>
 <div class="mx-tool-page">
@@ -160,7 +161,7 @@
 {
     <div class="mx-tool-content">
         <BoxOfficeForecastSection Kind="@ForecastKind" Rows="@(forecasts.Movies.Where(m => m.Kind == ForecastKind).ToList())"
-            Source="@(forecasts.Sources.SingleOrDefault(s => s.Kind == ForecastKind))" UtcNow="@utcNow" />
+            Source="@(forecasts.Sources.SingleOrDefault(s => s.Kind == ForecastKind))" NowUtc="@nowUtc" />
     </div>
 }
 </div>
@@ -184,9 +185,10 @@
     private IReadOnlyDictionary<string, BoxOfficeForecast> predictions = new Dictionary<string, BoxOfficeForecast>();
     private bool failed;
     private BoxOfficeForecastSnapshot forecasts = new([], []);
-    private readonly DateTime utcNow = DateTime.UtcNow;
+    private DateTime nowUtc;
     protected override async Task OnParametersSetAsync()
     {
+        nowUtc = Clock.GetUtcNow().UtcDateTime;
         if (SelectedView is "results" or "weekend-preview" or "movie-forecasts")
         {
             Navigation.NavigateTo(SelectedView == "results" ? "box-office" : "box-office/" + SelectedView, forceLoad: true);
@@ -204,7 +206,7 @@
                 movies = await BoxOfficeChartQuery.GetAsync(db, ct: Ct);
                 if (movies.Count > 0) predictions = await BoxOfficeForecastQuery.PredictionsAsync(db, movies[0].WeekendStart, Ct);
                 // Phones: next weekend's predictions for the Results view's last fold.
-                forecasts = await BoxOfficeForecastQuery.GetAsync(db, Dates.TodayAt(utcNow), Ct);
+                forecasts = await BoxOfficeForecastQuery.GetAsync(db, Dates.TodayAt(nowUtc), Ct);
             }
             catch (Exception ex) when (DataFailures.IsReadFailure(ex))
             { Log.LogError(ex, "Box-office chart read failed."); failed = true; }
@@ -214,7 +216,7 @@
             try
             {
                 await using var db = await Factory.CreateDbContextAsync(Ct);
-                forecasts = await BoxOfficeForecastQuery.GetAsync(db, Dates.TodayAt(utcNow), Ct);
+                forecasts = await BoxOfficeForecastQuery.GetAsync(db, Dates.TodayAt(nowUtc), Ct);
             }
             catch (Exception ex) when (DataFailures.IsReadFailure(ex))
             { Log.LogError(ex, "Box-office forecast read failed."); }

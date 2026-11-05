@@ -61,7 +61,7 @@ public sealed class ScoreboardGame
         _ => "Status unavailable"
     };
     public bool Active => Status is "live" or "delayed" or "suspended";
-    public bool Stale(DateTime utcNow) => IsStale || Active && utcNow - DateTime.SpecifyKind(LastObservedAtUtc, DateTimeKind.Utc) > TimeSpan.FromMinutes(25);
+    public bool Stale(DateTime nowUtc) => IsStale || Active && nowUtc - DateTime.SpecifyKind(LastObservedAtUtc, DateTimeKind.Utc) > TimeSpan.FromMinutes(25);
     public string? Details => FormatDetails(LiveDetailsJson, Sport);
     public static string? FormatDetails(string? json, string sport)
     {

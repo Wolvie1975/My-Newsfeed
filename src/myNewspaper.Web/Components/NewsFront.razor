@@ -10,6 +10,7 @@
 @inject ILogger<NewsFront> Log
 @inject myNewspaper.Shared.Profiles.ProfileContext Reader
 @inherits DataComponentBase
+@inject TimeProvider Clock
 
 @* News front page (docs/news-section-handoff.md, phase 3), built like the Sports front: a briefing strip, then the day
    so far, the lead and top headlines, and a side column of Kansas City and Opinion; In pictures and the three desks
@@ -363,7 +364,7 @@
 
     protected override async Task OnParametersSetAsync()
     {
-        nowUtc = DateTime.UtcNow;
+        nowUtc = Clock.GetUtcNow().UtcDateTime;
         unavailable = false;
         try
         {

@@ -1,5 +1,6 @@
 @using myNewspaper.Shared.Data
 @inject FeedDates Dates
+@inject TimeProvider Clock
 
 @* The article cards (and, on mobile, the day headings between them). Rendered by the home page for the first
    batch and by the /feed/more endpoint for "Load more", so both produce identical markup. *@
@@ -7,7 +8,7 @@
 @{
     var previousDay = PreviousDay;
     var previousGroup = PreviousGroup;
-    var nowUtc = DateTime.UtcNow;
+    var nowUtc = Clock.GetUtcNow().UtcDateTime;
 }
 
 @for (var i = 0; i < Items.Count; i++)

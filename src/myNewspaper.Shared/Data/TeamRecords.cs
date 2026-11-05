@@ -31,17 +31,18 @@ public sealed class TeamRecords
     private readonly List<(string Provider, string Sport, string Id, string Name, TeamRecordValue Record)> entries = [];
     public static TeamRecords Empty => new();
 
-    public static async Task<TeamRecords> LoadAsync(WebScraperContext db, DateOnly today, myNewspaper.Shared.Scores.LeaguePhases phases, CancellationToken ct = default)
+    public static async Task<TeamRecords> LoadAsync(WebScraperContext db, DateOnly today, DateTime nowUtc, myNewspaper.Shared.Scores.LeaguePhases phases,
+        CancellationToken ct = default)
     {
         var sources = await db.SportsStandingsSources.AsNoTracking().Where(s => s.Enabled).ToListAsync(ct);
-        sources = sources.Where(s => phases.IsRegular(s, DateTime.UtcNow)).ToList();
+        sources = sources.Where(s => phases.IsRegular(s, nowUtc)).ToList();
         if (sources.Count == 0) return Empty;
         var ids = sources.Select(s => s.Id).ToArray();
         var rows = await db.SportsStandings.AsNoTracking().Where(r => r.IsCurrent && ids.Contains(r.SourceId)).ToListAsync(ct);
-        return Build(sources, rows, today, DateTime.UtcNow);
+        return Build(sources, rows, today, nowUtc);
     }
 
-    public static TeamRecords Build(IEnumerable<SportsStandingsSource> sources, IEnumerable<SportsStanding> rows, DateOnly today, DateTime now)
+    public static TeamRecords Build(IEnumerable<SportsStandingsSource> sources, IEnumerable<SportsStanding> rows, DateOnly today, DateTime nowUtc)
     {
         var result = new TeamRecords();
         foreach (var source in sources.Where(s => s.Enabled))
@@ -53,7 +54,7 @@ public sealed class TeamRecords
                 if (text is null) continue;
                 var updated = row.FetchedAt ?? source.LastSuccessAt;
                 var stale = !string.IsNullOrWhiteSpace(source.LastError) || updated is null
-                    || now - DateTime.SpecifyKind(updated.Value, DateTimeKind.Utc) > TimeSpan.FromHours(2);
+                    || nowUtc - DateTime.SpecifyKind(updated.Value, DateTimeKind.Utc) > TimeSpan.FromHours(2);
                 result.entries.Add((source.ProviderKey, NormalizeSport(source.Sport), row.TeamId, TeamNames.Key(row.TeamName), new(text, updated, stale, source.ProviderKey == "big12")));
             }
         return result;

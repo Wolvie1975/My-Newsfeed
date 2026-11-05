@@ -3,6 +3,7 @@
 @inject IDbContextFactory<WebScraperContext> Factory
 @inject IConfiguration Config
 @inherits DataComponentBase
+@inject TimeProvider Clock
 
 <PageTitle>Scraper status</PageTitle>
 
@@ -216,7 +217,7 @@
         error = null;
         try
         {
-            var now = DateTime.UtcNow;
+            var now = Clock.GetUtcNow().UtcDateTime;
             await using var db = await Factory.CreateDbContextAsync(Ct);
             report = await ScraperHealth.GetReportAsync(
                 db, now, Dates.TodayAt(now), ScraperHealth.StaleAfter(Config["Scraper:StaleAfterHours"]), Ct);

@@ -8,7 +8,7 @@ public sealed record WatchListing(IReadOnlyList<WatchTitle> Items, int Pages, bo
 public sealed record WatchProvider(int Id, string Name, string? Logo);
 public sealed record WatchOffer(string Category, IReadOnlyList<string> Providers, IReadOnlyList<WatchProvider>? Options = null);
 public sealed record WatchAvailability(WatchTitle Title, IReadOnlyList<WatchOffer> Offers, string? Link, DateTime Checked);
-public sealed partial class WatchCatalog(IHttpClientFactory factory, IConfiguration configuration) : IDisposable
+public sealed partial class WatchCatalog(IHttpClientFactory factory, IConfiguration configuration, TimeProvider clock) : IDisposable
 {
     private readonly MemoryCache cache = new(new MemoryCacheOptions { SizeLimit = 512 });
     private T Save<T>(string key, T value, TimeSpan ttl) => cache.Set(key, value, new MemoryCacheEntryOptions { Size = 1, AbsoluteExpirationRelativeToNow = ttl });
@@ -180,7 +180,7 @@ public sealed partial class WatchCatalog(IHttpClientFactory factory, IConfigurat
                 offers.AddRange(ReadOffers(us));
                 link = ProviderLink(us);
             }
-            return Save(key, new WatchAvailability(Title(title.RootElement, kind), offers, link, DateTime.UtcNow), TimeSpan.FromHours(6));
+            return Save(key, new WatchAvailability(Title(title.RootElement, kind), offers, link, clock.GetUtcNow().UtcDateTime), TimeSpan.FromHours(6));
         }
         catch (Exception e) when (e is InvalidOperationException or KeyNotFoundException or FormatException) { return null; }
     }

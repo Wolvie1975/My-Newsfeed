@@ -92,9 +92,9 @@ public static class F1Query
     public static string Points(decimal points) => points.ToString("0.###", CultureInfo.InvariantCulture);
     public static string Position(int position, string? text) => string.IsNullOrWhiteSpace(text) ? position.ToString(CultureInfo.InvariantCulture) : text;
     public static string Grid(int grid) => grid > 0 ? grid.ToString(CultureInfo.InvariantCulture) : "Pit lane / unavailable";
-    public static string? Freshness(F1Page page, DateTime now) => !string.IsNullOrWhiteSpace(page.Source?.LastError)
+    public static string? Freshness(F1Page page, DateTime nowUtc) => !string.IsNullOrWhiteSpace(page.Source?.LastError)
         ? "Latest refresh failed; showing the last available snapshot when present."
-        : page.FetchedAt is { } fetched && now - DateTime.SpecifyKind(fetched, DateTimeKind.Utc) > TimeSpan.FromHours(2)
+        : page.FetchedAt is { } fetched && nowUtc - DateTime.SpecifyKind(fetched, DateTimeKind.Utc) > TimeSpan.FromHours(2)
             ? "F1 data may be out of date." : null;
     public static string Constructors(string? json)
     {

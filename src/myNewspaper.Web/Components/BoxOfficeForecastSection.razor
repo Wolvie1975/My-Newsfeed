@@ -10,13 +10,13 @@
     {
         <h2>@Title</h2>
     }
-    @if (Source is { Failed: true } || (Rows.Count > 0 && !BoxOfficeForecastQuery.IsRecent(Source, UtcNow)))
+    @if (Source is { Failed: true } || (Rows.Count > 0 && !BoxOfficeForecastQuery.IsRecent(Source, NowUtc)))
     {
         <p class="standing-status" role="status">Forecast refresh is delayed; showing previously collected predictions.</p>
     }
     @if (Rows.Count == 0)
     {
-        <p class="empty" role="status">@BoxOfficeForecastQuery.EmptyMessage(Kind, Source, UtcNow)</p>
+        <p class="empty" role="status">@BoxOfficeForecastQuery.EmptyMessage(Kind, Source, NowUtc)</p>
     }
     else
     {
@@ -52,7 +52,7 @@
     [Parameter] public string Kind { get; set; } = BoxOfficeForecastQuery.Preview;
     [Parameter] public IReadOnlyList<BoxOfficeForecast> Rows { get; set; } = [];
     [Parameter] public BoxOfficeForecastSource? Source { get; set; }
-    [Parameter] public DateTime UtcNow { get; set; }
+    [Parameter] public DateTime NowUtc { get; set; }
     private string Title => Kind == BoxOfficeForecastQuery.Preview
         ? "Upcoming weekend preview — Predictions" : "Upcoming movie forecasts — Predictions";
 }

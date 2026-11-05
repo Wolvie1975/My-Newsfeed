@@ -1,4 +1,5 @@
 @inherits DataComponentBase
+@inject TimeProvider Clock
 
 @page "/championship/results"
 @layout PublicLayout
@@ -17,7 +18,7 @@ else
     @if (data.Season is { } season) { <p class="updated">Season starting @season</p> }
     @if (data.Source.LastSuccessAt is { } refreshed) { <p class="updated">Last refreshed @Dates.PublishedFull(refreshed)</p> }
     @if (!string.IsNullOrWhiteSpace(data.Source.LastError)) { <p class="standing-status" role="status">Latest refresh failed; showing last available results.</p> }
-    else if (data.Source.LastSuccessAt is not { } last || DateTime.UtcNow - DateTime.SpecifyKind(last, DateTimeKind.Utc) > TimeSpan.FromHours(2)) { <p class="standing-status" role="status">Results may be out of date.</p> }
+    else if (data.Source.LastSuccessAt is not { } last || Clock.GetUtcNow().UtcDateTime - DateTime.SpecifyKind(last, DateTimeKind.Utc) > TimeSpan.FromHours(2)) { <p class="standing-status" role="status">Results may be out of date.</p> }
     <form class="ranking-detail-toggle" method="get" action="championship/results">
         <label><input type="checkbox" name="team" value="352" checked="@(Team == 352)" onchange="this.form.requestSubmit()" /> Wrexham AFC only</label>
         <noscript><button type="submit" class="nf-btn nf-btn--secondary">Apply</button></noscript>
@@ -74,7 +75,7 @@ else
     {
         error = null;
         try { await using var db = await Factory.CreateDbContextAsync(Ct);
-        records = await TeamRecords.LoadAsync(db, Dates.Today, RecordPhases, Ct); data = await ChampionshipResultsQuery.GetAsync(db, Team == 352, int.TryParse(Page, out var page) ? Math.Clamp(page, 0, 10000) : 0, Ct);
+        records = await TeamRecords.LoadAsync(db, Dates.Today, Clock.GetUtcNow().UtcDateTime, RecordPhases, Ct); data = await ChampionshipResultsQuery.GetAsync(db, Team == 352, int.TryParse(Page, out var page) ? Math.Clamp(page, 0, 10000) : 0, Ct);
         boxLabels = await BoxScoreQuery.AvailableAsync(db, data.Items.Select(g=>BoxIdentity.Match(g.ProviderKey,g.GameId)).OfType<BoxIdentity>(), Log, Ct); }
         catch (Exception ex) when (DataFailures.IsReadFailure(ex))
         { Log.LogError(ex, "Could not read Championship results."); error = "Results are temporarily unavailable. Please try again."; }

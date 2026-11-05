@@ -13,6 +13,7 @@
 @inject IDbContextFactory<WebScraperContext> Factory
 @inject FeedDates Dates
 @inherits DataComponentBase
+@inject TimeProvider Clock
 
 @if (!SectionNews) {
 }
@@ -141,7 +142,7 @@ else
             {
                 <div class="mx-block__media" data-article-media>
                     <img src="@image" alt="" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()" />
-                    @if (!lead.Undated && DateTime.UtcNow - lead.Date < TimeSpan.FromHours(1)) { <span class="mx-block__badge">Just in</span> }
+                    @if (!lead.Undated && Clock.GetUtcNow().UtcDateTime - lead.Date < TimeSpan.FromHours(1)) { <span class="mx-block__badge">Just in</span> }
                 </div>
             }
             <span class="mx-block__kicker">@Meta(lead, withCategory: true)</span>
@@ -299,17 +300,17 @@ else
         feed = emptySection ? new FeedPage([], 0, 0, null) : await FeedQuery.GetFeedAsync(
             db, Category, Q, After, After is null ? FeedQuery.FirstBatch : FeedQuery.MoreBatch, Source, headlinesOnly: !SectionNews, hub: feedHub, Ct);
         lastDay = feed.Items.Count > 0 ? Dates.DayKey(feed.Items[^1]) : null;
-        var nowUtc = DateTime.UtcNow;
+        var nowUtc = Clock.GetUtcNow().UtcDateTime;
         groupBy = feed.Items.Count > 0 && await FeedQuery.CountPublishedSinceAsync(db, Dates.StartOfDayUtc(Dates.TodayAt(nowUtc)),
             Category, Q, Source, headlinesOnly: !SectionNews, hub: feedHub, Ct) >= FeedQuery.HourGroupingThreshold ? "hour" : "day";
         lastGroup = feed.Items.Count > 0 ? Dates.CardGroupKey(feed.Items[^1], groupBy, nowUtc) : null;
         lastUpdated = emptySection ? null : await FeedQuery.GetLastUpdatedAsync(db, headlinesOnly: !SectionNews, categoryId: Category, hub: feedHub, Ct);
         if (!emptySection && feed.Items.Count > 0)
         {
-            var recent = await FeedQuery.GetRecentDatesAsync(db, Category, Q, Source, headlinesOnly: !SectionNews, hub: feedHub, ct: Ct);
+            var recent = await FeedQuery.GetRecentDatesAsync(db, nowUtc, Category, Q, Source, headlinesOnly: !SectionNews, hub: feedHub, ct: Ct);
             var hubRecent = Category is null && Source is null && string.IsNullOrWhiteSpace(Q)
                 ? recent
-                : await FeedQuery.GetRecentDatesAsync(db, null, null, null, headlinesOnly: !SectionNews, hub: feedHub, days: 2, ct: Ct);
+                : await FeedQuery.GetRecentDatesAsync(db, nowUtc, null, null, null, headlinesOnly: !SectionNews, hub: feedHub, days: 2, ct: Ct);
             jumpBox = JumpBoxBuilder.Build(recent, hubRecent, SectionNews ? HubCategories : categories, feed.Items, groupBy, feedHub, Category, Href, Dates, nowUtc);
         }
         else
@@ -335,7 +336,7 @@ else
         var parts = new List<string>();
         if (lastUpdated is { } updated)
         {
-            var minutes = (int)Math.Max(0, (DateTime.UtcNow - updated).TotalMinutes);
+            var minutes = (int)Math.Max(0, (Clock.GetUtcNow().UtcDateTime - updated).TotalMinutes);
             parts.Add(minutes < 1 ? "Updated just now" : minutes < 60 ? $"Updated {minutes} min ago"
                 : minutes < 24 * 60 ? $"Updated {minutes / 60} hr ago" : $"Updated {Dates.Published(updated)}");
         }

@@ -18,7 +18,7 @@
    or channel name. Each column is a plain form that posts the PIN, so it works without JavaScript; editions.js turns the
    PIN field into a dialog with a number pad. *@
 <header class="picker__mast">
-    <span class="picker__date">@Dates.TodayLabel(now) · @Year</span>
+    <span class="picker__date">@Dates.TodayLabel(nowUtc) · @Year</span>
     <span class="picker__brand">
         <svg class="picker__mark" viewBox="0 0 64 64" width="56" height="56" aria-hidden="true">
             <rect class="bs-mark-tile" width="64" height="64" rx="14" />
@@ -146,16 +146,16 @@ else
     [SupplyParameterFromQuery(Name = "triesLeft")] private int? TriesLeft { get; set; }
 
     private PickerPage page = new([], null);
-    private DateTime now;
+    private DateTime nowUtc;
 
     private string Target => ProfileEndpoints.SafeReturnUrl(ReturnUrl);
-    private string Year => Dates.TodayAt(now).Year.ToString(System.Globalization.CultureInfo.InvariantCulture);
+    private string Year => Dates.TodayAt(nowUtc).Year.ToString(System.Globalization.CultureInfo.InvariantCulture);
 
     protected override async Task OnInitializedAsync()
     {
-        now = Clock.GetUtcNow().UtcDateTime;
+        nowUtc = Clock.GetUtcNow().UtcDateTime;
         await using var db = await Factory.CreateDbContextAsync(Ct);
-        page = await PickerPreviewQuery.GetAsync(db, Saved, Dates, now, Ct);
+        page = await PickerPreviewQuery.GetAsync(db, Saved, Dates, nowUtc, Ct);
     }
 
     private static string Initial(string name) => name.Trim() is { Length: > 0 } n ? char.ToUpperInvariant(n[0]).ToString() : "?";
@@ -164,7 +164,7 @@ else
     {
         if (lastRead is not { } read) return "New edition";
         var day = Dates.TodayAt(read);
-        var today = Dates.TodayAt(now);
+        var today = Dates.TodayAt(nowUtc);
         return day == today ? $"Last read {Dates.Time(read)}" : day == today.AddDays(-1) ? "Last read yesterday" : $"Last read {Dates.Published(read)}";
     }
 

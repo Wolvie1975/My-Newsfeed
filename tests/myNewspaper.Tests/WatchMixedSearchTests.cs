@@ -27,7 +27,7 @@ public class WatchMixedSearchTests
     public async Task Mixed_search_keeps_overlapping_movie_tv_ids_filters_people_and_uses_correct_providers()
     {
         var provider = new Provider();
-        var catalog = new WatchCatalog(provider, new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?> { { "Movies:AccessToken", "test" } }).Build());
+        var catalog = new WatchCatalog(provider, new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?> { { "Movies:AccessToken", "test" } }).Build(), TimeProvider.System);
         var result = await catalog.FilledPage("multi", "Shared title", selected: "8");
         Assert.False(result.Failed); Assert.Equal(2, result.Items.Count);
         Assert.Contains(result.Items, t => t.Kind == "movie" && t.Id == 7 && t.Year == "2020");

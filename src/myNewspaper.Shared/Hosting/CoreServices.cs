@@ -37,7 +37,8 @@ public static class CoreServices
         services.AddHealthChecks().AddDbContextCheck<WebScraperContext>();
 
         // The date shown on each article is the calendar day in one configured time zone (Display:TimeZone).
-        services.AddSingleton(sp => FeedDates.Create(sp.GetRequiredService<IConfiguration>()["Display:TimeZone"]));
+        services.AddSingleton(sp => FeedDates.Create(sp.GetRequiredService<IConfiguration>()["Display:TimeZone"],
+            sp.GetRequiredService<TimeProvider>()));
         services.TryAddSingleton(TimeProvider.System);
         services.AddMemoryCache();
 

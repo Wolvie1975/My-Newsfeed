@@ -23,11 +23,11 @@ public static class RankingsQuery
         var change = previous - rank;
         return change > 0 ? $"Up {change}" : change < 0 ? $"Down {-change}" : "Unchanged";
     }
-    public static bool OldPoll(SportsRankingPoll poll, DateTime now) =>
-        DateTime.SpecifyKind(now, DateTimeKind.Utc) - DateTime.SpecifyKind(poll.PublishedAtUtc, DateTimeKind.Utc) > TimeSpan.FromDays(14);
-    public static string? Freshness(SportsRankingSource source, DateTime now) => !string.IsNullOrWhiteSpace(source.LastError)
+    public static bool OldPoll(SportsRankingPoll poll, DateTime nowUtc) =>
+        DateTime.SpecifyKind(nowUtc, DateTimeKind.Utc) - DateTime.SpecifyKind(poll.PublishedAtUtc, DateTimeKind.Utc) > TimeSpan.FromDays(14);
+    public static string? Freshness(SportsRankingSource source, DateTime nowUtc) => !string.IsNullOrWhiteSpace(source.LastError)
         ? "Latest refresh failed; showing last available rankings."
-        : source.LastSuccessAt is not { } last || DateTime.SpecifyKind(now, DateTimeKind.Utc) - DateTime.SpecifyKind(last, DateTimeKind.Utc) > TimeSpan.FromHours(2)
+        : source.LastSuccessAt is not { } last || DateTime.SpecifyKind(nowUtc, DateTimeKind.Utc) - DateTime.SpecifyKind(last, DateTimeKind.Utc) > TimeSpan.FromHours(2)
             ? "Rankings may be out of date." : null;
     public static async Task<RankingsPage> GetAsync(WebScraperContext db, int? sourceId, ILogger log, DateOnly? today = null, string? collegeSport = null, CancellationToken ct = default)
     {

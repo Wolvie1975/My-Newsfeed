@@ -110,7 +110,7 @@ public class TechDesksTests
         // tables present (as in the test copy of WebScraper) they return what is stored. Missing tables are covered by
         // TechQuery.LiveTablesAsync returning false, checked here only when that is the database's actual state.
         var tracker = await TechQuery.TrackerAsync(db);
-        var released = await TechQuery.JustReleasedAsync(db, TimeSpan.FromHours(48), 4);
+        var released = await TechQuery.JustReleasedAsync(db, DateTime.UtcNow, TimeSpan.FromHours(48), 4);
         var reading = await TechQuery.DevReadingAsync(db, "hn", 5);
         var services = await TechQuery.ServiceStatesAsync(db);
         if (!await TechQuery.LiveTablesAsync(db, "releases"))

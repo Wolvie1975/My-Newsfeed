@@ -1,6 +1,7 @@
 @inject IDbContextFactory<WebScraperContext> Factory
 @inject FeedDates Dates
 @inherits DataComponentBase
+@inject TimeProvider Clock
 
 @if (releases.Count > 0)
 {
@@ -62,14 +63,14 @@
 @code {
     [Parameter] public bool Compact { get; set; }
 
-    private DateTime nowUtc = DateTime.UtcNow;
+    private DateTime nowUtc;
     private IReadOnlyList<TrackedRelease> releases = [];
 
     protected override async Task OnParametersSetAsync()
     {
-        nowUtc = DateTime.UtcNow;
+        nowUtc = Clock.GetUtcNow().UtcDateTime;
         await using var db = await Factory.CreateDbContextAsync(Ct);
-        releases = await TechQuery.JustReleasedAsync(db, TimeSpan.FromHours(48), take: 4, Ct);
+        releases = await TechQuery.JustReleasedAsync(db, nowUtc, TimeSpan.FromHours(48), take: 4, Ct);
     }
 
     private string When(DateTime utc) =>

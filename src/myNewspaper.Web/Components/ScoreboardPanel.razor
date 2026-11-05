@@ -1,4 +1,5 @@
 @inherits DataComponentBase
+@inject TimeProvider Clock
 
 
 @inject ILogger<ScoreboardPanel> Log
@@ -370,7 +371,7 @@
         selection = ScoreboardSelection.Resolve(Compact ? null : Show, Compact ? null : Competition, Compact ? null : Follow, snapshot.Coverage, snapshot.Follows ?? []);
         try {
             await using var db = await Factory.CreateDbContextAsync(Ct);
-            records = await TeamRecords.LoadAsync(db, today, RecordPhases, Ct);
+            records = await TeamRecords.LoadAsync(db, today, Clock.GetUtcNow().UtcDateTime, RecordPhases, Ct);
             hasMls = !Compact && await EventsQuery.HasEnabledProviderAsync(db, "espn-mls", Ct);
             hasChampionship = !Compact && await EventsQuery.HasEnabledProviderAsync(db, "espn-championship", Ct);
             if (!Compact)
@@ -557,8 +558,8 @@
                     </details>
                 }
                 <footer class="scoreboard-footer">
-                    <p class="scoreboard-updated @(game.Stale(DateTime.UtcNow) ? "scoreboard-warning" : "")">
-                        @(game.Stale(DateTime.UtcNow) ? "Scores may be outdated — last updated" : "Updated")
+                    <p class="scoreboard-updated @(game.Stale(Clock.GetUtcNow().UtcDateTime) ? "scoreboard-warning" : "")">
+                        @(game.Stale(Clock.GetUtcNow().UtcDateTime) ? "Scores may be outdated — last updated" : "Updated")
                         <time datetime="@DateTime.SpecifyKind(game.LastObservedAtUtc, DateTimeKind.Utc).ToString("O")" title="@Dates.PublishedFull(game.LastObservedAtUtc)">@Dates.Time(game.LastObservedAtUtc) @Dates.ZoneLabel</time>
                     </p>
                     @if (game.RequestAvailability is "error" or "partial") { <p class="scoreboard-warning">Latest collection is @(game.RequestAvailability == "partial" ? "incomplete" : "unavailable"); showing the latest stored sample.</p> }

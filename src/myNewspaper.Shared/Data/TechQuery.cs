@@ -111,14 +111,14 @@ public static class TechQuery
         FeedQuery.GetLatestInHubAsync(db, "tech", take, category, ct);
 
     public static Task<IReadOnlyList<CoveredStory>> MostCoveredAsync(
-        WebScraperContext db, TimeSpan window, int minSources, int take, string? category = null,
+        WebScraperContext db, DateTime nowUtc, TimeSpan window, int minSources, int take, string? category = null,
         CancellationToken ct = default) =>
-        CoveredQuery.MostCoveredAsync(db, FallbackCache, "tech", DateTime.UtcNow - window, minSources, take, category, ct);
+        CoveredQuery.MostCoveredAsync(db, FallbackCache, "tech", nowUtc - window, minSources, take, category, ct);
 
     public static Task<IReadOnlyList<CoveredStory>> MostCoveredAsync(
-        WebScraperContext db, IMemoryCache? cache, TimeSpan window, int minSources, int take,
+        WebScraperContext db, IMemoryCache? cache, DateTime nowUtc, TimeSpan window, int minSources, int take,
         string? category = null, CancellationToken ct = default) =>
-        CoveredQuery.MostCoveredAsync(db, cache, "tech", DateTime.UtcNow - window, minSources, take, category, ct);
+        CoveredQuery.MostCoveredAsync(db, cache, "tech", nowUtc - window, minSources, take, category, ct);
 
     public static async Task<IReadOnlyList<VideoItem>> VideosAsync(
         WebScraperContext db, int take, CancellationToken ct = default)
@@ -259,11 +259,8 @@ public static class TechQuery
     }
 
     public static Task<IReadOnlyList<TrackedRelease>> JustReleasedAsync(
-        WebScraperContext db, TimeSpan window, int take, CancellationToken ct = default)
-    {
-        var now = DateTime.UtcNow;
-        return ReleasesBetweenAsync(db, now - window, now.AddHours(1), take, ct);
-    }
+        WebScraperContext db, DateTime nowUtc, TimeSpan window, int take, CancellationToken ct = default) =>
+        ReleasesBetweenAsync(db, nowUtc - window, nowUtc.AddHours(1), take, ct);
 
     public static async Task<IReadOnlyList<TrackedRelease>> ReleasesBetweenAsync(
         WebScraperContext db, DateTime startUtc, DateTime endUtc, int take = 100, CancellationToken ct = default)
@@ -308,7 +305,7 @@ public static class TechQuery
     }
 
     public static async Task<(IReadOnlyList<(string Slug, string Name)> Projects, IReadOnlyList<TrackedRelease> Releases)> ReleaseHistoryAsync(
-        WebScraperContext db, string? projectSlug = null, CancellationToken ct = default)
+        WebScraperContext db, DateTime nowUtc, string? projectSlug = null, CancellationToken ct = default)
     {
         if (!await LiveTablesAsync(db, "releases", ct)) return ([], []);
         try
@@ -319,7 +316,7 @@ public static class TechQuery
                 .Select(p => new { p.Slug, p.Name })
                 .ToListAsync(ct);
 
-            var since = DateTime.UtcNow.AddMonths(-12);
+            var since = nowUtc.AddMonths(-12);
             var query = db.TechReleases.AsNoTracking()
                 .Where(r => !r.IsPrerelease && r.Project.Enabled && r.ReleasedAt >= since);
             if (!string.IsNullOrWhiteSpace(projectSlug))
@@ -434,9 +431,9 @@ public static class TechQuery
     /// The latest roundup covers the last complete Sunday–Saturday week in America/Chicago.
     /// It publishes at 6:00 AM Sunday Central; before then, the previous week is still the latest.
     /// </summary>
-    public static DateOnly LatestWeekStart(DateTime utcNow, FeedDates dates)
+    public static DateOnly LatestWeekStart(DateTime nowUtc, FeedDates dates)
     {
-        var local = TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(utcNow, DateTimeKind.Utc), dates.Zone);
+        var local = TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(nowUtc, DateTimeKind.Utc), dates.Zone);
         var today = DateOnly.FromDateTime(local);
         var thisWeekSunday = today.AddDays(-(int)today.DayOfWeek);
         return today.DayOfWeek == DayOfWeek.Sunday && local.TimeOfDay < TimeSpan.FromHours(6)
@@ -444,9 +441,9 @@ public static class TechQuery
             : thisWeekSunday.AddDays(-7);
     }
 
-    public static bool TryResolveWeekStart(string? weekQuery, DateTime utcNow, FeedDates dates, out DateOnly weekStart)
+    public static bool TryResolveWeekStart(string? weekQuery, DateTime nowUtc, FeedDates dates, out DateOnly weekStart)
     {
-        var latest = LatestWeekStart(utcNow, dates);
+        var latest = LatestWeekStart(nowUtc, dates);
         if (string.IsNullOrWhiteSpace(weekQuery))
         {
             weekStart = latest;

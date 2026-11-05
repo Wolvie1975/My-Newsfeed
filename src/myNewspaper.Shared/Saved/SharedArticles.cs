@@ -13,11 +13,11 @@ public sealed record SavedRemoval(string Url);
 public sealed class SavedListFullException : Exception;
 
 // Separate from scraper-owned rows: copies survive feed retention and deployments.
-public sealed class SharedArticles(IDbContextFactory<WebScraperContext> factory)
+public sealed class SharedArticles(IDbContextFactory<WebScraperContext> factory, TimeProvider clock)
 {
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
     public const int Maximum = 500;
-    public static SavedArticle Normalize(SavedArticle article)
+    public static SavedArticle Normalize(SavedArticle article, DateTimeOffset nowUtc)
     {
         ArgumentNullException.ThrowIfNull(article);
         static string Text(string? value, int maximum) => (value ?? "").Length <= maximum
@@ -32,7 +32,7 @@ public sealed class SharedArticles(IDbContextFactory<WebScraperContext> factory)
             Image = string.IsNullOrEmpty(article.Image) ? null : NormalizeUrl(article.Image),
             Date = Text(article.Date, 100),
             DateLabel = Text(article.DateLabel, 200),
-            SavedAt = article.SavedAt ?? DateTimeOffset.UtcNow
+            SavedAt = article.SavedAt ?? nowUtc
         };
     }
     public static string NormalizeUrl(string? value)
@@ -71,14 +71,14 @@ public sealed class SharedArticles(IDbContextFactory<WebScraperContext> factory)
     }
 
     public Task<IReadOnlyList<SavedArticle>> Add(int? profileId, SavedArticle article, CancellationToken ct = default) =>
-        Change(profileId, [Normalize(article) with { SavedAt = DateTimeOffset.UtcNow }], null, null, ct);
+        Change(profileId, [Normalize(article, clock.GetUtcNow()) with { SavedAt = clock.GetUtcNow() }], null, null, ct);
     public Task<IReadOnlyList<SavedArticle>> Remove(int? profileId, string url, CancellationToken ct = default) =>
         Change(profileId, [], NormalizeUrl(url), null, ct);
     public Task<IReadOnlyList<SavedArticle>> Import(int? profileId, SavedImport import, CancellationToken ct = default)
     {
         if (import.ClientId == Guid.Empty || import.Articles is null || import.Articles.Length > Maximum)
             throw new ArgumentException("Invalid bookmark import.");
-        return Change(profileId, import.Articles.Select(Normalize).ToArray(), null, import.ClientId, ct);
+        return Change(profileId, import.Articles.Select(a => Normalize(a, clock.GetUtcNow())).ToArray(), null, import.ClientId, ct);
     }
 
     private async Task<IReadOnlyList<SavedArticle>> Change(int? profileId, SavedArticle[] additions, string? remove, Guid? clientId, CancellationToken ct)

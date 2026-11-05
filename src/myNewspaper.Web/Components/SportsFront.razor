@@ -4,6 +4,7 @@
 @inject IConfiguration Config
 @inject ILogger<SportsFront> Log
 @inherits DataComponentBase
+@inject TimeProvider Clock
 
 
 @* Sports front page as in the approved concept: today's scores across the top, then upcoming games, the lead story and
@@ -276,7 +277,7 @@
 
     protected override async Task OnParametersSetAsync()
     {
-        nowUtc = DateTime.UtcNow;
+        nowUtc = Clock.GetUtcNow().UtcDateTime;
         var today = Dates.TodayAt(nowUtc);
         newsUnavailable = false;
         await using var db = await Factory.CreateDbContextAsync(Ct);

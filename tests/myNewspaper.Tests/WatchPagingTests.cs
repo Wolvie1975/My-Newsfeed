@@ -26,7 +26,7 @@ public class WatchPagingTests
             return Task.FromResult(new HttpResponseMessage(Fail ? HttpStatusCode.ServiceUnavailable : HttpStatusCode.OK) { Content = new StringContent(json) });
         }
     }
-    private static WatchCatalog Catalog(Provider p) => new(p, new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?> { { "Movies:AccessToken", "test" } }).Build());
+    private static WatchCatalog Catalog(Provider p) => new(p, new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?> { { "Movies:AccessToken", "test" } }).Build(), TimeProvider.System);
     [Fact]
     public async Task Fills_pages_from_eligible_prefix_without_repeats_skips_or_extra_refetches()
     {

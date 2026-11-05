@@ -20,6 +20,7 @@ public class FeedArticlesRenderTests
     {
         var services = new ServiceCollection()
             .AddLogging()
+            .AddSingleton(TimeProvider.System)
             .AddSingleton(FeedDates.Create("UTC"))
             .BuildServiceProvider();
 

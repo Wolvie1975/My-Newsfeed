@@ -23,7 +23,7 @@ public class WatchCatalogTests
             return Task.FromResult(new HttpResponseMessage(Broken || LastPath.Contains("/6/watch/providers") ? HttpStatusCode.ServiceUnavailable : HttpStatusCode.OK) { Content = new StringContent(json) });
         }
     }
-    private static WatchCatalog Catalog(Provider provider) => new(provider, new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?> { { "Movies:AccessToken", "test-token" } }).Build());
+    private static WatchCatalog Catalog(Provider provider) => new(provider, new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?> { { "Movies:AccessToken", "test-token" } }).Build(), TimeProvider.System);
     [Fact]
     public async Task Search_encodes_query_bounds_pages_filters_adults_and_caches()
     {

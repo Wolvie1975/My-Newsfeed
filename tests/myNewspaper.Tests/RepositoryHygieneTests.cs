@@ -175,6 +175,27 @@ public partial class RepositoryHygieneTests
         Assert.True(noBase.Count == 0, "Add `@inherits DataComponentBase` and pass Ct to reads: " + string.Join(", ", noBase));
     }
 
+    // One name for the current time (general standard section 4): `DateTime nowUtc`. The banned-API list stops code
+    // reading the clock outside the edge; this stops the utcNow/now names from coming back.
+    [GeneratedRegex(@"\bDateTime(Offset)?\??\s+(utcNow|now)\b")]
+    private static partial Regex OtherNowName();
+
+    [Fact]
+    public void The_current_time_is_called_nowUtc()
+    {
+        var root = RepositoryRoot();
+        var offenders = TrackedFiles(root)
+            .Where(f => f.StartsWith("src/", StringComparison.Ordinal)
+                && (f.EndsWith(".cs", StringComparison.Ordinal) || f.EndsWith(".razor", StringComparison.Ordinal)))
+            .Where(f => File.Exists(Path.Combine(root, f)))
+            .SelectMany(f => File.ReadLines(Path.Combine(root, f)).Select((line, i) => (f, line: i + 1, text: line)))
+            .Where(l => OtherNowName().IsMatch(l.text))
+            .Select(l => $"{l.f}:{l.line}")
+            .ToList();
+
+        Assert.True(offenders.Count == 0, "Name the current time `nowUtc`: " + string.Join(", ", offenders));
+    }
+
     private static string RepositoryRoot()
     {
         for (var dir = new DirectoryInfo(AppContext.BaseDirectory); dir is not null; dir = dir.Parent)

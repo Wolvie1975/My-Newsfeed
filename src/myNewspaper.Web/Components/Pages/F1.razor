@@ -8,6 +8,7 @@
 @inject NavigationManager Nav
 @inject ILogger<F1> Log
 @inherits DataComponentBase
+@inject TimeProvider Clock
 
 <PageTitle>F1 · @ViewLabel · myNewspaper</PageTitle>
 <div class="mx-desktop">
@@ -26,7 +27,7 @@ else if (data.Source?.Enabled != true)
 }
 else
 {
-    @if (F1Query.Freshness(data, DateTime.UtcNow) is { } warning) { <p class="updated" role="status">@warning</p> }
+    @if (F1Query.Freshness(data, Clock.GetUtcNow().UtcDateTime) is { } warning) { <p class="updated" role="status">@warning</p> }
     @if (view == "schedule")
     {
         @* Schedule as in the approved concept: the next race weekend as a banner, the following rounds as agate rows

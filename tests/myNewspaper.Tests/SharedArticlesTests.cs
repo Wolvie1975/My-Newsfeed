@@ -18,21 +18,21 @@ public class SharedArticlesTests
     [Fact]
     public void Copies_text_and_limits_payload_without_interpreting_html()
     {
-        var article = SharedArticles.Normalize(new("https://EXAMPLE.com", "<script>alert(1)</script>"));
+        var article = SharedArticles.Normalize(new("https://EXAMPLE.com", "<script>alert(1)</script>"), DateTimeOffset.UtcNow);
         Assert.Equal("https://example.com/", article.Url);
         Assert.Equal("<script>alert(1)</script>", article.Title);
         Assert.NotNull(article.SavedAt);
-        Assert.Throws<ArgumentException>(() => SharedArticles.Normalize(article with { Summary = new string('a', 4001) }));
+        Assert.Throws<ArgumentException>(() => SharedArticles.Normalize(article with { Summary = new string('a', 4001) }, DateTimeOffset.UtcNow));
     }
 
     [Fact]
     public void Video_copies_preserve_type_and_old_articles_default_to_article()
     {
-        var video = SharedArticles.Normalize(new("https://www.youtube.com/watch?v=test", "Video", "Channel", Kind: "video"));
+        var video = SharedArticles.Normalize(new("https://www.youtube.com/watch?v=test", "Video", "Channel", Kind: "video"), DateTimeOffset.UtcNow);
         Assert.Equal("video", video.Kind);
         var legacy = System.Text.Json.JsonSerializer.Deserialize<SavedArticle>("{\"Url\":\"https://example.com/\",\"Title\":\"Old article\"}");
         Assert.Equal("article", legacy!.Kind);
-        Assert.Throws<ArgumentException>(() => SharedArticles.Normalize(video with { Kind = "unsupported" }));
+        Assert.Throws<ArgumentException>(() => SharedArticles.Normalize(video with { Kind = "unsupported" }, DateTimeOffset.UtcNow));
     }
 
     // Profiles off: the legacy shared list. Profiles on: the profile's own row, created on first save, which leaves the
@@ -68,8 +68,8 @@ public class SharedArticlesTests
                     other = (await db.Database.SqlQueryRaw<int>("INSERT dbo.MyDailyFeedProfiles (Name) OUTPUT inserted.Id AS Value VALUES (N'B')").ToListAsync()).Single();
                 }
             }
-            var first = new SharedArticles(factory);
-            var second = new SharedArticles(factory);
+            var first = new SharedArticles(factory, TimeProvider.System);
+            var second = new SharedArticles(factory, TimeProvider.System);
             await Task.WhenAll(first.Add(owner, new("https://example.com/a", "A")), second.Add(owner, new("https://example.com/b", "B")));
             Assert.Equal(2, (await first.Read(owner)).Count);
             await first.Add(owner, new("https://example.com/a", "Duplicate"));
@@ -83,7 +83,7 @@ public class SharedArticlesTests
             await first.Remove(owner, "https://example.com/a");
             Assert.Single(await first.Read(owner));
             // Another service instance (as after restart) sees persisted copies.
-            Assert.Single(await new SharedArticles(factory).Read(owner));
+            Assert.Single(await new SharedArticles(factory, TimeProvider.System).Read(owner));
             var batch = Enumerable.Range(0, 499).Select(i => new SavedArticle($"https://example.com/{i}", "Saved")).ToArray();
             await first.Import(owner, new(Guid.NewGuid(), batch));
             await Assert.ThrowsAsync<SavedListFullException>(() => first.Add(owner, new("https://example.com/overflow", "Full")));

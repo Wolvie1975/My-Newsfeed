@@ -10,9 +10,9 @@ public static class BoxOfficeQuery
 {
     public static Task<int?> CategoryIdAsync(WebScraperContext db, CancellationToken ct = default) => db.SourceCategories.AsNoTracking()
         .Where(c => c.CategoryName == "Box Office").OrderBy(c => c.Id).Select(c => (int?)c.Id).FirstOrDefaultAsync(ct);
-    public static string? Health(NewsPublisher source, DateTime now) => source.Failed
+    public static string? Health(NewsPublisher source, DateTime nowUtc) => source.Failed
         ? "Latest collection failed; showing previously collected stories."
-        : source.LastChecked is not { } last || now - DateTime.SpecifyKind(last, DateTimeKind.Utc) > TimeSpan.FromHours(2)
+        : source.LastChecked is not { } last || nowUtc - DateTime.SpecifyKind(last, DateTimeKind.Utc) > TimeSpan.FromHours(2)
             ? "Story collection may be delayed." : null;
     public static async Task<BoxOfficePage> GetAsync(WebScraperContext db, int? sourceId, FeedCursor? after, CancellationToken ct = default)
     {

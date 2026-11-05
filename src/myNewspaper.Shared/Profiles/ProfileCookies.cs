@@ -18,7 +18,7 @@ public sealed record GatePass(Guid DeviceId, int ProfileId, DateTime PassedAtUtc
 /// keeps only a hash of its secret, so a copied database can't mint cookies. <c>mnp.gate</c> is a session cookie that
 /// records passing the picker. Both are protected with Data Protection, which persists to the /keys volume.
 /// </summary>
-public sealed class ProfileCookies(IDataProtectionProvider provider)
+public sealed class ProfileCookies(IDataProtectionProvider provider, TimeProvider clock)
 {
     public const string DeviceCookie = "mnp.device";
     public const string GateCookie = "mnp.gate";
@@ -46,7 +46,7 @@ public sealed class ProfileCookies(IDataProtectionProvider provider)
 
     public void WriteDevice(HttpContext http, DeviceToken token) =>
         http.Response.Cookies.Append(DeviceCookie, device.Protect($"{token.DeviceId:N}.{WebEncoders.Base64UrlEncode(token.Secret)}"),
-            Options(http, DateTimeOffset.UtcNow.Add(DeviceLifetime)));
+            Options(http, clock.GetUtcNow().Add(DeviceLifetime)));
 
     public GatePass? ReadGate(HttpContext http)
     {

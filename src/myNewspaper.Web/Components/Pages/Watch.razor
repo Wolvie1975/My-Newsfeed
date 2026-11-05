@@ -3,6 +3,7 @@
 @using myNewspaper.Shared.Watching
 @inject WatchCatalog Catalog
 @inject FeedDates Dates
+@inject TimeProvider Clock
 <PageTitle>Where to watch · myNewspaper</PageTitle>
 <div class="watch-page">
 <div class="mx-desktop tab-desktop">
@@ -105,7 +106,7 @@ else{
         Page=Math.Clamp(Page,1,10);
         MyServices=Selected.Length>0?(await Catalog.Services()).Where(s=>Selected.Contains(s.Id)).ToList():[];
         if(Featured){
-            var today=DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(DateTime.UtcNow,Dates.Zone));
+            var today=DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(Clock.GetUtcNow().UtcDateTime,Dates.Zone));
             var rows=await Task.WhenAll(Catalog.ServicesShelf(Selection),Catalog.TrendingShelf("movie",Selection),Catalog.TrendingShelf("tv",Selection),Catalog.NewMoviesShelf(today,Selection));
             (servicesRow,trendingMovies,trendingTv,newMovies)=(rows[0],rows[1],rows[2],rows[3]);
         }

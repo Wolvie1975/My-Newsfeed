@@ -26,10 +26,10 @@ public static class StandingsQuery
         return enabled.FirstOrDefault(s => s.Id == requested) ?? enabled.FirstOrDefault();
     }
 
-    public static string? Freshness(SportsStandingsSource source, DateTime utcNow)
+    public static string? Freshness(SportsStandingsSource source, DateTime nowUtc)
     {
         if (!string.IsNullOrWhiteSpace(source.LastError)) return "Latest refresh failed; showing last available standings.";
-        return source.LastSuccessAt is not { } last || utcNow - DateTime.SpecifyKind(last, DateTimeKind.Utc) > TimeSpan.FromHours(2)
+        return source.LastSuccessAt is not { } last || nowUtc - DateTime.SpecifyKind(last, DateTimeKind.Utc) > TimeSpan.FromHours(2)
             ? "Standings may be out of date." : null;
     }
 

@@ -4,10 +4,10 @@ using myNewspaper.Shared.Data;
 namespace myNewspaper.Shared.Endpoints;
 
 /// <summary>A database context for one admin request, disposed with the request, plus its clock and cancellation.</summary>
-public sealed class RequestDb(WebScraperContext context, DateTime now, CancellationToken ct) : IAsyncDisposable
+public sealed class RequestDb(WebScraperContext context, DateTime nowUtc, CancellationToken ct) : IAsyncDisposable
 {
     public WebScraperContext Context { get; } = context;
-    public DateTime Now { get; } = now;
+    public DateTime Now { get; } = nowUtc;
     public CancellationToken Ct { get; } = ct;
 
     public static async ValueTask<RequestDb?> BindAsync(HttpContext http)

@@ -43,7 +43,7 @@ public class BoxOfficeForecastTests
             ["Rows"] = rows,
             ["Kind"] = BoxOfficeForecastQuery.Preview,
             ["Source"] = new BoxOfficeForecastSource(BoxOfficeForecastQuery.Preview, Now, true),
-            ["UtcNow"] = Now
+            ["NowUtc"] = Now
         }))).ToHtmlString());
         Assert.Contains("Predicted rank 3", html);
         Assert.DoesNotContain("Predicted rank 1", html);

@@ -5,6 +5,7 @@
 @inject IDbContextFactory<WebScraperContext> Factory
 @inject FeedDates Dates
 @inherits DataComponentBase
+@inject TimeProvider Clock
 
 <PageTitle>Competitions · myNewspaper</PageTitle>
 
@@ -141,7 +142,7 @@ else
         // "Today" is the calendar date in the display zone (Central); events are compared by their own local date.
         var today = Dates.Today;
         await using var db = await Factory.CreateDbContextAsync(Ct);
-        records = await TeamRecords.LoadAsync(db, Dates.Today, RecordPhases, Ct);
+        records = await TeamRecords.LoadAsync(db, Dates.Today, Clock.GetUtcNow().UtcDateTime, RecordPhases, Ct);
         choices = await EventsQuery.GetScheduleChoicesAsync(db, today, Ct);
         selectedChoice = choices.FirstOrDefault(c => c.Value == Schedule);
         selectedProvider = await EventsQuery.ProviderOfScheduleAsync(db, School, Ct);
