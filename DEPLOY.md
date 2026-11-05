@@ -50,8 +50,13 @@ docker run -d --name sql2025 --hostname 6dae60fee94f --restart unless-stopped -p
 - Keep `--hostname 6dae60fee94f`: SQL Server's `@@SERVERNAME` comes from it. Keep the IP for anything that
   connects by address; apps use the name `sql2025`.
 - Upgrading the image: back up, stop, recreate with the same command and a newer image; the volume carries the data.
-- `docker stop` waits 90 s and then kills SQL Server (its launcher doesn't pass the stop signal on); the next start
-  runs crash recovery, which is safe. Check `docker logs sql2025` for "Recovery is complete".
+- To stop it cleanly: `docker update --restart no sql2025`, then `SHUTDOWN` through sqlcmd, and wait until the
+  container has exited (about 2 s); set `--restart unless-stopped` again on the new container. `SHUTDOWN` alone
+  isn't enough (the restart policy starts it again), and plain `docker stop` waits 90 s and then kills SQL Server
+  (its launcher doesn't pass the stop signal on); the next start runs crash recovery, which is safe but avoidable.
+- Changing `sa`: `ALTER LOGIN [sa]` to the new value in `.env`, then `deployment/deploy.sh --env-change`, then
+  recreate `sql2025` with the new `MSSQL_SA_PASSWORD` as above. Anything else that logs in as `sa` (the log-backup
+  job, a VS Code connection) needs the new value too.
 - `MSSQL_SA_PASSWORD` is read only when the data directory is first created; with the volume, an `ALTER LOGIN [sa]`
   change persists and the variable is ignored.
 - Backups inside the volume (`/var/opt/mssql/backup`) survive the container, not the disk: keep copies elsewhere.

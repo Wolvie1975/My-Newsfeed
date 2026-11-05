@@ -6,6 +6,26 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
+## SQL Server: data volume and sa password rotation — November 4, 2026 (America/Chicago)
+
+No code change. `sql2025`'s data (`/var/opt/mssql`, 6.9 GB) moved from the container layer to the Docker volume
+`sql2025-data` (same image, hostname `6dae60fee94f`, IP 172.18.0.6, port and settings; down 04:58–05:01 UTC). All 7
+databases ONLINE with the baseline's server name, logins and row counts; `DBCC CHECKDB` clean on `WebScraper`,
+`WebScraper_Test` and `BoxofficeChallenge`. Previous container kept stopped as `sql2025-before-volume`.
+
+Then the leaked `sa` password (in Git history until October 25; last set September 25) was rotated to the new value
+the user put in `.env` (not in Git history): `ALTER LOGIN [sa]` at 05:12:23 UTC, web and admin redeployed with
+`deploy.sh --env-change` (commit `dcf4ddebfff3`, only `ConnectionStrings__DefaultConnection` changed; rollback
+`deployment/rollback.sh dcf4ddebfff3`), and `sql2025` recreated with the new `MSSQL_SA_PASSWORD` at 05:18 UTC. The
+old password is refused. The first recreate attempt failed: after `SHUTDOWN` the restart policy restarted SQL Server,
+the running container was renamed and the new one couldn't take its IP, so the name `sql2025` was missing from about
+05:14:40 to 05:17:42 UTC (apps stayed healthy on existing connections). Redone with the restart policy off first; a
+clean shutdown took 2 s. Live check after: 44/44 public, 55/55 admin; household unchanged.
+
+Still using the old password until the user updates them: the job that runs the 15-minute `WebScraper` log backups
+as `sa` (outside SQL Server, probably on the host) and the VS Code SQL connection. Correction to the entry below:
+`rollback.sh` recreates containers from the current `.env`, so a rollback does not restore an old password.
+
 ## Live score cards and the admin password — November 4, 2026 (America/Chicago)
 
 Commits `5b43e6d`, `60eb313`, `327452f`, `51d7537` (November 5 UTC). Live score cards in the phone strips (Home,
@@ -22,8 +42,7 @@ Deployment: commit `327452fc6ef2` via `deployment/deploy.sh all --env-change`: w
 `4cf4f41c1858`, both healthy, `/version` `327452fc6ef2`, admin environment changed as intended (the password only).
 The script stopped printing after web because `diff` exits 1 under `set -e`; the deploy itself completed, checked by
 hand (image, health, `/version`, password hash against `.env`), and `51d7537` fixes the script. Rollback:
-`deployment/rollback.sh 327452fc6ef2` → `before-327452fc6ef2` (`ae1b90ba5029`, `96c4da823871`); note that rolling
-admin back also restores the old password.
+`deployment/rollback.sh 327452fc6ef2` → `before-327452fc6ef2` (`ae1b90ba5029`, `96c4da823871`).
 
 Live verification (`tools/live-check.cjs`): health 2/2; admin sign-in with the new password and 27 admin pages at 390
 and 1440px 55/55; 22 public pages at 320/390/430/1440px in light and dark 176/176, including the new score-card check.
