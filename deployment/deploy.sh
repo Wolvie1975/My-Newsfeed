@@ -146,7 +146,8 @@ for s in "${services[@]}"; do
     new_env="$(env_hash "${container[$s]}")"
     env_note="env unchanged"
     if [[ "$new_env" != "${old_env[$s]}" ]]; then
-        changed="$(diff <(echo "${old_env_lines[$s]}") <(env_lines "${container[$s]}") | awk '/^[<>]/ { print $2 }' | sort -u | paste -sd, -)"
+        # diff exits 1 when the files differ, which is the expected case here; don't let set -e stop the script.
+        changed="$( { diff <(echo "${old_env_lines[$s]}") <(env_lines "${container[$s]}") || true; } | awk '/^[<>]/ { print $2 }' | sort -u | paste -sd, -)"
         if [[ $env_change -eq 0 ]]; then
             echo "   ${container[$s]}: environment changed ($changed); pass --env-change if .env was changed on purpose" >&2
             rollback
