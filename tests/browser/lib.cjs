@@ -223,7 +223,7 @@ function cleanupZz(start, site = base) {
 }
 
 // A check run on its own cleans up when it exits, however it exits; under run.cjs (BROWSER_SUITE_START) the runner
-// does it once at the end. On its own, an unknown database is a warning; a clean-up that ran and failed fails the check.
+// does it once at the end. Either way an unknown database is a warning; a clean-up that ran and failed fails the run.
 if (require.main && require.main.filename.endsWith('.browser.cjs') && !process.env.BROWSER_SUITE_START) {
     process.on('exit', () => {
         const result = cleanupZz(started);

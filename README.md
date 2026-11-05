@@ -106,8 +106,9 @@ CLEANUP_DB=WebScraper_Test npm run test:browser -- watch     # checks whose file
 
 Checks that add profiles need `ADMIN_PASSWORD` and `ADMIN_BASE_URL`. At the end the runner
 removes `zz ` profiles and unassigned devices created during the run from `CLEANUP_DB` (the
-database behind the site; `WebScraper` is assumed only when `BASE_URL` is the live site) and
-fails the run if it can't.
+database behind the site; `WebScraper` is assumed only when `BASE_URL` is the live site). Without
+`CLEANUP_DB` it only warns and prints the clean-up command to run; a clean-up that runs and fails
+fails the run.
 
 Three checks skip unless given extra input: `category-hubs` changes admin data and needs
 `CATEGORY_ADMIN_PASSWORD`; `football-boxscore` needs a cached NFL box score from today or

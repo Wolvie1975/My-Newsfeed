@@ -8,7 +8,8 @@
 // Each check is a standalone Node script that exits non-zero on failure; output is kept in test-results/browser/.
 // Settings (BASE_URL, ADMIN_BASE_URL, ADMIN_PASSWORD, SCREENSHOT_DIR, WIDTHS, THEMES) are read by lib.cjs. At the end
 // the runner removes `zz ` profiles and the unassigned devices created since it started (lib.cjs, cleanupZz) and
-// fails the run if that clean-up can't run or the household check fails.
+// fails the run only if that clean-up ran and failed (or the household check failed). Without CLEANUP_DB, away from the
+// live site, it warns and prints the command to run instead.
 const { spawn } = require('node:child_process');
 const lib = require('./lib.cjs');
 const fs = require('node:fs');
@@ -80,5 +81,5 @@ function run(file) {
     );
     const cleanup = lib.cleanupZz(start);
     console.log('\n' + cleanup.text);
-    process.exitCode = failed.length || !cleanup.ok ? 1 : 0;
+    process.exitCode = failed.length || (cleanup.ran && !cleanup.ok) ? 1 : 0;
 })();
