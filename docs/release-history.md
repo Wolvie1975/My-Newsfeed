@@ -6,6 +6,28 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
+## CSS guard, `adm-` classes, one hidden-text class per site (clean-up step 8) — November 5, 2026 (America/Chicago)
+
+Commits `051fc38` (the Requests alert's `admin-alert*` and the public header's `admin-link` became `adm-alert*`/`adm-link`,
+classes only; Admin's `.adm-sr` became Bootstrap's `.visually-hidden`; the `.games` table heads use `.sr-only`),
+`76da2e3` (`tools/check-css.cjs`, in `tools/verify.sh` and both CI workflows), `efd063d` (`compare-builds --layout`),
+`eb5447b` (docs; guardrail row done). Breakpoints unchanged by choice (no visible change): the 29 one-off widths are
+registered with their reasons and new ones fail the check. No visible change intended.
+
+Verification: `tools/verify.sh` 6/6 (new CSS check). `compare-builds --layout` against `cda620f`: 112/112 layout views
+identical (`/events`, `/college`, `/college/results`, `/`, Admin status, sources, profiles, requests × 320/390/430/744/
+1024/1440/1920px × light/dark: every visible element's box, colours and font size); HTML: 301 pages differ only by the
+renames. Browser checks on a local preview (`WebScraper_Test`): admin-separation, admin-profiles, college-today pass;
+admin-layout and profile-settings fail exactly as before; admin-requests skips; clean-up left nothing.
+
+Deployment: commit `eb5447b53287` via `deployment/deploy.sh web admin` at 22:27:27Z (after the user added the
+workspace permission rule for the deploy scripts), both healthy, environment unchanged, `/version` the commit (web
+`63321d44bb27`, admin `b9cebc0ab752`). Rollback `deployment/rollback.sh eb5447b53287` → web `a856c5b0963c`, admin
+`f8504cbcf123` (`678842c`, step 7). Retention removed the `4317b1137a18` and `before-b4afe870d55c` images; rollbacks
+left: `678842c1109d`, `b4afe870d55c`, `college-revised-20261105`. Live check (22:28–22:33 UTC): health 2/2, admin 55/55,
+public 176/176 (22 pages × 320/390/430/1440px × light/dark), clean-up 2/2; household Jason (admin), 6 devices, 0
+unassigned, 0 `zz`; no errors in either app log; live stylesheets carry `adm-alert`/`adm-link` and no `admin-` classes.
+
 ## Shared browser-check helper (clean-up step 7) — November 5, 2026 (America/Chicago)
 
 Commits `52f38d3` (`tests/browser/lib.cjs`: addresses, admin password, screenshots, widths, themes, temporary profiles
