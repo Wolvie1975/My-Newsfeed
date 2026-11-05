@@ -116,4 +116,78 @@ public class LocalWeatherTests
         Assert.Same(result, await service.GetAsync(default, 51.5, -0.12)); Assert.Equal(1, handler.Calls);
     }
 
+    // A regression must fail these tests, not hang them.
+    private static readonly TimeSpan Limit = TimeSpan.FromSeconds(10);
+
+    // Holds each response until released, like a slow weather service.
+    private sealed class SlowHandler(Func<HttpRequestMessage, HttpResponseMessage> respond) : HttpMessageHandler
+    {
+        public readonly TaskCompletionSource Release = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public int Calls;
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken token)
+        {
+            Interlocked.Increment(ref Calls);
+            await Release.Task;
+            return respond(request);
+        }
+    }
+
+    private static HttpResponseMessage Forecast(HttpRequestMessage request) => request.RequestUri!.AbsolutePath.StartsWith("/points/")
+        ? Json("""{"properties":{"forecast":"https://api.weather.gov/gridpoints/EAX/1,2/forecast"}}""")
+        : Json(System.Text.Json.JsonSerializer.Serialize(new
+        {
+            properties = new
+            {
+                updated = DateTimeOffset.UtcNow,
+                periods = new[] { new { name = "Today", isDaytime = true, temperature = 61, temperatureUnit = "F", shortForecast = "Sunny", windSpeed = "5 mph", windDirection = "S", startTime = DateTimeOffset.UtcNow } }
+            }
+        }));
+
+    [Fact]
+    public async Task A_caller_that_stops_waiting_does_not_cancel_the_fetch_and_the_next_request_is_served_from_cache()
+    {
+        var handler = new SlowHandler(Forecast);
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        var service = new LocalWeather(new Clients(handler), cache, TimeProvider.System, NullLogger<LocalWeather>.Instance);
+
+        using (var impatient = new CancellationTokenSource(TimeSpan.FromMilliseconds(50)))
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => service.GetAsync(impatient.Token).WaitAsync(Limit));
+        var waiting = service.GetAsync(default);   // joins the same fetch rather than starting another
+        handler.Release.SetResult();
+        var page = await waiting.WaitAsync(Limit);
+
+        Assert.Equal(61, Assert.Single(page.Periods).Temperature);
+        Assert.Same(page, await service.GetAsync(default));
+        Assert.Equal(2, handler.Calls);           // one points request and one forecast request, for three callers
+    }
+
+    [Fact]
+    public async Task A_failure_after_the_caller_gave_up_is_still_cached_so_requests_back_off()
+    {
+        var handler = new SlowHandler(_ => new(HttpStatusCode.ServiceUnavailable));
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        var service = new LocalWeather(new Clients(handler), cache, TimeProvider.System, NullLogger<LocalWeather>.Instance);
+
+        using (var impatient = new CancellationTokenSource(TimeSpan.FromMilliseconds(50)))
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => service.GetAsync(impatient.Token).WaitAsync(Limit));
+        handler.Release.SetResult();
+        await Task.Delay(100);
+        var page = await service.GetAsync(default).WaitAsync(Limit);
+
+        Assert.Empty(page.Periods);
+        Assert.True(page.Stale);
+        Assert.Equal(1, handler.Calls);
+    }
+
+    [Fact]
+    public async Task Alert_failures_are_cached_so_requests_back_off()
+    {
+        var handler = new Handler(_ => new(HttpStatusCode.ServiceUnavailable));
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        var service = new LocalWeather(new Clients(handler), cache, TimeProvider.System, NullLogger<LocalWeather>.Instance);
+
+        Assert.Empty(await service.GetAlertsAsync(default));
+        Assert.Empty(await service.GetAlertsAsync(default));
+        Assert.Equal(1, handler.Calls);
+    }
 }

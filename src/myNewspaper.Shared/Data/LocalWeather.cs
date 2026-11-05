@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Globalization;
 using System.Text.Json;
 using Microsoft.Extensions.Caching.Memory;
@@ -8,11 +9,30 @@ public sealed record LocalForecast(string Name, int Temperature, string Unit, st
 public sealed record LocalWeatherPage(IReadOnlyList<LocalForecast> Periods, DateTimeOffset? Updated, bool Stale, string Location = "Kansas City", double Latitude = 39.0997, double Longitude = -94.5786);
 public sealed record WeatherAlert(string Event, string Headline, string Severity, DateTimeOffset? Ends);
 
+/// <summary>
+/// NWS forecasts and alerts, cached. Each location has at most one fetch in flight, bounded by the client's own timeout
+/// rather than the caller's: a caller that stops waiting (Home allows 3 s) doesn't cancel it, so its result, forecast or
+/// failure, is cached for the next request instead of every request waiting out the slow service again.
+/// </summary>
 public sealed class LocalWeather(IHttpClientFactory clients, IMemoryCache cache, TimeProvider clock, ILogger<LocalWeather> logger)
-    : IDisposable
 {
-    private readonly SemaphoreSlim gate = new(1, 1);
-    public void Dispose() => gate.Dispose();
+    private static readonly TimeSpan FailureBackoff = TimeSpan.FromMinutes(2);
+    private readonly ConcurrentDictionary<string, Lazy<Task<LocalWeatherPage>>> forecastFetches = new();
+    private readonly ConcurrentDictionary<string, Lazy<Task<IReadOnlyList<WeatherAlert>>>> alertFetches = new();
+
+    // Joins the fetch in flight for this key, or starts one; the caller's token only limits how long it waits.
+    private static Task<T> SharedFetchAsync<T>(ConcurrentDictionary<string, Lazy<Task<T>>> fetches, string key,
+        Func<Task<T>> fetch, CancellationToken cancellationToken)
+    {
+        async Task<T> RunAsync()
+        {
+            try { return await fetch(); }
+            finally { fetches.TryRemove(key, out _); }
+        }
+        // Lazy: GetOrAdd may build two entries under a race, but only the stored one is ever started.
+        return fetches.GetOrAdd(key, _ => new Lazy<Task<T>>(RunAsync)).Value.WaitAsync(cancellationToken);
+    }
+
     public static (double Latitude, double Longitude) Coordinates(double? latitude, double? longitude)
     {
         if (latitude is null && longitude is null) return (39.0997, -94.5786);
@@ -28,57 +48,59 @@ public sealed class LocalWeather(IHttpClientFactory clients, IMemoryCache cache,
         var key = custom ? FormattableString.Invariant($"weather:{lat:F2}:{lon:F2}") : "kc-weather";
         var location = custom ? "Your location" : "Kansas City";
         if (cache.TryGetValue<LocalWeatherPage>(key, out var fresh)) return fresh!;
-        await gate.WaitAsync(cancellationToken);
-        try
-        {
-            if (cache.TryGetValue<LocalWeatherPage>(key, out fresh)) return fresh!;
-            try
-            {
-                var http = clients.CreateClient("local-weather");
-                using var point = await http.GetAsync("https://api.weather.gov/points/" + lat.ToString(CultureInfo.InvariantCulture) + "," + lon.ToString(CultureInfo.InvariantCulture), cancellationToken);
-                point.EnsureSuccessStatusCode();
-                using var pointData = JsonDocument.Parse(await point.Content.ReadAsStringAsync(cancellationToken));
-                var pointProperties = pointData.RootElement.GetProperty("properties");
-                if (custom && pointProperties.TryGetProperty("relativeLocation", out var relative)
-                    && relative.TryGetProperty("properties", out var place))
-                {
-                    var city = place.TryGetProperty("city", out var c) ? c.GetString() : null;
-                    var state = place.TryGetProperty("state", out var st) ? st.GetString() : null;
-                    if (!string.IsNullOrWhiteSpace(city)) location = string.Join(", ", new[] { city, state }.Where(v => !string.IsNullOrWhiteSpace(v)));
-                }
-                var url = pointProperties.GetProperty("forecast").GetString();
-                if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) || uri.Scheme != "https" || uri.Host != "api.weather.gov")
-                    throw new JsonException("Unexpected forecast address.");
-                using var forecast = await http.GetAsync(uri, cancellationToken);
-                forecast.EnsureSuccessStatusCode();
-                using var data = JsonDocument.Parse(await forecast.Content.ReadAsStringAsync(cancellationToken));
-                var properties = data.RootElement.GetProperty("properties");
-                var nowUtc = clock.GetUtcNow();
-                var periods = properties.GetProperty("periods").EnumerateArray().Select(p => new LocalForecast(
-                    p.GetProperty("name").GetString() ?? "Forecast", p.GetProperty("temperature").GetInt32(),
-                    p.GetProperty("temperatureUnit").GetString() ?? "F", p.GetProperty("shortForecast").GetString() ?? "",
-                    (p.GetProperty("windSpeed").GetString() ?? "") + " " + (p.GetProperty("windDirection").GetString() ?? ""),
-                    p.GetProperty("startTime").GetDateTimeOffset(),
-                    !p.TryGetProperty("isDaytime", out var daytime) || daytime.ValueKind != JsonValueKind.False)).Where(p => p.Starts >= nowUtc.AddHours(-12)).Take(4).ToList();
-                var updated = properties.TryGetProperty("updated", out var stamp) && stamp.TryGetDateTimeOffset(out var date) ? date : nowUtc;
-                var result = new LocalWeatherPage(periods, updated, updated < nowUtc.AddHours(-6), location, lat, lon);
-                cache.Set(key + "-last", result, TimeSpan.FromHours(6));
-                cache.Set(key, result, TimeSpan.FromMinutes(15));
-                return result;
-            }
-            catch (Exception ex) when (ex is HttpRequestException or JsonException or InvalidOperationException or KeyNotFoundException || ex is OperationCanceledException && !cancellationToken.IsCancellationRequested)
-            {
-                logger.LogWarning(ex, "Weather forecast unavailable");
-                var result = cache.TryGetValue<LocalWeatherPage>(key + "-last", out var last)
-                    ? last! with { Stale = true } : new LocalWeatherPage([], null, true, location, lat, lon);
-                cache.Set(key, result, TimeSpan.FromMinutes(2));
-                return result;
-            }
-        }
-        finally { gate.Release(); }
+        return await SharedFetchAsync(forecastFetches, key, () => FetchForecastAsync(key, lat, lon, custom, location), cancellationToken);
     }
 
-    /// <summary>Active NWS alerts for the forecast point; empty on any failure. Cached 5 minutes.</summary>
+    private async Task<LocalWeatherPage> FetchForecastAsync(string key, double lat, double lon, bool custom, string location)
+    {
+        if (cache.TryGetValue<LocalWeatherPage>(key, out var fresh)) return fresh!;
+        // No caller token below: the client's timeout bounds the fetch, and its outcome is cached either way.
+        var cancellationToken = CancellationToken.None;
+        try
+        {
+            var http = clients.CreateClient("local-weather");
+            using var point = await http.GetAsync("https://api.weather.gov/points/" + lat.ToString(CultureInfo.InvariantCulture) + "," + lon.ToString(CultureInfo.InvariantCulture), cancellationToken);
+            point.EnsureSuccessStatusCode();
+            using var pointData = JsonDocument.Parse(await point.Content.ReadAsStringAsync(cancellationToken));
+            var pointProperties = pointData.RootElement.GetProperty("properties");
+            if (custom && pointProperties.TryGetProperty("relativeLocation", out var relative)
+                && relative.TryGetProperty("properties", out var place))
+            {
+                var city = place.TryGetProperty("city", out var c) ? c.GetString() : null;
+                var state = place.TryGetProperty("state", out var st) ? st.GetString() : null;
+                if (!string.IsNullOrWhiteSpace(city)) location = string.Join(", ", new[] { city, state }.Where(v => !string.IsNullOrWhiteSpace(v)));
+            }
+            var url = pointProperties.GetProperty("forecast").GetString();
+            if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) || uri.Scheme != "https" || uri.Host != "api.weather.gov")
+                throw new JsonException("Unexpected forecast address.");
+            using var forecast = await http.GetAsync(uri, cancellationToken);
+            forecast.EnsureSuccessStatusCode();
+            using var data = JsonDocument.Parse(await forecast.Content.ReadAsStringAsync(cancellationToken));
+            var properties = data.RootElement.GetProperty("properties");
+            var nowUtc = clock.GetUtcNow();
+            var periods = properties.GetProperty("periods").EnumerateArray().Select(p => new LocalForecast(
+                p.GetProperty("name").GetString() ?? "Forecast", p.GetProperty("temperature").GetInt32(),
+                p.GetProperty("temperatureUnit").GetString() ?? "F", p.GetProperty("shortForecast").GetString() ?? "",
+                (p.GetProperty("windSpeed").GetString() ?? "") + " " + (p.GetProperty("windDirection").GetString() ?? ""),
+                p.GetProperty("startTime").GetDateTimeOffset(),
+                !p.TryGetProperty("isDaytime", out var daytime) || daytime.ValueKind != JsonValueKind.False)).Where(p => p.Starts >= nowUtc.AddHours(-12)).Take(4).ToList();
+            var updated = properties.TryGetProperty("updated", out var stamp) && stamp.TryGetDateTimeOffset(out var date) ? date : nowUtc;
+            var result = new LocalWeatherPage(periods, updated, updated < nowUtc.AddHours(-6), location, lat, lon);
+            cache.Set(key + "-last", result, TimeSpan.FromHours(6));
+            cache.Set(key, result, TimeSpan.FromMinutes(15));
+            return result;
+        }
+        catch (Exception ex) when (ex is HttpRequestException or JsonException or InvalidOperationException or KeyNotFoundException or OperationCanceledException)
+        {
+            logger.LogWarning(ex, "Weather forecast unavailable");
+            var result = cache.TryGetValue<LocalWeatherPage>(key + "-last", out var last)
+                ? last! with { Stale = true } : new LocalWeatherPage([], null, true, location, lat, lon);
+            cache.Set(key, result, FailureBackoff);
+            return result;
+        }
+    }
+
+    /// <summary>Active NWS alerts for the forecast point; empty on any failure. Cached 5 minutes, failures 2.</summary>
     public async Task<IReadOnlyList<WeatherAlert>> GetAlertsAsync(CancellationToken cancellationToken, double? latitude = null, double? longitude = null)
     {
         var (lat, lon) = Coordinates(latitude, longitude);
@@ -86,22 +108,35 @@ public sealed class LocalWeather(IHttpClientFactory clients, IMemoryCache cache,
         var key = custom ? FormattableString.Invariant($"alerts:{lat:F2}:{lon:F2}") : "kc-alerts";
         if (cache.TryGetValue<IReadOnlyList<WeatherAlert>>(key, out var cached) && cached is not null)
             return cached;
+        return await SharedFetchAsync(alertFetches, key, () => FetchAlertsAsync(key, lat, lon), cancellationToken);
+    }
 
+    private async Task<IReadOnlyList<WeatherAlert>> FetchAlertsAsync(string key, double lat, double lon)
+    {
+        if (cache.TryGetValue<IReadOnlyList<WeatherAlert>>(key, out var cached) && cached is not null)
+            return cached;
+        var cancellationToken = CancellationToken.None;
+        IReadOnlyList<WeatherAlert> Failed()
+        {
+            IReadOnlyList<WeatherAlert> none = [];
+            cache.Set(key, none, FailureBackoff);
+            return none;
+        }
         try
         {
             var http = clients.CreateClient("local-weather");
             var pointUrl = "https://api.weather.gov/alerts/active?point=" + lat.ToString(CultureInfo.InvariantCulture) + "," + lon.ToString(CultureInfo.InvariantCulture);
             if (!Uri.TryCreate(pointUrl, UriKind.Absolute, out var uri) || uri.Scheme != "https" || uri.Host != "api.weather.gov")
-                return [];
+                return Failed();
 
             using var response = await http.GetAsync(uri, cancellationToken);
             if (!response.IsSuccessStatusCode)
-                return [];
+                return Failed();
 
             using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync(cancellationToken));
             var root = doc.RootElement;
             if (!root.TryGetProperty("features", out var features) || features.ValueKind != JsonValueKind.Array)
-                return [];
+                return Failed();
 
             var list = new List<WeatherAlert>();
             foreach (var feature in features.EnumerateArray())
@@ -123,10 +158,10 @@ public sealed class LocalWeather(IHttpClientFactory clients, IMemoryCache cache,
             cache.Set(key, result, TimeSpan.FromMinutes(5));
             return result;
         }
-        catch (Exception ex) when (ex is HttpRequestException or JsonException or InvalidOperationException or KeyNotFoundException || ex is OperationCanceledException && !cancellationToken.IsCancellationRequested)
+        catch (Exception ex) when (ex is HttpRequestException or JsonException or InvalidOperationException or KeyNotFoundException or OperationCanceledException)
         {
             logger.LogWarning(ex, "Weather alerts unavailable");
-            return [];
+            return Failed();
         }
     }
 }
