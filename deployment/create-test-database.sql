@@ -5,6 +5,7 @@
 -- The copy-only backup doesn't affect the regular backup chain. Afterwards delete the backup file, e.g.
 --   docker exec sql2025 rm /var/opt/mssql/data/WebScraper_copy_for_test.bak
 -- Repeatable: drops only a database named WebScraper_Test. Never point the tests at WebScraper itself.
+-- Then re-run deployment/sql-logins/04-test-login.sql: the copy has WebScraper's users, not mynewspaper_test.
 SET NOCOUNT ON;
 IF DB_ID(N'WebScraper') IS NULL THROW 50000, 'WebScraper is missing on this server.', 1;
 

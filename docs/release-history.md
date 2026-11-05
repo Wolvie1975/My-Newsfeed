@@ -6,6 +6,40 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
+## Own SQL logins for web, admin and the tests — November 5, 2026 (America/Chicago)
+
+Web and admin no longer connect as `sa`. New logins, none in a server role: `mynewspaper_web` (role
+`MyNewspaperWebApp`: SELECT on schema `dbo`, writes on 15 app tables), `mynewspaper_admin` (`MyNewspaperAdminApp`:
+SELECT on `dbo`, writes on 22 tables) and `mynewspaper_test` (`db_owner` of `WebScraper_Test` only, plus
+`CREATE ANY DATABASE` for the scratch database in `SharedArticlesTests`, decided by the user). Scripts in
+`deployment/sql-logins/`; runtime identities and the grant rule in DEPLOY.md ("SQL logins"). Commits `4e05c9d`
+(`.gitignore` `.env.*`), `3ad27b1` (tests prefer `ConnectionStrings:TestConnection`; `verify.sh` reads
+`TEST_SQL_CONNECTION`).
+
+Rehearsal on `WebScraper_Test`: the write lists re-derived from the current code (no change needed); `02` 12/12; a
+matrix of every `dbo` table × both logins × INSERT/UPDATE/DELETE, 414 probes, 0 mismatches; each login signs in and
+is refused by `WebScraper`. `tools/verify.sh` under `mynewspaper_test`: 1120/1120. Browser suite against local Web and
+Admin on their own logins (profiles off): 51 passed, 30 failed, 9 skipped, no SQL error in either log; the same 30
+fail identically with Web on `sa` (stale assertions and local data, for example `admin-layout` expecting a nav label
+without its count, and the Watch checks needing the catalog key), so none comes from the logins. Two fixes to the
+draft scripts: sqlcmd's default `QUOTED_IDENTIFIER OFF` (error 1934) and `02` reverting inside a doomed transaction.
+
+Production: copy-only backup `WebScraper_copyonly_20261105_134436_before-app-logins.bak` (verified; copy in
+`/workspaces/DotNet_Projects/sql-backups/`), then `01` + `02` on `WebScraper` (12/12). Web switched first
+(`SQL_CONNECTION`, with `ADMIN_SQL_CONNECTION` pinned to the old value so admin didn't follow), live check 2/2, 55/55,
+176/176, clean-up 2/2; then admin (`ADMIN_SQL_CONNECTION`), live check the same. Sessions after: only
+`mynewspaper_web` and `mynewspaper_admin` from the app containers, no `sa`.
+
+Deployment: commit `3ad27b141f04` via `deployment/deploy.sh web --env-change` at 15:39:26Z (`2234d5146f5c`, rollback
+`deployment/rollback.sh 3ad27b141f04 web` → `a38523491944`) and `deploy.sh admin --env-change` at 15:50:17Z
+(`25deb4a01598`, rollback `… admin` → `42026e43e0e3`); only `ConnectionStrings__DefaultConnection` changed. A rollback
+recreates from the current `.env`, so it keeps the new logins; to go back to `sa`, restore the `.env` copy in
+`/root/.config/mynewspaper/` and `deploy.sh --env-change`. Retention removed the `d1159dc05981` images of both
+services (also tagged `before-327452fc6ef2`); the remaining rollbacks are `dcf4ddebfff3` and `327452fc6ef2`.
+
+Not covered live: admin edits (the live check visits admin pages without saving). Admin's writes were covered on
+the test copy by the matrix and the admin browser checks.
+
 ## SQL Server: data volume and sa password rotation — November 4, 2026 (America/Chicago)
 
 No code change. `sql2025`'s data (`/var/opt/mssql`, 6.9 GB) moved from the container layer to the Docker volume

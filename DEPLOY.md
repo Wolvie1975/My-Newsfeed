@@ -14,8 +14,9 @@ separately. The reviewed shared environment uses sql2025 / WebScraper; another s
 may use a different database. Always use that deployment's actual runtime connection,
 not an assumed development database or copied numeric source IDs.
 
-Compose reads private `.env` settings: SQL_CONNECTION, ADMIN_PASSWORD, optional
-WEB_PORT, REVERSE_PROXY_IP and DISPLAY_TIMEZONE. Direct container deployments may
+Compose reads private `.env` settings: SQL_CONNECTION (web's login), ADMIN_SQL_CONNECTION
+(admin's login), ADMIN_PASSWORD, optional WEB_PORT, REVERSE_PROXY_IP and DISPLAY_TIMEZONE.
+TEST_SQL_CONNECTION is read only by `tools/verify.sh`. See "SQL logins" below. Direct container deployments may
 have runtime overrides absent from `.env`; inspect and preserve them privately.
 Keep the persistent `/keys` data-protection volume, network, ports, restart policy,
 health check and any existing operational settings. Never print passwords or a full
@@ -54,12 +55,38 @@ docker run -d --name sql2025 --hostname 6dae60fee94f --restart unless-stopped -p
   container has exited (about 2 s); set `--restart unless-stopped` again on the new container. `SHUTDOWN` alone
   isn't enough (the restart policy starts it again), and plain `docker stop` waits 90 s and then kills SQL Server
   (its launcher doesn't pass the stop signal on); the next start runs crash recovery, which is safe but avoidable.
-- Changing `sa`: `ALTER LOGIN [sa]` to the new value in `.env`, then `deployment/deploy.sh --env-change`, then
-  recreate `sql2025` with the new `MSSQL_SA_PASSWORD` as above. Anything else that logs in as `sa` (the log-backup
-  job, a VS Code connection) needs the new value too.
+- Changing `sa`: `ALTER LOGIN [sa]`, then update the private `sql.env` (`MSSQL_SA_PASSWORD`; the log-backup job reads
+  it from the container) and anything else you log in with as `sa` (a VS Code connection). Since November 5, 2026 no
+  app or test uses `sa` (see "SQL logins"), so no redeploy is needed.
 - `MSSQL_SA_PASSWORD` is read only when the data directory is first created; with the volume, an `ALTER LOGIN [sa]`
   change persists and the variable is ignored.
 - Backups inside the volume (`/var/opt/mssql/backup`) survive the container, not the disk: keep copies elsewhere.
+
+### SQL logins
+
+Since November 5, 2026 each runtime has its own login; none is `sysadmin`, `db_owner` of `WebScraper` or in a server
+role. Scripts are in [deployment/sql-logins/](deployment/sql-logins/); run them as `sa`, with passwords passed only as
+environment variables (`MNP_DATABASE`, `MNP_WEB_SQL_PASSWORD`, `MNP_ADMIN_SQL_PASSWORD`, `MNP_TEST_SQL_PASSWORD`).
+
+| Runtime | Login (`.env` setting) | Can do |
+| --- | --- | --- |
+| Web (`mynewsfeed-web`) | `mynewspaper_web` (`SQL_CONNECTION`) | Role `MyNewspaperWebApp`: SELECT on schema `dbo`; INSERT/UPDATE/DELETE on 15 app tables (profiles, devices, follows, topics, Saved, requests, rollouts, `TvTrackedSeries`, Results tables) |
+| Admin (`mynewspaper-admin`) | `mynewspaper_admin` (`ADMIN_SQL_CONNECTION`) | Role `MyNewspaperAdminApp`: SELECT on `dbo`; INSERT/UPDATE/DELETE on 22 tables (the web list plus `Sources`, `SourceCategories`, `Pages`, YouTube feeds/videos, sports events and types) |
+| .NET tests (`tools/verify.sh`) | `mynewspaper_test` (`TEST_SQL_CONNECTION`) | `db_owner` of `WebScraper_Test` only, plus `CREATE ANY DATABASE` for the scratch database in `SharedArticlesTests` |
+| Rust scraper and scoreboard | `webscraper_ingest` | Role `WebScraperIngest` (managed by that project) |
+| Migrations, maintenance, backups | `sa` | You only, from the password manager or the private host file; no app container holds it |
+
+- **A migration that adds a table an app writes** also adds it to `@writes` in `01-app-logins.sql`; re-run `01` and
+  `02` on `WebScraper_Test`, then `WebScraper`. A missing grant shows up as SQL error 229 ("The INSERT permission was
+  denied…") in the app log. Reads need nothing: SELECT is granted on the schema.
+- **After every `create-test-database.sql`** re-run `04`: the restore copies `WebScraper`'s users and roles (so the
+  app logins keep working there) but drops `mynewspaper_test`, which exists only in the copy.
+- `tools/sql/` scripts use `SQL_CONNECTION`, so they run as `mynewspaper_web`: enough for `household-check.sh` and
+  `cleanup-zz.sh`. Anything else (DDL, other tables) needs `sa`.
+- Rotating an app password: `ALTER LOGIN [mynewspaper_web] WITH PASSWORD = …` (from a script, password in an
+  environment variable), update `.env`, then `deployment/deploy.sh --env-change web` (or `admin`).
+- Rollback for one app: put a working connection back in `.env` and `deploy.sh --env-change <service>`.
+  `99-rollback-app-logins.sql` removes the roles and users (and the logins with `MNP_DROP_LOGINS=yes`).
 
 ## Prepare source and database
 
