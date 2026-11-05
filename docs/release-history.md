@@ -6,6 +6,27 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
+## The clock through TimeProvider, one `nowUtc` name (clean-up step 6) — November 5, 2026 (America/Chicago)
+
+Commit `b4afe87`: `BannedSymbols.txt` refuses `DateTime.Now`/`UtcNow`/`Today` and `DateTimeOffset.Now`/`UtcNow` in
+application code (71 reads before, 0 after). Components inject `TimeProvider Clock`; endpoints take `TimeProvider`;
+`ScoresSync`, `LeaguePhaseService`, `LocalWeather`, `SharedArticles`, `ProfileCookies`, `WatchCatalog` and
+`FeedDates.Today` use the injected clock; `TeamRecords.LoadAsync`, `FeedQuery.GetRecentDatesAsync` and three
+`TechQuery` methods take `DateTime nowUtc`. The 30 `utcNow`/`now` names became `nowUtc`, guarded by
+`RepositoryHygieneTests`. No visible change intended.
+
+Verification: `tools/verify.sh` 5/5 (1123 tests). `node tools/compare-builds.cjs 2d54dbf`: admin 25/25 identical;
+public identical on a second run (`--public-only`, 300 pages). The first run differed only on `/mls/results` (a team
+record shown by the old build, not the new), which depends on the league-phase check that runs after startup; the two
+fresh servers finished it at different times.
+
+Deployment: commit `b4afe870d55c` via `deployment/deploy.sh web admin` at 16:55:31Z, both healthy, environment
+unchanged, `/version` the commit (web `6c5ff8414bc2`, admin `ce70a0fc5ae0`). Rollback `deployment/rollback.sh
+b4afe870d55c` → web `031aa49e2281`, admin `21c2d9cd2ee1` (`4317b11`, step 5). Retention removed the `dcf4ddebfff3`
+images; rollbacks left: `4317b1137a18`, `3ad27b141f04`, `college-revised-20261105`. Live check (16:57–17:02 UTC):
+health 2/2, admin 55/55 (390/1440px), public 176/176 (22 pages × 320/390/430/1440px × light/dark), clean-up 2/2;
+household unchanged (Jason, admin); no errors in either app log.
+
 ## Cancellation tokens through the data layer (clean-up step 5) — November 5, 2026 (America/Chicago)
 
 Commits `f15e90f` (72 Shared data methods take `CancellationToken ct = default` and forward it; CA2016, a build
