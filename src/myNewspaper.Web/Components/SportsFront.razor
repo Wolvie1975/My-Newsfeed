@@ -75,20 +75,7 @@
                     <ul class="ef-headlines spf-headlines">
                         @foreach (var item in stories.Skip(1))
                         {
-                            var href = FeedQuery.SafeHref(item.Url);
-                            var title = Title(item);
-                            var source = FeedText.SourceName(item.SourceLabel, item.SourceUrl);
-                            var summary = FeedText.StripEmoji(FeedQuery.Excerpt(item.Description));
-                            <li data-news-url="@href" data-news-source="@source">
-                                @if (!string.IsNullOrWhiteSpace(item.CategoryName)) { <span class="ef-headlines__kicker">@item.CategoryName</span> }
-                                @if (href is not null) { <a class="ef-headlines__title" href="@href" target="_blank" rel="noopener noreferrer">@title</a> }
-                                else { <span class="ef-headlines__title">@title</span> }
-                                <div class="ef-meta">
-                                    <span class="ef-meta__when">@source@(item.Undated ? "" : " · " + Dates.Published(item.Date))</span>
-                                    <ShareButton Url="@item.Url" Title="@title" />
-                                    <SaveButton Item="item" Title="@title" Source="@source" Summary="@summary" />
-                                </div>
-                            </li>
+                            <HeadlineRow Item="item" WithCategory="true" />
                         }
                     </ul>
                 }
@@ -139,7 +126,7 @@
                             }
                         </tbody>
                     </table>
-                    <a class="ef-more" href="@($"rankings?sourceId={rankings.Selected?.Id}")">All rankings <span aria-hidden="true">→</span></a>
+                    <a class="ef-more" href="@CollegeHub.RankingsHref(rankings.Selected)">All rankings <span aria-hidden="true">→</span></a>
                 </section>
             }
         </aside>
@@ -224,7 +211,7 @@
         {
             var top = rankings.Teams[0];
             var riser = rankings.Teams.Where(t => t.PreviousRank > t.Rank).OrderByDescending(t => t.PreviousRank - t.Rank).FirstOrDefault();
-            <Fold Title="@(rankings.Poll?.PollName ?? "Top 25")" Color="mx-c-world" Open="@first" AllHref="rankings" AllText="All rankings"
+            <Fold Title="@(rankings.Poll?.PollName ?? "Top 25")" Color="mx-c-world" Open="@first" AllHref="@CollegeHub.RankingsHref(rankings.Selected)" AllText="All rankings"
                   Gist="@($"{top.TeamName} No. {top.Rank}{(riser is null ? "" : $" · {riser.TeamName} up {riser.PreviousRank - riser.Rank} to No. {riser.Rank}")}")">
                 @foreach (var team in rankings.Teams.Take(5))
                 {

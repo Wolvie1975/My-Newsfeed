@@ -22,7 +22,6 @@
     var onMovies = path.StartsWith("movies", StringComparison.OrdinalIgnoreCase);
     var onTv = path.StartsWith("tv", StringComparison.OrdinalIgnoreCase);
     var onVideos = path.StartsWith("videos", StringComparison.OrdinalIgnoreCase);
-    var onRankings = path.StartsWith("rankings", StringComparison.OrdinalIgnoreCase);
     var onStandings = path.StartsWith("standings", StringComparison.OrdinalIgnoreCase);
     var onScoreboard = path.StartsWith("scoreboard", StringComparison.OrdinalIgnoreCase);
     var onResults = path.StartsWith("box-score/", StringComparison.OrdinalIgnoreCase) || path.StartsWith("results", StringComparison.OrdinalIgnoreCase)
@@ -33,10 +32,9 @@
     var onTvFilmNews = path.Split('?')[0].Equals("entertainment/tv-film", StringComparison.OrdinalIgnoreCase);
     var onSportsNews = path.Split('?')[0].StartsWith("sports/news", StringComparison.OrdinalIgnoreCase);
     var onBasketballNews = path.Split('?')[0].Equals("sports/mens-college-basketball/news", StringComparison.OrdinalIgnoreCase);
-    var onBig12News = path.Split('?')[0].Equals("college/news", StringComparison.OrdinalIgnoreCase);
     var onSaved = path.StartsWith("saved", StringComparison.OrdinalIgnoreCase);
     var onHome = path.Length == 0 || path[0] is '?' or '#';
-    var onSportsSection = onSportsHub || onSportsNews || onBasketballNews || onScoreboard || onEvents || onResults || onStandings || onRankings || onF1 || onCollege || onBig12News;
+    var onSportsSection = onSportsHub || onSportsNews || onBasketballNews || onScoreboard || onEvents || onResults || onStandings || onF1 || onCollege;
     var onEntertainmentSection = onEntertainmentHub || (onMovies && !onWatch) || onTv || onEntertainmentNews || onTvFilmNews || onBoxOffice;
     var onTechSection = onTechHub || bare.StartsWith("tech/", StringComparison.OrdinalIgnoreCase);
 }
@@ -143,7 +141,6 @@
                             <a href="scoreboard" aria-current="@(onScoreboard ? "page" : null)">Scoreboard</a>
                             <a href="events" aria-current="@(onEvents ? "page" : null)">Competitions</a>
                             <a href="standings" aria-current="@(onStandings ? "page" : null)">Standings</a>
-                            <a href="rankings" aria-current="@(onRankings ? "page" : null)">Top 25</a>
                             <a href="college" aria-current="@(onCollege ? "page" : null)">College Sports</a>
                             <a href="f1" aria-current="@(onF1 ? "page" : null)">F1</a>
                         </div>

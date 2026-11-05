@@ -2,13 +2,76 @@
 const { chromium } = require('playwright');
 const assert = require('node:assert/strict');
 const base = process.env.BASE_URL || 'http://localhost:5295';
+const adminBase = process.env.ADMIN_BASE_URL || base;
+const password = process.env.ADMIN_PASSWORD;
+
 (async () => {
-    const browser = await chromium.launch();
+    const profiles = (await fetch(base + '/editions', { headers: { Accept: 'text/html' } })).status !== 404;
+    if (profiles && !password) {
+        console.log('SKIP: profiles are on here; set ADMIN_PASSWORD so the check can add a throwaway profile.');
+        return;
+    }
+
+    const browser = await chromium.launch({
+        args: ['--disable-web-security', '--unsafely-treat-insecure-origin-as-secure=' + base],
+    });
+    let admin = null;
+    let id = null;
+    let storageState = process.env.STORAGE_STATE;
+
     try {
-        const page = await browser.newPage();
+        if (profiles && !storageState) {
+            admin = await (await browser.newContext({ viewport: { width: 1440, height: 1000 } })).newPage();
+            await admin.goto(adminBase + '/login?returnUrl=%2Fadmin%2Fprofiles');
+            await admin.locator('#password').fill(password);
+            await admin.getByRole('button', { name: 'Sign in', exact: true }).click();
+            await admin.waitForURL('**/admin/profiles');
+            await admin.waitForLoadState('networkidle');
+
+            const name = 'zz HomeTop25 ' + Date.now().toString(36);
+            for (let attempt = 0; attempt < 12 && !(await admin.locator('#add-name').isVisible()); attempt++) {
+                await admin.getByRole('button', { name: 'Add profile', exact: true }).first().click();
+                try {
+                    await admin.locator('#add-name').waitFor({ state: 'visible', timeout: 1500 });
+                } catch {
+                    if (attempt === 11) throw new Error('Admin Add profile did not become interactive');
+                }
+            }
+            await admin.locator('#add-name').fill(name);
+            await admin.locator('#add-pin').fill('3691');
+            await admin.locator('#add-confirm').fill('3691');
+            await admin.locator('form[aria-labelledby="add-title"] button[type="submit"]').click();
+            await admin.getByText(`Added ${name}.`).waitFor();
+
+            id = Number(
+                (await admin.locator('.adm-table a.adm-row-title', { hasText: name }).getAttribute('href')).match(
+                    /(\d+)$/,
+                )[1],
+            );
+
+            const context = await browser.newContext({ viewport: { width: 390, height: 900 } });
+            const p = await context.newPage();
+            await p.goto(base + '/');
+            await p.locator(`form[action="profiles/${id}/open"]`).getByRole('button').click();
+            await p.keyboard.type('3691');
+            await p.waitForURL(base + '/');
+            storageState = await context.storageState();
+            await context.close();
+        }
+
+        const context = await browser.newContext({ storageState });
+        const page = await context.newPage();
         const errors = [];
         page.on('pageerror', (e) => errors.push(e.message));
         await page.goto(base + '/');
+        const saved = page.waitForResponse(
+            (r) => new URL(r.url()).pathname === '/api/me/settings' && r.request().method() === 'PUT',
+        );
+        await page.evaluate(() => {
+            window.myNewspaperPrefs.setItem('mynewsfeed-personal-v1', JSON.stringify({ order: [], hidden: [] }));
+        });
+        await (await saved).finished();
+        await page.reload({ waitUntil: 'networkidle' });
         assert.equal(await page.locator('[data-home-section="f1"]').count(), 0);
         const card = page.locator('section[data-home-section="rankings"]');
         await card.waitFor();
@@ -60,7 +123,10 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
                 'Focus stays on the chosen pill',
             );
             assert.equal(await card.locator('select').inputValue(), option.value);
-            assert.equal(await card.locator('.d-more').getAttribute('href'), 'rankings?sourceId=' + option.value);
+            assert.match(
+                await card.locator('.d-more').getAttribute('href'),
+                new RegExp(`^college/rankings\\?sport=[\\w-]+&sourceId=${option.value}$`),
+            );
             const ranks = await card.locator('tbody tr td:first-child').allTextContents();
             assert(ranks.every((r) => +r >= 1 && +r <= 25));
             if (!ranks.length) assert((await card.innerText()).includes('Rankings not available yet'));
@@ -122,6 +188,7 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
                     ? options.at(-1).value
                     : options[0].value;
             const scrollBefore = await page.evaluate(() => scrollY);
+            const topBefore = (await card.boundingBox()).y;
             await card.locator('select').selectOption(value);
             await page.waitForFunction(
                 (v) =>
@@ -130,15 +197,21 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
                 value,
             );
             assert.equal(await page.evaluate(() => window.__top25NoReload), true, 'Dropdown switch reloaded the page');
+            const scrollAfter = await page.evaluate(() => scrollY);
+            const topAfter = (await card.boundingBox()).y;
             assert(
-                Math.abs((await page.evaluate(() => scrollY)) - scrollBefore) <= 1,
-                'Dropdown switch moved the page',
+                Math.abs(scrollAfter - scrollBefore) <= 25 && Math.abs(topAfter - topBefore) <= 1,
+                'Dropdown switch moved the card on screen',
             );
         }
         await page.locator('#home-ranking-source').focus();
         assert.deepEqual(errors, []);
         await card.screenshot({ path: process.env.TOP25_SCREENSHOT || 'test-results/home-top25.png' });
-        const plain = await browser.newContext({ javaScriptEnabled: false, viewport: { width: 820, height: 900 } });
+        const plain = await browser.newContext({
+            storageState,
+            javaScriptEnabled: false,
+            viewport: { width: 820, height: 900 },
+        });
         const p = await plain.newPage();
         await p.goto(base + '/');
         await p.locator('#home-ranking-source').selectOption(options.at(-1).value);
@@ -159,6 +232,23 @@ const base = process.env.BASE_URL || 'http://localhost:5295';
             'Homepage Top 25: desktop sport pills (short names, none on phone/iPad), in-place switch by pill and dropdown (no reload, scroll kept), available source selection, matching full-page link, ranks 1–25, expanded desktop/scrolling mobile table, no standalone F1, responsive widths, no-JS Apply, no JS errors, health 200 passed.',
         );
     } finally {
+        if (id && admin) {
+            try {
+                await admin.goto(adminBase + '/admin/profiles/' + id);
+                await admin.waitForLoadState('networkidle');
+                const confirm = admin.getByRole('button', { name: 'Delete profile', exact: true });
+                for (let attempt = 0; attempt < 12 && !(await confirm.isVisible()); attempt++) {
+                    await admin.getByRole('button', { name: 'Delete profile…' }).click();
+                    try {
+                        await confirm.waitFor({ state: 'visible', timeout: 1500 });
+                    } catch {}
+                }
+                await confirm.click();
+                await admin.waitForURL('**/admin/profiles?deleted=*');
+            } catch (e) {
+                console.error(`Could not delete throwaway profile ${id}: ${e.message}`);
+            }
+        }
         await browser.close();
     }
 })().catch((e) => {

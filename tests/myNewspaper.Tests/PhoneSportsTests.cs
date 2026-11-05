@@ -146,26 +146,21 @@ public class PhoneSportsTests
         if (hasLogo) Assert.Matches(" alt(?:=\"\")?[ >]", html);
     }
 
-    private static Task<string> RenderRankings(RankingsPage page) => RenderSports<PhoneRankings>(new() { ["Data"] = page });
-
     [Fact]
-    public async Task Poll_without_previous_ranks_has_no_moves_tiles_or_empty_folds()
+    public async Task Phone_college_renders_poll_and_headlines_folds_with_honest_links()
     {
-        var source = new SportsRankingSource { Id = 1, Enabled = true, DisplayName = "Test poll", LastSuccessAt = DateTime.UtcNow };
-        var html = await RenderRankings(new([source], source, new() { PollName = "AP", PublishedAtUtc = DateTime.UtcNow }, [Ranked("Kansas", 1), Ranked("BYU", 2)]));
-        Assert.DoesNotContain("Biggest moves", html);
-        Assert.DoesNotContain("<details", html);
-        Assert.Contains("ranking-source-m", html);
-        Assert.Contains("sports-section-m", html);
-        Assert.Contains("<noscript>", html);
-    }
-
-    [Fact]
-    public async Task Empty_and_failed_polls_keep_honest_states()
-    {
-        Assert.Contains("No ranking sources", await RenderRankings(new([], null, null, [])));
-        Assert.Contains("Rankings not available yet", await RenderRankings(new([], new() { Id = 1 }, null, [])));
-        Assert.Contains("temporarily unavailable", await RenderRankings(new([], null, null, [], "Rankings are temporarily unavailable.")));
+        var source = new SportsRankingSource { Id = 12, Sport = "Football", DisplayName = "Football AP", Enabled = true };
+        var team = Ranked("Kansas", 1);
+        team.IsBig12 = true;
+        var poll = new RankingsPage([source], source, new() { PollName = "AP" }, [team]);
+        var news = new[] { new FeedItem(1, "Big 12 Title Race", "https://example.com/story", null, null, "ESPN", "https://espn.com", null, null, DateTime.UtcNow) };
+        var html = await RenderSports<PhoneCollege>(new() { ["Poll"] = poll, ["Big12News"] = news });
+        Assert.Contains("Big 12 in the Top 25", html);
+        Assert.Contains("college/rankings?sport=football", html);
+        Assert.Contains("sourceId=12", html);
+        Assert.Contains("Big 12 headlines", html);
+        Assert.Contains("sports/news/big12", html);
+        Assert.Contains("Big 12 Title Race", html);
     }
 
     private sealed class TestNavigation : NavigationManager

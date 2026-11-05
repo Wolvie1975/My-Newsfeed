@@ -24,4 +24,13 @@ public static class Big12NewsQuery
             && (source == null || s.Id == source) && s.LastError == null).MaxAsync(s => s.LastScrapedAt);
         return new(category, sources, source, feed, updated);
     }
+
+    /// <summary>The latest Big 12 News headlines for the College front box; empty when category is missing.</summary>
+    public static async Task<IReadOnlyList<FeedItem>> LatestAsync(WebScraperContext db, int take = 3, CancellationToken ct = default)
+    {
+        var category = await CategoryIdAsync(db);
+        if (category is null) return [];
+        var feed = await FeedQuery.GetFeedAsync(db, category, null, null, take);
+        return feed.Items;
+    }
 }

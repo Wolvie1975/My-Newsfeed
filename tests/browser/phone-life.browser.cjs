@@ -1,4 +1,4 @@
-// Release 3: folded Top 25, Standings, College Sports and F1; profiles-on runs create and delete a temporary profile.
+// Release 3: folded Standings, College Sports and F1; profiles-on runs create and delete a temporary profile.
 const { chromium } = require('playwright');
 const assert = require('node:assert/strict');
 const { audit } = require('./contrast-audit.cjs');

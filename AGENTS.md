@@ -61,6 +61,56 @@ changing anything.
 5. Report what was built, test and live-check results, any gaps, and the
    local commit hashes.
 
+## Questions yes, repeat approvals no
+
+User direction, November 5, 2026 (America/Chicago): processes written down in
+this repository are standing approvals. Carry them out without asking again,
+in any session. Ask questions when you need an answer, not permission.
+
+**Already approved; don't ask first:**
+
+- Anything the user has approved in this session or in a plan, carried through
+  to the end (see "Attached markdown files" above).
+- Building, running the tests and browser checks, and running the apps locally
+  against `WebScraper_Test`.
+- Deploying to the live site and rolling back as [DEPLOY.md](DEPLOY.md)
+  describes, including the live checks and their clean-up.
+- Creating and deleting temporary `zz ` test data, per the clean-up rule below.
+- Committing locally on `develop` (see "Commits, not pushes").
+- Updating release history, handoffs, the guardrails table and other docs the
+  process calls for.
+
+A new chat doesn't reset these. Don't open by asking whether deploy and commit
+are still allowed.
+
+**Ask (one round, all questions together, before starting):**
+
+- Requirements are unclear, or a choice is the user's: product, design, wording,
+  or which of several reasonable approaches.
+- The docs conflict with each other or with the code, or don't cover the step.
+- Something unexpected changes the plan: uncommitted changes that aren't yours,
+  a live state that doesn't match the handoff, a failure the runbook doesn't
+  cover. Roll back first if the runbook says to, then ask.
+
+**Always confirm first, even when a document describes it:**
+
+- Anything that destroys data or can't be undone: dropping databases or tables,
+  deleting or changing real household data, removing rollback images.
+- Changes to credentials, SQL logins or permissions, and secret rotation.
+- Anything outside this repository and its containers (other projects, the host,
+  GitHub). Never push.
+
+**Never put a password or connection string on a command line.** Not in
+`sqlcmd -P`, a URL or an echoed variable: command lines land in permission
+prompts, transcripts, shell history and the process list, and an "always allow"
+answer saves them in agent settings files. Read credentials from `.env` inside a
+script and pass them through the environment (`SQLCMDPASSWORD`). For routine
+database checks, use the scripts in `tools/sql/`, not raw `sqlcmd`.
+
+If the harness's own permission check stops an approved step, say which step and
+why it's approved here, and continue once the user allows it. This file can't
+switch that check off; the user's Claude Code settings can.
+
 ## Browser tests clean up their own data
 
 User direction, November 4, 2026 (America/Chicago): every browser test run must

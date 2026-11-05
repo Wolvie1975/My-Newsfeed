@@ -10,7 +10,9 @@ const shots = process.env.SCREENSHOT_DIR || 'test-results/browser/sports-panels/
     fs.mkdirSync(shots, { recursive: true });
     const profiles = (await fetch(base + '/editions')).status !== 404;
     assert(profiles, 'Use profiles-enabled preview; this test never writes to a household Saved list');
-    const browser = await chromium.launch();
+    const browser = await chromium.launch({
+        args: ['--disable-web-security', '--unsafely-treat-insecure-origin-as-secure=' + base],
+    });
     let admin = null,
         id = null,
         storageState;

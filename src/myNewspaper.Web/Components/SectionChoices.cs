@@ -8,7 +8,7 @@ public static class SectionChoices
     public static readonly IReadOnlyList<NavigationChoice> Sports =
     [
         new("sports", "Sports home"), new("sports/news", "Headlines"), new("scoreboard", "Scoreboard"), new("events", "Competitions"),
-        new("standings", "Standings"), new("rankings", "Top 25"), new("college", "College Sports"), new("f1", "F1"),
+        new("standings", "Standings"), new("college", "College Sports"), new("f1", "F1"),
     ];
 
     public static readonly IReadOnlyList<NavigationChoice> Entertainment =

@@ -1,11 +1,72 @@
 const assert = require('node:assert/strict'),
     { chromium } = require('playwright');
 const base = process.env.BASE_URL || 'http://localhost:5295',
+    adminBase = process.env.ADMIN_BASE_URL || base,
+    password = process.env.ADMIN_PASSWORD,
     root = process.env.SCREENSHOT_DIR;
 (async () => {
-    const b = await chromium.launch();
+    const profiles = (await fetch(base + '/editions', { headers: { Accept: 'text/html' } })).status !== 404;
+    if (profiles && !password) {
+        console.log('SKIP: profiles are on here; set ADMIN_PASSWORD so the check can add a throwaway profile.');
+        return;
+    }
+
+    const b = await chromium.launch({
+        args: ['--disable-web-security', '--unsafely-treat-insecure-origin-as-secure=' + base],
+    });
+    let admin = null;
+    let id = null;
+    let storageState = process.env.STORAGE_STATE;
+
     try {
-        const p = await b.newPage();
+        if (profiles && !storageState) {
+            admin = await (await b.newContext({ viewport: { width: 1440, height: 1000 } })).newPage();
+            await admin.goto(adminBase + '/login?returnUrl=%2Fadmin%2Fprofiles');
+            await admin.locator('#password').fill(password);
+            await admin.getByRole('button', { name: 'Sign in', exact: true }).click();
+            await admin.waitForURL('**/admin/profiles');
+            await admin.waitForLoadState('networkidle');
+
+            const name = 'zz SectionSelect ' + Date.now().toString(36);
+            for (let attempt = 0; attempt < 12 && !(await admin.locator('#add-name').isVisible()); attempt++) {
+                await admin.getByRole('button', { name: 'Add profile', exact: true }).first().click();
+                try {
+                    await admin.locator('#add-name').waitFor({ state: 'visible', timeout: 1500 });
+                } catch {
+                    if (attempt === 11) throw new Error('Admin Add profile did not become interactive');
+                }
+            }
+            await admin.locator('#add-name').fill(name);
+            await admin.locator('#add-pin').fill('3691');
+            await admin.locator('#add-confirm').fill('3691');
+            await admin.locator('form[aria-labelledby="add-title"] button[type="submit"]').click();
+            await admin.getByText(`Added ${name}.`).waitFor();
+
+            id = Number(
+                (await admin.locator('.adm-table a.adm-row-title', { hasText: name }).getAttribute('href')).match(
+                    /(\d+)$/,
+                )[1],
+            );
+
+            const context = await b.newContext({ viewport: { width: 390, height: 900 } });
+            const p = await context.newPage();
+            await p.goto(base + '/college?sport=football');
+            await p.locator(`form[action="profiles/${id}/open"]`).getByRole('button').click();
+            await p.keyboard.type('3691');
+            await p.waitForURL('**/college?sport=football');
+            const saved = p.waitForResponse(
+                (r) => new URL(r.url()).pathname === '/api/me/settings' && r.request().method() === 'PUT',
+            );
+            await p.evaluate(() => {
+                window.myNewspaperPrefs.setItem('theme', 'system');
+            });
+            await (await saved).finished();
+            storageState = await context.storageState();
+            await context.close();
+        }
+
+        const context = await b.newContext({ storageState, viewport: { width: 390, height: 900 } });
+        const p = await context.newPage();
         const errors = [];
         p.on('pageerror', (e) => errors.push(e.message));
         const routes = [
@@ -13,7 +74,6 @@ const base = process.env.BASE_URL || 'http://localhost:5295',
             '/college/results?sport=mens-basketball',
             '/college/standings?sport=volleyball',
             '/college/rankings?sport=soccer',
-            '/college/news',
             '/f1',
             '/f1/standings',
             '/watch?kind=tv&sort=newest',
@@ -64,7 +124,7 @@ const base = process.env.BASE_URL || 'http://localhost:5295',
         await p.setViewportSize({ width: 390, height: 900 });
         for (const sport of ['football', 'mens-basketball', 'volleyball', 'soccer']) {
             await p.goto(base + '/college?sport=' + sport);
-            for (const view of ['results', 'standings', 'rankings', 'news', 'schedule']) {
+            for (const view of ['results', 'standings', 'rankings', 'schedule']) {
                 const target = (view === 'schedule' ? '/college' : '/college/' + view) + '?sport=' + sport;
                 const explore = p.locator('.mx-phone .mx-fold', { hasText: 'Explore College Sports' });
                 if (await explore.count()) await explore.locator('summary').click();
@@ -94,7 +154,9 @@ const base = process.env.BASE_URL || 'http://localhost:5295',
         await p.locator('nav.section-tabs[aria-label="View"] a', { hasText: 'Standings' }).click();
         await p.waitForURL((u) => u.pathname === '/college/standings' && u.searchParams.get('sport') === 'football');
         // No-JS College view links and Sport Go, F1 View Go, and the retained Local links.
-        const plain = await b.newPage({ javaScriptEnabled: false, viewport: { width: 320, height: 900 } });
+        const plain = await (
+            await b.newContext({ storageState, javaScriptEnabled: false, viewport: { width: 320, height: 900 } })
+        ).newPage();
         await plain.goto(base + '/college?sport=soccer');
         await plain.locator('.mx-phone .mx-fold', { hasText: 'Explore College Sports' }).locator('summary').click();
         await plain.locator('.mx-phone a[href="college/results?sport=soccer"]').click();
@@ -110,16 +172,24 @@ const base = process.env.BASE_URL || 'http://localhost:5295',
         for (const [path, current] of [
             ['/scoreboard', '/scoreboard'],
             ['/standings', '/standings'],
-            ['/rankings', '/rankings'],
             ['/college/standings', '/college'],
             ['/f1/results', '/f1'],
         ]) {
             await plain.goto(base + path);
             assert.equal(await plain.locator('#sports-section-m').inputValue(), current, path + ' Section dropdown');
         }
-        await plain.selectOption('#sports-section-m', '/rankings');
+        await plain.selectOption('#sports-section-m', '/college');
         await plain.locator('.mx-ribbon form:has(#sports-section-m) button').click();
-        await plain.waitForURL(base + '/rankings');
+        await plain.waitForURL(base + '/college');
+
+        // Redirects: /rankings?sourceId=1 and /college/news?q=utah return 301
+        const r1 = await p.request.get(base + '/rankings', { maxRedirects: 0 });
+        assert.equal(r1.status(), 301);
+        assert(r1.headers().location.includes('/college/rankings?sport=football'));
+
+        const r2 = await p.request.get(base + '/college/news?q=utah', { maxRedirects: 0 });
+        assert.equal(r2.status(), 301);
+        assert(r2.headers().location.includes('/sports/news/big12?q=utah'));
         // Kansas City lives under News: its ribbon select is the News tabs (phone-life covers the folds).
         await plain.goto(base + '/news/kansas-city');
         assert.equal(await plain.locator('#news-section-m').inputValue(), '/news/kansas-city');
@@ -136,6 +206,23 @@ const base = process.env.BASE_URL || 'http://localhost:5295',
             'Section navigation: folded College view links/Sport select, F1 View select and table links, retained navigation controls, desktop tabs, all College sports/views, no-JS Go and links, local-only redirects passed.',
         );
     } finally {
+        if (id && admin) {
+            try {
+                await admin.goto(adminBase + '/admin/profiles/' + id);
+                await admin.waitForLoadState('networkidle');
+                const confirm = admin.getByRole('button', { name: 'Delete profile', exact: true });
+                for (let attempt = 0; attempt < 12 && !(await confirm.isVisible()); attempt++) {
+                    await admin.getByRole('button', { name: 'Delete profile…' }).click();
+                    try {
+                        await confirm.waitFor({ state: 'visible', timeout: 1500 });
+                    } catch {}
+                }
+                await confirm.click();
+                await admin.waitForURL('**/admin/profiles?deleted=*');
+            } catch (e) {
+                console.error(`Could not delete throwaway profile ${id}: ${e.message}`);
+            }
+        }
         await b.close();
     }
 })().catch((e) => {

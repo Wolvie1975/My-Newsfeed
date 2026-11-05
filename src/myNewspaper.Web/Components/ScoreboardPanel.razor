@@ -145,7 +145,7 @@
                         <section class="sb-rail__panel" aria-labelledby="sb-rail-top25-title">
                             <div class="sb-rail__head">
                                 <h3 id="sb-rail-top25-title">Top 25</h3>
-                                <a href="rankings">Full poll →</a>
+                                <a href="@CollegeHub.RankingsHref(railRankings?.Selected)">Full poll →</a>
                             </div>
                             <ol class="sb-rail__list">
                                 @foreach (var team in rankedTeams.Take(10))

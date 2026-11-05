@@ -1,3 +1,6 @@
+using System.Globalization;
+using myNewspaper.Shared.Data.Models;
+
 namespace myNewspaper.Shared.Data;
 
 public sealed record CollegeSport(string Key, string Name, string StandingsSport, string League);
@@ -18,4 +21,8 @@ public static class CollegeHub
 
     public static string Href(string view, CollegeSport sport) =>
         (view == "schedule" ? "college" : "college/" + view) + "?sport=" + sport.Key;
+
+    /// <summary>College → Rankings for a poll: its sport's tab, with the poll selected.</summary>
+    public static string RankingsHref(SportsRankingSource? source) =>
+        source is null ? "college/rankings" : Href("rankings", Resolve(source.Sport)) + "&sourceId=" + source.Id.ToString(CultureInfo.InvariantCulture);
 }

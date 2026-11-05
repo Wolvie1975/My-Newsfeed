@@ -1,6 +1,8 @@
 const assert = require('node:assert/strict'),
     { chromium } = require('playwright');
 const base = process.env.BASE_URL || 'http://localhost:5295',
+    adminBase = process.env.ADMIN_BASE_URL || base,
+    password = process.env.ADMIN_PASSWORD,
     root = process.env.SCREENSHOT_DIR;
 const sections = [
     ['sports/news', 'Sports headlines', 'sports-news', '#source'],
@@ -9,14 +11,74 @@ const sections = [
     ['sports/news/f1', 'Sports headlines', 'sports-f1-news', '#source'],
 ];
 (async () => {
-    const browser = await chromium.launch();
+    const profiles = (await fetch(base + '/editions', { headers: { Accept: 'text/html' } })).status !== 404;
+    if (profiles && !password) {
+        console.log('SKIP: profiles are on here; set ADMIN_PASSWORD so the check can add a throwaway profile.');
+        return;
+    }
+
+    const browser = await chromium.launch({
+        args: ['--disable-web-security', '--unsafely-treat-insecure-origin-as-secure=' + base],
+    });
+    let admin = null;
+    let id = null;
+    let storageState = process.env.STORAGE_STATE;
+
     try {
+        if (profiles && !storageState) {
+            admin = await (await browser.newContext({ viewport: { width: 1440, height: 1000 } })).newPage();
+            await admin.goto(adminBase + '/login?returnUrl=%2Fadmin%2Fprofiles');
+            await admin.locator('#password').fill(password);
+            await admin.getByRole('button', { name: 'Sign in', exact: true }).click();
+            await admin.waitForURL('**/admin/profiles');
+            await admin.waitForLoadState('networkidle');
+
+            const name = 'zz SportsNews ' + Date.now().toString(36);
+            for (let attempt = 0; attempt < 12 && !(await admin.locator('#add-name').isVisible()); attempt++) {
+                await admin.getByRole('button', { name: 'Add profile', exact: true }).first().click();
+                try {
+                    await admin.locator('#add-name').waitFor({ state: 'visible', timeout: 1500 });
+                } catch {
+                    if (attempt === 11) throw new Error('Admin Add profile did not become interactive');
+                }
+            }
+            await admin.locator('#add-name').fill(name);
+            await admin.locator('#add-pin').fill('3691');
+            await admin.locator('#add-confirm').fill('3691');
+            await admin.locator('form[aria-labelledby="add-title"] button[type="submit"]').click();
+            await admin.getByText(`Added ${name}.`).waitFor();
+
+            id = Number(
+                (await admin.locator('.adm-table a.adm-row-title', { hasText: name }).getAttribute('href')).match(
+                    /(\d+)$/,
+                )[1],
+            );
+
+            const context = await browser.newContext({ viewport: { width: 390, height: 900 } });
+            const p = await context.newPage();
+            await p.goto(base + '/sports/news');
+            await p.locator(`form[action="profiles/${id}/open"]`).getByRole('button').click();
+            await p.keyboard.type('3691');
+            await p.waitForURL('**/sports/news');
+            const saved = p.waitForResponse(
+                (r) => new URL(r.url()).pathname === '/api/me/settings' && r.request().method() === 'PUT',
+            );
+            await p.evaluate(() => {
+                window.myNewspaperPrefs.setItem('theme', 'system');
+            });
+            await (await saved).finished();
+            storageState = await context.storageState();
+            await context.close();
+        }
+
         // Phone width: the category dropdown (desktop shows category pills instead).
-        const p = await browser.newPage({ viewport: { width: 390, height: 900 } });
+        const context = await browser.newContext({ storageState, viewport: { width: 390, height: 900 } });
+        const p = await context.newPage();
         const errors = [];
         p.on('pageerror', (e) => errors.push(e.message));
         const movedSources = new Set();
         for (const [route, title, , selector] of sections) {
+            console.log('Testing section:', route);
             await p.setViewportSize({ width: 390, height: 900 });
             await p.goto(base + '/' + route);
             assert.equal(await p.locator('h1:visible').innerText(), title);
@@ -47,7 +109,7 @@ const sections = [
                 assert.equal(url.pathname, '/' + route);
                 assert.equal(url.searchParams.get('source'), ids[0]);
             }
-            const before = await p.locator('.feed .article').count(),
+            const before = await p.locator('.feed .article:visible').count(),
                 more = p.locator('[data-load-more]');
             if (await more.count()) {
                 const promise = p.waitForResponse((r) => r.url().includes('/feed/more?'));
@@ -57,9 +119,12 @@ const sections = [
                 assert.equal(response.status(), 200);
                 const result = await response.json();
                 if (result.nextHref) assert(result.nextHref.startsWith(route + '?'));
-                await p.waitForFunction((n) => document.querySelectorAll('.feed .article').length > n, before);
+                await p.waitForFunction(
+                    (n) => document.querySelectorAll('.feed .article:not([style*="display: none"])').length > n,
+                    before,
+                );
                 const allIds = await p
-                    .locator('.feed .article')
+                    .locator('.feed .article:visible')
                     .evaluateAll((ns) => ns.map((n) => n.dataset.articleId));
                 assert.equal(allIds.length, new Set(allIds).size);
                 if (selector === '#source') {
@@ -110,13 +175,14 @@ const sections = [
                         });
                 }
         }
-        for (const [route, label] of [
-            ['sports/mens-college-basketball/news', 'Men’s college basketball'],
-            ['college/news', 'Big 12 News'],
-        ]) {
-            await p.goto(base + '/' + route);
-            assert((await p.locator('main').innerText()).includes(label));
-        }
+        await p.goto(base + '/sports/mens-college-basketball/news');
+        assert((await p.locator('main').innerText()).includes('Men’s college basketball'));
+
+        // college/news was retired: 301 redirects to /sports/news/big12 preserving query parameters.
+        await p.goto(base + '/college/news?q=utah');
+        assert.equal(new URL(p.url()).pathname, '/sports/news/big12');
+        assert.equal(new URL(p.url()).searchParams.get('q'), 'utah');
+        assert.equal(await p.locator('#hub-category option:checked').innerText(), 'Big 12');
         // F1 › News was retired (October 26, 2026): old links land on the F1 topic of Sports headlines.
         await p.goto(base + '/f1/news');
         assert.equal(new URL(p.url()).pathname, '/sports/news/f1');
@@ -139,7 +205,9 @@ const sections = [
                 (id) => !movedSources.has(id),
             ),
         );
-        const plain = await browser.newPage({ javaScriptEnabled: false, viewport: { width: 390, height: 900 } });
+        const plain = await (
+            await browser.newContext({ storageState, javaScriptEnabled: false, viewport: { width: 390, height: 900 } })
+        ).newPage();
         for (const [route] of sections) {
             await plain.goto(base + '/' + route);
             const current = await plain.locator('#hub-category').inputValue();
@@ -163,6 +231,23 @@ const sections = [
             'Sports headline category dropdown, existing F1/Big12 readers, legacy links, source filters, scoped JS/no-JS paging, Headlines exclusion and mobile light/dark navigation passed.',
         );
     } finally {
+        if (id && admin) {
+            try {
+                await admin.goto(adminBase + '/admin/profiles/' + id);
+                await admin.waitForLoadState('networkidle');
+                const confirm = admin.getByRole('button', { name: 'Delete profile', exact: true });
+                for (let attempt = 0; attempt < 12 && !(await confirm.isVisible()); attempt++) {
+                    await admin.getByRole('button', { name: 'Delete profile…' }).click();
+                    try {
+                        await confirm.waitFor({ state: 'visible', timeout: 1500 });
+                    } catch {}
+                }
+                await confirm.click();
+                await admin.waitForURL('**/admin/profiles?deleted=*');
+            } catch (e) {
+                console.error(`Could not delete throwaway profile ${id}: ${e.message}`);
+            }
+        }
         await browser.close();
     }
 })().catch((e) => {

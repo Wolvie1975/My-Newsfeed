@@ -129,4 +129,31 @@ public class RankingsTests
         Assert.DoesNotContain((await RankingsQuery.GetAsync(db, source.Id, NullLogger.Instance, day)).Sources, s => s.Id == source.Id);
     }
 
+    [Theory]
+    [InlineData(null, "college/rankings")]
+    [InlineData("Football", "college/rankings?sport=football&sourceId=1")]
+    [InlineData("Volleyball", "college/rankings?sport=volleyball&sourceId=1")]
+    [InlineData("Men's Basketball", "college/rankings?sport=mens-basketball&sourceId=1")]
+    [InlineData("Soccer", "college/rankings?sport=soccer&sourceId=1")]
+    public void CollegeHub_RankingsHref_resolves_expected_routes(string? sport, string expected)
+    {
+        var source = sport is null ? null : new SportsRankingSource { Id = 1, Sport = sport };
+        Assert.Equal(expected, CollegeHub.RankingsHref(source));
+    }
+
+    [Fact]
+    public async Task SportForSourceAsync_maps_to_college_sport_key()
+    {
+        await using var db = new WebScraperContext(new DbContextOptionsBuilder<WebScraperContext>().UseSqlServer(TestDatabase.ConnectionString).Options);
+        await using var transaction = await db.Database.BeginTransactionAsync();
+        var tag = Guid.NewGuid().ToString("N");
+        var fb = new SportsRankingSource { ProviderKey = "test-" + tag, Sport = "Football", DisplayName = "FB", Enabled = true, Url = "https://test.invalid" };
+        var vb = new SportsRankingSource { ProviderKey = "test-vb-" + tag, Sport = "Volleyball", DisplayName = "VB", Enabled = true, Url = "https://test.invalid" };
+        db.AddRange(fb, vb);
+        await db.SaveChangesAsync();
+
+        Assert.Equal("Football", await RankingsQuery.SportForSourceAsync(db, fb.Id));
+        Assert.Equal("Volleyball", await RankingsQuery.SportForSourceAsync(db, vb.Id));
+        Assert.Null(await RankingsQuery.SportForSourceAsync(db, -999999));
+    }
 }

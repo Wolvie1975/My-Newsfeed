@@ -3,7 +3,7 @@
 <section data-home-section="rankings" class="d-card d-rankings" aria-labelledby="h-home-rankings">
     <div class="d-card__head">
         <h2 class="d-card__title" id="h-home-rankings">Top 25</h2>
-        <a class="d-more" href="@(Data.Selected is { } selected ? $"rankings?sourceId={selected.Id}" : "rankings")">View all <span aria-hidden="true">→</span></a>
+        <a class="d-more" href="@CollegeHub.RankingsHref(Data.Selected)">View all <span aria-hidden="true">→</span></a>
     </div>
     <div class="d-rankings__body">
         @if (Data.Sources.Count > 0)

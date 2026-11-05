@@ -64,4 +64,11 @@ public static class RankingsQuery
         catch (System.Data.Common.DbException ex)
         { log.LogError(ex, "Rankings read failed for source {SourceId}.", selected.Id); return new(sources, selected, null, [], "Rankings are temporarily unavailable."); }
     }
+
+    /// <summary>Looks up the sport of an enabled ranking source; null when not found or disabled.</summary>
+    public static async Task<string?> SportForSourceAsync(WebScraperContext db, int id, CancellationToken ct = default) =>
+        await db.SportsRankingSources.AsNoTracking()
+            .Where(s => s.Id == id && s.Enabled)
+            .Select(s => s.Sport)
+            .FirstOrDefaultAsync(ct);
 }

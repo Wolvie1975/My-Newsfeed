@@ -425,11 +425,11 @@
         {
             var poll = homeRankings.Poll?.PollName ?? "Top 25";
             var big12 = homeRankings.Teams.FirstOrDefault(t => t.IsBig12 == true);
-            <Fold Title="Top 25" Section="rankings" Color="mx-c-world" AllHref="rankings" AllText="All 25"
+            <Fold Title="Top 25" Section="rankings" Color="mx-c-world" AllHref="@CollegeHub.RankingsHref(homeRankings.Selected)" AllText="All 25"
                   Gist="@($"{homeRankings.Teams[0].TeamName} No. {homeRankings.Teams[0].Rank}{(big12 is null || big12 == homeRankings.Teams[0] ? "" : $" · {big12.TeamName} No. {big12.Rank}")}")">
                 @foreach (var team in homeRankings.Teams.Take(3))
                 {
-                    <a class="mx-fold__row" href="rankings">
+                    <a class="mx-fold__row" href="@CollegeHub.RankingsHref(homeRankings.Selected)">
                         <span><b>@team.TeamName</b><small>@string.Join(" · ", new[] { poll, team.Record, team.IsBig12 == true ? "Big 12" : null }.Where(p => !string.IsNullOrEmpty(p)))</small></span>
                         <span class="mx-fold__value">@team.Rank</span>
                     </a>

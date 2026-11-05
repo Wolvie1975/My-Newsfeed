@@ -8,7 +8,6 @@ const adminBase = process.env.ADMIN_BASE_URL || base;
 const shots = process.env.SCREENSHOT_DIR;
 const password = process.env.ADMIN_PASSWORD;
 const pages = [
-    { path: '/rankings', title: /^Top 25$/, desktop: '.rk-cols' },
     { path: '/standings', title: /^Standings$/, desktop: '.standings-view' },
     { path: '/college', title: /^College Sports$/, desktop: '.cl-cols' },
     { path: '/f1', title: /^F1$/, desktop: '.f1-cols' },
@@ -183,7 +182,6 @@ const OWN_SELECT = '.mx-ribbon select:not(#sports-section-m)';
             for (const [path, current] of [
                 ['/scoreboard', '/scoreboard'],
                 ['/standings', '/standings'],
-                ['/rankings', '/rankings'],
                 ['/college/standings', '/college'],
                 ['/f1/results', '/f1'],
             ]) {
@@ -194,9 +192,14 @@ const OWN_SELECT = '.mx-ribbon select:not(#sports-section-m)';
                     path + ' Section dropdown',
                 );
             }
-            await page.locator('#sports-section-m').selectOption('/rankings');
+            await page.locator('#sports-section-m').selectOption('/college');
             await page.locator('.mx-ribbon form:has(#sports-section-m) button[type=submit]').click();
-            await page.waitForURL(base + '/rankings');
+            await page.waitForURL(base + '/college');
+
+            // Redirect /rankings to /college/rankings?sport=football (301)
+            await page.goto(base + '/rankings');
+            assert.equal(new URL(page.url()).pathname, '/college/rankings');
+            assert.equal(new URL(page.url()).searchParams.get('sport'), 'football');
             await context.close();
         }
         // JS selects, My Teams and persisted choices, deep links into existing views.

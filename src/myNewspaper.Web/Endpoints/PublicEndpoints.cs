@@ -58,6 +58,31 @@ public static class PublicEndpoints
             return Results.LocalRedirect(local ? to! : "/");
         });
 
+        // College news moved to Sports headlines (Big 12 category).
+        app.MapGet("/college/news", (HttpContext http) =>
+        {
+            var keep = http.Request.Query.Where(q => q.Key is "q" or "source" or "after");
+            var query = QueryString.Create(keep.Select(q => KeyValuePair.Create(q.Key, (string?)q.Value.ToString())));
+            return Results.Redirect(http.Request.PathBase + "/sports/news/big12" + query, permanent: true);
+        });
+
+        // Top 25 joined College Sports rankings.
+        app.MapGet("/rankings", async (HttpContext http, IDbContextFactory<WebScraperContext> factory, int? sourceId, CancellationToken ct) =>
+        {
+            if (sourceId is { } id)
+            {
+                await using var db = await factory.CreateDbContextAsync(ct);
+                var sport = await RankingsQuery.SportForSourceAsync(db, id, ct);
+                if (sport is not null)
+                {
+                    var key = CollegeHub.Resolve(sport).Key;
+                    return Results.Redirect($"{http.Request.PathBase}/college/rankings?sport={key}&sourceId={id}", permanent: true);
+                }
+                return Results.Redirect(http.Request.PathBase + "/college/rankings", permanent: true);
+            }
+            return Results.Redirect(http.Request.PathBase + "/college/rankings?sport=football", permanent: true);
+        });
+
         // Preserve old result bookmarks as final-score views of Scoreboard.
         app.MapGet("/results", (HttpContext http) =>
         {

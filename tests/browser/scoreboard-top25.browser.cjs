@@ -73,7 +73,10 @@ const password = process.env.ADMIN_PASSWORD;
             // The upcoming ranked games this week section should be rendered
             const top25Week = page.locator('.sb-top25-week');
             assert.equal(await top25Week.count(), 1, 'sb-top25-week section should be present');
-            assert.match(await top25Week.locator('.sb-top25-week__title').textContent(), /Upcoming ranked games this week/i);
+            assert.match(
+                await top25Week.locator('.sb-top25-week__title').textContent(),
+                /Upcoming ranked games this week/i,
+            );
 
             // Check if any rank badge is rendered
             const ranks = page.locator('.sb-rank');

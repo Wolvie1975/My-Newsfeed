@@ -1,0 +1,28 @@
+@using myNewspaper.Shared.Data
+@inject FeedDates Dates
+
+@{
+    var href = FeedQuery.SafeHref(Item.Url);
+    var title = FeedText.StripEmoji(Item.Title) is { Length: > 0 } t ? t : Item.Title;
+    var source = FeedText.SourceName(Item.SourceLabel, Item.SourceUrl);
+    var summary = FeedText.StripEmoji(FeedQuery.Excerpt(Item.Description));
+    var kicker = Kicker ?? (WithCategory && !string.IsNullOrWhiteSpace(Item.CategoryName) ? Item.CategoryName : null);
+}
+
+<li data-news-url="@href" data-news-source="@source">
+    @if (!string.IsNullOrWhiteSpace(kicker)) { <span class="ef-headlines__kicker">@kicker</span> }
+    @if (href is not null) { <a class="ef-headlines__title" href="@href" target="_blank" rel="noopener noreferrer">@title</a> }
+    else { <span class="ef-headlines__title">@title</span> }
+    <div class="ef-meta">
+        <span class="ef-meta__when">@source@(Item.Undated ? "" : " · " + Dates.Published(Item.Date))</span>
+        <ShareButton Url="@Item.Url" Title="@title" />
+        <SaveButton Item="Item" Title="@title" Source="@source" Summary="@summary" />
+    </div>
+</li>
+
+@code {
+    [Parameter, EditorRequired] public FeedItem Item { get; set; } = null!;
+    [Parameter] public bool WithCategory { get; set; }
+    [Parameter] public string? Kicker { get; set; }
+}
+
