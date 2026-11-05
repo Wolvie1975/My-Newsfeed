@@ -6,6 +6,25 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
+## Cancellation tokens through the data layer (clean-up step 5) — November 5, 2026 (America/Chicago)
+
+Commits `f15e90f` (72 Shared data methods take `CancellationToken ct = default` and forward it; CA2016, a build
+error, found every call), `c73b1d5` (public endpoints pass `RequestAborted`), `4317b11` (components inherit
+`DataComponentBase` and pass its `Ct` to reads, 290 calls, and `CancellationToken.None` to the writes a person started,
+90, so a save finishes if they navigate away; weather timeouts linked to `Ct`; `RepositoryHygieneTests` guards; standard
+§4 and the guardrails row). Behaviour: a page left mid-load stops its queries; nothing else changes.
+
+Verification: `tools/verify.sh` 5/5 (1120 tests plus the two new hygiene tests, which caught one missed method,
+`FeedQuery.GetRecentDatesAsync`); `node tools/compare-builds.cjs c2c05e1` vs `4317b11`: identical, 300 public and 25
+admin pages. Not done: `WatchCatalog` (shared cached HTTP fetches).
+
+Deployment: commit `4317b1137a18` via `deployment/deploy.sh web admin` at 16:29:12Z, both healthy, environment
+unchanged, `/version` the commit (web `031aa49e2281`, admin `21c2d9cd2ee1`). Rollback `deployment/rollback.sh
+4317b1137a18` → web `2234d5146f5c`, admin `25deb4a01598` (`3ad27b141f04`, the SQL-logins build). Retention removed the
+`327452fc6ef2` images; rollbacks left: `3ad27b141f04`, `dcf4ddebfff3`, `college-revised-20261105`. Live check
+(16:30–16:35 UTC): health 2/2, admin 55/55 (390/1440px), public 176/176 (22 pages × 320/390/430/1440px × light/dark),
+clean-up 2/2; household unchanged (Jason, admin); no errors in either app log.
+
 ## Own SQL logins for web, admin and the tests — November 5, 2026 (America/Chicago)
 
 Web and admin no longer connect as `sa`. New logins, none in a server role: `mynewspaper_web` (role
