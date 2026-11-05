@@ -70,23 +70,27 @@ reviewer. Existing code is being brought into line in the clean-up steps listed 
 - **[Review]** Public styles are scoped under the `.pub` root class and live in the global stylesheets in
   `src/myNewspaper.Shared/wwwroot/public.css` and `src/myNewspaper.Web/wwwroot/*.css`. Scoped `.razor.css` only for
   layout components.
-- **[Review]** Breakpoints: `max-width: 1023px` / `min-width: 1024px` (phone and tablet vs desktop),
+- **[Enforced]** Breakpoints: `max-width: 1023px` / `min-width: 1024px` (phone and tablet vs desktop),
   `(min-width: 744px) and (max-width: 1023px)` (tablet), `min-width: 1920px` (wide) and `min-width: 2560px` (4K).
-  Anything else needs a comment explaining why. Today's CSS has about 26 other one-off widths; fold them into these
-  when a rule is next edited.
+  Any other width is listed in `oneOffWidths` in [tools/check-css.cjs](../tools/check-css.cjs) with the reason it
+  exists; 29 older ones are there (November 5, 2026), kept because folding them would change in-between sizes. Fold one
+  into the breakpoints when its rule is next edited, and remove it from the list.
 - **[Review]** Colors come from the tokens on `:root`/`.pub` (`--text`, `--surface`, …). Dark mode and colour schemes
   are `:root[data-theme='dark']` and `:root[data-color-scheme='…']`, set before first paint by `theme-init.js`.
   Don't add `prefers-color-scheme` media queries.
-- **[Review]** Visually hidden text uses `.sr-only`. Don't copy the clip pattern into new rules, and don't use
-  Bootstrap's `.visually-hidden` on public pages.
+- **[Enforced]** Visually hidden text uses `.sr-only` on public pages and Bootstrap's `.visually-hidden` in Admin.
+  The clip pattern appears only in `.pub .sr-only` and in rules that hide text at some widths and show it at others
+  (`widthDependentHiding` in `tools/check-css.cjs`, each with its reason).
 - **[Review]** Touch targets are at least 44px (AGENTS.md); use `min-height: 44px`, until a shared token replaces it.
 - **[Review]** Bootstrap: the **admin** site loads full Bootstrap 5 and may use its classes. The **public** site
   loads only `lib/bootstrap/bootstrap-public-subset.css` (root variables, base reset, and the classes used by
   `SeriesFollowForm` and the error page). Don't add Bootstrap classes to public markup. If a shared component needs
   one, regenerate the subset and record it there.
-- **[Review]** Class prefixes: each new feature picks a new short prefix, uses BEM (`xx-block__element--modifier`)
-  with `is-`/`has-` state classes, and adds itself to this table. The prefix must not collide with Bootstrap
-  utilities on admin pages (`d-`, `p-`, `m-`, `g-`, `text-`, `bg-` …).
+- **[Enforced]** Class prefixes: each new feature picks a new short prefix, uses BEM (`xx-block__element--modifier`)
+  with `is-`/`has-` state classes, and adds itself to this table and to `registeredPrefixes` in
+  `tools/check-css.cjs`, which fails on any other new prefix (older unprefixed names are frozen there) and on
+  `admin-`. The prefix must not collide with Bootstrap utilities on admin pages (`d-`, `p-`, `m-`, `g-`, `text-`,
+  `bg-` …).
 
 | Prefix | Meaning or main users |
 | --- | --- |
@@ -108,7 +112,8 @@ reviewer. Existing code is being brought into line in the clean-up steps listed 
 | `tv-`, `tvc-` | TV |
 | `dg-` | Digital releases |
 | `rk-` | Rankings |
-| `adm-` | Admin (use this, not `admin-`, for new admin styles) |
+| `adm-` | Admin, including the Requests alert (`adm-alert`) and the public header's `adm-link`; `admin-` is refused |
+| `is-`, `has-`, `sr-` | State classes; `sr-only` |
 | `cv-` | Most covered lists (News, Tech) |
 | `nw-` | News front additions: trending, cascade |
 
@@ -152,7 +157,9 @@ scratchpad, so a check is a command, not instructions for rebuilding it.
   and hygiene tests). A change isn't committed while it fails.
 - **[Review]** A step that claims no behaviour change proves it with `node tools/compare-builds.cjs <old-ref>
   [<new-ref>]`: both builds side by side against `WebScraper_Test`, about 300 public pages and every admin list and
-  edit page compared after normalising volatile markup. Record the counts in release history.
+  edit page compared after normalising volatile markup. For CSS changes add `--layout` with the affected pages in
+  `LAYOUT_PAGES`: element boxes, colours and font sizes at 320–1920px in light and dark. Record the counts in release
+  history.
 - **[Review]** After every deploy, `node tools/live-check.cjs`: health, admin HTTPS sign-in, about 22 public pages at
   320/390/430/1440px in light and dark, every admin route and edit page at 390 and 1440px, then clean-up through
   Admin and `tools/sql/cleanup-zz.sh`. It is the standard live part of mobile verification; flows a change adds (a
@@ -193,7 +200,7 @@ quietly come back. Update the **Status** column as each guard lands, and don't r
 | Clock read three ways inside queries; `nowUtc`/`utcNow`/`now` parameter names | General §4 | Banned-API list blocks `DateTime.Now`, `DateTime.UtcNow`, `DateTimeOffset.UtcNow` outside the edge | Done November 5, 2026: `BannedSymbols.txt` refuses `DateTime.Now`/`UtcNow`/`Today` and `DateTimeOffset.Now`/`UtcNow` in application code (0 reads left, was 71); components inject `TimeProvider Clock`, endpoints and services (`ScoresSync`, `LeaguePhaseService`, `LocalWeather`, `SharedArticles`, `ProfileCookies`, `WatchCatalog`, `FeedDates.Today`) take `TimeProvider`; `TeamRecords.LoadAsync`, `FeedQuery.GetRecentDatesAsync` and three `TechQuery` methods take `DateTime nowUtc`; the 30 `utcNow`/`now` names became `nowUtc` and `RepositoryHygieneTests` fails if they return |
 | Shared code in `myNewspaper.Web.*` with `RootNamespace` `myNewspaper.Common` | General §2; Solution shape above | `IDE0130` at `warning`; `RootNamespace` matches the assembly | Done November 4, 2026: Shared is `myNewspaper.Shared.*` (and `myNewspaper.Hosting` became `myNewspaper.Shared.Hosting`), its `RootNamespace` is `myNewspaper.Shared`, and Admin's endpoints and tests moved out of `myNewspaper.Web.Endpoints`/`myNewspaper.Tests` |
 | `Web` and `Admin` `Program.cs` duplicating about 60 lines that had drifted | Solution shape above; general §5 | One `AddMyNewspaperCore()` in Shared (`Hosting/CoreServices.cs`); reviewers reject copied registrations | Done November 4, 2026: both hosts' registrations and outbound client settings compared identical before and after, apart from Admin's duplicate `TimeProvider` registration now removed |
-| 35 breakpoint widths, an `admin-`/`adm-` split, three visually-hidden patterns | CSS section above | `tools/check-css.cjs` (run by CI) fails on unregistered widths, unregistered prefixes and copies of the clip pattern | Planned (step 8) |
+| 35 breakpoint widths, an `admin-`/`adm-` split, three visually-hidden patterns | CSS section above | `tools/check-css.cjs` (run by CI) fails on unregistered widths, unregistered prefixes and copies of the clip pattern | Done November 5, 2026: `tools/check-css.cjs` runs in `tools/verify.sh` and both CI workflows. Widths: the 29 one-offs stay (user's choice: no visible change), each registered with its reason; new widths fail. Hidden text: Admin's `.adm-sr` became Bootstrap's `.visually-hidden`, the `.games` table heads use `.sr-only`, and the 9 rules that hide text only at some widths are registered; new copies fail. Prefixes: the 30 `admin-` classes became `adm-`; 129 older prefixes frozen, new unregistered ones fail. Proved with `compare-builds --layout` (new: element boxes, colours and font sizes per width and theme) |
 | `sa` password hard-coded in 10 test files; integration tests writing to the live database | Tests section above; general §12 | `RepositoryHygieneTests` fails on a literal `Password=`/`Pwd=` in any tracked file; `TestDatabase` always targets `WebScraper_Test` and refuses `WebScraper`; [create-test-database.sql](../deployment/create-test-database.sql) rebuilds the copy | Done November 4, 2026 for the tests; `sa` rotated November 5. Done November 5, 2026: web, admin and the tests have their own logins (DEPLOY.md, "SQL logins"; `deployment/sql-logins/`); `TestDatabase` prefers `TestConnection` (`mynewspaper_test`, no user in `WebScraper`) |
 | 89 browser checks with 10 viewport sets, several base-URL defaults (one production), and copied clean-up code | Tests section above; AGENTS.md | Shared `tests/browser/lib.cjs`; the check script fails on any `*.browser.cjs` that doesn't use it | Done November 5, 2026: all 90 checks require `lib.cjs`; five base-URL defaults (production, two odd ports, a container IP) became one; the profile set-up and delete copied into 34 checks (10 variants, some without the retry for Admin's interactive circuit) became `lib.addProfile`/`openProfile`/`deleteProfiles`; the `zz` clean-up runs on exit or once per suite (`CLEANUP_DB`); `browser-lib.test.cjs` is the guard (a node unit test, so `tools/verify.sh` runs it). Width lists that differ per check stay, behind `lib.widths()` |
 | CI ran only 4 of about 81 test classes and no lint or format checks | General §1 | Both workflows run the full suite (with a SQL service container), `dotnet format --verify-no-changes`, `npm run lint`, `npm run format:check` and the check script | Planned |

@@ -185,6 +185,8 @@ Run relevant application checks; the full suites are:
 ```bash
 tools/verify.sh                                  # build (warnings fail it), .NET tests, JS unit tests, lint, format
 node tools/compare-builds.cjs <old-ref>          # only for a change that claims no behaviour change
+LAYOUT_PAGES=/,admin:/admin node tools/compare-builds.cjs <old-ref> --layout   # CSS: boxes and colours per width/theme
+node tools/check-css.cjs                         # breakpoints, hidden-text pattern, class prefixes (also in verify.sh)
 CLEANUP_DB=<db> BASE_URL=<preview> npm run test:browser   # all Playwright checks, serially; zz clean-up in <db>
 ```
 
