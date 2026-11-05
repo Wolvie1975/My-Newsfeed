@@ -275,6 +275,34 @@ prefix_rule(
 )
 
 prefix_rule(
+    pattern = ["tools/verify.sh"],
+    decision = "allow",
+    justification = "Release tools: pre-commit suite, build comparison against WebScraper_Test, live checks that clean up after themselves",
+    match = ["tools/verify.sh"],
+)
+
+prefix_rule(
+    pattern = ["./tools/verify.sh"],
+    decision = "allow",
+    justification = "Release tools: pre-commit suite, build comparison against WebScraper_Test, live checks that clean up after themselves",
+    match = ["./tools/verify.sh"],
+)
+
+prefix_rule(
+    pattern = ["node", "tools/compare-builds.cjs"],
+    decision = "allow",
+    justification = "Release tools: pre-commit suite, build comparison against WebScraper_Test, live checks that clean up after themselves",
+    match = ["node tools/compare-builds.cjs"],
+)
+
+prefix_rule(
+    pattern = ["node", "tools/live-check.cjs"],
+    decision = "allow",
+    justification = "Release tools: pre-commit suite, build comparison against WebScraper_Test, live checks that clean up after themselves",
+    match = ["node tools/live-check.cjs"],
+)
+
+prefix_rule(
     pattern = ["git", "reset"],
     decision = "prompt",
     justification = "Discards work or removes containers and images: confirm first (AGENTS.md)",

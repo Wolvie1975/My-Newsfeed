@@ -126,10 +126,13 @@ Record any missing verification as outstanding; do not claim readiness without i
 Run relevant application checks; the full suites are:
 
 ```bash
-dotnet build myNewspaper.sln && dotnet test     # warnings fail the build
-npm ci && npm run lint && npm run format:check
+tools/verify.sh                                  # build (warnings fail it), .NET tests, JS unit tests, lint, format
+node tools/compare-builds.cjs <old-ref>          # only for a change that claims no behaviour change
 BASE_URL=<preview> npm run test:browser          # all Playwright checks, serially
 ```
+
+After the deploy, `node tools/live-check.cjs` runs the standard live checks and cleans up after itself (see
+[coding standards, Releases](docs/coding-standards.md#releases)).
 
 Tests need configured SQL access (user secrets or `ConnectionStrings__DefaultConnection`;
 `appsettings.json` carries no credentials); use development/staging for integration

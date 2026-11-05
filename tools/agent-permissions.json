@@ -60,6 +60,11 @@
             "commands": ["tools/sql/household-check.sh", "tools/sql/cleanup-zz.sh"]
         },
         {
+            "decision": "allow",
+            "why": "Release tools: pre-commit suite, build comparison against WebScraper_Test, live checks that clean up after themselves",
+            "commands": ["tools/verify.sh", "node tools/compare-builds.cjs", "node tools/live-check.cjs"]
+        },
+        {
             "decision": "ask",
             "why": "Discards work or removes containers and images: confirm first (AGENTS.md)",
             "commands": [

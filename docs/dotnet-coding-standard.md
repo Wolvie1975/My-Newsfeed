@@ -234,6 +234,9 @@ Every solution starts with these files, copied from My-Newsfeed and adjusted:
 - **[Review]** Dates in docs are written "Month D, YYYY (America/Chicago)". Each project keeps one changelog
   (newest first) and one deployment runbook; handoffs live in `docs/`, with unique names, and are not duplicated
   elsewhere. Remove or update links when files move.
+- **[Review]** Verification tools live in the repository: one command for the pre-commit suite, one for comparing
+  two builds' rendered output when a change claims no behaviour change, and one for the post-deploy live check with
+  its own clean-up. Handoffs give the command, not instructions for rebuilding a script from a session scratchpad.
 
 ## 15. Keeping the codebase consistent
 

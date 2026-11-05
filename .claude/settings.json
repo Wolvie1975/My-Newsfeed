@@ -41,7 +41,11 @@
             "Bash(tools/sql/household-check.sh:*)",
             "Bash(./tools/sql/household-check.sh:*)",
             "Bash(tools/sql/cleanup-zz.sh:*)",
-            "Bash(./tools/sql/cleanup-zz.sh:*)"
+            "Bash(./tools/sql/cleanup-zz.sh:*)",
+            "Bash(tools/verify.sh:*)",
+            "Bash(./tools/verify.sh:*)",
+            "Bash(node tools/compare-builds.cjs:*)",
+            "Bash(node tools/live-check.cjs:*)"
         ],
         "ask": [
             "Bash(git reset:*)",

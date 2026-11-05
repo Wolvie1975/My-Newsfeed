@@ -138,6 +138,24 @@ reviewer. Existing code is being brought into line in the clean-up steps listed 
   [release-history.md](release-history.md), newest first. Handoffs live in `docs/` and are not linked from
   `new development/`, which is ignored by git.
 
+## Releases
+
+AGENTS.md sets the cadence; these are the tools for each step. They live in the repository, not in a session
+scratchpad, so a check is a command, not instructions for rebuilding it.
+
+- **[Enforced]** `tools/verify.sh` before every commit: build with 0 warnings, all .NET tests against
+  `WebScraper_Test`, JS unit tests, lint and format check, with one pass/fail summary (`--quick` for build, JS unit
+  and hygiene tests). A change isn't committed while it fails.
+- **[Review]** A step that claims no behaviour change proves it with `node tools/compare-builds.cjs <old-ref>
+  [<new-ref>]`: both builds side by side against `WebScraper_Test`, about 300 public pages and every admin list and
+  edit page compared after normalising volatile markup. Record the counts in release history.
+- **[Review]** After every deploy, `node tools/live-check.cjs`: health, admin HTTPS sign-in, about 22 public pages at
+  320/390/430/1440px in light and dark, every admin route and edit page at 390 and 1440px, then clean-up through
+  Admin and `tools/sql/cleanup-zz.sh`. It is the standard live part of mobile verification; flows a change adds (a
+  form, a dialog) still get their own checks. Paste `test-results/live/summary.md` into the release-history entry.
+- **[Review]** A known failure goes in `live-check.cjs`'s `known` list with the reason and the date it was found, so
+  it stays visible without failing every run. Remove it when fixed.
+
 ## Agents and database tools
 
 - **[Enforced]** Coding agents (Claude Code, Codex, Antigravity) get their command permissions from one list,
@@ -170,7 +188,7 @@ quietly come back. Update the **Status** column as each guard lands, and don't r
 | CI ran only 4 of about 81 test classes and no lint or format checks | General §1 | Both workflows run the full suite (with a SQL service container), `dotnet format --verify-no-changes`, `npm run lint`, `npm run format:check` and the check script | Planned |
 | `== null` and `is null` mixed | General §3 | `IDE0041` and the `is null` preference at `warning` (catches `ReferenceEquals` and object casts); `RepositoryHygieneTests` ratchets the remaining `== null` lines, which are all in EF expression trees where `is null` doesn't compile (CS8122) | Done November 4, 2026: 95 lines converted; 158 expression-tree lines remained (160 after step 4 moved the TV series list into a query), and the test fails if the total rises |
 | Role-less class names (`BoxScoresRepository`, `ScoreboardRepository`, `AdminData`, `MyFollows`, `ProfilePageData`) | General §2 | `RepositoryHygieneTests` fails on a class or interface named `…Repository`, `…Manager`, `…Helper(s)`, `…Data` or `…Util(s)` | Done November 4, 2026: renamed `BoxScoreQuery`, `ScoreboardQuery`, `AdminStore`, `FollowStore`, `ProfilePageSettings`. `BoxScoreQuery` and `ScoreboardQuery` are still injected instances rather than static classes; step 4 reshapes them with the rest of data access |
-
 | Agents' "always allow" answers saved about 25 commands with the `sa` or admin password in plain text (`sqlcmd -P …`), plus broad grants such as bare `sqlcmd`, `docker stop` and `rm -f`; each tool's permissions drifted on its own | Agents and database tools above; AGENTS.md | One list generated into every tool's format, with a unit test that fails on a hand-edited file and on any destructive or raw-SQL command in the allow list; `tools/sql/` scripts keep passwords off command lines | Done November 5, 2026: Antigravity's saved grants cleaned (33 removed, then `docker compose`/`docker image` narrowed to safe subcommands) and the list merged in; `.claude/settings.json` and `.codex/rules/project.rules` generated. Still open: rotate the admin password and `sa` (both were saved there); confirm the Codex rules with `codex execpolicy check` where Codex is installed |
+| Verification tooling (the side-by-side build comparison, the live checks, the clean-up SQL) lived in session scratchpads and was rebuilt from handoff prose each time; `format:check` had been failing on four files | Releases section above; general §14 | `tools/verify.sh`, `tools/compare-builds.cjs`, `tools/live-check.cjs` and `tools/sql/` in the repository, documented in DEPLOY.md; `verify.sh` includes the format check | Done November 5, 2026: `compare-builds` reported step 4 (`c025a8d` → `7370fbf`) identical over 300 public and 25 admin pages and caught the College Sports navigation change; the four files were formatted (`7f4c367`). Still open: `deploy.sh`/`rollback.sh` (release plan parts 1–2) |
 
 When the audit is repeated, add any new repeated deviation to this table with its rule and guard.

@@ -26,6 +26,8 @@ features and fixes, including data/query changes that affect rendered content.
   saved preferences and no-JavaScript fallbacks where applicable to the change.
 - Keep tablet/desktop regression checks appropriate to the affected layout.
 - After deployment, repeat affected mobile checks against the live build.
+  `node tools/live-check.cjs` covers the standard pages and admin routes at
+  phone and desktop widths in both themes; add checks for flows the change adds.
 - Record widths, themes, flows, outcomes and any unverified limits in the handoff
   and release evidence. Do not claim a mobile check that was not run. If mobile
   verification cannot run, report the gap and leave that validation outstanding.
