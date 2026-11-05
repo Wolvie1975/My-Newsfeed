@@ -45,7 +45,11 @@
             "Bash(tools/verify.sh:*)",
             "Bash(./tools/verify.sh:*)",
             "Bash(node tools/compare-builds.cjs:*)",
-            "Bash(node tools/live-check.cjs:*)"
+            "Bash(node tools/live-check.cjs:*)",
+            "Bash(deployment/deploy.sh:*)",
+            "Bash(./deployment/deploy.sh:*)",
+            "Bash(deployment/rollback.sh:*)",
+            "Bash(./deployment/rollback.sh:*)"
         ],
         "ask": [
             "Bash(git reset:*)",

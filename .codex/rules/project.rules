@@ -277,29 +277,57 @@ prefix_rule(
 prefix_rule(
     pattern = ["tools/verify.sh"],
     decision = "allow",
-    justification = "Release tools: pre-commit suite, build comparison against WebScraper_Test, live checks that clean up after themselves",
+    justification = "Release tools: pre-commit suite, build comparison, live checks, and deploy/rollback as DEPLOY.md describes (standing approval in AGENTS.md)",
     match = ["tools/verify.sh"],
 )
 
 prefix_rule(
     pattern = ["./tools/verify.sh"],
     decision = "allow",
-    justification = "Release tools: pre-commit suite, build comparison against WebScraper_Test, live checks that clean up after themselves",
+    justification = "Release tools: pre-commit suite, build comparison, live checks, and deploy/rollback as DEPLOY.md describes (standing approval in AGENTS.md)",
     match = ["./tools/verify.sh"],
 )
 
 prefix_rule(
     pattern = ["node", "tools/compare-builds.cjs"],
     decision = "allow",
-    justification = "Release tools: pre-commit suite, build comparison against WebScraper_Test, live checks that clean up after themselves",
+    justification = "Release tools: pre-commit suite, build comparison, live checks, and deploy/rollback as DEPLOY.md describes (standing approval in AGENTS.md)",
     match = ["node tools/compare-builds.cjs"],
 )
 
 prefix_rule(
     pattern = ["node", "tools/live-check.cjs"],
     decision = "allow",
-    justification = "Release tools: pre-commit suite, build comparison against WebScraper_Test, live checks that clean up after themselves",
+    justification = "Release tools: pre-commit suite, build comparison, live checks, and deploy/rollback as DEPLOY.md describes (standing approval in AGENTS.md)",
     match = ["node tools/live-check.cjs"],
+)
+
+prefix_rule(
+    pattern = ["deployment/deploy.sh"],
+    decision = "allow",
+    justification = "Release tools: pre-commit suite, build comparison, live checks, and deploy/rollback as DEPLOY.md describes (standing approval in AGENTS.md)",
+    match = ["deployment/deploy.sh"],
+)
+
+prefix_rule(
+    pattern = ["./deployment/deploy.sh"],
+    decision = "allow",
+    justification = "Release tools: pre-commit suite, build comparison, live checks, and deploy/rollback as DEPLOY.md describes (standing approval in AGENTS.md)",
+    match = ["./deployment/deploy.sh"],
+)
+
+prefix_rule(
+    pattern = ["deployment/rollback.sh"],
+    decision = "allow",
+    justification = "Release tools: pre-commit suite, build comparison, live checks, and deploy/rollback as DEPLOY.md describes (standing approval in AGENTS.md)",
+    match = ["deployment/rollback.sh"],
+)
+
+prefix_rule(
+    pattern = ["./deployment/rollback.sh"],
+    decision = "allow",
+    justification = "Release tools: pre-commit suite, build comparison, live checks, and deploy/rollback as DEPLOY.md describes (standing approval in AGENTS.md)",
+    match = ["./deployment/rollback.sh"],
 )
 
 prefix_rule(

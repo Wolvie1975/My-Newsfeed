@@ -61,8 +61,14 @@
         },
         {
             "decision": "allow",
-            "why": "Release tools: pre-commit suite, build comparison against WebScraper_Test, live checks that clean up after themselves",
-            "commands": ["tools/verify.sh", "node tools/compare-builds.cjs", "node tools/live-check.cjs"]
+            "why": "Release tools: pre-commit suite, build comparison, live checks, and deploy/rollback as DEPLOY.md describes (standing approval in AGENTS.md)",
+            "commands": [
+                "tools/verify.sh",
+                "node tools/compare-builds.cjs",
+                "node tools/live-check.cjs",
+                "deployment/deploy.sh",
+                "deployment/rollback.sh"
+            ]
         },
         {
             "decision": "ask",
