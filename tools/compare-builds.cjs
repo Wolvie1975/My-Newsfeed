@@ -12,6 +12,13 @@
 // page linked from each, compared as main.innerHTML after the interactive render settles. Volatile markup
 // (antiforgery tokens, Blazor comments and state, _bl_/b- attributes, ports, countdowns) is normalised first.
 //
+// With --layout it also compares what's on screen, for CSS changes the HTML can't show: on each LAYOUT_PAGES route
+// (comma-separated; prefix admin routes with admin:) at LAYOUT_WIDTHS (default 320,390,430,744,1024,1440,1920) in
+// light and dark, the tag, box, colours and font size of every visible element and the page's scroll width. Class
+// names are ignored, so a pure rename compares equal; elements 1px or smaller (visually hidden text) are left out.
+//
+//   LAYOUT_PAGES=/events,/college,admin:/admin/sources node tools/compare-builds.cjs HEAD --layout
+//
 // Writes each differing page's two normalised versions to test-results/compare/ and exits 1 if any page differs.
 // Servers, worktrees and temporary files are removed in teardown, also on failure or Ctrl+C.
 const { spawn, execFileSync } = require('node:child_process');
@@ -165,9 +172,10 @@ function firstDifference(a, b) {
 async function main() {
     const args = process.argv.slice(2);
     const publicOnly = args.includes('--public-only');
+    const layout = args.includes('--layout');
     const refs = args.filter((a) => !a.startsWith('--'));
     if (refs.length < 1 || refs.length > 2) {
-        console.error('usage: node tools/compare-builds.cjs <old-ref> [<new-ref>] [--public-only]');
+        console.error('usage: node tools/compare-builds.cjs <old-ref> [<new-ref>] [--public-only] [--layout]');
         process.exit(2);
     }
     const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'compare-builds-'));
@@ -352,10 +360,10 @@ async function main() {
 
         // Admin: sign in to both, then every route plus the first edit page each list links to.
         let adminCompared = 0;
+        const pages = {};
         if (!publicOnly) {
             const { chromium } = require('playwright');
             browser = await chromium.launch();
-            const pages = {};
             for (const side of ['old', 'new']) {
                 const context = await browser.newContext({
                     ignoreHTTPSErrors: true,
@@ -397,12 +405,82 @@ async function main() {
             console.log(`admin: ${adminCompared} pages compared`);
         }
 
+        // Layout: what's on screen at each width and theme, for the LAYOUT_PAGES routes.
+        let layoutCompared = 0;
+        if (layout) {
+            const routes = (process.env.LAYOUT_PAGES || '')
+                .split(',')
+                .map((s) => s.trim())
+                .filter(Boolean);
+            if (routes.length === 0) throw new Error('--layout needs LAYOUT_PAGES (for example /events,admin:/admin)');
+            const widths = (process.env.LAYOUT_WIDTHS || '320,390,430,744,1024,1440,1920').split(',').map(Number);
+            if (!browser) browser = await require('playwright').chromium.launch();
+            const signature = () => [
+                'scrollWidth ' + document.documentElement.scrollWidth,
+                ...[...document.querySelectorAll('body *')]
+                    .filter((n) => {
+                        const s = getComputedStyle(n);
+                        const r = n.getBoundingClientRect();
+                        return s.display !== 'none' && s.visibility !== 'hidden' && r.width > 1 && r.height > 1;
+                    })
+                    .map((n) => {
+                        const r = n.getBoundingClientRect();
+                        const s = getComputedStyle(n);
+                        return `${n.tagName} ${Math.round(r.x)},${Math.round(r.y)} ${Math.round(r.width)}x${Math.round(r.height)} ${s.color} ${s.backgroundColor} ${s.fontSize}`;
+                    }),
+            ];
+            const contexts = {};
+            for (const side of ['old', 'new'])
+                for (const theme of ['light', 'dark']) {
+                    const context = await browser.newContext({ ignoreHTTPSErrors: true, colorScheme: theme });
+                    await context.addInitScript((t) => {
+                        try {
+                            localStorage.setItem('theme', t);
+                        } catch {}
+                    }, theme);
+                    contexts[side + theme] = await context.newPage();
+                }
+            for (const entry of routes) {
+                const isAdmin = entry.startsWith('admin:');
+                const route = isAdmin ? entry.slice(6) : entry;
+                if (isAdmin && publicOnly) continue;
+                for (const theme of ['light', 'dark'])
+                    for (const width of widths) {
+                        const shots = {};
+                        for (const side of ['old', 'new']) {
+                            // Admin pages reuse the signed-in session; public pages use a context per theme.
+                            const p = isAdmin ? pages[side].p : contexts[side + theme];
+                            if (isAdmin) await p.emulateMedia({ colorScheme: theme });
+                            await p.setViewportSize({ width, height: 900 });
+                            const base = isAdmin ? pages[side].base : `http://127.0.0.1:${ports[side]}`;
+                            await p.goto(base + route);
+                            await p.waitForLoadState('networkidle');
+                            await p.waitForTimeout(400);
+                            shots[side] = (await p.evaluate(signature)).join('\n');
+                        }
+                        layoutCompared++;
+                        if (shots.old !== shots.new)
+                            record(
+                                'layout',
+                                `${isAdmin ? 'admin:' : ''}${route}@${width}/${theme}`,
+                                shots.old,
+                                shots.new,
+                            );
+                    }
+            }
+            console.log(
+                `layout: ${layoutCompared} views compared (${routes.length} pages × ${widths.length} widths × 2 themes)`,
+            );
+        }
+
         console.log('');
         if (changedAssets.size > 0) {
             console.log(`note: changed assets (check them visually): ${[...changedAssets].sort().join(', ')}`);
         }
         if (differences.length === 0) {
-            console.log(`compare-builds: identical (${compared} public, ${adminCompared} admin pages)`);
+            console.log(
+                `compare-builds: identical (${compared} public, ${adminCompared} admin pages${layout ? `, ${layoutCompared} layout views` : ''})`,
+            );
             return 0;
         }
         console.log(
