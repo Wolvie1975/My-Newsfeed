@@ -6,6 +6,29 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
+## Shared browser-check helper (clean-up step 7) — November 5, 2026 (America/Chicago)
+
+Commits `52f38d3` (`tests/browser/lib.cjs`: addresses, admin password, screenshots, widths, themes, temporary profiles
+through Admin, and the `zz` clean-up on exit or once per `npm run test:browser` run), `48cff37` (all 90 checks on
+`lib.cjs`; guard `tests/browser/browser-lib.test.cjs` in `npm run test:unit`; `profile-settings` looks up the household
+admin on Admin, not the public site), `2280cae` (docs), `678842c` (without `CLEANUP_DB` the runner warns instead of
+failing). Tests and docs only: the images' application code is unchanged.
+
+Verification: `tools/verify.sh` 5/5. Full browser suite against a local preview (web :5295, admin :5297,
+`WebScraper_Test`, profiles on) before and after: 27 passed, 57 failed, 6 skipped both times, the same checks each
+time; failure messages identical apart from `profile-settings` (gets further with the fix) and `home-latest-video`
+(flaky; old and new fail identically on two standalone re-runs). The 57 are environment failures (checks without a
+profile land on the picker; stale test data). Clean-up after each run: 0 `zz` profiles; 142 and 141 unassigned
+devices removed from `WebScraper_Test`.
+
+Deployment: commit `678842c1109d` via `deployment/deploy.sh web admin` at 21:26:31Z, both healthy, environment
+unchanged, `/version` the commit (web `a856c5b0963c`, admin `f8504cbcf123`). Rollback `deployment/rollback.sh
+678842c1109d` → web `6c5ff8414bc2`, admin `ce70a0fc5ae0` (`b4afe87`, step 6). Retention removed the `3ad27b141f04`
+and `before-4317b1137a18` images; rollbacks left: `b4afe870d55c`, `4317b1137a18`, `college-revised-20261105`. Live
+check (21:27–21:32 UTC): health 2/2, admin 55/55 (390/1440px), public 176/176 (22 pages × 320/390/430/1440px ×
+light/dark), clean-up 2/2; household: Jason (admin), 6 devices, 0 unassigned, 0 `zz`; no errors in either app log.
+Mobile: no rendered change (tests and docs only); the live check's phone widths passed.
+
 ## The clock through TimeProvider, one `nowUtc` name (clean-up step 6) — November 5, 2026 (America/Chicago)
 
 Commit `b4afe87`: `BannedSymbols.txt` refuses `DateTime.Now`/`UtcNow`/`Today` and `DateTimeOffset.Now`/`UtcNow` in
