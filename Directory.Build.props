@@ -11,6 +11,11 @@
     <!-- New NuGet advisories appear without any code change; report them without breaking image builds. -->
     <WarningsNotAsErrors>$(WarningsNotAsErrors);NU1901;NU1902;NU1903;NU1904</WarningsNotAsErrors>
   </PropertyGroup>
+  <!-- Build time for /version (Shared/Hosting/BuildInfo.cs); the commit comes from SourceRevisionId. Docker builds pass
+       both (deployment/deploy.sh sets GIT_COMMIT and BUILD_TIME); local builds get the commit from git. -->
+  <ItemGroup Condition="'$(BuildTime)' != ''">
+    <AssemblyMetadata Include="BuildTime" Value="$(BuildTime)" />
+  </ItemGroup>
   <!-- Refuses the APIs listed in BannedSymbols.txt (RS0030), for example EF's *Raw SQL methods. Application code only:
        test fixtures run the db/ migration scripts and build temp tables from text. -->
   <ItemGroup Condition="'$(IsTestProject)' != 'true'">

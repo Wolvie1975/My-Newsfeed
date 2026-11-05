@@ -65,6 +65,7 @@ public class ProfileGateTests
 
     [Theory]
     [InlineData("/healthz", true)]
+    [InlineData("/version", true)]
     [InlineData("/service-worker.js", true)]
     [InlineData("/manifest.webmanifest", true)]
     [InlineData("/offline.html", true)]

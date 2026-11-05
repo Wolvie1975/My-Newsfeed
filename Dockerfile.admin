@@ -13,7 +13,12 @@ RUN dotnet restore src/myNewspaper.Admin/myNewspaper.Admin.csproj
 COPY src/ src/
 # No --no-restore: the early restore above only saw the .csproj, not the .razor files, and skips the package that
 # supplies _framework/blazor.web.js. Restoring again with the full source picks it up.
-RUN dotnet publish src/myNewspaper.Admin/myNewspaper.Admin.csproj -c Release -o /app/publish
+# The commit and build time for /version and the image label (deployment/deploy.sh passes both). Declared here, after
+# restore, so changing them doesn't invalidate the cached package layer.
+ARG GIT_COMMIT=""
+ARG BUILD_TIME=""
+RUN dotnet publish src/myNewspaper.Admin/myNewspaper.Admin.csproj -c Release -o /app/publish \
+      ${GIT_COMMIT:+-p:SourceRevisionId=$GIT_COMMIT} ${BUILD_TIME:+-p:BuildTime=$BUILD_TIME}
 
 # Guard: fail the build if the published site cannot serve the Blazor script. Without it the admin pages are not
 # interactive and every form post is rejected with a 400, and nothing else would notice until someone used the site.
@@ -24,6 +29,8 @@ RUN grep -q "_framework/blazor.web.js" /app/publish/myNewspaper.Admin.staticweba
 
 # ---- runtime ----
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
+ARG GIT_COMMIT=""
+LABEL org.opencontainers.image.revision="${GIT_COMMIT}"
 WORKDIR /app
 
 # Persistent home for the cookie-signing keys (mounted as a volume); owned by the non-root app user.

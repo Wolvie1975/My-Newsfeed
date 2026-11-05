@@ -134,6 +134,9 @@ public class ProfileHttpTests
             var admin = await client.SendAsync(Page("/admin"));
             Assert.Equal(HttpStatusCode.NotFound, admin.StatusCode);
             Assert.NotEqual(HttpStatusCode.Redirect, (await client.GetAsync("/healthz")).StatusCode);
+            var version = await client.GetAsync("/version");
+            Assert.Equal(HttpStatusCode.OK, version.StatusCode);
+            Assert.Contains("\"commit\":", await version.Content.ReadAsStringAsync());
             Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/manifest.webmanifest")).StatusCode);
             Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/theme-init.js")).StatusCode);
         }
@@ -147,7 +150,7 @@ public class ProfileHttpTests
         var client = app.Browser();
         try
         {
-            foreach (var path in new[] { "/api/saved", "/feed/more", "/healthz", "/local/weather" })
+            foreach (var path in new[] { "/api/saved", "/feed/more", "/healthz", "/version", "/local/weather" })
             {
                 var response = await client.GetAsync(path);
                 Assert.False(response.Headers.TryGetValues("Set-Cookie", out var cookies) && cookies.Any(c => c.StartsWith(ProfileCookies.DeviceCookie)), path);

@@ -51,6 +51,17 @@ public class AdminHostTests
             Assert.Equal(HttpStatusCode.OK, (await client.GetAsync(icon.GetProperty("src").GetString())).StatusCode);
     }
     [Fact]
+    public async Task Version_is_anonymous_and_shows_only_the_commit_and_build_time()
+    {
+        await using var app = new App();
+        using var client = app.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+        var response = await client.GetAsync("/version");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.Equal(["commit", "builtAt"], json.RootElement.EnumerateObject().Select(p => p.Name));
+    }
+
+    [Fact]
     public async Task Shared_assets_on_the_login_page_serve_real_bytes_including_fingerprinted_urls()
     {
         await using var app = new App();

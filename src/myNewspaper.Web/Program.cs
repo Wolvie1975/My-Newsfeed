@@ -95,6 +95,8 @@ app.MapFeed();
 
 // Used by the container health check: healthy only when the database is reachable.
 app.MapHealthChecks("/healthz");
+// The commit and build time of the running build, so a deploy can check it (Shared/Hosting/BuildInfo.cs).
+app.MapVersion();
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();

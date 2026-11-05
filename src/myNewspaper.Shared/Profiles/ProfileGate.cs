@@ -13,7 +13,7 @@ public static class ProfileGate
     /// <summary>Paths that never see the gate and aren't identified: static files and framework plumbing.</summary>
     public static bool IsPassThrough(PathString path) =>
         path.StartsWithSegments("/_framework") || path.StartsWithSegments("/_blazor") || path.StartsWithSegments("/_content")
-        || path.Equals("/healthz") || path.Equals("/service-worker.js") || path.Equals("/manifest.webmanifest")
+        || path.Equals("/healthz") || path.Equals("/version") || path.Equals("/service-worker.js") || path.Equals("/manifest.webmanifest")
         || path.Equals("/offline.html") || path.Equals("/favicon.ico");
 
     /// <summary>Identified, but never sent to the picker: the picker itself, profile endpoints, sign-in, admin, errors.</summary>

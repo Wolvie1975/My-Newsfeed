@@ -4,7 +4,12 @@ name: mynewsfeed
 
 services:
   web:
-    build: .
+    build:
+      context: .
+      # Set by deployment/deploy.sh: the commit for /version and the image's revision label.
+      args:
+        GIT_COMMIT: ${GIT_COMMIT:-}
+        BUILD_TIME: ${BUILD_TIME:-}
     image: mynewspaper-web:latest
     container_name: mynewsfeed-web
     restart: unless-stopped
@@ -33,6 +38,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.admin
+      args:
+        GIT_COMMIT: ${GIT_COMMIT:-}
+        BUILD_TIME: ${BUILD_TIME:-}
     image: mynewspaper-admin:latest
     container_name: mynewspaper-admin
     restart: unless-stopped

@@ -62,6 +62,7 @@ public partial class AdminProgram
         app.MapAdminProfiles();
         app.MapGet("/", () => Results.LocalRedirect("/admin"));
         app.MapHealthChecks("/healthz");
+        app.MapVersion();
         app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
         app.Run();
     }
