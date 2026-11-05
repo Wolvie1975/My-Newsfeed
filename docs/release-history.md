@@ -6,6 +6,37 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
+## Live score cards and the admin password — November 4, 2026 (America/Chicago)
+
+Commits `5b43e6d`, `60eb313`, `327452f`, `51d7537` (November 5 UTC). Live score cards in the phone strips (Home,
+Scoreboard, Sports) kept a long team name from shrinking, so the score sat past the card's edge (seen as "Chicago
+Blackhawks 1" cut off at 390px). The card's grid column may now shrink and the name ends in an ellipsis.
+`score-tiles.browser.cjs` renders mobile.css with long names at 320/390/430px and failed before the fix;
+`live-check` now checks every score card on the live pages too. Also: the rotated admin password (changed in `.env`
+by the user) applied with the new `deploy.sh --env-change`.
+
+Validation: `tools/verify.sh` passed (build 0 warnings, all .NET tests, JS unit tests, lint, format). No database
+change.
+
+Deployment: commit `327452fc6ef2` via `deployment/deploy.sh all --env-change`: web `74d26f3de582`, admin
+`4cf4f41c1858`, both healthy, `/version` `327452fc6ef2`, admin environment changed as intended (the password only).
+The script stopped printing after web because `diff` exits 1 under `set -e`; the deploy itself completed, checked by
+hand (image, health, `/version`, password hash against `.env`), and `51d7537` fixes the script. Rollback:
+`deployment/rollback.sh 327452fc6ef2` → `before-327452fc6ef2` (`ae1b90ba5029`, `96c4da823871`); note that rolling
+admin back also restores the old password.
+
+Live verification (`tools/live-check.cjs`): health 2/2; admin sign-in with the new password and 27 admin pages at 390
+and 1440px 55/55; 22 public pages at 320/390/430/1440px in light and dark 176/176, including the new score-card check.
+Phone screenshots inspected: Scoreboard dark shows "Los Angeles Kin…" with its score inside the card; Home light
+fits both live games. Clean-up: 1 profile (Jason, admin), 5 devices, 0 unassigned.
+
+Housekeeping the same evening: a verified copy-only `WebScraper` backup
+(`/var/opt/mssql/backup/WebScraper_copyonly_20261105_033148_before-sql-logins.bak`, copied to
+`/workspaces/DotNet_Projects/sql-backups/`); 11 stopped myNewspaper rollback containers (holding the old `sa`
+password) removed; about 1,500 old myNewspaper image tags and untagged builds removed (pre-rename `mynewsfeed-web`
+and `mydailyfeed-web` included), keeping `latest`, the current and previous `<sha>` images and
+`college-revised-20261105`; unused build cache pruned (11.8 GB).
+
 ## Release process: verify, compare, deploy and live-check tools — November 4, 2026 (America/Chicago)
 
 Commits `119f748`, `fa322ff`, `7f4c367`, `40ae0ec`, `1c7fdd8`, `832ec75`, `c74c4d7`, `154fb78`, `7745e2a`, `d1159dc`
