@@ -2,6 +2,7 @@
 @inject FeedDates Dates
 @inject myNewspaper.Shared.Profiles.ProfileContext Reader
 @inject ILogger<SectionAgenda> Log
+@inherits DataComponentBase
 
 @if (unavailable) {
     <p class="updated" role="status">Schedules are temporarily unavailable. Please try again.</p>
@@ -66,15 +67,15 @@
         unavailable = false;
         races = []; games = []; movies = []; episodes = [];
         try {
-        await using var db = await Factory.CreateDbContextAsync();
+        await using var db = await Factory.CreateDbContextAsync(Ct);
         var today = Dates.TodayAt(DateTime.UtcNow);
         if (Entertainment) {
-            movies = (await MoviesQuery.GetAsync(db, today, null, null, null, null, take: 4)).Items;
-            episodes = await TvQuery.GetOnDateAsync(db, Reader.Viewer, Dates, today);
+            movies = (await MoviesQuery.GetAsync(db, today, null, null, null, null, take: 4, ct: Ct)).Items;
+            episodes = await TvQuery.GetOnDateAsync(db, Reader.Viewer, Dates, today, Ct);
         } else {
             var sport = CategoryName == NewsSections.MensBasketball ? "Men's Basketball" : null;
-            if (CategoryName == F1NewsQuery.CategoryName) races = (await F1Query.GetAsync(db, "schedule")).Races.Where(r => r.RaceDate >= today).Take(3).ToArray();
-            games = CategoryName == F1NewsQuery.CategoryName ? [] : (await EventsQuery.GetUpcomingAsync(db, today, sport, null, limit: 40)).Items.Where(g => g.StartsAtUtc is null || g.StartsAtUtc > DateTime.UtcNow).Take(5).ToArray();
+            if (CategoryName == F1NewsQuery.CategoryName) races = (await F1Query.GetAsync(db, "schedule", ct: Ct)).Races.Where(r => r.RaceDate >= today).Take(3).ToArray();
+            games = CategoryName == F1NewsQuery.CategoryName ? [] : (await EventsQuery.GetUpcomingAsync(db, today, sport, null, limit: 40, ct: Ct)).Items.Where(g => g.StartsAtUtc is null || g.StartsAtUtc > DateTime.UtcNow).Take(5).ToArray();
         }
         } catch (Exception ex) when (DataFailures.IsReadFailure(ex)) {
             unavailable = true;

@@ -3,6 +3,7 @@
 @using myNewspaper.Shared.Profiles
 @using myNewspaper.Web.Endpoints
 @inject IDbContextFactory<WebScraperContext> Factory
+@inherits DataComponentBase
 
 <PageTitle>Choose a PIN · myNewspaper</PageTitle>
 
@@ -49,8 +50,8 @@
 
     protected override async Task OnInitializedAsync()
     {
-        await using var db = await Factory.CreateDbContextAsync();
-        profile = await ProfileStore.PinlessAsync(db, Id);
+        await using var db = await Factory.CreateDbContextAsync(Ct);
+        profile = await ProfileStore.PinlessAsync(db, Id, Ct);
     }
 
     private static string Initial(string name) => name.Trim() is { Length: > 0 } n ? char.ToUpperInvariant(n[0]).ToString() : "?";

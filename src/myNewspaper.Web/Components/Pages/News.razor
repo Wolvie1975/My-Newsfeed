@@ -12,6 +12,7 @@
 @using myNewspaper.Web.Components.Feed
 @inject IDbContextFactory<WebScraperContext> Factory
 @inject FeedDates Dates
+@inherits DataComponentBase
 
 @if (!SectionNews) {
 }
@@ -249,8 +250,8 @@ else
 
     protected override async Task OnParametersSetAsync()
     {
-        await using var db = await Factory.CreateDbContextAsync();
-        var allCategories = await FeedQuery.GetCategoriesAsync(db);
+        await using var db = await Factory.CreateDbContextAsync(Ct);
+        var allCategories = await FeedQuery.GetCategoriesAsync(db, Ct);
         if (!SectionNews && int.TryParse(CategoryQuery, out var oldId)
             && allCategories.FirstOrDefault(c => c.Id == oldId) is {} oldCategory
             && NewsSections.RouteFor(oldCategory) is {} destination) {
@@ -293,22 +294,22 @@ else
             : int.TryParse(CategoryQuery, out var categoryId) ? categoryId : null;
         var emptySection = SectionNews && Category is null && Hub != "tech";
         var feedHub = SectionNews ? Hub : "headlines";
-        sources = emptySection ? [] : await FeedQuery.GetSourcesAsync(db, Category, headlinesOnly: !SectionNews, hub: feedHub);
+        sources = emptySection ? [] : await FeedQuery.GetSourcesAsync(db, Category, headlinesOnly: !SectionNews, hub: feedHub, Ct);
         Source = int.TryParse(SourceQuery, out var sourceId) && sources.Any(s => s.Id == sourceId) ? sourceId : null;
         feed = emptySection ? new FeedPage([], 0, 0, null) : await FeedQuery.GetFeedAsync(
-            db, Category, Q, After, After is null ? FeedQuery.FirstBatch : FeedQuery.MoreBatch, Source, headlinesOnly: !SectionNews, hub: feedHub);
+            db, Category, Q, After, After is null ? FeedQuery.FirstBatch : FeedQuery.MoreBatch, Source, headlinesOnly: !SectionNews, hub: feedHub, Ct);
         lastDay = feed.Items.Count > 0 ? Dates.DayKey(feed.Items[^1]) : null;
         var nowUtc = DateTime.UtcNow;
         groupBy = feed.Items.Count > 0 && await FeedQuery.CountPublishedSinceAsync(db, Dates.StartOfDayUtc(Dates.TodayAt(nowUtc)),
-            Category, Q, Source, headlinesOnly: !SectionNews, hub: feedHub) >= FeedQuery.HourGroupingThreshold ? "hour" : "day";
+            Category, Q, Source, headlinesOnly: !SectionNews, hub: feedHub, Ct) >= FeedQuery.HourGroupingThreshold ? "hour" : "day";
         lastGroup = feed.Items.Count > 0 ? Dates.CardGroupKey(feed.Items[^1], groupBy, nowUtc) : null;
-        lastUpdated = emptySection ? null : await FeedQuery.GetLastUpdatedAsync(db, headlinesOnly: !SectionNews, categoryId: Category, hub: feedHub);
+        lastUpdated = emptySection ? null : await FeedQuery.GetLastUpdatedAsync(db, headlinesOnly: !SectionNews, categoryId: Category, hub: feedHub, Ct);
         if (!emptySection && feed.Items.Count > 0)
         {
-            var recent = await FeedQuery.GetRecentDatesAsync(db, Category, Q, Source, headlinesOnly: !SectionNews, hub: feedHub);
+            var recent = await FeedQuery.GetRecentDatesAsync(db, Category, Q, Source, headlinesOnly: !SectionNews, hub: feedHub, ct: Ct);
             var hubRecent = Category is null && Source is null && string.IsNullOrWhiteSpace(Q)
                 ? recent
-                : await FeedQuery.GetRecentDatesAsync(db, null, null, null, headlinesOnly: !SectionNews, hub: feedHub, days: 2);
+                : await FeedQuery.GetRecentDatesAsync(db, null, null, null, headlinesOnly: !SectionNews, hub: feedHub, days: 2, ct: Ct);
             jumpBox = JumpBoxBuilder.Build(recent, hubRecent, SectionNews ? HubCategories : categories, feed.Items, groupBy, feedHub, Category, Href, Dates, nowUtc);
         }
         else
@@ -320,7 +321,7 @@ else
             ? categories.Where(c => c.Id != Category).OrderBy(c => PhoneColors.Order(c.Name)).ThenBy(c => c.Name).ToList()
             : [];
         latestByCategory = foldCategories.Count > 0
-            ? await FeedQuery.GetLatestByCategoryAsync(db, foldCategories.Select(c => c.Id))
+            ? await FeedQuery.GetLatestByCategoryAsync(db, foldCategories.Select(c => c.Id), ct: Ct)
             : new Dictionary<int, IReadOnlyList<FeedItem>>();
     }
 

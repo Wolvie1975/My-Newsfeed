@@ -76,8 +76,11 @@ Every solution starts with these files, copied from My-Newsfeed and adjusted:
 
 - **[Review]** Every async method that does I/O takes `CancellationToken ct = default` as its **last** parameter and
   passes it to everything it awaits, including `CreateDbContextAsync(ct)`, EF calls and `HttpClient` calls.
-  Endpoint handlers and components get their token from the framework (`HttpContext.RequestAborted`, the
-  handler's `CancellationToken` parameter) and pass it down.
+  Endpoint handlers get their token from the framework (`HttpContext.RequestAborted`, the handler's
+  `CancellationToken` parameter) and pass it down. Blazor gives components no token, so a component that reads data
+  inherits `DataComponentBase` and passes its `Ct` (the request's token during static rendering, cancelled on dispose
+  when interactive) to reads. A write the person started (save, delete, approve, sync) passes
+  `CancellationToken.None`, so it finishes even if they navigate away straight after clicking.
 - **[Review]** No sync-over-async (`.Result`, `.Wait()`, `GetAwaiter().GetResult()`). No `ConfigureAwait(false)` in
   application code (there is no synchronization context in ASP.NET Core).
 - **[Review]** Read the clock once, at the edge: inject `TimeProvider` into endpoints, components, services and
@@ -262,7 +265,7 @@ and two `Program.cs` files that had quietly diverged. Most of those had a conven
 | --- | --- |
 | `== null`, missing `is null` pattern | `.editorconfig`: `dotnet_style_prefer_is_null_check_over_reference_equality_method` and `IDE0041` at `warning` |
 | Namespace doesn't match the folder | `IDE0130` at `warning` (with `dotnet_style_namespace_match_folder = true`) |
-| Token not passed on | `CA2016` at `warning` |
+| Token not passed on | `CA2016` at `warning`; a test that every async method taking the context (or of an `XxxClient`) has a token, and that no `CreateDbContextAsync()` lacks one |
 | Missing `Async` suffix, `_field` names | `.editorconfig` naming rules at `warning` |
 | Reading the clock or raw SQL strings in app code | `Microsoft.CodeAnalysis.BannedApiAnalyzers` with a `BannedSymbols.txt` listing `DateTime.Now`, `DateTime.UtcNow`, `DateTimeOffset.UtcNow`, `FromSqlRaw`, `SqlQueryRaw`, `ExecuteSqlRaw(Async)` (test projects exempt where needed) |
 | Secrets in the repo | CI check that fails on `Password=`/`Pwd=` in tracked files outside `*.example`, plus secret scanning on the host |

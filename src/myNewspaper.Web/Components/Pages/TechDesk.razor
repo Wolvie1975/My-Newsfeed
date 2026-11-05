@@ -10,6 +10,7 @@
 @inject FeedDates Dates
 @inject IMemoryCache Cache
 @inject ILogger<TechDesk> Log
+@inherits DataComponentBase
 
 <PageTitle>@desk.Title · Tech · myNewspaper</PageTitle>
 
@@ -419,15 +420,15 @@
 
         try
         {
-            await using var db = await Factory.CreateDbContextAsync();
-            var categories = await FeedQuery.GetCategoriesAsync(db);
+            await using var db = await Factory.CreateDbContextAsync(Ct);
+            var categories = await FeedQuery.GetCategoriesAsync(db, Ct);
             var cat = categories.FirstOrDefault(c => c.Name == desk.Category);
             categoryId = cat?.Id;
-            lastUpdated = await FeedQuery.GetLastUpdatedAsync(db, headlinesOnly: false, categoryId: categoryId, hub: "tech");
+            lastUpdated = await FeedQuery.GetLastUpdatedAsync(db, headlinesOnly: false, categoryId: categoryId, hub: "tech", Ct);
 
             var todayStartUtc = Dates.StartOfDayUtc(Dates.TodayAt(nowUtc));
-            todayItems = await TechQuery.DeskItemsSinceAsync(db, todayStartUtc, desk.Category, take: 500);
-            allDeskStories = await TechQuery.LatestAsync(db, 60, desk.Category);
+            todayItems = await TechQuery.DeskItemsSinceAsync(db, todayStartUtc, desk.Category, take: 500, Ct);
+            allDeskStories = await TechQuery.LatestAsync(db, 60, desk.Category, Ct);
 
             var counts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
             foreach (var topic in desk.Topics)
@@ -441,7 +442,7 @@
                 : allDeskStories;
             moreStories = filteredStories.Skip(5).Take(9).ToList();
 
-            var sources = await FeedQuery.GetSourcesAsync(db, categoryId, headlinesOnly: false, hub: "tech");
+            var sources = await FeedQuery.GetSourcesAsync(db, categoryId, headlinesOnly: false, hub: "tech", Ct);
             var todayBySourceName = todayItems
                 .GroupBy(Source, StringComparer.OrdinalIgnoreCase)
                 .ToDictionary(g => g.Key, g => g.Count(), StringComparer.OrdinalIgnoreCase);
@@ -465,32 +466,32 @@
 
             if (desk.Slug == "technology")
             {
-                var weekItems = await TechQuery.DeskItemsSinceAsync(db, nowUtc.AddDays(-7), desk.Category, take: 300);
+                var weekItems = await TechQuery.DeskItemsSinceAsync(db, nowUtc.AddDays(-7), desk.Category, take: 300, Ct);
                 howToCards = weekItems
                     .Select(i => (Item: i, Tag: TechDesks.HowToTag(i.Title)))
                     .Where(x => x.Tag is not null)
                     .Take(4)
                     .Select(x => new HowToCard(x.Item, x.Tag!))
                     .ToList();
-                deskVideos = await TechQuery.VideosByCategoryAsync(db, "Tech", 3);
-                var gamesOne = await TechQuery.LatestAsync(db, 1, NewsSections.VideoGames);
-                var linuxOne = await TechQuery.LatestAsync(db, 1, NewsSections.Linux);
+                deskVideos = await TechQuery.VideosByCategoryAsync(db, "Tech", 3, Ct);
+                var gamesOne = await TechQuery.LatestAsync(db, 1, NewsSections.VideoGames, Ct);
+                var linuxOne = await TechQuery.LatestAsync(db, 1, NewsSections.Linux, Ct);
                 alsoInTech = gamesOne.Concat(linuxOne).ToList();
             }
             else if (desk.Slug == "video-games")
             {
-                var threeDays = await TechQuery.DeskItemsSinceAsync(db, nowUtc.AddDays(-3), desk.Category, take: 250);
+                var threeDays = await TechQuery.DeskItemsSinceAsync(db, nowUtc.AddDays(-3), desk.Category, take: 250, Ct);
                 dealsStories = threeDays
                     .Where(i => TechDesks.IsGamingDeal(i.Title, i.Description))
                     .Take(4)
                     .ToList();
-                deskVideos = await TechQuery.VideosByCategoryAsync(db, "Video Games", 4);
+                deskVideos = await TechQuery.VideosByCategoryAsync(db, "Video Games", 4, Ct);
             }
             else if (desk.Slug == "linux")
             {
-                linuxCovered = await TechQuery.MostCoveredAsync(db, Cache, TimeSpan.FromHours(36), minSources: 2, take: 1, category: NewsSections.Linux);
+                linuxCovered = await TechQuery.MostCoveredAsync(db, Cache, TimeSpan.FromHours(36), minSources: 2, take: 1, category: NewsSections.Linux, Ct);
                 var gamingTopic = desk.Topics.First(t => t.Slug == "gaming");
-                var weekTech = await TechQuery.DeskItemsSinceAsync(db, nowUtc.AddDays(-7), category: null, take: 400);
+                var weekTech = await TechQuery.DeskItemsSinceAsync(db, nowUtc.AddDays(-7), category: null, take: 400, Ct);
                 linuxGamingStories = weekTech
                     .Where(i => i.CategoryName is NewsSections.Linux or NewsSections.VideoGames
                         && TechDesks.Matches(gamingTopic, i.Title, i.Description))

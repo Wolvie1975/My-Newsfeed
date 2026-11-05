@@ -7,6 +7,7 @@
 @inject ProfileContext Reader
 @inject FeedDates Dates
 @inject NavigationManager Nav
+@inherits DataComponentBase
 
 @* One of your topics (docs/news-section-handoff.md, phase 5): what's new since it was last marked read, then earlier
    matches from the past 30 days, 20 at a time. Opening the page doesn't mark anything read; only the button does, so
@@ -99,9 +100,9 @@
     protected override async Task OnParametersSetAsync()
     {
         var nowUtc = DateTime.UtcNow;
-        await using var db = await Factory.CreateDbContextAsync();
+        await using var db = await Factory.CreateDbContextAsync(Ct);
         // Only the open profile's own topic; anything else answers exactly as an unknown ID does.
-        topic = await TopicQuery.GetAsync(db, Reader.Id, Id);
+        topic = await TopicQuery.GetAsync(db, Reader.Id, Id, Ct);
         if (topic is null)
         {
             Nav.NotFound();
@@ -109,7 +110,7 @@
         }
         name = TopicQuery.NameOf(topic);
         newsTabs = await SectionChoices.NewsAsync(db);
-        var summaries = await TopicQuery.SummariesAsync(db, Reader.Id, nowUtc);
+        var summaries = await TopicQuery.SummariesAsync(db, Reader.Id, nowUtc, Ct);
         topicChoices = summaries.Select(s => new NavigationChoice($"news/topics/{s.Topic.Id}", $"{s.Name} · {(s.New > 0 ? $"{s.New} new" : "none new")}")).ToList();
         var (items, _) = await TopicQuery.MatchAsync(db, topic.Terms, topic.ExceptTerms, topic.Hub, nowUtc.AddDays(-TopicQuery.PageDays));
         var since = TopicQuery.NewSince(topic);

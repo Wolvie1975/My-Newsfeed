@@ -3,6 +3,7 @@
 @inject IDbContextFactory<WebScraperContext> Factory
 @inject TvmazeClient Tvmaze
 @inject NavigationManager Nav
+@inherits DataComponentBase
 
 @* In admin, the page header already names the page. *@
 @if (Public) { <h1>Follow a TV series</h1> }
@@ -52,10 +53,10 @@
         busy = true; error = null;
         try
         {
-            var response = await Tvmaze.SearchAsync(query);
+            var response = await Tvmaze.SearchAsync(query, Ct);
             results = response.Shows; error = response.Error; searched = true;
-            await using var db = await Factory.CreateDbContextAsync();
-            followed = (await TvQuery.TrackedShowIdsAsync(db)).ToHashSet();
+            await using var db = await Factory.CreateDbContextAsync(Ct);
+            followed = (await TvQuery.TrackedShowIdsAsync(db, Ct)).ToHashSet();
         }
         finally { busy = false; }
     }
@@ -65,10 +66,10 @@
         busy = true; error = null; success=null;
         try
         {
-            var response = await Tvmaze.GetShowAsync(id);
+            var response = await Tvmaze.GetShowAsync(id, Ct);
             if (response.Error is not null || response.Shows.Count != 1) { error = response.Error ?? "Series could not be verified."; return; }
-            await using var db = await Factory.CreateDbContextAsync();
-            await TvQuery.FollowAsync(db, id, response.Shows[0].Name);
+            await using var db = await Factory.CreateDbContextAsync(CancellationToken.None);
+            await TvQuery.FollowAsync(db, id, response.Shows[0].Name, CancellationToken.None);
             if(Public){followed.Add(id);success=response.Shows[0].Name+" is now tracked. Episode schedules will appear after the next update.";}
             else Nav.NavigateTo("admin/tv-series");
         }

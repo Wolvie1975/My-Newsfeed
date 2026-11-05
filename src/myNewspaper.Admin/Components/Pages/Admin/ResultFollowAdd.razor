@@ -5,6 +5,7 @@
 @inject EspnClient Espn
 @inject ScoresSync Sync
 @inject NavigationManager Nav
+@inherits DataComponentBase
 
 <PageTitle>Follow a league or team</PageTitle>
 
@@ -115,7 +116,7 @@
 
         // One request; a college list is a few hundred teams, filtered here as you type.
         var requested = league;
-        var result = await Espn.GetTeamsAsync(requested.Sport, requested.League);
+        var result = await Espn.GetTeamsAsync(requested.Sport, requested.League, Ct);
         if (league != requested)
         {
             return;   // the league changed while this list was loading
@@ -138,8 +139,8 @@
         int followId;
         try
         {
-            await using var db = await Factory.CreateDbContextAsync();
-            followId = await AdminStore.AddResultFollowAsync(db, kind, sport, leagueKey, teamId, name, logoUrl);
+            await using var db = await Factory.CreateDbContextAsync(CancellationToken.None);
+            followId = await AdminStore.AddResultFollowAsync(db, kind, sport, leagueKey, teamId, name, logoUrl, CancellationToken.None);
         }
         catch (DbUpdateException ex) when (AdminStore.IsUniqueViolation(ex))
         {
@@ -153,7 +154,7 @@
         // The follow is saved either way; if this first fetch fails (ESPN or the network), the background sync retries it.
         try
         {
-            await Sync.SyncNowAsync(followId);
+            await Sync.SyncNowAsync(followId, CancellationToken.None);
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or System.Text.Json.JsonException
             or DbUpdateException || DataFailures.IsReadFailure(ex))

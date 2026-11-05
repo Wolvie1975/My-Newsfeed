@@ -9,6 +9,7 @@
 @inject FeedDates Dates
 @inject ProfileContext Reader
 @inject TimeProvider Clock
+@inherits DataComponentBase
 
 <PageTitle>Pick your edition · myNewspaper</PageTitle>
 
@@ -153,8 +154,8 @@ else
     protected override async Task OnInitializedAsync()
     {
         now = Clock.GetUtcNow().UtcDateTime;
-        await using var db = await Factory.CreateDbContextAsync();
-        page = await PickerPreviewQuery.GetAsync(db, Saved, Dates, now);
+        await using var db = await Factory.CreateDbContextAsync(Ct);
+        page = await PickerPreviewQuery.GetAsync(db, Saved, Dates, now, Ct);
     }
 
     private static string Initial(string name) => name.Trim() is { Length: > 0 } n ? char.ToUpperInvariant(n[0]).ToString() : "?";

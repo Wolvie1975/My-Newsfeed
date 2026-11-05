@@ -1,6 +1,7 @@
 @page "/admin/categories"
 @rendermode InteractiveServer
 @inject IDbContextFactory<WebScraperContext> Factory
+@inherits DataComponentBase
 
 <PageTitle>Categories</PageTitle>
 
@@ -130,8 +131,8 @@ else
 
     private async Task LoadAsync()
     {
-        await using var db = await Factory.CreateDbContextAsync();
-        rows = await AdminQuery.CategoriesAsync(db);
+        await using var db = await Factory.CreateDbContextAsync(Ct);
+        rows = await AdminQuery.CategoriesAsync(db, Ct);
     }
 
     private void Fail(string text)
@@ -171,8 +172,8 @@ else
 
         try
         {
-            await using var db = await Factory.CreateDbContextAsync();
-            await AdminStore.AddCategoryAsync(db, name, newHub);
+            await using var db = await Factory.CreateDbContextAsync(CancellationToken.None);
+            await AdminStore.AddCategoryAsync(db, name, newHub, CancellationToken.None);
             Succeed($"Added {name}.");
             newName = "";
         }
@@ -210,8 +211,8 @@ else
 
         try
         {
-            await using var db = await Factory.CreateDbContextAsync();
-            if (!await AdminStore.UpdateCategoryAsync(db, id, name, editHub))
+            await using var db = await Factory.CreateDbContextAsync(CancellationToken.None);
+            if (!await AdminStore.UpdateCategoryAsync(db, id, name, editHub, CancellationToken.None))
             {
                 Fail("That category no longer exists.");
             }
@@ -246,8 +247,8 @@ else
 
         try
         {
-            await using var db = await Factory.CreateDbContextAsync();
-            var deleted = await AdminStore.DeleteCategoryAsync(db, target.Id);
+            await using var db = await Factory.CreateDbContextAsync(CancellationToken.None);
+            var deleted = await AdminStore.DeleteCategoryAsync(db, target.Id, CancellationToken.None);
             Succeed(deleted ? $"Deleted {target.Name}." : $"{target.Name} was already deleted.");
         }
         catch (Exception ex) when (AdminStore.IsForeignKeyViolation(ex))

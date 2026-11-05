@@ -3,6 +3,7 @@
 @inject FeedDates Dates
 @inject myNewspaper.Shared.Profiles.ProfileContext Reader
 @inject ILogger<EntertainmentFront> Log
+@inherits DataComponentBase
 
 @* Entertainment front page as in the approved concept: On screen, then the lead story and latest headlines beside
    the weekend box office, tonight's TV and Friday's theater releases. Phones get the folded front below. *@
@@ -391,22 +392,22 @@
         nowUtc = DateTime.UtcNow;
         var today = Dates.TodayAt(nowUtc);
         newsUnavailable = agendaUnavailable = boxOfficeUnavailable = false;
-        await using var db = await Factory.CreateDbContextAsync();
+        await using var db = await Factory.CreateDbContextAsync(Ct);
 
-        try { stories = await FeedQuery.GetHomeNewsAsync(db, 7, "entertainment"); }
+        try { stories = await FeedQuery.GetHomeNewsAsync(db, 7, "entertainment", Ct); }
         catch (Exception ex) when (DataFailures.IsReadFailure(ex))
         { newsUnavailable = true; stories = []; Log.LogError(ex, "Could not read entertainment headlines."); }
 
         try
         {
-            var hubCategories = (await FeedQuery.GetCategoriesAsync(db))
+            var hubCategories = (await FeedQuery.GetCategoriesAsync(db, Ct))
                 .Where(c => c.Hub == "entertainment")
                 .OrderBy(NewsSections.Order).ThenBy(c => c.Name)
                 .ToList();
             var loaded = new List<(FeedCategory, IReadOnlyList<FeedItem>)>();
             foreach (var category in hubCategories)
             {
-                var items = await FeedQuery.GetLatestInHubAsync(db, "entertainment", 4, category.Name);
+                var items = await FeedQuery.GetLatestInHubAsync(db, "entertainment", 4, category.Name, Ct);
                 if (items.Count > 0) loaded.Add((category, items));
             }
             desks = loaded;
@@ -417,8 +418,8 @@
         // On screen: one card per tracked show, then the next releases, five in all.
         try
         {
-            episodes = await TvQuery.GetOnDateAsync(db, Reader.Viewer, Dates, today);
-            var movies = (await MoviesQuery.GetAsync(db, today, null, null, null, null, take: 4)).Items;
+            episodes = await TvQuery.GetOnDateAsync(db, Reader.Viewer, Dates, today, Ct);
+            var movies = (await MoviesQuery.GetAsync(db, today, null, null, null, null, take: 4, ct: Ct)).Items;
             weekMovies = movies;
             // Phones: the same items as a timeline, tonight's episodes first.
             screenLine = episodes.Take(2)
@@ -443,7 +444,7 @@
                     m.Platform ?? MoviesQuery.Types.GetValueOrDefault(m.Type, m.Type), "movies", false)))
                 .Take(5).ToList();
             theaterFriday = MoviesQuery.HomeTheatricalFriday(today);
-            theatrical = await MoviesQuery.GetFridayTheatricalAsync(db, today);
+            theatrical = await MoviesQuery.GetFridayTheatricalAsync(db, today, ct: Ct);
         }
         catch (Exception ex) when (DataFailures.IsReadFailure(ex))
         { agendaUnavailable = true; onScreen = []; screenLine = []; weekMovies = []; episodes = []; theatrical = []; Log.LogError(ex, "Could not read entertainment schedules."); }
@@ -452,8 +453,8 @@
         weekend = HomeBoxOfficeSchedule.ResultsWeekend(today);
         try
         {
-            if (showResults) boxOffice = (await BoxOfficeChartQuery.GetAsync(db, weekend)).Take(5).ToList();
-            else forecasts = await BoxOfficeForecastQuery.GetAsync(db, today);
+            if (showResults) boxOffice = (await BoxOfficeChartQuery.GetAsync(db, weekend, Ct)).Take(5).ToList();
+            else forecasts = await BoxOfficeForecastQuery.GetAsync(db, today, Ct);
         }
         catch (Exception ex) when (DataFailures.IsReadFailure(ex))
         { boxOfficeUnavailable = true; boxOffice = []; Log.LogError(ex, "Could not read entertainment box office."); }

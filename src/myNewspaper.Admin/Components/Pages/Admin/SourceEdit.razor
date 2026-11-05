@@ -5,6 +5,7 @@
 @inject IDbContextFactory<WebScraperContext> Factory
 @inject NavigationManager Nav
 @inject IConfiguration Config
+@inherits DataComponentBase
 
 <PageTitle>@(IsNew ? "Add source" : $"Edit {SourceName}")</PageTitle>
 
@@ -170,8 +171,8 @@
 
     protected override async Task OnParametersSetAsync()
     {
-        await using var db = await Factory.CreateDbContextAsync();
-        categories = await AdminQuery.CategoryOptionsAsync(db);
+        await using var db = await Factory.CreateDbContextAsync(Ct);
+        categories = await AdminQuery.CategoryOptionsAsync(db, Ct);
 
         if (Id is not { } id)
         {
@@ -180,7 +181,7 @@
             return;
         }
 
-        existing = await AdminQuery.SourceAsync(db, id);
+        existing = await AdminQuery.SourceAsync(db, id, Ct);
         if (existing is null)
         {
             notFound = true;
@@ -220,8 +221,8 @@
         saving = true;
         try
         {
-            await using var db = await Factory.CreateDbContextAsync();
-            if (!await AdminStore.SaveSourceAsync(db, Id, url, label, form.Enabled, categoryId))
+            await using var db = await Factory.CreateDbContextAsync(CancellationToken.None);
+            if (!await AdminStore.SaveSourceAsync(db, Id, url, label, form.Enabled, categoryId, CancellationToken.None))
             {
                 notFound = true;
                 return;
@@ -237,8 +238,8 @@
         {
             // The chosen category was deleted after this form loaded.
             error = "That category no longer exists. Pick another one.";
-            await using var db = await Factory.CreateDbContextAsync();
-            categories = await AdminQuery.CategoryOptionsAsync(db);
+            await using var db = await Factory.CreateDbContextAsync(CancellationToken.None);
+            categories = await AdminQuery.CategoryOptionsAsync(db, Ct);
             form.SourceCategoryId = null;
         }
         finally
@@ -281,9 +282,9 @@
 
     private async Task DisableAsync()
     {
-        await using var db = await Factory.CreateDbContextAsync();
-        if (Id is not { } id || !await AdminStore.SetSourceEnabledAsync(db, id, enabled: false)) { notFound = true; return; }
-        existing = await AdminQuery.SourceAsync(db, id);
+        await using var db = await Factory.CreateDbContextAsync(CancellationToken.None);
+        if (Id is not { } id || !await AdminStore.SetSourceEnabledAsync(db, id, enabled: false, CancellationToken.None)) { notFound = true; return; }
+        existing = await AdminQuery.SourceAsync(db, id, Ct);
         if (form is not null)
         {
             form.Enabled = false;
@@ -297,8 +298,8 @@
         var name = SourceName;
         try
         {
-            await using var db = await Factory.CreateDbContextAsync();
-            await AdminStore.DeleteSourceAsync(db, Id!.Value, includePages: pageCount > 0);
+            await using var db = await Factory.CreateDbContextAsync(CancellationToken.None);
+            await AdminStore.DeleteSourceAsync(db, Id!.Value, includePages: pageCount > 0, CancellationToken.None);
             Nav.NavigateTo("admin/sources?deleted=" + Uri.EscapeDataString(name));
         }
         catch (Exception ex) when (AdminStore.IsForeignKeyViolation(ex))

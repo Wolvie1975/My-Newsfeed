@@ -4,6 +4,7 @@
 @using myNewspaper.Web.Components.Events
 @inject IDbContextFactory<WebScraperContext> Factory
 @inject FeedDates Dates
+@inherits DataComponentBase
 
 <PageTitle>Competitions · myNewspaper</PageTitle>
 
@@ -139,16 +140,16 @@ else
     {
         // "Today" is the calendar date in the display zone (Central); events are compared by their own local date.
         var today = Dates.Today;
-        await using var db = await Factory.CreateDbContextAsync();
-        records = await TeamRecords.LoadAsync(db, Dates.Today, RecordPhases);
-        choices = await EventsQuery.GetScheduleChoicesAsync(db, today);
+        await using var db = await Factory.CreateDbContextAsync(Ct);
+        records = await TeamRecords.LoadAsync(db, Dates.Today, RecordPhases, Ct);
+        choices = await EventsQuery.GetScheduleChoicesAsync(db, today, Ct);
         selectedChoice = choices.FirstOrDefault(c => c.Value == Schedule);
-        selectedProvider = await EventsQuery.ProviderOfScheduleAsync(db, School);
+        selectedProvider = await EventsQuery.ProviderOfScheduleAsync(db, School, Ct);
         if (selectedChoice is not null) selectedProvider = selectedChoice.Provider;
         pageIndex = int.TryParse(Page, out var page) ? Math.Clamp(page, 0, 10000) : 0;
-        listing = await EventsQuery.GetUpcomingAsync(db, today, selectedChoice?.Sport ?? Sport, null, school: selectedChoice is null ? School : null, providerTeamId: selectedProvider == "espn-championship" && Team == 352 ? 352 : null, offset: pageIndex * EventsQuery.Limit, provider: selectedChoice?.Provider, to: today.AddDays(3));
+        listing = await EventsQuery.GetUpcomingAsync(db, today, selectedChoice?.Sport ?? Sport, null, school: selectedChoice is null ? School : null, providerTeamId: selectedProvider == "espn-championship" && Team == 352 ? 352 : null, offset: pageIndex * EventsQuery.Limit, provider: selectedChoice?.Provider, to: today.AddDays(3), ct: Ct);
         pageIndex = Math.Min(pageIndex, Math.Max(0, (listing.Total - 1) / EventsQuery.Limit));
-        lastUpdated = await EventsQuery.GetLastUpdatedAsync(db);
+        lastUpdated = await EventsQuery.GetLastUpdatedAsync(db, Ct);
     }
 
     private bool IsSelected(string sport) => string.Equals(Sport?.Trim(), sport, StringComparison.OrdinalIgnoreCase);

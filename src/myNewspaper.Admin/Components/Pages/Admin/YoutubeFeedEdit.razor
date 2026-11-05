@@ -4,6 +4,7 @@
 @using System.Globalization
 @inject IDbContextFactory<WebScraperContext> Factory
 @inject NavigationManager Nav
+@inherits DataComponentBase
 
 <PageTitle>@(IsNew ? "Add YouTube feed" : "Edit YouTube feed")</PageTitle>
 
@@ -129,15 +130,15 @@ else
 
     protected override async Task OnParametersSetAsync()
     {
-        await using var db = await Factory.CreateDbContextAsync();
-        categories = await AdminQuery.YoutubeCategoryOptionsAsync(db);
+        await using var db = await Factory.CreateDbContextAsync(Ct);
+        categories = await AdminQuery.YoutubeCategoryOptionsAsync(db, Ct);
         if (Id is not { } id)
         {
             form = new FeedForm();
             return;
         }
 
-        existing = await AdminQuery.YoutubeFeedAsync(db, id);
+        existing = await AdminQuery.YoutubeFeedAsync(db, id, Ct);
         if (existing is null)
         {
             notFound = true;
@@ -179,15 +180,15 @@ else
         saving = true;
         try
         {
-            await using var db = await Factory.CreateDbContextAsync();
-            if (!await AdminStore.SaveYoutubeFeedAsync(db, Id, channelId, name, url, categoryId, form.IsHouseholdPick, keepChannelId: channelLocked))
+            await using var db = await Factory.CreateDbContextAsync(CancellationToken.None);
+            if (!await AdminStore.SaveYoutubeFeedAsync(db, Id, channelId, name, url, categoryId, form.IsHouseholdPick, keepChannelId: channelLocked, CancellationToken.None))
             {
                 notFound = true;
                 return;
             }
 
             // A new feed is a household channel: turn it on for everyone now rather than at the next 15-minute pass.
-            await myNewspaper.Shared.Profiles.HouseholdChannels.RunOnceAsync(db);
+            await myNewspaper.Shared.Profiles.HouseholdChannels.RunOnceAsync(db, CancellationToken.None);
             Nav.NavigateTo("admin/youtube-feeds");
         }
         catch (DbUpdateException ex) when (AdminStore.IsUniqueViolation(ex))

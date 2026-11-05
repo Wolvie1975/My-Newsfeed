@@ -7,6 +7,7 @@
 @inject IMemoryCache Cache
 @inject ILogger<TechFront> Log
 @inject ProfileContext Reader
+@inherits DataComponentBase
 
 @* Tech front page (/tech, docs/tech/tech-02-front.md), sharing the News and Sports fronts' column layout on desktop
    and iPad, and the folded phone layout below 744px. *@
@@ -263,34 +264,34 @@
         unavailable = false;
         try
         {
-            await using var db = await Factory.CreateDbContextAsync();
-            briefing = await TechQuery.BriefingAsync(db, Dates);
+            await using var db = await Factory.CreateDbContextAsync(Ct);
+            briefing = await TechQuery.BriefingAsync(db, Dates, Ct);
 
-            var candidates = await FeedQuery.GetLatestPerSourceAsync(db, int.MaxValue, hub: "tech");
+            var candidates = await FeedQuery.GetLatestPerSourceAsync(db, int.MaxValue, hub: "tech", ct: Ct);
             var rotation = FeedQuery.SelectHomeNews(candidates,
-                await FeedQuery.GetLastUpdatedAsync(db) ?? DateTime.UnixEpoch, 7);
-            stories = rotation.Count > 0 ? rotation : await TechQuery.LatestAsync(db, 7);
+                await FeedQuery.GetLastUpdatedAsync(db, ct: Ct) ?? DateTime.UnixEpoch, 7);
+            stories = rotation.Count > 0 ? rotation : await TechQuery.LatestAsync(db, 7, ct: Ct);
 
             var shown = stories.Select(s => s.Id).ToHashSet();
-            var latestAll = await TechQuery.LatestAsync(db, 10 + shown.Count);
+            var latestAll = await TechQuery.LatestAsync(db, 10 + shown.Count, ct: Ct);
             day = latestAll.Where(i => !shown.Contains(i.Id)).Take(10).ToList();
 
-            covered = await TechQuery.MostCoveredAsync(db, Cache, TimeSpan.FromHours(24), minSources: 3, take: 2);
-            videos = await TechQuery.VideosAsync(db, 6);
+            covered = await TechQuery.MostCoveredAsync(db, Cache, TimeSpan.FromHours(24), minSources: 3, take: 2, ct: Ct);
+            videos = await TechQuery.VideosAsync(db, 6, Ct);
 
             desks.Clear();
             foreach (var category in NewsSections.TechCategories)
-                desks[category] = await TechQuery.LatestAsync(db, 4, category);
+                desks[category] = await TechQuery.LatestAsync(db, 4, category, Ct);
 
-            var categories = (await FeedQuery.GetCategoriesAsync(db)).Where(c => c.Hub == "tech").ToList();
+            var categories = (await FeedQuery.GetCategoriesAsync(db, Ct)).Where(c => c.Hub == "tech").ToList();
             total = categories.Sum(c => c.Count);
-            sourceCount = await TechQuery.SourceCountAsync(db);
+            sourceCount = await TechQuery.SourceCountAsync(db, Ct);
 
             var todayDow = Dates.TodayAt(nowUtc).DayOfWeek;
             if (todayDow is DayOfWeek.Sunday or DayOfWeek.Monday or DayOfWeek.Tuesday)
             {
                 var latestWeek = TechQuery.LatestWeekStart(nowUtc, Dates);
-                weekLinkSummary = await TechQuery.WeekAsync(db, Cache, Dates, latestWeek, "all");
+                weekLinkSummary = await TechQuery.WeekAsync(db, Cache, Dates, latestWeek, "all", ct: Ct);
             }
             else
             {

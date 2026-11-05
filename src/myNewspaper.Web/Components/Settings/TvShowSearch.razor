@@ -1,5 +1,6 @@
 @using myNewspaper.Shared.Tv
 @inject TvmazeClient Tvmaze
+@inherits DataComponentBase
 
 @* Search TVmaze and follow a show for the open profile (handoff 4.1). Static: the search is a GET form and each
    result is a POST form to /me/tv/follow, so it works without JavaScript and never runs in a circuit, which couldn't
@@ -65,7 +66,7 @@ else if (searched && results.Count == 0)
     {
         var term = QueryText.Term(Query);
         if (term.Length == 0) return;
-        var response = await Tvmaze.SearchAsync(term);
+        var response = await Tvmaze.SearchAsync(term, Ct);
         results = response.Shows;
         error = response.Error;
         searched = true;

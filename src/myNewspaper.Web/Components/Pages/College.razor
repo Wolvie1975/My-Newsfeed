@@ -11,6 +11,7 @@
 @inject FeedDates Dates
 @inject myNewspaper.Shared.Scores.LeaguePhases RecordPhases
 @inject ILogger<College> Log
+@inherits DataComponentBase
 
 <PageTitle>College Sports · @selected.Name · myNewspaper</PageTitle>
 <div class="mx-desktop">
@@ -186,10 +187,10 @@ else
 
         try
         {
-            await using var db = await Factory.CreateDbContextAsync();
+            await using var db = await Factory.CreateDbContextAsync(Ct);
             try
             {
-                big12News = await Big12NewsQuery.LatestAsync(db, 3);
+                big12News = await Big12NewsQuery.LatestAsync(db, 3, Ct);
             }
             catch (Exception ex) when (DataFailures.IsReadFailure(ex))
             {
@@ -201,7 +202,7 @@ else
             {
                 try
                 {
-                    var allPolls = await RankingsQuery.GetAsync(db, null, Log, Dates.Today, collegeSport: null);
+                    var allPolls = await RankingsQuery.GetAsync(db, null, Log, Dates.Today, collegeSport: null, Ct);
                     otherPolls = allPolls.Sources
                         .Where(s => !string.Equals(s.Sport, selected.StandingsSport, StringComparison.OrdinalIgnoreCase))
                         .GroupBy(s => s.Sport, StringComparer.OrdinalIgnoreCase)
@@ -221,31 +222,31 @@ else
 
             if (view == "standings") return;
 
-            records = await TeamRecords.LoadAsync(db, Dates.Today, RecordPhases);
+            records = await TeamRecords.LoadAsync(db, Dates.Today, RecordPhases, Ct);
             if (view == "schedule")
             {
                 pageIndex = int.TryParse(Page, out var page) ? Math.Clamp(page, 0, 10000) : 0;
                 events = await EventsQuery.GetUpcomingAsync(db, Dates.Today, selected.StandingsSport, null,
-                    provider: "big12", to: Dates.Today.AddDays(7), offset: pageIndex * EventsQuery.Limit);
+                    provider: "big12", to: Dates.Today.AddDays(7), offset: pageIndex * EventsQuery.Limit, ct: Ct);
                 // Paging the weekly schedule must not replace today's highlight with a later game.
                 todayGames = pageIndex == 0 ? events.Items
                     : (await EventsQuery.GetUpcomingAsync(db, Dates.Today, selected.StandingsSport, null,
-                        provider: "big12", to: Dates.Today)).Items;
-                updatedAt = await EventsQuery.LastSeenAsync(db, "big12", selected.StandingsSport);
+                        provider: "big12", to: Dates.Today, ct: Ct)).Items;
+                updatedAt = await EventsQuery.LastSeenAsync(db, "big12", selected.StandingsSport, Ct);
                 pageIndex = Math.Min(pageIndex, Math.Max(0, (events.Total - 1) / EventsQuery.Limit));
                 // Side column: Big 12 schools in the national poll and the conference leaders, when published.
-                var poll = await RankingsQuery.GetAsync(db, null, Log, Dates.Today, selected.StandingsSport);
+                var poll = await RankingsQuery.GetAsync(db, null, Log, Dates.Today, selected.StandingsSport, Ct);
                 phonePoll = poll;
                 pollName = poll.Poll?.PollName;
                 pollTeams = poll.Teams.Where(t => t.IsBig12 == true).Take(8).ToList();
-                leaders = (await StandingsQuery.GetAsync(db, null, Log, Dates.Today, null, selected.StandingsSport)).Groups.FirstOrDefault();
+                leaders = (await StandingsQuery.GetAsync(db, null, Log, Dates.Today, null, selected.StandingsSport, Ct)).Groups.FirstOrDefault();
             }
             else
             {
                 resultDay = DateOnly.TryParseExact(Day, "yyyy-MM-dd", out var day) && day >= Dates.Today.AddDays(-1) && day <= Dates.Today ? day : Dates.Today;
-                updatedAt = await ResultsQuery.LastSyncedAsync(db, selected.League);
-                results = await ResultsQuery.GetResultsAsync(db, null, window: ResultsWindow.ForDay(resultDay, Dates.Zone), collegeLeague: selected.League);
-                boxLabels = await BoxScoreQuery.AvailableAsync(db, results.Items.Select(i=>new BoxIdentity(i.Sport ?? "",i.League ?? "",i.EventId)), Log);
+                updatedAt = await ResultsQuery.LastSyncedAsync(db, selected.League, Ct);
+                results = await ResultsQuery.GetResultsAsync(db, null, window: ResultsWindow.ForDay(resultDay, Dates.Zone), collegeLeague: selected.League, ct: Ct);
+                boxLabels = await BoxScoreQuery.AvailableAsync(db, results.Items.Select(i=>new BoxIdentity(i.Sport ?? "",i.League ?? "",i.EventId)), Log, Ct);
             }
         }
         catch (Exception ex) when (DataFailures.IsReadFailure(ex))

@@ -2,6 +2,7 @@
 @rendermode InteractiveServer
 @inject IDbContextFactory<WebScraperContext> Factory
 @inject NavigationManager Nav
+@inherits DataComponentBase
 
 <PageTitle>Edit page</PageTitle>
 
@@ -77,8 +78,8 @@ else
 
     protected override async Task OnParametersSetAsync()
     {
-        await using var db = await Factory.CreateDbContextAsync();
-        existing = await AdminQuery.PageAsync(db, Id);
+        await using var db = await Factory.CreateDbContextAsync(Ct);
+        existing = await AdminQuery.PageAsync(db, Id, Ct);
         if (existing is null)
         {
             notFound = true;
@@ -99,9 +100,9 @@ else
         saving = true;
         try
         {
-            await using var db = await Factory.CreateDbContextAsync();
+            await using var db = await Factory.CreateDbContextAsync(CancellationToken.None);
             var description = string.IsNullOrWhiteSpace(form.Description) ? null : form.Description.Trim();
-            if (!await AdminStore.UpdatePageAsync(db, Id, form.Title.Trim(), description, form.Published))
+            if (!await AdminStore.UpdatePageAsync(db, Id, form.Title.Trim(), description, form.Published, CancellationToken.None))
             {
                 notFound = true;
                 return;

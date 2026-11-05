@@ -4,6 +4,7 @@
 @inject FeedDates Dates
 @inject NavigationManager Nav
 @inject ILogger<DigitalReleases> Log
+@inherits DataComponentBase
 
 <PageTitle>Digital releases · myNewspaper</PageTitle>
 <div class="mx-desktop">
@@ -207,14 +208,14 @@ else
     private IReadOnlyList<BoxOfficeMovie> stillInTheaters = [];
     protected override async Task OnParametersSetAsync()
     {
-        try { await using var db = await Factory.CreateDbContextAsync(); data = await DigitalReleasesQuery.GetAsync(db, Dates.Today, SourceKey); }
+        try { await using var db = await Factory.CreateDbContextAsync(Ct); data = await DigitalReleasesQuery.GetAsync(db, Dates.Today, SourceKey, ct: Ct); }
         catch (Exception ex) when (DataFailures.IsReadFailure(ex))
         { Log.LogError(ex, "Digital releases read failed."); data = null; }
         // Phones: the biggest totals from the last weekend chart, for the Still in theaters fold.
         try
         {
-            await using var db = await Factory.CreateDbContextAsync();
-            stillInTheaters = (await BoxOfficeChartQuery.GetAsync(db, HomeBoxOfficeSchedule.ResultsWeekend(Dates.Today)))
+            await using var db = await Factory.CreateDbContextAsync(Ct);
+            stillInTheaters = (await BoxOfficeChartQuery.GetAsync(db, HomeBoxOfficeSchedule.ResultsWeekend(Dates.Today), Ct))
                 .OrderByDescending(m => m.TotalDomesticGross).Take(3).ToList();
         }
         catch (Exception ex) when (DataFailures.IsReadFailure(ex))

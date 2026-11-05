@@ -2,6 +2,7 @@
 @rendermode InteractiveServer
 @inject IDbContextFactory<WebScraperContext> Factory
 @inject NavigationManager Nav
+@inherits DataComponentBase
 
 <PageTitle>Edit YouTube video</PageTitle>
 
@@ -119,15 +120,15 @@ else
     {
         notFound = false;
         error = null;
-        await using var db = await Factory.CreateDbContextAsync();
-        existing = await AdminQuery.YoutubeVideoAsync(db, Id);
+        await using var db = await Factory.CreateDbContextAsync(Ct);
+        existing = await AdminQuery.YoutubeVideoAsync(db, Id, Ct);
         if (existing is null)
         {
             notFound = true;
             return;
         }
 
-        feeds = await AdminQuery.YoutubeFeedOptionsAsync(db, existing.ChannelId);
+        feeds = await AdminQuery.YoutubeFeedOptionsAsync(db, existing.ChannelId, Ct);
 
         form.FeedId = existing.YoutubeVideoFeedId?.ToString();
     }
@@ -138,10 +139,10 @@ else
         saving = true;
         try
         {
-            await using var db = await Factory.CreateDbContextAsync();
+            await using var db = await Factory.CreateDbContextAsync(CancellationToken.None);
             
 
-            if (!await AdminStore.AssignYoutubeVideoFeedAsync(db, Id, int.TryParse(form.FeedId, out var feedId) ? feedId : null))
+            if (!await AdminStore.AssignYoutubeVideoFeedAsync(db, Id, int.TryParse(form.FeedId, out var feedId) ? feedId : null, CancellationToken.None))
             { notFound = true; return; }
             Nav.NavigateTo("admin/youtube-videos");
         }

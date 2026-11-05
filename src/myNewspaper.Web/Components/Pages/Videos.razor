@@ -4,6 +4,7 @@
 @inject FeedDates Dates
 @inject myNewspaper.Shared.Saved.SharedArticles SavedArticles
 @inject myNewspaper.Shared.Profiles.ProfileContext Reader
+@inherits DataComponentBase
 
 <PageTitle>YouTube · myNewspaper</PageTitle>
 
@@ -230,11 +231,11 @@ else
 
     protected override async Task OnParametersSetAsync()
     {
-        await using var db = await Factory.CreateDbContextAsync();
-        categories = await VideosQuery.GetCategoriesAsync(db, Reader.Viewer);
+        await using var db = await Factory.CreateDbContextAsync(Ct);
+        categories = await VideosQuery.GetCategoriesAsync(db, Reader.Viewer, Ct);
         var today = Dates.Today;
         categoryCounts = await VideosQuery.GetCategoryCountsAsync(db, Reader.Viewer,
-            Dates.StartOfDayUtc(today), Dates.StartOfDayUtc(today.AddDays(1)));
+            Dates.StartOfDayUtc(today), Dates.StartOfDayUtc(today.AddDays(1)), Ct);
         watchLater = (await SavedArticles.Read(Reader.SavedListProfileId))
             .Where(v => v.Kind == "video" && FeedQuery.SafeHref(v.Url) is not null)
             .OrderByDescending(v => v.SavedAt).ThenBy(v => v.Url, StringComparer.Ordinal).Take(3).ToList();
@@ -245,18 +246,18 @@ else
                 ? [CategoryQuery.Trim().ToLowerInvariant()]
                 : [];
         selectedCategories = slugs.Length == 0 ? [] : categories.Where(c => slugs.Contains(c.Slug)).ToList();
-        channels = await VideosQuery.GetChannelsAsync(db, Reader.Viewer, selectedCategories);
+        channels = await VideosQuery.GetChannelsAsync(db, Reader.Viewer, selectedCategories, Ct);
         // A channel from another category (an old link) is dropped rather than showing an empty page.
         var channel = channels.Any(IsSelected) ? Channel : null;
         page = int.TryParse(PageText, out var requested) ? Math.Clamp(requested, 1, 1000000) : 1;
         offset = (page - 1) * 50;
-        listing = await VideosQuery.GetVideosAsync(db, Reader.Viewer, channel, Q, limit: 50, offset: offset, categories: selectedCategories);
+        listing = await VideosQuery.GetVideosAsync(db, Reader.Viewer, channel, Q, limit: 50, offset: offset, categories: selectedCategories, Ct);
         if (offset >= listing.Total && page > 1)
         {
             page = Math.Max(1, (listing.Total + 49) / 50); offset = (page - 1) * 50;
-            listing = await VideosQuery.GetVideosAsync(db, Reader.Viewer, channel, Q, limit: 50, offset: offset, categories: selectedCategories);
+            listing = await VideosQuery.GetVideosAsync(db, Reader.Viewer, channel, Q, limit: 50, offset: offset, categories: selectedCategories, Ct);
         }
-        lastUpdated = await VideosQuery.GetLastUpdatedAsync(db);
+        lastUpdated = await VideosQuery.GetLastUpdatedAsync(db, Ct);
         selectedChannel = channels.FirstOrDefault(IsSelected)?.Name;
         // The first page leads with the featured carousel and Latest videos; later pages are the plain grid.
         featured = page == 1 && string.IsNullOrWhiteSpace(Q) ? VideoFeatured.Pick(listing.Items) : [];

@@ -1,4 +1,5 @@
 @inject IDbContextFactory<WebScraperContext> Factory
+@inherits DataComponentBase
 @if (Provider is "espn-championship" or "espn-epl" or "espn-mls")
 {
     <SectionSelect Id="league-view" Label="League view" Choices="@Options" />
@@ -21,8 +22,8 @@
     {
         scheduleId = tableId = null;
         if (Provider is not ("espn-championship" or "espn-epl" or "espn-mls")) return;
-        await using var db = await Factory.CreateDbContextAsync();
-        scheduleId = await EventsQuery.FirstScheduleIdAsync(db, Provider);
-        tableId = await StandingsQuery.FirstSourceIdAsync(db, Provider);
+        await using var db = await Factory.CreateDbContextAsync(Ct);
+        scheduleId = await EventsQuery.FirstScheduleIdAsync(db, Provider, Ct);
+        tableId = await StandingsQuery.FirstSourceIdAsync(db, Provider, Ct);
     }
 }

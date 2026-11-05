@@ -7,6 +7,7 @@
 @inject FeedDates Dates
 @inject NavigationManager Nav
 @inject ILogger<F1> Log
+@inherits DataComponentBase
 
 <PageTitle>F1 · @ViewLabel · myNewspaper</PageTitle>
 <div class="mx-desktop">
@@ -225,10 +226,10 @@ else
         error = null; data = F1Page.Empty; selectedRace = null; standingsRound = null; visibleRaces = [];
         try
         {
-            await using var db = await Factory.CreateDbContextAsync();
-            data = await F1Query.GetAsync(db, view, Race);
+            await using var db = await Factory.CreateDbContextAsync(Ct);
+            data = await F1Query.GetAsync(db, view, Race, Ct);
             visibleRaces = data.Races.Where(r => FullCalendar || F1Query.Upcoming(r, Dates, Dates.Today)).ToList();
-            championship = view == "schedule" ? await F1Query.GetAsync(db, "standings", null) : F1Page.Empty;
+            championship = view == "schedule" ? await F1Query.GetAsync(db, "standings", null, Ct) : F1Page.Empty;
             drivers = championship.Drivers.Take(10).ToList();
             selectedRace = data.Races.FirstOrDefault(r => r.Round == data.Selected?.Round);
             standingsRound = Constructors ? data.Constructors.Select(r => (int?)r.StandingsRound).FirstOrDefault()

@@ -1,6 +1,7 @@
 @inject IDbContextFactory<WebScraperContext> Factory
 @inject FeedDates Dates
 @inject myNewspaper.Shared.Hosting.SiteLinks SiteLinks
+@inherits DataComponentBase
 
 @if (releases.Count > 0)
 {
@@ -97,8 +98,8 @@
     protected override async Task OnParametersSetAsync()
     {
         nowUtc = DateTime.UtcNow;
-        await using var db = await Factory.CreateDbContextAsync();
-        releases = await TechQuery.TrackerAsync(db);
+        await using var db = await Factory.CreateDbContextAsync(Ct);
+        releases = await TechQuery.TrackerAsync(db, Ct);
         var checkedTimes = releases.Where(r => r.LastCheckedAt is not null).Select(r => r.LastCheckedAt!.Value).ToList();
         oldestChecked = checkedTimes.Count > 0 ? checkedTimes.Min() : null;
     }

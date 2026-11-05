@@ -5,6 +5,7 @@
 @inject FeedDates Dates
 @inject IConfiguration Config
 @inject ILogger<Standings> Log
+@inherits DataComponentBase
 
 <div class="@(CollegeSport is null ? "mx-desktop" : "mx-contents")">
 @if (CollegeSport is null)
@@ -103,15 +104,15 @@ else
     {
         try
         {
-            await using var db = await Factory.CreateDbContextAsync();
-            page = await StandingsQuery.GetAsync(db, StandingsQuery.ParseSourceId(SourceId), Log, Dates.Today, Config.GetSection("Standings:HiddenProviders").Get<string[]>(), CollegeSport);
+            await using var db = await Factory.CreateDbContextAsync(Ct);
+            page = await StandingsQuery.GetAsync(db, StandingsQuery.ParseSourceId(SourceId), Log, Dates.Today, Config.GetSection("Standings:HiddenProviders").Get<string[]>(), CollegeSport, Ct);
             phoneGames = []; phonePoll = new([], null, null, []);
             if (CollegeSport is null && page.Selected is { } selected)
             {
                 try
                 {
-                    phoneGames = (await EventsQuery.GetUpcomingAsync(db, Dates.Today, selected.Sport, null, provider: selected.ProviderKey, to: Dates.Today.AddDays(7))).Items;
-                    if (selected.ProviderKey == "big12") phonePoll = await RankingsQuery.GetAsync(db, null, Log, Dates.Today, selected.Sport);
+                    phoneGames = (await EventsQuery.GetUpcomingAsync(db, Dates.Today, selected.Sport, null, provider: selected.ProviderKey, to: Dates.Today.AddDays(7), ct: Ct)).Items;
+                    if (selected.ProviderKey == "big12") phonePoll = await RankingsQuery.GetAsync(db, null, Log, Dates.Today, selected.Sport, Ct);
                 }
                 catch (Exception ex) when (DataFailures.IsReadFailure(ex)) { Log.LogWarning(ex, "Supplemental standings schedule/poll unavailable."); }
             }

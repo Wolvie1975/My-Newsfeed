@@ -1,4 +1,6 @@
 using System.Diagnostics;
+using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore;
 using myNewspaper.Shared.Data;
@@ -115,6 +117,62 @@ public partial class RepositoryHygieneTests
 
         Assert.True(offenders.Count == 0,
             "Move these queries into an XxxQuery or XxxStore class in Shared and call it from the component: " + string.Join(", ", offenders));
+    }
+
+    // Every async method that does I/O takes a CancellationToken (general standard section 4). Checked on the compiled
+    // Shared and Web assemblies: an async method with a WebScraperContext parameter, or any async method of an XxxClient,
+    // must also take a CancellationToken. CA2016 (a build error) then makes each caller that has a token pass it on.
+    [Fact]
+    public void Async_data_and_client_methods_take_a_cancellation_token()
+    {
+        const BindingFlags all = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance
+            | BindingFlags.DeclaredOnly;
+        var offenders = new[] { typeof(WebScraperContext).Assembly, typeof(myNewspaper.Web.Components.SectionChoices).Assembly }
+            .SelectMany(a => a.GetTypes())
+            .Where(t => !t.IsDefined(typeof(CompilerGeneratedAttribute), false))
+            .SelectMany(t => t.GetMethods(all).Select(m => (t, m)))
+            .Where(x => !x.m.IsDefined(typeof(CompilerGeneratedAttribute), false) && !x.m.IsSpecialName
+                && x.m.Name.EndsWith("Async", StringComparison.Ordinal) && IsTaskLike(x.m.ReturnType))
+            .Where(x => x.m.GetParameters().Any(p => p.ParameterType == typeof(WebScraperContext))
+                || (x.t.Name.EndsWith("Client", StringComparison.Ordinal) && x.m.IsPublic))
+            .Where(x => !x.m.GetParameters().Any(p => p.ParameterType == typeof(CancellationToken)))
+            .Select(x => $"{x.t.Name}.{x.m.Name}")
+            .Distinct()
+            .ToList();
+
+        Assert.True(offenders.Count == 0,
+            "Add `CancellationToken ct = default` as the last parameter and pass it on: " + string.Join(", ", offenders));
+    }
+
+    private static bool IsTaskLike(Type type) => type == typeof(Task) || type == typeof(ValueTask)
+        || (type.IsGenericType && type.GetGenericTypeDefinition() is var d && (d == typeof(Task<>) || d == typeof(ValueTask<>)));
+
+    // CA2016 can't see a token that is a property, so the call sites are checked here: no CreateDbContextAsync() without
+    // a token anywhere in src/, and a component that opens a context inherits DataComponentBase, whose Ct it passes to
+    // reads (writes a person started pass CancellationToken.None so they finish).
+    [Fact]
+    public void Contexts_are_created_with_a_token_and_components_inherit_DataComponentBase()
+    {
+        var root = RepositoryRoot();
+        var files = TrackedFiles(root)
+            .Where(f => f.StartsWith("src/", StringComparison.Ordinal)
+                && (f.EndsWith(".cs", StringComparison.Ordinal) || f.EndsWith(".razor", StringComparison.Ordinal)))
+            .Where(f => File.Exists(Path.Combine(root, f)))
+            .ToList();
+        var noToken = files
+            .SelectMany(f => File.ReadLines(Path.Combine(root, f)).Select((line, i) => (f, line: i + 1, text: line)))
+            .Where(l => l.text.Contains("CreateDbContextAsync()", StringComparison.Ordinal))
+            .Select(l => $"{l.f}:{l.line}")
+            .ToList();
+        var noBase = files
+            .Where(f => f.EndsWith(".razor", StringComparison.Ordinal))
+            .Where(f => File.ReadAllText(Path.Combine(root, f)) is var text
+                && text.Contains("CreateDbContextAsync(", StringComparison.Ordinal)
+                && !text.Contains("@inherits DataComponentBase", StringComparison.Ordinal))
+            .ToList();
+
+        Assert.True(noToken.Count == 0, "Pass a token to CreateDbContextAsync (Ct, RequestAborted or ct): " + string.Join(", ", noToken));
+        Assert.True(noBase.Count == 0, "Add `@inherits DataComponentBase` and pass Ct to reads: " + string.Join(", ", noBase));
     }
 
     private static string RepositoryRoot()

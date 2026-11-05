@@ -41,8 +41,8 @@ public static class SectionChoices
     ];
 
     /// <summary>The News tabs for a page that hasn't loaded categories itself.</summary>
-    public static async Task<IReadOnlyList<NavigationChoice>> NewsAsync(WebScraperContext db) =>
-        News((await FeedQuery.GetCategoriesAsync(db)).Where(c => c.Hub == "headlines"));
+    public static async Task<IReadOnlyList<NavigationChoice>> NewsAsync(WebScraperContext db, CancellationToken ct = default) =>
+        News((await FeedQuery.GetCategoriesAsync(db, ct)).Where(c => c.Hub == "headlines"));
 
     public static IReadOnlyList<NavigationChoice>? For(string? section) => section switch
     {

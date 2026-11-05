@@ -2,6 +2,7 @@
 @rendermode InteractiveServer
 @inject IDbContextFactory<WebScraperContext> Factory
 @inject NavigationManager Nav
+@inherits DataComponentBase
 
 <PageTitle>Edit event</PageTitle>
 
@@ -102,8 +103,8 @@ else
     {
         notFound = false;
         error = null;
-        await using var db = await Factory.CreateDbContextAsync();
-        existing = await AdminQuery.EventAsync(db, Id);
+        await using var db = await Factory.CreateDbContextAsync(Ct);
+        existing = await AdminQuery.EventAsync(db, Id, Ct);
         if (existing is null)
         {
             notFound = true;
@@ -111,7 +112,7 @@ else
         }
 
         attributionLocked = existing.AttributionLocked;
-        types = await AdminQuery.EventTypeOptionsAsync(db, legacyOnly: true, legacyOnlyExcept: existing.SportsEventsTypeId);
+        types = await AdminQuery.EventTypeOptionsAsync(db, legacyOnly: true, legacyOnlyExcept: existing.SportsEventsTypeId, Ct);
         form.TypeId = existing.SportsEventsTypeId?.ToString();
     }
 
@@ -121,10 +122,10 @@ else
         saving = true;
         try
         {
-            await using var db = await Factory.CreateDbContextAsync();
+            await using var db = await Factory.CreateDbContextAsync(CancellationToken.None);
             
 
-            if (!await AdminStore.AssignSportsEventTypeAsync(db, Id, int.TryParse(form.TypeId, out var typeId) ? typeId : null))
+            if (!await AdminStore.AssignSportsEventTypeAsync(db, Id, int.TryParse(form.TypeId, out var typeId) ? typeId : null, CancellationToken.None))
             { notFound = true; return; }
             Nav.NavigateTo("admin/sports-events");
         }

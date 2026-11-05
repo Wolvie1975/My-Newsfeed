@@ -184,11 +184,12 @@ public static class FeedQuery
 
     /// <summary>Sort dates and category IDs of matching articles from the past <paramref name="days"/> days, for the Jump to box.</summary>
     public static async Task<IReadOnlyList<(DateTime Date, int? CategoryId)>> GetRecentDatesAsync(
-        WebScraperContext db, int? categoryId, string? search, int? sourceId, bool headlinesOnly = false, string? hub = null, int days = 7) =>
+        WebScraperContext db, int? categoryId, string? search, int? sourceId, bool headlinesOnly = false, string? hub = null, int days = 7,
+        CancellationToken ct = default) =>
         (await Filtered(db, categoryId, search, sourceId, headlinesOnly, hub)
             .Where(p => (p.Published ?? p.ScrapedAt) >= DateTime.UtcNow.AddDays(-days))
             .Select(p => new { Date = p.Published ?? p.ScrapedAt, p.Source.SourceCategoryId })
-            .ToListAsync())
+            .ToListAsync(ct))
         .Select(r => (r.Date, r.SourceCategoryId)).ToList();
 
     /// <summary>Headline cards group a busy day by hour: at least this many of today's stories in the list.</summary>
@@ -294,12 +295,12 @@ public static class FeedQuery
             .ToListAsync(ct);
 
     /// <summary>Headlines-hub stories newer than <paramref name="since"/>: how many, and how many in one category.</summary>
-    public static async Task<(int Total, int InCategory)> CountSinceAsync(WebScraperContext db, DateTime since, int? categoryId)
+    public static async Task<(int Total, int InCategory)> CountSinceAsync(WebScraperContext db, DateTime since, int? categoryId, CancellationToken ct = default)
     {
         var query = Visible(db).Where(p => (p.Published ?? p.ScrapedAt) > since
             && (p.Source.SourceCategory == null || p.Source.SourceCategory.NewsHub == "headlines"));
-        var total = await query.CountAsync();
-        var inCategory = categoryId is { } id ? await query.CountAsync(p => p.Source.SourceCategoryId == id) : 0;
+        var total = await query.CountAsync(ct);
+        var inCategory = categoryId is { } id ? await query.CountAsync(p => p.Source.SourceCategoryId == id, ct) : 0;
         return (total, inCategory);
     }
 

@@ -2,6 +2,7 @@
 @layout PublicLayout
 @inject myNewspaper.Shared.Profiles.ProfileContext Reader
 @inject IDbContextFactory<WebScraperContext> Factory
+@inherits DataComponentBase
 <PageTitle>Track a TV series · myNewspaper</PageTitle>
 <p><a href="watch?kind=tv">← Where to watch</a></p>
 @if (Reader.HasProfile)
@@ -30,7 +31,7 @@ else
     protected override async Task OnInitializedAsync()
     {
         if (Reader.Profile is not { } me) return;
-        await using var db = await Factory.CreateDbContextAsync();
+        await using var db = await Factory.CreateDbContextAsync(Ct);
         followed = (await myNewspaper.Shared.Profiles.FollowQuery.TrackedSeries(db, myNewspaper.Shared.Profiles.Viewer.ForProfile(me.Id))
             .Select(t => t.TvmazeShowId).ToListAsync()).ToHashSet();
     }

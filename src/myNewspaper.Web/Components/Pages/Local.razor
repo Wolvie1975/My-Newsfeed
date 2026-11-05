@@ -3,6 +3,7 @@
 @using myNewspaper.Web.Components.Feed
 @inject IDbContextFactory<WebScraperContext> Factory
 @inject ILogger<Local> Logger
+@inherits DataComponentBase
 <PageTitle>Kansas City · News · myNewspaper</PageTitle>
 <div class="mx-life-layout">
 <div class="mx-desktop">
@@ -69,7 +70,7 @@
     private string? error;
     protected override async Task OnParametersSetAsync() {
         error = null;
-        try { await using var db = await Factory.CreateDbContextAsync(); (feed, dedicated) = await LocalNewsQuery.GetAsync(db, FeedCursor.Parse(After)); newsTabs = await SectionChoices.NewsAsync(db); }
+        try { await using var db = await Factory.CreateDbContextAsync(Ct); (feed, dedicated) = await LocalNewsQuery.GetAsync(db, FeedCursor.Parse(After), Ct); newsTabs = await SectionChoices.NewsAsync(db); }
         catch (Exception ex) when (DataFailures.IsReadFailure(ex)) {
             Logger.LogWarning(ex,"Local news unavailable"); error = "Local news is temporarily unavailable. Weather and event links remain available.";
         }

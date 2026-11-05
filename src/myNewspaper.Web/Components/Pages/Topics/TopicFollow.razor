@@ -4,6 +4,7 @@
 @using myNewspaper.Shared.Data.Models
 @inject IDbContextFactory<WebScraperContext> Factory
 @inject ProfileContext Reader
+@inherits DataComponentBase
 
 @* Follow (or edit) a topic (docs/news-section-handoff.md, phase 5). A plain form that posts without JavaScript;
    topics.js adds the live preview from /me/topics/preview after a pause in typing. Phones: a full-width sheet;
@@ -80,8 +81,8 @@
     protected override async Task OnParametersSetAsync()
     {
         // The gate keeps this page to an open profile (it doesn't exist with profiles off).
-        await using var db = await Factory.CreateDbContextAsync();
-        count = await TopicQuery.CountAsync(db, Reader.Id);
-        editing = EditId is { } id ? await TopicQuery.GetAsync(db, Reader.Id, id) : null;
+        await using var db = await Factory.CreateDbContextAsync(Ct);
+        count = await TopicQuery.CountAsync(db, Reader.Id, Ct);
+        editing = EditId is { } id ? await TopicQuery.GetAsync(db, Reader.Id, id, Ct) : null;
     }
 }

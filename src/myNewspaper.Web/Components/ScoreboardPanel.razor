@@ -1,3 +1,4 @@
+@inherits DataComponentBase
 
 
 @inject ILogger<ScoreboardPanel> Log
@@ -364,19 +365,19 @@
     protected override async Task OnParametersSetAsync() {
         today = Dates.Today;
         selectedDay = !Compact && DateOnly.TryParseExact(Day, "yyyy-MM-dd", out var day) && day >= today.AddDays(-1) && day <= today.AddDays(7) ? day : today;
-        await using var boardDb = await Factory.CreateDbContextAsync();
-        snapshot = await ScoreboardQuery.ReadAsync(boardDb, Dates, Log, selectedDay, selectedDay == today, Compact ? null : Competition, Compact ? null : Follow, !Compact && Status == "final", Compact ? null : Show);
+        await using var boardDb = await Factory.CreateDbContextAsync(Ct);
+        snapshot = await ScoreboardQuery.ReadAsync(boardDb, Dates, Log, selectedDay, selectedDay == today, Compact ? null : Competition, Compact ? null : Follow, !Compact && Status == "final", Compact ? null : Show, Ct);
         selection = ScoreboardSelection.Resolve(Compact ? null : Show, Compact ? null : Competition, Compact ? null : Follow, snapshot.Coverage, snapshot.Follows ?? []);
         try {
-            await using var db = await Factory.CreateDbContextAsync();
-            records = await TeamRecords.LoadAsync(db, today, RecordPhases);
-            hasMls = !Compact && await EventsQuery.HasEnabledProviderAsync(db, "espn-mls");
-            hasChampionship = !Compact && await EventsQuery.HasEnabledProviderAsync(db, "espn-championship");
+            await using var db = await Factory.CreateDbContextAsync(Ct);
+            records = await TeamRecords.LoadAsync(db, today, RecordPhases, Ct);
+            hasMls = !Compact && await EventsQuery.HasEnabledProviderAsync(db, "espn-mls", Ct);
+            hasChampionship = !Compact && await EventsQuery.HasEnabledProviderAsync(db, "espn-championship", Ct);
             if (!Compact)
             {
                 try
                 {
-                    railRankings = await RankingsQuery.GetAsync(db, null, Log, today);
+                    railRankings = await RankingsQuery.GetAsync(db, null, Log, today, ct: Ct);
                 }
                 catch (Exception ex) when (DataFailures.IsReadFailure(ex))
                 {
@@ -399,7 +400,7 @@
         }
         visibleGames = Compact ? homeGames.Take(6).ToList() : snapshot.Games;
         var allGamesForBox = visibleGames.Concat(snapshot.Top25Week ?? []).Where(g => g.Provider == "espn" && g.HasBoxScore).Select(g => new BoxIdentity(g.Sport, g.League, g.EventId));
-        boxLabels = await BoxScoreQuery.AvailableAsync(boardDb, allGamesForBox, Log);
+        boxLabels = await BoxScoreQuery.AvailableAsync(boardDb, allGamesForBox, Log, Ct);
     }
 
     /// <summary>The Show choices, shared by the desktop filter and the phone ribbon's Sport select.</summary>

@@ -6,6 +6,7 @@
 @inject ProfilePins Pins
 @inject TimeProvider Clock
 @inject NavigationManager Nav
+@inherits DataComponentBase
 
 <PageTitle>@(profile is null ? "Manage profile" : $"Manage {profile.Name}")</PageTitle>
 
@@ -238,15 +239,15 @@
 
     private async Task LoadAsync(bool resetForm)
     {
-        await using var db = await Factory.CreateDbContextAsync();
-        profile = await ProfileAdmin.ProfileAsync(db, Id);
+        await using var db = await Factory.CreateDbContextAsync(Ct);
+        profile = await ProfileAdmin.ProfileAsync(db, Id, Ct);
         if (profile is null) { notFound = true; return; }
-        devices = await ProfileAdmin.DevicesAsync(db, Id) ?? [];
+        devices = await ProfileAdmin.DevicesAsync(db, Id, Ct) ?? [];
         // The lock's device may belong to someone else or nobody; only this profile's devices can be signed out here.
-        openDevices = await ProfileAdmin.OpenDeviceIdsAsync(db, Id);
+        openDevices = await ProfileAdmin.OpenDeviceIdsAsync(db, Id, Ct);
         lockDevice = devices.FirstOrDefault(d => d.CausedLock)?.Label;
-        requests = await RequestStore.ListAsync(db, profileId: Id);
-        isAdminProfile = await ProfileAdmin.GetAdminProfileAsync(db) == Id;
+        requests = await RequestStore.ListAsync(db, profileId: Id, ct: Ct);
+        isAdminProfile = await ProfileAdmin.GetAdminProfileAsync(db, Ct) == Id;
         if (resetForm || form is null)
         {
             form = new ProfileForm { Name = profile.Name, Color = profile.Color, ShowOnPicker = !profile.Hidden };
@@ -292,7 +293,7 @@
         message = null;
         try
         {
-            await using var db = await Factory.CreateDbContextAsync();
+            await using var db = await Factory.CreateDbContextAsync(Ct);
             if (await action(db) is { } text) Say(text);
             await LoadAsync(resetForm);
         }
@@ -302,7 +303,7 @@
 
     private Task SetAdminAsync(bool on) => Run(async db =>
     {
-        await ProfileAdmin.SetAdminProfileAsync(db, Id, on);
+        await ProfileAdmin.SetAdminProfileAsync(db, Id, on, CancellationToken.None);
         // The gate caches the household row for a minute; drop it so the link changes on the next page.
         return on ? $"{profile!.Name}’s pages now show the Admin sign in link." : $"{profile!.Name}’s pages no longer show the Admin sign in link.";
     });
@@ -314,8 +315,8 @@
         busy = true;
         try
         {
-            await using var db = await Factory.CreateDbContextAsync();
-            if (!await ProfileAdmin.UpdateAsync(db, Id, form.Name, form.Color, !form.ShowOnPicker, Now)) { notFound = true; return; }
+            await using var db = await Factory.CreateDbContextAsync(CancellationToken.None);
+            if (!await ProfileAdmin.UpdateAsync(db, Id, form.Name, form.Color, !form.ShowOnPicker, Now, CancellationToken.None)) { notFound = true; return; }
             Say(form.ShowOnPicker || profile!.Hidden ? "Saved." : $"Saved. {form.Name.Trim()} is hidden from the edition picker and their devices are signed out.");
             await LoadAsync(resetForm: true);
         }
@@ -332,31 +333,31 @@
         var name = profile!.Name;
         await Run(async db =>
         {
-            if (!await ProfileAdmin.ResetPinAsync(db, Pins, Id, newPin, Now)) { notFound = true; return null; }
+            if (!await ProfileAdmin.ResetPinAsync(db, Pins, Id, newPin, Now, CancellationToken.None)) { notFound = true; return null; }
             newPin = newPinConfirm = "";
             return $"{name}’s PIN is reset and they’re signed out everywhere. Tell them the new PIN.";
         });
     }
 
     private Task UnlockAsync() => Run(async db =>
-        await ProfileAdmin.UnlockAsync(db, Id) ? $"Unlocked {profile!.Name}. Their PIN is unchanged." : null);
+        await ProfileAdmin.UnlockAsync(db, Id, CancellationToken.None) ? $"Unlocked {profile!.Name}. Their PIN is unchanged." : null);
 
     private Task SetHiddenAsync(bool hidden)
     {
         pendingDelete = false;
         var p = profile!;
         return Run(async db =>
-            !await ProfileAdmin.UpdateAsync(db, Id, p.Name, p.Color, hidden, Now) ? null
+            !await ProfileAdmin.UpdateAsync(db, Id, p.Name, p.Color, hidden, Now, CancellationToken.None) ? null
             : hidden ? $"Hid {p.Name} from the edition picker and signed out their devices. Nothing was deleted." : $"{p.Name} is back on the edition picker.",
             resetForm: true);
     }
 
     private Task SignOutDeviceAsync(AdminDeviceRow device) => Run(async db =>
-        await ProfileAdmin.SignOutDeviceAsync(db, Id, device.Id, Now) ? $"Signed out {device.Label}." : $"{device.Label} was already signed out.");
+        await ProfileAdmin.SignOutDeviceAsync(db, Id, device.Id, Now, CancellationToken.None) ? $"Signed out {device.Label}." : $"{device.Label} was already signed out.");
 
     private Task SignOutEverywhereAsync() => Run(async db =>
     {
-        var count = await ProfileAdmin.SignOutEverywhereAsync(db, Id, Now);
+        var count = await ProfileAdmin.SignOutEverywhereAsync(db, Id, Now, CancellationToken.None);
         return count == 0 ? $"{profile!.Name} wasn’t signed in on any device." : $"Signed {profile!.Name} out of {count} {(count == 1 ? "device" : "devices")}.";
     });
 
@@ -368,7 +369,7 @@
 
     private Task RenameAsync(AdminDeviceRow device) => Run(async db =>
     {
-        var renamed = await ProfileAdmin.RenameDeviceAsync(db, Id, device.Id, renameText);
+        var renamed = await ProfileAdmin.RenameDeviceAsync(db, Id, device.Id, renameText, CancellationToken.None);
         renaming = null;
         return renamed ? $"Renamed the device to {renameText.Trim()}." : "That device is no longer listed.";
     });
@@ -376,8 +377,8 @@
     private async Task DeleteAsync()
     {
         var name = profile!.Name;
-        await using var db = await Factory.CreateDbContextAsync();
-        await ProfileAdmin.DeleteAsync(db, Id);
+        await using var db = await Factory.CreateDbContextAsync(CancellationToken.None);
+        await ProfileAdmin.DeleteAsync(db, Id, CancellationToken.None);
         Nav.NavigateTo("admin/profiles?deleted=" + Uri.EscapeDataString(name));
     }
 

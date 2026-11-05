@@ -5,6 +5,7 @@
 @using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.EntityFrameworkCore
 @using myNewspaper.Shared.Data
+@inherits DataComponentBase
 
 @* The admin menu. It renders on the server with each page request, so the red counts (from the same report as Scraper
    status) refresh as you move between pages. A failed count never breaks the menu. *@
@@ -83,9 +84,9 @@
         try
         {
             var now = DateTime.UtcNow;
-            await using var db = await Factory.CreateDbContextAsync();
+            await using var db = await Factory.CreateDbContextAsync(Ct);
             var report = await ScraperHealth.GetReportAsync(
-                db, now, Dates.TodayAt(now), ScraperHealth.StaleAfter(Config["Scraper:StaleAfterHours"]));
+                db, now, Dates.TodayAt(now), ScraperHealth.StaleAfter(Config["Scraper:StaleAfterHours"]), Ct);
             counts = AdminNavCounts.From(report);
         }
         catch (Exception ex) when (DataFailures.IsReadFailure(ex))
@@ -94,8 +95,8 @@
         }
         try
         {
-            await using var db = await Factory.CreateDbContextAsync();
-            (lockedProfiles, waitingRequests) = await AdminQuery.AlertCountsAsync(db);
+            await using var db = await Factory.CreateDbContextAsync(Ct);
+            (lockedProfiles, waitingRequests) = await AdminQuery.AlertCountsAsync(db, Ct);
         }
         catch (Exception ex) when (DataFailures.IsReadFailure(ex))
         {

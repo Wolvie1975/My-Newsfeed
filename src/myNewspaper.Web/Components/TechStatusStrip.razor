@@ -1,5 +1,6 @@
 @inject IDbContextFactory<WebScraperContext> Factory
 @inject FeedDates Dates
+@inherits DataComponentBase
 
 @if (affected.Count > 0)
 {
@@ -73,8 +74,8 @@
 
     protected override async Task OnParametersSetAsync()
     {
-        await using var db = await Factory.CreateDbContextAsync();
-        var all = await TechQuery.ServiceStatesAsync(db);
+        await using var db = await Factory.CreateDbContextAsync(Ct);
+        var all = await TechQuery.ServiceStatesAsync(db, Ct);
         affected = all.Where(s => s.Indicator is "minor" or "major" or "critical" or "maintenance").ToList();
         healthy = all.Where(s => s.Indicator == "none").ToList();
     }

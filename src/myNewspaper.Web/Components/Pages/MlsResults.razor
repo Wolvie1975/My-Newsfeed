@@ -1,3 +1,4 @@
+@inherits DataComponentBase
 
 @page "/mls/results"
 @layout PublicLayout
@@ -53,9 +54,9 @@ else
     protected override async Task OnParametersSetAsync()
     {
         error = null;
-        try { await using var db = await Factory.CreateDbContextAsync();
-        records = await TeamRecords.LoadAsync(db, Dates.Today, RecordPhases); data = await MlsResultsQuery.GetAsync(db, int.TryParse(Page, out var page) ? Math.Clamp(page, 0, 10000) : 0);
-        boxLabels = await BoxScoreQuery.AvailableAsync(db, data.Items.Select(g=>BoxIdentity.Match(g.ProviderKey,g.GameId)).OfType<BoxIdentity>(), Log); }
+        try { await using var db = await Factory.CreateDbContextAsync(Ct);
+        records = await TeamRecords.LoadAsync(db, Dates.Today, RecordPhases, Ct); data = await MlsResultsQuery.GetAsync(db, int.TryParse(Page, out var page) ? Math.Clamp(page, 0, 10000) : 0, Ct);
+        boxLabels = await BoxScoreQuery.AvailableAsync(db, data.Items.Select(g=>BoxIdentity.Match(g.ProviderKey,g.GameId)).OfType<BoxIdentity>(), Log, Ct); }
         catch (Exception ex) when (DataFailures.IsReadFailure(ex))
         { Log.LogError(ex, "Could not read MLS results."); error = "Results are temporarily unavailable. Please try again."; }
     }

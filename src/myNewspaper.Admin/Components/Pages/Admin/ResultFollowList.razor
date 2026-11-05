@@ -3,6 +3,7 @@
 @using myNewspaper.Shared.Scores
 @inject IDbContextFactory<WebScraperContext> Factory
 @inject ScoresSync Sync
+@inherits DataComponentBase
 
 <PageTitle>Results follows</PageTitle>
 
@@ -118,8 +119,8 @@ else
 
     private async Task LoadAsync()
     {
-        await using var db = await Factory.CreateDbContextAsync();
-        rows = await AdminQuery.ResultFollowsAsync(db);
+        await using var db = await Factory.CreateDbContextAsync(Ct);
+        rows = await AdminQuery.ResultFollowsAsync(db, Ct);
     }
 
     private static string Label(AdminResultFollowRow f) => EspnLeagues.FollowLabel(f.Kind, f.Name, f.Sport, f.League);
@@ -130,7 +131,7 @@ else
         message = null;
         try
         {
-            var report = await Sync.SyncNowAsync(followId);
+            var report = await Sync.SyncNowAsync(followId, CancellationToken.None);
             messageKind = report.Failed == 0 ? "success" : "warning";
             message = report.Failed == 0
                 ? $"Synced {report.Synced} {(report.Synced == 1 ? "follow" : "follows")}: {report.Games} games added or updated ({report.Requests} ESPN requests)."
@@ -146,8 +147,8 @@ else
 
     private async Task SetEnabledAsync(AdminResultFollowRow row, bool enabled)
     {
-        await using var db = await Factory.CreateDbContextAsync();
-        await AdminStore.SetResultFollowEnabledAsync(db, row.Id, enabled);
+        await using var db = await Factory.CreateDbContextAsync(CancellationToken.None);
+        await AdminStore.SetResultFollowEnabledAsync(db, row.Id, enabled, CancellationToken.None);
         message = null;
         await LoadAsync();
     }
@@ -165,8 +166,8 @@ else
             return;
         }
 
-        await using var db = await Factory.CreateDbContextAsync();
-        var deleted = await AdminStore.DeleteResultFollowAsync(db, target.Id);
+        await using var db = await Factory.CreateDbContextAsync(CancellationToken.None);
+        var deleted = await AdminStore.DeleteResultFollowAsync(db, target.Id, CancellationToken.None);
         messageKind = deleted ? "success" : "warning";
         message = deleted ? $"Stopped following {Label(target)}." : $"{Label(target)} was already removed.";
         pendingDelete = null;

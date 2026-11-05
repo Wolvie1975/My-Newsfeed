@@ -4,6 +4,7 @@
 @inject IDbContextFactory<WebScraperContext> Factory
 @inject FeedDates Dates
 @inject ILogger<Rankings> Log
+@inherits DataComponentBase
 
 @{
     var sportDef = CollegeHub.Resolve(CollegeSport);
@@ -218,7 +219,7 @@
     private string RetryHref => BasePath + (CollegeSport is not null ? "?sport=" + CollegeHub.Resolve(CollegeSport).Key + "&" : "?") + (data.Selected is { } selected ? $"sourceId={selected.Id}" : "");
     protected override async Task OnParametersSetAsync()
     {
-        try { await using var db = await Factory.CreateDbContextAsync(); data = await RankingsQuery.GetAsync(db, StandingsQuery.ParseSourceId(SourceId), Log, Dates.Today, CollegeSport); }
+        try { await using var db = await Factory.CreateDbContextAsync(Ct); data = await RankingsQuery.GetAsync(db, StandingsQuery.ParseSourceId(SourceId), Log, Dates.Today, CollegeSport, Ct); }
         catch (Exception ex) when (DataFailures.IsReadFailure(ex))
         { Log.LogError(ex, "Rankings source read failed."); data = new([], null, null, [], "Rankings are temporarily unavailable."); }
     }

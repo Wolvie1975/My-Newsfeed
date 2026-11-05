@@ -6,6 +6,7 @@
 @inject FeedDates Dates
 @inject NavigationManager Navigation
 @inject ILogger<BoxOffice> Log
+@inherits DataComponentBase
 
 <PageTitle>@Title · myNewspaper</PageTitle>
 <div class="mx-tool-page">
@@ -199,11 +200,11 @@
         {
             try
             {
-                await using var db = await Factory.CreateDbContextAsync();
-                movies = await BoxOfficeChartQuery.GetAsync(db);
-                if (movies.Count > 0) predictions = await BoxOfficeForecastQuery.PredictionsAsync(db, movies[0].WeekendStart);
+                await using var db = await Factory.CreateDbContextAsync(Ct);
+                movies = await BoxOfficeChartQuery.GetAsync(db, ct: Ct);
+                if (movies.Count > 0) predictions = await BoxOfficeForecastQuery.PredictionsAsync(db, movies[0].WeekendStart, Ct);
                 // Phones: next weekend's predictions for the Results view's last fold.
-                forecasts = await BoxOfficeForecastQuery.GetAsync(db, Dates.TodayAt(utcNow));
+                forecasts = await BoxOfficeForecastQuery.GetAsync(db, Dates.TodayAt(utcNow), Ct);
             }
             catch (Exception ex) when (DataFailures.IsReadFailure(ex))
             { Log.LogError(ex, "Box-office chart read failed."); failed = true; }
@@ -212,8 +213,8 @@
         {
             try
             {
-                await using var db = await Factory.CreateDbContextAsync();
-                forecasts = await BoxOfficeForecastQuery.GetAsync(db, Dates.TodayAt(utcNow));
+                await using var db = await Factory.CreateDbContextAsync(Ct);
+                forecasts = await BoxOfficeForecastQuery.GetAsync(db, Dates.TodayAt(utcNow), Ct);
             }
             catch (Exception ex) when (DataFailures.IsReadFailure(ex))
             { Log.LogError(ex, "Box-office forecast read failed."); }

@@ -1,6 +1,7 @@
 @page "/admin/tv-series"
 @rendermode InteractiveServer
 @inject IDbContextFactory<WebScraperContext> Factory
+@inherits DataComponentBase
 
 <PageTitle>TV series</PageTitle>
 <AdminContent>
@@ -88,14 +89,14 @@ else
     protected override Task OnInitializedAsync() => LoadAsync();
     private async Task LoadAsync()
     {
-        await using var db = await Factory.CreateDbContextAsync();
-        var list = await AdminQuery.TvSeriesAsync(db, pageIndex, PageSize);
+        await using var db = await Factory.CreateDbContextAsync(Ct);
+        var list = await AdminQuery.TvSeriesAsync(db, pageIndex, PageSize, Ct);
         (rows, totalRows, pageIndex) = (list.Rows, list.Total, list.PageIndex);
     }
     private async Task ToggleAsync(AdminTvSeriesRow row)
     {
         busy = true; error = null; message = null;
-        try { await using var db = await Factory.CreateDbContextAsync(); await TvQuery.SetEnabledAsync(db, row.Id, !row.Enabled); await LoadAsync(); }
+        try { await using var db = await Factory.CreateDbContextAsync(CancellationToken.None); await TvQuery.SetEnabledAsync(db, row.Id, !row.Enabled, CancellationToken.None); await LoadAsync(); }
         catch (DbUpdateException) { error = "Could not update tracking. Please try again."; }
         finally { busy = false; }
     }
@@ -113,8 +114,8 @@ else
         busy = true; error = null;
         try
         {
-            await using var db = await Factory.CreateDbContextAsync();
-            switch (await TvQuery.RemoveAsync(db, target.Id, DateTime.UtcNow))
+            await using var db = await Factory.CreateDbContextAsync(CancellationToken.None);
+            switch (await TvQuery.RemoveAsync(db, target.Id, DateTime.UtcNow, CancellationToken.None))
             {
                 case TvRemoveResult.Removed: message = $"Deleted {TitleOf(target)}."; break;
                 case TvRemoveResult.Missing: message = $"{TitleOf(target)} was already deleted."; break;

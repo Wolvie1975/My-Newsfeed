@@ -3,6 +3,7 @@
 @rendermode InteractiveServer
 @inject IDbContextFactory<WebScraperContext> Factory
 @inject NavigationManager Nav
+@inherits DataComponentBase
 
 <PageTitle>@(IsNew ? "Add event feed" : "Edit event feed")</PageTitle>
 
@@ -116,8 +117,8 @@ else
             return;
         }
 
-        await using var db = await Factory.CreateDbContextAsync();
-        existing = await AdminQuery.EventTypeAsync(db, id);
+        await using var db = await Factory.CreateDbContextAsync(Ct);
+        existing = await AdminQuery.EventTypeAsync(db, id, Ct);
         if (existing is null)
         {
             notFound = true;
@@ -150,8 +151,8 @@ else
         saving = true;
         try
         {
-            await using var db = await Factory.CreateDbContextAsync();
-            if (!await AdminStore.SaveSportsEventsTypeAsync(db, Id, name, url, school, form.Enabled))
+            await using var db = await Factory.CreateDbContextAsync(CancellationToken.None);
+            if (!await AdminStore.SaveSportsEventsTypeAsync(db, Id, name, url, school, form.Enabled, CancellationToken.None))
             {
                 notFound = true;
                 return;

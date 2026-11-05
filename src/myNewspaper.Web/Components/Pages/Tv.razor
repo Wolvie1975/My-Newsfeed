@@ -3,6 +3,7 @@
 @inject IDbContextFactory<WebScraperContext> Factory
 @inject FeedDates Dates
 @inject myNewspaper.Shared.Profiles.ProfileContext Reader
+@inherits DataComponentBase
 
 <PageTitle>TV &amp; Streaming · myNewspaper</PageTitle>
 <div class="mx-desktop">
@@ -192,9 +193,9 @@
         today = Dates.Today;
         start = DateOnly.TryParseExact(From, "yyyy-MM-dd", out var parsed)
             && parsed.Year <= 9998 && parsed >= today ? parsed : today;
-        await using var db = await Factory.CreateDbContextAsync();
+        await using var db = await Factory.CreateDbContextAsync(Ct);
         var show = int.TryParse(Show, out var id) && id > 0 ? id : (int?)null;
-        schedule = await TvQuery.GetAsync(db, Reader.Viewer, Dates, start, show);
+        schedule = await TvQuery.GetAsync(db, Reader.Viewer, Dates, start, show, ct: Ct);
         showTitle = show is { } selected ? schedule.Shows.FirstOrDefault(s => s.Id == selected)?.Title : null;
     }
 

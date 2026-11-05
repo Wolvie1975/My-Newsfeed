@@ -3,6 +3,7 @@
 @inject IDbContextFactory<WebScraperContext> Factory
 @inject ProfileContext Reader
 @inject FeedDates Dates
+@inherits DataComponentBase
 
 @* Settings → Shows & channels and Requests (handoff 4.1, 4.2, 5.1 and 6.3), for the open profile only. Lists only this
    profile's follows, the household channels everyone has, household picks, and this profile's own requests. *@
@@ -148,9 +149,9 @@
     protected override async Task OnInitializedAsync()
     {
         if (Reader.Profile is not { } me) return;
-        await using var db = await Factory.CreateDbContextAsync();
-        page = await FollowStore.GetAsync(db, me.Id);
+        await using var db = await Factory.CreateDbContextAsync(Ct);
+        page = await FollowStore.GetAsync(db, me.Id, Ct);
         followedShows = page.Shows.Select(s => s.TvmazeShowId).ToHashSet();
-        requests = await RequestStore.MineAsync(db, me.Id);
+        requests = await RequestStore.MineAsync(db, me.Id, Ct);
     }
 }

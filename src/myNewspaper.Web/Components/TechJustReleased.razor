@@ -1,5 +1,6 @@
 @inject IDbContextFactory<WebScraperContext> Factory
 @inject FeedDates Dates
+@inherits DataComponentBase
 
 @if (releases.Count > 0)
 {
@@ -67,8 +68,8 @@
     protected override async Task OnParametersSetAsync()
     {
         nowUtc = DateTime.UtcNow;
-        await using var db = await Factory.CreateDbContextAsync();
-        releases = await TechQuery.JustReleasedAsync(db, TimeSpan.FromHours(48), take: 4);
+        await using var db = await Factory.CreateDbContextAsync(Ct);
+        releases = await TechQuery.JustReleasedAsync(db, TimeSpan.FromHours(48), take: 4, Ct);
     }
 
     private string When(DateTime utc) =>

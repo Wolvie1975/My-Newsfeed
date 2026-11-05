@@ -4,6 +4,7 @@
 @inject FeedDates Dates
 @inject NavigationManager Navigation
 @inject ILogger<Movies> Log
+@inherits DataComponentBase
 
 <PageTitle>Movies · myNewspaper</PageTitle>
 @* Phones get the folded week (docs/mobile-refresh-handoff.md); a title search keeps this layout on every width. *@
@@ -237,16 +238,16 @@
             && requested >= CurrentWeekStart
             ? requested.AddDays(-(int)requested.DayOfWeek)
             : CurrentWeekStart;
-        await using var db = await Factory.CreateDbContextAsync();
+        await using var db = await Factory.CreateDbContextAsync(Ct);
         listing = string.IsNullOrWhiteSpace(Q)
-            ? await MoviesQuery.GetAsync(db, weekStart, null, Type, null, null, take: 200, through: weekStart.AddDays(6))
-            : await MoviesQuery.GetAsync(db, today, QueryText.Term(Q), Type, null, "all", take: 100);
-        ahead = (await MoviesQuery.GetAsync(db, weekStart.AddDays(7), null, Type, null, null, take: 6)).Items
+            ? await MoviesQuery.GetAsync(db, weekStart, null, Type, null, null, take: 200, through: weekStart.AddDays(6), ct: Ct)
+            : await MoviesQuery.GetAsync(db, today, QueryText.Term(Q), Type, null, "all", take: 100, ct: Ct);
+        ahead = (await MoviesQuery.GetAsync(db, weekStart.AddDays(7), null, Type, null, null, take: 6, ct: Ct)).Items
             .Where(m => m.Date is not null).ToList();
         // Phones: the last weekend's top three for the In theaters fold (as on the Entertainment front).
         if (Phone)
         {
-            try { boxOffice = (await BoxOfficeChartQuery.GetAsync(db, HomeBoxOfficeSchedule.ResultsWeekend(today))).Take(3).ToList(); }
+            try { boxOffice = (await BoxOfficeChartQuery.GetAsync(db, HomeBoxOfficeSchedule.ResultsWeekend(today), Ct)).Take(3).ToList(); }
             catch (Exception ex) when (DataFailures.IsReadFailure(ex))
             { boxOffice = []; Log.LogError(ex, "Could not read box office for Movies."); }
         }

@@ -3,6 +3,7 @@
 @inject FeedDates Dates
 @inject IConfiguration Config
 @inject ILogger<SportsFront> Log
+@inherits DataComponentBase
 
 
 @* Sports front page as in the approved concept: today's scores across the top, then upcoming games, the lead story and
@@ -278,16 +279,16 @@
         nowUtc = DateTime.UtcNow;
         var today = Dates.TodayAt(nowUtc);
         newsUnavailable = false;
-        await using var db = await Factory.CreateDbContextAsync();
+        await using var db = await Factory.CreateDbContextAsync(Ct);
 
-        try { stories = await FeedQuery.GetHomeNewsAsync(db, 7, "sports"); }
+        try { stories = await FeedQuery.GetHomeNewsAsync(db, 7, "sports", Ct); }
         catch (Exception ex) when (DataFailures.IsReadFailure(ex))
         { newsUnavailable = true; stories = []; Log.LogError(ex, "Could not read sports headlines."); }
 
         // Upcoming: today's remaining games, the same timeline as the homepage's Today & Tonight.
         try
         {
-            var todays = await HomeEventResults.WithoutFinalResultsAsync(db, await EventsQuery.GetOnDateAsync(db, today));
+            var todays = await HomeEventResults.WithoutFinalResultsAsync(db, await EventsQuery.GetOnDateAsync(db, today, Ct), Ct);
             upcoming = TodayTonight.Build(todays, Dates).Where(i => i.StartsUtc is null || i.StartsUtc > nowUtc).Take(11).ToList();
         }
         catch (Exception ex) when (DataFailures.IsReadFailure(ex))
@@ -297,12 +298,12 @@
         try
         {
             var hidden = Config.GetSection("Standings:HiddenProviders").Get<string[]>();
-            var all = await StandingsQuery.GetAsync(db, null, Log, today, hidden);
+            var all = await StandingsQuery.GetAsync(db, null, Log, today, hidden, ct: Ct);
             var available = new List<StandingsPage>();
             foreach (var source in all.Sources)
             {
                 var page = source.Id == all.Selected?.Id ? all
-                    : await StandingsQuery.GetAsync(db, source.Id, Log, today, hidden);
+                    : await StandingsQuery.GetAsync(db, source.Id, Log, today, hidden, ct: Ct);
                 if (page.Groups.Any(g => g.Teams.Count > 0)) available.Add(page);
             }
             var selected = SportsFrontRotation.Order(available, p => p.Selected!.Id, nowUtc, "standings").FirstOrDefault();
@@ -314,12 +315,12 @@
 
         try
         {
-            var all = await RankingsQuery.GetAsync(db, null, Log, today);
+            var all = await RankingsQuery.GetAsync(db, null, Log, today, ct: Ct);
             var available = new List<RankingsPage>();
             foreach (var source in all.Sources)
             {
                 var page = source.Id == all.Selected?.Id ? all
-                    : await RankingsQuery.GetAsync(db, source.Id, Log, today);
+                    : await RankingsQuery.GetAsync(db, source.Id, Log, today, ct: Ct);
                 if (page.Teams.Any(t => t.Rank is >= 1 and <= 25)) available.Add(page);
             }
             rankings = SportsFrontRotation.Order(available, p => p.Selected!.Id, nowUtc, "rankings").FirstOrDefault()
@@ -330,11 +331,11 @@
 
         // Phones: live scores for the Today's games band, and the next F1 round for its fold. The scoreboard read
         // reports its own failures; F1 just drops its fold.
-        board = (await ScoreboardQuery.ReadAsync(db, Dates, Log, today, carryOver: true)).Games;
+        board = (await ScoreboardQuery.ReadAsync(db, Dates, Log, today, carryOver: true, ct: Ct)).Games;
         live = board.Where(g => g.Active).ToList();
         try
         {
-            f1 = await F1Query.GetAsync(db, "standings");
+            f1 = await F1Query.GetAsync(db, "standings", ct: Ct);
             f1Race = f1.Races.FirstOrDefault(r => F1Query.Upcoming(r, Dates, today));
         }
         catch (Exception ex) when (DataFailures.IsReadFailure(ex))

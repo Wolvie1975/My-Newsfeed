@@ -1,6 +1,7 @@
 @inject IDbContextFactory<WebScraperContext> Factory
 @inject NavigationManager Nav
 @inject FeedDates Dates
+@inherits DataComponentBase
 
 @if (stories.Count > 0)
 {
@@ -55,8 +56,8 @@
             ? "lobsters"
             : "hn";
 
-        await using var db = await Factory.CreateDbContextAsync();
-        stories = await TechQuery.DevReadingAsync(db, site, take: 5);
+        await using var db = await Factory.CreateDbContextAsync(Ct);
+        stories = await TechQuery.DevReadingAsync(db, site, take: 5, Ct);
         snapshotAt = stories.FirstOrDefault()?.SnapshotAt;
     }
 

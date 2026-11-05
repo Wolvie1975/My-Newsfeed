@@ -7,6 +7,7 @@
 @inject FeedDates Dates
 @inject NavigationManager Nav
 @inject ILogger<RequestsView> Log
+@inherits DataComponentBase
 
 <PageTitle>Requests · myNewspaper</PageTitle>
 @if (Reader.IsHouseholdAdmin)
@@ -55,8 +56,8 @@
         if (!Reader.IsHouseholdAdmin) { Nav.NotFound(); return; }
         try
         {
-            await using var db = await Factory.CreateDbContextAsync();
-            overview = await RequestStore.OverviewAsync(db);
+            await using var db = await Factory.CreateDbContextAsync(Ct);
+            overview = await RequestStore.OverviewAsync(db, Ct);
         }
         catch (Exception ex) when (DataFailures.IsReadFailure(ex))
         {

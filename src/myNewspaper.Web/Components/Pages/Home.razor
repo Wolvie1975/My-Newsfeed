@@ -5,6 +5,7 @@
 @inject myNewspaper.Shared.Profiles.ProfileContext Reader
 @inject NavigationManager Nav
 @inject ILogger<Home> Log
+@inherits DataComponentBase
 
 @inject LocalWeather Weather
 @using myNewspaper.Web.Components.Feed
@@ -559,30 +560,30 @@
         }
 
         nowUtc = DateTime.UtcNow;
-        await using var db = await Factory.CreateDbContextAsync();
+        await using var db = await Factory.CreateDbContextAsync(Ct);
         homeF1 = F1Page.Empty; homeF1Error = null;
-        try { homeF1 = await F1Query.GetAsync(db, "schedule"); }
+        try { homeF1 = await F1Query.GetAsync(db, "schedule", ct: Ct); }
         catch (Exception ex) when (DataFailures.IsReadFailure(ex))
         { Log.LogError(ex, "Could not read home F1 summary."); homeF1Error = "F1 data is temporarily unavailable. Please try again."; }
-        try { homeRankings = await RankingsQuery.GetAsync(db, StandingsQuery.ParseSourceId(RankingSourceId), Log, Dates.TodayAt(nowUtc)); }
+        try { homeRankings = await RankingsQuery.GetAsync(db, StandingsQuery.ParseSourceId(RankingSourceId), Log, Dates.TodayAt(nowUtc), ct: Ct); }
         catch (Exception ex) when (DataFailures.IsReadFailure(ex))
         { Log.LogError(ex, "Could not read home rankings."); homeRankings = new([], null, null, [], "Rankings are temporarily unavailable."); }
 
         // The queries run one after another: one DbContext cannot run two at once.
-        todays = await EventsQuery.GetOnDateAsync(db, Dates.TodayAt(nowUtc));
-        try { lead = await HomeLeadQuery.GetAsync(db, nowUtc); }
+        todays = await EventsQuery.GetOnDateAsync(db, Dates.TodayAt(nowUtc), Ct);
+        try { lead = await HomeLeadQuery.GetAsync(db, nowUtc, Ct); }
         catch (Exception ex) when (DataFailures.IsReadFailure(ex))
         { Log.LogError(ex, "Could not read home lead story."); lead = new(null, nowUtc.Ticks / TimeSpan.TicksPerHour, 60000, true); }
-        news = await FeedQuery.GetHomeNewsAsync(db, HomeNewsCount, "headlines");
+        news = await FeedQuery.GetHomeNewsAsync(db, HomeNewsCount, "headlines", Ct);
         headlineStories = news.Where(item => item.Id != lead.Article?.Id).Take(4).ToList();
-        sportsStories = await FeedQuery.GetHomeNewsAsync(db, HomeShelfCount, "sports");
-        entertainmentStories = await FeedQuery.GetHomeNewsAsync(db, HomeShelfCount, "entertainment");
-        techStories = await FeedQuery.GetHomeNewsAsync(db, HomeShelfCount, "tech");
+        sportsStories = await FeedQuery.GetHomeNewsAsync(db, HomeShelfCount, "sports", Ct);
+        entertainmentStories = await FeedQuery.GetHomeNewsAsync(db, HomeShelfCount, "entertainment", Ct);
+        techStories = await FeedQuery.GetHomeNewsAsync(db, HomeShelfCount, "tech", Ct);
         latestVideo = null; latestVideoFailed = false;
-        try { latestVideo = (await VideosQuery.GetVideosAsync(db, Reader.Viewer, null, null, limit: 1)).Items.FirstOrDefault(); }
+        try { latestVideo = (await VideosQuery.GetVideosAsync(db, Reader.Viewer, null, null, limit: 1, ct: Ct)).Items.FirstOrDefault(); }
         catch (Exception ex) when (DataFailures.IsReadFailure(ex))
         { Log.LogError(ex, "Could not read the latest followed YouTube video."); latestVideoFailed = true; }
-        videos = await VideosQuery.GetHomeVideosAsync(db, Reader.Viewer);
+        videos = await VideosQuery.GetHomeVideosAsync(db, Reader.Viewer, ct: Ct);
         homeForecasts = new([], []);
         homeBoxOffice = []; homeBoxOfficeFailed = false; showBoxOfficeResults = false;
         var boxToday = Dates.TodayAt(nowUtc);
@@ -592,7 +593,7 @@
         {
             try
             {
-                homeBoxOffice = await BoxOfficeChartQuery.GetAsync(db, boxOfficeWeekend);
+                homeBoxOffice = await BoxOfficeChartQuery.GetAsync(db, boxOfficeWeekend, Ct);
                 showBoxOfficeResults = homeBoxOffice.Count > 0;
             }
             catch (Exception ex) when (DataFailures.IsReadFailure(ex))
@@ -603,17 +604,17 @@
             // No results yet: on Sun–Tue, the forecast for the weekend just played (its PeriodEnd is that Sunday,
             // and the query keeps PeriodEnd >= the date passed); otherwise the coming weekend's.
             var forecastDay = resultsDays ? boxOfficeWeekend.AddDays(2) : boxToday;
-            try { homeForecasts = await BoxOfficeForecastQuery.GetAsync(db, forecastDay); }
+            try { homeForecasts = await BoxOfficeForecastQuery.GetAsync(db, forecastDay, Ct); }
             catch (Exception ex) when (DataFailures.IsReadFailure(ex))
             { Log.LogError(ex, "Could not read home weekend predictions."); }
         }
-        movies = await MoviesQuery.GetFridayTheatricalAsync(db, Dates.TodayAt(nowUtc));
-        episodes = await TvQuery.GetOnDateAsync(db, Reader.Viewer, Dates, Dates.TodayAt(nowUtc));
-        todays = await HomeEventResults.WithoutFinalResultsAsync(db, todays);
+        movies = await MoviesQuery.GetFridayTheatricalAsync(db, Dates.TodayAt(nowUtc), ct: Ct);
+        episodes = await TvQuery.GetOnDateAsync(db, Reader.Viewer, Dates, Dates.TodayAt(nowUtc), Ct);
+        todays = await HomeEventResults.WithoutFinalResultsAsync(db, todays, Ct);
         tonight = TodayTonight.Build(todays, Dates);
 
         // Masthead ear: what is live, otherwise what starts next. The scoreboard read reports failures itself.
-        var board = await ScoreboardQuery.ReadAsync(db, Dates, Log, Dates.TodayAt(nowUtc), carryOver: true);
+        var board = await ScoreboardQuery.ReadAsync(db, Dates, Log, Dates.TodayAt(nowUtc), carryOver: true, ct: Ct);
         boardGames = board.Games;
         liveGames = board.Games.Where(g => g.Active).Take(3).ToList();
         upcomingGames = board.Games.Where(g => g.Status == "upcoming").Take(3).ToList();
@@ -622,7 +623,8 @@
         weather = null;
         try
         {
-            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(3));
+            using var timeout = CancellationTokenSource.CreateLinkedTokenSource(Ct);
+            timeout.CancelAfter(TimeSpan.FromSeconds(3));
             weather = await Weather.GetAsync(timeout.Token);
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or OperationCanceledException or System.Text.Json.JsonException or InvalidOperationException)

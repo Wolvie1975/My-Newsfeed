@@ -1,6 +1,7 @@
 @using myNewspaper.Shared.Requests
 @inject IDbContextFactory<WebScraperContext> Factory
 @inject ILogger<RequestsViewLink> Log
+@inherits DataComponentBase
 @if (count > 0)
 {
     <a class="requests-link" href="requests" aria-label="@($"Requests, {count} need attention")">
@@ -13,8 +14,8 @@
     {
         try
         {
-            await using var db = await Factory.CreateDbContextAsync();
-            count = await RequestStore.OpenItemsCountAsync(db);
+            await using var db = await Factory.CreateDbContextAsync(Ct);
+            count = await RequestStore.OpenItemsCountAsync(db, Ct);
         }
         catch (Exception ex) when (DataFailures.IsReadFailure(ex))
         {

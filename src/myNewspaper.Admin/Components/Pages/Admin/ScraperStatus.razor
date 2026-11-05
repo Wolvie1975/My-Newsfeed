@@ -2,6 +2,7 @@
 @rendermode InteractiveServer
 @inject IDbContextFactory<WebScraperContext> Factory
 @inject IConfiguration Config
+@inherits DataComponentBase
 
 <PageTitle>Scraper status</PageTitle>
 
@@ -216,13 +217,13 @@
         try
         {
             var now = DateTime.UtcNow;
-            await using var db = await Factory.CreateDbContextAsync();
+            await using var db = await Factory.CreateDbContextAsync(Ct);
             report = await ScraperHealth.GetReportAsync(
-                db, now, Dates.TodayAt(now), ScraperHealth.StaleAfter(Config["Scraper:StaleAfterHours"]));
-            techProjects = await TechQuery.LiveTablesAsync(db, "releases")
-                ? await TechQuery.ReleaseProjectsAsync(db)
+                db, now, Dates.TodayAt(now), ScraperHealth.StaleAfter(Config["Scraper:StaleAfterHours"]), Ct);
+            techProjects = await TechQuery.LiveTablesAsync(db, "releases", Ct)
+                ? await TechQuery.ReleaseProjectsAsync(db, Ct)
                 : [];
-            linkableEvents = report.UnlinkedEvents == 0 ? 0 : (await AdminStore.PlanSportsEventLinksAsync(db)).Count;
+            linkableEvents = report.UnlinkedEvents == 0 ? 0 : (await AdminStore.PlanSportsEventLinksAsync(db, Ct)).Count;
             issues = new[]
                 {
                     report.Sources.Select(r => new Issue(r, "News source", $"admin/sources/{r.Id}/edit")),
@@ -253,8 +254,8 @@
         message = null;
         try
         {
-            await using var db = await Factory.CreateDbContextAsync();
-            var result = await AdminStore.SyncYoutubeFeedsAsync(db);
+            await using var db = await Factory.CreateDbContextAsync(CancellationToken.None);
+            var result = await AdminStore.SyncYoutubeFeedsAsync(db, CancellationToken.None);
             message = $"Created {result.FeedsCreated} {(result.FeedsCreated == 1 ? "feed" : "feeds")} and linked {result.VideosLinked} {(result.VideosLinked == 1 ? "video" : "videos")}.";
         }
         catch (Exception ex) when (ex is DbUpdateException || DataFailures.IsReadFailure(ex))
@@ -274,8 +275,8 @@
         message = null;
         try
         {
-            await using var db = await Factory.CreateDbContextAsync();
-            var linked = await AdminStore.LinkSportsEventsBySiteAsync(db);
+            await using var db = await Factory.CreateDbContextAsync(CancellationToken.None);
+            var linked = await AdminStore.LinkSportsEventsBySiteAsync(db, CancellationToken.None);
             message = $"Linked {linked} {(linked == 1 ? "event" : "events")} to {(linked == 1 ? "its feed" : "their feeds")}.";
         }
         catch (Exception ex) when (ex is DbUpdateException || DataFailures.IsReadFailure(ex))

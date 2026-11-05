@@ -6,6 +6,7 @@
 @inject IDbContextFactory<WebScraperContext> Factory
 @inject WatchCatalog Catalog
 @inject ILogger<NewEdition> Log
+@inherits DataComponentBase
 
 <PageTitle>Start a new edition · myNewspaper</PageTitle>
 
@@ -156,9 +157,9 @@
         JsonObject baseEdition = [];
         try
         {
-            await using var db = await Factory.CreateDbContextAsync();
-            baseEdition = await ProfileAdmin.GetBaseEditionAsync(db);
-            teams = await SportsTeamPreferences.GetChoicesAsync(db);
+            await using var db = await Factory.CreateDbContextAsync(Ct);
+            baseEdition = await ProfileAdmin.GetBaseEditionAsync(db, Ct);
+            teams = await SportsTeamPreferences.GetChoicesAsync(db, Ct);
         }
         catch (Exception ex) when (DataFailures.IsReadFailure(ex))
         {

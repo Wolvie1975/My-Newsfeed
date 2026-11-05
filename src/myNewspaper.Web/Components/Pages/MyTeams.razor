@@ -4,6 +4,7 @@
 @inject IDbContextFactory<WebScraperContext> Factory
 @inject ILogger<MyTeams> Log
 @inject myNewspaper.Shared.Profiles.ProfileContext Reader
+@inherits DataComponentBase
 
 <PageTitle>Settings · myNewspaper</PageTitle>
 <div class="mx-tool-page" data-phone-settings>
@@ -126,7 +127,7 @@
     private string? error;
     protected override async Task OnInitializedAsync()
     {
-        try { await using var db = await Factory.CreateDbContextAsync(); choices = await SportsTeamPreferences.GetChoicesAsync(db); }
+        try { await using var db = await Factory.CreateDbContextAsync(Ct); choices = await SportsTeamPreferences.GetChoicesAsync(db, Ct); }
         catch (Exception ex) when (DataFailures.IsReadFailure(ex))
         { Log.LogError(ex, "Could not read team and category choices."); error = "Professional teams are temporarily unavailable. Reload to try again."; }
     }

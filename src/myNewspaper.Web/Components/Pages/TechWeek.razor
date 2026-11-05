@@ -9,6 +9,7 @@
 @inject IMemoryCache Cache
 @inject myNewspaper.Shared.Profiles.ProfileContext Reader
 @inject ILogger<TechWeek> Log
+@inherits DataComponentBase
 
 <PageTitle>@PageHeadingTitle · myNewspaper</PageTitle>
 
@@ -364,10 +365,10 @@ else if (summary is not null)
 
         try
         {
-            await using var db = await Factory.CreateDbContextAsync();
+            await using var db = await Factory.CreateDbContextAsync(Ct);
             var deskKey = deskDef?.Slug ?? "all";
-            summary = await TechQuery.WeekAsync(db, Cache, Dates, weekStart, deskKey);
-            deskCounts = await TechQuery.WeekDeskCountsAsync(db, Dates, weekStart);
+            summary = await TechQuery.WeekAsync(db, Cache, Dates, weekStart, deskKey, ct: Ct);
+            deskCounts = await TechQuery.WeekDeskCountsAsync(db, Dates, weekStart, Ct);
             earlierWeeks = await TechQuery.EarlierWeeksAsync(db, Dates, weekStart, deskKey, count: 3);
         }
         catch (Exception ex) when (DataFailures.IsReadFailure(ex))

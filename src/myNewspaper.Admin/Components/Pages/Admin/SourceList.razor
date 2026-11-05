@@ -3,6 +3,7 @@
 @using System.Globalization
 @inject IDbContextFactory<WebScraperContext> Factory
 @inject NavigationManager Nav
+@inherits DataComponentBase
 
 <PageTitle>Sources</PageTitle>
 
@@ -182,8 +183,8 @@
 
     protected override async Task OnInitializedAsync()
     {
-        await using var db = await Factory.CreateDbContextAsync();
-        categories = await AdminQuery.CategoryOptionsAsync(db);
+        await using var db = await Factory.CreateDbContextAsync(Ct);
+        categories = await AdminQuery.CategoryOptionsAsync(db, Ct);
         if (!string.IsNullOrWhiteSpace(DeletedName)) message = $"Deleted {DeletedName}.";
     }
 
@@ -218,8 +219,8 @@
 
     private async Task LoadAsync()
     {
-        await using var db = await Factory.CreateDbContextAsync();
-        var list = await AdminQuery.SourcesAsync(db, CategoryIdText, Q, Status, pageIndex, PageSize);
+        await using var db = await Factory.CreateDbContextAsync(Ct);
+        var list = await AdminQuery.SourcesAsync(db, CategoryIdText, Q, Status, pageIndex, PageSize, Ct);
         (rows, totalRows, pageIndex) = (list.Rows, list.Total, list.PageIndex);
         (countAll, countEnabled, countDisabled, countErrors) = (list.All, list.Enabled, list.Disabled, list.Errors);
     }
@@ -229,8 +230,8 @@
         busy = true;
         try
         {
-            await using var db = await Factory.CreateDbContextAsync();
-            await AdminStore.SetSourceEnabledAsync(db, id, enabled: null);
+            await using var db = await Factory.CreateDbContextAsync(CancellationToken.None);
+            await AdminStore.SetSourceEnabledAsync(db, id, enabled: null, CancellationToken.None);
             await LoadAsync();
         }
         finally
@@ -250,8 +251,8 @@
     private async Task DisableInsteadAsync()
     {
         if (pendingDelete is not { } target) return;
-        await using var db = await Factory.CreateDbContextAsync();
-        await AdminStore.SetSourceEnabledAsync(db, target.Id, enabled: false);
+        await using var db = await Factory.CreateDbContextAsync(CancellationToken.None);
+        await AdminStore.SetSourceEnabledAsync(db, target.Id, enabled: false, CancellationToken.None);
         messageBad = false;
         message = $"Disabled {target.Name}. Its pages were kept.";
         pendingDelete = null;
@@ -263,8 +264,8 @@
         if (pendingDelete is not { } target) return;
         try
         {
-            await using var db = await Factory.CreateDbContextAsync();
-            var deleted = await AdminStore.DeleteSourceAsync(db, target.Id, includePages);
+            await using var db = await Factory.CreateDbContextAsync(CancellationToken.None);
+            var deleted = await AdminStore.DeleteSourceAsync(db, target.Id, includePages, CancellationToken.None);
             messageBad = !deleted;
             message = deleted ? $"Deleted {target.Name}." : $"{target.Name} was already deleted.";
         }

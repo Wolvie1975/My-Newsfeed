@@ -7,6 +7,7 @@
 @inject TimeProvider Clock
 @inject NavigationManager Nav
 @inject ILogger<RequestList> Log
+@inherits DataComponentBase
 
 <PageTitle>Requests</PageTitle>
 
@@ -272,16 +273,16 @@
 
     private async Task LoadAsync(bool resetForm)
     {
-        await using var db = await Factory.CreateDbContextAsync();
+        await using var db = await Factory.CreateDbContextAsync(Ct);
         if (youtubeCategories.Count == 0)
         {
-            youtubeCategories = await AdminQuery.YoutubeCategoryOptionsAsync(db);
-            sourceCategories = await AdminQuery.CategoryOptionsAsync(db);
+            youtubeCategories = await AdminQuery.YoutubeCategoryOptionsAsync(db, Ct);
+            sourceCategories = await AdminQuery.CategoryOptionsAsync(db, Ct);
         }
-        counts = await RequestStore.CountsAsync(db);
-        rows = await RequestStore.ListAsync(db, StatusKey == "all" ? null : StatusKey);
+        counts = await RequestStore.CountsAsync(db, ct: Ct);
+        rows = await RequestStore.ListAsync(db, StatusKey == "all" ? null : StatusKey, ct: Ct);
         // A request picked from a link (the header alert, Manage profile) opens even when it isn't in this filter.
-        var picked = Id is { } id ? rows.FirstOrDefault(r => r.Id == id) ?? (await RequestStore.ListAsync(db, id: id)).FirstOrDefault() : rows.FirstOrDefault();
+        var picked = Id is { } id ? rows.FirstOrDefault(r => r.Id == id) ?? (await RequestStore.ListAsync(db, id: id, ct: Ct)).FirstOrDefault() : rows.FirstOrDefault();
         if (resetForm || picked?.Id != selected?.Id) Fill(picked);
         selected = picked;
         loadedFor = Id;
@@ -358,7 +359,7 @@
         message = null;
         try
         {
-            await using var db = await Factory.CreateDbContextAsync();
+            await using var db = await Factory.CreateDbContextAsync(Ct);
             await work(db);
         }
         catch (ArgumentException ex) { message = ex.Message; messageBad = true; }
@@ -387,45 +388,45 @@
     private Task ApproveYoutubeAsync() => Run(async db =>
     {
         var r = selected!;
-        var outcome = await RequestStore.ApproveYoutubeAsync(db, r.Id, channelId, displayName, CategoryId, follow, Clock.GetUtcNow().UtcDateTime);
+        var outcome = await RequestStore.ApproveYoutubeAsync(db, r.Id, channelId, displayName, CategoryId, follow, Clock.GetUtcNow().UtcDateTime, CancellationToken.None);
         await Decided(outcome, follow ? $"Added {r.Name} and followed it for {r.ProfileName}." : $"Added {r.Name}.");
     });
 
     private Task ApproveCollectedAsync() => Run(async db =>
     {
         var r = selected!;
-        var outcome = await RequestStore.ApproveCollectedYoutubeAsync(db, r.Id, r.ResolvedChannelId, Clock.GetUtcNow().UtcDateTime);
+        var outcome = await RequestStore.ApproveCollectedYoutubeAsync(db, r.Id, r.ResolvedChannelId, Clock.GetUtcNow().UtcDateTime, CancellationToken.None);
         await Decided(outcome, $"Approved. {r.ProfileName} now follows {r.Name}.");
     });
 
     private Task ApproveNewsAsync() => Run(async db =>
     {
         var r = selected!;
-        var outcome = await RequestStore.ApproveNewsAsync(db, r.Id, feedUrl, displayName, CategoryId, Clock.GetUtcNow().UtcDateTime);
+        var outcome = await RequestStore.ApproveNewsAsync(db, r.Id, feedUrl, displayName, CategoryId, Clock.GetUtcNow().UtcDateTime, CancellationToken.None);
         await Decided(outcome, $"Added {r.Name} as a news source.");
     });
 
     private Task DeclineAsync() => Run(async db =>
     {
         var r = selected!;
-        var outcome = await RequestStore.DeclineAsync(db, r.Id, reason, Clock.GetUtcNow().UtcDateTime);
+        var outcome = await RequestStore.DeclineAsync(db, r.Id, reason, Clock.GetUtcNow().UtcDateTime, CancellationToken.None);
         await Decided(outcome, string.IsNullOrWhiteSpace(reason) ? $"Declined {r.Name}." : $"Declined {r.Name}. {r.ProfileName} will see your reason.");
     });
 
     private Task CheckAgainAsync() => Run(async db =>
     {
-        await RequestStore.CheckAsync(db, Checks, selected!.Id);
+        await RequestStore.CheckAsync(db, Checks, selected!.Id, CancellationToken.None);
         await LoadAsync(resetForm: true);
     });
 
     private Task FindFeedsAsync() => Run(async db =>
     {
         test = null;
-        var result = await Checks.CheckNewsAsync(db, feedUrl);
+        var result = await Checks.CheckNewsAsync(db, feedUrl, Ct);
         foundFeeds = result.FeedUrls ?? [];
         if (foundFeeds.Count > 0) feedUrl = foundFeeds[0];
         (message, messageBad) = (result.Summary, !result.Ok);
     });
 
-    private Task TestAsync(string url) => Run(async _ => test = await Checks.TestFeedAsync(url));
+    private Task TestAsync(string url) => Run(async _ => test = await Checks.TestFeedAsync(url, Ct));
 }

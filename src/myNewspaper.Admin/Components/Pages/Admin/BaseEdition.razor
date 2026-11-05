@@ -6,6 +6,7 @@
 @inject IDbContextFactory<WebScraperContext> Factory
 @inject WatchCatalog Catalog
 @inject ILogger<BaseEdition> Log
+@inherits DataComponentBase
 
 <PageTitle>Base edition</PageTitle>
 
@@ -170,14 +171,14 @@
     protected override async Task OnInitializedAsync()
     {
         serviceChoices = await Catalog.Services();
-        await using var db = await Factory.CreateDbContextAsync();
-        try { teamChoices = await SportsTeamPreferences.GetChoicesAsync(db); }
+        await using var db = await Factory.CreateDbContextAsync(Ct);
+        try { teamChoices = await SportsTeamPreferences.GetChoicesAsync(db, Ct); }
         catch (Exception ex) when (DataFailures.IsReadFailure(ex))
         {
             Log.LogError(ex, "Could not read team choices for the base edition.");
             teamError = "Professional teams are temporarily unavailable; Big 12 schools are listed. Reload to try again.";
         }
-        Show(await ProfileAdmin.GetBaseEditionAsync(db));
+        Show(await ProfileAdmin.GetBaseEditionAsync(db, Ct));
         openGroups = [.. teamChoices.Where(t => teams.Contains(t.Key)).Select(t => t.Group)];
     }
 
@@ -240,8 +241,8 @@
         message = null;
         try
         {
-            await using var db = await Factory.CreateDbContextAsync();
-            Show(await ProfileAdmin.SaveBaseEditionAsync(db, Build()));
+            await using var db = await Factory.CreateDbContextAsync(CancellationToken.None);
+            Show(await ProfileAdmin.SaveBaseEditionAsync(db, Build(), CancellationToken.None));
             message = "Saved. Profiles created from now on start with these settings.";
             messageBad = false;
         }
@@ -256,8 +257,8 @@
         confirmReset = false;
         try
         {
-            await using var db = await Factory.CreateDbContextAsync();
-            Show(await ProfileAdmin.SaveBaseEditionAsync(db, []));
+            await using var db = await Factory.CreateDbContextAsync(CancellationToken.None);
+            Show(await ProfileAdmin.SaveBaseEditionAsync(db, [], CancellationToken.None));
             message = "The base edition is back to site defaults.";
             messageBad = false;
         }

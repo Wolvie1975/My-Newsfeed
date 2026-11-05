@@ -7,6 +7,7 @@
 @inject ProfilePins Pins
 @inject TimeProvider Clock
 @inject IOptions<ProfilesOptions> ProfilesSwitch
+@inherits DataComponentBase
 
 <PageTitle>Profiles</PageTitle>
 
@@ -240,10 +241,10 @@
 
     private async Task LoadAsync()
     {
-        await using var db = await Factory.CreateDbContextAsync();
-        rows = await ProfileAdmin.ListAsync(db);
-        totals = await ProfileAdmin.TotalsAsync(db);
-        household = await ProfileAdmin.GetHouseholdAsync(db);
+        await using var db = await Factory.CreateDbContextAsync(Ct);
+        rows = await ProfileAdmin.ListAsync(db, Ct);
+        totals = await ProfileAdmin.TotalsAsync(db, Ct);
+        household = await ProfileAdmin.GetHouseholdAsync(db, Ct);
     }
 
     private void Say(string text, bool bad = false) { message = text; messageBad = bad; }
@@ -263,8 +264,8 @@
         busy = true;
         try
         {
-            await using var db = await Factory.CreateDbContextAsync();
-            var profile = await ProfileStore.CreateAsync(db, Pins, adding.Name, adding.Color, adding.Pin, null);
+            await using var db = await Factory.CreateDbContextAsync(CancellationToken.None);
+            var profile = await ProfileStore.CreateAsync(db, Pins, adding.Name, adding.Color, adding.Pin, null, CancellationToken.None);
             adding = null;
             Say($"Added {profile.Name}. Tell them their PIN; they can change it in Settings.");
             await LoadAsync();
@@ -280,7 +281,7 @@
         message = null;
         try
         {
-            await using var db = await Factory.CreateDbContextAsync();
+            await using var db = await Factory.CreateDbContextAsync(Ct);
             if (await action(db) is { Length: > 0 } text) Say(text);
             await LoadAsync();
         }
@@ -289,16 +290,16 @@
     }
 
     private Task UnlockAsync(AdminProfileRow row) => Run(async db =>
-        await ProfileAdmin.UnlockAsync(db, row.Id) ? $"Unlocked {row.Name}. Their PIN is unchanged." : $"{row.Name} no longer exists.");
+        await ProfileAdmin.UnlockAsync(db, row.Id, CancellationToken.None) ? $"Unlocked {row.Name}. Their PIN is unchanged." : $"{row.Name} no longer exists.");
 
     private Task SignOutAllAsync(AdminProfileRow row) => Run(async db =>
     {
-        var count = await ProfileAdmin.SignOutEverywhereAsync(db, row.Id, Now);
+        var count = await ProfileAdmin.SignOutEverywhereAsync(db, row.Id, Now, CancellationToken.None);
         return count == 0 ? $"{row.Name} wasn’t signed in on any device." : $"Signed {row.Name} out of {count} {(count == 1 ? "device" : "devices")}.";
     });
 
     private Task SetHiddenAsync(AdminProfileRow row, bool hidden) => Run(async db =>
-        !await ProfileAdmin.UpdateAsync(db, row.Id, row.Name, row.Color, hidden, Now) ? $"{row.Name} no longer exists."
+        !await ProfileAdmin.UpdateAsync(db, row.Id, row.Name, row.Color, hidden, Now, CancellationToken.None) ? $"{row.Name} no longer exists."
         : hidden ? $"Hid {row.Name} from the edition picker and signed out their devices. Nothing was deleted." : $"{row.Name} is back on the edition picker.");
 
     private Task HideInsteadAsync(AdminProfileRow row)
@@ -312,7 +313,7 @@
     private Task ConfirmDeleteAsync(AdminProfileRow row)
     {
         pendingDelete = null;
-        return Run(async db => await ProfileAdmin.DeleteAsync(db, row.Id) ? $"Deleted {row.Name}." : $"{row.Name} was already deleted.");
+        return Run(async db => await ProfileAdmin.DeleteAsync(db, row.Id, CancellationToken.None) ? $"Deleted {row.Name}." : $"{row.Name} was already deleted.");
     }
 
     private Task MoveAsync(int index, int by) => Run(async db =>
@@ -321,13 +322,13 @@
         var target = index + by;
         if (target < 0 || target >= ids.Count) return "";
         (ids[index], ids[target]) = (ids[target], ids[index]);
-        await ProfileAdmin.ReorderAsync(db, ids);
+        await ProfileAdmin.ReorderAsync(db, ids, CancellationToken.None);
         return $"Moved {rows![index].Name} {(by < 0 ? "up" : "down")} on the edition picker.";
     });
 
     private Task SaveHouseholdAsync(HouseholdSettings next) => Run(async db =>
     {
-        await ProfileAdmin.SaveHouseholdAsync(db, next);
+        await ProfileAdmin.SaveHouseholdAsync(db, next, CancellationToken.None);
         return "Household settings saved.";
     });
 
