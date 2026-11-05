@@ -225,15 +225,14 @@ public static class TechQuery
                 .ToListAsync(ct);
             if (projects.Count == 0) return [];
 
+            // Only each project's latest stable release, chosen in SQL (ROW_NUMBER), not every release ever recorded.
             var projectIds = projects.Select(p => p.Id).ToList();
-            var releases = await db.TechReleases.AsNoTracking()
+            var latestByProject = (await db.TechReleases.AsNoTracking()
                 .Where(r => !r.IsPrerelease && projectIds.Contains(r.ProjectId))
-                .OrderByDescending(r => r.ReleasedAt).ThenByDescending(r => r.Id)
-                .ToListAsync(ct);
-
-            var latestByProject = releases
                 .GroupBy(r => r.ProjectId)
-                .ToDictionary(g => g.Key, g => g.First());
+                .Select(g => g.OrderByDescending(r => r.ReleasedAt).ThenByDescending(r => r.Id).First())
+                .ToListAsync(ct))
+                .ToDictionary(r => r.ProjectId);
 
             var list = new List<TrackedRelease>();
             foreach (var p in projects)

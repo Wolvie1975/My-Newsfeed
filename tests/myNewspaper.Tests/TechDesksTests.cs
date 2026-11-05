@@ -121,4 +121,26 @@ public class TechDesksTests
         Assert.True(released.Count <= 4 && reading.Count <= 5);
         Assert.NotNull(services);
     }
+
+    [Fact]
+    public async Task Tracker_reads_only_each_projects_latest_stable_release_and_matches_reading_them_all()
+    {
+        await using var db = TestDatabase.CreateContext();
+        if (!await TechQuery.LiveTablesAsync(db, "releases")) return;
+
+        // What TrackerAsync used to do: read every stable release, keep the newest per project in memory.
+        var projects = await db.TechReleaseProjects.AsNoTracking().Where(p => p.Enabled)
+            .OrderBy(p => p.SortOrder).ThenBy(p => p.Name).ToListAsync();
+        var ids = projects.Select(p => p.Id).ToList();
+        var all = await db.TechReleases.AsNoTracking().Where(r => !r.IsPrerelease && ids.Contains(r.ProjectId))
+            .OrderByDescending(r => r.ReleasedAt).ThenByDescending(r => r.Id).ToListAsync();
+        var newest = all.GroupBy(r => r.ProjectId).ToDictionary(g => g.Key, g => g.First());
+        var expected = projects.Where(p => newest.ContainsKey(p.Id))
+            .Select(p => (p.Name, newest[p.Id].Version, newest[p.Id].ReleasedAt)).ToList();
+
+        var tracker = await TechQuery.TrackerAsync(db);
+
+        Assert.NotEmpty(expected);
+        Assert.Equal(expected, tracker.Select(t => (t.Project, t.Version, t.ReleasedAt)).ToList());
+    }
 }
