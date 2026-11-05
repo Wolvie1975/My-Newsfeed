@@ -20,7 +20,7 @@
 // check started, in CLEANUP_DB (WebScraper or WebScraper_Test; `none` to skip). Without CLEANUP_DB it is WebScraper
 // only when BASE_URL is the live site (.env PUBLIC_BASE_URL); otherwise the check says what to run. Under run.cjs the
 // runner does this once for the whole suite instead.
-const { chromium } = require('playwright');
+const { chromium, request } = require('playwright');
 const { execFileSync } = require('node:child_process');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -140,26 +140,76 @@ async function openProfileIn(page, profile, route = '/', { waitUntil } = {}) {
     await page.waitForURL((u) => u.pathname + u.search === route);
 }
 
-async function openProfile(browser, profile, { path: route = '/', waitUntil, viewport } = {}) {
+async function openProfile(browser, profile, { path: route = '/', waitUntil, viewport, settings } = {}) {
     const context = await browser.newContext({ viewport: viewport || { width: 390, height: 900 } });
     try {
-        await openProfileIn(await context.newPage(), profile, route, { waitUntil });
+        const page = await context.newPage();
+        await openProfileIn(page, profile, route, { waitUntil });
+        if (settings) await saveSettings(page, settings);
         return await context.storageState();
     } finally {
         await context.close();
     }
 }
 
+// Saves settings to the open profile (myNewspaperPrefs) and waits for the server to store them.
+async function saveSettings(page, settings) {
+    for (const [key, value] of Object.entries(settings)) {
+        const saved = page.waitForResponse(
+            (r) => new URL(r.url()).pathname === '/api/me/settings' && r.request().method() === 'PUT',
+        );
+        await page.evaluate(([k, v]) => window.myNewspaperPrefs.setItem(k, v), [key, value]);
+        await (await saved).finished();
+    }
+}
+
+/**
+ * Sets a reader preference through the page's own window.myNewspaperPrefs, which works in both modes: with profiles
+ * on it saves to the open profile (this waits for the server to store it), otherwise it writes localStorage.
+ */
+async function setPreference(page, key, value) {
+    const profile = await page.evaluate(() => !!window.myNewspaperPrefs?.profile);
+    const saved = profile
+        ? page.waitForResponse(
+              (r) => new URL(r.url()).pathname === '/api/me/settings' && r.request().method() === 'PUT',
+          )
+        : null;
+    await page.evaluate(([k, v]) => window.myNewspaperPrefs.setItem(k, v), [key, value]);
+    if (saved) await (await saved).finished();
+}
+
+/** Reads a reader preference the same way (the profile's value with profiles on, localStorage otherwise). */
+function getPreference(page, key) {
+    return page.evaluate((k) => window.myNewspaperPrefs.getItem(k), key);
+}
+
+// The reader follows the device's light or dark setting, so checks steer it with emulateMedia/colorScheme as they
+// did before profiles; a profile's own saved theme would otherwise win.
+const readerSettings = { theme: 'system' };
+
 async function deleteProfile(profile) {
+    if (!/^zz /.test(profile.name)) throw new Error(`Refusing to delete "${profile.name}": not a zz profile`);
     const admin = profile.admin;
     await admin.setViewportSize({ width: 1440, height: 1000 });
     await admin.goto(adminBase + profile.manage);
     await admin.waitForLoadState('networkidle');
+    // The page's own name, not the one we were given: never delete a household profile by a wrong id. A bare
+    // "Manage profile" means Admin has no such profile: already deleted.
+    if ((await admin.title()).trim() === 'Manage profile') return forget(profile);
+    if (!/Manage zz /.test(await admin.title()))
+        throw new Error(
+            `Refusing to delete profile ${profile.id}: Admin calls it "${await admin.title()}", not a zz profile`,
+        );
     const confirm = admin.getByRole('button', { name: 'Delete profile', exact: true });
     await clickUntil(admin, admin.getByRole('button', { name: 'Delete profile…' }), confirm, 'Delete profile');
     await confirm.click();
     await admin.waitForURL('**/admin/profiles?deleted=*');
-    created.splice(created.indexOf(profile), 1);
+    forget(profile);
+}
+
+function forget(profile) {
+    const index = created.indexOf(profile);
+    if (index >= 0) created.splice(index, 1);
 }
 
 // Deletes every profile addProfile created, newest first. A failure is reported and fails the check; the zz
@@ -174,6 +224,107 @@ async function deleteProfiles() {
                 `Could not delete ${profile.name} (${profile.id}) through Admin: ${e.message.split('\n')[0]}`,
             );
         }
+    }
+}
+
+// A reader session: with profiles on, every page sends a browser without a profile to the edition picker, so checks
+// that read pages as a visitor use a context signed in as one throwaway `zz Reader` profile. Under run.cjs the runner
+// creates it once and passes its storage state in READER_STATE; a check run on its own creates its own and deletes it
+// through Admin when it exits (`node lib.cjs --delete-profile <id>`, synchronously, however the check exits).
+let readerState;
+const readerProfiles = [];
+
+// Runs when a check exits, before the zz clean-up: deletes the reader profile through Admin.
+function deleteReaderProfiles() {
+    for (const profile of readerProfiles) {
+        try {
+            execFileSync(process.execPath, [__filename, '--delete-profile', String(profile.id)], { stdio: 'inherit' });
+        } catch {
+            console.error(
+                `Could not delete ${profile.name} (${profile.id}) through Admin; the zz clean-up removes it.`,
+            );
+            if (!process.exitCode) process.exitCode = 1;
+        }
+    }
+}
+async function readerStorageState(browser) {
+    if (process.env.READER_STATE) {
+        // The run's shared reader: put its settings back to the defaults first, whatever the last check changed.
+        if (readerState === undefined) {
+            await resetReaderSettings(process.env.READER_STATE);
+            readerState = process.env.READER_STATE;
+        }
+        return readerState;
+    }
+    if (readerState !== undefined) return readerState;
+    if (!(await profilesEnabled())) return (readerState = null);
+    const admin = await signInAdmin(browser);
+    const profile = await addProfile(admin, 'Reader');
+    created.splice(created.indexOf(profile), 1); // not the check's own profile: deleted on exit, after its browser closes
+    readerState = await openProfile(browser, profile, { path: '/', settings: readerSettings });
+    await admin.context().close();
+    readerProfiles.push(profile);
+    return readerState;
+}
+
+// Every saved setting removed (PUT /api/me/settings is a merge-patch where null removes a key), then readerSettings.
+async function resetReaderSettings(storageState) {
+    const api = await request.newContext({ baseURL: base, storageState });
+    try {
+        const response = await api.get('/api/me', { headers: { Accept: 'application/json' } });
+        if (!response.ok()) throw new Error(`Reader profile: GET /api/me answered ${response.status()}`);
+        const me = await response.json();
+        const patch = {
+            ...Object.fromEntries(Object.keys(me.settings || {}).map((k) => [k, null])),
+            ...readerSettings,
+        };
+        const saved = await api.put('/api/me/settings', {
+            headers: { 'X-Saved-CSRF': me.token, 'Content-Type': 'application/json' },
+            data: patch,
+        });
+        if (!saved.ok()) throw new Error(`Reader profile: resetting settings answered ${saved.status()}`);
+    } finally {
+        await api.dispose();
+    }
+}
+
+/** A browser context that reads the site as a visitor would: signed in as the reader profile when profiles are on. */
+async function readerContext(browser, options = {}) {
+    const storageState = options.storageState ?? (await readerStorageState(browser)) ?? undefined;
+    return browser.newContext({ ...options, storageState });
+}
+
+/** A page in its own reader context (closing the browser closes both). */
+async function readerPage(browser, options = {}) {
+    return (await readerContext(browser, options)).newPage();
+}
+
+// Creates the reader profile for a whole run (run.cjs), writing its storage state to `file`; returns its id.
+async function createReaderProfile(file) {
+    const browser = await chromium.launch();
+    try {
+        if (!(await profilesEnabled())) return null;
+        const admin = await signInAdmin(browser);
+        const profile = await addProfile(admin, 'Reader');
+        created.length = 0;
+        fs.writeFileSync(
+            file,
+            JSON.stringify(await openProfile(browser, profile, { path: '/', settings: readerSettings })),
+        );
+        return profile.id;
+    } finally {
+        await browser.close();
+    }
+}
+
+// Deletes a profile through Admin by id (used for the reader profile, after the browser that made it is gone).
+async function deleteProfileById(id) {
+    const browser = await chromium.launch();
+    try {
+        const admin = await signInAdmin(browser);
+        await deleteProfile({ id, name: 'zz Reader', manage: '/admin/profiles/' + id, admin });
+    } finally {
+        await browser.close();
     }
 }
 
@@ -224,8 +375,17 @@ function cleanupZz(start, site = base) {
 
 // A check run on its own cleans up when it exits, however it exits; under run.cjs (BROWSER_SUITE_START) the runner
 // does it once at the end. Either way an unknown database is a warning; a clean-up that ran and failed fails the run.
-if (require.main && require.main.filename.endsWith('.browser.cjs') && !process.env.BROWSER_SUITE_START) {
+if (require.main === module && process.argv[2] === '--delete-profile') {
+    deleteProfileById(Number(process.argv[3])).then(
+        () => process.exit(0),
+        (e) => {
+            console.error(e.message);
+            process.exit(1);
+        },
+    );
+} else if (require.main && require.main.filename.endsWith('.browser.cjs') && !process.env.BROWSER_SUITE_START) {
     process.on('exit', () => {
+        deleteReaderProfiles();
         const result = cleanupZz(started);
         (result.ok ? console.log : console.error)(result.text);
         if (result.ran && !result.ok && !process.exitCode) process.exitCode = 1;
@@ -252,6 +412,12 @@ module.exports = {
     openProfileIn,
     adoptProfile,
     deleteProfiles,
+    readerContext,
+    readerPage,
+    setPreference,
+    getPreference,
+    createReaderProfile,
+    deleteProfileById,
     run,
     cleanupDatabase,
     cleanupZz,

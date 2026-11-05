@@ -41,6 +41,7 @@ function run(file) {
                 BASE_URL: base,
                 SCREENSHOT_DIR: process.env.SCREENSHOT_DIR || outDir + '/',
                 BROWSER_SUITE_START: start,
+                ...(readerId ? { READER_STATE: readerFile } : {}),
             },
             stdio: ['ignore', 'pipe', 'pipe'],
         });
@@ -59,7 +60,16 @@ function run(file) {
     });
 }
 
+// With profiles on, one throwaway reader profile for the whole run (lib.readerContext); deleted through Admin at the end.
+const readerFile = path.join(outDir, 'reader-state.json');
+let readerId = null;
+
 (async () => {
+    fs.rmSync(readerFile, { force: true });
+    if (lib.adminPassword && (await lib.profilesEnabled())) {
+        readerId = await lib.createReaderProfile(readerFile);
+        console.log(`Reader profile ${readerId} for checks that read pages as a visitor`);
+    }
     console.log(`Running ${files.length} browser checks against ${base} (${jobs} at a time)`);
     const queue = [...files];
     const results = [];
@@ -79,6 +89,14 @@ function run(file) {
     console.log(
         `\n${results.length - failed.length - skipped} passed, ${failed.length} failed, ${skipped} skipped; logs in ${outDir}`,
     );
+    if (readerId) {
+        try {
+            await lib.deleteProfileById(readerId);
+        } catch (e) {
+            console.log(`Could not delete reader profile ${readerId} through Admin: ${e.message.split('\n')[0]}`);
+        }
+        fs.rmSync(readerFile, { force: true });
+    }
     const cleanup = lib.cleanupZz(start);
     console.log('\n' + cleanup.text);
     process.exitCode = failed.length || (cleanup.ran && !cleanup.ok) ? 1 : 0;
