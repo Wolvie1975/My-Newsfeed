@@ -11,8 +11,8 @@ public class NewsSectionTests
     public void Tabs_follow_the_design_order_and_kansas_city_has_its_own_page()
     {
         var tabs = SectionChoices.News([
-            new FeedCategory(2627, "U.S. News", 0), new FeedCategory(5950, "Kansas City News", 0),
-            new FeedCategory(6444, "Business", 0), new FeedCategory(5877, "Top Headlines", 0), new FeedCategory(6022, "Opinion", 0),
+            new FeedCategory(2627, "U.S. News"), new FeedCategory(5950, "Kansas City News"),
+            new FeedCategory(6444, "Business"), new FeedCategory(5877, "Top Headlines"), new FeedCategory(6022, "Opinion"),
         ]);
         Assert.Equal(["News home", "All headlines", "Top Headlines", "Kansas City", "Opinion", "U.S. News", "Business"],
             tabs.Select(t => t.Label));

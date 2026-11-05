@@ -34,7 +34,7 @@ public class FeedQueryTests
         var other = new Source { Url = $"https://test.invalid/{token}/other", Enabled = true };
         db.Sources.AddRange(source, empty, disabled, other);
         await db.SaveChangesAsync();
-        Assert.Contains(await FeedQuery.GetCategoriesAsync(db), c => c.Id == category.Id && c.Count == 0);
+        Assert.Contains(await FeedQuery.GetCategoriesAsync(db), c => c.Id == category.Id);
         Assert.Equal(new[] { empty.Id, source.Id }, (await FeedQuery.GetSourcesAsync(db, category.Id)).Select(s => s.Id));
         var date = new DateTime(2026, 10, 18);
         source.Pages.Add(NewPage(token, "Newest", date, date));
@@ -187,7 +187,6 @@ public class FeedQueryTests
 
         var mine = (await FeedQuery.GetCategoriesAsync(db)).Where(c => c.Name.EndsWith(token)).ToList();
         Assert.Equal(used.CategoryName, Assert.Single(mine).Name);
-        Assert.Equal(1, mine[0].Count);
     }
 
     [Fact]
@@ -220,10 +219,28 @@ public class FeedQueryTests
         var inTech = await FeedQuery.GetFeedAsync(db, tech.Id, token, null);
         Assert.Equal(2, inTech.Total);
         Assert.All(inTech.Items, i => Assert.Equal(tech.CategoryName, i.CategoryName));
+    }
 
-        var counts = (await FeedQuery.GetCategoriesAsync(db)).Where(c => c.Name.EndsWith(token)).ToDictionary(c => c.Name, c => c.Count);
-        Assert.Equal(1, counts[news.CategoryName]);
-        Assert.Equal(2, counts[tech.CategoryName]);
+    [Fact]
+    public async Task A_hubs_story_count_covers_its_categories_enabled_sources_only()
+    {
+        await using var db = Create();
+        await using var tx = await db.Database.BeginTransactionAsync();
+        var token = Guid.NewGuid().ToString("N");
+        var before = await FeedQuery.CountHubStoriesAsync(db, "tech");
+        var category = new SourceCategory { CategoryName = "zz " + token, NewsHub = "tech", DateAdded = DateTime.UtcNow };
+        var on = new Source { Url = $"https://test.invalid/{token}/on", Enabled = true, SourceCategory = category };
+        var off = new Source { Url = $"https://test.invalid/{token}/off", Enabled = false, SourceCategory = category };
+        var elsewhere = new Source { Url = $"https://test.invalid/{token}/news", Enabled = true };
+        var date = new DateTime(2026, 11, 5);
+        on.Pages.Add(NewPage(token, "One", date, date));
+        on.Pages.Add(NewPage(token, "Two", date, date));
+        off.Pages.Add(NewPage(token, "Hidden", date, date));
+        elsewhere.Pages.Add(NewPage(token, "Other hub", date, date));
+        db.Sources.AddRange(on, off, elsewhere);
+        await db.SaveChangesAsync();
+
+        Assert.Equal(before + 2, await FeedQuery.CountHubStoriesAsync(db, "tech"));
     }
 
     [Fact]

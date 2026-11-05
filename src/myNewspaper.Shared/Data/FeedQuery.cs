@@ -19,7 +19,7 @@ public sealed record FeedItem(
     public string Title { get; init; } = FeedText.StripTitleLabel(Title);
 }
 
-public sealed record FeedCategory(int Id, string Name, int Count, string Hub = "headlines");
+public sealed record FeedCategory(int Id, string Name, string Hub = "headlines");
 public sealed record FeedSource(int Id, string Name);
 
 /// <summary>
@@ -71,7 +71,7 @@ public static class FeedQuery
         db.SourceCategories.AsNoTracking()
             .Where(c => c.NewsHub == hub && (name != null ? c.CategoryName == name : c.Id == id)
                 && db.Sources.Any(s => s.Enabled && s.SourceCategoryId == c.Id))
-            .Select(c => new FeedCategory(c.Id, c.CategoryName, 0, c.NewsHub)).SingleOrDefaultAsync(ct);
+            .Select(c => new FeedCategory(c.Id, c.CategoryName, c.NewsHub)).SingleOrDefaultAsync(ct);
 
     /// <summary>True when the source is enabled and, if a category is given, belongs to it.</summary>
     public static Task<bool> IsEnabledSourceAsync(WebScraperContext db, int sourceId, int? categoryId, CancellationToken ct = default) =>
@@ -114,20 +114,24 @@ public static class FeedQuery
             .Select(ToFeedItem)
             .ToListAsync(ct);
 
+    /// <summary>
+    /// The categories with an enabled source. Called by most pages' navigation, so it reads only SourceCategories and
+    /// Sources; it used to count every category's articles in Pages too, which only Tech's ribbon showed
+    /// (<see cref="CountHubStoriesAsync"/>).
+    /// </summary>
     public static async Task<IReadOnlyList<FeedCategory>> GetCategoriesAsync(WebScraperContext db, CancellationToken ct = default) =>
         await db.SourceCategories.AsNoTracking()
-            .Select(c => new
-            {
-                c.Id,
-                c.CategoryName,
-                c.NewsHub,
-                Count = db.Pages.Count(p => p.Source.Enabled && p.Source.SourceCategoryId == c.Id),
-            })
+            .Select(c => new { c.Id, c.CategoryName, c.NewsHub })
             .Where(c => db.Sources.Any(s => s.Enabled && s.SourceCategoryId == c.Id))
             .OrderBy(c => c.CategoryName == "Top Headlines" ? 0 : 1)
             .ThenBy(c => c.CategoryName)
-            .Select(c => new FeedCategory(c.Id, c.CategoryName, c.Count, c.NewsHub))
+            .Select(c => new FeedCategory(c.Id, c.CategoryName, c.NewsHub))
             .ToListAsync(ct);
+
+    /// <summary>All stored articles from a hub's enabled sources (the Tech front's "N stories").</summary>
+    public static Task<int> CountHubStoriesAsync(WebScraperContext db, string hub, CancellationToken ct = default) =>
+        // A source without a category has a NULL hub in SQL, which never equals hub, so no null check is needed.
+        db.Pages.CountAsync(p => p.Source.Enabled && p.Source.SourceCategory!.NewsHub == hub, ct);
 
     /// <summary>Enabled sources remain selectable before their first articles arrive.</summary>
     public static async Task<IReadOnlyList<FeedSource>> GetSourcesAsync(WebScraperContext db, int? categoryId, bool headlinesOnly = false, string? hub = null, CancellationToken ct = default) =>

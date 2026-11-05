@@ -284,8 +284,7 @@
             foreach (var category in NewsSections.TechCategories)
                 desks[category] = await TechQuery.LatestAsync(db, 4, category, Ct);
 
-            var categories = (await FeedQuery.GetCategoriesAsync(db, Ct)).Where(c => c.Hub == "tech").ToList();
-            total = categories.Sum(c => c.Count);
+            total = await FeedQuery.CountHubStoriesAsync(db, "tech", Ct);
             sourceCount = await TechQuery.SourceCountAsync(db, Ct);
 
             var todayDow = Dates.TodayAt(nowUtc).DayOfWeek;

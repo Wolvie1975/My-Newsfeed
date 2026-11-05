@@ -65,7 +65,7 @@
     [SupplyParameterFromQuery(Name="after")] private string? After {get;set;}
     private FeedPage feed = new([],0,0,null);
     // If the database can't be read, the tabs still lead home, to every headline and back here.
-    private IReadOnlyList<NavigationChoice> newsTabs = SectionChoices.News([new FeedCategory(0, SectionChoices.NewsKansasCityCategory, 0)]);
+    private IReadOnlyList<NavigationChoice> newsTabs = SectionChoices.News([new FeedCategory(0, SectionChoices.NewsKansasCityCategory)]);
     private bool dedicated;
     private string? error;
     protected override async Task OnParametersSetAsync() {

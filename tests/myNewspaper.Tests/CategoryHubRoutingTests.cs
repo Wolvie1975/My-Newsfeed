@@ -9,9 +9,9 @@ public class CategoryHubRoutingTests
     [InlineData("entertainment", "entertainment/news/category-42")]
     [InlineData("tech", "tech/news/category-42")]
     public void Arbitrary_categories_route_by_saved_hub_and_stable_id(string hub, string? route) =>
-        Assert.Equal(route, NewsSections.RouteFor(new FeedCategory(42, "Any future category", 0, hub)));
+        Assert.Equal(route, NewsSections.RouteFor(new FeedCategory(42, "Any future category", hub)));
     [Fact]
-    public void Assigned_hub_overrides_legacy_name() => Assert.Equal("entertainment/news/category-7", NewsSections.RouteFor(new FeedCategory(7, "Sports", 0, "entertainment")));
+    public void Assigned_hub_overrides_legacy_name() => Assert.Equal("entertainment/news/category-7", NewsSections.RouteFor(new FeedCategory(7, "Sports", "entertainment")));
     [Theory]
     [InlineData(null)]
     [InlineData("")]
