@@ -7,7 +7,7 @@ const base = lib.base,
 (async () => {
     const b = await chromium.launch();
     try {
-        const p = await b.newPage();
+        const p = await lib.readerPage(b);
         if (process.env.PREVIEW_CSS)
             await p.route('**/public*.css', (r) =>
                 r.fulfill({ contentType: 'text/css', body: fs.readFileSync(process.env.PREVIEW_CSS, 'utf8') }),

@@ -55,11 +55,17 @@ const widths = lib.widths('320,390,430,744,820,1024,1440');
             await p.waitForURL('**/settings');
             await settle(p);
         };
+        // Settings opens with its panels closed; open one the way a person would before using it.
+        const openPanel = async (id) => {
+            const panel = p.locator(`details#${id}, details:has(#${id})`).first();
+            if (!(await panel.evaluate((n) => n.open))) await panel.locator('summary').first().click();
+        };
         await open(person.pin);
         assert(await p.locator('#profile-heading').isVisible(), 'Your profile section');
         assert.equal(await p.locator('#profile-name').inputValue(), person.name);
 
         // Color, then this device's picker.
+        await openPanel('profile');
         await p.locator('.set-color', { hasText: 'Violet' }).click();
         await p.getByRole('button', { name: 'Save name and color' }).click();
         await p.getByText('Name and color saved.').waitFor();
@@ -71,6 +77,7 @@ const widths = lib.widths('320,390,430,744,820,1024,1440');
 
         // Change PIN: a wrong current PIN says how many tries are left; the right one changes it.
         const pin = async (current, next) => {
+            await openPanel('profile');
             await p.locator('#pin-current').fill(current);
             await p.locator('#pin-new').fill(next);
             await p.locator('#pin-confirm').fill(next);
@@ -83,6 +90,7 @@ const widths = lib.widths('320,390,430,744,820,1024,1440');
         await p.getByText('PIN changed.').waitFor();
 
         // TV: follow a tracked show from Settings, see it listed, unfollow it.
+        await openPanel('shows');
         await p.locator('#tv-query').fill(show);
         await p.locator('.tv-search button[type="submit"]').click();
         await settle(p);
@@ -110,6 +118,7 @@ const widths = lib.widths('320,390,430,744,820,1024,1440');
         await p.getByText('Unfollowed.').waitFor();
 
         // Household channels: switch the first one off and back on.
+        await openPanel('channels');
         const channel = p.locator('.set-rows[aria-label="Household channels"] [role="switch"]').first();
         if (await channel.count()) {
             await p.locator('summary', { hasText: 'All household channels' }).click();
@@ -124,6 +133,7 @@ const widths = lib.widths('320,390,430,744,820,1024,1440');
         } else console.log('Note: no household channels here; switches not checked.');
 
         // A request shows under Your requests as Waiting.
+        await openPanel('requests');
         await p.locator('input[name="kind"][value="news"]').check();
         await p.locator('#request-name').fill('zz request ' + tag);
         await p.getByRole('button', { name: 'Send request' }).click();

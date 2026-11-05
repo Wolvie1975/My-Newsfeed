@@ -143,12 +143,22 @@ const legacy = {
         // The imported home sections apply on the home page: Opinion is hidden for Cy, on a device that never had it.
         await two.page.goto(base + '/');
         await settle(two.page);
-        assert.equal(
-            await two.page.locator('[data-home-section="opinion"]').evaluate((n) => n.hidden),
-            true,
+        // Home renders the desktop and the phone front; the setting applies to every copy of a section.
+        const hidden = async (key) => {
+            const flags = await two.page
+                .locator(`[data-home-section="${key}"]`)
+                .evaluateAll((ns) => ns.map((n) => n.hidden));
+            assert(flags.length > 0, `home section ${key} present`);
+            return flags;
+        };
+        assert(
+            (await hidden('opinion')).every((h) => h),
             'imported hidden section',
         );
-        assert.equal(await two.page.locator('[data-home-section="news"]').evaluate((n) => n.hidden), false);
+        assert(
+            (await hidden('news')).every((h) => !h),
+            'news stays shown',
+        );
         await two.page.goto(base + '/settings#appearance-heading');
         await settle(two.page);
         await two.page.locator('input[data-theme-mode][value="light"]').check();

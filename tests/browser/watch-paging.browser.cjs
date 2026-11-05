@@ -5,7 +5,7 @@ const base = lib.base;
 (async () => {
     const browser = await chromium.launch();
     try {
-        const page = await browser.newPage();
+        const page = await lib.readerPage(browser);
         const ids = () => page.locator('[data-watch-title]').evaluateAll((ns) => ns.map((n) => n.getAttribute('href')));
         await page.goto(base + '/watch?kind=tv&sort=title');
         const first = await ids();

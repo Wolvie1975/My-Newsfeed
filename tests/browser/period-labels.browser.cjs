@@ -14,7 +14,7 @@ const samples = [
 (async () => {
     const browser = await chromium.launch();
     try {
-        const page = await browser.newPage();
+        const page = await lib.readerPage(browser);
         const errors = [];
         page.on('pageerror', (e) => errors.push(e.message));
         for (const [path, labels] of samples) {

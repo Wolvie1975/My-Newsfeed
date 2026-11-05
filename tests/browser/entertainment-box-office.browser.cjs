@@ -7,7 +7,7 @@ const base = lib.base,
     const browser = await chromium.launch();
     try {
         for (const js of [true, false]) {
-            const p = await browser.newPage({ javaScriptEnabled: js });
+            const p = await lib.readerPage(browser, { javaScriptEnabled: js });
             const errors = [];
             p.on('pageerror', (e) => errors.push(e.message));
             for (const route of ['/box-office', '/box-office/weekend-preview', '/box-office/movie-forecasts'])

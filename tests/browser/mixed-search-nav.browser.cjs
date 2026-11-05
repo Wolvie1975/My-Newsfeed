@@ -9,7 +9,7 @@ const base = lib.base;
             : [],
     });
     try {
-        const page = await browser.newPage();
+        const page = await lib.readerPage(browser);
         const errors = [];
         page.on('pageerror', (e) => errors.push(e.message));
         await page.goto(base + '/watch?kind=tv');

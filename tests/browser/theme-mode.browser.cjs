@@ -6,7 +6,7 @@ const assert = require('node:assert/strict');
 (async () => {
     const browser = await chromium.launch({ headless: true });
     try {
-        const context = await browser.newContext({ timezoneId: 'Asia/Tokyo', colorScheme: 'dark' });
+        const context = await lib.readerContext(browser, { timezoneId: 'Asia/Tokyo', colorScheme: 'dark' });
         const page = await context.newPage();
         const errors = [];
         page.on('pageerror', (error) => errors.push(error.message));
@@ -64,7 +64,7 @@ const assert = require('node:assert/strict');
         await page.setViewportSize({ width: 390, height: 844 });
         assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
         assert.deepEqual(errors, []);
-        const blocked = await browser.newContext();
+        const blocked = await lib.readerContext(browser);
         await blocked.addInitScript(() => {
             Storage.prototype.getItem = Storage.prototype.setItem = () => {
                 throw new Error('Blocked storage');

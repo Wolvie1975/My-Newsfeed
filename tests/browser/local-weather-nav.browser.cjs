@@ -7,7 +7,7 @@ const base = lib.base;
     const browser = await chromium.launch();
     try {
         for (const from of ['/news', '/news/all', '/', '/sports']) {
-            const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+            const page = await lib.readerPage(browser, { viewport: { width: 1440, height: 1000 } });
             const errors = [];
             page.on('pageerror', (e) => errors.push(e.message));
             await page.route('**/local/weather*', (r) =>

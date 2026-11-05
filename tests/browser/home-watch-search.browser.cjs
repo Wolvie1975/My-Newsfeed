@@ -6,7 +6,7 @@ const base = lib.base;
     const browser = await chromium.launch();
     try {
         for (const javaScriptEnabled of [true, false]) {
-            const context = await browser.newContext({ javaScriptEnabled });
+            const context = await lib.readerContext(browser, { javaScriptEnabled });
             const page = await context.newPage();
             const errors = [];
             page.on('pageerror', (e) => errors.push(e.message));

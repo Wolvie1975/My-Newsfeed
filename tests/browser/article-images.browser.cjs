@@ -39,7 +39,10 @@ async function ready(page, story, quality) {
         for (const width of [320, 390, 430, 744, 1440]) {
             for (const theme of lib.THEMES) {
                 for (const kind of ['wide', 'standard', 'square', 'compact', 'portrait', 'tiny', 'broken']) {
-                    const context = await browser.newContext({ viewport: { width, height: 1000 }, colorScheme: theme });
+                    const context = await lib.readerContext(browser, {
+                        viewport: { width, height: 1000 },
+                        colorScheme: theme,
+                    });
                     await context.addInitScript(
                         ({ theme }) => {
                             localStorage.setItem('theme', theme);
@@ -120,7 +123,10 @@ async function ready(page, story, quality) {
         for (const width of [390, 1440])
             for (const theme of lib.THEMES)
                 for (const kind of ['wide', 'compact', 'broken']) {
-                    const context = await browser.newContext({ viewport: { width, height: 1000 }, colorScheme: theme });
+                    const context = await lib.readerContext(browser, {
+                        viewport: { width, height: 1000 },
+                        colorScheme: theme,
+                    });
                     await context.addInitScript((theme) => localStorage.setItem('theme', theme), theme);
                     await context.route('**/*', (route) => {
                         if (
@@ -184,7 +190,7 @@ async function ready(page, story, quality) {
                     }
                     await context.close();
                 }
-        const largeScreen = await browser.newContext({ viewport: { width: 2560, height: 1200 } });
+        const largeScreen = await lib.readerContext(browser, { viewport: { width: 2560, height: 1200 } });
         await largeScreen.route('**/*', (route) => {
             if (
                 route.request().resourceType() !== 'image' ||
@@ -206,7 +212,7 @@ async function ready(page, story, quality) {
         await ready(largePage, largePage.locator(selector).filter({ visible: true }).first(), 'wide');
         await largeScreen.close();
         // The known BBC higher-resolution candidate must fall back once to its original thumbnail.
-        const context = await browser.newContext({ viewport: { width: 390, height: 1000 } });
+        const context = await lib.readerContext(browser, { viewport: { width: 390, height: 1000 } });
         let preferredRequests = 0;
         await context.route('https://ichef.bbci.co.uk/**', (route) => {
             if (route.request().url().includes('/standard/1024/')) {
@@ -331,7 +337,10 @@ async function ready(page, story, quality) {
         // Blazor enhanced navigation can activate a noscript stylesheet link.
         for (const width of [320, 390, 430, 744, 1440]) {
             for (const theme of lib.THEMES) {
-                const navContext = await browser.newContext({ viewport: { width, height: 1000 }, colorScheme: theme });
+                const navContext = await lib.readerContext(browser, {
+                    viewport: { width, height: 1000 },
+                    colorScheme: theme,
+                });
                 await navContext.route('**/*', (route) => {
                     if (
                         route.request().resourceType() !== 'image' ||
@@ -377,7 +386,7 @@ async function ready(page, story, quality) {
         }
         // Without JS, even large images stay modest; failed images leave no large blank region.
         for (const broken of [false, true]) {
-            const plain = await browser.newContext({
+            const plain = await lib.readerContext(browser, {
                 viewport: { width: 390, height: 1000 },
                 javaScriptEnabled: false,
             });

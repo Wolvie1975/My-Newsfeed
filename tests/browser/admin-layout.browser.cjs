@@ -101,7 +101,7 @@ const widths = lib.widths('320,390,430,744,820,1024,1440');
         await open('/admin/sources');
         await p.locator('label[for="adm-menu-toggle"]').click();
         assert(await p.locator('.adm-side').isVisible(), 'menu opens');
-        assert.equal(await p.locator('.adm-nav__link.active').innerText(), 'Sources');
+        assert.equal(await p.locator('.adm-nav__link.active .adm-nav__text').innerText(), 'Sources');
         await p.locator('label[for="adm-menu-toggle"]').click();
         assert(await p.locator('.adm-side').isHidden(), 'menu closes');
 

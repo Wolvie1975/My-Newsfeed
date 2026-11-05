@@ -6,7 +6,7 @@ const base = lib.base,
 (async () => {
     const b = await chromium.launch();
     try {
-        const p = await b.newPage(),
+        const p = await lib.readerPage(b),
             errors = [];
         p.on('pageerror', (e) => errors.push(e.message));
         for (const route of ['sports', 'entertainment'])
@@ -106,7 +106,7 @@ const base = lib.base,
         await p.keyboard.press('Escape');
         await p.getByRole('dialog').waitFor({ state: 'detached' });
         assert(await share.evaluate((n) => document.activeElement === n));
-        const plain = await b.newPage({ javaScriptEnabled: false, viewport: { width: 390, height: 950 } });
+        const plain = await lib.readerPage(b, { javaScriptEnabled: false, viewport: { width: 390, height: 950 } });
         for (const route of ['sports', 'entertainment']) {
             await plain.goto(base + '/news');
             await plain.locator('.mobile-nav > summary').click();

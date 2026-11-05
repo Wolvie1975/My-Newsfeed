@@ -7,7 +7,7 @@ const base = lib.base;
     const b = await chromium.launch();
     try {
         for (const js of [true, false]) {
-            const p = await b.newPage({ javaScriptEnabled: js });
+            const p = await lib.readerPage(b, { javaScriptEnabled: js });
             const errors = [];
             p.on('pageerror', (e) => errors.push(e.message));
             for (const width of [744, 768, 1440])

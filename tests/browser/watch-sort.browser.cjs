@@ -5,7 +5,7 @@ const base = lib.base;
 (async () => {
     const browser = await chromium.launch();
     try {
-        const page = await browser.newPage();
+        const page = await lib.readerPage(browser);
         const compare = new Intl.Collator('en', { sensitivity: 'base' }).compare;
         const param = (n) => new URL(page.url()).searchParams.get(n);
         await page.goto(base + '/watch?kind=tv&q=Breaking%20Bad&sort=title');
@@ -84,7 +84,7 @@ const base = lib.base;
         assert.equal(await page.locator('#watch-sort').inputValue(), 'services');
         await page.setViewportSize({ width: 390, height: 900 });
         assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
-        const plain = await browser.newContext({ javaScriptEnabled: false });
+        const plain = await lib.readerContext(browser, { javaScriptEnabled: false });
         const p = await plain.newPage();
         await p.goto(base + '/watch?q=Arrival');
         await p.locator('#watch-sort').selectOption('popular');

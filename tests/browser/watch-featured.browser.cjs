@@ -7,7 +7,7 @@ const base = lib.base;
     try {
         for (const width of [320, 390, 430, 1440])
             for (const theme of lib.THEMES) {
-                const page = await browser.newPage({ viewport: { width, height: 1000 }, colorScheme: theme });
+                const page = await lib.readerPage(browser, { viewport: { width, height: 1000 }, colorScheme: theme });
                 const errors = [];
                 page.on('pageerror', (e) => errors.push(e.message));
                 await page.goto(base + '/watch?services=8,9,337');
@@ -76,7 +76,10 @@ const base = lib.base;
                 assert.deepEqual(errors, []);
                 await page.close();
             }
-        const plain = await browser.newPage({ javaScriptEnabled: false, viewport: { width: 390, height: 900 } });
+        const plain = await lib.readerPage(browser, {
+            javaScriptEnabled: false,
+            viewport: { width: 390, height: 900 },
+        });
         await plain.goto(base + '/watch');
         assert.equal(await plain.locator('#watch-row-services').count(), 0);
         assert.equal(await plain.locator('.mx-desktop [data-watch-row]').count(), 3);

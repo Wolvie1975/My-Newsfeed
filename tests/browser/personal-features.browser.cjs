@@ -9,7 +9,7 @@ const base = lib.base;
             : [],
     });
     try {
-        const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
+        const context = await lib.readerContext(browser, { viewport: { width: 1440, height: 1000 } });
         const page = await context.newPage(),
             errors = [];
         page.on('pageerror', (e) => errors.push(e.message));
@@ -84,11 +84,11 @@ const base = lib.base;
                 savedUrl,
             );
         }
-        const noJs = await browser.newContext({ javaScriptEnabled: false }),
+        const noJs = await lib.readerContext(browser, { javaScriptEnabled: false }),
             plain = await noJs.newPage();
         for (const path of ['/news/kansas-city', '/tv']) assert.equal((await plain.goto(base + path)).status(), 200);
         await noJs.close();
-        const blocked = await browser.newContext();
+        const blocked = await lib.readerContext(browser);
         await blocked.addInitScript(() => {
             Storage.prototype.setItem = function () {
                 throw Error('blocked');

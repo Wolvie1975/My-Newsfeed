@@ -9,13 +9,13 @@ const shots = lib.screenshots('home-scoreboard-sport');
 (async () => {
     const browser = await chromium.launch();
     try {
-        const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+        const page = await lib.readerPage(browser, { viewport: { width: 1440, height: 900 } });
         const errors = [];
         page.on('pageerror', (e) => errors.push(e.message));
 
         // The Sports page shares the compact box but has no Sport filter, ignores the homepage's parameter, and stays
         // unfiltered after its own refresh.
-        const sports = await browser.newPage({ viewport: { width: 820, height: 900 } });
+        const sports = await lib.readerPage(browser, { viewport: { width: 820, height: 900 } });
         await sports.goto(base + '/sports?scoreboardShow=' + encodeURIComponent('c:hockey|nhl'));
         const sportsBox = sports.locator('[data-scoreboard]').first();
         await sportsBox.waitFor();
@@ -125,7 +125,10 @@ const shots = lib.screenshots('home-scoreboard-sport');
         // Phones, light and dark: the dropdown fits, with no sideways scrolling.
         for (const scheme of lib.THEMES)
             for (const width of [1024, 1280]) {
-                const context = await browser.newContext({ viewport: { width, height: 900 }, colorScheme: scheme });
+                const context = await lib.readerContext(browser, {
+                    viewport: { width, height: 900 },
+                    colorScheme: scheme,
+                });
                 const p = await context.newPage();
                 p.on('pageerror', (e) => errors.push(e.message));
                 await p.goto(base + '/?scoreboardShow=' + encodeURIComponent(kept.value));
@@ -147,7 +150,10 @@ const shots = lib.screenshots('home-scoreboard-sport');
             }
 
         // Without JavaScript, the dropdown and Apply load the filtered page.
-        const plain = await browser.newContext({ javaScriptEnabled: false, viewport: { width: 820, height: 900 } });
+        const plain = await lib.readerContext(browser, {
+            javaScriptEnabled: false,
+            viewport: { width: 820, height: 900 },
+        });
         const p = await plain.newPage();
         await p.goto(base + '/');
         await p.locator('#home-scoreboard-show').selectOption(kept.value);

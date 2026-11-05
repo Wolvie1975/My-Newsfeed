@@ -38,7 +38,7 @@ const base = lib.base;
         await button.click();
     }
     try {
-        const emptyContext = await browser.newContext();
+        const emptyContext = await lib.readerContext(browser);
         const emptyPage = await emptyContext.newPage();
         await emptyPage.route('**/api/saved', (route) =>
             route.fulfill({ contentType: 'application/json', body: '{"articles":[],"token":"empty-test"}' }),
@@ -50,8 +50,8 @@ const base = lib.base;
             0,
         );
         await emptyContext.close();
-        const first = await browser.newContext(),
-            second = await browser.newContext();
+        const first = await lib.readerContext(browser),
+            second = await lib.readerContext(browser);
         await first.addInitScript(
             ({ url }) => {
                 if (!localStorage.getItem('shared-test-seeded')) {
@@ -107,7 +107,7 @@ const base = lib.base;
             ];
         });
         assert.deepEqual(statuses, [400, 400]);
-        const blocked = await browser.newContext();
+        const blocked = await lib.readerContext(browser);
         await blocked.addInitScript(() => {
             Storage.prototype.setItem = function () {
                 throw new Error('blocked');

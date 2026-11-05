@@ -33,7 +33,7 @@ const data = (location) => ({
     });
     try {
         for (const mode of ['success', 'denied', 'timeout', 'unavailable', 'unsupported', 'reset-pending']) {
-            const context = await browser.newContext({
+            const context = await lib.readerContext(browser, {
                 permissions: ['geolocation'],
                 geolocation: { latitude: 40.7128, longitude: -74.006 },
             });
@@ -112,14 +112,14 @@ const data = (location) => ({
             assert.deepEqual(errors, []);
             await context.close();
         }
-        const plain = await browser.newContext({ javaScriptEnabled: false });
+        const plain = await lib.readerContext(browser, { javaScriptEnabled: false });
         const p = await plain.newPage();
         await p.goto(base + '/news/kansas-city');
         assert(await p.getByRole('button', { name: 'Use my location', exact: true }).isHidden());
         assert((await p.locator('[data-weather-link]').getAttribute('href')).includes('39.0997'));
         await plain.close();
         const apiBase = process.env.API_BASE_URL || base;
-        const apiPage = await browser.newPage();
+        const apiPage = await lib.readerPage(browser);
         for (const query of ['?lat=91&lon=0', '?lat=1', '?lat=NaN&lon=0', '?lat=0&lon=-181'])
             assert.equal((await apiPage.request.get(apiBase + '/local/weather' + query)).status(), 400);
         const response = await apiPage.request.get(apiBase + '/local/weather?lat=40.71&lon=-74.01');

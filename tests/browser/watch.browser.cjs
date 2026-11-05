@@ -5,7 +5,7 @@ const base = lib.base;
 (async () => {
     const browser = await chromium.launch();
     try {
-        const page = await browser.newPage();
+        const page = await lib.readerPage(browser);
         const errors = [];
         page.on('pageerror', (e) => errors.push(e.message));
         await page.goto(base + '/watch');
@@ -56,7 +56,7 @@ const base = lib.base;
         assert(await page.locator('dialog a').count());
         await page.keyboard.press('Escape');
         await page.unroute('**/watch/movie/*');
-        const plain = await browser.newContext({ javaScriptEnabled: false });
+        const plain = await lib.readerContext(browser, { javaScriptEnabled: false });
         const p = await plain.newPage();
         await p.goto(base + '/watch?q=Arrival');
         await p.locator('[data-watch-title]').first().click();

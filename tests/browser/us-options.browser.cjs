@@ -5,7 +5,7 @@ const base = lib.base;
 (async () => {
     const browser = await chromium.launch();
     try {
-        const page = await browser.newPage();
+        const page = await lib.readerPage(browser);
         let checked = 0;
         for (const path of ['/watch?kind=movie', '/watch?kind=tv', '/watch?kind=movie&q=Arrival']) {
             await page.goto(base + path);

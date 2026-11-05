@@ -10,7 +10,7 @@ const total = async (p) => Number((await p.locator('.filters--videos .count').in
 (async () => {
     const browser = await chromium.launch();
     try {
-        const p = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+        const p = await lib.readerPage(browser, { viewport: { width: 1440, height: 1000 } });
         const errors = [];
         p.on('pageerror', (e) => errors.push(e.message));
         await p.goto(base + '/videos');

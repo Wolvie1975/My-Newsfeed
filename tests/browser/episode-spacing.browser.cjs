@@ -106,6 +106,9 @@ const shots = lib.screenshots('episode-spacing');
                     await page.waitForLoadState('networkidle');
                     await fixture(page);
                     await layout(page);
+                } else if (width >= 744) {
+                    // 744–1023px is the tablet front (tablet-layout.browser.cjs checks it); phones are below 744.
+                    assert(await page.locator('.tab-desktop').isVisible(), 'Tablet Home from 744px');
                 } else {
                     assert(await page.locator('.mx-phone').isVisible());
                     const fold = page.locator('.mx-phone details').first();

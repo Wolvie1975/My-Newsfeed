@@ -5,7 +5,7 @@ const base = lib.base;
 (async () => {
     const browser = await chromium.launch();
     try {
-        const page = await browser.newPage();
+        const page = await lib.readerPage(browser);
         const errors = [];
         page.on('pageerror', (e) => errors.push(e.message));
         // Which providers are enabled is admin data; read it from the page, then check canonicalization against it.

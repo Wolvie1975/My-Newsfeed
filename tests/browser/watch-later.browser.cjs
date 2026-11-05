@@ -4,7 +4,7 @@ const assert = require('node:assert/strict');
 const base = lib.base;
 (async () => {
     const browser = await chromium.launch();
-    const context = await browser.newContext();
+    const context = await lib.readerContext(browser);
     const page = await context.newPage();
     let added = false,
         url;
@@ -34,7 +34,7 @@ const base = lib.base;
         await button.click();
         added = true;
         await page.locator(`[data-save][data-url="${url}"][aria-pressed="true"]:visible`).waitFor();
-        const second = await browser.newContext();
+        const second = await lib.readerContext(browser);
         const other = await second.newPage();
         await other.goto(base + '/saved');
         const card = other.locator('article').filter({ has: other.locator(`a[href="${url}"]`) });

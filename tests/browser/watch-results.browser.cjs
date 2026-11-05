@@ -10,7 +10,7 @@ const root = lib.screenshots('watch-results');
     const browser = await chromium.launch();
     try {
         for (const js of [true, false]) {
-            const page = await browser.newPage({ javaScriptEnabled: js });
+            const page = await lib.readerPage(browser, { javaScriptEnabled: js });
             const errors = [];
             page.on('pageerror', (error) => errors.push(error.message));
             for (const width of [320, 390, 430, 768, 1440]) {

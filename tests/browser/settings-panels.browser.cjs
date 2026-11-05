@@ -87,7 +87,8 @@ const password = lib.adminPassword;
                     assert(await panel.evaluate((n) => n.open), 'keyboard opens');
                     await summary.click();
                 }
-                if (width < 500) {
+                // The phone jump menu below the index breakpoint (tablets included), the side index from there.
+                if (await p.locator('#settings-jump-m').isVisible()) {
                     await p.locator('#settings-jump-m').selectOption('/settings#color-scheme-heading');
                 } else await p.locator('.set-index a[href="settings#color-scheme-heading"]').click();
                 const colors = p.locator('[data-settings-section="colors"]');
@@ -102,7 +103,8 @@ const password = lib.adminPassword;
                 assert(await colors.evaluate((n) => n.open), 'deep link opens after reload');
                 assert(await colors.locator('[data-color-scheme][value="monochrome"]').isChecked(), 'saved scheme');
                 await colors.locator('summary').click();
-                if (width < 500) {
+                // The phone jump menu below the index breakpoint (tablets included), the side index from there.
+                if (await p.locator('#settings-jump-m').isVisible()) {
                     await p.locator('#settings-jump-m').selectOption('/settings#appearance-heading');
                     await p.locator('#settings-jump-m').selectOption('/settings#color-scheme-heading');
                 } else await p.locator('.set-index a[href="settings#color-scheme-heading"]').click();

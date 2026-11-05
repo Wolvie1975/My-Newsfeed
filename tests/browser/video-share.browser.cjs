@@ -6,7 +6,7 @@ const base = lib.base;
     const browser = await chromium.launch();
     try {
         for (const mobile of [false, true]) {
-            const context = await browser.newContext({
+            const context = await lib.readerContext(browser, {
                 viewport: { width: mobile ? 390 : 1440, height: 900 },
                 ...(mobile
                     ? {

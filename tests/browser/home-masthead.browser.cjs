@@ -201,6 +201,9 @@ const shots = lib.screenshots('home-masthead');
                     assert(await page.locator('.bs-watch').isVisible());
                     assert(await page.locator('.bs-title__name').isVisible(), 'Original desktop masthead retained');
                     assert(!(await page.locator('.site-header .brand').isVisible()), 'Original Home header retained');
+                } else if (width >= 744) {
+                    // 744–1023px is the tablet front (tablet-layout.browser.cjs checks it); phones are below 744.
+                    assert(await page.locator('.tab-desktop').isVisible(), 'Tablet Home from 744px');
                 } else {
                     const phone = page.locator('.mx-phone');
                     assert(await phone.isVisible());

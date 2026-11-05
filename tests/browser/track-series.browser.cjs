@@ -6,7 +6,7 @@ const adminBase = lib.adminBase;
 (async () => {
     const browser = await chromium.launch();
     try {
-        const page = await browser.newPage();
+        const page = await lib.readerPage(browser);
         await page.goto(base + '/watch/movie/329865');
         assert.equal(await page.locator('[data-track-series]').count(), 0);
         await page.goto(base + '/watch?kind=tv&q=Breaking%20Bad');
@@ -19,12 +19,21 @@ const adminBase = lib.adminBase;
         await link.click();
         await page.waitForURL('**/tv/track?**');
         assert.equal(await page.locator('#tv-query').inputValue(), 'Breaking Bad');
-        await page.waitForSelector('table tbody tr');
-        assert(await page.locator('table tbody tr').count());
-        assert((await page.locator('.alert-info').textContent()).includes('2008'));
         assert.equal(await page.locator('input[name=password]').count(), 0);
-        await page.waitForSelector('table button');
-        assert(await page.locator('table button').count());
+        if (await page.locator('.tv-results').count()) {
+            // Profiles on: the page follows a show for the open profile (TvShowSearch). Nothing is followed here.
+            const first = page.locator('.tv-results li').first();
+            assert((await first.innerText()).includes('Breaking Bad'), 'first result is the show');
+            assert((await first.innerText()).includes('2008'), 'premiere year shown');
+            assert(await first.getByRole('button', { name: /Follow/ }).count(), 'Follow button');
+        } else {
+            // Profiles off: the shared tracked-series form (SeriesFollowForm).
+            await page.waitForSelector('table tbody tr');
+            assert(await page.locator('table tbody tr').count());
+            assert((await page.locator('.alert-info').textContent()).includes('2008'));
+            await page.waitForSelector('table button');
+            assert(await page.locator('table button').count());
+        }
         await page.setViewportSize({ width: 390, height: 900 });
         assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
         const protectedResponse = await page.request.get(adminBase + '/admin/tv-series', { maxRedirects: 0 });

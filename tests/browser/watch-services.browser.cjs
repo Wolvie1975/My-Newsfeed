@@ -5,17 +5,14 @@ const base = lib.base;
 (async () => {
     const browser = await chromium.launch();
     try {
-        const page = await browser.newPage();
+        const page = await lib.readerPage(browser);
         await page.goto(base + '/settings#my-services');
         const choice = page.getByLabel('Paramount Plus Premium', { exact: true });
         assert(await choice.count());
         const id = await choice.getAttribute('value');
         await choice.check();
         await page.getByRole('button', { name: 'Save services', exact: true }).click();
-        assert.equal(
-            await page.evaluate(() => JSON.parse(localStorage.getItem('mynewsfeed-watch-services-v1'))[0]),
-            Number(id),
-        );
+        assert.equal(JSON.parse(await lib.getPreference(page, 'mynewsfeed-watch-services-v1'))[0], Number(id));
         await page.reload();
         assert(await choice.isChecked());
         await page.locator('a[href="watch"]:visible').first().click();
@@ -37,11 +34,8 @@ const base = lib.base;
         await page.setViewportSize({ width: 390, height: 900 });
         assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
         await page.locator('#my-services').getByRole('button', { name: 'Clear selections', exact: true }).click();
-        assert.deepEqual(
-            await page.evaluate(() => JSON.parse(localStorage.getItem('mynewsfeed-watch-services-v1'))),
-            [],
-        );
-        const plain = await browser.newContext({ javaScriptEnabled: false });
+        assert.deepEqual(JSON.parse(await lib.getPreference(page, 'mynewsfeed-watch-services-v1')), []);
+        const plain = await lib.readerContext(browser, { javaScriptEnabled: false });
         const p = await plain.newPage();
         await p.goto(base + '/settings');
         await p.locator('#my-services > summary').click();

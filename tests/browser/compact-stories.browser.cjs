@@ -7,7 +7,7 @@ const base = lib.base,
 (async () => {
     const b = await chromium.launch();
     try {
-        const p = await b.newPage(),
+        const p = await lib.readerPage(b),
             errors = [];
         p.on('pageerror', (e) => errors.push(e.message));
         if (process.env.PREVIEW_CSS)

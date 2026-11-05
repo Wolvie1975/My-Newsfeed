@@ -6,7 +6,7 @@ const base = lib.base;
     const browser = await chromium.launch();
     try {
         for (const js of [true, false]) {
-            const page = await browser.newPage({ javaScriptEnabled: js });
+            const page = await lib.readerPage(browser, { javaScriptEnabled: js });
             await page.goto(base + '/scoreboard');
             assert.equal(await page.locator('.scoreboard-filter select').count(), 2);
             assert.equal(await page.locator('#scoreboard-follow,#scoreboard-competition').count(), 0);

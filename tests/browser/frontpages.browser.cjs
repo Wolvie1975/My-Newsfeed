@@ -6,7 +6,7 @@ const base = lib.base,
 (async () => {
     const browser = await chromium.launch();
     try {
-        const p = await browser.newPage(),
+        const p = await lib.readerPage(browser),
             errors = [];
         p.on('pageerror', (e) => errors.push(e.message));
         for (const route of ['news/all', 'sports/news', 'entertainment/news', 'videos'])
@@ -72,7 +72,10 @@ const base = lib.base,
             if (await p.locator('[data-load-more]').count()) {
                 await p.locator('[data-load-more]').click();
                 await p.waitForFunction((n) => document.querySelectorAll('.feed .article').length > n, before);
-                const ids = await p.locator('.feed .article').evaluateAll((ns) => ns.map((n) => n.dataset.articleId));
+                // Each story is rendered in the top strip and in the grid, one of them hidden at any width: compare what shows.
+                const ids = await p
+                    .locator('.feed .article')
+                    .evaluateAll((ns) => ns.filter((n) => n.getClientRects().length).map((n) => n.dataset.articleId));
                 assert.equal(ids.length, new Set(ids).size);
             }
             if ((await p.locator('#source option').count()) > 1) {
@@ -93,7 +96,10 @@ const base = lib.base,
                 1,
             );
         }
-        const plain = await browser.newPage({ javaScriptEnabled: false, viewport: { width: 390, height: 1000 } });
+        const plain = await lib.readerPage(browser, {
+            javaScriptEnabled: false,
+            viewport: { width: 390, height: 1000 },
+        });
         for (const route of ['news/all', 'sports/news', 'entertainment/news', 'videos']) {
             await plain.goto(base + '/' + route);
             assert(await plain.evaluate(() => document.documentElement.scrollWidth <= innerWidth));

@@ -5,7 +5,7 @@ const base = lib.base;
 (async () => {
     const browser = await chromium.launch();
     try {
-        const page = await browser.newPage();
+        const page = await lib.readerPage(browser);
         const errors = [];
         page.on('pageerror', (e) => errors.push(e.message));
         const resultsPath =
@@ -66,7 +66,7 @@ const base = lib.base;
         await page.unroute('**/box-score/**');
         assert.equal((await page.request.get(base + '/box-score/football/nfl/not-an-id')).status(), 404);
         assert.equal((await page.request.get(base + '/box-score/football/nfl/99999999999999999999')).status(), 404);
-        const plain = await browser.newContext({ javaScriptEnabled: false });
+        const plain = await lib.readerContext(browser, { javaScriptEnabled: false });
         const p = await plain.newPage();
         await p.goto(base + '/mls/results');
         const normal = p.locator('[data-box-score]:visible').first();

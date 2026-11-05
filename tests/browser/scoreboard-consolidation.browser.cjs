@@ -6,7 +6,7 @@ const base = lib.base;
 (async () => {
     const browser = await chromium.launch();
     try {
-        const p = await browser.newPage();
+        const p = await lib.readerPage(browser);
         const errors = [];
         p.on('pageerror', (e) => errors.push(e.message));
         const redirect = await p.request.get(base + '/results?day=2026-10-23&follow=1', { maxRedirects: 0 });
@@ -17,7 +17,7 @@ const base = lib.base;
         assert.equal(target.searchParams.get('follow'), '1');
         assert.equal(target.searchParams.get('status'), 'final');
         for (const js of [true, false]) {
-            const page = await browser.newPage({ javaScriptEnabled: js });
+            const page = await lib.readerPage(browser, { javaScriptEnabled: js });
             for (const width of [768, 1440]) {
                 await page.setViewportSize({ width, height: 1000 });
                 await page.goto(base + '/results');

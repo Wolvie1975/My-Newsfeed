@@ -5,7 +5,7 @@ const base = lib.base;
 (async () => {
     const browser = await chromium.launch();
     try {
-        const page = await browser.newPage();
+        const page = await lib.readerPage(browser);
         const errors = [];
         page.on('pageerror', (e) => errors.push(e.message));
         for (const width of [320, 390, 768, 1440])
@@ -110,7 +110,7 @@ const base = lib.base;
         assert(requests > before);
         assert.deepEqual(errors, []);
         await page.close();
-        const nojs = await browser.newPage({ javaScriptEnabled: false });
+        const nojs = await lib.readerPage(browser, { javaScriptEnabled: false });
         await nojs.goto(base + '/scoreboard');
         assert((await nojs.locator('.scoreboard-game').count()) > 0);
         assert.equal(await nojs.locator('[data-scoreboard-team]:visible').count(), 0);

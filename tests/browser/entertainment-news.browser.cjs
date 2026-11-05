@@ -7,7 +7,7 @@ const base = lib.base,
     const browser = await chromium.launch();
     try {
         // Phone width: the category dropdown (desktop shows category pills instead).
-        const p = await browser.newPage({ viewport: { width: 390, height: 900 } });
+        const p = await lib.readerPage(browser, { viewport: { width: 390, height: 900 } });
         const errors = [];
         p.on('pageerror', (e) => errors.push(e.message));
         const categories = [],
@@ -54,7 +54,10 @@ const base = lib.base,
                 const result = await response.json();
                 if (result.nextHref) assert(result.nextHref.startsWith(route + '?'));
                 await p.waitForFunction((n) => document.querySelectorAll('.feed .article').length > n, before);
-                const ids = await p.locator('.feed .article').evaluateAll((ns) => ns.map((n) => n.dataset.articleId));
+                // Each story is rendered in the top strip and in the grid, one of them hidden at any width: compare what shows.
+                const ids = await p
+                    .locator('.feed .article')
+                    .evaluateAll((ns) => ns.filter((n) => n.getClientRects().length).map((n) => n.dataset.articleId));
                 assert.equal(ids.length, new Set(ids).size);
                 const leaked = await p.request.get(
                     base +
@@ -114,7 +117,10 @@ const base = lib.base,
         assert(!names.includes('Entertainment') && !names.includes('TV/Film'));
         const sourceIds = await p.locator('#source option').evaluateAll((ns) => ns.map((n) => n.value));
         assert(sourceIds.every((id) => !movedSources.has(id)));
-        const plain = await browser.newPage({ javaScriptEnabled: false, viewport: { width: 390, height: 900 } });
+        const plain = await lib.readerPage(browser, {
+            javaScriptEnabled: false,
+            viewport: { width: 390, height: 900 },
+        });
         for (const route of ['entertainment/news', 'entertainment/news/tv-film']) {
             await plain.goto(base + '/' + route);
             const current = await plain.locator('#hub-category').inputValue();

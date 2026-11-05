@@ -6,7 +6,7 @@ const base = lib.base,
 (async () => {
     const browser = await chromium.launch();
     try {
-        const page = await browser.newPage();
+        const page = await lib.readerPage(browser);
         const errors = [];
         page.on('pageerror', (e) => errors.push(e.message));
         await page.addInitScript(() => {
@@ -34,7 +34,12 @@ const base = lib.base,
             assert((await page.title()).includes('myNewspaper'));
             assert(!/MyDailyFeed|MyNewsFeed/.test(await page.locator('body').innerText()));
             // The folded-page mark is inline SVG so it can take the colour scheme's ink.
-            assert.equal(await page.locator('.brand svg.brand-mark path').count(), 3);
+            for (const part of ['page', 'fold', 'n'])
+                assert.equal(
+                    await page.locator(`.brand svg.brand-mark .brand-mark__${part}`).count(),
+                    1,
+                    'mark ' + part,
+                );
             assert.equal(
                 await page.evaluate(() =>
                     document.querySelector('link[rel="icon"][type="image/svg+xml"]').getAttribute('href'),
@@ -50,7 +55,7 @@ const base = lib.base,
                 .getAttribute('data-settings-section'),
             'services',
         );
-        assert.equal(await page.evaluate(() => localStorage.getItem('mynewsfeed-watch-services-v1')), '[8]');
+        assert.equal(await lib.getPreference(page, 'mynewsfeed-watch-services-v1'), '[8]');
         assert.equal(
             await page.evaluate(() => localStorage.getItem('mydailyfeed-scoreboard-teams-v1')),
             '["soccer|eng.1|359"]',
@@ -100,7 +105,10 @@ const base = lib.base,
                 );
                 assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
             }
-        const plain = await browser.newPage({ javaScriptEnabled: false, viewport: { width: 390, height: 900 } });
+        const plain = await lib.readerPage(browser, {
+            javaScriptEnabled: false,
+            viewport: { width: 390, height: 900 },
+        });
         await plain.goto(base + '/sports/news');
         await plain.locator('.brand').click();
         assert.equal(new URL(plain.url()).pathname, '/');

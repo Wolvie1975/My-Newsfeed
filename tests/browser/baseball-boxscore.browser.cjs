@@ -6,7 +6,7 @@ const path = process.env.BASEBALL_PATH || '/box-score/baseball/mlb/401930515';
 (async () => {
     const browser = await chromium.launch();
     try {
-        const page = await browser.newPage(),
+        const page = await lib.readerPage(browser),
             errors = [];
         page.on('pageerror', (e) => errors.push(e.message));
         for (const theme of lib.THEMES) {
