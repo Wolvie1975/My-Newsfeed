@@ -31,6 +31,8 @@ const files = fs
 
 fs.mkdirSync(outDir, { recursive: true });
 
+const checkTimeout = Number(process.env.CHECK_TIMEOUT) || 600;
+
 function run(file) {
     return new Promise((resolve) => {
         const started = Date.now();
@@ -52,7 +54,18 @@ function run(file) {
         };
         child.stdout.on('data', keep);
         child.stderr.on('data', keep);
+        // A check that hangs fails after CHECK_TIMEOUT seconds (default 600) instead of stalling the run. Anything it
+        // created is removed by the zz clean-up at the end of the run.
+        let timedOut = false;
+        const limit = setTimeout(() => {
+            timedOut = true;
+            keep(`\nTIMED OUT after ${checkTimeout} s\n`);
+            child.kill('SIGTERM');
+            setTimeout(() => child.kill('SIGKILL'), 20000).unref();
+        }, checkTimeout * 1000);
         child.on('close', (code) => {
+            clearTimeout(limit);
+            if (timedOut && code === 0) code = 1;
             log.end();
             const skipped = code === 0 && /^SKIP\b/m.test(tail);
             resolve({ file, code, skipped, seconds: (Date.now() - started) / 1000, tail });

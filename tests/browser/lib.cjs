@@ -167,6 +167,12 @@ async function saveSettings(page, settings) {
  * Sets a reader preference through the page's own window.myNewspaperPrefs, which works in both modes: with profiles
  * on it saves to the open profile (this waits for the server to store it), otherwise it writes localStorage.
  */
+// The PUT's response is sent once the server has stored the change. Not response.finished(): it can hang on these
+// responses although the body is complete.
+async function savedOk(response) {
+    if (!response.ok()) throw new Error(`Saving settings failed: ${response.status()} ${response.url()}`);
+}
+
 async function setPreference(page, key, value) {
     const profile = await page.evaluate(() => !!window.myNewspaperPrefs?.profile);
     const saved = profile
@@ -174,8 +180,25 @@ async function setPreference(page, key, value) {
               (r) => new URL(r.url()).pathname === '/api/me/settings' && r.request().method() === 'PUT',
           )
         : null;
+    saved?.catch(() => {}); // when the action itself fails, its error is the one reported
     await page.evaluate(([k, v]) => window.myNewspaperPrefs.setItem(k, v), [key, value]);
-    if (saved) await (await saved).finished();
+    if (saved) await savedOk(await saved);
+}
+
+/**
+ * Runs a UI action that saves a preference and, with profiles on, waits until the server has stored it, so a reload
+ * that follows sees it (the page saves to the profile a moment after the change).
+ */
+async function whileSaving(page, action) {
+    const profile = await page.evaluate(() => !!window.myNewspaperPrefs?.profile);
+    const saved = profile
+        ? page.waitForResponse(
+              (r) => new URL(r.url()).pathname === '/api/me/settings' && r.request().method() === 'PUT',
+          )
+        : null;
+    saved?.catch(() => {});
+    await action();
+    if (saved) await savedOk(await saved);
 }
 
 /** Reads a reader preference the same way (the profile's value with profiles on, localStorage otherwise). */
@@ -416,6 +439,7 @@ module.exports = {
     readerPage,
     setPreference,
     getPreference,
+    whileSaving,
     createReaderProfile,
     deleteProfileById,
     run,

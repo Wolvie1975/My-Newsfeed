@@ -46,7 +46,7 @@ const base = lib.base;
         await page.goto(base + '/scoreboard');
         const favorite = page.locator('[data-scoreboard-team]').first();
         if (await favorite.count()) {
-            await favorite.click();
+            await lib.whileSaving(page, () => favorite.click());
             assert.equal(await favorite.getAttribute('aria-pressed'), 'true');
             await page.reload();
             assert.equal(

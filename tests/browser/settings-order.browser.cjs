@@ -18,16 +18,19 @@ const base = lib.base;
         const original = await read();
         assert.equal(original.length, 4);
         await page.locator('.settings-arrange summary').click();
-        await page.locator('[data-settings-move="teams:-1"]').click();
+        await lib.whileSaving(page, () => page.locator('[data-settings-move="teams:-1"]').click());
         assert.deepEqual((await read()).slice(-2), ['teams', 'services']);
         await page.reload();
         assert.deepEqual((await read()).slice(-2), ['teams', 'services']);
         await page.locator('.settings-arrange summary').click();
         await page.setViewportSize({ width: 390, height: 900 });
         assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
-        await page.locator('[data-settings-order-reset]').click();
+        await lib.whileSaving(page, () => page.locator('[data-settings-order-reset]').click());
         assert.deepEqual(await read(), original);
-        await page.evaluate(() => localStorage.setItem('mynewsfeed-settings-order-v1', '{"bad":true}'));
+        // A malformed order: with profiles on the server refuses to store it; in localStorage the page ignores it.
+        if (await page.evaluate(() => !!window.myNewspaperPrefs?.profile))
+            await assert.rejects(lib.setPreference(page, 'mynewsfeed-settings-order-v1', '{"bad":true}'), /400/);
+        else await page.evaluate(() => localStorage.setItem('mynewsfeed-settings-order-v1', '{"bad":true}'));
         await page.reload();
         assert.deepEqual(await read(), original);
         await page.goto(base + '/watch');

@@ -9,17 +9,24 @@ const base = lib.base,
         const page = await lib.readerPage(browser);
         const errors = [];
         page.on('pageerror', (e) => errors.push(e.message));
-        await page.addInitScript(() => {
-            if (!localStorage.getItem('rename-test-seeded')) {
-                localStorage.setItem(
-                    'mynewsfeed-settings-order-v1',
-                    JSON.stringify(['services', 'teams', 'appearance', 'colors', 'home', 'reading']),
-                );
-                localStorage.setItem('mynewsfeed-watch-services-v1', '[8]');
-                localStorage.setItem('mydailyfeed-scoreboard-teams-v1', '["soccer|eng.1|359"]');
-                localStorage.setItem('rename-test-seeded', '1');
-            }
-        });
+        // Preferences saved under the renamed keys still apply: seeded on the open profile with profiles on, in this
+        // browser's localStorage (before the first page loads) otherwise.
+        const seeded = {
+            'mynewsfeed-settings-order-v1': JSON.stringify(['services', 'teams', 'appearance', 'colors']),
+            'mynewsfeed-watch-services-v1': '[8]',
+            'mydailyfeed-scoreboard-teams-v1': '["soccer|eng.1|359"]',
+        };
+        await page.goto(base + '/');
+        if (await page.evaluate(() => !!window.myNewspaperPrefs?.profile)) {
+            for (const [key, value] of Object.entries(seeded)) await lib.setPreference(page, key, value);
+        } else {
+            await page.addInitScript((values) => {
+                if (!localStorage.getItem('rename-test-seeded')) {
+                    for (const [key, value] of Object.entries(values)) localStorage.setItem(key, value);
+                    localStorage.setItem('rename-test-seeded', '1');
+                }
+            }, seeded);
+        }
         for (const path of [
             '/',
             '/settings',
@@ -56,17 +63,14 @@ const base = lib.base,
             'services',
         );
         assert.equal(await lib.getPreference(page, 'mynewsfeed-watch-services-v1'), '[8]');
-        assert.equal(
-            await page.evaluate(() => localStorage.getItem('mydailyfeed-scoreboard-teams-v1')),
-            '["soccer|eng.1|359"]',
-        );
+        assert.equal(await lib.getPreference(page, 'mydailyfeed-scoreboard-teams-v1'), '["soccer|eng.1|359"]');
         const manifest = await (await page.request.get(base + '/manifest.webmanifest')).json();
         assert.equal(manifest.name, 'myNewspaper');
         assert.equal(manifest.short_name, 'myNewspaper');
         assert.equal(manifest.id, '/');
         assert.equal(manifest.scope, '/');
         for (const icon of manifest.icons) {
-            assert(icon.src.includes('newspaper-page-'));
+            assert(icon.src.includes('newspaper-front-'));
             assert.equal((await page.request.get(base + icon.src)).status(), 200);
         }
         const styles = await page.locator('link[rel="stylesheet"]').evaluateAll((ns) => ns.map((n) => n.href));

@@ -42,7 +42,9 @@ const base = lib.base,
                             );
                             assert.equal(await nav.locator('a[href="news"]').getAttribute('aria-current'), null);
                             assert.equal(
-                                await p.locator('.section-tabs a[href="box-office"][aria-current="page"]').count(),
+                                await p
+                                    .locator('.section-tabs a[href="box-office"][aria-current="page"]:visible')
+                                    .count(),
                                 1,
                             );
                         }

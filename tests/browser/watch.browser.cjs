@@ -51,9 +51,9 @@ const base = lib.base;
         await page.route('**/watch/movie/*', (r) => r.fulfill({ status: 503, body: 'Unavailable' }));
         await page.locator('[data-watch-title]').first().click();
         await page.waitForFunction(() =>
-            document.querySelector('dialog [role=status]')?.textContent.includes('could not'),
+            document.querySelector('dialog[open] [role=status]')?.textContent.includes('could not'),
         );
-        assert(await page.locator('dialog a').count());
+        assert(await page.locator('dialog[open] a').count());
         await page.keyboard.press('Escape');
         await page.unroute('**/watch/movie/*');
         const plain = await lib.readerContext(browser, { javaScriptEnabled: false });

@@ -11,12 +11,13 @@ const base = lib.base;
         for (const width of [320, 390, 430, 744, 1024, 1280, 1440]) {
             for (const theme of lib.THEMES) {
                 for (const kind of ['wide', 'compact', 'broken']) {
-                    const page = await browser.newPage({
+                    const page = await lib.readerPage(browser, {
                         viewport: { width, height: 1000 },
                         colorScheme: theme,
                         storageState: process.env.STORAGE_STATE,
                     });
-                    await page.addInitScript((t) => localStorage.setItem('theme', t), theme);
+                    // The reader follows the device theme (colorScheme); a theme in localStorage would start the
+                    // one-time browser import with a profile open.
                     await page.route('**/*', (route) => {
                         if (
                             route.request().resourceType() !== 'image' ||
@@ -70,7 +71,7 @@ const base = lib.base;
                 }
             }
         }
-        const page = await browser.newPage({
+        const page = await lib.readerPage(browser, {
             javaScriptEnabled: false,
             storageState: process.env.STORAGE_STATE,
             viewport: { width: 1440, height: 1000 },

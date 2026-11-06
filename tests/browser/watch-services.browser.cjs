@@ -11,7 +11,7 @@ const base = lib.base;
         assert(await choice.count());
         const id = await choice.getAttribute('value');
         await choice.check();
-        await page.getByRole('button', { name: 'Save services', exact: true }).click();
+        await lib.whileSaving(page, () => page.getByRole('button', { name: 'Save services', exact: true }).click());
         assert.equal(JSON.parse(await lib.getPreference(page, 'mynewsfeed-watch-services-v1'))[0], Number(id));
         await page.reload();
         assert(await choice.isChecked());

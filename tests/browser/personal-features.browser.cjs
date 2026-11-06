@@ -30,11 +30,11 @@ const base = lib.base;
         assert.equal((await page.goto(base + '/week')).status(), 404);
         assert.equal(await page.evaluate(async () => (await fetch('/calendar/week.ics')).status), 404);
         // Homepage section controls left Settings on October 20; saved preferences still apply.
-        const setHomePrefs = (prefs) =>
-            page.evaluate((value) => {
-                const stored = JSON.parse(localStorage.getItem('mynewsfeed-personal-v1') || '{}');
-                localStorage.setItem('mynewsfeed-personal-v1', JSON.stringify({ ...stored, ...value }));
-            }, prefs);
+        // Through the page's own preferences API: the open profile's settings with profiles on, localStorage otherwise.
+        const setHomePrefs = async (prefs) => {
+            const stored = JSON.parse((await lib.getPreference(page, 'mynewsfeed-personal-v1')) || '{}');
+            await lib.setPreference(page, 'mynewsfeed-personal-v1', JSON.stringify({ ...stored, ...prefs }));
+        };
         await page.goto(base + '/');
         await setHomePrefs({ hidden: ['videos'] });
         await page.reload();
@@ -53,11 +53,13 @@ const base = lib.base;
         // Reading preferences were removed (October 26, 2026); Settings no longer offers them.
         await page.goto(base + '/settings');
         assert.equal(await page.locator('#reading-preferences, [data-news-category], [data-news-muted]').count(), 0);
-        // Homepage choices still synchronize between tabs.
+        // Homepage choices reach another tab: live through the storage event in localStorage; from the profile on its
+        // next load with profiles on.
         const other = await context.newPage();
         await other.goto(base + '/');
         await other.waitForFunction(() => document.querySelector('[data-home-section="videos"]').hidden);
         await setHomePrefs({ hidden: [] });
+        if (await other.evaluate(() => !!window.myNewspaperPrefs?.profile)) await other.reload();
         await other.waitForFunction(() => !document.querySelector('[data-home-section="videos"]').hidden);
         await other.close();
         // Saving still works without read/mute buttons.
