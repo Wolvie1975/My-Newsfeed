@@ -377,3 +377,12 @@ zz data cleaned.
 - Open for the user as before: box office forecast scraper (since October 30), VS Code SQL connection on the old sa
   password, Rust migration credentials, app passwords into the password manager, delete the two `.env` backup copies;
   `sql2025-before-volume` removal around November 8.
+
+### Housekeeping — November 6, 2026 ~13:30 UTC
+
+- Deleted `/root/.config/mynewspaper/env.before-phase3`, `env.before-admin-switch` and `env.before-test-login` (each
+  held only the old sa connection string). That folder now holds just `web.pw`, `admin.pw`, `test.pw`.
+- `sql2025-before-volume` was still running after the host crash (restart policy `unless-stopped`, ~830 MB RAM, 7.2 GB,
+  no working network). Stopped cleanly (SIGTERM to sqlservr) and set `--restart no`. On or after November 8, if nothing
+  needed it: `docker rm sql2025-before-volume` (live data is in `sql2025` / volume `sql2025-data`).
+- Not done (user): app passwords into the password manager.
