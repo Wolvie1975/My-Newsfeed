@@ -90,7 +90,7 @@ const shots = lib.screenshots('episode-spacing');
                 (r) => new URL(r.url()).pathname === '/api/me/settings' && r.request().method() === 'PUT',
             );
             await page.evaluate((v) => window.myNewspaperPrefs.setItem('theme', v), theme);
-            await (await saved).finished();
+            await saved;
             for (const width of lib.widths('320,390,430,768,1024,1280,1440,1920,2560,3200,3840')) {
                 await page.setViewportSize({ width, height: 1080 });
                 await visit();

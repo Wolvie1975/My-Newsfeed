@@ -52,7 +52,6 @@ const password = lib.adminPassword;
         );
         const response = await saved;
         assert.equal(response.status(), 200, 'Profile theme and scheme save succeeds before reload');
-        await response.finished();
         await page.reload({ waitUntil: 'networkidle' });
     };
     try {
@@ -76,7 +75,6 @@ const password = lib.adminPassword;
             if (pending) {
                 const response = await pending;
                 assert.equal(response.status(), 200);
-                await response.finished();
             }
             await page.waitForFunction(
                 () =>
@@ -189,7 +187,6 @@ const password = lib.adminPassword;
             if (pending) {
                 const response = await pending;
                 assert.equal(response.status(), 200);
-                await response.finished();
             }
             await trigger.click();
             assert(await dialog.locator('input[value="olive"]').isChecked(), 'Picker follows Settings');
@@ -208,7 +205,6 @@ const password = lib.adminPassword;
                 await dialog.locator('[data-scheme-retry]').click();
                 const response = await saved;
                 assert.equal(response.status(), 200);
-                await response.finished();
             } else {
                 await page.evaluate(() => {
                     window.schemePickerOriginalSet = window.myNewspaperPrefs.setItem;

@@ -45,7 +45,6 @@ const PERSONAL = 'mynewsfeed-personal-v1';
         }, settings);
         const response = await saved;
         assert.equal(response.status(), 200, 'Profile settings save completes before reload');
-        await response.finished();
         await page.reload({ waitUntil: 'networkidle' });
     };
     const look = (scheme, theme) => ({

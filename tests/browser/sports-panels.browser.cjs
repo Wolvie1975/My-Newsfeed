@@ -53,7 +53,7 @@ const shots = lib.screenshots('sports-panels');
                 (r) => new URL(r.url()).pathname === '/api/me/settings' && r.request().method() === 'PUT',
             );
             await page.evaluate((v) => window.myNewspaperPrefs.setItem('theme', v), theme);
-            await (await saved).finished();
+            await saved;
             for (const width of lib.widths('320,390,430,1024,1440,1920,2560,3840')) {
                 await page.setViewportSize({ width, height: 1000 });
                 await visit();

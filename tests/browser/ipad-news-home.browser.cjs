@@ -22,8 +22,11 @@ const shots = lib.screenshots('ipad-news-home');
             storageState = await lib.openProfile(browser, profile, { path: '/sports', waitUntil: 'domcontentloaded' });
         }
 
+        // No service worker: once one controls the page it answers navigations itself, and page.route (the lead
+        // refresh below) can't see them.
         const context = await browser.newContext({
             storageState,
+            serviceWorkers: 'block',
             hasTouch: true,
             viewport: { width: 820, height: 1100 },
         });
@@ -44,15 +47,7 @@ const shots = lib.screenshots('ipad-news-home');
         const visit = async (route) => {
             await page.goto(base + route, { waitUntil: 'networkidle' });
         };
-        const preference = async (key, value) => {
-            const saved = page.waitForResponse(
-                (r) => new URL(r.url()).pathname === '/api/me/settings' && r.request().method() === 'PUT',
-            );
-            await page.evaluate(([k, v]) => window.myNewspaperPrefs.setItem(k, v), [key, value]);
-            const response = await saved;
-            assert.equal(response.status(), 200);
-            await response.finished();
-        };
+        const preference = (key, value) => lib.setPreference(page, key, value);
         const box = async (selector) =>
             page
                 .locator(selector)
@@ -91,9 +86,13 @@ const shots = lib.screenshots('ipad-news-home');
             const tiles = await page
                 .locator('.tab-desktop .nf-tile')
                 .evaluateAll((els) => els.map((e) => ({ x: e.offsetLeft, y: e.offsetTop, w: e.clientWidth })));
-            assert(tiles.length >= 2);
-            assert.equal(tiles[0].y, tiles[1].y);
-            assert(tiles[1].x > tiles[0].x);
+            // Kansas City now is always there; the others depend on the reader's history and fresh stories (a new
+            // reader on the test snapshot may see only one). Two or more share a row.
+            assert(tiles.length >= 1, 'News tiles');
+            if (tiles.length >= 2) {
+                assert.equal(tiles[0].y, tiles[1].y, 'Tiles share a row');
+                assert(tiles[1].x > tiles[0].x, 'Tiles side by side');
+            }
             assert(await page.locator('.tab-phone .nf-brief--phone').isHidden());
             assert.equal(
                 await page.locator('.nf-topics > .ef-more').evaluate((e) => e.getBoundingClientRect().height),
@@ -108,11 +107,12 @@ const shots = lib.screenshots('ipad-news-home');
                 side = await box('.bs-front > .bs-col--side'),
                 band = await box('.bs-band'),
                 lower = await box('.bs-more > .bs-col--main'),
-                releases = await box('.bs-more > .bs-col--side');
+                // Scoreboard + Top 25: the lower band's right column (releases left it in the November 1 rebalance).
+                scores = await box('.bs-more > .bs-col--left');
             assert(Math.abs(lead.w - frame.w) < 2, 'Home lead spans columns');
             assert(left.x < main.x && side.x > left.x, 'Home first two columns');
             assert(band.y >= Math.max(left.b, side.b) - 1, 'More from today follows front');
-            assert(lower.y >= band.b - 1 && releases.x > lower.x, 'Home lower columns');
+            assert(lower.y >= band.b - 1 && scores.y >= band.b - 1 && scores.x > lower.x, 'Home lower columns');
             assert.equal(
                 await page.locator('.bs-title__greeting').evaluate((e) => getComputedStyle(e).fontSize),
                 '48px',

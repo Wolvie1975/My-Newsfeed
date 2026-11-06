@@ -34,7 +34,6 @@ const shots = lib.screenshots('home-masthead');
             await page.evaluate(([k, v]) => window.myNewspaperPrefs.setItem(k, v), [key, value]);
             const response = await saved;
             assert.equal(response.status(), 200);
-            await response.finished();
         };
         const wide = async () => {
             assert.equal(

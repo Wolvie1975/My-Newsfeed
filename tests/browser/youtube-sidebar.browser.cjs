@@ -58,7 +58,6 @@ const shots = lib.screenshots('youtube-sidebar');
             await page.evaluate(([k, v]) => window.myNewspaperPrefs.setItem(k, v), [key, value]);
             const response = await saved;
             assert.equal(response.status(), 200);
-            await response.finished();
         };
         const noOverflow = async () =>
             assert(

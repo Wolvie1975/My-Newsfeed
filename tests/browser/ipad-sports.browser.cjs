@@ -55,7 +55,7 @@ const shots = lib.screenshots('ipad-sports');
                 (r) => new URL(r.url()).pathname === '/api/me/settings' && r.request().method() === 'PUT',
             );
             await page.evaluate((v) => window.myNewspaperPrefs.setItem('theme', v), theme);
-            await (await saved).finished();
+            await saved;
             for (const width of lib.widths('320,390,430,743,744,820,834,1023,1024,1280,1920')) {
                 await page.setViewportSize({ width, height: 1100 });
                 await visit();
@@ -140,7 +140,7 @@ const shots = lib.screenshots('ipad-sports');
             (team) => window.myNewspaperPrefs.setItem('mynewsfeed-sports-teams-v1', JSON.stringify([team])),
             favorite,
         );
-        await (await favoriteSaved).finished();
+        await favoriteSaved;
         await visit();
         assert(await lower.isVisible(), 'Persisted favorite below row ten remains visible');
         assert(await lower.evaluate((e) => e.classList.contains('sports-selected')));

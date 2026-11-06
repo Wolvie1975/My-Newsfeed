@@ -38,7 +38,7 @@ const password = lib.adminPassword;
         await page.evaluate(() => {
             window.myNewspaperPrefs.setItem('mynewsfeed-personal-v1', JSON.stringify({ order: [], hidden: [] }));
         });
-        await (await saved).finished();
+        await saved;
         await page.reload({ waitUntil: 'networkidle' });
         assert.equal(await page.locator('[data-home-section="f1"]').count(), 0);
         const card = page.locator('section[data-home-section="rankings"]');

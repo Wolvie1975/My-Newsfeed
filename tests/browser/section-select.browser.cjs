@@ -31,7 +31,7 @@ const base = lib.base,
             await p.evaluate(() => {
                 window.myNewspaperPrefs.setItem('theme', 'system');
             });
-            await (await saved).finished();
+            await saved;
             storageState = await context.storageState();
             await context.close();
         }

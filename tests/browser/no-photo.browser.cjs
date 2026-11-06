@@ -51,7 +51,6 @@ const password = lib.adminPassword;
         );
         const response = await saved;
         assert.equal(response.status(), 200, 'Profile theme and scheme save succeeds before reload');
-        await response.finished();
         await page.reload({ waitUntil: 'networkidle' });
     };
     try {
