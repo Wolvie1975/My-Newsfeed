@@ -6,6 +6,17 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
+## Tech front: service status strip removed — November 5, 2026 (America/Chicago)
+
+`b421891`: the Tech front no longer renders `TechStatusStrip` (desktop or phone); it had been showing a Cloudflare
+incident. Component, styles and status collection are unchanged. Verification: the quick `tools/verify.sh` run inside
+`deploy.sh` passed; `/tech` HTML has no `tc-status` markup; `node tools/live-check.cjs` no failures (public pages
+176/176 at 320/390/430/1440px light and dark, admin 55/55, clean-up 2/2, household restored).
+
+Deployment: commit `b421891a8ca2` via `deployment/deploy.sh web` at 2026-11-06T03:27:56Z, healthy, environment
+unchanged, `/version` the commit (web `0246dbf5bf31`). Rollback `deployment/rollback.sh b421891a8ca2 web` →
+`mynewspaper-web:before-b421891a8ca2` (`a6477e833e32`).
+
 ## Reliability findings (November 4 audit) — November 5, 2026 (America/Chicago)
 
 One commit per finding, each with a test that fails on the old code:
