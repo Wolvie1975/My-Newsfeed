@@ -9,7 +9,7 @@
 !.env.example
 
 # Local development projects
-/new development/
+/new development/design-backup-before-logo-theme/*.tar.gz
 
 # User-specific files
 *.rsuser
