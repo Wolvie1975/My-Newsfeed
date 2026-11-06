@@ -106,6 +106,10 @@ link here.
 
 ## 6. Service status (Tech front, `TechStatusStrip.razor`)
 
+> **Removed from the Tech front November 6, 2026** at the user's request. The component, its styles and the status
+> data collection remain; re-add `<TechStatusStrip />` (desktop) and `<TechStatusStrip Compact="true" />` (phone) to
+> `TechFront.razor` to bring it back.
+
 Shows **only when something isn't fine.**
 
 - Every service is `none`, or the tables are missing: render **nothing**.

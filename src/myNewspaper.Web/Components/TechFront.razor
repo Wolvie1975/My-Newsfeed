@@ -13,7 +13,6 @@
 @* Tech front page (/tech, docs/tech/tech-02-front.md), sharing the News and Sports fronts' column layout on desktop
    and iPad, and the folded phone layout below 744px. *@
 <div class="mx-desktop tab-desktop">
-<TechStatusStrip />
 <div class="ef spf nf tc-front">
     <section class="nf-brief" aria-labelledby="tc-brief-title">
         <h2 id="tc-brief-title" class="ef-label">The briefing · @Dates.TodayLabel(nowUtc)</h2>
@@ -154,8 +153,6 @@
 @* Phones: the folded Tech front, from the same data. *@
 <div class="mx-phone tab-phone">
     <PhoneRibbon Section="tech" Kicker="@RibbonKicker" Title="Tech" />
-
-    <TechStatusStrip Compact="true" />
 
     <section class="nf-brief nf-brief--phone tc-brief--phone" aria-label="The briefing">
         <div class="nf-brief__tiles">@Tiles</div>
