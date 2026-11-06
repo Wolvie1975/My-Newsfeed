@@ -9,8 +9,8 @@
 <PageTitle>YouTube · myNewspaper</PageTitle>
 
 
-@* YouTube as in the approved v2 concept: a featured carousel (still until Play is pressed) beside Latest videos, then
-   More videos. Without JavaScript the first featured video shows and the carousel controls stay hidden. Filters are
+@* YouTube: a featured carousel (still until Play is pressed); from 1024px the picture sits beside its title, with Latest
+   videos as a grid under it (concept C, November 6, 2026), then More videos. Without JavaScript the first featured video shows and the carousel controls stay hidden. Filters are
    plain links and a GET form, so every view has a shareable URL. *@
 
 <div class="mx-life-layout">
@@ -101,7 +101,7 @@ else
                         var picture = VideosText.Thumbnail(video.ThumbnailUrl, video.VideoId, "hqdefault");
                         <article class="yt-slide" data-yt-slide hidden="@(index > 0)" aria-roledescription="slide" aria-label="@($"{index + 1} of {featured.Count}")">
                             <a class="yt-slide__thumb" href="@href" target="_blank" rel="noopener noreferrer" tabindex="-1" aria-hidden="true">
-                                @if (picture is not null) { <img src="@picture" alt="" loading="@(index == 0 ? "eager" : "lazy")" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()" /> }
+                                @if (picture is not null) { <img src="@picture" alt="" loading="@(index == 0 ? "eager" : "lazy")" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()" data-yt-sharpen /> }
                                 <span class="play"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15a1 1 0 0 0 1.5.86l12-7.5a1 1 0 0 0 0-1.72l-12-7.5A1 1 0 0 0 7 4.5z"></path></svg></span>
                                 <span class="yt-progress"><span data-yt-bar></span></span>
                             </a>

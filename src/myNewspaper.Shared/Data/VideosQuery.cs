@@ -278,7 +278,8 @@ public static class VideosText
     /// The picture for a video: YouTube's standard thumbnail built from the video id, which every video has, else the
     /// stored one. Stored addresses (hq720 and custom crops) can point at a grey "no image" placeholder that YouTube
     /// serves without an error, so they are only a fallback. <paramref name="size"/> is "mqdefault" (320 × 180, the
-    /// grid) or "hqdefault" (480 × 360, the featured video).
+    /// grid) or "hqdefault" (480 × 360, the featured video, which youtube.js swaps for "maxresdefault" or "sddefault"
+    /// once it has checked the larger picture exists; a missing one comes back as a 120 × 90 placeholder).
     /// </summary>
     public static string? Thumbnail(string? stored, string? videoId, string size = "mqdefault") =>
         !string.IsNullOrWhiteSpace(videoId) && videoId.All(c => char.IsAsciiLetterOrDigit(c) || c is '-' or '_')

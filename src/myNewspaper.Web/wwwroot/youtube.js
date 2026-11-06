@@ -1,11 +1,35 @@
 // The YouTube page's featured carousel. It holds still until Play is pressed; then it advances every seven seconds
 // with a progress bar, and pauses while the page is hidden. Arrows and the title tabs switch videos at any time.
 // Without JavaScript the first featured video shows and the controls stay hidden.
+// Featured pictures are rendered as YouTube's 480 × 360 "hqdefault", which every video has. A shown one is swapped for
+// the 1280 × 720 "maxresdefault", else the 640 × 480 "sddefault", once that loads at full size: YouTube answers a size
+// a video lacks with a 120 × 90 placeholder rather than an error.
 (function () {
     'use strict';
     const SECONDS = 7;
     const TICK = 250;
+    const SHARPER = ['maxresdefault', 'sddefault'];
     const state = new WeakMap();
+
+    function sharpen(slide) {
+        const img = slide && slide.querySelector('img[data-yt-sharpen]');
+        if (!img || img.dataset.ytSharpened) return;
+        img.dataset.ytSharpened = 'pending';
+        const match = /^(https:\/\/i\.ytimg\.com\/vi\/[\w-]+\/)hqdefault\.jpg$/.exec(img.currentSrc || img.src);
+        if (!match) return;
+        const attempt = (i) => {
+            if (i >= SHARPER.length) return;
+            const probe = new Image();
+            probe.referrerPolicy = 'no-referrer';
+            probe.onload = () => {
+                if (probe.naturalWidth > 120) img.src = probe.src;
+                else attempt(i + 1);
+            };
+            probe.onerror = () => attempt(i + 1);
+            probe.src = match[1] + SHARPER[i] + '.jpg';
+        };
+        attempt(0);
+    }
 
     function show(carousel, index) {
         const s = state.get(carousel);
@@ -15,6 +39,7 @@
         slides.forEach((slide, i) => {
             slide.hidden = i !== s.index;
         });
+        sharpen(slides[s.index]);
         carousel.querySelectorAll('[data-yt-pick]').forEach((tab, i) => {
             tab.setAttribute('aria-current', String(i === s.index));
         });
@@ -45,6 +70,7 @@
 
     function init() {
         document.querySelectorAll('[data-yt-carousel]').forEach((carousel) => {
+            sharpen(carousel.querySelector('[data-yt-slide]:not([hidden])'));
             // A single featured video (a one-channel category) is rendered without controls: nothing to rotate.
             if (state.has(carousel) || !carousel.querySelector('[data-yt-toggle]')) return;
             state.set(carousel, { index: 0, ticks: 0, playing: false });

@@ -5726,24 +5726,11 @@ a.tvc-row__show:hover {
 
 /* ---------- YouTube, 1920px and up (wide-screens-4k-handoff.md) ---------- */
 @media (min-width: 1920px) {
-    .pub .yt-top {
-        grid-template-columns: minmax(0, 2.2fr) minmax(400px, 1fr);
-    }
-    .pub .yt-slide__title {
-        font-size: 40px;
-        line-height: 1.08;
-    }
     :root:is([data-color-scheme], :not([data-color-scheme])) .pub .video-front .videos {
         grid-template-columns: repeat(5, minmax(0, 1fr));
     }
 }
 @media (min-width: 2560px) {
-    .pub .yt-top {
-        grid-template-columns: minmax(0, 1fr) 460px; /* phase 2 adds a third column of 380px */
-    }
-    .pub .yt-slide__title {
-        font-size: 48px;
-    }
     :root:is([data-color-scheme], :not([data-color-scheme])) .pub .video-front .videos {
         grid-template-columns: repeat(6, minmax(0, 1fr));
     }
@@ -5764,17 +5751,11 @@ a.tvc-row__show:hover {
     display: none;
 }
 @media (min-width: 2560px) {
-    .pub .yt-top:has(.yt-aside) {
-        grid-template-columns: minmax(0, 1fr) 460px 380px;
-    }
     .pub .yt-aside {
         display: block;
         min-width: 0;
         padding-left: 28px;
         border-left: 1px solid var(--row-border);
-    }
-    .pub .yt-top:has(.yt-aside) .yt-latest {
-        padding-right: 28px;
     }
     .pub .yt-aside > section + section {
         margin-top: 32px;
@@ -5830,6 +5811,93 @@ a.tvc-row__show:hover {
     .pub .yt-aside .ef-more {
         display: flex;
         align-items: center;
+    }
+}
+
+/* ---------- YouTube from 1024px: concept C (November 6, 2026) ----------
+   The featured picture beside its title, capped at 720px so YouTube's larger thumbnails stay sharp (youtube.js swaps
+   them in), then Latest videos as a grid under it. From 2560px By channel and Watch later run down the right of both. */
+@media (min-width: 1024px) {
+    .pub .yt-top {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-areas: 'feature' 'latest';
+        row-gap: 28px;
+    }
+    .pub .yt-feature {
+        grid-area: feature;
+        padding-right: 0;
+        border-right: 0;
+    }
+    .pub .yt-slide:not([hidden]) {
+        display: grid;
+        grid-template-columns: min(720px, 60%) minmax(0, 1fr);
+        grid-template-rows: auto auto 1fr;
+        align-items: start;
+        column-gap: 32px;
+    }
+    .pub .yt-slide__thumb {
+        grid-row: 1 / -1;
+    }
+    .pub .yt-slide .yt-kicker {
+        margin-top: 0;
+    }
+    .pub .yt-slide__title {
+        font-size: clamp(30px, 2.4vw, 44px);
+        line-height: 1.08;
+    }
+    .pub .yt-latest {
+        grid-area: latest;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        align-content: start;
+        column-gap: 32px;
+        padding-left: 0;
+    }
+    .pub .yt-latest .ef-label {
+        grid-column: 1 / -1;
+    }
+}
+@media (min-width: 1440px) {
+    .pub .yt-latest {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    .pub .yt-row {
+        grid-template-columns: 192px minmax(0, 1fr);
+        gap: 14px;
+    }
+}
+/* Wide screens: the five picks sit at the foot of the title column instead of a full-width row under the picture. */
+@media (min-width: 1920px) {
+    .pub .yt-feature {
+        display: grid;
+        grid-template-columns: 720px minmax(0, 1fr);
+        column-gap: 32px;
+    }
+    .pub .yt-feature__head,
+    .pub .yt-feature__slides {
+        grid-column: 1 / -1;
+    }
+    .pub .yt-feature__slides {
+        grid-row: 2;
+    }
+    .pub .yt-tabs {
+        grid-column: 2;
+        grid-row: 2;
+        align-self: end;
+        margin-top: 0;
+    }
+}
+@media (min-width: 2560px) {
+    .pub .yt-top:has(.yt-aside) {
+        grid-template-columns: minmax(0, 1fr) 420px;
+        grid-template-areas: 'feature aside' 'latest aside';
+    }
+    .pub .yt-aside {
+        grid-area: aside;
+        margin-left: 32px;
+    }
+    .pub .yt-slide__title {
+        font-size: 48px;
     }
 }
 

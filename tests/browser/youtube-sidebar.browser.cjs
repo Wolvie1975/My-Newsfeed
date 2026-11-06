@@ -148,7 +148,19 @@ const shots = lib.screenshots('youtube-sidebar');
                     const columns = await page
                         .locator('.yt-top')
                         .evaluate((n) => getComputedStyle(n).gridTemplateColumns.split(' ').length);
-                    assert.equal(columns, width >= 2560 ? 3 : 2, 'Featured, Latest and optional sidebar');
+                    assert.equal(columns, width >= 2560 ? 2 : 1, 'Featured over Latest, plus the sidebar from 2560px');
+                    const shape = await page.evaluate(() => {
+                        const box = (q) => document.querySelector(q).getBoundingClientRect();
+                        return {
+                            thumb: box('[data-yt-slide]:not([hidden]) .yt-slide__thumb'),
+                            title: box('[data-yt-slide]:not([hidden]) .yt-slide__title'),
+                            feature: box('.yt-feature'),
+                            latest: box('.yt-latest'),
+                        };
+                    });
+                    assert(shape.thumb.width <= 721, 'Featured picture capped at 720px');
+                    assert(shape.title.x >= shape.thumb.right, 'Featured title beside the picture');
+                    assert(shape.latest.y >= shape.feature.bottom - 1, 'Latest videos under the featured video');
                     if (width >= 2560) {
                         await waitList(expected);
                         assert(
