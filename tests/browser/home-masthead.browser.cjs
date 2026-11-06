@@ -99,7 +99,9 @@ const shots = lib.screenshots('home-masthead');
                 const headings = page.locator(
                     '.bs-sheet .bs-col > .d-card:first-child > .d-card__head > .d-card__title',
                 );
-                assert.equal(await headings.count(), 6);
+                // One heading per column (five since the wide-desktop rebalance of November 1, 2026), each on one line.
+                assert.equal(await headings.count(), await page.locator('.bs-sheet .bs-col').count());
+                assert(await headings.count(), 'column headings');
                 for (const heading of await headings.all()) {
                     assert(
                         await heading.evaluate(

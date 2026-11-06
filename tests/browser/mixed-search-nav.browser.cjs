@@ -40,18 +40,30 @@ const base = lib.base;
             for (const width of [390, 768]) {
                 await page.setViewportSize({ width, height: 900 });
                 await page.goto(base + '/events');
-                await page.evaluate((theme) => localStorage.setItem('theme', theme), theme);
+                await lib.setPreference(page, 'theme', theme);
                 await page.reload();
+                // iPad portrait: the sections are tabs in the header and there is no Menu.
+                if (width >= 744) {
+                    assert(await page.locator('.site-nav--inline').isVisible(), 'tablet section tabs');
+                    assert.equal(await page.locator('.mobile-nav').isVisible(), false, 'no Menu on a tablet');
+                    assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+                    if (lib.shotDir) await page.screenshot({ path: `${lib.shotDir}/nav-${theme}-${width}.png` });
+                    continue;
+                }
                 await page.locator('.mobile-nav > summary').click();
-                for (const [name, href] of [
-                    ['YouTube', 'videos'],
-                    ['Saved', 'saved'],
+                // YouTube sits with Where to watch; Saved with Settings under Tools.
+                for (const [name, href, section] of [
+                    ['YouTube', 'videos', 'watch'],
+                    ['Saved', 'saved', 'tools'],
                 ]) {
                     const link = page.locator('.mobile-nav__links').getByRole('link', { name, exact: true });
                     assert.equal(await link.count(), 1);
                     assert.equal(await link.getAttribute('href'), href);
-                    if (href === 'videos')
-                        assert(await link.evaluate((n) => n.parentElement.classList.contains('mobile-nav__links')));
+                    assert.equal(
+                        await link.evaluate((n) => n.closest('[data-section]')?.dataset.section),
+                        section,
+                        name,
+                    );
                 }
                 assert.equal(
                     await page

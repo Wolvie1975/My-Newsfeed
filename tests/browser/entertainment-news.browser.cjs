@@ -79,12 +79,12 @@ const base = lib.base,
                     assert.equal(await p.locator('html').getAttribute('data-theme'), theme);
                     assert(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
                     assert(!(await p.locator('#blazor-error-ui').isVisible()));
-                    // Desktop shows topic pills instead of the dropdown.
-                    if (width < 1024)
+                    // Phones get the category dropdown; iPad portrait (744px up) and desktop show the desktop layout.
+                    if (width < 744)
                         assert(
                             await p.locator('#hub-category').evaluate((n) => n.getBoundingClientRect().height >= 44),
                         );
-                    if (width < 768) {
+                    if (width < 744) {
                         await p.locator('.mobile-nav > summary').click();
                         const group = p.locator('[aria-labelledby="mobile-entertainment-heading"]');
                         assert.equal(

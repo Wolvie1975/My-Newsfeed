@@ -25,7 +25,8 @@ const base = lib.base,
                     );
                     assert(!(await p.locator('#blazor-error-ui').isVisible()));
                     // Both are concept front pages (SportsFront, EntertainmentFront): a lead and up to six headlines.
-                    const cards = p.locator('.ef-lead, .ef-headlines li');
+                    // Visible ones only: the page also carries markup for other widths.
+                    const cards = p.locator('.ef-lead:visible, .ef-headlines li:visible');
                     assert((await cards.count()) > 0 && (await cards.count()) <= 8);
                     assert.equal(await p.locator('#category,#source,[data-load-more]').count(), 0);
                     assert(await p.locator(route === 'sports' ? '.spf-scores' : '.ef-screen').isVisible());

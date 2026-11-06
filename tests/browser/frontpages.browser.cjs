@@ -92,7 +92,10 @@ const base = lib.base,
             await p.selectOption('#channel', value);
             await p.waitForURL((u) => u.searchParams.get('channel') === value);
             assert.equal(
-                (await p.locator('.video-channel').allTextContents()).filter((v, i, a) => a.indexOf(v) === i).length,
+                // The channel line of every visible video (yt-kicker on the concept board, video-channel in the grid).
+                (await p.locator('.video-channel:visible, .yt-kicker:visible').allTextContents())
+                    .map((v) => v.trim())
+                    .filter((v, i, a) => a.indexOf(v) === i).length,
                 1,
             );
         }
