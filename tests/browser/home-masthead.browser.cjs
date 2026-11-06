@@ -181,14 +181,18 @@ const shots = lib.screenshots('home-masthead');
                     );
                     await wide();
                     if (await page.locator('.bs-glance').count()) {
-                        assert.equal(await page.locator('.bs-glance__periods .weather-icon').count(), 4);
+                        assert.equal(
+                            await page.locator('.bs-glance .weather-icon').count(),
+                            1 + (await page.locator('.bs-glance__periods li').count()),
+                            'One icon for the lead and one per later period',
+                        );
                         await page
-                            .locator('.bs-glance__reading')
+                            .locator('.bs-glance__summary, .bs-glance__reading')
                             .evaluateAll((ns) =>
                                 ns.forEach(
                                     (n) =>
-                                        (n.innerHTML =
-                                            '<b>76°</b> Chance Showers And Thunderstorms Then Mostly Cloudy'),
+                                        (n.textContent =
+                                            'Chance showers and thunderstorms then mostly cloudy. Tonight, chance showers and thunderstorms.'),
                                 ),
                             );
                         await wide();

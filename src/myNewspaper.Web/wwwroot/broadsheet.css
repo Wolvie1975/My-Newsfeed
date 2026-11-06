@@ -631,64 +631,109 @@
     font-size: 12px;
 }
 
-/* At a glance: the Kansas City forecast. */
+/* At a glance: the forecast as a lead period (with the night's low) and the periods after it. Stacked in the
+   desktop ear; a row on tablets and from 1920px. */
 .pub .bs-glance {
     display: grid;
-    gap: 10px;
-    padding: 12px 14px;
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    background: var(--surface);
+    grid-template-columns: minmax(0, 1fr);
+    align-content: start;
+    gap: 12px;
+    min-width: 0;
+}
+.pub .bs-glance__lead {
+    display: grid;
+    align-content: start;
+    gap: 8px;
+    min-width: 0;
 }
 .pub .bs-glance__title {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip: rect(0 0 0 0);
+    margin: 0;
+    color: var(--text-2);
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
 }
-.pub .bs-glance__weather {
+.pub .bs-glance__now {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 0;
+    font-family: var(--font-serif);
+    font-weight: 700;
+    line-height: 1;
+}
+/* One ink for every icon in the strip; the coloured sun, storm and snow tints stay on the full forecast. */
+.pub .bs-glance .weather-icon {
+    color: var(--text);
+}
+.pub .bs-glance__now .weather-icon {
+    flex: none;
+    width: 44px;
+    height: 44px;
+}
+.pub .bs-glance__temp {
+    font-size: 48px;
+}
+.pub .bs-glance__low {
+    color: var(--text-2);
+    font-size: 26px;
+}
+.pub .bs-glance__summary {
+    max-width: 46ch;
+    margin: 0;
+    font-family: var(--font-serif);
+    font-size: 16px;
+    line-height: 1.4;
+}
+.pub .bs-glance__next {
     display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    align-items: start;
-    gap: 8px;
-}
-.pub .bs-glance__weather > .d-more {
-    justify-self: start;
+    align-content: start;
+    min-width: 0;
 }
 .pub .bs-glance__periods {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 6px;
     margin: 0;
     padding: 0;
     list-style: none;
+    border-top: 1px solid var(--row-border);
 }
 .pub .bs-glance__periods li {
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
+    display: grid;
+    grid-template-columns: 24px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--row-border);
+}
+.pub .bs-glance__periods .weather-icon {
+    width: 24px;
+    height: 24px;
+}
+.pub .bs-glance__period {
+    display: grid;
+    gap: 2px;
     min-width: 0;
 }
 .pub .bs-glance__name {
-    color: var(--text-2);
-    font-size: 11px;
-    font-weight: 800;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    font-size: 14px;
+    font-weight: 700;
 }
 .pub .bs-glance__reading {
-    font-size: 12px;
-    line-height: 1.3;
     color: var(--text-2);
+    font-size: 13px;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
 }
-.pub .bs-glance__reading b {
-    display: block;
-    color: var(--text);
-    font-size: 18px;
+.pub .bs-glance__high {
+    font-family: var(--font-serif);
+    font-size: 24px;
+    font-variant-numeric: tabular-nums;
+}
+.pub .bs-glance__next > .d-more {
+    justify-self: start;
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
 }
 
 /* Today & Tonight as agate rows. */
@@ -1015,45 +1060,12 @@
         border: 2px solid var(--text);
         background: transparent;
     }
-    /* The forecast is the masthead's left ear, outlined like Coming up: periods two by two. */
+    /* The forecast is the masthead's left ear, outlined like Coming up. */
     .pub .bs-glance {
-        grid-template-columns: minmax(0, 1fr);
         align-self: stretch;
-        align-content: start;
-        gap: 12px;
-        padding: 14px 16px 16px;
+        padding: 14px 16px 4px;
         border: 2px solid var(--text);
         border-radius: 16px;
-        background: transparent;
-    }
-    .pub .bs-glance__title {
-        position: static;
-        width: auto;
-        height: auto;
-        overflow: visible;
-        clip: auto;
-        grid-column: 1 / -1;
-        margin: 0;
-        font-family: var(--font-serif);
-        font-size: 22px;
-        font-weight: 700;
-    }
-    .pub .bs-glance__weather {
-        grid-template-columns: minmax(0, 1fr);
-        align-items: start;
-        gap: 10px;
-    }
-    .pub .bs-glance__periods {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 12px 16px;
-    }
-    .pub .bs-glance__reading {
-        font-size: 14px;
-    }
-    .pub .bs-glance__reading b {
-        display: inline;
-        margin-right: 4px;
-        font-size: 20px;
     }
     .pub .bs-front {
         display: grid;
@@ -1169,9 +1181,6 @@
 .pub .tt-team .team-record {
     display: inline;
     margin-top: 0;
-}
-.pub .bs-glance__name {
-    white-space: normal;
 }
 @media (min-width: 1024px) {
     .pub .bs-title__name {
@@ -1424,32 +1433,7 @@
     .pub .bs-watch__search label {
         margin: 0;
     }
-    .pub .bs-glance__weather {
-        grid-template-columns: minmax(0, 1fr);
-    }
 }
-@media (max-width: 599px) {
-    .pub .bs-glance__periods {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 12px 16px;
-    }
-    .pub .bs-glance__name {
-        white-space: nowrap;
-    }
-}
-@media (min-width: 600px) and (max-width: 1023px) {
-    .pub .bs-glance__periods li {
-        align-items: center;
-        text-align: center;
-    }
-    /* Names take two lines' height so the temperatures line up across the strip. */
-    .pub .bs-glance__name {
-        min-height: 2.5em;
-        line-height: 1.25;
-        white-space: normal;
-    }
-}
-
 /* ---------- Desktop paper ---------- */
 @media (min-width: 1024px) {
     :root:is([data-color-scheme], :not([data-color-scheme])) .pub {
@@ -2092,12 +2076,6 @@
     }
 }
 
-.pub .bs-glance__periods .weather-icon {
-    width: 28px;
-    height: 28px;
-    margin-block: 3px;
-}
-
 /* Keep header actions at 44px and the date/time readable on narrow phones. */
 @media (max-width: 374px) {
     :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme])) .pub .site-header {
@@ -2588,73 +2566,6 @@ body:has([data-scheme-dialog][open]) {
     }
 }
 
-@media (min-width: 1920px) {
-    /* No box: the weather reads as the masthead's right-hand ear. */
-    .pub .bs-glance {
-        padding: 0;
-        border: 0;
-        border-radius: 0;
-    }
-    .pub .bs-glance__title {
-        position: absolute; /* visually hidden; still names the section for screen readers */
-        width: 1px;
-        height: 1px;
-        overflow: hidden;
-        clip: rect(0 0 0 0);
-    }
-    .pub .bs-glance__weather {
-        min-width: 0;
-        grid-template-columns: minmax(0, 1fr);
-        grid-template-areas: 'periods' 'link';
-        align-items: end;
-        gap: 12px;
-    }
-    .pub .bs-glance__weather > .d-more {
-        grid-area: link;
-    }
-    .pub .bs-glance__periods {
-        grid-area: periods;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: 0;
-    }
-    .pub .bs-glance__periods li {
-        display: grid;
-        grid-template-columns: 34px minmax(0, 1fr);
-        min-width: 0;
-        grid-template-areas: 'name name' 'icon temp';
-        align-items: center;
-        gap: 2px 8px;
-        padding: 0 12px;
-        border-left: 1px solid var(--row-border);
-    }
-    .pub .bs-glance__name {
-        grid-area: name;
-        white-space: normal;
-    }
-    .pub .bs-glance__periods .weather-icon {
-        grid-area: icon;
-        width: 34px;
-        height: 34px;
-        margin: 0;
-    }
-    .pub .bs-glance__reading {
-        grid-area: temp;
-        display: flex;
-        flex-direction: column; /* temperature on top, the summary text under it */
-        min-width: 0;
-        overflow-wrap: anywhere;
-        max-width: 170px;
-        font-size: 12px;
-    }
-    .pub .bs-glance__reading b {
-        display: block;
-        margin: 0;
-        font-family: var(--font-serif);
-        font-size: 26px;
-        line-height: 1.1;
-    }
-}
-
 /* ---------- Home masthead polish, 1920px and up (wide-screens-4k-handoff.md 2.4) ---------- */
 @media (min-width: 1920px) {
     .pub .bs-masthead {
@@ -2699,12 +2610,6 @@ body:has([data-scheme-dialog][open]) {
         grid-column: 2;
         grid-row: 1;
         justify-self: end;
-    }
-    .pub .bs-glance__periods {
-        grid-template-columns: repeat(4, minmax(0, 210px));
-    }
-    .pub .bs-glance__weather {
-        align-items: end;
     }
     /* 1: Live now becomes one line under the double rule. */
     .pub .bs-masthead > .bs-live {
@@ -2830,17 +2735,6 @@ body:has([data-scheme-dialog][open]) {
 }
 
 @media (min-width: 1920px) {
-    .pub .bs-glance__weather {
-        grid-template-columns: minmax(0, 1fr) auto;
-        grid-template-areas: 'periods link';
-        gap: 16px;
-    }
-    .pub .bs-glance__weather > .d-more {
-        white-space: nowrap;
-        min-height: 44px;
-        display: inline-flex;
-        align-items: center;
-    }
     .pub .bs-masthead > .bs-glance {
         align-self: center;
         min-width: 0;
@@ -2980,5 +2874,31 @@ body:has([data-scheme-dialog][open]) {
         display: flex;
         align-items: center;
         min-height: 44px;
+    }
+}
+
+/* From 1920px the forecast is the masthead's right-hand ear: no box, the lead beside the later periods. */
+@media (min-width: 1920px) {
+    .pub .bs-glance {
+        grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
+        column-gap: 32px;
+        width: min(860px, 100%);
+        padding: 0;
+        border: 0;
+        border-radius: 0;
+    }
+    .pub .bs-glance__next {
+        padding-left: 28px;
+        border-left: 1px solid var(--row-border);
+    }
+    .pub .bs-glance__temp {
+        font-size: 64px;
+    }
+    .pub .bs-glance__now .weather-icon {
+        width: 52px;
+        height: 52px;
+    }
+    .pub .bs-glance__summary {
+        font-size: 18px;
     }
 }

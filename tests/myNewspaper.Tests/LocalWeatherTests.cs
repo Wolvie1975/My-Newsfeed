@@ -190,4 +190,32 @@ public class LocalWeatherTests
         Assert.Empty(await service.GetAlertsAsync(default));
         Assert.Equal(1, handler.Calls);
     }
+
+    private static LocalForecast Period(string name, int temperature, string summary, bool day) =>
+        new(name, temperature, "F", summary, "5 mph S", DateTimeOffset.UnixEpoch, day);
+
+    [Fact]
+    public void Glance_pairs_a_daytime_lead_with_its_night_and_lists_the_rest()
+    {
+        var glance = ForecastGlance.From([
+            Period("Today", 53, "Patchy Drizzle", true), Period("Tonight", 35, "Mostly Cloudy then Patchy Frost", false),
+            Period("Saturday", 56, "Patchy Frost then Mostly Sunny", true), Period("Saturday Night", 40, "Clear", false)])!;
+        Assert.Equal("Today", glance.Lead.Name);
+        Assert.Equal(35, glance.Low);
+        Assert.Equal("Patchy drizzle. Tonight, mostly cloudy then patchy frost.", glance.Summary);
+        Assert.Equal(new[] { "Saturday", "Saturday Night" }, glance.Next.Select(p => p.Name));
+        Assert.Equal("Patchy frost then mostly sunny", ForecastGlance.Sentence(glance.Next[0].Summary));
+    }
+
+    [Fact]
+    public void Glance_led_by_a_night_has_no_separate_low()
+    {
+        var glance = ForecastGlance.From([
+            Period("Tonight", 35, "Mostly Cloudy", false), Period("Saturday", 56, "Sunny", true),
+            Period("Saturday Night", 40, "Clear", false), Period("Sunday", 60, "Sunny", true)])!;
+        Assert.Null(glance.Low);
+        Assert.Equal("Mostly cloudy.", glance.Summary);
+        Assert.Equal(new[] { "Saturday", "Saturday Night" }, glance.Next.Select(p => p.Name));
+        Assert.Null(ForecastGlance.From([]));
+    }
 }

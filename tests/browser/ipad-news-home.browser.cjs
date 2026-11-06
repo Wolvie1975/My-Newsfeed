@@ -126,11 +126,13 @@ const shots = lib.screenshots('ipad-news-home');
             const image = await box('.bs-home .d-lead__image');
             assert(Math.abs(image.w / image.h - 16 / 9) < 0.02, 'Home photo/P8 ratio');
             assert(image.w > frame.w * 0.95);
-            const weather = page.locator('.bs-glance__periods li');
-            if (await weather.count()) {
-                assert.equal(await weather.count(), 4);
-                const ys = await weather.evaluateAll((els) => els.map((e) => e.getBoundingClientRect().y));
-                assert(Math.max(...ys) - Math.min(...ys) < 2);
+            if (await page.locator('.bs-glance').count()) {
+                const lead = await box('.bs-glance__lead'),
+                    next = await box('.bs-glance__next');
+                assert(
+                    Math.abs(lead.y - next.y) < 2 && next.x > lead.x + lead.w,
+                    'Weather lead beside the later periods',
+                );
             }
             const date = await box('.bs-title__date'),
                 refresh = await box('.bs-title .home-refresh');

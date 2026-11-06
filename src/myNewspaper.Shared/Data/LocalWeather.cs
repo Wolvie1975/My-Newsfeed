@@ -10,6 +10,33 @@ public sealed record LocalWeatherPage(IReadOnlyList<LocalForecast> Periods, Date
 public sealed record WeatherAlert(string Event, string Headline, string Severity, DateTimeOffset? Ends);
 
 /// <summary>
+/// Home's forecast at a glance: the first period leads. A daytime lead is paired with the night after it, whose low and
+/// conditions join the summary; the periods after those follow as a short list.
+/// </summary>
+public sealed record ForecastGlance(LocalForecast Lead, int? Low, string Summary, IReadOnlyList<LocalForecast> Next)
+{
+    public static ForecastGlance? From(IReadOnlyList<LocalForecast> periods, int next = 2)
+    {
+        if (periods.Count == 0) return null;
+        var lead = periods[0];
+        var night = lead.IsDaytime && periods.Count > 1 && !periods[1].IsDaytime ? periods[1] : null;
+        var parts = new List<string>(2);
+        if (!string.IsNullOrWhiteSpace(lead.Summary)) parts.Add(Sentence(lead.Summary) + ".");
+        if (night is not null && !string.IsNullOrWhiteSpace(night.Summary))
+            parts.Add($"{night.Name}, {night.Summary.Trim().ToLowerInvariant()}.");
+        return new ForecastGlance(lead, night?.Temperature, string.Join(' ', parts),
+            periods.Skip(night is null ? 1 : 2).Take(next).ToList());
+    }
+
+    /// <summary>NWS short forecasts are title case ("Mostly Cloudy then Patchy Frost"); this reads as a sentence.</summary>
+    public static string Sentence(string text)
+    {
+        var lower = text.Trim().ToLowerInvariant();
+        return lower.Length == 0 ? lower : char.ToUpperInvariant(lower[0]) + lower[1..];
+    }
+}
+
+/// <summary>
 /// NWS forecasts and alerts, cached. Each location has at most one fetch in flight, bounded by the client's own timeout
 /// rather than the caller's: a caller that stops waiting (Home allows 3 s) doesn't cancel it, so its result, forecast or
 /// failure, is cached for the next request instead of every request waiting out the slow service again.

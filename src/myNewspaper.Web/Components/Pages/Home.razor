@@ -40,18 +40,32 @@
             </a>
         </div>
 
-        @if (weather is { Periods.Count: > 0 } forecast)
+        @if (weather is { Periods.Count: > 0 } forecast && ForecastGlance.From(forecast.Periods) is { } glance)
         {
-            <section class="bs-glance" aria-label="Kansas City weather">
-                <div class="bs-glance__weather">
-                    <h2 class="bs-glance__title">Kansas City weather</h2>
-                    <a class="d-more" href="news/kansas-city">Kansas City <span aria-hidden="true">→</span></a>
-                    <ul class="bs-glance__periods">
-                        @foreach (var period in forecast.Periods.Take(4))
+            <section class="bs-glance" aria-labelledby="h-home-weather">
+                <div class="bs-glance__lead">
+                    <h2 class="bs-glance__title" id="h-home-weather">@glance.Lead.Name in @forecast.Location</h2>
+                    <p class="bs-glance__now">
+                        <WeatherIcon Summary="@glance.Lead.Summary" IsDaytime="@glance.Lead.IsDaytime" />
+                        <span class="bs-glance__temp">@glance.Lead.Temperature°<span class="sr-only"> @(glance.Lead.IsDaytime ? "high" : "low")</span></span>
+                        @if (glance.Low is { } low)
                         {
-                            <li><span class="bs-glance__name">@period.Name</span><WeatherIcon Summary="@period.Summary" IsDaytime="@period.IsDaytime" /><span class="bs-glance__reading"><b>@period.Temperature°</b> @period.Summary</span></li>
+                            <span class="bs-glance__low"><span aria-hidden="true">/ </span>@low°<span class="sr-only"> low</span></span>
                         }
-                    </ul>
+                    </p>
+                    <p class="bs-glance__summary">@glance.Summary</p>
+                </div>
+                <div class="bs-glance__next">
+                    @if (glance.Next.Count > 0)
+                    {
+                        <ul class="bs-glance__periods">
+                            @foreach (var period in glance.Next)
+                            {
+                                <li><WeatherIcon Summary="@period.Summary" IsDaytime="@period.IsDaytime" /><span class="bs-glance__period"><span class="bs-glance__name">@period.Name</span><span class="bs-glance__reading">@ForecastGlance.Sentence(period.Summary)</span></span><b class="bs-glance__high">@period.Temperature°</b></li>
+                            }
+                        </ul>
+                    }
+                    <a class="d-more" href="news/kansas-city#local-weather">Full forecast <span aria-hidden="true">→</span></a>
                 </div>
             </section>
         }

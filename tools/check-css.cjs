@@ -42,8 +42,6 @@ const oneOffWidths = {
     'max:479': 'narrow phones: header clock on its own row, colour scheme picker in one column',
     'max:480': 'soccer stats panel stacks on narrow phones',
     'max:550': 'Watch detail and Settings order rows stack',
-    'max:599': 'Home weather periods wrap below 600px (pairs with min 600)',
-    'min:600': 'Home weather periods centre in a strip from 600px to tablet',
     'max:600': 'phones vs 7-inch tablets (600px portrait): box office, Watch page, Home choice, Admin category list',
     'max:650': 'movie grid drops to two columns',
     'max:699': 'section hub, Watch results and Load more stack below 700px',
@@ -68,11 +66,9 @@ const oneOffWidths = {
 const widthDependentHiding = {
     'src/myNewspaper.Web/wwwroot/broadsheet.css|.pub .bs-watch__search label':
         'Home search label, shown again on desktop',
-    'src/myNewspaper.Web/wwwroot/broadsheet.css|.pub .bs-glance__title': 'Home weather heading, shown on desktop',
     'src/myNewspaper.Web/wwwroot/broadsheet.css|.pub .bs-title__date': 'masthead date, hidden in the compact header',
     'src/myNewspaper.Web/wwwroot/broadsheet.css|.pub .saved-link__label':
         'Saved label, icon only in the compact header',
-    'src/myNewspaper.Web/wwwroot/tablet.css|.pub .tab-desktop .bs-glance__title': 'weather heading on the tablet front',
     'src/myNewspaper.Web/wwwroot/sections.css|.pub .dg-bar__label': 'Digital source label, shown on desktop',
     'src/myNewspaper.Web/wwwroot/sections.css|.pub .sb-toolbar__filter label': 'scoreboard filter labels on phones',
     'src/myNewspaper.Shared/wwwroot/public.css|.pub .settings-link__label': 'Settings label, icon only below 1024px',
