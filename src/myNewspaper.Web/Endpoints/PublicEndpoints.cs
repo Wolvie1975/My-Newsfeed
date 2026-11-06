@@ -123,5 +123,12 @@ public static class PublicEndpoints
             try { return Results.Json(await weather.GetAsync(context.RequestAborted, lat, lon)); }
             catch (ArgumentException) { return Results.BadRequest(new { error = "Valid latitude and longitude are required." }); }
         });
+
+        app.MapGet("/local/weather/hourly", async (LocalWeather weather, HttpContext context, double? lat, double? lon) =>
+        {
+            context.Response.Headers.CacheControl = lat is not null || lon is not null ? "private,no-store" : "public,max-age=120";
+            try { return Results.Json(await weather.GetHourlyAsync(context.RequestAborted, lat, lon)); }
+            catch (ArgumentException) { return Results.BadRequest(new { error = "Valid latitude and longitude are required." }); }
+        });
     }
 }

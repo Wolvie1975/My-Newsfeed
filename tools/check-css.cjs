@@ -106,6 +106,7 @@ const registeredPrefixes = [
     'is',
     'has',
     'sr',
+    'hw',
 ];
 
 // Prefixes already in use on November 5, 2026, frozen: don't add to this list; give a new feature its own prefix in

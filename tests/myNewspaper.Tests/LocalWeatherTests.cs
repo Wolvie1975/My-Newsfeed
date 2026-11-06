@@ -218,4 +218,239 @@ public class LocalWeatherTests
         Assert.Equal(new[] { "Saturday", "Saturday Night" }, glance.Next.Select(p => p.Name));
         Assert.Null(ForecastGlance.From([]));
     }
+
+    private sealed class FixedClock(DateTimeOffset now) : TimeProvider
+    {
+        public override DateTimeOffset GetUtcNow() => now;
+    }
+
+    [Fact]
+    public async Task Hourly_starts_from_next_hour_returns_exactly_8_and_preserves_missing_rain_chance()
+    {
+        var baseTime = new DateTimeOffset(2026, 11, 6, 15, 30, 0, TimeSpan.FromHours(-6)); // 3:30 PM CST
+        var handler = new Handler(request =>
+        {
+            var path = request.RequestUri!.AbsolutePath;
+            if (path.StartsWith("/points/"))
+            {
+                return Json("""
+                {
+                    "properties": {
+                        "forecast": "https://api.weather.gov/gridpoints/EAX/1,2/forecast",
+                        "forecastHourly": "https://api.weather.gov/gridpoints/EAX/1,2/forecast/hourly",
+                        "timeZone": "America/Chicago"
+                    }
+                }
+                """);
+            }
+
+            var periods = new List<object>
+            {
+                // Current/past hour (3 PM): should be skipped
+                new {
+                    startTime = baseTime.AddMinutes(-30),
+                    isDaytime = true,
+                    temperature = 50,
+                    temperatureUnit = "F",
+                    shortForecast = "Mostly Cloudy",
+                    windSpeed = "5 mph",
+                    windDirection = "N",
+                    probabilityOfPrecipitation = new { value = (int?)10 }
+                }
+            };
+
+            // 10 future hours (4 PM to 1 AM)
+            for (var i = 1; i <= 10; i++)
+            {
+                var dt = baseTime.AddMinutes(-30).AddHours(i);
+                periods.Add(new
+                {
+                    startTime = dt,
+                    isDaytime = dt.Hour is >= 6 and < 18,
+                    temperature = 48 - i,
+                    temperatureUnit = "F",
+                    shortForecast = "Partly Cloudy",
+                    windSpeed = "5 mph",
+                    windDirection = "NW",
+                    probabilityOfPrecipitation = new { value = i == 3 ? (int?)null : i * 5 }
+                });
+            }
+
+            return Json(System.Text.Json.JsonSerializer.Serialize(new
+            {
+                properties = new
+                {
+                    updated = baseTime,
+                    periods
+                }
+            }));
+        });
+
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        var timeProvider = new FixedClock(baseTime);
+        var service = new LocalWeather(new Clients(handler), cache, timeProvider, NullLogger<LocalWeather>.Instance);
+
+        var page = await service.GetHourlyAsync(default);
+        Assert.Equal("Kansas City", page.Location);
+        Assert.Equal("America/Chicago", page.TimeZone);
+        Assert.False(page.Stale);
+        Assert.Equal(8, page.Hours.Count);
+        Assert.Equal("4 PM", page.Hours[0].Label);
+        Assert.Equal("11 PM", page.Hours[^1].Label);
+        Assert.Null(page.Hours[2].RainChance); // 3rd hour has null pop
+        Assert.Equal(5, page.Hours[0].RainChance);
+
+        // Cached
+        var cached = await service.GetHourlyAsync(default);
+        Assert.Same(page, cached);
+        Assert.Equal(2, handler.Calls); // 1 point + 1 forecastHourly
+    }
+
+    [Fact]
+    public async Task Hourly_with_fewer_than_8_future_periods_counts_as_failure()
+    {
+        var baseTime = new DateTimeOffset(2026, 11, 6, 15, 30, 0, TimeSpan.FromHours(-6));
+        var handler = new Handler(request =>
+        {
+            var path = request.RequestUri!.AbsolutePath;
+            if (path.StartsWith("/points/"))
+            {
+                return Json("""
+                {
+                    "properties": {
+                        "forecast": "https://api.weather.gov/gridpoints/EAX/1,2/forecast",
+                        "forecastHourly": "https://api.weather.gov/gridpoints/EAX/1,2/forecast/hourly",
+                        "timeZone": "America/Chicago"
+                    }
+                }
+                """);
+            }
+
+            // Only 5 future periods
+            var periods = Enumerable.Range(1, 5).Select(i => new
+            {
+                startTime = baseTime.AddHours(i),
+                isDaytime = true,
+                temperature = 45,
+                temperatureUnit = "F",
+                shortForecast = "Clear",
+                windSpeed = "5 mph",
+                windDirection = "N",
+                probabilityOfPrecipitation = new { value = 0 }
+            });
+
+            return Json(System.Text.Json.JsonSerializer.Serialize(new
+            {
+                properties = new
+                {
+                    updated = baseTime,
+                    periods
+                }
+            }));
+        });
+
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        var timeProvider = new FixedClock(baseTime);
+        var service = new LocalWeather(new Clients(handler), cache, timeProvider, NullLogger<LocalWeather>.Instance);
+
+        var result = await service.GetHourlyAsync(default);
+        Assert.Empty(result.Hours);
+        Assert.True(result.Stale);
+    }
+
+    private static LocalHourlyPeriod HourlyPeriod(string label, DateTimeOffset starts, int? rainChance, int temp = 45) =>
+        new(label, starts, true, temp, "F", "Cloudy", rainChance, "5 mph N");
+
+    [Fact]
+    public void RainSummary_covers_all_four_cases_and_crossing_midnight_and_noon()
+    {
+        var start = new DateTimeOffset(2026, 11, 6, 16, 0, 0, TimeSpan.FromHours(-6)); // 4 PM
+
+        // Case 1 standard: 30% or more, e.g. 6 PM (30%) and 7 PM (40%). End is 8 PM.
+        var case1 = new List<LocalHourlyPeriod>
+        {
+            HourlyPeriod("4 PM", start, 10),
+            HourlyPeriod("5 PM", start.AddHours(1), 15),
+            HourlyPeriod("6 PM", start.AddHours(2), 30),
+            HourlyPeriod("7 PM", start.AddHours(3), 40),
+            HourlyPeriod("8 PM", start.AddHours(4), 20),
+            HourlyPeriod("9 PM", start.AddHours(5), 10),
+            HourlyPeriod("10 PM", start.AddHours(6), 5),
+            HourlyPeriod("11 PM", start.AddHours(7), 0),
+        };
+        Assert.Equal("Rain most likely 6–8 PM, up to 40% at 7 PM", LocalWeather.CalculateRainSummary(case1));
+
+        // Case 1 crossing midnight: 11 PM (35%), 12 AM (45%). End is 1 AM.
+        var midnightStart = new DateTimeOffset(2026, 11, 6, 21, 0, 0, TimeSpan.FromHours(-6)); // 9 PM
+        var case1Midnight = new List<LocalHourlyPeriod>
+        {
+            HourlyPeriod("9 PM", midnightStart, 10),
+            HourlyPeriod("10 PM", midnightStart.AddHours(1), 15),
+            HourlyPeriod("11 PM", midnightStart.AddHours(2), 35),
+            HourlyPeriod("12 AM", midnightStart.AddHours(3), 45),
+            HourlyPeriod("1 AM", midnightStart.AddHours(4), 20),
+            HourlyPeriod("2 AM", midnightStart.AddHours(5), 10),
+            HourlyPeriod("3 AM", midnightStart.AddHours(6), 5),
+            HourlyPeriod("4 AM", midnightStart.AddHours(7), 0),
+        };
+        Assert.Equal("Rain most likely 11 PM–1 AM, up to 45% at 12 AM", LocalWeather.CalculateRainSummary(case1Midnight));
+
+        // Case 1 crossing noon: 11 AM (50%), 12 PM (40%). End is 1 PM.
+        var noonStart = new DateTimeOffset(2026, 11, 6, 9, 0, 0, TimeSpan.FromHours(-6)); // 9 AM
+        var case1Noon = new List<LocalHourlyPeriod>
+        {
+            HourlyPeriod("9 AM", noonStart, 10),
+            HourlyPeriod("10 AM", noonStart.AddHours(1), 20),
+            HourlyPeriod("11 AM", noonStart.AddHours(2), 50),
+            HourlyPeriod("12 PM", noonStart.AddHours(3), 40),
+            HourlyPeriod("1 PM", noonStart.AddHours(4), 15),
+            HourlyPeriod("2 PM", noonStart.AddHours(5), 10),
+            HourlyPeriod("3 PM", noonStart.AddHours(6), 5),
+            HourlyPeriod("4 PM", noonStart.AddHours(7), 0),
+        };
+        Assert.Equal("Rain most likely 11 AM–1 PM, up to 50% at 11 AM", LocalWeather.CalculateRainSummary(case1Noon));
+
+        // Case 2: Highest is 1-29%
+        var case2 = new List<LocalHourlyPeriod>
+        {
+            HourlyPeriod("4 PM", start, 0),
+            HourlyPeriod("5 PM", start.AddHours(1), 10),
+            HourlyPeriod("6 PM", start.AddHours(2), 25),
+            HourlyPeriod("7 PM", start.AddHours(3), 15),
+            HourlyPeriod("8 PM", start.AddHours(4), 5),
+            HourlyPeriod("9 PM", start.AddHours(5), 0),
+            HourlyPeriod("10 PM", start.AddHours(6), 0),
+            HourlyPeriod("11 PM", start.AddHours(7), 0),
+        };
+        Assert.Equal("Low chance of rain through 11 PM, up to 25%", LocalWeather.CalculateRainSummary(case2));
+
+        // Case 3: All 0%
+        var case3 = new List<LocalHourlyPeriod>
+        {
+            HourlyPeriod("4 PM", start, 0),
+            HourlyPeriod("5 PM", start.AddHours(1), 0),
+            HourlyPeriod("6 PM", start.AddHours(2), 0),
+            HourlyPeriod("7 PM", start.AddHours(3), 0),
+            HourlyPeriod("8 PM", start.AddHours(4), 0),
+            HourlyPeriod("9 PM", start.AddHours(5), 0),
+            HourlyPeriod("10 PM", start.AddHours(6), 0),
+            HourlyPeriod("11 PM", start.AddHours(7), 0),
+        };
+        Assert.Equal("No rain expected through 11 PM", LocalWeather.CalculateRainSummary(case3));
+
+        // Case 4: Any hour missing (null)
+        var case4 = new List<LocalHourlyPeriod>
+        {
+            HourlyPeriod("4 PM", start, 0),
+            HourlyPeriod("5 PM", start.AddHours(1), null),
+            HourlyPeriod("6 PM", start.AddHours(2), 20),
+            HourlyPeriod("7 PM", start.AddHours(3), 10),
+            HourlyPeriod("8 PM", start.AddHours(4), 0),
+            HourlyPeriod("9 PM", start.AddHours(5), 0),
+            HourlyPeriod("10 PM", start.AddHours(6), 0),
+            HourlyPeriod("11 PM", start.AddHours(7), 0),
+        };
+        Assert.Null(LocalWeather.CalculateRainSummary(case4));
+        Assert.Null(LocalWeather.CalculateRainSummary([]));
+    }
 }

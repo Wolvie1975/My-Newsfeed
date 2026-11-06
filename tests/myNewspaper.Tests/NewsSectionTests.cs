@@ -40,6 +40,7 @@ public class NewsSectionTests
     [InlineData("/news?view=x")]
     [InlineData("/news/all?category=5877")]
     [InlineData("/local/weather")]
+    [InlineData("/local/weather/hourly")]
     public async Task Other_addresses_are_not_redirected(string path)
     {
         await using var app = new ProfileApp(enabled: false);

@@ -30,6 +30,15 @@
     <p class="updated" data-weather-location-status role="status" aria-live="polite"></p>
     <p class="updated" data-weather-status aria-live="polite">Open the official forecast for current weather.</p>
     <div class="weather-grid" data-weather-periods></div>
+    <section class="hw" data-weather-hourly aria-labelledby="hw-title" hidden>
+        <div class="hw__head">
+            <h3 class="hw__title" id="hw-title">Next 8 hours</h3>
+            <p class="hw__summary" data-weather-hourly-summary></p>
+            <p class="hw__zone" data-weather-hourly-zone></p>
+        </div>
+        <ol class="hw__hours" data-weather-hourly-list></ol>
+        <p class="hw__unavailable" data-weather-hourly-unavailable hidden>Hourly forecast unavailable.</p>
+    </section>
     <noscript><p>Use the National Weather Service link to view the forecast.</p></noscript>
 </section>
 <PhoneLocalNews Data="feed" Dedicated="dedicated" Error="@error" After="@After" Section="@LocalSection" Expanded="@(ViewQuery == "news")" />

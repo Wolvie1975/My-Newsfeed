@@ -273,12 +273,127 @@
                 (point?.lon ?? -94.5786);
         const feature = host.querySelector('[data-weather-feature]'),
             tiles = host.querySelector('[data-weather-tiles]'),
-            forecast = document.querySelector('[data-phone-forecast]');
+            forecast = document.querySelector('[data-phone-forecast]'),
+            hourlyHost = host.querySelector('[data-weather-hourly]');
         feature?.replaceChildren();
         tiles?.replaceChildren();
         if (forecast) forecast.textContent = 'Loading the National Weather Service forecast…';
         periods.replaceChildren();
         status.textContent = 'Loading the National Weather Service forecast…';
+        if (hourlyHost) {
+            hourlyHost.hidden = true;
+            (async () => {
+                const query = point ? '?' + new URLSearchParams(point) : '';
+                const hourlyList = hourlyHost.querySelector('[data-weather-hourly-list]');
+                const hourlySummary = hourlyHost.querySelector('[data-weather-hourly-summary]');
+                const hourlyZone = hourlyHost.querySelector('[data-weather-hourly-zone]');
+                const hourlyUnavailable = hourlyHost.querySelector('[data-weather-hourly-unavailable]');
+                try {
+                    const response = await fetch('local/weather/hourly' + query, { signal: controller.signal });
+                    if (!response.ok) throw Error('Hourly unavailable');
+                    const data = await response.json();
+                    if (!host.isConnected || controller.signal.aborted) return;
+                    if (!Array.isArray(data.hours) || data.hours.length !== 8) throw Error('Fewer than 8 hours');
+
+                    hourlyList.replaceChildren();
+                    data.hours.forEach((h) => {
+                        const item = node('li', '', 'hw__hour');
+                        if (h.rainChance !== null && h.rainChance !== undefined && h.rainChance >= 30) {
+                            item.classList.add('is-likely');
+                        }
+                        const timeSpan = node('span', txt(h.label), 'hw__time');
+                        timeSpan.setAttribute('aria-hidden', 'true');
+
+                        let iconWrap = null;
+                        if (window.myNewspaperWeatherIcons) {
+                            iconWrap = window.myNewspaperWeatherIcons.create(h.summary, h.isDaytime !== false);
+                            iconWrap.setAttribute('aria-hidden', 'true');
+                        }
+
+                        const tempSpan = node('span', `${h.temperature}°`, 'hw__temp');
+                        tempSpan.setAttribute('aria-hidden', 'true');
+
+                        const condSpan = node('span', txt(h.summary), 'hw__cond');
+                        condSpan.setAttribute('title', txt(h.summary));
+                        condSpan.setAttribute('aria-hidden', 'true');
+
+                        const barSpan = node('span', '', 'hw__bar');
+                        barSpan.setAttribute('aria-hidden', 'true');
+                        const fill = document.createElement('span');
+                        const pct =
+                            h.rainChance !== null && h.rainChance !== undefined
+                                ? Math.max(0, Math.min(100, h.rainChance))
+                                : 0;
+                        fill.style.width = pct + '%';
+                        barSpan.append(fill);
+
+                        const popText = h.rainChance !== null && h.rainChance !== undefined ? `${h.rainChance}%` : '—';
+                        const popSpan = node('span', popText, 'hw__pop');
+                        popSpan.setAttribute('aria-hidden', 'true');
+
+                        const condLower = (txt(h.summary) || 'fair').toLowerCase();
+                        const rainPart =
+                            h.rainChance !== null && h.rainChance !== undefined
+                                ? `${h.rainChance} percent chance of rain.`
+                                : 'chance of rain not given.';
+                        const srSentence = `${txt(h.label)}, ${h.temperature} degrees, ${condLower}, ${rainPart}`;
+                        const srSpan = node('span', srSentence, 'sr-only');
+
+                        item.append(timeSpan);
+                        if (iconWrap) item.append(iconWrap);
+                        item.append(tempSpan, condSpan, barSpan, popSpan, srSpan);
+                        hourlyList.append(item);
+                    });
+
+                    if (data.rainSummary) {
+                        hourlySummary.textContent = data.rainSummary;
+                        hourlySummary.hidden = false;
+                    } else {
+                        hourlySummary.textContent = '';
+                        hourlySummary.hidden = true;
+                    }
+
+                    let zoneLabel = '';
+                    if (data.timeZone) {
+                        try {
+                            const parts = new Intl.DateTimeFormat('en-US', {
+                                timeZone: data.timeZone,
+                                timeZoneName: 'short',
+                            }).formatToParts(new Date());
+                            const tz = parts.find((p) => p.type === 'timeZoneName');
+                            if (tz?.value) zoneLabel = 'Times in ' + tz.value;
+                        } catch {
+                            zoneLabel = '';
+                        }
+                    }
+                    if (zoneLabel) {
+                        hourlyZone.textContent = zoneLabel;
+                        hourlyZone.hidden = false;
+                    } else {
+                        hourlyZone.textContent = '';
+                        hourlyZone.hidden = true;
+                    }
+
+                    hourlyUnavailable.hidden = true;
+                    hourlyList.hidden = false;
+                    hourlyHost.hidden = false;
+                } catch (_) {
+                    if (!host.isConnected || controller.signal.aborted) return;
+                    hourlyList.replaceChildren();
+                    hourlyList.hidden = true;
+                    if (hourlySummary) {
+                        hourlySummary.textContent = '';
+                        hourlySummary.hidden = true;
+                    }
+                    if (hourlyZone) {
+                        hourlyZone.textContent = '';
+                        hourlyZone.hidden = true;
+                    }
+                    hourlyUnavailable.hidden = false;
+                    hourlyHost.hidden = false;
+                }
+            })();
+        }
         try {
             const query = point ? '?' + new URLSearchParams(point) : '';
             const response = await fetch('local/weather' + query, { signal: controller.signal });

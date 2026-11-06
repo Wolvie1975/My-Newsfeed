@@ -116,6 +116,7 @@ reviewer. Existing code is being brought into line in the clean-up steps listed 
 | `is-`, `has-`, `sr-` | State classes; `sr-only` |
 | `cv-` | Most covered lists (News, Tech) |
 | `nw-` | News front additions: trending, cascade |
+| `hw-` | Hourly weather (Kansas City & local) |
 
 ## JavaScript
 

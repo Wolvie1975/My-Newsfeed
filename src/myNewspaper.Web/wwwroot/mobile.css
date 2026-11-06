@@ -1232,9 +1232,30 @@ span.mx-stepper__btn {
         border-radius: 0;
         background: var(--mx-block-bg);
         color: var(--mx-block-fg);
+        display: flex;
+        flex-direction: column;
     }
     .pub #local-weather.mx-local-weather .d-card__head {
+        order: 1;
         flex-wrap: wrap;
+    }
+    .pub #local-weather.mx-local-weather .mx-weather-feature {
+        order: 2;
+    }
+    .pub #local-weather.mx-local-weather .mx-tiles {
+        order: 3;
+    }
+    .pub #local-weather.mx-local-weather .hw {
+        order: 4;
+        margin-top: 14px;
+        padding-top: 12px;
+        border-top: 1px solid var(--mx-block-line);
+    }
+    .pub #local-weather.mx-local-weather .weather-location-controls {
+        order: 5;
+    }
+    .pub #local-weather.mx-local-weather > .updated {
+        order: 6;
     }
     .pub #local-weather.mx-local-weather .d-card__head h2,
     .pub #local-weather.mx-local-weather .d-card__head a,
@@ -1257,6 +1278,115 @@ span.mx-stepper__btn {
         border-color: var(--mx-block-line);
         background: var(--mx-block-tile);
         color: var(--mx-block-fg);
+    }
+    .pub .hw__head {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 4px;
+        margin-bottom: 6px;
+    }
+    .pub .hw__title {
+        margin: 0;
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--mx-block-2);
+    }
+    .pub .hw__zone {
+        margin: 0;
+        font-size: 11px;
+        color: var(--mx-block-2);
+    }
+    .pub .hw__summary {
+        width: 100%;
+        margin: 4px 0 6px;
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--mx-block-fg);
+        display: flex;
+        align-items: center;
+    }
+    .pub .hw__summary::before {
+        content: '';
+        display: inline-block;
+        width: 14px;
+        height: 14px;
+        margin-right: 6px;
+        flex-shrink: 0;
+        background-color: var(--accent);
+        -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8 1.5C8 1.5 2.5 8 2.5 11a5.5 5.5 0 0 0 11 0c0-3-5.5-9.5-5.5-9.5z'/%3E%3C/svg%3E")
+            no-repeat center / contain;
+        mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8 1.5C8 1.5 2.5 8 2.5 11a5.5 5.5 0 0 0 11 0c0-3-5.5-9.5-5.5-9.5z'/%3E%3C/svg%3E")
+            no-repeat center / contain;
+    }
+    .pub .hw__hours {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+    }
+    .pub .hw__hour {
+        display: grid;
+        grid-template-columns: 46px 24px 34px minmax(0, 1fr) 36px;
+        align-items: center;
+        min-height: 40px;
+        border-bottom: 1px solid var(--mx-block-line);
+        gap: 6px;
+    }
+    .pub .hw__time {
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: var(--mx-block-2);
+        white-space: nowrap;
+    }
+    .pub .hw__hour .weather-icon {
+        width: 24px;
+        height: 24px;
+        justify-self: center;
+    }
+    .pub .hw__temp {
+        font-family: Newsreader, Georgia, serif;
+        font-size: 19px;
+        font-weight: 700;
+        color: var(--mx-block-fg);
+        white-space: nowrap;
+    }
+    .pub .hw__cond {
+        display: none;
+    }
+    .pub .hw__bar {
+        height: 8px;
+        border-radius: 4px;
+        background: color-mix(in srgb, var(--accent) 14%, var(--mx-block-bg));
+        overflow: hidden;
+        margin: 0 4px;
+    }
+    .pub .hw__bar span {
+        display: block;
+        height: 100%;
+        background: var(--accent);
+        border-radius: 4px;
+    }
+    .pub .hw__pop {
+        font-size: 12px;
+        text-align: right;
+        color: var(--mx-block-2);
+        white-space: nowrap;
+    }
+    .pub .hw__hour.is-likely .hw__pop {
+        font-weight: 800;
+        color: var(--mx-block-fg);
+    }
+    .pub .hw__pop::before {
+        display: none;
+    }
+    .pub .hw__unavailable {
+        margin: 8px 0;
+        font-size: 13px;
+        color: var(--mx-block-2);
     }
     .pub .mx-watch-feature + .mx-folds .watch-row__head {
         flex-wrap: wrap;

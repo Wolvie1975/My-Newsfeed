@@ -120,8 +120,10 @@ const data = (location) => ({
         await plain.close();
         const apiBase = process.env.API_BASE_URL || base;
         const apiPage = await lib.readerPage(browser);
-        for (const query of ['?lat=91&lon=0', '?lat=1', '?lat=NaN&lon=0', '?lat=0&lon=-181'])
+        for (const query of ['?lat=91&lon=0', '?lat=1', '?lat=NaN&lon=0', '?lat=0&lon=-181']) {
             assert.equal((await apiPage.request.get(apiBase + '/local/weather' + query)).status(), 400);
+            assert.equal((await apiPage.request.get(apiBase + '/local/weather/hourly' + query)).status(), 400);
+        }
         const response = await apiPage.request.get(apiBase + '/local/weather?lat=40.71&lon=-74.01');
         assert.equal(response.status(), 200);
         assert(response.headers()['cache-control'].includes('no-store'));
