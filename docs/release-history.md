@@ -6,6 +6,21 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
+## Home weather forecast strip & YouTube featured layout — November 6, 2026 (America/Chicago)
+
+Commits:
+- `b7fd51d` Home weather: lead forecast with the night's low, later periods beside it. Concept C from the November 6 weather-strip review. The first NWS period leads (icon, high / low, one-sentence summary); a daytime lead pairs with the night after it; next two periods follow as ruled rows with right-aligned temps. Stacked in the 1024-1919px masthead ear, a row on tablets and from 1920px. `ForecastGlance` (Shared/Data) builds the lead and summary; unit tests cover day and night leads. CSS spread over nine breakpoint blocks streamlined into one base set plus ear, tablet, and 1920 overrides.
+- `0f96f0e` YouTube: featured picture beside its title, Latest videos as a grid under it. Concept C from the November 6 featured-video review. From 1024px featured picture is capped at 720px (60% width at narrow desktops) with kicker, title, meta beside it; Latest videos becomes a 2-across (from 1440px 3-across) grid under it. From 1920px the five picks sit at foot of title column; from 2560px By channel and Watch later run down right of both. Tablets and phones unchanged. `youtube.js` swaps hqdefault to maxresdefault/sddefault once loaded.
+- `8346bc2` Track review patches and design screenshots for weather and YouTube.
+
+Verification: full `tools/verify.sh` passed (6/6 steps: dotnet build, 1,139 tests, js unit tests, css check, lint, format check); quick `tools/verify.sh` in deploy.sh passed. `node tools/live-check.cjs`: health 2/2, admin 55/55, public 176/176 (22 pages × 320/390/430/1440px × light/dark), clean-up 2/2; household restored (0 `zz`, 0 unassigned devices).
+
+Deployment: commit `8346bc2d984c` via `deployment/deploy.sh web admin` at 2026-11-06T20:47:42Z.
+- mynewspaper-web:8346bc2d984c (`b2a4f6c33f1a`): healthy, env unchanged, /version `8346bc2d984c`
+  Rollback: `deployment/rollback.sh 8346bc2d984c web` → mynewspaper-web:before-8346bc2d984c (`0246dbf5bf31`)
+- mynewspaper-admin:8346bc2d984c (`fdecb6b65a4c`): healthy, env unchanged, /version `8346bc2d984c`
+  Rollback: `deployment/rollback.sh 8346bc2d984c admin` → mynewspaper-admin:before-8346bc2d984c (`4887c61821e1`)
+
 ## Tech front: service status strip removed — November 5, 2026 (America/Chicago)
 
 `b421891`: the Tech front no longer renders `TechStatusStrip` (desktop or phone); it had been showing a Cloudflare
