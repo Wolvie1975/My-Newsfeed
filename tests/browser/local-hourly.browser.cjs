@@ -203,8 +203,12 @@ const shots = lib.screenshots('local-hourly');
         await page.reload();
         const locateBtn = page.locator('[data-weather-locate]');
         await locateBtn.waitFor({ state: 'visible' });
+        const hourlyResponse = page.waitForResponse(
+            (r) => r.url().includes('/local/weather/hourly') && r.status() === 200,
+        );
         await locateBtn.click();
-        await page.locator('.hw[data-weather-hourly]').waitFor({ state: 'visible' });
+        await hourlyResponse;
+        await page.waitForTimeout(200);
         const zoneText = await page.locator('[data-weather-hourly-zone]').innerText();
         assert(zoneText.includes('MST') || zoneText.includes('MDT'), `Zone updated to Denver: ${zoneText}`);
 

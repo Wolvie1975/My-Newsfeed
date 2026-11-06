@@ -206,6 +206,6 @@ Desktop rules go in `src/myNewspaper.Web/wwwroot/sections.css`, after the existi
   - **Failure:** `page.route('**/local/weather/hourly*', r => r.fulfill({ status: 503 }))` → still 4 forecast cards, and the unavailable line shows.
   - **Location:** grant geolocation to a point in another time zone (for example Denver) → the zone label changes and the labels shift by an hour.
   - Screen reader: each item's `.sr-only` sentence holds the time, temperature, conditions and rain chance.
-- [ ] Mobile verification per AGENTS.md: 320, 390 and 430px in light and dark, with screenshots inspected. Record the widths, themes and results in the handoff.
-- [ ] After deploy: `node tools/live-check.cjs`, plus this page on a phone width against the live NWS data.
-- [ ] Release-history entry naming the deployed commit and the rollback command.
+- [x] Mobile verification per AGENTS.md: 320, 390 and 430px in light and dark, with screenshots inspected. Record the widths, themes and results in the handoff.
+- [x] After deploy: `node tools/live-check.cjs`, plus this page on a phone width against the live NWS data.
+- [x] Release-history entry naming the deployed commit and the rollback command.

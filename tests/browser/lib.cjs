@@ -41,9 +41,9 @@ function envFile(name) {
 }
 
 const trim = (url) => url.replace(/\/$/, '');
-const base = trim(process.env.BASE_URL || 'http://localhost:5295');
-const adminBase = trim(process.env.ADMIN_BASE_URL || 'http://localhost:5297');
-const adminPassword = process.env.ADMIN_PASSWORD || '';
+const base = trim(process.env.BASE_URL || envFile('PUBLIC_BASE_URL') || 'http://localhost:5295');
+const adminBase = trim(process.env.ADMIN_BASE_URL || envFile('ADMIN_BASE_URL') || 'http://localhost:5297');
+const adminPassword = process.env.ADMIN_PASSWORD || envFile('ADMIN_PASSWORD') || '';
 
 const withSlash = (dir) => (dir.endsWith('/') ? dir : dir + '/');
 const shotDir = process.env.SCREENSHOT_DIR ? withSlash(process.env.SCREENSHOT_DIR) : null;

@@ -6,6 +6,18 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
+## Kansas City weather: Next 8 hours strip & rain list — November 6, 2026 (America/Chicago)
+
+Commits:
+- `67f2315` Archive previous development handoffs and add Kansas City hourly weather plan
+- `fe40928` Kansas City weather: next 8 hours strip on desktop and rain list on phones. Concept D from the hourly weather review: 8-column strip on desktop (≥1024px) under forecast cards, 8-row rain list on phones (<1024px) after tiles. Displays time, icon, temp, conditions (desktop 2-line clamp), inline rain chance with droplet / percentage bar. Server calculates one-line rain summary (`RainSummary`) and provides short time zone. New `GET /local/weather/hourly` endpoint with independent failure handling and points caching. Class prefix `hw-` registered. Unit tests in `LocalWeatherTests`, new browser check `local-hourly.browser.cjs`.
+
+Verification: full `tools/verify.sh` passed (6/6 steps: dotnet build 0 warnings, 1,143 tests, js unit tests, css check, lint, format check); quick `tools/verify.sh` in deploy.sh passed. `tests/browser/local-hourly.browser.cjs` passed (all 7 widths: 320/390/430/768/1024/1440/1920px light & dark, 2-line condition clamp, missing rain chance as `—`, 503 failure fallback, Denver location switch). `node tools/live-check.cjs`: health 2/2, admin 55/55, public 176/176 (22 pages × 320/390/430/1440px × light/dark), clean-up 2/2; household restored (0 `zz`, 0 unassigned devices).
+
+Deployment: commit `fe4092857e04` via `deployment/deploy.sh web` at 2026-11-06T22:13:59Z.
+- mynewspaper-web:fe4092857e04 (`9f35de6451d6`): healthy, env unchanged, /version `fe4092857e04`
+  Rollback: `deployment/rollback.sh fe4092857e04 web` → mynewspaper-web:before-fe4092857e04 (`b2a4f6c33f1a`)
+
 ## Home weather forecast strip & YouTube featured layout — November 6, 2026 (America/Chicago)
 
 Commits:
