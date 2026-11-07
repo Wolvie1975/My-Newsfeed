@@ -183,7 +183,7 @@ const phoneOrder = [
                     if (await page.locator('.bs-glance').count()) assert(watch.y < (await box('.bs-glance')).y);
                     assert(!(await page.locator('.bs-title__name').isVisible()));
                 }
-                assert.equal(await page.locator('.bs-agate__row[hidden]').count(), 0);
+                assert.equal(await page.locator('.bs-tonight .spf-timeline__item[hidden]').count(), 0);
             }
             assert.deepEqual(errors, []);
             await context.close();

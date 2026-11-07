@@ -1043,50 +1043,6 @@
     }
 
     /* Home: scoped desktop column details; desktop templates and header stay in broadsheet.css. */
-    .pub .tab-desktop .bs-agate__row {
-        grid-template-columns: 44px minmax(0, 1fr) auto;
-        gap: 8px;
-        padding: 6px 0;
-        font-size: 14px;
-        line-height: 1.3;
-    }
-    .pub .tab-desktop .bs-agate__time {
-        color: var(--text-2);
-        font-size: 14px;
-        font-weight: 400;
-    }
-    .pub .tab-desktop .bs-agate__half,
-    .pub .tab-desktop .bs-agate__venue {
-        display: none;
-    }
-    .pub .tab-desktop .bs-agate__match {
-        font-size: 14px;
-    }
-    .pub .tab-desktop .bs-agate .tt-team {
-        font-weight: 600;
-    }
-    .pub .tab-desktop .bs-agate .tt-sep {
-        margin: 0 2px;
-        font-size: 14px;
-    }
-    .pub .tab-desktop .bs-agate__kind {
-        display: inline;
-        font-size: 14px;
-    }
-    .pub .tab-desktop .bs-agate__sport::before {
-        content: ' (';
-    }
-    .pub .tab-desktop .bs-agate__sport::after {
-        content: ')';
-    }
-    .pub .tab-desktop .bs-agate__tv {
-        font-size: 13px;
-    }
-    .pub .tab-desktop .bs-agate__tv--stream {
-        min-height: 0;
-        padding: 0;
-        background: none;
-    }
     .pub .tab-desktop .bs-title__greeting {
         margin-top: 10px;
         font-size: 20px;
@@ -1175,8 +1131,7 @@
         min-height: 44px;
         padding: 0 0 4px;
     }
-    .pub .tab-desktop .bs-home .bs-agate,
-    .pub .tab-desktop .bs-home .bs-agate__note,
+    .pub .tab-desktop .bs-home .bs-tonight__note,
     .pub .tab-desktop .bs-home .d-headline-shelf__list {
         padding-left: 0;
         padding-right: 0;
@@ -1391,18 +1346,7 @@
         grid-template-columns: minmax(0, 1fr);
         padding: 12px 0;
     }
-    .pub .tab-desktop .bs-home .bs-col--side .d-tv__show {
-        gap: 12px;
-        padding: 12px 0;
-    }
-    .pub .tab-desktop .bs-home .bs-col--side .d-tv__show .tv-poster {
-        flex: 0 0 56px;
-        width: 56px;
-    }
-    .pub .tab-desktop .bs-home .bs-col--side .d-tv__body {
-        flex: 1 1 auto;
-        min-width: 0;
-    }
+
     :root:is([data-color-scheme], :not([data-color-scheme])) .pub .tab-desktop .bs-more .d-scoreboard .scoreboard-note,
     :root:is([data-color-scheme], :not([data-color-scheme])) .pub .tab-desktop .bs-more .d-scoreboard p.updated,
     :root:is([data-color-scheme], :not([data-color-scheme]))
@@ -1615,49 +1559,7 @@
         min-height: 0;
         padding: 0;
     }
-    .pub .tab-desktop .bs-home .bs-col--side .d-tv__list {
-        grid-template-columns: minmax(0, 1fr);
-    }
-    .pub .tab-desktop .bs-home .bs-col--side .d-tv__show {
-        display: grid;
-        grid-template-columns: 56px minmax(0, 1fr);
-        grid-template-rows: auto 1fr auto;
-        gap: 4px 12px;
-    }
-    .pub .tab-desktop .bs-home .bs-col--side .d-tv__show .tv-poster {
-        grid-column: 1;
-        grid-row: 1 / span 2;
-    }
-    .pub .tab-desktop .bs-home .bs-col--side .d-tv__body {
-        display: contents;
-    }
-    .pub .tab-desktop .bs-home .bs-col--side .d-tv__body > .movie-kind {
-        grid-column: 2;
-        grid-row: 1;
-        margin: 0;
-    }
-    .pub .tab-desktop .bs-home .bs-col--side .d-tv__body > .d-vid__title {
-        grid-column: 2;
-        grid-row: 2;
-        display: block;
-        -webkit-line-clamp: unset;
-        overflow: visible;
-    }
-    .pub .tab-desktop .bs-home .bs-col--side .d-tv__episodes {
-        grid-column: 1 / -1;
-        grid-row: 3;
-        margin: 12px 0 0;
-    }
-    .pub .tab-desktop .bs-home .bs-col--side .d-tv__episodes li {
-        margin: 0;
-        padding: 8px 0;
-        border-top: 1px solid var(--row-border);
-    }
-    .pub .tab-desktop .bs-home .bs-col--side .d-tv__episodes a {
-        display: flex;
-        align-items: center;
-        min-height: 44px;
-    }
+
     /* ---------- Home (docs/ipad/ipad-06-home.md) ---------- */
     /* Header: the big centred logo isn't shown; the header's logo is on row 1. */
     .pub .tab-desktop .bs-title__name {
@@ -1955,22 +1857,7 @@
     .pub .tab-desktop .bs-home .bs-col--main .d-headline-shelf__list {
         grid-template-columns: minmax(0, 1fr);
     }
-    .pub .tab-desktop .bs-home .bs-agate__row {
-        grid-template-columns: 56px minmax(0, 1fr);
-        column-gap: 8px;
-        row-gap: 2px;
-    }
-    .pub .tab-desktop .bs-home .bs-agate__time {
-        grid-row: 1 / span 2;
-        align-self: start;
-    }
-    .pub .tab-desktop .bs-home .bs-agate__tv {
-        grid-column: 2;
-        overflow-wrap: anywhere;
-    }
-    .pub .tab-desktop .bs-home .bs-agate__tv--stream {
-        min-height: 44px;
-    }
+
     .pub .tab-desktop .bs-home .scoreboard-actions a {
         min-height: 44px;
     }
@@ -2044,19 +1931,6 @@
     }
     .pub .tab-desktop .bs-sheet {
         grid-template-rows: auto max-content auto auto max-content auto;
-    }
-    .pub .tab-desktop .bs-home .bs-agate__match {
-        grid-column: 2;
-        grid-row: 1;
-    }
-    .pub .tab-desktop .bs-home .bs-agate__kind {
-        display: block;
-    }
-    .pub .tab-desktop .bs-home .bs-agate__tv {
-        grid-column: 2;
-        grid-row: 2;
-        justify-self: start;
-        text-align: left;
     }
 
     /* ---------- Headline sub-pages: All headlines for News, Sports, Entertainment, Tech (docs/tech-fixes-handoff.md §1) ---------- */

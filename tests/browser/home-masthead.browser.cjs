@@ -160,19 +160,19 @@ const shots = lib.screenshots('home-masthead');
                     await page.locator('.bs-title__greeting').evaluate((n) => (n.textContent = 'Good afternoon'));
                     await page.evaluate(() => {
                         const section = document.querySelector('.d-episodes');
-                        if (!section.querySelector('.d-tv__body')) {
-                            const row = document.createElement('div');
-                            row.className = 'd-tv__show';
-                            row.innerHTML =
-                                '<div class="tv-poster"></div><div class="d-tv__body"><h3 class="d-vid__title"></h3></div>';
-                            section.append(row);
+                        if (!section.querySelector('.ef-screen__title')) {
+                            const list = document.createElement('ol');
+                            list.className = 'ef-onscreen';
+                            list.innerHTML =
+                                '<li class="ef-onscreen__item mx-c-us"><span class="ef-onscreen__date">8:00 PM</span><span class="ef-onscreen__body"><span class="ef-screen__item"><div class="ef-poster"></div><span class="ef-screen__text"><b class="ef-screen__title"></b></span></span></span></li>';
+                            section.append(list);
                         }
-                        section.querySelector('.d-vid__title').textContent =
+                        section.querySelector('.ef-screen__title').textContent =
                             'Avatar: Seven Havens — a complete long series title that must remain readable';
                     });
                     assert(
                         await page
-                            .locator('.d-episodes .d-vid__title')
+                            .locator('.d-episodes .ef-screen__title')
                             .first()
                             .evaluate(
                                 (n) => getComputedStyle(n).display === 'block' && n.scrollHeight <= n.clientHeight + 1,

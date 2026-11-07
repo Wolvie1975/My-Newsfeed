@@ -1,0 +1,952 @@
+From 2a8d00b3e4e60b63beb7b76d019626ce7184833c Mon Sep 17 00:00:00 2001
+From: Jason Carpio <jcarpio@gmail.com>
+Date: Sat, 7 Nov 2026 12:27:31 -0600
+Subject: [PATCH] Home: Today & Tonight and Today's episodes as vertical
+ timelines
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Both Home cards take Entertainment's On screen format.
+
+Today & Tonight keeps its day-part headings ("This afternoon", "Tonight"),
+each over Sports' Upcoming timeline (spf-timeline): a rail with a dot in
+the sport's color, the time to the left, the matchup in bold and
+"Sport · TV" under it. The network moves from its own right-hand column
+into that line; a stream stays a link with its play mark. Every row
+keeps its time, because "My teams only" hides rows in the browser and a
+blanked repeat could lose its only shown time. The five-row limit, the
+"N more today" link and team filtering are unchanged (same data
+attributes). Venue is dropped; it was already hidden from 744px.
+
+Today's episodes uses the On screen markup (ef-onscreen): one row per
+episode in time order, confirmed times first, the time shown once per
+slot, a 34x50 poster beside the series title and "TV · network · S01 E02
+· title" under it. Unconfirmed times read "TBA" (screen readers: "Time
+not confirmed").
+
+Removed the bs-agate, d-tv__list/show/body/episodes and tv-poster rules,
+which nothing else uses. Phones are unchanged (PhoneTimeline).
+
+Browser checks: home-columns, home-masthead and episode-spacing updated
+for the new markup.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01BeSUhVSrEYFW7YxEsPgtnC
+---
+ src/myNewspaper.Shared/wwwroot/public.css     |  50 +---
+ .../Components/Pages/Home.razor               | 111 ++++----
+ src/myNewspaper.Web/wwwroot/broadsheet.css    | 266 +++---------------
+ src/myNewspaper.Web/wwwroot/tablet.css        | 134 +--------
+ tests/browser/episode-spacing.browser.cjs     |  74 ++---
+ tests/browser/home-columns.browser.cjs        |   2 +-
+ tests/browser/home-masthead.browser.cjs       |  16 +-
+ 7 files changed, 143 insertions(+), 510 deletions(-)
+
+diff --git a/src/myNewspaper.Shared/wwwroot/public.css b/src/myNewspaper.Shared/wwwroot/public.css
+index facf0de..82fafd3 100644
+--- a/src/myNewspaper.Shared/wwwroot/public.css
++++ b/src/myNewspaper.Shared/wwwroot/public.css
+@@ -2540,19 +2540,6 @@
+     border: 1px solid var(--border);
+     border-radius: 12px;
+ }
+-.pub .tv-poster {
+-    position: relative;
+-    flex: 0 0 72px;
+-    height: 108px;
+-    border-radius: 6px;
+-    overflow: hidden;
+-    background: var(--ph-bg) url('img/movie-placeholder.svg') center / cover;
+-}
+-.pub .tv-poster img {
+-    width: 100%;
+-    height: 100%;
+-    object-fit: cover;
+-}
+ .pub .tv-episode__body {
+     min-width: 0;
+ }
+@@ -2603,36 +2590,7 @@
+     }
+ }
+ 
+-/* Today's TV releases share a poster per series while retaining every episode in a batch. */
+-.pub .d-tv__list {
+-    display: grid;
+-    grid-template-columns: repeat(2, minmax(0, 1fr));
+-}
+-.pub .d-tv__list > li {
+-    border: 0;
+-}
+-.pub .d-tv__show {
+-    display: flex;
+-    align-items: start;
+-    gap: 16px;
+-    padding: 20px;
+-}
+-.pub .d-tv__body {
+-    min-width: 0;
+-}
+-.pub .d-tv__episodes {
+-    list-style: none;
+-    padding: 0;
+-    margin: 10px 0 0;
+-    font-size: 13px;
+-}
+-.pub .d-tv__episodes li {
+-    margin: 6px 0;
+-}
+-.pub .d-tv__episodes .movie-meta {
+-    display: block;
+-    margin: 2px 0;
+-}
++/* Today's episodes: the TVmaze credit under the timeline. */
+ .pub .d-tv__credit {
+     border-top: 1px solid var(--row-border);
+     padding: 12px 20px;
+@@ -2643,11 +2601,6 @@
+ .pub .d-tv__credit a {
+     text-decoration: underline;
+ }
+-@media (max-width: 1023px) {
+-    .pub .d-tv__list {
+-        grid-template-columns: 1fr;
+-    }
+-}
+ 
+ /* Video channel navigation stays a dropdown at every screen size. */
+ .pub .filters--videos .catselect {
+@@ -5588,7 +5541,6 @@
+     .pub .d-grid .d-movies .d-list {
+         grid-template-columns: repeat(2, minmax(0, 1fr));
+     }
+-    .pub .d-grid .d-tv__list,
+     .pub .d-grid .d-vids .d-list,
+     .pub .d-grid .d-f1__body {
+         grid-template-columns: minmax(0, 1fr);
+diff --git a/src/myNewspaper.Web/Components/Pages/Home.razor b/src/myNewspaper.Web/Components/Pages/Home.razor
+index c6d0d2f..bf7cfc9 100644
+--- a/src/myNewspaper.Web/Components/Pages/Home.razor
++++ b/src/myNewspaper.Web/Components/Pages/Home.razor
+@@ -114,43 +114,44 @@
+                 @if (unavailable.Contains(Events)) { <p class="d-empty">Today’s games are temporarily unavailable.</p> }
+                 else if (tonight.Count == 0) { <p class="d-empty">No remaining games today. View All games for upcoming fixtures.</p> }
+                 <p class="d-empty" data-home-teams-empty hidden>No remaining games match your selected teams. <a href="events">Browse all games</a>.</p>
+-                @if (tonight.Count > 0) { <p class="bs-agate__note">All times @(Dates.ZoneLabel ?? "local") · TV in bold</p> }
++                @if (tonight.Count > 0) { <p class="bs-tonight__note">All times @(Dates.ZoneLabel ?? "local") · TV in bold</p> }
++                @* The same timeline as Sports' Upcoming games (spf-timeline), under the day-part headings. Every row keeps
++                   its time: "My teams only" hides rows in the browser, so a blanked repeat could lose its only shown time. *@
+                 @{ var tonightIndex = 0; }
+-                <ul class="bs-agate">
++                <ul class="bs-tonight__groups">
+                     @foreach (var (heading, items) in TodayTonight.Groups(tonight, Dates))
+                     {
+-                        <li class="bs-agate__group">
+-                            <h3 class="bs-agate__heading">@heading</h3>
+-                            <ul>
++                        <li class="bs-tonight__group">
++                            <h3 class="bs-tonight__heading">@heading</h3>
++                            <ol class="spf-timeline">
+                             @foreach (var item in items)
+                             {
+-                                <li class="bs-agate__row" data-home-team-item data-sports-teams="@SportsTeamPreferences.Keys(item.SchoolName, item.OpponentName)"
++                                <li class="spf-timeline__item @PhoneColors.ForSport(item.Kind)" data-home-team-item data-sports-teams="@SportsTeamPreferences.Keys(item.SchoolName, item.OpponentName)"
+                                     data-home-over="@(tonightIndex++ >= TonightLimit ? "" : null)">
+-                                    @if (item.StartsUtc is { } starts)
+-                                    {
+-                                        var (clock, half) = Dates.ClockParts(starts);
+-                                        <span class="bs-agate__time">@clock<span class="bs-agate__half">@(" " + half)</span></span>
+-                                    }
+-                                    else { <span class="bs-agate__time">@item.TimeLabel</span> }
+-                                    <span class="bs-agate__match">
++                                    <span class="spf-timeline__time">@(item.StartsUtc is { } starts ? Dates.Time(starts) : item.TimeLabel)</span>
++                                    <span class="spf-timeline__body">
+                                         @if (item.Url is not null)
+                                         { <a href="@item.Url" target="_blank" rel="noopener noreferrer"><TonightMatchup Item="item" /></a> }
+-                                        else { <TonightMatchup Item="item" /> }
+-                                        <span class="bs-agate__kind"><span class="bs-agate__sport">@item.Kind</span>@if (item.Location is not null) { <span class="bs-agate__venue"> · @EventsText.SplitLocation(item.Location).Item1</span> }</span>
++                                        else { <span class="bs-tonight__match"><TonightMatchup Item="item" /></span> }
++                                        <span class="spf-timeline__meta"><span class="spf-timeline__sport">@item.Kind</span>@if (item.Tv is not null || item.StreamUrl is not null)
++                                            {
++                                                var tv = EventsText.ShortTv(item.Tv ?? "");
++                                                <span aria-hidden="true"> · </span>
++                                                @* The network doubles as the stream link, so the row keeps one extra tap target. *@
++                                                if (item.StreamUrl is not null)
++                                                {
++                                                    <a class="bs-tonight__stream" href="@item.StreamUrl" target="_blank" rel="noopener noreferrer" title="@item.Tv"
++                                                       aria-label="Watch stream@(item.Tv is not null ? " on " + item.Tv : "")"><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M2 1.2v7.6L8.6 5z" fill="currentColor" /></svg>@(item.Tv is not null ? tv.Display : "Watch")</a>
++                                                }
++                                                else
++                                                {
++                                                    <b title="@item.Tv">@tv.Display@if (tv.Also is not null) { <span class="sr-only">@tv.Also</span> }</b>
++                                                }
++                                            }</span>
+                                     </span>
+-                                    @* The network doubles as the stream link, so phones keep one tap target per row. *@
+-                                    @if (item.StreamUrl is not null)
+-                                    {
+-                                        <a class="bs-agate__tv bs-agate__tv--stream" href="@item.StreamUrl" target="_blank" rel="noopener noreferrer"
+-                                           aria-label="Watch stream@(item.Tv is not null ? " on " + item.Tv : "")"><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M2 1.2v7.6L8.6 5z" fill="currentColor" /></svg>@(item.Tv ?? "Watch")</a>
+-                                    }
+-                                    else if (item.Tv is not null)
+-                                    {
+-                                        <span class="bs-agate__tv">@item.Tv</span>
+-                                    }
+                                 </li>
+                             }
+-                            </ul>
++                            </ol>
+                         </li>
+                     }
+                 </ul>
+@@ -191,34 +192,42 @@
+                 else
+                 {
+                     <p class="bs-episodes-count">@episodes.Count @(episodes.Count == 1 ? "episode" : "episodes")</p>
+-                    <ul class="d-list d-tv__list">
+-                        @foreach (var group in episodes.GroupBy(e => e.ShowId))
++                    @* Entertainment's On screen timeline: one row per episode in time order, the time shown once per slot,
++                       confirmed times first. *@
++                    <ol class="ef-onscreen">
++                        @{ string? previousTime = null; var tvDot = PhoneColors.ForRelease("tv"); }
++                        @foreach (var episode in episodes.OrderBy(e => e.StartsUtc is null).ThenBy(e => e.StartsUtc))
+                         {
+-                            var series = group.First();
+-                            <li class="d-tv__show">
+-                                <div class="tv-poster" aria-hidden="true">
+-                                    @if (EventsText.LogoUrl(series.Poster) is { } poster)
+-                                    { <img src="@poster" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()" /> }
+-                                </div>
+-                                <div class="d-tv__body">
+-                                    <p class="movie-kind">@(series.Platform ?? "Network not announced")</p>
+-                                    <h3 class="d-vid__title">@series.SeriesTitle</h3>
+-                                    <ul class="d-tv__episodes">
+-                                        @foreach (var episode in group)
+-                                        {
+-                                            var label = episode.Special ? "Special" : episode.Season is { } season && episode.Number is { } number ? $"S{season:00} E{number:00}" : "Episode";
+-                                            <li>
+-                                                @if (FeedQuery.SafeHref(episode.Url) is { } link)
+-                                                { <a href="@link" target="_blank" rel="noopener noreferrer">@label · @(episode.Title ?? "Title to be announced")</a> }
+-                                                else { <span>@label · @episode.Title</span> }
+-                                                <span class="movie-meta">@(episode.StartsUtc is { } time ? Dates.TimeWithOffset(time) : "Time not confirmed")</span>
+-                                            </li>
+-                                        }
+-                                    </ul>
+-                                </div>
++                            var label = episode.Special ? "Special" : episode.Season is { } season && episode.Number is { } number ? $"S{season:00} E{number:00}" : "Episode";
++                            var time = episode.StartsUtc is { } starts ? Dates.Time(starts) : "TBA";
++                            var firstOfSlot = time != previousTime;
++                            previousTime = time;
++                            var link = FeedQuery.SafeHref(episode.Url);
++                            var when = episode.StartsUtc is null ? "Time not confirmed" : time;
++                            <li class="ef-onscreen__item @tvDot">
++                                <span class="ef-onscreen__date" aria-hidden="@(firstOfSlot ? null : "true")" title="@(episode.StartsUtc is null ? "Time not confirmed" : null)">@(firstOfSlot ? time : null)</span>
++                                <span class="ef-onscreen__body">
++                                    @if (!firstOfSlot || episode.StartsUtc is null) { <span class="sr-only">@when: </span> }
++                                    @if (link is not null)
++                                    {
++                                        <a class="ef-screen__item" href="@link" target="_blank" rel="noopener noreferrer">
++                                            <MoviePoster Url="@episode.Poster" Title="@episode.SeriesTitle" Class="ef-poster" />
++                                            <span class="ef-screen__text"><b class="ef-screen__title">@episode.SeriesTitle</b>
++                                                <span class="ef-onscreen__meta"><span class="ef-onscreen__kind">TV</span> · @(episode.Platform ?? "Network not announced") · @label · @(episode.Title ?? "Title to be announced")</span></span>
++                                        </a>
++                                    }
++                                    else
++                                    {
++                                        <span class="ef-screen__item">
++                                            <MoviePoster Url="@episode.Poster" Title="@episode.SeriesTitle" Class="ef-poster" />
++                                            <span class="ef-screen__text"><b class="ef-screen__title">@episode.SeriesTitle</b>
++                                                <span class="ef-onscreen__meta"><span class="ef-onscreen__kind">TV</span> · @(episode.Platform ?? "Network not announced") · @label · @(episode.Title ?? "Title to be announced")</span></span>
++                                        </span>
++                                    }
++                                </span>
+                             </li>
+                         }
+-                    </ul>
++                    </ol>
+                 }
+                 <p class="d-tv__credit">Episode data and images: <a href="https://www.tvmaze.com" target="_blank" rel="noopener noreferrer">TVmaze</a> · <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener noreferrer">CC BY-SA 4.0</a>. Date-only releases retain their original date; confirmed times use @Dates.Zone.Id.</p>
+             </section>
+diff --git a/src/myNewspaper.Web/wwwroot/broadsheet.css b/src/myNewspaper.Web/wwwroot/broadsheet.css
+index 5d0b3d6..f8b4068 100644
+--- a/src/myNewspaper.Web/wwwroot/broadsheet.css
++++ b/src/myNewspaper.Web/wwwroot/broadsheet.css
+@@ -740,42 +740,6 @@
+     min-height: 44px;
+ }
+ 
+-/* Today & Tonight as agate rows. */
+-.pub .bs-agate {
+-    list-style: none;
+-    margin: 0;
+-    padding: 0 16px 8px;
+-}
+-.pub .bs-agate__row {
+-    display: grid;
+-    grid-template-columns: 66px minmax(0, 1fr) auto;
+-    align-items: start;
+-    gap: 2px 10px;
+-    padding: 9px 0;
+-    border-bottom: 1px dotted var(--row-border);
+-}
+-.pub .bs-agate__row:last-child {
+-    border-bottom: 0;
+-}
+-.pub .bs-agate__time {
+-    color: var(--text-2);
+-    font-size: 12px;
+-    font-weight: 700;
+-    line-height: 1.35;
+-    font-variant-numeric: tabular-nums;
+-}
+-.pub .bs-agate__match {
+-    min-width: 0;
+-    font-size: 15px;
+-    line-height: 1.35;
+-}
+-.pub .bs-agate__match > a {
+-    color: var(--text);
+-    text-decoration: none;
+-}
+-.pub .bs-agate__match > a:hover .tt-team {
+-    text-decoration: underline;
+-}
+ .pub .tt-team {
+     font-weight: 650;
+ }
+@@ -790,51 +754,52 @@
+     color: var(--text-2);
+     font-size: 13px;
+ }
+-.pub .bs-agate__kind {
+-    display: block;
+-    color: var(--text-2);
+-    font-size: 12px;
++
++/* Today & Tonight: the day-part headings, each over Sports' Upcoming timeline (spf-timeline in sections.css). */
++.pub .bs-tonight__groups {
++    margin: 0;
++    padding: 0;
++    list-style: none;
+ }
+-.pub .bs-agate__tv {
+-    justify-self: end;
+-    max-width: 96px;
+-    font-size: 12px;
+-    font-weight: 800;
+-    text-align: right;
++.pub .bs-tonight__match {
++    display: block;
++    color: var(--text);
++    font-size: 14px;
++    font-weight: 700;
++    line-height: 1.3;
+ }
+-.pub .bs-agate__tv--stream {
++/* The network as the stream link: one line in the meta, a play mark before it, the row's own tap target. */
++.pub .spf-timeline__meta .bs-tonight__stream {
+     display: inline-flex;
+     align-items: center;
+-    justify-content: center;
+-    gap: 4px;
+-    min-height: 44px;
+-    padding: 0 10px;
+-    border-radius: 8px;
+-    background: var(--pill-bg);
++    gap: 3px;
+     color: var(--accent);
++    font-size: 12px;
++    font-weight: 800;
++    line-height: inherit;
+     text-decoration: none;
+ }
+-.pub .bs-agate__tv--stream svg {
++.pub .spf-timeline__meta .bs-tonight__stream:hover {
++    text-decoration: underline;
++}
++.pub .bs-tonight__stream svg {
+     flex: none;
+-    width: 9px;
+-    height: 9px;
++    width: 8px;
++    height: 8px;
+ }
+-
+-.pub .bs-agate__note {
++.pub .bs-tonight__note {
+     margin: 0 0 4px;
+     padding: 0 16px;
+     color: var(--text-2);
+     font-size: 12px;
+ }
+-.pub .bs-agate__group > ul {
+-    margin: 0;
+-    padding: 0;
+-    list-style: none;
++.pub .bs-tonight__group > .spf-timeline {
++    margin: 8px 0 4px;
+ }
+-.pub .bs-agate__group:not(:has(.bs-agate__row:not([hidden]))) {
++.pub .bs-tonight__group:not(:has(.spf-timeline__item:not([hidden]))) {
+     display: none;
+ }
+-.pub .bs-agate__heading {
++.pub .bs-tonight__heading {
+     margin: 12px 0 2px;
+     padding-bottom: 3px;
+     border-bottom: 2px solid var(--text);
+@@ -847,7 +812,7 @@
+ .pub .bs-tonight [data-home-over] {
+     display: none;
+ }
+-.pub .bs-tonight .bs-agate__group:not(:has(.bs-agate__row:not([hidden], [data-home-over]))) {
++.pub .bs-tonight .bs-tonight__group:not(:has(.spf-timeline__item:not([hidden], [data-home-over]))) {
+     display: none;
+ }
+ .pub .bs-tonight__more {
+@@ -866,103 +831,6 @@
+     text-transform: uppercase;
+ }
+ 
+-/* Desktop: agate listings, one line per game ("1:00  Kansas at TCU (Soccer)  ESPN+"); the group says the half of day. */
+-@media (min-width: 1024px) {
+-    .pub .bs-agate__row {
+-        grid-template-columns: 44px minmax(0, 1fr) auto;
+-        gap: 8px;
+-        padding: 6px 0;
+-        font-size: 14px;
+-        line-height: 1.3;
+-    }
+-    .pub .bs-agate__time {
+-        color: var(--text-2);
+-        font-size: 14px;
+-        font-weight: 400;
+-    }
+-    .pub .bs-agate__half,
+-    .pub .bs-agate__venue {
+-        display: none;
+-    }
+-    .pub .bs-agate__match {
+-        font-size: 14px;
+-    }
+-    .pub .bs-agate .tt-team {
+-        font-weight: 600;
+-    }
+-    .pub .bs-agate .tt-sep {
+-        margin: 0 2px;
+-        font-size: 14px;
+-    }
+-    .pub .bs-agate__kind {
+-        display: inline;
+-        font-size: 14px;
+-    }
+-    .pub .bs-agate__sport::before {
+-        content: ' (';
+-    }
+-    .pub .bs-agate__sport::after {
+-        content: ')';
+-    }
+-    .pub .bs-agate__tv {
+-        font-size: 13px;
+-    }
+-    .pub .bs-agate__tv--stream {
+-        min-height: 0;
+-        padding: 0;
+-        background: none;
+-    }
+-}
+-
+-/* Phones and tablets: one compact tappable row per game — time, matchup (sport beneath), network. */
+-@media (max-width: 1023px) {
+-    .pub .bs-agate__row {
+-        grid-template-columns: auto minmax(0, 1fr) auto;
+-        align-items: center;
+-        gap: 0 10px;
+-        padding: 4px 0;
+-    }
+-    .pub .bs-agate__time {
+-        max-width: 66px;
+-    }
+-    .pub .bs-agate__match {
+-        position: relative;
+-        display: flex;
+-        flex-direction: column;
+-        justify-content: center;
+-        min-height: 44px;
+-    }
+-    .pub .bs-agate__match > a {
+-        display: block;
+-        min-width: 0;
+-    }
+-    .pub .bs-agate__match > a::after {
+-        position: absolute;
+-        inset: 0;
+-        content: '';
+-    }
+-    .pub .bs-agate .tt-match {
+-        display: -webkit-box;
+-        overflow: hidden;
+-        -webkit-box-orient: vertical;
+-        -webkit-line-clamp: 2;
+-        line-clamp: 2;
+-    }
+-    .pub .bs-agate__kind {
+-        overflow: hidden;
+-        text-overflow: ellipsis;
+-        white-space: nowrap;
+-    }
+-}
+-@media (max-width: 400px) {
+-    .pub .bs-agate__tv {
+-        max-width: 76px;
+-    }
+-    .pub .bs-agate__tv--stream {
+-        padding: 0 8px;
+-    }
+-}
+-
+ /* ---------- Home: desktop broadsheet ---------- */
+ @media (min-width: 1024px) {
+     .pub .bs-home {
+@@ -1120,8 +988,7 @@
+         min-height: 44px;
+         padding: 0 0 4px;
+     }
+-    .pub .bs-home .bs-agate,
+-    .pub .bs-home .bs-agate__note,
++    .pub .bs-home .bs-tonight__note,
+     .pub .bs-home .d-headline-shelf__list {
+         padding-left: 0;
+         padding-right: 0;
+@@ -1379,21 +1246,7 @@
+         padding: 12px 0;
+     }
+ }
+-@media (min-width: 1024px) {
+-    /* Today's episodes in the side column: small poster, full-width text. */
+-    .pub .bs-home .bs-col--side .d-tv__show {
+-        gap: 12px;
+-        padding: 12px 0;
+-    }
+-    .pub .bs-home .bs-col--side .d-tv__show .tv-poster {
+-        flex: 0 0 56px;
+-        width: 56px;
+-    }
+-    .pub .bs-home .bs-col--side .d-tv__body {
+-        flex: 1 1 auto;
+-        min-width: 0;
+-    }
+-}
++
+ .pub .tt-team .team-record {
+     white-space: nowrap;
+ }
+@@ -2786,14 +2639,6 @@ body:has([data-scheme-dialog][open]) {
+     }
+ }
+ 
+-@media (min-width: 1920px) {
+-    .pub .bs-home .bs-col--side .d-tv__body .d-vid__title {
+-        display: block;
+-        -webkit-line-clamp: unset;
+-        overflow: visible;
+-    }
+-}
+-
+ .pub .bs-episodes-count {
+     display: none;
+ }
+@@ -2824,53 +2669,6 @@ body:has([data-scheme-dialog][open]) {
+     }
+ }
+ 
+-/* Home's episode card is a sidebar, rather than the full-width two-show grid. */
+-@media (min-width: 1024px) {
+-    .pub .bs-home .bs-col--side .d-tv__list {
+-        grid-template-columns: minmax(0, 1fr);
+-    }
+-    .pub .bs-home .bs-col--side .d-tv__show {
+-        display: grid;
+-        grid-template-columns: 56px minmax(0, 1fr);
+-        grid-template-rows: auto 1fr auto;
+-        gap: 4px 12px;
+-    }
+-    .pub .bs-home .bs-col--side .d-tv__show .tv-poster {
+-        grid-column: 1;
+-        grid-row: 1 / span 2;
+-    }
+-    .pub .bs-home .bs-col--side .d-tv__body {
+-        display: contents;
+-    }
+-    .pub .bs-home .bs-col--side .d-tv__body > .movie-kind {
+-        grid-column: 2;
+-        grid-row: 1;
+-        margin: 0;
+-    }
+-    .pub .bs-home .bs-col--side .d-tv__body > .d-vid__title {
+-        grid-column: 2;
+-        grid-row: 2;
+-        display: block;
+-        -webkit-line-clamp: unset;
+-        overflow: visible;
+-    }
+-    .pub .bs-home .bs-col--side .d-tv__episodes {
+-        grid-column: 1 / -1;
+-        grid-row: 3;
+-        margin: 12px 0 0;
+-    }
+-    .pub .bs-home .bs-col--side .d-tv__episodes li {
+-        margin: 0;
+-        padding: 8px 0;
+-        border-top: 1px solid var(--row-border);
+-    }
+-    .pub .bs-home .bs-col--side .d-tv__episodes a {
+-        display: flex;
+-        align-items: center;
+-        min-height: 44px;
+-    }
+-}
+-
+ /* From 1920px the forecast is the masthead's right-hand ear: no box, the lead beside the later periods. */
+ @media (min-width: 1920px) {
+     .pub .bs-glance {
+diff --git a/src/myNewspaper.Web/wwwroot/tablet.css b/src/myNewspaper.Web/wwwroot/tablet.css
+index cee0da3..b34ec26 100644
+--- a/src/myNewspaper.Web/wwwroot/tablet.css
++++ b/src/myNewspaper.Web/wwwroot/tablet.css
+@@ -1043,50 +1043,6 @@
+     }
+ 
+     /* Home: scoped desktop column details; desktop templates and header stay in broadsheet.css. */
+-    .pub .tab-desktop .bs-agate__row {
+-        grid-template-columns: 44px minmax(0, 1fr) auto;
+-        gap: 8px;
+-        padding: 6px 0;
+-        font-size: 14px;
+-        line-height: 1.3;
+-    }
+-    .pub .tab-desktop .bs-agate__time {
+-        color: var(--text-2);
+-        font-size: 14px;
+-        font-weight: 400;
+-    }
+-    .pub .tab-desktop .bs-agate__half,
+-    .pub .tab-desktop .bs-agate__venue {
+-        display: none;
+-    }
+-    .pub .tab-desktop .bs-agate__match {
+-        font-size: 14px;
+-    }
+-    .pub .tab-desktop .bs-agate .tt-team {
+-        font-weight: 600;
+-    }
+-    .pub .tab-desktop .bs-agate .tt-sep {
+-        margin: 0 2px;
+-        font-size: 14px;
+-    }
+-    .pub .tab-desktop .bs-agate__kind {
+-        display: inline;
+-        font-size: 14px;
+-    }
+-    .pub .tab-desktop .bs-agate__sport::before {
+-        content: ' (';
+-    }
+-    .pub .tab-desktop .bs-agate__sport::after {
+-        content: ')';
+-    }
+-    .pub .tab-desktop .bs-agate__tv {
+-        font-size: 13px;
+-    }
+-    .pub .tab-desktop .bs-agate__tv--stream {
+-        min-height: 0;
+-        padding: 0;
+-        background: none;
+-    }
+     .pub .tab-desktop .bs-title__greeting {
+         margin-top: 10px;
+         font-size: 20px;
+@@ -1175,8 +1131,7 @@
+         min-height: 44px;
+         padding: 0 0 4px;
+     }
+-    .pub .tab-desktop .bs-home .bs-agate,
+-    .pub .tab-desktop .bs-home .bs-agate__note,
++    .pub .tab-desktop .bs-home .bs-tonight__note,
+     .pub .tab-desktop .bs-home .d-headline-shelf__list {
+         padding-left: 0;
+         padding-right: 0;
+@@ -1391,18 +1346,7 @@
+         grid-template-columns: minmax(0, 1fr);
+         padding: 12px 0;
+     }
+-    .pub .tab-desktop .bs-home .bs-col--side .d-tv__show {
+-        gap: 12px;
+-        padding: 12px 0;
+-    }
+-    .pub .tab-desktop .bs-home .bs-col--side .d-tv__show .tv-poster {
+-        flex: 0 0 56px;
+-        width: 56px;
+-    }
+-    .pub .tab-desktop .bs-home .bs-col--side .d-tv__body {
+-        flex: 1 1 auto;
+-        min-width: 0;
+-    }
++
+     :root:is([data-color-scheme], :not([data-color-scheme])) .pub .tab-desktop .bs-more .d-scoreboard .scoreboard-note,
+     :root:is([data-color-scheme], :not([data-color-scheme])) .pub .tab-desktop .bs-more .d-scoreboard p.updated,
+     :root:is([data-color-scheme], :not([data-color-scheme]))
+@@ -1615,49 +1559,7 @@
+         min-height: 0;
+         padding: 0;
+     }
+-    .pub .tab-desktop .bs-home .bs-col--side .d-tv__list {
+-        grid-template-columns: minmax(0, 1fr);
+-    }
+-    .pub .tab-desktop .bs-home .bs-col--side .d-tv__show {
+-        display: grid;
+-        grid-template-columns: 56px minmax(0, 1fr);
+-        grid-template-rows: auto 1fr auto;
+-        gap: 4px 12px;
+-    }
+-    .pub .tab-desktop .bs-home .bs-col--side .d-tv__show .tv-poster {
+-        grid-column: 1;
+-        grid-row: 1 / span 2;
+-    }
+-    .pub .tab-desktop .bs-home .bs-col--side .d-tv__body {
+-        display: contents;
+-    }
+-    .pub .tab-desktop .bs-home .bs-col--side .d-tv__body > .movie-kind {
+-        grid-column: 2;
+-        grid-row: 1;
+-        margin: 0;
+-    }
+-    .pub .tab-desktop .bs-home .bs-col--side .d-tv__body > .d-vid__title {
+-        grid-column: 2;
+-        grid-row: 2;
+-        display: block;
+-        -webkit-line-clamp: unset;
+-        overflow: visible;
+-    }
+-    .pub .tab-desktop .bs-home .bs-col--side .d-tv__episodes {
+-        grid-column: 1 / -1;
+-        grid-row: 3;
+-        margin: 12px 0 0;
+-    }
+-    .pub .tab-desktop .bs-home .bs-col--side .d-tv__episodes li {
+-        margin: 0;
+-        padding: 8px 0;
+-        border-top: 1px solid var(--row-border);
+-    }
+-    .pub .tab-desktop .bs-home .bs-col--side .d-tv__episodes a {
+-        display: flex;
+-        align-items: center;
+-        min-height: 44px;
+-    }
++
+     /* ---------- Home (docs/ipad/ipad-06-home.md) ---------- */
+     /* Header: the big centred logo isn't shown; the header's logo is on row 1. */
+     .pub .tab-desktop .bs-title__name {
+@@ -1955,22 +1857,7 @@
+     .pub .tab-desktop .bs-home .bs-col--main .d-headline-shelf__list {
+         grid-template-columns: minmax(0, 1fr);
+     }
+-    .pub .tab-desktop .bs-home .bs-agate__row {
+-        grid-template-columns: 56px minmax(0, 1fr);
+-        column-gap: 8px;
+-        row-gap: 2px;
+-    }
+-    .pub .tab-desktop .bs-home .bs-agate__time {
+-        grid-row: 1 / span 2;
+-        align-self: start;
+-    }
+-    .pub .tab-desktop .bs-home .bs-agate__tv {
+-        grid-column: 2;
+-        overflow-wrap: anywhere;
+-    }
+-    .pub .tab-desktop .bs-home .bs-agate__tv--stream {
+-        min-height: 44px;
+-    }
++
+     .pub .tab-desktop .bs-home .scoreboard-actions a {
+         min-height: 44px;
+     }
+@@ -2045,19 +1932,6 @@
+     .pub .tab-desktop .bs-sheet {
+         grid-template-rows: auto max-content auto auto max-content auto;
+     }
+-    .pub .tab-desktop .bs-home .bs-agate__match {
+-        grid-column: 2;
+-        grid-row: 1;
+-    }
+-    .pub .tab-desktop .bs-home .bs-agate__kind {
+-        display: block;
+-    }
+-    .pub .tab-desktop .bs-home .bs-agate__tv {
+-        grid-column: 2;
+-        grid-row: 2;
+-        justify-self: start;
+-        text-align: left;
+-    }
+ 
+     /* ---------- Headline sub-pages: All headlines for News, Sports, Entertainment, Tech (docs/tech-fixes-handoff.md §1) ---------- */
+ 
+diff --git a/tests/browser/episode-spacing.browser.cjs b/tests/browser/episode-spacing.browser.cjs
+index 1cd66b3..a2a9666 100644
+--- a/tests/browser/episode-spacing.browser.cjs
++++ b/tests/browser/episode-spacing.browser.cjs
+@@ -26,26 +26,27 @@ const shots = lib.screenshots('episode-spacing');
+             await page.goto(base + '/', { waitUntil: 'networkidle' });
+             await page.locator('.d-episodes').waitFor({ state: 'attached' });
+         };
++        // Today's episodes as Entertainment's On screen timeline: one row per episode, the time once per slot.
+         const fixture = async (p) => {
+             await p.locator('.d-episodes').evaluate((section) => {
+                 section.querySelector('.d-empty')?.remove();
+-                let list = section.querySelector('.d-tv__list');
++                let list = section.querySelector('.ef-onscreen');
+                 if (!list) {
+-                    list = document.createElement('ul');
+-                    list.className = 'd-list d-tv__list';
++                    list = document.createElement('ol');
++                    list.className = 'ef-onscreen';
+                     section.querySelector('.d-tv__credit').before(list);
+                 }
+-                const shows = [
+-                    [
+-                        'Avatar: Seven Havens',
+-                        ['Ghosts and Spirits', 'Battle of the Ruins', 'The Dome', 'The Root Chakra'],
+-                    ],
+-                    ['A second series with a longer name', ['A separate episode']],
++                const rows = [
++                    ['8:00 PM', 'Avatar: Seven Havens', 'S01 E10 · Ghosts and Spirits'],
++                    ['', 'Avatar: Seven Havens', 'S01 E11 · Battle of the Ruins'],
++                    ['9:00 PM', 'A second series with a longer name than the column', 'S02 E01 · A separate episode'],
++                    ['TBA', 'Avatar: Seven Havens', 'S01 E12 · The Dome'],
++                    ['', 'Avatar: Seven Havens', 'S01 E13 · The Root Chakra'],
+                 ];
+-                list.innerHTML = shows
++                list.innerHTML = rows
+                     .map(
+-                        ([title, episodes]) =>
+-                            `<li class="d-tv__show"><div class="tv-poster" aria-hidden="true"></div><div class="d-tv__body"><p class="movie-kind">Paramount+</p><h3 class="d-vid__title">${title}</h3><ul class="d-tv__episodes">${episodes.map((title, i) => `<li><a href="tv">S01 E${10 + i} · ${title}</a><span class="movie-meta">Time not confirmed</span></li>`).join('')}</ul></div></li>`,
++                        ([time, title, episode]) =>
++                            `<li class="ef-onscreen__item mx-c-us"><span class="ef-onscreen__date"${time ? '' : ' aria-hidden="true"'}>${time}</span><span class="ef-onscreen__body"><a class="ef-screen__item" href="tv"><div class="ef-poster"></div><span class="ef-screen__text"><b class="ef-screen__title">${title}</b><span class="ef-onscreen__meta"><span class="ef-onscreen__kind">TV</span> · Paramount+ · ${episode}</span></span></a></span></li>`,
+                     )
+                     .join('');
+                 section
+@@ -54,34 +55,31 @@ const shots = lib.screenshots('episode-spacing');
+             });
+         };
+         const layout = async (p) => {
+-            const metrics = await p.locator('.d-tv__list').evaluate((list) => {
+-                const shows = [...list.children];
+-                const row = shows[0],
+-                    episodes = row.querySelector('.d-tv__episodes');
++            const metrics = await p.locator('.d-episodes .ef-onscreen').evaluate((list) => {
++                const rows = [...list.children];
+                 const box = (n) => n.getBoundingClientRect();
++                const first = rows[0];
++                const poster = first.querySelector('.ef-poster'),
++                    title = first.querySelector('.ef-screen__title'),
++                    body = first.querySelector('.ef-onscreen__body');
+                 return {
+-                    cols: getComputedStyle(list).gridTemplateColumns.split(' ').length,
+-                    width: box(list).width,
+-                    rowWidth: box(row).width,
+-                    full: box(episodes).width / box(row).width,
+-                    below: box(episodes).top >= box(row.querySelector('.tv-poster')).bottom,
+-                    stacked: box(shows[1]).top >= box(row).bottom,
+-                    status: [...row.querySelectorAll('.movie-meta')].every(
+-                        (n) =>
+-                            box(n).height <=
+-                            parseFloat(getComputedStyle(n).lineHeight) *
+-                                parseFloat(getComputedStyle(n.closest('.pub')).zoom) +
+-                                1,
+-                    ),
+-                    links: [...row.querySelectorAll('.d-tv__episodes a')].every((n) => box(n).height >= 44),
++                    rows: rows.length,
++                    inside: rows.every((r) => box(r).right <= box(list).right + 1 && box(r).left >= box(list).left - 1),
++                    stacked: rows.every((r, i) => i === 0 || box(r).top >= box(rows[i - 1]).bottom - 1),
++                    beside: box(title).left >= box(poster).right && box(title).top < box(poster).bottom,
++                    rail:
++                        getComputedStyle(body).borderLeftWidth === '2px' &&
++                        getComputedStyle(body, '::before').width === '10px',
++                    blank: rows.filter((r) => r.querySelector('.ef-onscreen__date').textContent.trim() === '').length,
++                    links: rows.every((r) => box(r.querySelector('a')).height >= 44),
+                 };
+             });
+-            assert.equal(metrics.cols, 1, 'One show per row in sidebar');
+-            assert(metrics.rowWidth >= metrics.width - 1);
+-            assert(metrics.full > 0.95, 'Episode details use full card width');
+-            assert(metrics.below, 'Episodes below poster');
+-            assert(metrics.stacked, 'Second series stacks below first');
+-            assert(metrics.status, 'Time not confirmed stays on one line');
++            assert.equal(metrics.rows, 5, 'One timeline row per episode');
++            assert(metrics.inside, 'Rows stay inside the card');
++            assert(metrics.stacked, 'Rows stack in time order');
++            assert(metrics.beside, 'Title beside the poster');
++            assert(metrics.rail, 'Rail and dot drawn as on Entertainment');
++            assert.equal(metrics.blank, 2, 'Repeated times left blank');
+             assert(metrics.links, '44px episode links');
+         };
+         await visit();
+@@ -142,7 +140,9 @@ const shots = lib.screenshots('episode-spacing');
+         assert.equal((await fold.getAttribute('open')) !== null, !before);
+         await noJs.close();
+         await context.close();
+-        console.log('PASS four-episode batch, multiple shows, full-width details, calendar, Refresh and no-JS');
++        console.log(
++            'PASS episode timeline: one row per episode, repeated times blank, poster beside title, 44px links, calendar, Refresh and no-JS',
++        );
+     } finally {
+         try {
+             await lib.deleteProfiles();
+diff --git a/tests/browser/home-columns.browser.cjs b/tests/browser/home-columns.browser.cjs
+index d16a5e8..7cbee3e 100644
+--- a/tests/browser/home-columns.browser.cjs
++++ b/tests/browser/home-columns.browser.cjs
+@@ -183,7 +183,7 @@ const phoneOrder = [
+                     if (await page.locator('.bs-glance').count()) assert(watch.y < (await box('.bs-glance')).y);
+                     assert(!(await page.locator('.bs-title__name').isVisible()));
+                 }
+-                assert.equal(await page.locator('.bs-agate__row[hidden]').count(), 0);
++                assert.equal(await page.locator('.bs-tonight .spf-timeline__item[hidden]').count(), 0);
+             }
+             assert.deepEqual(errors, []);
+             await context.close();
+diff --git a/tests/browser/home-masthead.browser.cjs b/tests/browser/home-masthead.browser.cjs
+index 1925856..c05ce1b 100644
+--- a/tests/browser/home-masthead.browser.cjs
++++ b/tests/browser/home-masthead.browser.cjs
+@@ -160,19 +160,19 @@ const shots = lib.screenshots('home-masthead');
+                     await page.locator('.bs-title__greeting').evaluate((n) => (n.textContent = 'Good afternoon'));
+                     await page.evaluate(() => {
+                         const section = document.querySelector('.d-episodes');
+-                        if (!section.querySelector('.d-tv__body')) {
+-                            const row = document.createElement('div');
+-                            row.className = 'd-tv__show';
+-                            row.innerHTML =
+-                                '<div class="tv-poster"></div><div class="d-tv__body"><h3 class="d-vid__title"></h3></div>';
+-                            section.append(row);
++                        if (!section.querySelector('.ef-screen__title')) {
++                            const list = document.createElement('ol');
++                            list.className = 'ef-onscreen';
++                            list.innerHTML =
++                                '<li class="ef-onscreen__item mx-c-us"><span class="ef-onscreen__date">8:00 PM</span><span class="ef-onscreen__body"><span class="ef-screen__item"><div class="ef-poster"></div><span class="ef-screen__text"><b class="ef-screen__title"></b></span></span></span></li>';
++                            section.append(list);
+                         }
+-                        section.querySelector('.d-vid__title').textContent =
++                        section.querySelector('.ef-screen__title').textContent =
+                             'Avatar: Seven Havens — a complete long series title that must remain readable';
+                     });
+                     assert(
+                         await page
+-                            .locator('.d-episodes .d-vid__title')
++                            .locator('.d-episodes .ef-screen__title')
+                             .first()
+                             .evaluate(
+                                 (n) => getComputedStyle(n).display === 'block' && n.scrollHeight <= n.clientHeight + 1,
+-- 
+2.43.0
+

@@ -114,43 +114,44 @@
                 @if (unavailable.Contains(Events)) { <p class="d-empty">Today’s games are temporarily unavailable.</p> }
                 else if (tonight.Count == 0) { <p class="d-empty">No remaining games today. View All games for upcoming fixtures.</p> }
                 <p class="d-empty" data-home-teams-empty hidden>No remaining games match your selected teams. <a href="events">Browse all games</a>.</p>
-                @if (tonight.Count > 0) { <p class="bs-agate__note">All times @(Dates.ZoneLabel ?? "local") · TV in bold</p> }
+                @if (tonight.Count > 0) { <p class="bs-tonight__note">All times @(Dates.ZoneLabel ?? "local") · TV in bold</p> }
+                @* The same timeline as Sports' Upcoming games (spf-timeline), under the day-part headings. Every row keeps
+                   its time: "My teams only" hides rows in the browser, so a blanked repeat could lose its only shown time. *@
                 @{ var tonightIndex = 0; }
-                <ul class="bs-agate">
+                <ul class="bs-tonight__groups">
                     @foreach (var (heading, items) in TodayTonight.Groups(tonight, Dates))
                     {
-                        <li class="bs-agate__group">
-                            <h3 class="bs-agate__heading">@heading</h3>
-                            <ul>
+                        <li class="bs-tonight__group">
+                            <h3 class="bs-tonight__heading">@heading</h3>
+                            <ol class="spf-timeline">
                             @foreach (var item in items)
                             {
-                                <li class="bs-agate__row" data-home-team-item data-sports-teams="@SportsTeamPreferences.Keys(item.SchoolName, item.OpponentName)"
+                                <li class="spf-timeline__item @PhoneColors.ForSport(item.Kind)" data-home-team-item data-sports-teams="@SportsTeamPreferences.Keys(item.SchoolName, item.OpponentName)"
                                     data-home-over="@(tonightIndex++ >= TonightLimit ? "" : null)">
-                                    @if (item.StartsUtc is { } starts)
-                                    {
-                                        var (clock, half) = Dates.ClockParts(starts);
-                                        <span class="bs-agate__time">@clock<span class="bs-agate__half">@(" " + half)</span></span>
-                                    }
-                                    else { <span class="bs-agate__time">@item.TimeLabel</span> }
-                                    <span class="bs-agate__match">
+                                    <span class="spf-timeline__time">@(item.StartsUtc is { } starts ? Dates.Time(starts) : item.TimeLabel)</span>
+                                    <span class="spf-timeline__body">
                                         @if (item.Url is not null)
                                         { <a href="@item.Url" target="_blank" rel="noopener noreferrer"><TonightMatchup Item="item" /></a> }
-                                        else { <TonightMatchup Item="item" /> }
-                                        <span class="bs-agate__kind"><span class="bs-agate__sport">@item.Kind</span>@if (item.Location is not null) { <span class="bs-agate__venue"> · @EventsText.SplitLocation(item.Location).Item1</span> }</span>
+                                        else { <span class="bs-tonight__match"><TonightMatchup Item="item" /></span> }
+                                        <span class="spf-timeline__meta"><span class="spf-timeline__sport">@item.Kind</span>@if (item.Tv is not null || item.StreamUrl is not null)
+                                            {
+                                                var tv = EventsText.ShortTv(item.Tv ?? "");
+                                                <span aria-hidden="true"> · </span>
+                                                @* The network doubles as the stream link, so the row keeps one extra tap target. *@
+                                                if (item.StreamUrl is not null)
+                                                {
+                                                    <a class="bs-tonight__stream" href="@item.StreamUrl" target="_blank" rel="noopener noreferrer" title="@item.Tv"
+                                                       aria-label="Watch stream@(item.Tv is not null ? " on " + item.Tv : "")"><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M2 1.2v7.6L8.6 5z" fill="currentColor" /></svg>@(item.Tv is not null ? tv.Display : "Watch")</a>
+                                                }
+                                                else
+                                                {
+                                                    <b title="@item.Tv">@tv.Display@if (tv.Also is not null) { <span class="sr-only">@tv.Also</span> }</b>
+                                                }
+                                            }</span>
                                     </span>
-                                    @* The network doubles as the stream link, so phones keep one tap target per row. *@
-                                    @if (item.StreamUrl is not null)
-                                    {
-                                        <a class="bs-agate__tv bs-agate__tv--stream" href="@item.StreamUrl" target="_blank" rel="noopener noreferrer"
-                                           aria-label="Watch stream@(item.Tv is not null ? " on " + item.Tv : "")"><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M2 1.2v7.6L8.6 5z" fill="currentColor" /></svg>@(item.Tv ?? "Watch")</a>
-                                    }
-                                    else if (item.Tv is not null)
-                                    {
-                                        <span class="bs-agate__tv">@item.Tv</span>
-                                    }
                                 </li>
                             }
-                            </ul>
+                            </ol>
                         </li>
                     }
                 </ul>
@@ -191,34 +192,42 @@
                 else
                 {
                     <p class="bs-episodes-count">@episodes.Count @(episodes.Count == 1 ? "episode" : "episodes")</p>
-                    <ul class="d-list d-tv__list">
-                        @foreach (var group in episodes.GroupBy(e => e.ShowId))
+                    @* Entertainment's On screen timeline: one row per episode in time order, the time shown once per slot,
+                       confirmed times first. *@
+                    <ol class="ef-onscreen">
+                        @{ string? previousTime = null; var tvDot = PhoneColors.ForRelease("tv"); }
+                        @foreach (var episode in episodes.OrderBy(e => e.StartsUtc is null).ThenBy(e => e.StartsUtc))
                         {
-                            var series = group.First();
-                            <li class="d-tv__show">
-                                <div class="tv-poster" aria-hidden="true">
-                                    @if (EventsText.LogoUrl(series.Poster) is { } poster)
-                                    { <img src="@poster" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()" /> }
-                                </div>
-                                <div class="d-tv__body">
-                                    <p class="movie-kind">@(series.Platform ?? "Network not announced")</p>
-                                    <h3 class="d-vid__title">@series.SeriesTitle</h3>
-                                    <ul class="d-tv__episodes">
-                                        @foreach (var episode in group)
-                                        {
-                                            var label = episode.Special ? "Special" : episode.Season is { } season && episode.Number is { } number ? $"S{season:00} E{number:00}" : "Episode";
-                                            <li>
-                                                @if (FeedQuery.SafeHref(episode.Url) is { } link)
-                                                { <a href="@link" target="_blank" rel="noopener noreferrer">@label · @(episode.Title ?? "Title to be announced")</a> }
-                                                else { <span>@label · @episode.Title</span> }
-                                                <span class="movie-meta">@(episode.StartsUtc is { } time ? Dates.TimeWithOffset(time) : "Time not confirmed")</span>
-                                            </li>
-                                        }
-                                    </ul>
-                                </div>
+                            var label = episode.Special ? "Special" : episode.Season is { } season && episode.Number is { } number ? $"S{season:00} E{number:00}" : "Episode";
+                            var time = episode.StartsUtc is { } starts ? Dates.Time(starts) : "TBA";
+                            var firstOfSlot = time != previousTime;
+                            previousTime = time;
+                            var link = FeedQuery.SafeHref(episode.Url);
+                            var when = episode.StartsUtc is null ? "Time not confirmed" : time;
+                            <li class="ef-onscreen__item @tvDot">
+                                <span class="ef-onscreen__date" aria-hidden="@(firstOfSlot ? null : "true")" title="@(episode.StartsUtc is null ? "Time not confirmed" : null)">@(firstOfSlot ? time : null)</span>
+                                <span class="ef-onscreen__body">
+                                    @if (!firstOfSlot || episode.StartsUtc is null) { <span class="sr-only">@when: </span> }
+                                    @if (link is not null)
+                                    {
+                                        <a class="ef-screen__item" href="@link" target="_blank" rel="noopener noreferrer">
+                                            <MoviePoster Url="@episode.Poster" Title="@episode.SeriesTitle" Class="ef-poster" />
+                                            <span class="ef-screen__text"><b class="ef-screen__title">@episode.SeriesTitle</b>
+                                                <span class="ef-onscreen__meta"><span class="ef-onscreen__kind">TV</span> · @(episode.Platform ?? "Network not announced") · @label · @(episode.Title ?? "Title to be announced")</span></span>
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <span class="ef-screen__item">
+                                            <MoviePoster Url="@episode.Poster" Title="@episode.SeriesTitle" Class="ef-poster" />
+                                            <span class="ef-screen__text"><b class="ef-screen__title">@episode.SeriesTitle</b>
+                                                <span class="ef-onscreen__meta"><span class="ef-onscreen__kind">TV</span> · @(episode.Platform ?? "Network not announced") · @label · @(episode.Title ?? "Title to be announced")</span></span>
+                                        </span>
+                                    }
+                                </span>
                             </li>
                         }
-                    </ul>
+                    </ol>
                 }
                 <p class="d-tv__credit">Episode data and images: <a href="https://www.tvmaze.com" target="_blank" rel="noopener noreferrer">TVmaze</a> · <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener noreferrer">CC BY-SA 4.0</a>. Date-only releases retain their original date; confirmed times use @Dates.Zone.Id.</p>
             </section>

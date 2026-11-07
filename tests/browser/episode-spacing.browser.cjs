@@ -26,26 +26,27 @@ const shots = lib.screenshots('episode-spacing');
             await page.goto(base + '/', { waitUntil: 'networkidle' });
             await page.locator('.d-episodes').waitFor({ state: 'attached' });
         };
+        // Today's episodes as Entertainment's On screen timeline: one row per episode, the time once per slot.
         const fixture = async (p) => {
             await p.locator('.d-episodes').evaluate((section) => {
                 section.querySelector('.d-empty')?.remove();
-                let list = section.querySelector('.d-tv__list');
+                let list = section.querySelector('.ef-onscreen');
                 if (!list) {
-                    list = document.createElement('ul');
-                    list.className = 'd-list d-tv__list';
+                    list = document.createElement('ol');
+                    list.className = 'ef-onscreen';
                     section.querySelector('.d-tv__credit').before(list);
                 }
-                const shows = [
-                    [
-                        'Avatar: Seven Havens',
-                        ['Ghosts and Spirits', 'Battle of the Ruins', 'The Dome', 'The Root Chakra'],
-                    ],
-                    ['A second series with a longer name', ['A separate episode']],
+                const rows = [
+                    ['8:00 PM', 'Avatar: Seven Havens', 'S01 E10 · Ghosts and Spirits'],
+                    ['', 'Avatar: Seven Havens', 'S01 E11 · Battle of the Ruins'],
+                    ['9:00 PM', 'A second series with a longer name than the column', 'S02 E01 · A separate episode'],
+                    ['TBA', 'Avatar: Seven Havens', 'S01 E12 · The Dome'],
+                    ['', 'Avatar: Seven Havens', 'S01 E13 · The Root Chakra'],
                 ];
-                list.innerHTML = shows
+                list.innerHTML = rows
                     .map(
-                        ([title, episodes]) =>
-                            `<li class="d-tv__show"><div class="tv-poster" aria-hidden="true"></div><div class="d-tv__body"><p class="movie-kind">Paramount+</p><h3 class="d-vid__title">${title}</h3><ul class="d-tv__episodes">${episodes.map((title, i) => `<li><a href="tv">S01 E${10 + i} · ${title}</a><span class="movie-meta">Time not confirmed</span></li>`).join('')}</ul></div></li>`,
+                        ([time, title, episode]) =>
+                            `<li class="ef-onscreen__item mx-c-us"><span class="ef-onscreen__date"${time ? '' : ' aria-hidden="true"'}>${time}</span><span class="ef-onscreen__body"><a class="ef-screen__item" href="tv"><div class="ef-poster"></div><span class="ef-screen__text"><b class="ef-screen__title">${title}</b><span class="ef-onscreen__meta"><span class="ef-onscreen__kind">TV</span> · Paramount+ · ${episode}</span></span></a></span></li>`,
                     )
                     .join('');
                 section
@@ -54,34 +55,31 @@ const shots = lib.screenshots('episode-spacing');
             });
         };
         const layout = async (p) => {
-            const metrics = await p.locator('.d-tv__list').evaluate((list) => {
-                const shows = [...list.children];
-                const row = shows[0],
-                    episodes = row.querySelector('.d-tv__episodes');
+            const metrics = await p.locator('.d-episodes .ef-onscreen').evaluate((list) => {
+                const rows = [...list.children];
                 const box = (n) => n.getBoundingClientRect();
+                const first = rows[0];
+                const poster = first.querySelector('.ef-poster'),
+                    title = first.querySelector('.ef-screen__title'),
+                    body = first.querySelector('.ef-onscreen__body');
                 return {
-                    cols: getComputedStyle(list).gridTemplateColumns.split(' ').length,
-                    width: box(list).width,
-                    rowWidth: box(row).width,
-                    full: box(episodes).width / box(row).width,
-                    below: box(episodes).top >= box(row.querySelector('.tv-poster')).bottom,
-                    stacked: box(shows[1]).top >= box(row).bottom,
-                    status: [...row.querySelectorAll('.movie-meta')].every(
-                        (n) =>
-                            box(n).height <=
-                            parseFloat(getComputedStyle(n).lineHeight) *
-                                parseFloat(getComputedStyle(n.closest('.pub')).zoom) +
-                                1,
-                    ),
-                    links: [...row.querySelectorAll('.d-tv__episodes a')].every((n) => box(n).height >= 44),
+                    rows: rows.length,
+                    inside: rows.every((r) => box(r).right <= box(list).right + 1 && box(r).left >= box(list).left - 1),
+                    stacked: rows.every((r, i) => i === 0 || box(r).top >= box(rows[i - 1]).bottom - 1),
+                    beside: box(title).left >= box(poster).right && box(title).top < box(poster).bottom,
+                    rail:
+                        getComputedStyle(body).borderLeftWidth === '2px' &&
+                        getComputedStyle(body, '::before').width === '10px',
+                    blank: rows.filter((r) => r.querySelector('.ef-onscreen__date').textContent.trim() === '').length,
+                    links: rows.every((r) => box(r.querySelector('a')).height >= 44),
                 };
             });
-            assert.equal(metrics.cols, 1, 'One show per row in sidebar');
-            assert(metrics.rowWidth >= metrics.width - 1);
-            assert(metrics.full > 0.95, 'Episode details use full card width');
-            assert(metrics.below, 'Episodes below poster');
-            assert(metrics.stacked, 'Second series stacks below first');
-            assert(metrics.status, 'Time not confirmed stays on one line');
+            assert.equal(metrics.rows, 5, 'One timeline row per episode');
+            assert(metrics.inside, 'Rows stay inside the card');
+            assert(metrics.stacked, 'Rows stack in time order');
+            assert(metrics.beside, 'Title beside the poster');
+            assert(metrics.rail, 'Rail and dot drawn as on Entertainment');
+            assert.equal(metrics.blank, 2, 'Repeated times left blank');
             assert(metrics.links, '44px episode links');
         };
         await visit();
@@ -142,7 +140,9 @@ const shots = lib.screenshots('episode-spacing');
         assert.equal((await fold.getAttribute('open')) !== null, !before);
         await noJs.close();
         await context.close();
-        console.log('PASS four-episode batch, multiple shows, full-width details, calendar, Refresh and no-JS');
+        console.log(
+            'PASS episode timeline: one row per episode, repeated times blank, poster beside title, 44px links, calendar, Refresh and no-JS',
+        );
     } finally {
         try {
             await lib.deleteProfiles();
