@@ -323,21 +323,18 @@
     }.Where(p => p is not null));
 
     private RenderFragment Tiles => @<text>
-        @Tile("tech/technology", PhoneColors.ForCategory(NewsSections.Technology), "Technology",
-            briefing.Technology.ToString("N0", CultureInfo.InvariantCulture), StoriesSub(briefing.Technology))
-        @Tile("tech/video-games", PhoneColors.ForCategory(NewsSections.VideoGames), "Video Games",
-            briefing.VideoGames.ToString("N0", CultureInfo.InvariantCulture), StoriesSub(briefing.VideoGames))
-        @Tile("tech/linux", PhoneColors.ForCategory(NewsSections.Linux), "Linux",
-            briefing.Linux.ToString("N0", CultureInfo.InvariantCulture), StoriesSub(briefing.Linux))
-        @Tile("videos?categories=tech,video-games", "mx-c-tech", "Tech videos",
-            briefing.Videos.ToString("N0", CultureInfo.InvariantCulture), VideosSub(briefing.Videos))
+        <BriefTile Href="tech/technology" Color="@PhoneColors.ForCategory(NewsSections.Technology)" Label="Technology"
+            Value="@briefing.Technology.ToString("N0", CultureInfo.InvariantCulture)" Sub="@StoriesSub(briefing.Technology)" />
+        <BriefTile Href="tech/video-games" Color="@PhoneColors.ForCategory(NewsSections.VideoGames)" Label="Video Games"
+            Value="@briefing.VideoGames.ToString("N0", CultureInfo.InvariantCulture)" Sub="@StoriesSub(briefing.VideoGames)" />
+        <BriefTile Href="tech/linux" Color="@PhoneColors.ForCategory(NewsSections.Linux)" Label="Linux"
+            Value="@briefing.Linux.ToString("N0", CultureInfo.InvariantCulture)" Sub="@StoriesSub(briefing.Linux)" />
+        <BriefTile Href="videos?categories=tech,video-games" Color="mx-c-tech" Label="Tech videos"
+            Value="@briefing.Videos.ToString("N0", CultureInfo.InvariantCulture)" Sub="@VideosSub(briefing.Videos)" />
     </text>;
 
     private static string StoriesSub(int count) => count == 1 ? "story today" : "stories today";
     private static string VideosSub(int count) => count == 1 ? "video today" : "videos today";
-
-    private static RenderFragment Tile(string href, string color, string label, string value, string sub) =>
-        @<a class="nf-tile @color" href="@href"><span class="nf-tile__label">@label</span><b class="nf-tile__value">@value</b><span class="nf-tile__sub">@sub</span></a>;
 
     private RenderFragment Headline(FeedItem item, bool withCategory = false) =>
         @<li class="@PhoneColors.ForCategory(item.CategoryName)" data-news-url="@FeedQuery.SafeHref(item.Url)" data-news-source="@Source(item)">

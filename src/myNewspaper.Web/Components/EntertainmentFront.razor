@@ -1,3 +1,4 @@
+@using System.Globalization
 @using myNewspaper.Web.Components.Feed
 @inject IDbContextFactory<WebScraperContext> Factory
 @inject FeedDates Dates
@@ -10,6 +11,11 @@
    the weekend box office, tonight's TV and Friday's theater releases. Phones get the folded front below. *@
 <div class="mx-desktop tab-desktop">
 <div class="ef">
+    <section class="nf-brief" aria-labelledby="ef-brief-title">
+        <h2 id="ef-brief-title" class="ef-label">The briefing · @Dates.TodayLabel(nowUtc)</h2>
+        <div class="nf-brief__tiles">@Tiles</div>
+    </section>
+
     <section class="ef-screen" aria-labelledby="ef-screen-title">
         <div class="ef-head"><h2 id="ef-screen-title">On screen</h2><a href="movies">All releases <span aria-hidden="true">→</span></a></div>
         @if (agendaUnavailable)
@@ -246,6 +252,8 @@
 <div class="mx-phone tab-phone">
     <PhoneRibbon Section="entertainment" Kicker="@($"{Dates.TodayLabel(nowUtc)}{(showResults && boxOffice.Count > 0 ? " · weekend box office is in" : "")}")" Title="Entertainment" />
 
+    <section class="nf-brief nf-brief--phone" aria-label="The briefing"><div class="nf-brief__tiles">@Tiles</div></section>
+
     @if (stories.Count > 0)
     {
         var lead = stories[0];
@@ -387,6 +395,7 @@
     private BoxOfficeForecastSnapshot forecasts = new([], []);
     private bool showResults, newsUnavailable, agendaUnavailable, boxOfficeUnavailable;
     private DateOnly weekend;
+    private int entertainmentStoriesToday;
 
     protected override async Task OnParametersSetAsync()
     {
@@ -398,6 +407,10 @@
         try { stories = await FeedQuery.GetHomeNewsAsync(db, 7, "entertainment", Ct); }
         catch (Exception ex) when (DataFailures.IsReadFailure(ex))
         { newsUnavailable = true; stories = []; Log.LogError(ex, "Could not read entertainment headlines."); }
+
+        try { entertainmentStoriesToday = await FeedQuery.CountTodayInHubAsync(db, Dates, "entertainment", Ct); }
+        catch (Exception ex) when (DataFailures.IsReadFailure(ex))
+        { entertainmentStoriesToday = 0; Log.LogError(ex, "Could not count entertainment stories today."); }
 
         try
         {
@@ -479,4 +492,32 @@
 
     private static string? EpisodeCode(TvEpisodeItem episode) =>
         EntertainmentEpisodeBatch.Code(episode);
+
+    private RenderFragment Tiles => @<text>
+        <BriefTile Href="entertainment/news" Color="@PhoneColors.ForCategory("entertainment")" Label="Entertainment news"
+            Value="@($"{entertainmentStoriesToday} {(entertainmentStoriesToday == 1 ? "story" : "stories")}")"
+            Sub="@(entertainmentStoriesToday == 0 ? "nothing new yet" : "today")" />
+        @if (showResults && boxOffice.Count > 0)
+        {
+            <BriefTile Href="box-office" Color="@PhoneColors.ForCategory("box office")" Label="Last weekend"
+                Value="@boxOffice[0].Title" Sub="@BoxOfficeChartQuery.Compact(boxOffice[0].WeekendGross)" />
+        }
+        else if (!showResults)
+        {
+            var preview = forecasts.Movies.Where(f => f.Kind == BoxOfficeForecastQuery.Preview).ToList();
+            var hasPreview = preview.Count > 0;
+            <BriefTile Href="box-office" Color="@PhoneColors.ForCategory("box office")" Label="Next weekend"
+                Value="@(hasPreview ? preview[0].Title : "Not out yet")"
+                Sub="@(hasPreview ? $"{BoxOfficeForecastQuery.Range(preview[0].Low, preview[0].High)} forecast" : "predictions publish later")" />
+        }
+        <BriefTile Href="tv" Color="@PhoneColors.ForRelease("tv")" Label="Tonight on TV"
+            Value="@($"{episodes.Count} {(episodes.Count == 1 ? "episode" : "episodes")}")"
+            Sub="@(episodes.Count > 0 ? episodes[0].SeriesTitle : "Track a series →")" />
+        @if (theatrical.Count > 0)
+        {
+            <BriefTile Href="movies?type=theatrical" Color="@PhoneColors.ForRelease("theatrical")" Label="In theaters Friday"
+                Value="@($"{theatrical.Count} {(theatrical.Count == 1 ? "film" : "films")}")"
+                Sub="@string.Join(", ", theatrical.Take(3).Select(m => m.Title))" />
+        }
+    </text>;
 }

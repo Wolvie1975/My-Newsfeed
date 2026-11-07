@@ -103,6 +103,20 @@ public static class FeedQuery
     internal static IQueryable<Models.Page> VisibleSince(WebScraperContext db, DateTime since, string? hub, string? category = null) =>
         VisibleInHub(db, hub, category).Where(p => (p.Published ?? p.ScrapedAt) >= since);
 
+    /// <summary>Visible stories in <paramref name="hub"/> published (or scraped) on <paramref name="dates"/>'s today in the display zone.</summary>
+    internal static IQueryable<Models.Page> VisibleTodayInHub(WebScraperContext db, FeedDates dates, string hub)
+    {
+        var today = dates.Today;
+        var startUtc = dates.StartOfDayUtc(today);
+        var endUtc = dates.StartOfDayUtc(today.AddDays(1));
+        return VisibleInHub(db, hub)
+            .Where(p => (p.Published ?? p.ScrapedAt) >= startUtc && (p.Published ?? p.ScrapedAt) < endUtc);
+    }
+
+    /// <summary>Visible stories in a hub published (or scraped) today in the display time zone.</summary>
+    public static Task<int> CountTodayInHubAsync(WebScraperContext db, FeedDates dates, string hub, CancellationToken ct = default) =>
+        VisibleTodayInHub(db, dates, hub).CountAsync(ct);
+
     /// <summary>Newest stories in <paramref name="hub"/> (and optional <paramref name="category"/>), in standard feed order.</summary>
     public static async Task<IReadOnlyList<FeedItem>> GetLatestInHubAsync(
         WebScraperContext db, string? hub, int take, string? category = null, CancellationToken ct = default) =>

@@ -468,4 +468,50 @@ public class FeedQueryTests
         var item = Assert.Single((await FeedQuery.GetFeedAsync(db, null, token, null)).Items);
         Assert.Equal(600, item.Description!.Length);
     }
+
+    private sealed class FixedClock(DateTimeOffset now) : TimeProvider
+    {
+        public override DateTimeOffset GetUtcNow() => now;
+    }
+
+    [Fact]
+    public async Task CountTodayInHubAsync_excludes_yesterday_1159_pm_and_counts_today_1200_am_and_excludes_hidden_sources()
+    {
+        await using var db = Create();
+        await using var tx = await db.Database.BeginTransactionAsync();
+        var token = Guid.NewGuid().ToString("N");
+
+        var zone = TimeZoneInfo.FindSystemTimeZoneById("America/Chicago");
+        var noonChicago = new DateTimeOffset(2026, 11, 7, 12, 0, 0, TimeSpan.FromHours(-6));
+        var dates = new FeedDates(zone, new FixedClock(noonChicago));
+
+        var today = dates.Today;
+        var startUtc = dates.StartOfDayUtc(today);
+        var yesterday1159Utc = startUtc.AddMinutes(-1);
+        var todayMidnightUtc = startUtc;
+
+        var countBefore = await FeedQuery.CountTodayInHubAsync(db, dates, "sports");
+
+        var category = new SourceCategory { CategoryName = "SportsCat " + token, NewsHub = "sports", DateAdded = DateTime.UtcNow };
+        var enabledSource = new Source { Url = $"https://test.invalid/{token}/enabled", Label = "Enabled", Enabled = true, SourceCategory = category };
+        var disabledSource = new Source { Url = $"https://test.invalid/{token}/disabled", Label = "Disabled", Enabled = false, SourceCategory = category };
+
+        // 11:59 PM yesterday (excluded)
+        enabledSource.Pages.Add(NewPage(token, "Yesterday 11:59 PM", yesterday1159Utc, yesterday1159Utc));
+        // 12:00 AM today (counted)
+        enabledSource.Pages.Add(NewPage(token, "Today 12:00 AM", todayMidnightUtc, todayMidnightUtc));
+        // 12:00 AM today but disabled source (excluded)
+        disabledSource.Pages.Add(NewPage(token, "Hidden Today", todayMidnightUtc, todayMidnightUtc));
+
+        db.Sources.AddRange(enabledSource, disabledSource);
+        await db.SaveChangesAsync();
+
+        var countAfter = await FeedQuery.CountTodayInHubAsync(db, dates, "sports");
+        Assert.Equal(countBefore + 1, countAfter);
+
+        // When the enabled source is disabled, its story is excluded as well
+        enabledSource.Enabled = false;
+        await db.SaveChangesAsync();
+        Assert.Equal(countBefore, await FeedQuery.CountTodayInHubAsync(db, dates, "sports"));
+    }
 }

@@ -87,8 +87,7 @@ public static class TechQuery
         var startUtc = dates.StartOfDayUtc(today);
         var endUtc = dates.StartOfDayUtc(today.AddDays(1));
 
-        var storyCounts = await FeedQuery.VisibleInHub(db, "tech")
-            .Where(p => (p.Published ?? p.ScrapedAt) >= startUtc && (p.Published ?? p.ScrapedAt) < endUtc)
+        var storyCounts = await FeedQuery.VisibleTodayInHub(db, dates, "tech")
             .GroupBy(p => p.Source.SourceCategory != null ? p.Source.SourceCategory.CategoryName : null)
             .Select(g => new { Category = g.Key, Count = g.Count() })
             .ToListAsync(ct);

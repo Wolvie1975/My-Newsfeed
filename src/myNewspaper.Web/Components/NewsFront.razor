@@ -479,27 +479,24 @@
     private RenderFragment Tiles => @<text>
         @if (sinceVisit is { } since)
         {
-            @Tile("news/all", "mx-c-world", "Since last visit", since.Total.ToString("N0", CultureInfo.InvariantCulture),
-                since.Total == 0 ? "nothing new yet" : since.Local > 0 ? $"new · {since.Local} local" : "new")
+            <BriefTile Href="news/all" Color="mx-c-world" Label="Since last visit" Value="@since.Total.ToString("N0", CultureInfo.InvariantCulture)"
+                Sub="@(since.Total == 0 ? "nothing new yet" : since.Local > 0 ? $"new · {since.Local} local" : "new")" />
         }
-        @Tile("news/kansas-city#local-weather", "mx-c-local", "Kansas City now", Now is { } now ? $"{now.Temperature}°" : "Forecast", Now?.Summary ?? "National Weather Service")
+        <BriefTile Href="news/kansas-city#local-weather" Color="mx-c-local" Label="Kansas City now" Value="@(Now is { } now ? $"{now.Temperature}°" : "Forecast")" Sub="@(Now?.Summary ?? "National Weather Service")" />
         @if (TopTopic is { } topTopic)
         {
-            @Tile($"news/topics/{topTopic.Topic.Id}", HubColor(topTopic.Topic.Hub), "Your top topic", topTopic.Name, $"{topTopic.New} new since your last visit")
+            <BriefTile Href="@($"news/topics/{topTopic.Topic.Id}")" Color="@HubColor(topTopic.Topic.Hub)" Label="Your top topic" Value="@topTopic.Name" Sub="@($"{topTopic.New} new since your last visit")" />
         }
         @if (mostCoveredLead is { } mc)
         {
-            @Tile(FeedQuery.SafeHref(mc.Lead.Url) ?? "news/all", "mx-c-us", "Most covered", $"{mc.Sources} sources", Title(mc.Lead))
+            <BriefTile Href="@(FeedQuery.SafeHref(mc.Lead.Url) ?? "news/all")" Color="mx-c-us" Label="Most covered" Value="@($"{mc.Sources} sources")" Sub="@Title(mc.Lead)" />
         }
-        @if (ElectionDays is { } days) { @Tile("news/all?q=election", "mx-c-us", "Election Day", ElectionValue(days), ElectionDate) }
+        @if (ElectionDays is { } days) { <BriefTile Href="news/all?q=election" Color="mx-c-us" Label="Election Day" Value="@ElectionValue(days)" Sub="@ElectionDate" /> }
         @if (ActiveAlert is { } alert)
         {
-            @Tile("news/kansas-city#local-weather", AlertColor(alert), "Weather alert", alert.Event, AlertSub(alert))
+            <BriefTile Href="news/kansas-city#local-weather" Color="@AlertColor(alert)" Label="Weather alert" Value="@alert.Event" Sub="@AlertSub(alert)" />
         }
     </text>;
-
-    private static RenderFragment Tile(string href, string color, string label, string value, string sub) =>
-        @<a class="nf-tile @color" href="@href"><span class="nf-tile__label">@label</span><b class="nf-tile__value">@value</b><span class="nf-tile__sub">@sub</span></a>;
 
     // ---------- Rows ----------
 

@@ -1,3 +1,4 @@
+@using System.Globalization
 @using myNewspaper.Web.Components.Feed
 @inject IDbContextFactory<WebScraperContext> Factory
 @inject FeedDates Dates
@@ -11,6 +12,11 @@
    headlines, and a side column of hourly rotating standings and Top 25 polls. Phones get the same sections as cards. *@
 <div class="mx-desktop tab-desktop">
 <div class="ef spf">
+    <section class="nf-brief" aria-labelledby="sp-brief-title">
+        <h2 id="sp-brief-title" class="ef-label">The briefing · @Dates.TodayLabel(nowUtc)</h2>
+        <div class="nf-brief__tiles">@Tiles</div>
+    </section>
+
     <section class="spf-scores" aria-labelledby="spf-scores-title">
         <div class="ef-head"><h2 id="spf-scores-title">Today’s scores</h2><a href="scoreboard">Full scoreboard <span aria-hidden="true">→</span></a></div>
         <ScoreboardPanel Compact="true" />
@@ -139,6 +145,8 @@
 @* Phones: the folded Sports front (docs/mobile-refresh-handoff.md), from the same data. *@
 <div class="mx-phone tab-phone">
     <PhoneRibbon Section="sports" Kicker="@($"{Dates.TodayLabel(nowUtc)}{(live.Count > 0 ? $" · {live.Count} live now" : "")}")" Title="Sports" />
+
+    <section class="nf-brief nf-brief--phone" aria-label="The briefing"><div class="nf-brief__tiles">@Tiles</div></section>
 
     @if (stories.Count > 0)
     {
@@ -274,6 +282,7 @@
     private IReadOnlyList<myNewspaper.Shared.Data.ScoreboardGame> live = [];
     private F1Page f1 = F1Page.Empty;
     private myNewspaper.Shared.Data.Models.F1Race? f1Race;
+    private int sportsStoriesToday;
 
     protected override async Task OnParametersSetAsync()
     {
@@ -285,6 +294,10 @@
         try { stories = await FeedQuery.GetHomeNewsAsync(db, 7, "sports", Ct); }
         catch (Exception ex) when (DataFailures.IsReadFailure(ex))
         { newsUnavailable = true; stories = []; Log.LogError(ex, "Could not read sports headlines."); }
+
+        try { sportsStoriesToday = await FeedQuery.CountTodayInHubAsync(db, Dates, "sports", Ct); }
+        catch (Exception ex) when (DataFailures.IsReadFailure(ex))
+        { sportsStoriesToday = 0; Log.LogError(ex, "Could not count sports stories today."); }
 
         // Upcoming: today's remaining games, the same timeline as the homepage's Today & Tonight.
         try
@@ -370,4 +383,71 @@
         : team.PreviousRank is { } previous && team.Rank is { } rank
             ? previous > rank ? $"▲{previous - rank}" : previous < rank ? $"▼{rank - previous}" : "—"
             : "";
+
+    private IReadOnlyList<myNewspaper.Shared.Data.ScoreboardGame> RankedGames =>
+        board.Where(g => (g.HomeRank is >= 1 and <= 25) || (g.AwayRank is >= 1 and <= 25)).ToList();
+
+    private static string RankedTeamsLine(IReadOnlyList<myNewspaper.Shared.Data.ScoreboardGame> games)
+    {
+        var teams = new List<string>();
+        foreach (var g in games)
+        {
+            if (g.AwayRank is >= 1 and <= 25 && !string.IsNullOrWhiteSpace(g.AwayName))
+                teams.Add($"#{g.AwayRank} {g.AwayName}");
+            if (g.HomeRank is >= 1 and <= 25 && !string.IsNullOrWhiteSpace(g.HomeName))
+                teams.Add($"#{g.HomeRank} {g.HomeName}");
+        }
+        var distinct = teams.Distinct().ToList();
+        if (distinct.Count > 3)
+            return $"{string.Join(", ", distinct.Take(3))}…";
+        return string.Join(", ", distinct);
+    }
+
+    private string F1Line(myNewspaper.Shared.Data.Models.F1Race race)
+    {
+        var gp = F1Query.Sessions(race).LastOrDefault();
+        var date = race.RaceDate.ToString("ddd, MMM d", CultureInfo.InvariantCulture);
+        return gp?.StartsUtc is { } starts ? $"{date} · {Dates.Time(starts)}" : date;
+    }
+
+    private RenderFragment Tiles => @<text>
+        @if (board.Count > 0)
+        {
+            @if (live.Count > 0)
+            {
+                <BriefTile Href="scoreboard" Color="@PhoneColors.ForSport(live[0].Sport)" Label="Live now"
+                    Value="@($"{live.Count} live")"
+                    Sub="@($"{board.Count} {(board.Count == 1 ? "game" : "games")} today")" />
+            }
+            else
+            {
+                <BriefTile Href="scoreboard" Color="@PhoneColors.ForSport(board[0].Sport)" Label="Live now"
+                    Value="@($"{board.Count} {(board.Count == 1 ? "game" : "games")}")"
+                    Sub="none live right now" />
+            }
+        }
+        @if (upcoming.Count > 0)
+        {
+            var next = upcoming[0];
+            var match = PhoneText.Matchup(next);
+            var sub = string.IsNullOrEmpty(next.Tv) ? match : $"{match} · {next.Tv}";
+            var time = next.StartsUtc is { } starts ? Dates.Time(starts) : next.TimeLabel;
+            <BriefTile Href="@(next.Url ?? "events")" Color="@PhoneColors.ForSport(next.Kind)" Label="Next up"
+                Value="@time" Sub="@sub" />
+        }
+        @if (RankedGames is { Count: > 0 } ranked)
+        {
+            <BriefTile Href="scoreboard" Color="@PhoneColors.ForSport(ranked[0].Sport)" Label="Top 25 in action"
+                Value="@($"{ranked.Count} {(ranked.Count == 1 ? "game" : "games")}")"
+                Sub="@RankedTeamsLine(ranked)" />
+        }
+        @if (f1Race is { } race)
+        {
+            <BriefTile Href="f1" Color="mx-c-us" Label="F1"
+                Value="@race.RaceName" Sub="@F1Line(race)" />
+        }
+        <BriefTile Href="sports/news" Color="@PhoneColors.ForCategory("sports")" Label="Sports news"
+            Value="@($"{sportsStoriesToday} {(sportsStoriesToday == 1 ? "story" : "stories")}")"
+            Sub="@(sportsStoriesToday == 0 ? "nothing new yet" : "today")" />
+    </text>;
 }
