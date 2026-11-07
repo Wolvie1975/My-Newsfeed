@@ -1174,22 +1174,6 @@
     .pub .tab-desktop .bs-col + .bs-col {
         border-left: 1px solid var(--row-border);
     }
-    .pub .tab-desktop .bs-col--side .d-movies .d-list {
-        grid-template-columns: minmax(0, 1fr);
-        gap: 14px;
-        padding: 8px 0 0;
-    }
-    .pub .tab-desktop .bs-col--side .d-movie {
-        flex-direction: row;
-        align-items: flex-start;
-    }
-    .pub .tab-desktop .bs-col--side .d-movie__poster {
-        flex: none;
-        width: 56px;
-    }
-    .pub .tab-desktop .bs-col--side .d-movie__body {
-        flex: 1 1 auto;
-    }
     .pub .tab-desktop .bs-band {
         display: block;
         margin: 40px 0 0;
@@ -2054,7 +2038,7 @@
     /* Tablet columns need real grids rather than the base phone flex shelves. */
     .pub .tab-desktop .bs-home .d-movies .d-list {
         display: grid;
-        grid-template-columns: minmax(0, 1fr);
+        grid-template-columns: repeat(3, minmax(0, 1fr));
         overflow: visible;
     }
     .pub .tab-desktop .bs-home .d-vids .d-list {

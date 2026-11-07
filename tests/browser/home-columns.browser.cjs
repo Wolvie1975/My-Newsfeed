@@ -117,6 +117,18 @@ const phoneOrder = [
                         1,
                         'tv in front side column',
                     );
+                    // Fridays: theater releases are a full-width row under the front, never in its columns.
+                    assert.equal(
+                        await page.locator('.bs-front [data-home-section="movies"]').count(),
+                        0,
+                        'theater releases not in the front columns',
+                    );
+                    const friday = await box('[data-home-section="movies"]');
+                    const front = await box('.bs-front');
+                    if (friday && front) {
+                        assert(friday.y >= front.y + front.height - 1, 'Friday releases below the front');
+                        assert(friday.width >= front.width - 2, 'Friday releases full width');
+                    }
 
                     if (width >= 1920) {
                         assert(!(await page.locator('.bs-band').isVisible()), 'band hidden at 1920+');

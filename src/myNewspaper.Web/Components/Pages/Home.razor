@@ -222,55 +222,58 @@
                 }
                 <p class="d-tv__credit">Episode data and images: <a href="https://www.tvmaze.com" target="_blank" rel="noopener noreferrer">TVmaze</a> · <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener noreferrer">CC BY-SA 4.0</a>. Date-only releases retain their original date; confirmed times use @Dates.Zone.Id.</p>
             </section>
-            @if (ShowTheatrical)
-            {
-            <section data-home-section="movies" class="d-card d-movies" aria-labelledby="h-movies">
-                <div class="d-card__head">
-                    <h2 class="d-card__title" id="h-movies">Friday theater releases</h2>
-                    <a class="d-more" href="movies?type=theatrical">View all <span aria-hidden="true">→</span></a>
-                </div>
-                @if (unavailable.Contains(Movies))
-                {
-                    <p class="d-empty">Theater releases are temporarily unavailable.</p>
-                }
-                else if (movies.Count == 0)
-                {
-                    <p class="d-empty">No theater releases announced for this Friday yet.</p>
-                }
-                else
-                {
-                    <ul class="d-list" tabindex="0" aria-label="This Friday’s theater releases">
-                        @foreach (var movie in movies)
-                        {
-                            var href = FeedQuery.SafeHref(movie.SourceUrl);
-                            <li class="d-movie">
-                                <MoviePoster Url="@movie.Poster" Title="@movie.Title" Class="d-movie__poster" />
-                                <div class="d-movie__body">
-                                    @if (movie.Date is { } date)
-                                    {
-                                        <p class="d-movie__date"><time datetime="@date.ToString("yyyy-MM-dd")">@date.ToString("ddd, MMM d, yyyy", System.Globalization.CultureInfo.InvariantCulture)</time>@(movie.DateStatus == "estimated" ? " · Estimated" : "")</p>
-                                    }
-                                    <h3 class="d-vid__title">
-                                        @if (href is not null)
-                                        {
-                                            <a href="@href" target="_blank" rel="noopener noreferrer">@movie.Title</a>
-                                        }
-                                        else
-                                        {
-                                            @movie.Title
-                                        }
-                                    </h3>
-                                    <p class="d-vid__meta">@string.Join(" · ", new[] { movie.Certification, movie.Runtime is { } runtime ? $"{runtime} min" : null, movie.ReRelease ? "Re-release" : null }.Where(x => !string.IsNullOrWhiteSpace(x)))</p>
-                                    <MovieCommerceAction Item="movie" />
-                                </div>
-                            </li>
-                        }
-                    </ul>
-                }
-            </section>
-            }
         </div>
     </div>
+
+    @* Fridays only: the new theater releases get their own full-width row between the front and More from today,
+       rather than a tall column that left the front half-empty (concept C, November 6, 2026). *@
+    @if (ShowTheatrical)
+    {
+    <section data-home-section="movies" class="d-card d-movies bs-friday" aria-labelledby="h-movies">
+        <div class="d-card__head">
+            <h2 class="d-card__title" id="h-movies">Friday theater releases</h2>
+            <a class="d-more" href="movies?type=theatrical">View all <span aria-hidden="true">→</span></a>
+        </div>
+        @if (unavailable.Contains(Movies))
+        {
+            <p class="d-empty">Theater releases are temporarily unavailable.</p>
+        }
+        else if (movies.Count == 0)
+        {
+            <p class="d-empty">No theater releases announced for this Friday yet.</p>
+        }
+        else
+        {
+            <ul class="d-list" tabindex="0" aria-label="This Friday’s theater releases">
+                @foreach (var movie in movies)
+                {
+                    var href = FeedQuery.SafeHref(movie.SourceUrl);
+                    <li class="d-movie">
+                        <MoviePoster Url="@movie.Poster" Title="@movie.Title" Class="d-movie__poster" />
+                        <div class="d-movie__body">
+                            @if (movie.Date is { } date)
+                            {
+                                <p class="d-movie__date"><time datetime="@date.ToString("yyyy-MM-dd")">@date.ToString("ddd, MMM d, yyyy", System.Globalization.CultureInfo.InvariantCulture)</time>@(movie.DateStatus == "estimated" ? " · Estimated" : "")</p>
+                            }
+                            <h3 class="d-vid__title">
+                                @if (href is not null)
+                                {
+                                    <a href="@href" target="_blank" rel="noopener noreferrer">@movie.Title</a>
+                                }
+                                else
+                                {
+                                    @movie.Title
+                                }
+                            </h3>
+                            <p class="d-vid__meta">@string.Join(" · ", new[] { movie.Certification, movie.Runtime is { } runtime ? $"{runtime} min" : null, movie.ReRelease ? "Re-release" : null }.Where(x => !string.IsNullOrWhiteSpace(x)))</p>
+                            <MovieCommerceAction Item="movie" />
+                        </div>
+                    </li>
+                }
+            </ul>
+        }
+    </section>
+    }
 
     <h2 class="bs-band">More from today</h2>
 
@@ -611,7 +614,7 @@
         catch (Exception ex) when (DataFailures.IsReadFailure(ex))
         { Log.LogError(ex, "Could not read home lead story."); lead = new(null, nowUtc.Ticks / TimeSpan.TicksPerHour, 60000, true); }
         news = await ReadSectionAsync(Headlines, () => FeedQuery.GetHomeNewsAsync(db, HomeNewsCount, "headlines", Ct), []);
-        headlineStories = news.Where(item => item.Id != lead.Article?.Id).Take(4).ToList();
+        headlineStories = news.Where(item => item.Id != lead.Article?.Id).Take(6).ToList();   // six fill the front beside the lead
         sportsStories = await ReadSectionAsync(SportsNews, () => FeedQuery.GetHomeNewsAsync(db, HomeShelfCount, "sports", Ct), []);
         entertainmentStories = await ReadSectionAsync(EntertainmentNews, () => FeedQuery.GetHomeNewsAsync(db, HomeShelfCount, "entertainment", Ct), []);
         techStories = await ReadSectionAsync(TechNews, () => FeedQuery.GetHomeNewsAsync(db, HomeShelfCount, "tech", Ct), []);
