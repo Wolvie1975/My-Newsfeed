@@ -1,0 +1,752 @@
+From 66833dec3880c309b71091ae0cd4f7b6f62eac76 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Fri, 6 Nov 2026 14:20:30 -0600
+Subject: [PATCH 1/3] Home weather: lead forecast with the night's low, later
+ periods beside it
+
+Concept C from the November 6 weather-strip review. The first NWS period leads
+(icon, high / low, a one-sentence summary); a daytime lead pairs with the night
+after it. The next two periods follow as ruled rows with right-aligned temps.
+Stacked in the 1024-1919px masthead ear, a row on tablets and from 1920px.
+Icons in the strip share one ink; the heading is visible at every width.
+
+ForecastGlance (Shared/Data) builds the lead and summary; unit tests cover a
+day lead and a night lead. The weather CSS spread over nine breakpoint blocks
+is one base set plus the ear, tablet and 1920 overrides; the 599/600px one-offs
+and two width-dependent hiding rules are retired from check-css.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01BeSUhTLXvQhUDsTovwqjsi
+---
+ docs/coding-standards.md                      |   4 +-
+ src/myNewspaper.Shared/Data/LocalWeather.cs   |  27 ++
+ .../Components/Pages/Home.razor               |  32 +-
+ src/myNewspaper.Web/wwwroot/broadsheet.css    | 302 +++++++-----------
+ src/myNewspaper.Web/wwwroot/tablet.css        |  87 +----
+ tests/browser/home-masthead.browser.cjs       |  12 +-
+ tests/browser/ipad-news-home.browser.cjs      |  12 +-
+ tests/myNewspaper.Tests/LocalWeatherTests.cs  |  28 ++
+ tools/check-css.cjs                           |   4 -
+ 9 files changed, 211 insertions(+), 297 deletions(-)
+
+diff --git a/docs/coding-standards.md b/docs/coding-standards.md
+index df77b20..3e8fe86 100644
+--- a/docs/coding-standards.md
++++ b/docs/coding-standards.md
+@@ -73,7 +73,7 @@ reviewer. Existing code is being brought into line in the clean-up steps listed
+ - **[Enforced]** Breakpoints: `max-width: 1023px` / `min-width: 1024px` (phone and tablet vs desktop),
+   `(min-width: 744px) and (max-width: 1023px)` (tablet), `min-width: 1920px` (wide) and `min-width: 2560px` (4K).
+   Any other width is listed in `oneOffWidths` in [tools/check-css.cjs](../tools/check-css.cjs) with the reason it
+-  exists; 29 older ones are there (November 5, 2026), kept because folding them would change in-between sizes. Fold one
++  exists; 29 older ones were there (November 5, 2026), 27 since the Home weather redesign (November 6, 2026), kept because folding them would change in-between sizes. Fold one
+   into the breakpoints when its rule is next edited, and remove it from the list.
+ - **[Review]** Colors come from the tokens on `:root`/`.pub` (`--text`, `--surface`, …). Dark mode and colour schemes
+   are `:root[data-theme='dark']` and `:root[data-color-scheme='…']`, set before first paint by `theme-init.js`.
+@@ -200,7 +200,7 @@ quietly come back. Update the **Status** column as each guard lands, and don't r
+ | Clock read three ways inside queries; `nowUtc`/`utcNow`/`now` parameter names | General §4 | Banned-API list blocks `DateTime.Now`, `DateTime.UtcNow`, `DateTimeOffset.UtcNow` outside the edge | Done November 5, 2026: `BannedSymbols.txt` refuses `DateTime.Now`/`UtcNow`/`Today` and `DateTimeOffset.Now`/`UtcNow` in application code (0 reads left, was 71); components inject `TimeProvider Clock`, endpoints and services (`ScoresSync`, `LeaguePhaseService`, `LocalWeather`, `SharedArticles`, `ProfileCookies`, `WatchCatalog`, `FeedDates.Today`) take `TimeProvider`; `TeamRecords.LoadAsync`, `FeedQuery.GetRecentDatesAsync` and three `TechQuery` methods take `DateTime nowUtc`; the 30 `utcNow`/`now` names became `nowUtc` and `RepositoryHygieneTests` fails if they return |
+ | Shared code in `myNewspaper.Web.*` with `RootNamespace` `myNewspaper.Common` | General §2; Solution shape above | `IDE0130` at `warning`; `RootNamespace` matches the assembly | Done November 4, 2026: Shared is `myNewspaper.Shared.*` (and `myNewspaper.Hosting` became `myNewspaper.Shared.Hosting`), its `RootNamespace` is `myNewspaper.Shared`, and Admin's endpoints and tests moved out of `myNewspaper.Web.Endpoints`/`myNewspaper.Tests` |
+ | `Web` and `Admin` `Program.cs` duplicating about 60 lines that had drifted | Solution shape above; general §5 | One `AddMyNewspaperCore()` in Shared (`Hosting/CoreServices.cs`); reviewers reject copied registrations | Done November 4, 2026: both hosts' registrations and outbound client settings compared identical before and after, apart from Admin's duplicate `TimeProvider` registration now removed |
+-| 35 breakpoint widths, an `admin-`/`adm-` split, three visually-hidden patterns | CSS section above | `tools/check-css.cjs` (run by CI) fails on unregistered widths, unregistered prefixes and copies of the clip pattern | Done November 5, 2026: `tools/check-css.cjs` runs in `tools/verify.sh` and both CI workflows. Widths: the 29 one-offs stay (user's choice: no visible change), each registered with its reason; new widths fail. Hidden text: Admin's `.adm-sr` became Bootstrap's `.visually-hidden`, the `.games` table heads use `.sr-only`, and the 9 rules that hide text only at some widths are registered; new copies fail. Prefixes: the 30 `admin-` classes became `adm-`; 129 older prefixes frozen, new unregistered ones fail. Proved with `compare-builds --layout` (new: element boxes, colours and font sizes per width and theme) |
++| 35 breakpoint widths, an `admin-`/`adm-` split, three visually-hidden patterns | CSS section above | `tools/check-css.cjs` (run by CI) fails on unregistered widths, unregistered prefixes and copies of the clip pattern | Done November 5, 2026: `tools/check-css.cjs` runs in `tools/verify.sh` and both CI workflows. Widths: the 29 one-offs stay (user's choice: no visible change), each registered with its reason; new widths fail. Hidden text: Admin's `.adm-sr` became Bootstrap's `.visually-hidden`, the `.games` table heads use `.sr-only`, and the 9 rules that hide text only at some widths are registered; new copies fail. November 6, 2026: the Home weather redesign retired the 599/600px one-offs and the two weather-heading hiding rules (the heading now shows at every width). Prefixes: the 30 `admin-` classes became `adm-`; 129 older prefixes frozen, new unregistered ones fail. Proved with `compare-builds --layout` (new: element boxes, colours and font sizes per width and theme) |
+ | `sa` password hard-coded in 10 test files; integration tests writing to the live database | Tests section above; general §12 | `RepositoryHygieneTests` fails on a literal `Password=`/`Pwd=` in any tracked file; `TestDatabase` always targets `WebScraper_Test` and refuses `WebScraper`; [create-test-database.sql](../deployment/create-test-database.sql) rebuilds the copy | Done November 4, 2026 for the tests; `sa` rotated November 5. Done November 5, 2026: web, admin and the tests have their own logins (DEPLOY.md, "SQL logins"; `deployment/sql-logins/`); `TestDatabase` prefers `TestConnection` (`mynewspaper_test`, no user in `WebScraper`) |
+ | 89 browser checks with 10 viewport sets, several base-URL defaults (one production), and copied clean-up code | Tests section above; AGENTS.md | Shared `tests/browser/lib.cjs`; the check script fails on any `*.browser.cjs` that doesn't use it | Done November 5, 2026: all 90 checks require `lib.cjs`; five base-URL defaults (production, two odd ports, a container IP) became one; the profile set-up and delete copied into 34 checks (10 variants, some without the retry for Admin's interactive circuit) became `lib.addProfile`/`openProfile`/`deleteProfiles`; the `zz` clean-up runs on exit or once per suite (`CLEANUP_DB`); `browser-lib.test.cjs` is the guard (a node unit test, so `tools/verify.sh` runs it). Width lists that differ per check stay, behind `lib.widths()` |
+ | Reliability findings (November 4 audit): Home failed whole on one read; weather failures not cached when the caller timed out; Web and Admin results syncs colliding; the Tech tracker reading every release; category lists counting all of Pages; a failed Tech table check cached 10 minutes; migrations 024 (re-run overrode Admin) and 008 (no transaction) | General §4 (errors), §13 (migrations); Data section above | A test per finding that fails on the old code: `HomeDegradationTests`, `LocalWeatherTests` (caller gives up, failures back off), `DatabaseLockTests`, `TechDesksTests` (tracker equivalence, uncached failed check), `FeedQueryTests` (hub count), `MigrationScriptTests` (008 in a scratch database, 024 re-run) | Done November 5, 2026 (`29602aa`, `a45b83f`, `3b44e97`, `cb1cba9`, `fa1e5d7`, `b5b1908`, `bdbac93`); live as `bdbac93f1c7c` |
+diff --git a/src/myNewspaper.Shared/Data/LocalWeather.cs b/src/myNewspaper.Shared/Data/LocalWeather.cs
+index 505f857..91a85bf 100644
+--- a/src/myNewspaper.Shared/Data/LocalWeather.cs
++++ b/src/myNewspaper.Shared/Data/LocalWeather.cs
+@@ -9,6 +9,33 @@ public sealed record LocalForecast(string Name, int Temperature, string Unit, st
+ public sealed record LocalWeatherPage(IReadOnlyList<LocalForecast> Periods, DateTimeOffset? Updated, bool Stale, string Location = "Kansas City", double Latitude = 39.0997, double Longitude = -94.5786);
+ public sealed record WeatherAlert(string Event, string Headline, string Severity, DateTimeOffset? Ends);
+ 
++/// <summary>
++/// Home's forecast at a glance: the first period leads. A daytime lead is paired with the night after it, whose low and
++/// conditions join the summary; the periods after those follow as a short list.
++/// </summary>
++public sealed record ForecastGlance(LocalForecast Lead, int? Low, string Summary, IReadOnlyList<LocalForecast> Next)
++{
++    public static ForecastGlance? From(IReadOnlyList<LocalForecast> periods, int next = 2)
++    {
++        if (periods.Count == 0) return null;
++        var lead = periods[0];
++        var night = lead.IsDaytime && periods.Count > 1 && !periods[1].IsDaytime ? periods[1] : null;
++        var parts = new List<string>(2);
++        if (!string.IsNullOrWhiteSpace(lead.Summary)) parts.Add(Sentence(lead.Summary) + ".");
++        if (night is not null && !string.IsNullOrWhiteSpace(night.Summary))
++            parts.Add($"{night.Name}, {night.Summary.Trim().ToLowerInvariant()}.");
++        return new ForecastGlance(lead, night?.Temperature, string.Join(' ', parts),
++            periods.Skip(night is null ? 1 : 2).Take(next).ToList());
++    }
++
++    /// <summary>NWS short forecasts are title case ("Mostly Cloudy then Patchy Frost"); this reads as a sentence.</summary>
++    public static string Sentence(string text)
++    {
++        var lower = text.Trim().ToLowerInvariant();
++        return lower.Length == 0 ? lower : char.ToUpperInvariant(lower[0]) + lower[1..];
++    }
++}
++
+ /// <summary>
+ /// NWS forecasts and alerts, cached. Each location has at most one fetch in flight, bounded by the client's own timeout
+ /// rather than the caller's: a caller that stops waiting (Home allows 3 s) doesn't cancel it, so its result, forecast or
+diff --git a/src/myNewspaper.Web/Components/Pages/Home.razor b/src/myNewspaper.Web/Components/Pages/Home.razor
+index 3da5cbc..2630d9e 100644
+--- a/src/myNewspaper.Web/Components/Pages/Home.razor
++++ b/src/myNewspaper.Web/Components/Pages/Home.razor
+@@ -40,18 +40,32 @@
+             </a>
+         </div>
+ 
+-        @if (weather is { Periods.Count: > 0 } forecast)
++        @if (weather is { Periods.Count: > 0 } forecast && ForecastGlance.From(forecast.Periods) is { } glance)
+         {
+-            <section class="bs-glance" aria-label="Kansas City weather">
+-                <div class="bs-glance__weather">
+-                    <h2 class="bs-glance__title">Kansas City weather</h2>
+-                    <a class="d-more" href="news/kansas-city">Kansas City <span aria-hidden="true">→</span></a>
+-                    <ul class="bs-glance__periods">
+-                        @foreach (var period in forecast.Periods.Take(4))
++            <section class="bs-glance" aria-labelledby="h-home-weather">
++                <div class="bs-glance__lead">
++                    <h2 class="bs-glance__title" id="h-home-weather">@glance.Lead.Name in @forecast.Location</h2>
++                    <p class="bs-glance__now">
++                        <WeatherIcon Summary="@glance.Lead.Summary" IsDaytime="@glance.Lead.IsDaytime" />
++                        <span class="bs-glance__temp">@glance.Lead.Temperature°<span class="sr-only"> @(glance.Lead.IsDaytime ? "high" : "low")</span></span>
++                        @if (glance.Low is { } low)
+                         {
+-                            <li><span class="bs-glance__name">@period.Name</span><WeatherIcon Summary="@period.Summary" IsDaytime="@period.IsDaytime" /><span class="bs-glance__reading"><b>@period.Temperature°</b> @period.Summary</span></li>
++                            <span class="bs-glance__low"><span aria-hidden="true">/ </span>@low°<span class="sr-only"> low</span></span>
+                         }
+-                    </ul>
++                    </p>
++                    <p class="bs-glance__summary">@glance.Summary</p>
++                </div>
++                <div class="bs-glance__next">
++                    @if (glance.Next.Count > 0)
++                    {
++                        <ul class="bs-glance__periods">
++                            @foreach (var period in glance.Next)
++                            {
++                                <li><WeatherIcon Summary="@period.Summary" IsDaytime="@period.IsDaytime" /><span class="bs-glance__period"><span class="bs-glance__name">@period.Name</span><span class="bs-glance__reading">@ForecastGlance.Sentence(period.Summary)</span></span><b class="bs-glance__high">@period.Temperature°</b></li>
++                            }
++                        </ul>
++                    }
++                    <a class="d-more" href="news/kansas-city#local-weather">Full forecast <span aria-hidden="true">→</span></a>
+                 </div>
+             </section>
+         }
+diff --git a/src/myNewspaper.Web/wwwroot/broadsheet.css b/src/myNewspaper.Web/wwwroot/broadsheet.css
+index e86b9a1..c4186b6 100644
+--- a/src/myNewspaper.Web/wwwroot/broadsheet.css
++++ b/src/myNewspaper.Web/wwwroot/broadsheet.css
+@@ -631,64 +631,109 @@
+     font-size: 12px;
+ }
+ 
+-/* At a glance: the Kansas City forecast. */
++/* At a glance: the forecast as a lead period (with the night's low) and the periods after it. Stacked in the
++   desktop ear; a row on tablets and from 1920px. */
+ .pub .bs-glance {
+     display: grid;
+-    gap: 10px;
+-    padding: 12px 14px;
+-    border: 1px solid var(--border);
+-    border-radius: 16px;
+-    background: var(--surface);
+-}
+-.pub .bs-glance__title {
+-    position: absolute;
+-    width: 1px;
+-    height: 1px;
+-    overflow: hidden;
+-    clip: rect(0 0 0 0);
++    grid-template-columns: minmax(0, 1fr);
++    align-content: start;
++    gap: 12px;
++    min-width: 0;
+ }
+-.pub .bs-glance__weather {
++.pub .bs-glance__lead {
+     display: grid;
+-    grid-template-columns: minmax(0, 1fr);
+-    align-items: start;
++    align-content: start;
+     gap: 8px;
++    min-width: 0;
+ }
+-.pub .bs-glance__weather > .d-more {
+-    justify-self: start;
++.pub .bs-glance__title {
++    margin: 0;
++    color: var(--text-2);
++    font-size: 12px;
++    font-weight: 800;
++    letter-spacing: 0.08em;
++    text-transform: uppercase;
+ }
+-.pub .bs-glance__periods {
++.pub .bs-glance__now {
++    display: flex;
++    align-items: center;
++    gap: 12px;
++    margin: 0;
++    font-family: var(--font-serif);
++    font-weight: 700;
++    line-height: 1;
++}
++/* One ink for every icon in the strip; the coloured sun, storm and snow tints stay on the full forecast. */
++.pub .bs-glance .weather-icon {
++    color: var(--text);
++}
++.pub .bs-glance__now .weather-icon {
++    flex: none;
++    width: 44px;
++    height: 44px;
++}
++.pub .bs-glance__temp {
++    font-size: 48px;
++}
++.pub .bs-glance__low {
++    color: var(--text-2);
++    font-size: 26px;
++}
++.pub .bs-glance__summary {
++    max-width: 46ch;
++    margin: 0;
++    font-family: var(--font-serif);
++    font-size: 16px;
++    line-height: 1.4;
++}
++.pub .bs-glance__next {
+     display: grid;
+-    grid-template-columns: repeat(4, minmax(0, 1fr));
+-    gap: 6px;
++    align-content: start;
++    min-width: 0;
++}
++.pub .bs-glance__periods {
+     margin: 0;
+     padding: 0;
+     list-style: none;
++    border-top: 1px solid var(--row-border);
+ }
+ .pub .bs-glance__periods li {
+-    display: flex;
+-    flex-direction: column;
+-    gap: 1px;
++    display: grid;
++    grid-template-columns: 24px minmax(0, 1fr) auto;
++    align-items: center;
++    gap: 12px;
++    padding: 10px 0;
++    border-bottom: 1px solid var(--row-border);
++}
++.pub .bs-glance__periods .weather-icon {
++    width: 24px;
++    height: 24px;
++}
++.pub .bs-glance__period {
++    display: grid;
++    gap: 2px;
+     min-width: 0;
+ }
+ .pub .bs-glance__name {
+-    color: var(--text-2);
+-    font-size: 11px;
+-    font-weight: 800;
+-    letter-spacing: 0.04em;
+-    text-transform: uppercase;
+-    white-space: nowrap;
+-    overflow: hidden;
+-    text-overflow: ellipsis;
++    font-size: 14px;
++    font-weight: 700;
+ }
+ .pub .bs-glance__reading {
+-    font-size: 12px;
+-    line-height: 1.3;
+     color: var(--text-2);
++    font-size: 13px;
++    line-height: 1.3;
++    overflow-wrap: anywhere;
+ }
+-.pub .bs-glance__reading b {
+-    display: block;
+-    color: var(--text);
+-    font-size: 18px;
++.pub .bs-glance__high {
++    font-family: var(--font-serif);
++    font-size: 24px;
++    font-variant-numeric: tabular-nums;
++}
++.pub .bs-glance__next > .d-more {
++    justify-self: start;
++    display: inline-flex;
++    align-items: center;
++    min-height: 44px;
+ }
+ 
+ /* Today & Tonight as agate rows. */
+@@ -1015,45 +1060,12 @@
+         border: 2px solid var(--text);
+         background: transparent;
+     }
+-    /* The forecast is the masthead's left ear, outlined like Coming up: periods two by two. */
++    /* The forecast is the masthead's left ear, outlined like Coming up. */
+     .pub .bs-glance {
+-        grid-template-columns: minmax(0, 1fr);
+         align-self: stretch;
+-        align-content: start;
+-        gap: 12px;
+-        padding: 14px 16px 16px;
++        padding: 14px 16px 4px;
+         border: 2px solid var(--text);
+         border-radius: 16px;
+-        background: transparent;
+-    }
+-    .pub .bs-glance__title {
+-        position: static;
+-        width: auto;
+-        height: auto;
+-        overflow: visible;
+-        clip: auto;
+-        grid-column: 1 / -1;
+-        margin: 0;
+-        font-family: var(--font-serif);
+-        font-size: 22px;
+-        font-weight: 700;
+-    }
+-    .pub .bs-glance__weather {
+-        grid-template-columns: minmax(0, 1fr);
+-        align-items: start;
+-        gap: 10px;
+-    }
+-    .pub .bs-glance__periods {
+-        grid-template-columns: repeat(2, minmax(0, 1fr));
+-        gap: 12px 16px;
+-    }
+-    .pub .bs-glance__reading {
+-        font-size: 14px;
+-    }
+-    .pub .bs-glance__reading b {
+-        display: inline;
+-        margin-right: 4px;
+-        font-size: 20px;
+     }
+     .pub .bs-front {
+         display: grid;
+@@ -1170,9 +1182,6 @@
+     display: inline;
+     margin-top: 0;
+ }
+-.pub .bs-glance__name {
+-    white-space: normal;
+-}
+ @media (min-width: 1024px) {
+     .pub .bs-title__name {
+         font-size: clamp(44px, 4.3vw, 64px);
+@@ -1424,32 +1433,7 @@
+     .pub .bs-watch__search label {
+         margin: 0;
+     }
+-    .pub .bs-glance__weather {
+-        grid-template-columns: minmax(0, 1fr);
+-    }
+-}
+-@media (max-width: 599px) {
+-    .pub .bs-glance__periods {
+-        grid-template-columns: repeat(2, minmax(0, 1fr));
+-        gap: 12px 16px;
+-    }
+-    .pub .bs-glance__name {
+-        white-space: nowrap;
+-    }
+-}
+-@media (min-width: 600px) and (max-width: 1023px) {
+-    .pub .bs-glance__periods li {
+-        align-items: center;
+-        text-align: center;
+-    }
+-    /* Names take two lines' height so the temperatures line up across the strip. */
+-    .pub .bs-glance__name {
+-        min-height: 2.5em;
+-        line-height: 1.25;
+-        white-space: normal;
+-    }
+ }
+-
+ /* ---------- Desktop paper ---------- */
+ @media (min-width: 1024px) {
+     :root:is([data-color-scheme], :not([data-color-scheme])) .pub {
+@@ -2092,12 +2076,6 @@
+     }
+ }
+ 
+-.pub .bs-glance__periods .weather-icon {
+-    width: 28px;
+-    height: 28px;
+-    margin-block: 3px;
+-}
+-
+ /* Keep header actions at 44px and the date/time readable on narrow phones. */
+ @media (max-width: 374px) {
+     :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme])) .pub .site-header {
+@@ -2588,73 +2566,6 @@ body:has([data-scheme-dialog][open]) {
+     }
+ }
+ 
+-@media (min-width: 1920px) {
+-    /* No box: the weather reads as the masthead's right-hand ear. */
+-    .pub .bs-glance {
+-        padding: 0;
+-        border: 0;
+-        border-radius: 0;
+-    }
+-    .pub .bs-glance__title {
+-        position: absolute; /* visually hidden; still names the section for screen readers */
+-        width: 1px;
+-        height: 1px;
+-        overflow: hidden;
+-        clip: rect(0 0 0 0);
+-    }
+-    .pub .bs-glance__weather {
+-        min-width: 0;
+-        grid-template-columns: minmax(0, 1fr);
+-        grid-template-areas: 'periods' 'link';
+-        align-items: end;
+-        gap: 12px;
+-    }
+-    .pub .bs-glance__weather > .d-more {
+-        grid-area: link;
+-    }
+-    .pub .bs-glance__periods {
+-        grid-area: periods;
+-        grid-template-columns: repeat(4, minmax(0, 1fr));
+-        gap: 0;
+-    }
+-    .pub .bs-glance__periods li {
+-        display: grid;
+-        grid-template-columns: 34px minmax(0, 1fr);
+-        min-width: 0;
+-        grid-template-areas: 'name name' 'icon temp';
+-        align-items: center;
+-        gap: 2px 8px;
+-        padding: 0 12px;
+-        border-left: 1px solid var(--row-border);
+-    }
+-    .pub .bs-glance__name {
+-        grid-area: name;
+-        white-space: normal;
+-    }
+-    .pub .bs-glance__periods .weather-icon {
+-        grid-area: icon;
+-        width: 34px;
+-        height: 34px;
+-        margin: 0;
+-    }
+-    .pub .bs-glance__reading {
+-        grid-area: temp;
+-        display: flex;
+-        flex-direction: column; /* temperature on top, the summary text under it */
+-        min-width: 0;
+-        overflow-wrap: anywhere;
+-        max-width: 170px;
+-        font-size: 12px;
+-    }
+-    .pub .bs-glance__reading b {
+-        display: block;
+-        margin: 0;
+-        font-family: var(--font-serif);
+-        font-size: 26px;
+-        line-height: 1.1;
+-    }
+-}
+-
+ /* ---------- Home masthead polish, 1920px and up (wide-screens-4k-handoff.md 2.4) ---------- */
+ @media (min-width: 1920px) {
+     .pub .bs-masthead {
+@@ -2700,12 +2611,6 @@ body:has([data-scheme-dialog][open]) {
+         grid-row: 1;
+         justify-self: end;
+     }
+-    .pub .bs-glance__periods {
+-        grid-template-columns: repeat(4, minmax(0, 210px));
+-    }
+-    .pub .bs-glance__weather {
+-        align-items: end;
+-    }
+     /* 1: Live now becomes one line under the double rule. */
+     .pub .bs-masthead > .bs-live {
+         grid-column: 1 / -1;
+@@ -2830,17 +2735,6 @@ body:has([data-scheme-dialog][open]) {
+ }
+ 
+ @media (min-width: 1920px) {
+-    .pub .bs-glance__weather {
+-        grid-template-columns: minmax(0, 1fr) auto;
+-        grid-template-areas: 'periods link';
+-        gap: 16px;
+-    }
+-    .pub .bs-glance__weather > .d-more {
+-        white-space: nowrap;
+-        min-height: 44px;
+-        display: inline-flex;
+-        align-items: center;
+-    }
+     .pub .bs-masthead > .bs-glance {
+         align-self: center;
+         min-width: 0;
+@@ -2982,3 +2876,29 @@ body:has([data-scheme-dialog][open]) {
+         min-height: 44px;
+     }
+ }
++
++/* From 1920px the forecast is the masthead's right-hand ear: no box, the lead beside the later periods. */
++@media (min-width: 1920px) {
++    .pub .bs-glance {
++        grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
++        column-gap: 32px;
++        width: min(860px, 100%);
++        padding: 0;
++        border: 0;
++        border-radius: 0;
++    }
++    .pub .bs-glance__next {
++        padding-left: 28px;
++        border-left: 1px solid var(--row-border);
++    }
++    .pub .bs-glance__temp {
++        font-size: 64px;
++    }
++    .pub .bs-glance__now .weather-icon {
++        width: 52px;
++        height: 52px;
++    }
++    .pub .bs-glance__summary {
++        font-size: 18px;
++    }
++}
+diff --git a/src/myNewspaper.Web/wwwroot/tablet.css b/src/myNewspaper.Web/wwwroot/tablet.css
+index c87e474..3b86bc8 100644
+--- a/src/myNewspaper.Web/wwwroot/tablet.css
++++ b/src/myNewspaper.Web/wwwroot/tablet.css
+@@ -1158,45 +1158,6 @@
+         border: 2px solid var(--text);
+         background: transparent;
+     }
+-    .pub .tab-desktop .bs-glance {
+-        grid-template-columns: minmax(0, 1fr);
+-        align-self: stretch;
+-        align-content: start;
+-        gap: 12px;
+-        padding: 14px 16px 16px;
+-        border: 2px solid var(--text);
+-        border-radius: 16px;
+-        background: transparent;
+-    }
+-    .pub .tab-desktop .bs-glance__title {
+-        position: static;
+-        width: auto;
+-        height: auto;
+-        overflow: visible;
+-        clip: auto;
+-        grid-column: 1 / -1;
+-        margin: 0;
+-        font-family: var(--font-serif);
+-        font-size: 22px;
+-        font-weight: 700;
+-    }
+-    .pub .tab-desktop .bs-glance__weather {
+-        grid-template-columns: minmax(0, 1fr);
+-        align-items: start;
+-        gap: 10px;
+-    }
+-    .pub .tab-desktop .bs-glance__periods {
+-        grid-template-columns: repeat(2, minmax(0, 1fr));
+-        gap: 12px 16px;
+-    }
+-    .pub .tab-desktop .bs-glance__reading {
+-        font-size: 14px;
+-    }
+-    .pub .tab-desktop .bs-glance__reading b {
+-        display: inline;
+-        margin-right: 4px;
+-        font-size: 20px;
+-    }
+     .pub .tab-desktop .bs-col {
+         display: flex;
+         flex-direction: column;
+@@ -1783,53 +1744,15 @@
+         position: absolute;
+         inset: -6px;
+     }
++    /* Weather: no box, the lead beside the later periods. */
+     .pub .tab-desktop .bs-glance {
+-        padding: 0;
+-        border: 0;
+-        border-radius: 0;
+-    }
+-    .pub .tab-desktop .bs-glance__title {
+-        position: absolute;
+-        width: 1px;
+-        height: 1px;
+-        overflow: hidden;
+-        clip: rect(0 0 0 0);
+-    }
+-    .pub .tab-desktop .bs-glance__periods {
+-        grid-template-columns: repeat(4, minmax(0, 1fr));
+-        gap: 0;
+-        margin-inline: -12px;
++        grid-template-columns: minmax(0, 1fr) minmax(240px, 300px);
++        column-gap: 28px;
+     }
+-    .pub .tab-desktop .bs-glance__periods li {
+-        display: grid;
+-        grid-template-columns: auto minmax(0, 1fr);
+-        grid-template-areas: 'name name' 'icon temp';
+-        align-items: center;
+-        gap: 2px 8px;
+-        padding: 0 12px;
++    .pub .tab-desktop .bs-glance__next {
++        padding-left: 24px;
+         border-left: 1px solid var(--row-border);
+     }
+-    .pub .tab-desktop .bs-glance__name {
+-        grid-area: name;
+-    }
+-    .pub .tab-desktop .bs-glance__periods .weather-icon {
+-        grid-area: icon;
+-        width: 30px;
+-        height: 30px;
+-        margin: 0;
+-    }
+-    .pub .tab-desktop .bs-glance__reading {
+-        grid-area: temp;
+-        display: flex;
+-        flex-direction: column;
+-        font-size: 12px;
+-    }
+-    .pub .tab-desktop .bs-glance__reading b {
+-        display: block;
+-        font-family: var(--font-serif);
+-        font-size: 24px;
+-        line-height: 1.1;
+-    }
+ 
+     /* Order: title, weather, Where to watch, Live now, then the sheet. */
+     .pub .tab-desktop .bs-home .bs-title {
+diff --git a/tests/browser/home-masthead.browser.cjs b/tests/browser/home-masthead.browser.cjs
+index 8682193..1925856 100644
+--- a/tests/browser/home-masthead.browser.cjs
++++ b/tests/browser/home-masthead.browser.cjs
+@@ -181,14 +181,18 @@ const shots = lib.screenshots('home-masthead');
+                     );
+                     await wide();
+                     if (await page.locator('.bs-glance').count()) {
+-                        assert.equal(await page.locator('.bs-glance__periods .weather-icon').count(), 4);
++                        assert.equal(
++                            await page.locator('.bs-glance .weather-icon').count(),
++                            1 + (await page.locator('.bs-glance__periods li').count()),
++                            'One icon for the lead and one per later period',
++                        );
+                         await page
+-                            .locator('.bs-glance__reading')
++                            .locator('.bs-glance__summary, .bs-glance__reading')
+                             .evaluateAll((ns) =>
+                                 ns.forEach(
+                                     (n) =>
+-                                        (n.innerHTML =
+-                                            '<b>76°</b> Chance Showers And Thunderstorms Then Mostly Cloudy'),
++                                        (n.textContent =
++                                            'Chance showers and thunderstorms then mostly cloudy. Tonight, chance showers and thunderstorms.'),
+                                 ),
+                             );
+                         await wide();
+diff --git a/tests/browser/ipad-news-home.browser.cjs b/tests/browser/ipad-news-home.browser.cjs
+index b8dd319..c44b0a6 100644
+--- a/tests/browser/ipad-news-home.browser.cjs
++++ b/tests/browser/ipad-news-home.browser.cjs
+@@ -126,11 +126,13 @@ const shots = lib.screenshots('ipad-news-home');
+             const image = await box('.bs-home .d-lead__image');
+             assert(Math.abs(image.w / image.h - 16 / 9) < 0.02, 'Home photo/P8 ratio');
+             assert(image.w > frame.w * 0.95);
+-            const weather = page.locator('.bs-glance__periods li');
+-            if (await weather.count()) {
+-                assert.equal(await weather.count(), 4);
+-                const ys = await weather.evaluateAll((els) => els.map((e) => e.getBoundingClientRect().y));
+-                assert(Math.max(...ys) - Math.min(...ys) < 2);
++            if (await page.locator('.bs-glance').count()) {
++                const lead = await box('.bs-glance__lead'),
++                    next = await box('.bs-glance__next');
++                assert(
++                    Math.abs(lead.y - next.y) < 2 && next.x > lead.x + lead.w,
++                    'Weather lead beside the later periods',
++                );
+             }
+             const date = await box('.bs-title__date'),
+                 refresh = await box('.bs-title .home-refresh');
+diff --git a/tests/myNewspaper.Tests/LocalWeatherTests.cs b/tests/myNewspaper.Tests/LocalWeatherTests.cs
+index 096356c..ea352f0 100644
+--- a/tests/myNewspaper.Tests/LocalWeatherTests.cs
++++ b/tests/myNewspaper.Tests/LocalWeatherTests.cs
+@@ -190,4 +190,32 @@ public class LocalWeatherTests
+         Assert.Empty(await service.GetAlertsAsync(default));
+         Assert.Equal(1, handler.Calls);
+     }
++
++    private static LocalForecast Period(string name, int temperature, string summary, bool day) =>
++        new(name, temperature, "F", summary, "5 mph S", DateTimeOffset.UnixEpoch, day);
++
++    [Fact]
++    public void Glance_pairs_a_daytime_lead_with_its_night_and_lists_the_rest()
++    {
++        var glance = ForecastGlance.From([
++            Period("Today", 53, "Patchy Drizzle", true), Period("Tonight", 35, "Mostly Cloudy then Patchy Frost", false),
++            Period("Saturday", 56, "Patchy Frost then Mostly Sunny", true), Period("Saturday Night", 40, "Clear", false)])!;
++        Assert.Equal("Today", glance.Lead.Name);
++        Assert.Equal(35, glance.Low);
++        Assert.Equal("Patchy drizzle. Tonight, mostly cloudy then patchy frost.", glance.Summary);
++        Assert.Equal(new[] { "Saturday", "Saturday Night" }, glance.Next.Select(p => p.Name));
++        Assert.Equal("Patchy frost then mostly sunny", ForecastGlance.Sentence(glance.Next[0].Summary));
++    }
++
++    [Fact]
++    public void Glance_led_by_a_night_has_no_separate_low()
++    {
++        var glance = ForecastGlance.From([
++            Period("Tonight", 35, "Mostly Cloudy", false), Period("Saturday", 56, "Sunny", true),
++            Period("Saturday Night", 40, "Clear", false), Period("Sunday", 60, "Sunny", true)])!;
++        Assert.Null(glance.Low);
++        Assert.Equal("Mostly cloudy.", glance.Summary);
++        Assert.Equal(new[] { "Saturday", "Saturday Night" }, glance.Next.Select(p => p.Name));
++        Assert.Null(ForecastGlance.From([]));
++    }
+ }
+diff --git a/tools/check-css.cjs b/tools/check-css.cjs
+index cb67b15..f47e19b 100644
+--- a/tools/check-css.cjs
++++ b/tools/check-css.cjs
+@@ -42,8 +42,6 @@ const oneOffWidths = {
+     'max:479': 'narrow phones: header clock on its own row, colour scheme picker in one column',
+     'max:480': 'soccer stats panel stacks on narrow phones',
+     'max:550': 'Watch detail and Settings order rows stack',
+-    'max:599': 'Home weather periods wrap below 600px (pairs with min 600)',
+-    'min:600': 'Home weather periods centre in a strip from 600px to tablet',
+     'max:600': 'phones vs 7-inch tablets (600px portrait): box office, Watch page, Home choice, Admin category list',
+     'max:650': 'movie grid drops to two columns',
+     'max:699': 'section hub, Watch results and Load more stack below 700px',
+@@ -68,11 +66,9 @@ const oneOffWidths = {
+ const widthDependentHiding = {
+     'src/myNewspaper.Web/wwwroot/broadsheet.css|.pub .bs-watch__search label':
+         'Home search label, shown again on desktop',
+-    'src/myNewspaper.Web/wwwroot/broadsheet.css|.pub .bs-glance__title': 'Home weather heading, shown on desktop',
+     'src/myNewspaper.Web/wwwroot/broadsheet.css|.pub .bs-title__date': 'masthead date, hidden in the compact header',
+     'src/myNewspaper.Web/wwwroot/broadsheet.css|.pub .saved-link__label':
+         'Saved label, icon only in the compact header',
+-    'src/myNewspaper.Web/wwwroot/tablet.css|.pub .tab-desktop .bs-glance__title': 'weather heading on the tablet front',
+     'src/myNewspaper.Web/wwwroot/sections.css|.pub .dg-bar__label': 'Digital source label, shown on desktop',
+     'src/myNewspaper.Web/wwwroot/sections.css|.pub .sb-toolbar__filter label': 'scoreboard filter labels on phones',
+     'src/myNewspaper.Shared/wwwroot/public.css|.pub .settings-link__label': 'Settings label, icon only below 1024px',
+-- 
+2.43.0
+
