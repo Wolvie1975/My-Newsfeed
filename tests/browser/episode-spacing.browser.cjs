@@ -62,13 +62,14 @@ const shots = lib.screenshots('episode-spacing');
                 const poster = first.querySelector('.ef-poster'),
                     title = first.querySelector('.ef-screen__title'),
                     body = first.querySelector('.ef-onscreen__body');
+                const zoom = parseFloat(getComputedStyle(body.closest('.pub') || body).zoom) || 1;
                 return {
                     rows: rows.length,
                     inside: rows.every((r) => box(r).right <= box(list).right + 1 && box(r).left >= box(list).left - 1),
                     stacked: rows.every((r, i) => i === 0 || box(r).top >= box(rows[i - 1]).bottom - 1),
                     beside: box(title).left >= box(poster).right && box(title).top < box(poster).bottom,
                     rail:
-                        getComputedStyle(body).borderLeftWidth === '2px' &&
+                        Math.round(parseFloat(getComputedStyle(body).borderLeftWidth) * zoom) === 2 &&
                         getComputedStyle(body, '::before').width === '10px',
                     blank: rows.filter((r) => r.querySelector('.ef-onscreen__date').textContent.trim() === '').length,
                     links: rows.every((r) => box(r.querySelector('a')).height >= 44),

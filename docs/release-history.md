@@ -6,6 +6,19 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
+## Home: Today & Tonight and Today's episodes as vertical timelines — November 7, 2026 (America/Chicago)
+
+Commit:
+- `869e9ea` Home: Today & Tonight and Today's episodes as vertical timelines. Both Home cards take Entertainment's On screen format. Today & Tonight keeps its day-part headings ("This afternoon", "Tonight"), each over Sports' Upcoming timeline (`.spf-timeline`): a rail with a dot in the sport's color via `PhoneColors.ForSport(item.Kind)`, the time to the left, the matchup in bold and "Sport · TV" under it. The network moves from its own right-hand column into that line; a stream stays a link with its play mark (`.bs-tonight__stream`). Every row keeps its time for "My teams only" browser filter compatibility. Venue is dropped. Today's episodes uses the On screen markup (`.ef-onscreen`): one row per episode in time order, confirmed times first, time shown once per slot, a 34×50 poster beside series title and "TV · network · S01 E02 · title" under it. Unconfirmed times read "TBA" (`.sr-only` "Time not confirmed"). Removed obsolete `.bs-agate`, `.d-tv__list/show/body/episodes`, and `.tv-poster` rules. Updated `episode-spacing.browser.cjs`, `home-columns.browser.cjs`, and `home-masthead.browser.cjs`.
+
+Verification: full `tools/verify.sh` passed (6/6 steps: dotnet build 0 warnings, 1,154 tests, js unit tests, css check, lint, format check); quick `tools/verify.sh` in deploy.sh passed; browser tests `episode-spacing.browser.cjs`, `home-columns.browser.cjs`, and `home-masthead.browser.cjs` passed; `tools/live-check.cjs`: health 2/2, admin 55/55, public 176/176 (22 pages × 320/390/430/1440px × light/dark); household check verified clean (0 `zz`, 0 unassigned devices).
+
+Deployment: commit `869e9ea78fe8` via `deployment/deploy.sh web admin` at 2026-11-07T18:35:09Z.
+- mynewspaper-web:869e9ea78fe8 (`c1340f42da27`): healthy, env unchanged, /version {"commit":"869e9ea78fe816ab8376717c4470afaa99852b8d","builtAt":"2026-11-07T18:35:09Z"}
+  Rollback: `deployment/rollback.sh 869e9ea78fe8 web` → mynewspaper-web:before-869e9ea78fe8 (`19ee6a05fde2`)
+- mynewspaper-admin:869e9ea78fe8 (`4fe940e043b9`): healthy, env unchanged, /version {"commit":"869e9ea78fe816ab8376717c4470afaa99852b8d","builtAt":"2026-11-07T18:35:09Z"}
+  Rollback: `deployment/rollback.sh 869e9ea78fe8 admin` → mynewspaper-admin:before-869e9ea78fe8 (`d241072d0231`)
+
 ## Section fronts: vertical day-so-far timelines, wider left column, Tech desks bottom rail — November 7, 2026 (America/Chicago)
 
 Commits:
