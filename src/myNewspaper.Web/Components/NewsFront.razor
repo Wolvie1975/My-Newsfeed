@@ -28,17 +28,22 @@
             <div class="ef-head"><h2 id="nf-day-title">The day so far</h2><a href="news/all">All headlines <span aria-hidden="true">→</span></a></div>
             <p class="ef-note">Newest first, from every source</p>
             @if (day.Count == 0) { <p class="ef-empty">No stories yet today.</p> }
-            <ul class="spf-agate nf-agate">
+            <ol class="spf-timeline nf-day__line">
+                @{ string? previousTime = null; }
                 @foreach (var item in day)
                 {
-                    <li class="@PhoneColors.ForCategory(item.CategoryName)">
-                        <a href="@(FeedQuery.SafeHref(item.Url) ?? "news/all")" target="_blank" rel="noopener noreferrer">
-                            <span class="spf-agate__time">@(item.Undated ? "" : Dates.Time(item.Date))</span>
-                            <span class="spf-agate__match">@Title(item) <span class="spf-agate__sport">@Meta(item)</span></span>
-                        </a>
+                    var time = item.Undated ? "" : Dates.Time(item.Date);
+                    var sameAsPrevious = time == previousTime;
+                    previousTime = time;
+                    <li class="spf-timeline__item @PhoneColors.ForCategory(item.CategoryName)">
+                        <span class="spf-timeline__time">@if (!sameAsPrevious) { @time } else { <span class="sr-only">@time</span> }</span>
+                        <span class="spf-timeline__body">
+                            <a href="@(FeedQuery.SafeHref(item.Url) ?? "news/all")" target="_blank" rel="noopener noreferrer">@Title(item)</a>
+                            <span class="spf-timeline__meta"><span class="spf-timeline__sport">@item.CategoryName</span><span aria-hidden="true"> · </span>@Source(item)</span>
+                        </span>
                     </li>
                 }
-            </ul>
+            </ol>
         </section>
 
         <div class="ef-main spf-main">

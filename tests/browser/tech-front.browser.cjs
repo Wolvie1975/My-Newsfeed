@@ -76,7 +76,7 @@ fs.mkdirSync(shots, { recursive: true });
                     .filter(
                         (n) =>
                             !n.closest(
-                                '.mx-block__title, .mx-top__title, .ef-headlines__title, .ef-lead__title, .ef-note, .spf-agate, .mx-ribbon__kicker, .yt-row__title, .tw-biggest__title, .tw-day-card__title, .tw-m-days__top, .td-howto-card__title',
+                                '.mx-block__title, .mx-top__title, .ef-headlines__title, .ef-lead__title, .ef-note, .spf-agate, .spf-timeline, .mx-ribbon__kicker, .yt-row__title, .tw-biggest__title, .tw-day-card__title, .tw-m-days__top, .td-howto-card__title',
                             ),
                     )
                     .filter((n) => n.getBoundingClientRect().height < 43.9)
@@ -250,6 +250,8 @@ fs.mkdirSync(shots, { recursive: true });
             assert.notEqual(desktopInfo.desks[1].labelColor, desktopInfo.desks[2].labelColor);
             assert.equal(desktopInfo.videoCount, 3);
             assert.equal(desktopInfo.hasTopics, false, '/tech has no topics on desktop');
+            assert(await page.locator('.tc-front ol.spf-timeline').isVisible(), 'Tech day timeline visible');
+            assert.equal(await page.locator('.tc-front .spf-agate').count(), 0, 'Tech no spf-agate');
 
             if (width >= 1920) {
                 const wideCheck = await page.evaluate(() => {

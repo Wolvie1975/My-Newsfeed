@@ -85,7 +85,7 @@ const password = lib.adminPassword;
                     .filter(
                         (n) =>
                             !n.closest(
-                                '.mx-block__title, .mx-top__title, .ef-headlines__title, .ef-lead__title, .nf-pictures__title, .ef-note, .spf-agate, .mx-ribbon__kicker',
+                                '.mx-block__title, .mx-top__title, .ef-headlines__title, .ef-lead__title, .nf-pictures__title, .ef-note, .spf-agate, .spf-timeline, .mx-ribbon__kicker',
                             ),
                     )
                     .filter((n) => n.getBoundingClientRect().height < 43.9)
@@ -243,6 +243,8 @@ const password = lib.adminPassword;
                 );
                 for (const module of ['.nf-brief', '.nf-day', '.ef-lead', '.nf-desks'])
                     assert(await page.locator(module).first().isVisible(), `${label} ${module}`);
+                assert(await page.locator('.nf-day ol.spf-timeline').isVisible(), label + ' day timeline visible');
+                assert.equal(await page.locator('.nf-day .spf-agate').count(), 0, label + ' no spf-agate');
                 // Every headline row on the front has Share and Save.
                 const rows = await page
                     .locator('.nf .ef-headlines li')

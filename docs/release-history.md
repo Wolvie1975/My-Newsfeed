@@ -6,6 +6,10 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
+## News and Tech fronts: The day so far as a vertical timeline — November 7, 2026 (America/Chicago)
+
+Commit: The day so far on News and Tech fronts moves to the vertical timeline markup (`.spf-timeline .nf-day__line`), matching Entertainment's On screen and Sports' Upcoming games. Uses `spf-timeline__item` with category color indicators via `PhoneColors.ForCategory(item.CategoryName)`, right-aligned event times with accessible `.sr-only` repetition handling, and category · source meta lines. Added `white-space: nowrap` to `.ef-head a` so "All headlines →" never breaks onto two lines. Removed unused `.nf-agate` CSS rules. Updated `news-front.browser.cjs` and `tech-front.browser.cjs`.
+
 ## YouTube phone channel picker: Categories and Channels headings — November 7, 2026 (America/Chicago)
 
 Commit:

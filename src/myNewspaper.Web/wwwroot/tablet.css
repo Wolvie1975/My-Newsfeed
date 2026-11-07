@@ -950,10 +950,6 @@
     .pub .tab-desktop .nf-tile__value {
         font-size: 30px;
     }
-    .pub .tab-desktop .nf-agate .spf-agate__time {
-        color: var(--dot, var(--text-2));
-        font-weight: 700;
-    }
     .pub .tab-desktop .nf-side .ef-note a {
         color: var(--text-2);
     }
@@ -992,13 +988,6 @@
     }
     .pub .tab-desktop .spf-cols:has(.nf-day) > .spf-main > .ef-headlines > li {
         break-inside: avoid;
-    }
-
-    /* The day so far: time | headline + source. */
-    .pub .tab-desktop .nf-agate a {
-        display: grid;
-        grid-template-columns: 58px minmax(0, 1fr);
-        gap: 8px;
     }
 
     /* Side column: the three boxes stacked with room between. */

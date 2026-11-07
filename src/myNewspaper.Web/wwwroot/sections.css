@@ -23,6 +23,7 @@
     color: var(--accent);
     font-size: 14px;
     font-weight: 700;
+    white-space: nowrap;
     text-decoration: none;
 }
 .pub .ef-label {
@@ -3283,11 +3284,6 @@ a.tvc-row__show:hover {
     }
     .pub .nf-tile__value {
         font-size: 30px;
-    }
-    /* The day so far: the time takes its story's category colour. */
-    .pub .nf-agate .spf-agate__time {
-        color: var(--dot, var(--text-2));
-        font-weight: 700;
     }
     .pub .nf-side + .nf-side {
         margin-top: 4px;
