@@ -6,20 +6,20 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
-## Tech front: desks bottom rail and latest headlines beside the lead — November 7, 2026 (America/Chicago)
+## Section fronts: vertical day-so-far timelines, wider left column, Tech desks bottom rail — November 7, 2026 (America/Chicago)
 
-Commit:
-- `4b1fdbb` Tech front: desks bottom rail and latest headlines beside the lead. Option A adopted for Tech front, reversing the October "category lists beside the lead" layout and matching Entertainment's middle-tier structure. Latest headlines (5 stories, `stories.Skip(1).Take(5)`) moved out of `.spf-main` into `<section class="ef-headlines-col tc-headlines-col">` alongside "All tech headlines →". Below 1920px, `.tc-headlines-col` sits under the lead in column 2. At 1920px+, `.tc-headlines-col` sits in column 3 beside the lead, while `.nf-desks` moves to row 3 full width across the page (3 desks across under a double rule, `border-top: 3px double var(--text)`), and "This week in Tech" banner sits in row 4. Tablet layout in `tablet.css` places `.tc-headlines-col` across row 3 below columns. Updated `docs/tech/tech-05-front-wide.md` and `tests/browser/tech-front.browser.cjs`.
-
-## Section fronts: wider left column across all four fronts — November 7, 2026 (America/Chicago)
-
-Commit:
-- `6b8ad18` Section fronts: wider left column across all four fronts. Left column tracks unified across Sports, Entertainment, News, and Tech: 280px at 1024–1279px, 320px at 1280–1919px, 360px at 1920–2559px, and 400px from 2560px. Entertainment's right column (Next weekend) narrows to 260px at 1024–1279px and 280px from 1280px, with `white-space: nowrap` on predicted box office totals. Lead photo caps preserved at 640×320. Tested in `section-fronts.browser.cjs` across 1024, 1280, 1440, 1920, and 2560px viewports.
-
-## News and Tech fronts: The day so far as a vertical timeline — November 7, 2026 (America/Chicago)
-
-Commit:
+Commits:
 - `f49b3de` News and Tech fronts: The day so far as a vertical timeline. The day so far on News and Tech fronts moves to the vertical timeline markup (`.spf-timeline .nf-day__line`), matching Entertainment's On screen and Sports' Upcoming games. Uses `spf-timeline__item` with category color indicators via `PhoneColors.ForCategory(item.CategoryName)`, right-aligned event times with accessible `.sr-only` repetition handling, and category · source meta lines. Added `white-space: nowrap` to `.ef-head a` so "All headlines →" never breaks onto two lines. Removed unused `.nf-agate` CSS rules. Updated `news-front.browser.cjs` and `tech-front.browser.cjs`.
+- `6b8ad18` Section fronts: wider left column across all four fronts. Left column tracks unified across Sports, Entertainment, News, and Tech: 280px at 1024–1279px, 320px at 1280–1919px, 360px at 1920–2559px, and 400px from 2560px. Entertainment's right column (Next weekend) narrows to 260px at 1024–1279px and 280px from 1280px, with `white-space: nowrap` on predicted box office totals. Lead photo caps preserved at 640×320. Tested in `section-fronts.browser.cjs` across 1024, 1280, 1440, 1920, and 2560px viewports.
+- `7f9bc05` Tech front: desks bottom rail and latest headlines beside the lead. Option A adopted for Tech front, reversing the October "category lists beside the lead" layout and matching Entertainment's middle-tier structure. Latest headlines (5 stories, `stories.Skip(1).Take(5)`) moved out of `.spf-main` into `<section class="ef-headlines-col tc-headlines-col">` alongside "All tech headlines →". Below 1920px, `.tc-headlines-col` sits under the lead in column 2. At 1920px+, `.tc-headlines-col` sits in column 3 beside the lead, while `.nf-desks` moves to row 3 full width across the page (3 desks across under a double rule, `border-top: 3px double var(--text)`), and "This week in Tech" banner sits in row 4. Tablet layout in `tablet.css` places `.tc-headlines-col` across row 3 below columns. Updated `docs/tech/tech-05-front-wide.md` and `tests/browser/tech-front.browser.cjs`.
+
+Verification: full `tools/verify.sh` passed (6/6 steps: dotnet build 0 warnings, 1,154 tests, js unit tests, css check, lint, format check); quick `tools/verify.sh` in deploy.sh passed; browser tests `tech-front.browser.cjs`, `section-fronts.browser.cjs`, and `news-front.browser.cjs` all passed; `tools/live-check.cjs`: health 2/2, admin 55/55, public 176/176 (22 pages × 320/390/430/1440px × light/dark); household check verified clean (0 `zz`, 0 unassigned devices).
+
+Deployment: commit `7f9bc05760d6` via `deployment/deploy.sh web admin` at 2026-11-07T17:50:02Z.
+- mynewspaper-web:7f9bc05760d6 (`19ee6a05fde2`): healthy, env unchanged, /version {"commit":"7f9bc05760d678e4de13665041f0e725f6b50fec","builtAt":"2026-11-07T17:50:02Z"}
+  Rollback: `deployment/rollback.sh 7f9bc05760d6 web` → mynewspaper-web:before-7f9bc05760d6 (`9c17a25976ef`)
+- mynewspaper-admin:7f9bc05760d6 (`d241072d0231`): healthy, env unchanged, /version {"commit":"7f9bc05760d678e4de13665041f0e725f6b50fec","builtAt":"2026-11-07T17:50:02Z"}
+  Rollback: `deployment/rollback.sh 7f9bc05760d6 admin` → mynewspaper-admin:before-7f9bc05760d6 (`4f63dba50387`)
 
 ## YouTube phone channel picker: Categories and Channels headings — November 7, 2026 (America/Chicago)
 
