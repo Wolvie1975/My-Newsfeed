@@ -9,9 +9,15 @@ keys were preserved by the documented releases unless otherwise stated.
 ## Sports and Entertainment fronts: vertical timelines for upcoming games and on screen releases — November 7, 2026 (America/Chicago)
 
 Commit:
-- Sports and Entertainment fronts: vertical timelines for upcoming games and on screen releases. Concept C on both fronts. Sports front replaces agate table with vertical timeline (`.spf-timeline`) using `ShortTv` helper for condensed multi-network broadcast lists (`{first} +{n}` with accessible expansion) and duplicate time consolidation. Entertainment front replaces horizontal On screen band above columns with vertical timeline in column 1 (`.ef-onscreen-col`, `.ef-onscreen`), deduplicating release titles via `EntertainmentReleases.Deduplicate` (stripping trailing year, preferring poster then year in title), capping at 6 items, tonight first, date shown once per day with `.sr-only` expansion, and removing `ef-tv` from desktop `.ef-side`. Responsive 4-column layout at $\ge 1280$px, 3-column layout at 1024–1279px, and 2-column layout on tablets (744–1023px) with On screen on left and lead/headlines/side stacked on right. Unit tests in `EventsTests` and `EntertainmentReleasesTests`, updated `section-fronts.browser.cjs` and `ipad-entertainment.browser.cjs`.
+- `76f6cc7` Sports and Entertainment fronts: vertical timelines for upcoming games and on screen releases. Concept C on both fronts. Sports front replaces agate table with vertical timeline (`.spf-timeline`) using `ShortTv` helper for condensed multi-network broadcast lists (`{first} +{n}` with accessible expansion) and duplicate time consolidation. Entertainment front replaces horizontal On screen band above columns with vertical timeline in column 1 (`.ef-onscreen-col`, `.ef-onscreen`), deduplicating release titles via `EntertainmentReleases.Deduplicate` (stripping trailing year, preferring poster then year in title), capping at 6 items, tonight first, date shown once per day with `.sr-only` expansion, and removing `ef-tv` from desktop `.ef-side`. Responsive 4-column layout at $\ge 1280$px, 3-column layout at 1024–1279px, and 2-column layout on tablets (744–1023px) with On screen on left and lead/headlines/side stacked on right. Unit tests in `EventsTests` and `EntertainmentReleasesTests`, updated `section-fronts.browser.cjs` and `ipad-entertainment.browser.cjs`.
 
-Verification: full `tools/verify.sh` passed (6/6 steps: dotnet build 0 warnings, 1,154 tests, js unit tests, css check, lint, format check).
+Verification: full `tools/verify.sh` passed (6/6 steps: dotnet build 0 warnings, 1,154 tests, js unit tests, css check, lint, format check); quick `tools/verify.sh` in deploy.sh passed.
+
+Deployment: commit `76f6cc721a49` via `deployment/deploy.sh web admin` at 2026-11-07T14:51:37Z.
+- mynewspaper-web:76f6cc721a49 (`999dffed32a3`): healthy, env unchanged, /version {"commit":"76f6cc721a4961744b3d178f479cb2f24173aa80","builtAt":"2026-11-07T14:51:37Z"}
+  Rollback: `deployment/rollback.sh 76f6cc721a49 web` → mynewspaper-web:before-76f6cc721a49 (`92e2fcc72748`)
+- mynewspaper-admin:76f6cc721a49 (`457a36d44948`): healthy, env unchanged, /version {"commit":"76f6cc721a4961744b3d178f479cb2f24173aa80","builtAt":"2026-11-07T14:51:37Z"}
+  Rollback: `deployment/rollback.sh 76f6cc721a49 admin` → mynewspaper-admin:before-76f6cc721a49 (`f499cf9368b3`)
 
 ## Sports and Entertainment fronts: briefing and middle tier refresh — November 7, 2026 (America/Chicago)
 
