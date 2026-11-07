@@ -12,6 +12,8 @@ public static class GameGroups
         "espn-mls" => "MLS",
         "espn-nwsl" => "NWSL",
         "espn-wnba" => "WNBA",
+        "espn-nhl" => "NHL",
+        "espn-nfl" => "NFL",
         "big12" => game.Sport switch
         {
             "Football" => "College Football",

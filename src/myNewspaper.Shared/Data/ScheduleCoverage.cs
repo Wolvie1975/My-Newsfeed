@@ -14,6 +14,7 @@ public static class ScheduleCoverage
         "espn-wnba" => ("basketball", "wnba", null),
         "espn-mlb" => ("baseball", "mlb", null),
         "espn-mls" => ("soccer", "usa.1", null),
+        "espn-nfl" => ("football", "nfl", null),
         "big12" => sport switch
         {
             "Football" => ("football", "college-football", "4"),

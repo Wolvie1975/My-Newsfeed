@@ -61,8 +61,8 @@ public static class EventsQuery
                 || (!e.EventSources.Any() && (e.SportsEventsType == null || e.SportsEventsType.Enabled)));
 
     public static async Task<IReadOnlyList<EventSchool>> GetSchoolsAsync(WebScraperContext db, CancellationToken ct = default) =>
-        await db.SportsEventsTypes.AsNoTracking().Where(t => t.Enabled && (t.SchoolName != null || t.ProviderKey == "espn-nwsl" || t.ProviderKey == "espn-wnba" || t.ProviderKey == "espn-mlb" || t.ProviderKey == "espn-championship" || t.ProviderKey == "espn-epl" || t.ProviderKey == "espn-mls"))
-            .OrderBy(t => t.SchoolName).Select(t => new EventSchool(t.Id, t.ProviderKey == "espn-championship" ? "EFL Championship" : t.ProviderKey == "espn-epl" ? "Premier League" : t.ProviderKey == "espn-mls" ? "MLS" : t.ProviderKey == "espn-mlb" ? "MLB" : t.ProviderKey == "espn-wnba" ? "WNBA" : t.ProviderKey == "espn-nwsl" ? "Kansas City Current" : t.SchoolName!)).ToListAsync(ct);
+        await db.SportsEventsTypes.AsNoTracking().Where(t => t.Enabled && (t.SchoolName != null || t.ProviderKey == "espn-nwsl" || t.ProviderKey == "espn-wnba" || t.ProviderKey == "espn-mlb" || t.ProviderKey == "espn-championship" || t.ProviderKey == "espn-epl" || t.ProviderKey == "espn-mls" || t.ProviderKey == "espn-nhl" || t.ProviderKey == "espn-nfl"))
+            .OrderBy(t => t.SchoolName).Select(t => new EventSchool(t.Id, t.ProviderKey == "espn-championship" ? "EFL Championship" : t.ProviderKey == "espn-epl" ? "Premier League" : t.ProviderKey == "espn-mls" ? "MLS" : t.ProviderKey == "espn-mlb" ? "MLB" : t.ProviderKey == "espn-wnba" ? "WNBA" : t.ProviderKey == "espn-nwsl" ? "Kansas City Current" : t.ProviderKey == "espn-nhl" ? "NHL" : t.ProviderKey == "espn-nfl" ? "NFL" : t.SchoolName!)).ToListAsync(ct);
 
     public static async Task<IReadOnlyList<ScheduleChoice>> GetScheduleChoicesAsync(WebScraperContext db, DateOnly today, CancellationToken ct = default)
     {
@@ -79,6 +79,7 @@ public static class EventsQuery
                 "espn-mlb" => "MLB",
                 "espn-wnba" => "WNBA",
                 "espn-nhl" => "NHL",
+                "espn-nfl" => "NFL",
                 "big12" => "Big 12 " + r.Sport,
                 _ => r.Sport ?? "Other events"
             }, r.Provider ?? "", r.Sport))

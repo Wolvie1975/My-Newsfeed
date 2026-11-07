@@ -628,4 +628,44 @@ public class EventsTests
         Assert.DoesNotContain(upcoming.Items, e => e.Sport == "Women's Basketball");
     }
 
+    [Fact]
+    public async Task Nfl_has_a_schedule_choice_and_league_heading()
+    {
+        await using var db = Create();
+        await using var tx = await BeginScheduleTransactionAsync(db);
+        var token = Tag();
+        var day = new DateOnly(2032, 11, 8);
+        var feed = new SportsEventsType
+        {
+            EventsTypeName = "NFL",
+            RssUrl = $"https://{token}.test.invalid/nfl",
+            ProviderKey = "espn-nfl",
+            ProviderSchoolId = 0,
+            Enabled = true
+        };
+        db.SportsEventsTypes.Add(feed);
+
+        var game = Game(token, "nfl", day, sport: "Football");
+        game.ProviderKey = "espn-nfl";
+        game.SportsEventsType = feed;
+        game.SchoolName = "Kansas City Chiefs";
+        game.Opponent = "Denver Broncos";
+        game.IsAway = false;
+        db.Add(game);
+        await db.SaveChangesAsync();
+
+        var choices = await EventsQuery.GetScheduleChoicesAsync(db, day);
+        var nflChoice = Assert.Single(choices, c => c.Provider == "espn-nfl");
+        Assert.Equal("NFL", nflChoice.Name);
+        Assert.Equal("espn-nfl|Football", nflChoice.Value);
+
+        var schools = await EventsQuery.GetSchoolsAsync(db);
+        Assert.Equal("NFL", schools.Single(s => s.Id == feed.Id).Name);
+
+        var upcoming = await EventsQuery.GetUpcomingAsync(db, day, null, token);
+        var item = Assert.Single(upcoming.Items);
+        Assert.Equal("NFL", GameGroups.ScheduleLeague(item));
+
+        Assert.Equal(("football", "nfl", null), ScheduleCoverage.Map("espn-nfl", "Football"));
+    }
 }
