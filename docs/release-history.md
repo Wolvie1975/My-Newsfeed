@@ -6,6 +6,19 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
+## Tech front: Tech videos as a bottom row under the desks — November 7, 2026 (America/Chicago)
+
+Commit:
+- `dc303eb` Tech front: Tech videos as a bottom row under the desks. Tech videos leaves the side column, where its large thumbnails made the right column far taller than the rest of the front, and becomes the front's last row under the desks, before "This week in Tech": a double rule (`.tc-video-band`), thumbnails over their titles, three across, six across from 1920px (`TechQuery.VideosAsync` already reads six). The side column keeps Just released. Phones keep their own video rail. Updated `tech-front.browser.cjs`.
+
+Verification: full `tools/verify.sh` passed (6/6 steps: dotnet build 0 warnings, 1,154 tests, js unit tests, css check, lint, format check); quick `tools/verify.sh` in deploy.sh passed; browser test `tech-front.browser.cjs` passed; `tools/live-check.cjs`: health 2/2, admin 55/55, public 176/176 (22 pages × 320/390/430/1440px × light/dark); household check verified clean (0 `zz`, 0 unassigned devices).
+
+Deployment: commit `dc303ebb0b64` via `deployment/deploy.sh web admin` at 2026-11-07T19:38:28Z.
+- mynewspaper-web:dc303ebb0b64 (`5b8b71f54f55`): healthy, env unchanged, /version {"commit":"dc303ebb0b64f9b796836460134c6a80f9ebf02b","builtAt":"2026-11-07T19:38:28Z"}
+  Rollback: `deployment/rollback.sh dc303ebb0b64 web` → mynewspaper-web:before-dc303ebb0b64 (`c1340f42da27`)
+- mynewspaper-admin:dc303ebb0b64 (`450d28b82b3e`): healthy, env unchanged, /version {"commit":"dc303ebb0b64f9b796836460134c6a80f9ebf02b","builtAt":"2026-11-07T19:38:28Z"}
+  Rollback: `deployment/rollback.sh dc303ebb0b64 admin` → mynewspaper-admin:before-dc303ebb0b64 (`4fe940e043b9`)
+
 ## Home: Today & Tonight and Today's episodes as vertical timelines — November 7, 2026 (America/Chicago)
 
 Commit:
