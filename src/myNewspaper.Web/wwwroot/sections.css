@@ -3165,17 +3165,27 @@ a.tvc-row__show:hover {
     padding: 12px 16px;
     background: var(--surface);
 }
-/* Phones: three tiles share the width, so the small print wraps rather than cutting off. */
+/* Phones: two tiles per row on every front, the way Tech has always done it. An odd tile out at the end takes the
+   whole row, so Sports' five and Entertainment's three end on one wide tile instead of a gap. */
+.pub .nf-brief--phone .nf-brief__tiles {
+    grid-auto-flow: row;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.pub .nf-brief--phone .nf-tile:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+}
 .pub .nf-brief--phone .nf-tile {
     padding: 10px;
 }
 .pub .nf-brief--phone .nf-tile__sub {
     white-space: normal;
 }
-@media (max-width: 359px) {
-    .pub .nf-brief--phone .nf-tile__value {
-        font-size: 22px;
-    }
+/* Word values ("Brazilian Grand Prix", "Election") break between words; the size eases down on narrow phones so a
+   long word still fits half the width. */
+.pub .nf-brief--phone .nf-tile__value {
+    overflow-wrap: break-word;
+    font-size: clamp(20px, 6vw, 26px);
+    line-height: 1.05;
 }
 .pub .nf-opinion .ef-headlines__title {
     font-family: var(--font-serif);

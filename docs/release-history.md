@@ -6,6 +6,10 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
+## Phone briefing: two tiles per row on every front — November 7, 2026 (America/Chicago)
+
+Commit: phone briefing on News, Sports and Entertainment uses Tech's two-per-row grid (`.nf-brief--phone .nf-brief__tiles` in `sections.css`); an odd last tile spans the row (Sports' Sports news, Entertainment's Tonight on TV). Word values break between words (`overflow-wrap: break-word`) and size with `clamp(20px, 6vw, 26px)`, replacing the 22px rule under 360px. Tech's own rule in `mobile.css` stays for the Tech week summary. Desktop and tablet unchanged (tablets hide `.nf-brief--phone`). New assertions in `section-fronts.browser.cjs` and `news-front.browser.cjs`.
+
 ## Sports and Entertainment fronts: vertical timelines for upcoming games and on screen releases — November 7, 2026 (America/Chicago)
 
 Commit:

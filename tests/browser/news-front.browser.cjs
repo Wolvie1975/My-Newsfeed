@@ -138,6 +138,14 @@ const password = lib.adminPassword;
                         tiles.every(([l, rt]) => l >= 0 && rt <= width),
                         label + ' tiles inside the screen',
                     );
+                    // Two tiles per row, as on Tech.
+                    assert.equal(
+                        await page
+                            .locator('.nf-brief--phone .nf-brief__tiles')
+                            .evaluate((g) => getComputedStyle(g).gridTemplateColumns.split(' ').length),
+                        2,
+                        label + ' briefing two per row',
+                    );
                     // Every top headline has Save with Share under it.
                     for (const row of await page.locator('.mx-phone .mx-top li').all()) {
                         const save = await row.locator('.save').boundingBox();

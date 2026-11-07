@@ -66,6 +66,25 @@ const base = lib.base;
                             () => document.documentElement.scrollWidth <= innerWidth + 1,
                         );
                         assert(noOverflow, `${route} has no horizontal scroll at ${width}`);
+
+                        // Two tiles per row, as on Tech; an odd last tile takes the whole row.
+                        const grid = await brief.evaluate((s) => {
+                            const g = s.querySelector('.nf-brief__tiles');
+                            const t = [...g.querySelectorAll('.nf-tile')].map((n) => n.getBoundingClientRect());
+                            return {
+                                cols: getComputedStyle(g).gridTemplateColumns.split(' ').length,
+                                gw: g.getBoundingClientRect().width,
+                                t,
+                            };
+                        });
+                        assert.equal(grid.cols, 2, `${route} phone briefing is two per row at ${width}`);
+                        if (grid.t.length % 2 === 1) {
+                            const last = grid.t[grid.t.length - 1];
+                            assert(
+                                Math.abs(last.width - grid.gw) <= 1,
+                                `${route} odd last tile spans the row at ${width}`,
+                            );
+                        }
                     }
 
                     // Sports, 1024px and up:
