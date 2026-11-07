@@ -6,6 +6,15 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
+## Sports and Entertainment fronts: briefing and middle tier refresh — November 7, 2026 (America/Chicago)
+
+Commits:
+- `57c4ec7` Sports and Entertainment fronts: briefing strip, shared BriefTile component. Shared `BriefTile.razor` across News, Tech, Sports, and Entertainment fronts. Sports briefing displays Live now, Next up, Top 25 in action, F1, and Sports news story count. Entertainment briefing displays Entertainment news story count, Next/Last weekend box office, Tonight on TV, and In theaters Friday. Added `FeedQuery.CountTodayInHubAsync` with America/Chicago timezone boundary and visibility filter tests in `FeedQueryTests`.
+- `7174c0e` Sports middle tier: concept B with split tables row, tomorrow's games and headline column. Scoped `.spf-front` wrapper to protect News and Tech fronts. Moved standings and rankings to full-width `.spf-tables` row below columns, each section rendering split 2-column tables with `(continued)` caption. Added tomorrow's games list under Upcoming games when `< 4` games left today. Latest headlines moved beside lead in its own `.spf-headlines-col`. Lead photo capped at 640×320 (2:1 aspect ratio). Updated `ipad-sports.browser.cjs`.
+- Entertainment middle tier: concept C with category desks row, theater releases in on screen, and headline column. Folded Friday theatrical releases into On screen (capped at 8 items total) and removed `ef-theaters`. Latest headlines moved beside the lead in `.ef-headlines-col` (5 stories + all entertainment headlines link). Category desks moved to `.ef-desk-row` below `.ef-cols` (2 columns per desk, 2 desks per row). Scoped desktop (1024px) `.ef-cols` 3-column template, lead image capped at 640×320, updated tablet layout in `tablet.css`, updated `wide-screens.browser.cjs` and `section-hubs.browser.cjs`, added `section-fronts.browser.cjs`.
+
+Verification: full `tools/verify.sh` passed (6/6 steps: dotnet build 0 warnings, 1,148 tests, js unit tests, css check, lint, format check).
+
 ## "Big 12 · All sports" on Scoreboard and Competitions — November 7, 2026 (America/Chicago)
 
 Commit:

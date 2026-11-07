@@ -83,66 +83,35 @@
                         <SaveButton Item="lead" Title="@leadTitle" Source="@leadSource" Summary="@leadSummary" />
                     </div>
                 </article>
+            }
+        </div>
 
-                @if (stories.Count > 1)
-                {
-                    <h3 class="ef-label">Latest headlines</h3>
-                    <ul class="ef-headlines">
-                        @foreach (var item in stories.Skip(1))
-                        {
-                            var href = FeedQuery.SafeHref(item.Url);
-                            var title = Title(item);
-                            var source = FeedText.SourceName(item.SourceLabel, item.SourceUrl);
-                            var summary = FeedText.StripEmoji(FeedQuery.Excerpt(item.Description));
-                            <li data-news-url="@href" data-news-source="@source">
-                                @if (!string.IsNullOrWhiteSpace(item.CategoryName)) { <span class="ef-headlines__kicker">@item.CategoryName</span> }
-                                @if (href is not null) { <a class="ef-headlines__title" href="@href" target="_blank" rel="noopener noreferrer">@title</a> }
-                                else { <span class="ef-headlines__title">@title</span> }
-                                <div class="ef-meta">
-                                    <span class="ef-meta__when">@source@(item.Undated ? "" : " · " + Dates.Published(item.Date))</span>
-                                    <ShareButton Url="@item.Url" Title="@title" />
-                                    <SaveButton Item="item" Title="@title" Source="@source" Summary="@summary" />
-                                </div>
-                            </li>
-                        }
-                    </ul>
-                }
+        <div class="ef-headlines-col">
+            @if (stories.Count > 1)
+            {
+                <h3 class="ef-label">Latest headlines</h3>
+                <ul class="ef-headlines">
+                    @foreach (var item in stories.Skip(1).Take(5))
+                    {
+                        var href = FeedQuery.SafeHref(item.Url);
+                        var title = Title(item);
+                        var source = FeedText.SourceName(item.SourceLabel, item.SourceUrl);
+                        var summary = FeedText.StripEmoji(FeedQuery.Excerpt(item.Description));
+                        <li data-news-url="@href" data-news-source="@source">
+                            @if (!string.IsNullOrWhiteSpace(item.CategoryName)) { <span class="ef-headlines__kicker">@item.CategoryName</span> }
+                            @if (href is not null) { <a class="ef-headlines__title" href="@href" target="_blank" rel="noopener noreferrer">@title</a> }
+                            else { <span class="ef-headlines__title">@title</span> }
+                            <div class="ef-meta">
+                                <span class="ef-meta__when">@source@(item.Undated ? "" : " · " + Dates.Published(item.Date))</span>
+                                <ShareButton Url="@item.Url" Title="@title" />
+                                <SaveButton Item="item" Title="@title" Source="@source" Summary="@summary" />
+                            </div>
+                        </li>
+                    }
+                </ul>
             }
             <a class="ef-more" href="entertainment/news">All entertainment headlines <span aria-hidden="true">→</span></a>
         </div>
-
-        @if (desks.Count > 0)
-        {
-            @* Wide screens only (1920+): the categories beside the lead. Hidden below that. *@
-            <div class="nf-desks ef-desks">
-                @foreach (var (category, items) in desks)
-                {
-                    var label = NewsSections.LabelFor(category.Name);
-                    <section class="nf-desk @PhoneColors.ForCategory(category.Name)" aria-labelledby="@($"ef-desk-{category.Id}")">
-                        <h2 id="@($"ef-desk-{category.Id}")" class="ef-label">@label</h2>
-                        <ul class="ef-headlines spf-headlines">
-                            @foreach (var item in items)
-                            {
-                                var href = FeedQuery.SafeHref(item.Url);
-                                var title = Title(item);
-                                var source = Source(item);
-                                var summary = FeedText.StripEmoji(FeedQuery.Excerpt(item.Description));
-                                <li data-news-url="@href" data-news-source="@source">
-                                    @if (href is not null) { <a class="ef-headlines__title" href="@href" target="_blank" rel="noopener noreferrer">@title</a> }
-                                    else { <span class="ef-headlines__title">@title</span> }
-                                    <div class="ef-meta">
-                                        <span class="ef-meta__when">@source@(item.Undated ? "" : " · " + Dates.Published(item.Date))</span>
-                                        <ShareButton Url="@item.Url" Title="@title" />
-                                        <SaveButton Item="item" Title="@title" Source="@source" Summary="@summary" />
-                                    </div>
-                                </li>
-                            }
-                        </ul>
-                        <a class="ef-more" href="@(NewsSections.RouteFor(category) ?? "entertainment/news")">All @label <span aria-hidden="true">→</span></a>
-                    </section>
-                }
-            </div>
-        }
 
         <aside class="ef-side">
             <section class="ef-box" aria-labelledby="ef-box-title">
@@ -225,26 +194,42 @@
                 }
                 <a class="ef-more" href="tv">Track a series <span aria-hidden="true">→</span></a>
             </section>
-
-            @if (theaterFriday is { } friday)
-            {
-                <section class="ef-theaters" aria-labelledby="ef-theaters-title">
-                    <h2 id="ef-theaters-title" class="ef-label">Friday in theaters</h2>
-                    @if (theatrical.Count == 0)
-                    {
-                        <p class="ef-empty">No theater releases announced for @(friday == Dates.TodayAt(nowUtc) ? "today" : "this Friday") yet.</p>
-                    }
-                    @foreach (var movie in theatrical)
-                    {
-                        <a class="ef-tv__item" href="movies?type=theatrical">
-                            <MoviePoster Url="@movie.Poster" Title="@movie.Title" Class="ef-poster" />
-                            <span><b>@movie.Title</b>@if (movie.Certification is { } rating) { <span class="ef-where">@rating</span> }</span>
-                        </a>
-                    }
-                </section>
-            }
         </aside>
     </div>
+
+    @if (desks.Count > 0)
+    {
+        <div class="ef-desk-row">
+            @foreach (var (category, items) in desks)
+            {
+                var label = NewsSections.LabelFor(category.Name);
+                <section class="nf-desk @PhoneColors.ForCategory(category.Name)" aria-labelledby="@($"ef-desk-{category.Id}")">
+                    <div class="ef-head">
+                        <h2 id="@($"ef-desk-{category.Id}")" class="ef-label">@label</h2>
+                        <a href="@(NewsSections.RouteFor(category) ?? "entertainment/news")">All @label <span aria-hidden="true">→</span></a>
+                    </div>
+                    <ul class="ef-headlines spf-headlines">
+                        @foreach (var item in items)
+                        {
+                            var href = FeedQuery.SafeHref(item.Url);
+                            var title = Title(item);
+                            var source = Source(item);
+                            var summary = FeedText.StripEmoji(FeedQuery.Excerpt(item.Description));
+                            <li data-news-url="@href" data-news-source="@source">
+                                @if (href is not null) { <a class="ef-headlines__title" href="@href" target="_blank" rel="noopener noreferrer">@title</a> }
+                                else { <span class="ef-headlines__title">@title</span> }
+                                <div class="ef-meta">
+                                    <span class="ef-meta__when">@source@(item.Undated ? "" : " · " + Dates.Published(item.Date))</span>
+                                    <ShareButton Url="@item.Url" Title="@title" />
+                                    <SaveButton Item="item" Title="@title" Source="@source" Summary="@summary" />
+                                </div>
+                            </li>
+                        }
+                    </ul>
+                </section>
+            }
+        </div>
+    }
 </div>
 </div>
 
@@ -380,7 +365,7 @@
 </div>
 
 @code {
-    private sealed record ScreenItem(string Title, string? Poster, string When, string Where, string Href, bool Tonight);
+    private sealed record ScreenItem(string Title, string? Poster, string When, string Where, string Href, bool Tonight, DateOnly? Date = null);
 
     private DateTime nowUtc;
     private IReadOnlyList<FeedItem> stories = [];
@@ -443,7 +428,9 @@
                 .Concat(movies.Select(m => new TimelineItem(ShortDate(m.Date), m.Title, MoviesQuery.Types.GetValueOrDefault(m.Type, m.Type),
                     m.Platform, "movies", PhoneColors.ForRelease(m.Type))))
                 .Take(4).ToList();
-            onScreen = EntertainmentEpisodeBatch.Group(episodes).Take(2)
+            theaterFriday = MoviesQuery.HomeTheatricalFriday(today);
+            theatrical = await MoviesQuery.GetFridayTheatricalAsync(db, today, ct: Ct);
+            var screenItems = EntertainmentEpisodeBatch.Group(episodes).Take(2)
                 .Select(show =>
                 {
                     var e = show.First;
@@ -455,10 +442,22 @@
                 })
                 .Concat(movies.Select(m => new ScreenItem(m.Title, m.Poster,
                     m.Date?.ToString("ddd, MMM d", System.Globalization.CultureInfo.InvariantCulture) ?? "Date to be announced",
-                    m.Platform ?? MoviesQuery.Types.GetValueOrDefault(m.Type, m.Type), "movies", false)))
+                    m.Platform ?? MoviesQuery.Types.GetValueOrDefault(m.Type, m.Type), "movies", false, m.Date)))
                 .Take(5).ToList();
-            theaterFriday = MoviesQuery.HomeTheatricalFriday(today);
-            theatrical = await MoviesQuery.GetFridayTheatricalAsync(db, today, ct: Ct);
+            if (theaterFriday is not null)
+            {
+                foreach (var m in theatrical)
+                {
+                    if (screenItems.Count >= 8) break;
+                    if (!screenItems.Any(s => string.Equals(s.Title, m.Title, StringComparison.OrdinalIgnoreCase) && s.Date == m.Date))
+                    {
+                        screenItems.Add(new ScreenItem(m.Title, m.Poster,
+                            m.Date?.ToString("ddd, MMM d", System.Globalization.CultureInfo.InvariantCulture) ?? "Date to be announced",
+                            "In theaters", "movies?type=theatrical", false, m.Date));
+                    }
+                }
+            }
+            onScreen = screenItems;
         }
         catch (Exception ex) when (DataFailures.IsReadFailure(ex))
         { agendaUnavailable = true; onScreen = []; screenLine = []; weekMovies = []; episodes = []; theatrical = []; Log.LogError(ex, "Could not read entertainment schedules."); }

@@ -79,7 +79,7 @@ const base = lib.base,
                 }
         for (const route of ['sports', 'entertainment']) {
             await p.goto(base + '/' + route);
-            await p.locator('.ef-main > .ef-more').click();
+            await p.locator(':is(.ef-main, .spf-headlines-col, .ef-headlines-col) > .ef-more').first().click();
             await p.waitForURL('**/' + route + '/news');
             await p.locator('#hub-category').waitFor({ state: 'attached' });
             await p.locator('#source').waitFor();

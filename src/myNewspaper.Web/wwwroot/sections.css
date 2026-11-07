@@ -210,10 +210,6 @@
 .pub .ef-main > .ef-more {
     align-self: flex-start;
 }
-/* The category lists only appear beside the lead on wide screens (docs/entertainment-front-wide-handoff.md). */
-.pub .ef-cols > .ef-desks {
-    display: none;
-}
 .pub .ef-table {
     width: 100%;
     margin-top: 4px;
@@ -322,26 +318,52 @@
     }
     .pub .ef-cols {
         display: grid;
-        grid-template-columns: minmax(0, 2fr) minmax(300px, 1fr);
-        gap: 0;
+        grid-template-columns: minmax(0, 640px) minmax(0, 1fr) 340px;
+        column-gap: 32px;
         padding-top: 20px;
     }
     .pub .ef-main {
         gap: 0;
-        padding-right: 28px;
-        border-right: 1px solid var(--row-border);
+        padding-right: 0;
+        border-right: 0;
     }
     .pub .ef-side {
         gap: 26px;
-        padding-left: 28px;
+        padding-left: 0;
     }
     .pub .ef-lead > :not(.ef-lead__image) {
         margin-left: 0;
         margin-right: 0;
     }
     .pub .ef-lead__image {
-        height: 300px;
+        max-width: 640px;
+        height: auto;
+        aspect-ratio: 2 / 1;
         margin: 0;
+    }
+    .pub .ef-lead__image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .pub .ef-headlines-col .ef-headlines {
+        grid-template-columns: minmax(0, 1fr);
+    }
+    .pub .ef-desk-row {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        column-gap: 48px;
+        margin-top: 32px;
+        padding-top: 16px;
+        border-top: 3px double var(--text);
+    }
+    .pub .ef-desk-row .ef-headlines {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        column-gap: 28px;
+    }
+    .pub .ef-desk-row > :only-child {
+        grid-column: 1 / -1;
     }
     .pub .ef-kicker,
     .pub .ef-lead__image + .ef-kicker {
@@ -5843,54 +5865,17 @@ a.tvc-row__show:hover {
     }
 }
 
-/* ---------- Entertainment front, 1920px and up: lead · categories · box office, TV, theaters (docs/entertainment-front-wide-handoff.md) ---------- */
+/* ---------- Entertainment front, 1920px and up (wide-screens-4k-handoff.md) ---------- */
 @media (min-width: 1920px) {
-    .pub .ef-cols {
-        grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1fr);
-        align-items: start;
-    }
     .pub .ef-screen__list {
         grid-template-columns: repeat(
             auto-fill,
             minmax(380px, 1fr)
         ); /* kept from the old block: 4 at 1920, 6 at 2560 */
     }
-
-    /* Column 1: the lead at a sensible size; Latest headlines hidden (the categories show the same stories). */
-    .pub .ef-cols > .ef-main .ef-lead__image {
-        height: auto;
-        aspect-ratio: 16 / 9;
-    }
     .pub .ef-cols > .ef-main .ef-lead__title {
         font-size: 34px;
         line-height: 1.1;
-    }
-    .pub .ef-cols > .ef-main :is(.ef-headlines, .ef-label:has(+ .ef-headlines)) {
-        display: none;
-    }
-
-    /* Column 2: the categories, stacked. */
-    .pub .ef-cols > .ef-desks {
-        display: flex;
-        flex-direction: column;
-        gap: 24px;
-        margin: 0;
-        padding: 0 24px;
-        border-top: 0;
-        border-left: 1px solid var(--row-border);
-    }
-
-    /* Column 3: box office, tonight on TV, Friday in theaters, in one column (undo the old two-column split). */
-    .pub .ef-cols > .ef-side {
-        display: flex;
-        flex-direction: column;
-        gap: 26px;
-        padding-left: 24px;
-        border-left: 1px solid var(--row-border);
-    }
-    .pub .ef-cols > .ef-side > .ef-tv:not(:first-child) {
-        padding-left: 0;
-        border-left: 0;
     }
 }
 

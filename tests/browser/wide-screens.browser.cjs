@@ -112,7 +112,7 @@ const shots = lib.screenshots('wide-screens');
                                 .locator('.ef-cols')
                                 .evaluate((el) => getComputedStyle(el).gridTemplateColumns.split(' ').length);
                             assert.equal(efCols, 3, 'Entertainment front has 3 columns at 1920+');
-                            const desksVisible = await page.locator('.ef-cols > .ef-desks').isVisible();
+                            const desksVisible = await page.locator('.ef-desk-row').isVisible();
                             assert.equal(desksVisible, true, 'Entertainment desks visible at 1920+');
                             const latestHeadlinesVisible = await page.locator('.ef-main .ef-headlines').isVisible();
                             assert.equal(
