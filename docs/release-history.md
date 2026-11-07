@@ -6,6 +6,18 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
+## "Big 12 · All sports" on Scoreboard and Competitions — November 7, 2026 (America/Chicago)
+
+Commit:
+- `4f30192` Add Big 12 All sports choice to Scoreboard and Competitions. Adds `Big 12 · All sports` to Competitions (`/events?schedule=big12|`), positioned first among Big 12 choices, returning all visible Big 12 fixtures across sports while preserving site-wide women's basketball exclusion and surviving paging. Adds multi-sport conference group selection `show=g:<Name>` (`g:Big 12`, labelled `<Name> · All sports`) to the Scoreboard (`/scoreboard`) Show menu whenever $\ge 2$ conference follows share a name. Resolves `ScoreboardSelection.Group` and matches any conference follow across sports/leagues; scopes the coverage delay warning to the conference group's leagues; preserves selection across day navigations, ribbons, folds, and status filters. Unit tests in `EventsTests`, `EventsRenderTests`, `ScoreboardTests`, `ScoreboardReadTests`, updated `scoreboard-show.browser.cjs`, and updated `docs/sports.md`.
+
+Verification: full `tools/verify.sh` passed (6/6 steps: dotnet build 0 warnings, 1,146 tests, js unit tests, css check, lint, format check); quick `tools/verify.sh` in deploy.sh passed. `tests/browser/scoreboard-show.browser.cjs` passed (desktop, mobile 390px, JS enabled/disabled, group option, legacy resolution, `/events` choice selection). `node tools/live-check.cjs`: health 2/2, admin 55/55, public 176/176 (22 pages × 320/390/430/1440px × light/dark), clean-up 2/2; household restored (0 `zz`, 0 unassigned devices).
+
+Deployment: commit `4f3019227282` via `deployment/deploy.sh web` at 2026-11-07T00:28:13Z.
+- mynewspaper-web:4f3019227282 (`683654320193`): healthy, env unchanged, /version {"commit":"4f3019227282c00f9a12c591b6f7743827fe63d9","builtAt":"2026-11-07T00:28:13Z"}
+  Rollback: `deployment/rollback.sh 4f3019227282 web` → mynewspaper-web:before-4f3019227282 (`9f35de6451d6`)
+
+
 ## Kansas City weather: Next 8 hours strip & rain list — November 6, 2026 (America/Chicago)
 
 Commits:
