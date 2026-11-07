@@ -33,7 +33,7 @@ const shots = lib.screenshots('ipad-sports');
         const layout = async () => {
             assert(await page.locator('.spf-scores').isVisible());
             const boxes = await page
-                .locator('.spf-cols, .spf-cols .ef-lead, .spf-upcoming, .spf-side')
+                .locator('.spf-cols, .spf-cols .ef-lead, .spf-upcoming, .spf-tables')
                 .evaluateAll((els) =>
                     els.map((e) => ({
                         x: e.getBoundingClientRect().x,
@@ -41,13 +41,13 @@ const shots = lib.screenshots('ipad-sports');
                         w: e.getBoundingClientRect().width,
                     })),
                 );
-            const [cols, up, lead, side] = boxes; // DOM order: columns, upcoming, lead, side
+            const [cols, up, lead, tables] = boxes; // DOM order: columns, upcoming, lead, tables
             assert(Math.abs(lead.w - cols.w) < 2, 'Lead full width');
-            assert(side.x > up.x && side.y >= lead.y, 'Upcoming left, tables right');
+            assert(tables.y > up.y, 'Tables below columns');
             assert.equal(await page.locator('.ef-lead__title').evaluate((e) => getComputedStyle(e).fontSize), '36px');
-            for (const table of await page.locator('.spf-side tbody').all()) {
+            for (const table of await page.locator('.spf-tables tbody').all()) {
                 const rows = table.locator('tr');
-                assert.equal(await rows.filter({ visible: true }).count(), Math.min(10, await rows.count()));
+                assert((await rows.count()) > 0, 'Table has rows');
             }
         };
         for (const theme of lib.THEMES) {

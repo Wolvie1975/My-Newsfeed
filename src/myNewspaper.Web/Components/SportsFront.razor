@@ -11,7 +11,7 @@
 @* Sports front page as in the approved concept: today's scores across the top, then upcoming games, the lead story and
    headlines, and a side column of hourly rotating standings and Top 25 polls. Phones get the same sections as cards. *@
 <div class="mx-desktop tab-desktop">
-<div class="ef spf">
+<div class="ef spf spf-front">
     <section class="nf-brief" aria-labelledby="sp-brief-title">
         <h2 id="sp-brief-title" class="ef-label">The briefing · @Dates.TodayLabel(nowUtc)</h2>
         <div class="nf-brief__tiles">@Tiles</div>
@@ -39,6 +39,22 @@
                     </li>
                 }
             </ul>
+            @if (upcoming.Count < 4 && tomorrow.Count > 0)
+            {
+                <h3 class="ef-label spf-tomorrow-head">Tomorrow · @(today.AddDays(1).ToString("ddd, MMM d", CultureInfo.InvariantCulture))</h3>
+                <ul class="spf-agate">
+                    @foreach (var item in tomorrow)
+                    {
+                        <li>
+                            <a href="@(item.Url ?? "events")" target="@(item.Url is null ? null : "_blank")" rel="@(item.Url is null ? null : "noopener noreferrer")">
+                                <span class="spf-agate__time">@(item.StartsUtc is { } starts ? Dates.Time(starts) : item.TimeLabel)</span>
+                                <span class="spf-agate__match"><TonightMatchup Item="item" /> <span class="spf-agate__sport">(@item.Kind)</span></span>
+                                @if (item.Tv is not null) { <b class="spf-agate__tv">@item.Tv</b> }
+                            </a>
+                        </li>
+                    }
+                </ul>
+            }
         </section>
 
         <div class="ef-main spf-main">
@@ -76,34 +92,41 @@
                         <SaveButton Item="lead" Title="@leadTitle" Source="@leadSource" Summary="@leadSummary" />
                     </div>
                 </article>
+            }
+        </div>
 
-                @if (stories.Count > 1)
-                {
-                    <h3 class="ef-label">Latest headlines</h3>
-                    <ul class="ef-headlines spf-headlines">
-                        @foreach (var item in stories.Skip(1))
-                        {
-                            <HeadlineRow Item="item" WithCategory="true" />
-                        }
-                    </ul>
-                }
+        <div class="spf-headlines-col">
+            @if (stories.Count > 1)
+            {
+                <h3 class="ef-label">Latest headlines</h3>
+                <ul class="ef-headlines spf-headlines">
+                    @foreach (var item in stories.Skip(1))
+                    {
+                        <HeadlineRow Item="item" WithCategory="true" />
+                    }
+                </ul>
             }
             <a class="ef-more" href="sports/news">All sports headlines <span aria-hidden="true">→</span></a>
         </div>
+    </div>
 
-        <aside class="ef-side spf-side" data-sports-rotation data-rotation-refresh-after="@RotationRefreshAfterMs">
-            @if (standingsGroups.Count > 0 && standingsSource is { } table)
-            {
-                <section class="spf-standings" aria-labelledby="spf-stand-title">
-                    <div class="ef-head"><h2 id="spf-stand-title" class="ef-label">@table.DisplayName standings</h2></div>
-                    @foreach (var group in standingsGroups)
-                    {
-                        var columns = group.Columns.Take(3).ToList();
+    <div class="spf-tables" data-sports-rotation data-rotation-refresh-after="@RotationRefreshAfterMs">
+        @if (standingsGroups.Count > 0 && standingsSource is { } table)
+        {
+            <section class="spf-standings" aria-labelledby="spf-stand-title">
+                <div class="ef-head"><h2 id="spf-stand-title" class="ef-label">@table.DisplayName standings</h2></div>
+                @foreach (var group in standingsGroups)
+                {
+                    var columns = group.Columns.Take(3).ToList();
+                    var half = (int)Math.Ceiling(group.Teams.Count / 2.0);
+                    var firstHalf = group.Teams.Take(half).ToList();
+                    var secondHalf = group.Teams.Skip(half).ToList();
+                    <div class="spf-table-split">
                         <table class="spf-table">
                             <caption>@group.Name</caption>
                             <thead><tr><th scope="col">Team</th>@foreach (var (column, index) in columns.Select((c, i) => (c, i))) { <th scope="col">@ColumnLabel(columns, index)</th> }</tr></thead>
                             <tbody>
-                                @foreach (var team in group.Teams)
+                                @foreach (var team in firstHalf)
                                 {
                                     <tr data-sports-teams="@SportsTeamPreferences.Keys(team.Row.TeamName)">
                                         <th scope="row">@team.Row.TeamName</th>
@@ -112,18 +135,43 @@
                                 }
                             </tbody>
                         </table>
-                    }
-                    <a class="ef-more" href="@($"standings?sourceId={table.Id}")">All standings <span aria-hidden="true">→</span></a>
-                </section>
-            }
-            @if (rankings.Teams.Count > 0)
-            {
-                <section class="spf-rankings" aria-labelledby="spf-rank-title">
-                    <h2 id="spf-rank-title" class="ef-label">@rankings.Selected?.Sport · @(rankings.Poll?.PollName ?? "Top 25")</h2>
+                        @if (secondHalf.Count > 0)
+                        {
+                            <table class="spf-table">
+                                <caption class="sr-only">@group.Name (continued)</caption>
+                                <thead><tr><th scope="col">Team</th>@foreach (var (column, index) in columns.Select((c, i) => (c, i))) { <th scope="col">@ColumnLabel(columns, index)</th> }</tr></thead>
+                                <tbody>
+                                    @foreach (var team in secondHalf)
+                                    {
+                                        <tr data-sports-teams="@SportsTeamPreferences.Keys(team.Row.TeamName)">
+                                            <th scope="row">@team.Row.TeamName</th>
+                                            @foreach (var column in columns) { <td>@StandingsQuery.StatisticValue(team, column.Name)</td> }
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        }
+                    </div>
+                }
+                <a class="ef-more" href="@($"standings?sourceId={table.Id}")">All standings <span aria-hidden="true">→</span></a>
+            </section>
+        }
+        @if (rankings.Teams.Count > 0)
+        {
+            <section class="spf-rankings" aria-labelledby="spf-rank-title">
+                <h2 id="spf-rank-title" class="ef-label">@rankings.Selected?.Sport · @(rankings.Poll?.PollName ?? "Top 25")</h2>
+                @{
+                    var topTeams = rankings.Teams.Where(t => t.Rank is >= 1 and <= 25).ToList();
+                    var half = (int)Math.Ceiling(topTeams.Count / 2.0);
+                    var firstHalf = topTeams.Take(half).ToList();
+                    var secondHalf = topTeams.Skip(half).ToList();
+                }
+                <div class="spf-table-split">
                     <table class="spf-table">
-                        <thead class="sr-only"><tr><th scope="col">Rank</th><th scope="col">School</th><th scope="col">Record</th><th scope="col">Move</th></tr></thead>
+                        <caption class="sr-only">@(rankings.Poll?.PollName ?? "Top 25")</caption>
+                        <thead><tr><th scope="col">Rank</th><th scope="col">School</th><th scope="col">Record</th><th scope="col">Move</th></tr></thead>
                         <tbody>
-                            @foreach (var team in rankings.Teams.Where(t => t.Rank is >= 1 and <= 25))
+                            @foreach (var team in firstHalf)
                             {
                                 <tr class="@(team.IsBig12 == true ? "spf-big12" : null)">
                                     <td class="spf-table__rank">@team.Rank</td>
@@ -134,10 +182,28 @@
                             }
                         </tbody>
                     </table>
-                    <a class="ef-more" href="@CollegeHub.RankingsHref(rankings.Selected)">All rankings <span aria-hidden="true">→</span></a>
-                </section>
-            }
-        </aside>
+                    @if (secondHalf.Count > 0)
+                    {
+                        <table class="spf-table">
+                            <caption class="sr-only">(continued)</caption>
+                            <thead><tr><th scope="col">Rank</th><th scope="col">School</th><th scope="col">Record</th><th scope="col">Move</th></tr></thead>
+                            <tbody>
+                                @foreach (var team in secondHalf)
+                                {
+                                    <tr class="@(team.IsBig12 == true ? "spf-big12" : null)">
+                                        <td class="spf-table__rank">@team.Rank</td>
+                                        <th scope="row">@team.TeamName</th>
+                                        <td>@team.Record</td>
+                                        <td class="spf-move">@Move(team)</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                </div>
+                <a class="ef-more" href="@CollegeHub.RankingsHref(rankings.Selected)">All rankings <span aria-hidden="true">→</span></a>
+            </section>
+        }
     </div>
 </div>
 </div>
@@ -271,6 +337,8 @@
 @code {
     private IReadOnlyList<FeedItem> stories = [];
     private IReadOnlyList<TonightItem> upcoming = [];
+    private IReadOnlyList<TonightItem> tomorrow = [];
+    private DateOnly today;
     private myNewspaper.Shared.Data.Models.SportsStandingsSource? standingsSource;
     private IReadOnlyList<StandingGroup> standingsGroups = [];
     private StandingGroup? standingsGroup => standingsGroups.FirstOrDefault();
@@ -287,7 +355,7 @@
     protected override async Task OnParametersSetAsync()
     {
         nowUtc = Clock.GetUtcNow().UtcDateTime;
-        var today = Dates.TodayAt(nowUtc);
+        today = Dates.TodayAt(nowUtc);
         newsUnavailable = false;
         await using var db = await Factory.CreateDbContextAsync(Ct);
 
@@ -307,6 +375,21 @@
         }
         catch (Exception ex) when (DataFailures.IsReadFailure(ex))
         { upcoming = []; Log.LogError(ex, "Could not read upcoming games."); }
+
+        if (upcoming.Count < 4)
+        {
+            try
+            {
+                var tomorrows = await HomeEventResults.WithoutFinalResultsAsync(db, await EventsQuery.GetOnDateAsync(db, today.AddDays(1), Ct), Ct);
+                tomorrow = TodayTonight.Build(tomorrows, Dates).Take(8 - upcoming.Count).ToList();
+            }
+            catch (Exception ex) when (DataFailures.IsReadFailure(ex))
+            { tomorrow = []; Log.LogError(ex, "Could not read tomorrow's games."); }
+        }
+        else
+        {
+            tomorrow = [];
+        }
 
         // Read the existing enabled/season-filtered sources. Empty snapshots never consume a rotation slot.
         try

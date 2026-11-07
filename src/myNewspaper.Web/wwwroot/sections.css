@@ -2838,6 +2838,39 @@ a.tvc-row__show:hover {
         gap: 0;
         padding-top: 20px;
     }
+    .pub .spf-front > .spf-cols {
+        grid-template-columns: 250px minmax(0, 640px) minmax(0, 1fr);
+        column-gap: 28px;
+    }
+    .pub .spf-front > .spf-cols > .spf-upcoming {
+        padding-right: 0;
+        border-right: 0;
+    }
+    .pub .spf-front > .spf-cols > .spf-main {
+        padding: 0;
+        border-right: 0;
+    }
+    .pub .spf-front .spf-main .ef-lead__image {
+        max-width: 640px;
+        height: auto;
+        aspect-ratio: 2 / 1;
+    }
+    .pub .spf-front .spf-main .ef-lead__image img {
+        object-fit: cover;
+    }
+    .pub .spf-tables {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        column-gap: 48px;
+        margin-top: 32px;
+        padding-top: 16px;
+        border-top: 3px double var(--text);
+    }
+    .pub .spf-tables .spf-table-split {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        column-gap: 24px;
+    }
     .pub .spf-upcoming,
     .pub .spf-standings,
     .pub .spf-rankings {
@@ -5674,7 +5707,7 @@ a.tvc-row__show:hover {
 
 /* ---------- News and Sports fronts, 1920px and up (wide-screens-4k-handoff.md) ---------- */
 @media (min-width: 1920px) {
-    .pub .spf-cols {
+    .pub .nf .spf-cols {
         grid-template-columns: 300px minmax(0, 1.8fr) minmax(0, 1.6fr);
     }
     .pub .spf-side {
@@ -5689,7 +5722,7 @@ a.tvc-row__show:hover {
     }
 }
 @media (min-width: 2560px) {
-    .pub .spf-cols {
+    .pub .nf .spf-cols {
         grid-template-columns: 320px minmax(0, 1.6fr) minmax(0, 2.4fr);
     }
     .pub .spf-side {
