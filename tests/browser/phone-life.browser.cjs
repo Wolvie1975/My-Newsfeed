@@ -220,7 +220,15 @@ const PERSONAL = 'mynewsfeed-personal-v1';
             await prepare(ctx);
             const p = await ctx.newPage();
             await p.goto(base + '/videos?q=MacBook');
-            const option = p.locator('#video-channel-m option').filter({ hasText: 'Category: Tech' });
+            // Categories and channels sit under their own optgroup headings, with no "Category:" prefix.
+            assert.deepEqual(await p.locator('#video-channel-m optgroup').evaluateAll((ns) => ns.map((n) => n.label)), [
+                'Categories',
+                'Channels',
+            ]);
+            assert.equal(await p.locator('#video-channel-m option', { hasText: 'Category:' }).count(), 0);
+            const option = p
+                .locator('#video-channel-m optgroup[label="Categories"] option')
+                .filter({ hasText: /^Tech$/ });
             await p.locator('#video-channel-m').selectOption(await option.getAttribute('value'));
             await p.waitForURL('**/videos?**category=tech**');
             assert.equal(new URL(p.url()).searchParams.get('q'), 'MacBook');

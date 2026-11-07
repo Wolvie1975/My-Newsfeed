@@ -6,6 +6,10 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
+## YouTube phone channel picker: Categories and Channels headings — November 7, 2026 (America/Chicago)
+
+Commit: the phone channel dropdown on `/videos` lists "All channels", then a Categories optgroup and a Channels optgroup, with the "Category: " prefix dropped. `NavigationChoice` gains an optional `Group`; `SectionSelect` puts consecutive choices with the same group under one `<optgroup>` (same pattern as the Scoreboard Show picker). Every other `SectionSelect` passes no group and renders as before. `phone-life.browser.cjs` now checks the two headings and the missing prefix.
+
 ## Phone briefing: two tiles per row on every front — November 7, 2026 (America/Chicago)
 
 Commit: phone briefing on News, Sports and Entertainment uses Tech's two-per-row grid (`.nf-brief--phone .nf-brief__tiles` in `sections.css`); an odd last tile spans the row (Sports' Sports news, Entertainment's Tonight on TV). Word values break between words (`overflow-wrap: break-word`) and size with `clamp(20px, 6vw, 26px)`, replacing the 22px rule under 360px. Tech's own rule in `mobile.css` stays for the Tech week summary. Desktop and tablet unchanged (tablets hide `.nf-brief--phone`). New assertions in `section-fronts.browser.cjs` and `news-front.browser.cjs`.

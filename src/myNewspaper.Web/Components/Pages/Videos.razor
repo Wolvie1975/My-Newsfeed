@@ -200,8 +200,8 @@ else
     private string ChannelHref(VideoChannel c) => CurrentCategoryHref + (CurrentCategoryHref.Contains('?') ? "&" : "?") + "channel=" + Uri.EscapeDataString(c.ChannelId);
     private string PhoneCurrent => channels.FirstOrDefault(IsSelected) is { } c ? ChannelHref(c) : CurrentCategoryHref;
     private IReadOnlyList<NavigationChoice> PhoneChoices => new[] { new NavigationChoice(CategoryHref(null), "All channels") }
-        .Concat(categories.Select(c => new NavigationChoice(CategoryHref(c), "Category: " + c.Name)))
-        .Concat(channels.Select(c => new NavigationChoice(ChannelHref(c), c.Name))).ToList();
+        .Concat(categories.Select(c => new NavigationChoice(CategoryHref(c), c.Name, "Categories")))
+        .Concat(channels.Select(c => new NavigationChoice(ChannelHref(c), c.Name, "Channels"))).ToList();
     private int page;
     private int offset;
     private string PageHref(int target) => "videos?page=" + target + (ViewQuery == "all" ? "&view=all" : "") + (selectedCategories.Count > 1 ? "&categories=" + string.Join(",", selectedCategories.Select(c => c.Slug)) : selectedCategory is null ? "" : "&category=" + selectedCategory.Slug) + (string.IsNullOrWhiteSpace(Q) ? "" : "&q=" + Uri.EscapeDataString(Q)) + (string.IsNullOrWhiteSpace(Channel) ? "" : "&channel=" + Uri.EscapeDataString(Channel));
