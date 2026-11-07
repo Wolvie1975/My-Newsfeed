@@ -8,11 +8,21 @@ keys were preserved by the documented releases unless otherwise stated.
 
 ## YouTube phone channel picker: Categories and Channels headings — November 7, 2026 (America/Chicago)
 
-Commit: the phone channel dropdown on `/videos` lists "All channels", then a Categories optgroup and a Channels optgroup, with the "Category: " prefix dropped. `NavigationChoice` gains an optional `Group`; `SectionSelect` puts consecutive choices with the same group under one `<optgroup>` (same pattern as the Scoreboard Show picker). Every other `SectionSelect` passes no group and renders as before. `phone-life.browser.cjs` now checks the two headings and the missing prefix.
+Commit:
+- `f5b186b` YouTube phone picker: Categories and Channels headings. The phone channel dropdown on `/videos` lists "All channels", then a Categories optgroup and a Channels optgroup, with the "Category: " prefix dropped. `NavigationChoice` gains an optional `Group`; `SectionSelect` puts consecutive choices with the same group under one `<optgroup>` (same pattern as the Scoreboard Show picker). Every other `SectionSelect` passes no group and renders as before. `phone-life.browser.cjs` now checks the two headings and the missing prefix.
 
 ## Phone briefing: two tiles per row on every front — November 7, 2026 (America/Chicago)
 
-Commit: phone briefing on News, Sports and Entertainment uses Tech's two-per-row grid (`.nf-brief--phone .nf-brief__tiles` in `sections.css`); an odd last tile spans the row (Sports' Sports news, Entertainment's Tonight on TV). Word values break between words (`overflow-wrap: break-word`) and size with `clamp(20px, 6vw, 26px)`, replacing the 22px rule under 360px. Tech's own rule in `mobile.css` stays for the Tech week summary. Desktop and tablet unchanged (tablets hide `.nf-brief--phone`). New assertions in `section-fronts.browser.cjs` and `news-front.browser.cjs`.
+Commit:
+- `0d6c382` Phone briefing: two tiles per row on every front, as on Tech. Phone briefing on News, Sports and Entertainment uses Tech's two-per-row grid (`.nf-brief--phone .nf-brief__tiles` in `sections.css`); an odd last tile spans the row (Sports' Sports news, Entertainment's Tonight on TV). Word values break between words (`overflow-wrap: break-word`) and size with `clamp(20px, 6vw, 26px)`, replacing the 22px rule under 360px. Tech's own rule in `mobile.css` stays for the Tech week summary. Desktop and tablet unchanged (tablets hide `.nf-brief--phone`). New assertions in `section-fronts.browser.cjs` and `news-front.browser.cjs`.
+
+Verification: full `tools/verify.sh` passed (6/6 steps: dotnet build 0 warnings, 1,154 tests, js unit tests, css check, lint, format check); quick `tools/verify.sh` in deploy.sh passed.
+
+Deployment: commit `f5b186b26b46` via `deployment/deploy.sh web admin` at 2026-11-07T15:19:39Z.
+- mynewspaper-web:f5b186b26b46 (`9b85966169df`): healthy, env unchanged, /version {"commit":"f5b186b26b46146734780822f0d716c3807618d9","builtAt":"2026-11-07T15:19:39Z"}
+  Rollback: `deployment/rollback.sh f5b186b26b46 web` → mynewspaper-web:before-f5b186b26b46 (`999dffed32a3`)
+- mynewspaper-admin:f5b186b26b46 (`4c686f3480b8`): healthy, env unchanged, /version {"commit":"f5b186b26b46146734780822f0d716c3807618d9","builtAt":"2026-11-07T15:19:39Z"}
+  Rollback: `deployment/rollback.sh f5b186b26b46 admin` → mynewspaper-admin:before-f5b186b26b46 (`457a36d44948`)
 
 ## Sports and Entertainment fronts: vertical timelines for upcoming games and on screen releases — November 7, 2026 (America/Chicago)
 
