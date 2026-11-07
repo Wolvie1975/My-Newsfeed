@@ -9,11 +9,16 @@ keys were preserved by the documented releases unless otherwise stated.
 ## Sports and Entertainment fronts: briefing and middle tier refresh — November 7, 2026 (America/Chicago)
 
 Commits:
+- `9881585` Home: Friday theater releases get their own row; six headlines beside the lead.
 - `57c4ec7` Sports and Entertainment fronts: briefing strip, shared BriefTile component. Shared `BriefTile.razor` across News, Tech, Sports, and Entertainment fronts. Sports briefing displays Live now, Next up, Top 25 in action, F1, and Sports news story count. Entertainment briefing displays Entertainment news story count, Next/Last weekend box office, Tonight on TV, and In theaters Friday. Added `FeedQuery.CountTodayInHubAsync` with America/Chicago timezone boundary and visibility filter tests in `FeedQueryTests`.
 - `7174c0e` Sports middle tier: concept B with split tables row, tomorrow's games and headline column. Scoped `.spf-front` wrapper to protect News and Tech fronts. Moved standings and rankings to full-width `.spf-tables` row below columns, each section rendering split 2-column tables with `(continued)` caption. Added tomorrow's games list under Upcoming games when `< 4` games left today. Latest headlines moved beside lead in its own `.spf-headlines-col`. Lead photo capped at 640×320 (2:1 aspect ratio). Updated `ipad-sports.browser.cjs`.
-- Entertainment middle tier: concept C with category desks row, theater releases in on screen, and headline column. Folded Friday theatrical releases into On screen (capped at 8 items total) and removed `ef-theaters`. Latest headlines moved beside the lead in `.ef-headlines-col` (5 stories + all entertainment headlines link). Category desks moved to `.ef-desk-row` below `.ef-cols` (2 columns per desk, 2 desks per row). Scoped desktop (1024px) `.ef-cols` 3-column template, lead image capped at 640×320, updated tablet layout in `tablet.css`, updated `wide-screens.browser.cjs` and `section-hubs.browser.cjs`, added `section-fronts.browser.cjs`.
+- `d360a37` Entertainment middle tier: concept C with category desks row, theater releases in on screen, and headline column. Folded Friday theatrical releases into On screen (capped at 8 items total) and removed `ef-theaters`. Latest headlines moved beside the lead in `.ef-headlines-col` (5 stories + all entertainment headlines link). Category desks moved to `.ef-desk-row` below `.ef-cols` (2 columns per desk, 2 desks per row). Scoped desktop (1024px) `.ef-cols` 3-column template, lead image capped at 640×320, updated tablet layout in `tablet.css`, updated `wide-screens.browser.cjs` and `section-hubs.browser.cjs`, added `section-fronts.browser.cjs`.
 
-Verification: full `tools/verify.sh` passed (6/6 steps: dotnet build 0 warnings, 1,148 tests, js unit tests, css check, lint, format check).
+Verification: full `tools/verify.sh` passed (6/6 steps: dotnet build 0 warnings, 1,148 tests, js unit tests, css check, lint, format check); quick `tools/verify.sh` in deploy.sh passed. `node tools/live-check.cjs`: health 2/2, admin 55/55, public 176/176 (22 pages × 320/390/430/1440px × light/dark), clean-up 2/2; household restored (0 `zz`, 0 unassigned devices).
+
+Deployment: commit `77a192e17776` via `deployment/deploy.sh web` at 2026-11-07T05:17:14Z.
+- mynewspaper-web:77a192e17776 (`d164402b94c3`): healthy, env unchanged, /version {"commit":"77a192e177762b1a35c5c99dd366a8ca134948b6","builtAt":"2026-11-07T05:17:14Z"}
+  Rollback: `deployment/rollback.sh 77a192e17776 web` → mynewspaper-web:before-77a192e17776 (`683654320193`)
 
 ## "Big 12 · All sports" on Scoreboard and Competitions — November 7, 2026 (America/Chicago)
 
