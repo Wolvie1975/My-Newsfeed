@@ -102,6 +102,13 @@ const phoneOrder = [
                         // Three columns: Today & Tonight | lead and headlines | side column (box office + episodes).
                         assert(tonight.x < lead.x && lead.x < side.x, 'front columns');
                         assert(Math.abs(tonight.y - lead.y) < 40 && Math.abs(lead.y - side.y) < 40, 'front row');
+                        const sideCard = await box('.bs-front > .bs-col--side > .d-card');
+                        if (sideCard) {
+                            assert(
+                                Math.abs(tonight.y - sideCard.y) <= 1.5,
+                                `tonight (${tonight.y}) and side card (${sideCard.y}) top aligned at ${width}`,
+                            );
+                        }
                     }
                     assert.equal(
                         await page

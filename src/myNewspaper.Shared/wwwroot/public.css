@@ -3174,7 +3174,7 @@
         font-size: 20px;
     }
 }
-.pub .boxoffice-forecasts {
+.pub .boxoffice-forecasts:not(.d-card) {
     margin-top: 40px;
 }
 .pub .boxoffice-forecast-date {
@@ -5809,8 +5809,9 @@
     margin: 0;
     padding: 0 20px 20px;
 }
-/* Homepage spacing comes from the card grid, not standalone section margins. */
-.pub .d-grid > .d-forecasts {
+/* Homepage spacing comes from the card grid or broadsheet columns, not standalone section margins. */
+.pub :is(.d-grid, .bs-col) > .d-forecasts,
+.pub .d-card.d-forecasts {
     margin-top: 0;
 }
 @media (max-width: 1023px) {

@@ -408,7 +408,8 @@
             [data-home-section='entertainment-news'],
             [data-home-section='movies'],
             [data-home-section='tv'],
-            [data-home-section='digital']
+            [data-home-section='digital'],
+            [data-home-section='forecasts']
         )
         .d-card__title {
         border-left: 3px solid #be185d;
@@ -421,7 +422,8 @@
             [data-home-section='entertainment-news'],
             [data-home-section='movies'],
             [data-home-section='tv'],
-            [data-home-section='digital']
+            [data-home-section='digital'],
+            [data-home-section='forecasts']
         )
         .d-card__title {
         border-left-color: #f472b6;
