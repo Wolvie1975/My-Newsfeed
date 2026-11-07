@@ -96,35 +96,6 @@
 
         <aside class="ef-side spf-side">
             <TechJustReleased />
-
-            <section class="nf-side tc-videos" aria-labelledby="tc-videos-title">
-                <h2 id="tc-videos-title" class="ef-label">Tech videos</h2>
-                @if (videos.Count == 0)
-                {
-                    <p class="ef-empty">No recent tech videos yet.</p>
-                }
-                else
-                {
-                    <div class="tc-videos__list">
-                        @foreach (var video in videos.Take(3))
-                        {
-                            var href = FeedQuery.SafeHref(video.Url);
-                            var picture = VideosText.Thumbnail(video.ThumbnailUrl, video.VideoId);
-                            <article class="yt-row">
-                                <a class="yt-row__thumb" href="@href" target="_blank" rel="noopener noreferrer" tabindex="-1" aria-hidden="true">
-                                    @if (picture is not null) { <img src="@picture" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()" /> }
-                                </a>
-                                <div class="yt-row__body">
-                                    <p class="yt-kicker @PhoneColors.ForCategory(video.Category)">@video.ChannelName</p>
-                                    <h3 class="yt-row__title">@if (href is not null) { <a href="@href" target="_blank" rel="noopener noreferrer">@video.Title</a> } else { @video.Title }</h3>
-                                    <p class="vmeta"><time datetime="@video.PublishedAt.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'")" title="@Dates.PublishedFull(video.PublishedAt)">@Dates.Published(video.PublishedAt)</time></p>
-                                </div>
-                            </article>
-                        }
-                    </div>
-                }
-                <a class="ef-more" href="videos?categories=tech,video-games">All tech videos <span aria-hidden="true">→</span></a>
-            </section>
         </aside>
     </div>
 
@@ -146,6 +117,35 @@
             }
         </div>
     }
+    @* Tech videos: their own row under the desks, three across (six from 1920px), rather than a tall side column. *@
+    <section class="tc-videos tc-video-band" aria-labelledby="tc-videos-title">
+        <h2 id="tc-videos-title" class="ef-label">Tech videos</h2>
+        @if (videos.Count == 0)
+        {
+            <p class="ef-empty">No recent tech videos yet.</p>
+        }
+        else
+        {
+            <div class="tc-videos__list">
+                @foreach (var video in videos)
+                {
+                    var href = FeedQuery.SafeHref(video.Url);
+                    var picture = VideosText.Thumbnail(video.ThumbnailUrl, video.VideoId);
+                    <article class="yt-row">
+                        <a class="yt-row__thumb" href="@href" target="_blank" rel="noopener noreferrer" tabindex="-1" aria-hidden="true">
+                            @if (picture is not null) { <img src="@picture" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()" /> }
+                        </a>
+                        <div class="yt-row__body">
+                            <p class="yt-kicker @PhoneColors.ForCategory(video.Category)">@video.ChannelName</p>
+                            <h3 class="yt-row__title">@if (href is not null) { <a href="@href" target="_blank" rel="noopener noreferrer">@video.Title</a> } else { @video.Title }</h3>
+                            <p class="vmeta"><time datetime="@video.PublishedAt.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'")" title="@Dates.PublishedFull(video.PublishedAt)">@Dates.Published(video.PublishedAt)</time></p>
+                        </div>
+                    </article>
+                }
+            </div>
+        }
+        <a class="ef-more" href="videos?categories=tech,video-games">All tech videos <span aria-hidden="true">→</span></a>
+    </section>
     @if (weekLinkSummary is { } wk)
     {
         <p class="tc-week-banner">

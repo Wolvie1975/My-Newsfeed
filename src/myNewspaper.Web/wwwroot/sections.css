@@ -6052,19 +6052,13 @@ a.tvc-row__show:hover {
     .pub .tc-front > .nf-desks > :only-child {
         grid-column: 1 / -1;
     }
-    .pub .tc-front > .tc-week-banner {
+    /* Row 4: Tech videos, six across. */
+    .pub .tc-front > .tc-video-band {
+        grid-column: 1 / -1;
         grid-row: 4;
     }
-
-    /* Tech videos in a ~460px column: thumbnail above the text rather than beside it. */
-    .pub .tc-front .tc-videos .yt-row {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-    }
-    .pub .tc-front .tc-videos .yt-row__thumb {
-        width: 100%;
-        aspect-ratio: 16 / 9;
+    .pub .tc-front > .tc-week-banner {
+        grid-row: 5;
     }
 }
 
@@ -6352,6 +6346,39 @@ a.tvc-row__show:hover {
     margin-top: 2px;
     color: var(--text-2);
     font-size: 12px;
+}
+/* Tech videos as the front's last row, under the desks: a double rule, thumbnails over their titles, three across
+   (six from 1920px). Phones keep their own video rail (.tc-video-rail in mobile.css). */
+.pub .tc-video-band {
+    margin-top: 32px;
+    padding-top: 16px;
+    border-top: 3px double var(--text);
+}
+.pub .tc-video-band .tc-videos__list {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    column-gap: 24px;
+}
+.pub .tc-video-band .yt-row {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border-bottom: 0;
+}
+.pub .tc-video-band .yt-row:nth-child(n + 4) {
+    display: none;
+}
+.pub .tc-video-band .yt-row__thumb {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+}
+@media (min-width: 1920px) {
+    .pub .tc-video-band .tc-videos__list {
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+    }
+    .pub .tc-video-band .yt-row:nth-child(n + 4) {
+        display: flex;
+    }
 }
 
 /* ---------- Tech desks (/tech/technology, /tech/video-games, /tech/linux, docs/tech/tech-03-desks.md) ---------- */

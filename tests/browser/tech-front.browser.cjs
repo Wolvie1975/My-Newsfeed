@@ -213,9 +213,14 @@ fs.mkdirSync(shots, { recursive: true });
                     moreHref: d.querySelector('.ef-more')?.getAttribute('href'),
                     labelColor: getComputedStyle(d.querySelector('.ef-label')).color,
                 }));
-                const videoCount = document.querySelectorAll('.mx-desktop .tc-videos .yt-row').length;
+                const videoRows = [...document.querySelectorAll('.mx-desktop .tc-video-band .yt-row')];
+                const videoCount = videoRows.filter((n) => getComputedStyle(n).display !== 'none').length;
+                const videoInSide = Boolean(document.querySelector('.mx-desktop .spf-side .tc-videos'));
+                const desksBox = document.querySelector('.mx-desktop .nf-desks')?.getBoundingClientRect();
+                const videoBox = document.querySelector('.mx-desktop .tc-video-band')?.getBoundingClientRect();
+                const videoBelowDesks = desksBox && videoBox ? videoBox.top >= desksBox.bottom - 2 : true;
                 const hasTopics = Boolean(document.querySelector('.mx-desktop .nf-topics'));
-                return { navLinks, activeNav, tabs, tiles, desks, videoCount, hasTopics };
+                return { navLinks, activeNav, tabs, tiles, desks, videoCount, videoInSide, videoBelowDesks, hasTopics };
             });
 
             assert.deepEqual(desktopInfo.navLinks, [
@@ -248,7 +253,10 @@ fs.mkdirSync(shots, { recursive: true });
             );
             assert.notEqual(desktopInfo.desks[0].labelColor, desktopInfo.desks[1].labelColor);
             assert.notEqual(desktopInfo.desks[1].labelColor, desktopInfo.desks[2].labelColor);
-            assert.equal(desktopInfo.videoCount, 3);
+            // Tech videos: a row under the desks, three across, six from 1920px (TechQuery.VideosAsync reads six).
+            assert.equal(desktopInfo.videoCount, width >= 1920 ? 6 : 3, `Tech videos shown at ${width}`);
+            assert.equal(desktopInfo.videoInSide, false, 'Tech videos no longer in the side column');
+            assert(desktopInfo.videoBelowDesks, 'Tech videos below the desks');
             assert.equal(desktopInfo.hasTopics, false, '/tech has no topics on desktop');
             assert(await page.locator('.tc-front ol.spf-timeline').isVisible(), 'Tech day timeline visible');
             assert.equal(await page.locator('.tc-front .spf-agate').count(), 0, 'Tech no spf-agate');

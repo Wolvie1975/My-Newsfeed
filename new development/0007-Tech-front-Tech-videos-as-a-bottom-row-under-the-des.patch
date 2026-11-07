@@ -1,0 +1,205 @@
+From 0efb0b3a17198502d9d328d1ab6a5f12bfc8fbdd Mon Sep 17 00:00:00 2001
+From: Jason Carpio <jcarpio@gmail.com>
+Date: Sat, 7 Nov 2026 12:37:27 -0600
+Subject: [PATCH] Tech front: Tech videos as a bottom row under the desks
+
+Tech videos leaves the side column, where its large thumbnails made the
+right column far taller than the rest of the front, and becomes the
+front's last row under the desks, before "This week in Tech": a double
+rule, thumbnails over their titles, three across, six across from 1920px
+(TechQuery.VideosAsync already reads six). The side column keeps Just
+released. Phones keep their own video rail.
+
+New class tc-video-band (tc-video-row is the Tech desk pages' list row).
+tech-front.browser.cjs: videos shown per width, no longer in the side
+column, and below the desks.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01BeSUhVSrEYFW7YxEsPgtnC
+---
+ .../Components/TechFront.razor                | 58 +++++++++----------
+ src/myNewspaper.Web/wwwroot/sections.css      | 49 ++++++++++++----
+ tests/browser/tech-front.browser.cjs          | 14 ++++-
+ 3 files changed, 78 insertions(+), 43 deletions(-)
+
+diff --git a/src/myNewspaper.Web/Components/TechFront.razor b/src/myNewspaper.Web/Components/TechFront.razor
+index 2dd921f..ed976e1 100644
+--- a/src/myNewspaper.Web/Components/TechFront.razor
++++ b/src/myNewspaper.Web/Components/TechFront.razor
+@@ -96,35 +96,6 @@
+ 
+         <aside class="ef-side spf-side">
+             <TechJustReleased />
+-
+-            <section class="nf-side tc-videos" aria-labelledby="tc-videos-title">
+-                <h2 id="tc-videos-title" class="ef-label">Tech videos</h2>
+-                @if (videos.Count == 0)
+-                {
+-                    <p class="ef-empty">No recent tech videos yet.</p>
+-                }
+-                else
+-                {
+-                    <div class="tc-videos__list">
+-                        @foreach (var video in videos.Take(3))
+-                        {
+-                            var href = FeedQuery.SafeHref(video.Url);
+-                            var picture = VideosText.Thumbnail(video.ThumbnailUrl, video.VideoId);
+-                            <article class="yt-row">
+-                                <a class="yt-row__thumb" href="@href" target="_blank" rel="noopener noreferrer" tabindex="-1" aria-hidden="true">
+-                                    @if (picture is not null) { <img src="@picture" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()" /> }
+-                                </a>
+-                                <div class="yt-row__body">
+-                                    <p class="yt-kicker @PhoneColors.ForCategory(video.Category)">@video.ChannelName</p>
+-                                    <h3 class="yt-row__title">@if (href is not null) { <a href="@href" target="_blank" rel="noopener noreferrer">@video.Title</a> } else { @video.Title }</h3>
+-                                    <p class="vmeta"><time datetime="@video.PublishedAt.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'")" title="@Dates.PublishedFull(video.PublishedAt)">@Dates.Published(video.PublishedAt)</time></p>
+-                                </div>
+-                            </article>
+-                        }
+-                    </div>
+-                }
+-                <a class="ef-more" href="videos?categories=tech,video-games">All tech videos <span aria-hidden="true">→</span></a>
+-            </section>
+         </aside>
+     </div>
+ 
+@@ -146,6 +117,35 @@
+             }
+         </div>
+     }
++    @* Tech videos: their own row under the desks, three across (six from 1920px), rather than a tall side column. *@
++    <section class="tc-videos tc-video-band" aria-labelledby="tc-videos-title">
++        <h2 id="tc-videos-title" class="ef-label">Tech videos</h2>
++        @if (videos.Count == 0)
++        {
++            <p class="ef-empty">No recent tech videos yet.</p>
++        }
++        else
++        {
++            <div class="tc-videos__list">
++                @foreach (var video in videos)
++                {
++                    var href = FeedQuery.SafeHref(video.Url);
++                    var picture = VideosText.Thumbnail(video.ThumbnailUrl, video.VideoId);
++                    <article class="yt-row">
++                        <a class="yt-row__thumb" href="@href" target="_blank" rel="noopener noreferrer" tabindex="-1" aria-hidden="true">
++                            @if (picture is not null) { <img src="@picture" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()" /> }
++                        </a>
++                        <div class="yt-row__body">
++                            <p class="yt-kicker @PhoneColors.ForCategory(video.Category)">@video.ChannelName</p>
++                            <h3 class="yt-row__title">@if (href is not null) { <a href="@href" target="_blank" rel="noopener noreferrer">@video.Title</a> } else { @video.Title }</h3>
++                            <p class="vmeta"><time datetime="@video.PublishedAt.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'")" title="@Dates.PublishedFull(video.PublishedAt)">@Dates.Published(video.PublishedAt)</time></p>
++                        </div>
++                    </article>
++                }
++            </div>
++        }
++        <a class="ef-more" href="videos?categories=tech,video-games">All tech videos <span aria-hidden="true">→</span></a>
++    </section>
+     @if (weekLinkSummary is { } wk)
+     {
+         <p class="tc-week-banner">
+diff --git a/src/myNewspaper.Web/wwwroot/sections.css b/src/myNewspaper.Web/wwwroot/sections.css
+index 7aea856..0422d2a 100644
+--- a/src/myNewspaper.Web/wwwroot/sections.css
++++ b/src/myNewspaper.Web/wwwroot/sections.css
+@@ -6052,19 +6052,13 @@ a.tvc-row__show:hover {
+     .pub .tc-front > .nf-desks > :only-child {
+         grid-column: 1 / -1;
+     }
+-    .pub .tc-front > .tc-week-banner {
++    /* Row 4: Tech videos, six across. */
++    .pub .tc-front > .tc-video-band {
++        grid-column: 1 / -1;
+         grid-row: 4;
+     }
+-
+-    /* Tech videos in a ~460px column: thumbnail above the text rather than beside it. */
+-    .pub .tc-front .tc-videos .yt-row {
+-        display: flex;
+-        flex-direction: column;
+-        gap: 8px;
+-    }
+-    .pub .tc-front .tc-videos .yt-row__thumb {
+-        width: 100%;
+-        aspect-ratio: 16 / 9;
++    .pub .tc-front > .tc-week-banner {
++        grid-row: 5;
+     }
+ }
+ 
+@@ -6353,6 +6347,39 @@ a.tvc-row__show:hover {
+     color: var(--text-2);
+     font-size: 12px;
+ }
++/* Tech videos as the front's last row, under the desks: a double rule, thumbnails over their titles, three across
++   (six from 1920px). Phones keep their own video rail (.tc-video-rail in mobile.css). */
++.pub .tc-video-band {
++    margin-top: 32px;
++    padding-top: 16px;
++    border-top: 3px double var(--text);
++}
++.pub .tc-video-band .tc-videos__list {
++    display: grid;
++    grid-template-columns: repeat(3, minmax(0, 1fr));
++    column-gap: 24px;
++}
++.pub .tc-video-band .yt-row {
++    display: flex;
++    flex-direction: column;
++    gap: 8px;
++    border-bottom: 0;
++}
++.pub .tc-video-band .yt-row:nth-child(n + 4) {
++    display: none;
++}
++.pub .tc-video-band .yt-row__thumb {
++    width: 100%;
++    aspect-ratio: 16 / 9;
++}
++@media (min-width: 1920px) {
++    .pub .tc-video-band .tc-videos__list {
++        grid-template-columns: repeat(6, minmax(0, 1fr));
++    }
++    .pub .tc-video-band .yt-row:nth-child(n + 4) {
++        display: flex;
++    }
++}
+ 
+ /* ---------- Tech desks (/tech/technology, /tech/video-games, /tech/linux, docs/tech/tech-03-desks.md) ---------- */
+ .pub .td-heading[class*='mx-c-'] .eyebrow {
+diff --git a/tests/browser/tech-front.browser.cjs b/tests/browser/tech-front.browser.cjs
+index 3c7ec3f..18f9edd 100644
+--- a/tests/browser/tech-front.browser.cjs
++++ b/tests/browser/tech-front.browser.cjs
+@@ -213,9 +213,14 @@ fs.mkdirSync(shots, { recursive: true });
+                     moreHref: d.querySelector('.ef-more')?.getAttribute('href'),
+                     labelColor: getComputedStyle(d.querySelector('.ef-label')).color,
+                 }));
+-                const videoCount = document.querySelectorAll('.mx-desktop .tc-videos .yt-row').length;
++                const videoRows = [...document.querySelectorAll('.mx-desktop .tc-video-band .yt-row')];
++                const videoCount = videoRows.filter((n) => getComputedStyle(n).display !== 'none').length;
++                const videoInSide = Boolean(document.querySelector('.mx-desktop .spf-side .tc-videos'));
++                const desksBox = document.querySelector('.mx-desktop .nf-desks')?.getBoundingClientRect();
++                const videoBox = document.querySelector('.mx-desktop .tc-video-band')?.getBoundingClientRect();
++                const videoBelowDesks = desksBox && videoBox ? videoBox.top >= desksBox.bottom - 2 : true;
+                 const hasTopics = Boolean(document.querySelector('.mx-desktop .nf-topics'));
+-                return { navLinks, activeNav, tabs, tiles, desks, videoCount, hasTopics };
++                return { navLinks, activeNav, tabs, tiles, desks, videoCount, videoInSide, videoBelowDesks, hasTopics };
+             });
+ 
+             assert.deepEqual(desktopInfo.navLinks, [
+@@ -248,7 +253,10 @@ fs.mkdirSync(shots, { recursive: true });
+             );
+             assert.notEqual(desktopInfo.desks[0].labelColor, desktopInfo.desks[1].labelColor);
+             assert.notEqual(desktopInfo.desks[1].labelColor, desktopInfo.desks[2].labelColor);
+-            assert.equal(desktopInfo.videoCount, 3);
++            // Tech videos: a row under the desks, three across, six from 1920px (TechQuery.VideosAsync reads six).
++            assert.equal(desktopInfo.videoCount, width >= 1920 ? 6 : 3, `Tech videos shown at ${width}`);
++            assert.equal(desktopInfo.videoInSide, false, 'Tech videos no longer in the side column');
++            assert(desktopInfo.videoBelowDesks, 'Tech videos below the desks');
+             assert.equal(desktopInfo.hasTopics, false, '/tech has no topics on desktop');
+             assert(await page.locator('.tc-front ol.spf-timeline').isVisible(), 'Tech day timeline visible');
+             assert.equal(await page.locator('.tc-front .spf-agate').count(), 0, 'Tech no spf-agate');
+-- 
+2.43.0
+
