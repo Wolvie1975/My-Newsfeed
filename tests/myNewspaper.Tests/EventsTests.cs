@@ -580,4 +580,52 @@ public class EventsTests
         Assert.Empty(await EventsQuery.GetSportsAsync(db, day, feed.Id));
     }
 
+    [Fact]
+    public async Task Big12_all_sports_choice_is_first_among_big12_and_returns_multi_sport_events()
+    {
+        await using var db = Create();
+        await using var tx = await BeginScheduleTransactionAsync(db);
+        var token = Tag();
+        var day = new DateOnly(2032, 10, 1);
+        var feed = new SportsEventsType { EventsTypeName = token, RssUrl = $"https://{token}.test.invalid/rss", SchoolName = token, ProviderKey = "big12", Enabled = true };
+        db.SportsEventsTypes.Add(feed);
+
+        var fb = Game(token, "cfb", day.AddDays(1), sport: "Football");
+        fb.ProviderKey = "big12";
+        fb.SportsEventsType = feed;
+
+        var bb = Game(token, "cbb", day.AddDays(2), sport: "Men's Basketball");
+        bb.ProviderKey = "big12";
+        bb.SportsEventsType = feed;
+
+        var wb = Game(token, "wbball", day.AddDays(2), sport: "Women's Basketball");
+        wb.ProviderKey = "big12";
+        wb.SportsEventsType = feed;
+
+        var pro = Game(token, "mls", day.AddDays(1), sport: "Soccer");
+        pro.ProviderKey = "espn-mls";
+
+        db.AddRange(fb, bb, wb, pro);
+        await db.SaveChangesAsync();
+
+        var choices = await EventsQuery.GetScheduleChoicesAsync(db, day);
+        var allBig12 = choices.Single(c => c.Value == "big12|");
+        Assert.Equal("Big 12 · All sports", allBig12.Name);
+        Assert.Equal("big12", allBig12.Provider);
+        Assert.Null(allBig12.Sport);
+
+        // First among Big 12 choices
+        var big12Choices = choices.Where(c => c.Provider == "big12").ToList();
+        Assert.Equal("big12|", big12Choices[0].Value);
+        Assert.Contains(big12Choices, c => c.Value == "big12|Football");
+        Assert.Contains(big12Choices, c => c.Value == "big12|Men's Basketball");
+
+        // Upcoming query with provider: "big12" and sport: null returns all visible Big 12 sports, excluding Women's Basketball
+        var upcoming = await EventsQuery.GetUpcomingAsync(db, day, null, token, provider: "big12");
+        Assert.Equal(2, upcoming.Total);
+        Assert.Contains(upcoming.Items, e => e.Sport == "Football");
+        Assert.Contains(upcoming.Items, e => e.Sport == "Men's Basketball");
+        Assert.DoesNotContain(upcoming.Items, e => e.Sport == "Women's Basketball");
+    }
+
 }

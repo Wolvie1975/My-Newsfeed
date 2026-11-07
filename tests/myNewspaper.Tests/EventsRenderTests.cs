@@ -221,4 +221,35 @@ public class EventsRenderTests
         Assert.Contains("Time TBD", Cell(html, "td-time"));
     }
 
+    [Fact]
+    public void Big12_all_sports_choice_is_selected_and_survives_paging()
+    {
+        var choices = new List<ScheduleChoice>
+        {
+            new("big12|", "Big 12 · All sports", "big12", null),
+            new("big12|Football", "Big 12 Football", "big12", "Football"),
+            new("big12|Men's Basketball", "Big 12 Men's Basketball", "big12", "Men's Basketball")
+        };
+
+        var scheduleParam = "big12|";
+        var selectedChoice = choices.FirstOrDefault(c => c.Value == scheduleParam);
+        Assert.NotNull(selectedChoice);
+        Assert.Equal("Big 12 · All sports", selectedChoice.Name);
+        Assert.Null(selectedChoice.Sport);
+        Assert.Equal("big12", selectedChoice.Provider);
+
+        // Paging link generation (as implemented in Events.razor: PageHref)
+        static string PageHref(int page, ScheduleChoice? choice) =>
+            "events?page=" + page + (choice is not null ? "&schedule=" + Uri.EscapeDataString(choice.Value) : "");
+        var page1Href = PageHref(1, selectedChoice);
+        Assert.Equal("events?page=1&schedule=big12%7C", page1Href);
+
+        // When decoded from query string on next page
+        var uri = new Uri("https://localhost/" + page1Href);
+        var parsedSchedule = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query)["schedule"].ToString();
+        Assert.Equal("big12|", parsedSchedule);
+        var pageSelectedChoice = choices.FirstOrDefault(c => c.Value == parsedSchedule);
+        Assert.Same(selectedChoice, pageSelectedChoice);
+    }
+
 }

@@ -76,7 +76,7 @@
                 <noscript><button class="nf-btn nf-btn--secondary" type="submit">Apply</button></noscript>
             </form>
         }
-        @if (snapshot.Coverage.Where(c => string.IsNullOrEmpty(selection.Competition) || c.Key == selection.Competition).Any(c => c.Availability is "error" or "partial" || c.LastSuccessAt is null)) {
+        @if (CoverageHasIssues()) {
             <p class="updated">Some coverage is delayed or unavailable. Showing the latest stored scores.</p>
         }
         @if (snapshot.Games.Count == 0) {
@@ -418,11 +418,39 @@
             var choices = (snapshot.Follows ?? []).Where(f => f.Kind == kind).ToList();
             @if (choices.Count > 0) {
                 <optgroup label="@(kind == "conference" ? "Conferences" : "Teams")">
-                    @foreach (var f in choices) { <option value="@("f:" + f.Id)" selected="@(selection.Value == "f:" + f.Id)">@f.Label</option> }
+                    @if (kind == "conference") {
+                        @foreach (var group in choices.GroupBy(f => f.Name).OrderBy(g => g.Key, StringComparer.OrdinalIgnoreCase)) {
+                            @if (!string.IsNullOrEmpty(group.Key) && group.Count() >= 2) {
+                                <option value="@("g:" + group.Key)" selected="@(selection.Value == "g:" + group.Key)">@(group.Key + " · All sports")</option>
+                            }
+                            @foreach (var f in group) {
+                                <option value="@("f:" + f.Id)" selected="@(selection.Value == "f:" + f.Id)">@f.Label</option>
+                            }
+                        }
+                    } else {
+                        @foreach (var f in choices) {
+                            <option value="@("f:" + f.Id)" selected="@(selection.Value == "f:" + f.Id)">@f.Label</option>
+                        }
+                    }
                 </optgroup>
             }
         }
     };
+
+    private bool CoverageHasIssues()
+    {
+        var cov = snapshot.Coverage.AsEnumerable();
+        if (selection.Group is not null)
+        {
+            var keys = (snapshot.Follows ?? []).Where(f => f.Kind == "conference" && string.Equals(f.Name, selection.Group, StringComparison.OrdinalIgnoreCase)).Select(f => f.Sport + "|" + f.League).ToHashSet();
+            cov = cov.Where(c => keys.Contains(c.Key));
+        }
+        else if (!string.IsNullOrEmpty(selection.Competition))
+        {
+            cov = cov.Where(c => c.Key == selection.Competition);
+        }
+        return cov.Any(c => c.Availability is "error" or "partial" || c.LastSuccessAt is null);
+    }
 
     private string DayLabel(DateOnly day)
     {

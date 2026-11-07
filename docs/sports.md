@@ -30,7 +30,11 @@ scraper additions need matching frontend provider rules and coverage verificatio
 
 `/events` lists enabled, unfinished fixtures from today forward. The Schedule and
 sport dropdowns narrow the list; `school`, `sport` and `page` selections survive
-paging. Retired `from`, `to` and `q` filters are ignored. No favorites-only view exists.
+paging. The Schedule select includes **Big 12 · All sports** (`schedule=big12|`, added
+November 7, 2026) ahead of the per-sport Big 12 choices whenever any Big 12 fixtures exist.
+It queries with provider `big12` and no sport, returning all Big 12 fixtures across sports
+while preserving the site-wide women's basketball exclusion, and survives paging.
+Retired `from`, `to` and `q` filters are ignored. No favorites-only view exists.
 Pages contain up to 200 games, with Earlier/Later controls. Games group by calendar
 date, then league; leagues sort alphabetically and confirmed starts precede TBD.
 
@@ -82,6 +86,12 @@ WHERE f.Enabled=1 AND f.ProviderKey=e.ProviderKey
         AND e.ScheduleStatus NOT LIKE 'STATUS_FINAL%'))
 ORDER BY e.EventDate,e.StartsAtUtc,e.ID;
 ```
+
+**Big 12 · All sports** (`schedule=big12|`, added November 7, 2026) sits first among the
+per-sport Big 12 choices, which stay alongside it. It's offered only when upcoming Big 12
+games exist. It filters by provider `big12` with no sport, so every Big 12 sport is listed,
+grouped by day and then by sport. Women's basketball stays excluded, as elsewhere on the page.
+See [the plan](big12-all-sports-plan.md).
 
 For Championship, `team=352` matches SchoolId OR OpponentSchoolId. Resolve enabled
 feed IDs by ProviderKey; production IDs recorded in old reports are not portable.
@@ -703,6 +713,15 @@ with their assigned date shown. Home shows up to six games with live/paused game
 first and links to the full page. Each Central midnight is converted separately
 for daylight saving changes. Coverage comes from enabled sources and does not
 promise national college coverage or a complete historical archive.
+
+The Conferences group in the Show menu (shared by desktop and the phone Sport select) adds
+**`<Conference> · All sports`** (`show=g:<conference name>`, added November 7, 2026) before
+that conference's per-sport choices whenever two or more enabled conference follows share a
+name. Today that's only Big 12. The read skips the single-league filter and keeps games that
+match **any** follow in the group, each follow checking its own sport, league and member team
+IDs. Women's college basketball stays excluded. Unknown or empty group names fall back to all
+sports. The delayed-coverage warning considers only the group's leagues. Day links and the
+Final filter keep the selection; the homepage card's filter is unchanged (leagues only).
 
 Scores update approximately every ten minutes. Visible pages read stored HTML
 again every five minutes and immediately when returning to a visible tab. Failed

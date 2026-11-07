@@ -36,6 +36,11 @@ public class ScoreboardReadTests
             Assert.True(filtered.Available);
             Assert.Equal(snapshot.Games.Where(follow.Matches).Select(g => g.Key).Order(), filtered.Games.Select(g => g.Key).Order());
         }
+        var big12Group = await Read(today, true, show: "g:Big 12");
+        Assert.True(big12Group.Available);
+        var big12Follows = (snapshot.Follows ?? []).Where(f => f.Kind == "conference" && string.Equals(f.Name, "Big 12", StringComparison.OrdinalIgnoreCase)).ToList();
+        Assert.Equal(snapshot.Games.Where(g => big12Follows.Any(f => f.Matches(g))).Select(g => g.Key).Order(), big12Group.Games.Select(g => g.Key).Order());
+        Assert.DoesNotContain(big12Group.Games, g => g.League == "womens-college-basketball");
         foreach (var competition in snapshot.Coverage.DistinctBy(c => c.Key).Take(3))
         {
             var filtered = await Read(today, true, competition.Key);

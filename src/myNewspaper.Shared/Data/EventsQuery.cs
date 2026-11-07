@@ -69,7 +69,7 @@ public static class EventsQuery
         var rows = await Visible(db).Where(e => e.EventDate >= today)
             .Select(e => new { Provider = e.ProviderKey ?? (e.SportsEventsType != null ? e.SportsEventsType.ProviderKey : null), e.Sport })
             .Distinct().ToListAsync(ct);
-        return rows.Select(r => new ScheduleChoice((r.Provider ?? "") + "|" + r.Sport,
+        var choices = rows.Select(r => new ScheduleChoice((r.Provider ?? "") + "|" + r.Sport,
             r.Provider switch
             {
                 "espn-epl" => "Premier League",
@@ -82,7 +82,19 @@ public static class EventsQuery
                 "big12" => "Big 12 " + r.Sport,
                 _ => r.Sport ?? "Other events"
             }, r.Provider ?? "", r.Sport))
-            .OrderBy(c => c.Name, StringComparer.OrdinalIgnoreCase).ThenBy(c => c.Value, StringComparer.Ordinal).ToList();
+            .ToList();
+
+        if (rows.Any(r => r.Provider == "big12"))
+        {
+            choices.Add(new ScheduleChoice("big12|", "Big 12 · All sports", "big12", null));
+        }
+
+        return choices
+            .OrderBy(c => c.Provider == "big12" ? "Big 12" : c.Name, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(c => c.Provider == "big12" ? (c.Sport is null ? 0 : 1) : 0)
+            .ThenBy(c => c.Name, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(c => c.Value, StringComparer.Ordinal)
+            .ToList();
     }
 
     /// <summary>A safety cap on one page; a season is far smaller than this.</summary>

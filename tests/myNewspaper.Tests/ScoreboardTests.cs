@@ -125,6 +125,41 @@ public class ScoreboardTests
         Assert.Equal(new ScoreboardSelection("top25", IsTop25: true), ScoreboardSelection.Resolve(null, "top25", null, coverage, follows));
     }
     [Fact]
+    public void Group_selection_resolves_and_filters_conference_multi_sport()
+    {
+        var coverage = new[]
+        {
+            new ScoreboardCoverage { Sport = "football", League = "college-football" },
+            new ScoreboardCoverage { Sport = "basketball", League = "mens-college-basketball" }
+        };
+        var follows = new[]
+        {
+            new ScoreboardFollow(10, "Big 12 · Football", "football", "college-football", "conference", null, new HashSet<string> { "2305", "2306" }, "Big 12"),
+            new ScoreboardFollow(11, "Big 12 · Men's Basketball", "basketball", "mens-college-basketball", "conference", null, new HashSet<string> { "2305", "2306" }, "Big 12"),
+            new ScoreboardFollow(12, "SEC · Football", "football", "college-football", "conference", null, new HashSet<string> { "333" }, "SEC")
+        };
+
+        // Resolution
+        Assert.Equal(new ScoreboardSelection("g:Big 12", Group: "Big 12"), ScoreboardSelection.Resolve("g:Big 12", null, null, coverage, follows));
+        Assert.Equal(new ScoreboardSelection("g:Big 12", Group: "Big 12"), ScoreboardSelection.Resolve("g:big 12", null, null, coverage, follows));
+        Assert.Equal(new ScoreboardSelection(""), ScoreboardSelection.Resolve("g:Unknown", null, null, coverage, follows));
+        Assert.Equal(new ScoreboardSelection(""), ScoreboardSelection.Resolve("g:", null, null, coverage, follows));
+
+        // Matching: each follow in the group checks its own sport and league
+        var cfbMemberGame = new ScoreboardGame { Provider = "espn", Sport = "football", League = "college-football", HomeTeamId = "2305", AwayTeamId = "999" };
+        var cfbNonMemberGame = new ScoreboardGame { Provider = "espn", Sport = "football", League = "college-football", HomeTeamId = "111", AwayTeamId = "222" };
+        var cbbMemberGame = new ScoreboardGame { Provider = "espn", Sport = "basketball", League = "mens-college-basketball", HomeTeamId = "999", AwayTeamId = "2306" };
+        var cbbNonMemberGame = new ScoreboardGame { Provider = "espn", Sport = "basketball", League = "mens-college-basketball", HomeTeamId = "444", AwayTeamId = "555" };
+        var otherSportGame = new ScoreboardGame { Provider = "espn", Sport = "baseball", League = "mlb", HomeTeamId = "2305", AwayTeamId = "999" };
+
+        var big12Follows = follows.Where(f => f.Kind == "conference" && string.Equals(f.Name, "Big 12", StringComparison.OrdinalIgnoreCase)).ToList();
+        Assert.Contains(big12Follows, f => f.Matches(cfbMemberGame));
+        Assert.DoesNotContain(big12Follows, f => f.Matches(cfbNonMemberGame));
+        Assert.Contains(big12Follows, f => f.Matches(cbbMemberGame));
+        Assert.DoesNotContain(big12Follows, f => f.Matches(cbbNonMemberGame));
+        Assert.DoesNotContain(big12Follows, f => f.Matches(otherSportGame));
+    }
+    [Fact]
     public void PhoneText_Matchup_formats_ranks_correctly_and_ignores_invalid_ranks()
     {
         var game = new ScoreboardGame

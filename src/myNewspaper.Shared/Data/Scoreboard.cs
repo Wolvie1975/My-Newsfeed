@@ -110,7 +110,7 @@ public sealed class ScoreboardCoverage
     public string? Availability { get; set; }
     public string Key => Sport + "|" + League;
 }
-public sealed record ScoreboardFollow(int Id, string Label, string Sport, string League, string Kind, string? TeamId, IReadOnlySet<string> Members)
+public sealed record ScoreboardFollow(int Id, string Label, string Sport, string League, string Kind, string? TeamId, IReadOnlySet<string> Members, string? Name = null)
 {
     public bool Matches(ScoreboardGame game) => game.Provider == "espn" && game.Sport == Sport && game.League == League && Kind switch
     {
@@ -120,7 +120,7 @@ public sealed record ScoreboardFollow(int Id, string Label, string Sport, string
         _ => false
     };
 }
-public sealed record ScoreboardSelection(string Value, string? Competition = null, int? FollowId = null, bool IsTop25 = false)
+public sealed record ScoreboardSelection(string Value, string? Competition = null, int? FollowId = null, bool IsTop25 = false, string? Group = null)
 {
     public static ScoreboardSelection Resolve(string? show, string? competition, int? followId,
         IReadOnlyList<ScoreboardCoverage> coverage, IReadOnlyList<ScoreboardFollow> follows)
@@ -133,11 +133,29 @@ public sealed record ScoreboardSelection(string Value, string? Competition = nul
             if (string.Equals(show, "top25", StringComparison.OrdinalIgnoreCase)) return new("top25", IsTop25: true);
             if (show.StartsWith("c:", StringComparison.Ordinal) && coverage.Any(c => c.Key == show[2..])) return new(show, show[2..]);
             if (show.StartsWith("f:", StringComparison.Ordinal) && int.TryParse(show[2..], out var id) && follows.FirstOrDefault(f => f.Id == id) is { } f) return ForFollow(f);
+            if (show.StartsWith("g:", StringComparison.Ordinal))
+            {
+                var groupName = show[2..];
+                if (!string.IsNullOrEmpty(groupName) && follows.Any(f => f.Kind == "conference" && string.Equals(f.Name, groupName, StringComparison.OrdinalIgnoreCase)))
+                {
+                    var canonical = follows.First(f => f.Kind == "conference" && string.Equals(f.Name, groupName, StringComparison.OrdinalIgnoreCase)).Name ?? groupName;
+                    return new("g:" + canonical, Group: canonical);
+                }
+            }
             return new("");
         }
         // Old bookmarks select their team/conference in preference to a conflicting league.
         if (follows.FirstOrDefault(f => f.Id == followId) is { } legacy) return ForFollow(legacy);
         if (string.Equals(competition, "top25", StringComparison.OrdinalIgnoreCase)) return new("top25", IsTop25: true);
+        if (competition is not null && competition.StartsWith("g:", StringComparison.Ordinal))
+        {
+            var groupName = competition[2..];
+            if (!string.IsNullOrEmpty(groupName) && follows.Any(f => f.Kind == "conference" && string.Equals(f.Name, groupName, StringComparison.OrdinalIgnoreCase)))
+            {
+                var canonical = follows.First(f => f.Kind == "conference" && string.Equals(f.Name, groupName, StringComparison.OrdinalIgnoreCase)).Name ?? groupName;
+                return new("g:" + canonical, Group: canonical);
+            }
+        }
         return coverage.Any(c => c.Key == competition) ? new("c:" + competition, competition) : new("");
     }
 }
@@ -158,7 +176,7 @@ public static class ScoreboardQuery
             var follows = origins.Where(f => coverage.Any(c => c.Sport == f.Sport && c.League == f.League))
                 .OrderBy(f => FollowKinds.Order(f.Kind)).ThenBy(f => f.Name).ThenBy(f => f.League)
                 .Select(f => new ScoreboardFollow(f.Id, EspnLeagues.FollowLabel(f.Kind, f.Name, f.Sport, f.League), f.Sport, f.League, f.Kind, f.TeamId,
-                    members.Where(m => m.FollowId == f.Id).Select(m => m.TeamId).ToHashSet())).ToList();
+                    members.Where(m => m.FollowId == f.Id).Select(m => m.TeamId).ToHashSet(), f.Name)).ToList();
             var selection = ScoreboardSelection.Resolve(show, competition, followId, coverage, follows);
             var selectedFollow = follows.FirstOrDefault(f => f.Id == selection.FollowId);
             var selected = coverage.FirstOrDefault(c => c.Key == selection.Competition);
@@ -171,13 +189,25 @@ public static class ScoreboardQuery
             {
                 query = query.Where(g => (g.League == "college-football" || g.League == "mens-college-basketball") && (g.HomeRank != null || g.AwayRank != null));
             }
+            else if (selection.Group is not null)
+            {
+                // Multi-sport conference group: skip the single-league SQL filter.
+            }
             else if (selected is not null)
             {
                 query = query.Where(g => g.Sport == selected.Sport && g.League == selected.League);
             }
             if (finalsOnly) query = query.Where(g => g.Status == "final" && g.Completed);
             var games = await query.ToListAsync(ct);
-            if (selectedFollow is not null) games = games.Where(selectedFollow.Matches).ToList();
+            if (selection.Group is not null)
+            {
+                var groupFollows = follows.Where(f => f.Kind == "conference" && string.Equals(f.Name, selection.Group, StringComparison.OrdinalIgnoreCase)).ToList();
+                games = games.Where(g => groupFollows.Any(f => f.Matches(g))).ToList();
+            }
+            else if (selectedFollow is not null)
+            {
+                games = games.Where(selectedFollow.Matches).ToList();
+            }
             List<ScoreboardGame>? top25Week = null;
             if (selection.IsTop25)
             {
