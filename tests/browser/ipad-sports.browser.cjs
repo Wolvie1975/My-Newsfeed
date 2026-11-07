@@ -47,7 +47,7 @@ const shots = lib.screenshots('ipad-sports');
             assert.equal(await page.locator('.ef-lead__title').evaluate((e) => getComputedStyle(e).fontSize), '36px');
             for (const table of await page.locator('.spf-tables tbody').all()) {
                 const rows = table.locator('tr');
-                assert(await rows.count() > 0, 'Table has rows');
+                assert((await rows.count()) > 0, 'Table has rows');
             }
         };
         for (const theme of lib.THEMES) {

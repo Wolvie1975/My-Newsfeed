@@ -2798,13 +2798,20 @@ body:has([data-scheme-dialog][open]) {
     display: none;
 }
 @media (min-width: 2560px) {
+    .pub .bs-home .bs-sheet .bs-col > .d-card:first-child .d-card__head {
+        min-width: 0;
+    }
     .pub .bs-home .bs-sheet .bs-col > .d-card:first-child .d-card__title {
         font-size: 12px;
         letter-spacing: 0.06em;
         white-space: nowrap;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
     .pub .bs-home .bs-sheet .bs-col > .d-card:first-child .d-card__head > .d-more {
         font-size: 12px;
+        flex-shrink: 0;
     }
     .pub .bs-home .d-episodes .d-card__title .d-card__count {
         display: none;

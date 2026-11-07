@@ -53,6 +53,7 @@
     [Parameter] public IReadOnlyList<BoxOfficeForecast> Rows { get; set; } = [];
     [Parameter] public BoxOfficeForecastSource? Source { get; set; }
     [Parameter] public DateTime NowUtc { get; set; }
-    private string Title => Kind == BoxOfficeForecastQuery.Preview
-        ? "Upcoming weekend preview — Predictions" : "Upcoming movie forecasts — Predictions";
+    private string Title => HomeCard
+        ? (Kind == BoxOfficeForecastQuery.Preview ? "Upcoming weekend preview" : "Upcoming movie forecasts")
+        : (Kind == BoxOfficeForecastQuery.Preview ? "Upcoming weekend preview — Predictions" : "Upcoming movie forecasts — Predictions");
 }
