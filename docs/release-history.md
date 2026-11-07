@@ -6,10 +6,15 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
+## Tech front: desks bottom rail and latest headlines beside the lead — November 7, 2026 (America/Chicago)
+
+Commit:
+- `4b1fdbb` Tech front: desks bottom rail and latest headlines beside the lead. Option A adopted for Tech front, reversing the October "category lists beside the lead" layout and matching Entertainment's middle-tier structure. Latest headlines (5 stories, `stories.Skip(1).Take(5)`) moved out of `.spf-main` into `<section class="ef-headlines-col tc-headlines-col">` alongside "All tech headlines →". Below 1920px, `.tc-headlines-col` sits under the lead in column 2. At 1920px+, `.tc-headlines-col` sits in column 3 beside the lead, while `.nf-desks` moves to row 3 full width across the page (3 desks across under a double rule, `border-top: 3px double var(--text)`), and "This week in Tech" banner sits in row 4. Tablet layout in `tablet.css` places `.tc-headlines-col` across row 3 below columns. Updated `docs/tech/tech-05-front-wide.md` and `tests/browser/tech-front.browser.cjs`.
+
 ## Section fronts: wider left column across all four fronts — November 7, 2026 (America/Chicago)
 
 Commit:
-- Section fronts: wider left column across all four fronts. Left column tracks unified across Sports, Entertainment, News, and Tech: 280px at 1024–1279px, 320px at 1280–1919px, 360px at 1920–2559px, and 400px from 2560px. Entertainment's right column (Next weekend) narrows to 260px at 1024–1279px and 280px from 1280px, with `white-space: nowrap` on predicted box office totals. Lead photo caps preserved at 640×320. Tested in `section-fronts.browser.cjs` across 1024, 1280, 1440, 1920, and 2560px viewports.
+- `6b8ad18` Section fronts: wider left column across all four fronts. Left column tracks unified across Sports, Entertainment, News, and Tech: 280px at 1024–1279px, 320px at 1280–1919px, 360px at 1920–2559px, and 400px from 2560px. Entertainment's right column (Next weekend) narrows to 260px at 1024–1279px and 280px from 1280px, with `white-space: nowrap` on predicted box office totals. Lead photo caps preserved at 640×320. Tested in `section-fronts.browser.cjs` across 1024, 1280, 1440, 1920, and 2560px viewports.
 
 ## News and Tech fronts: The day so far as a vertical timeline — November 7, 2026 (America/Chicago)
 

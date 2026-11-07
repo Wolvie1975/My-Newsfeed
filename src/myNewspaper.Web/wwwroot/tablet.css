@@ -986,7 +986,23 @@
         columns: 2;
         column-gap: 28px;
     }
-    .pub .tab-desktop .spf-cols:has(.nf-day) > .spf-main > .ef-headlines > li {
+    .pub .tab-desktop .spf-cols:has(.nf-day) > .ef-headlines-col.tc-headlines-col {
+        grid-column: 1 / -1;
+        grid-row: 3;
+        padding-right: 0;
+        border: 0;
+    }
+    .pub .tab-desktop .spf-cols:has(.nf-day) > .tc-headlines-col > .ef-label {
+        margin-top: 24px;
+        padding-top: 4px;
+        border-top: 1px solid var(--text);
+    }
+    .pub .tab-desktop .spf-cols:has(.nf-day) > .tc-headlines-col > .ef-headlines {
+        display: block;
+        columns: 2;
+        column-gap: 28px;
+    }
+    .pub .tab-desktop .spf-cols:has(.nf-day) > .tc-headlines-col > .ef-headlines > li {
         break-inside: avoid;
     }
 

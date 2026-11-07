@@ -258,15 +258,29 @@ fs.mkdirSync(shots, { recursive: true });
                     const front = document.querySelector('.tc-front');
                     const cols = front ? getComputedStyle(front).gridTemplateColumns.split(' ').length : 0;
                     const latest = document.querySelector('.tc-latest-grid');
-                    const latestHidden = !latest || getComputedStyle(latest).display === 'none';
+                    const latestCount = latest ? latest.querySelectorAll('li').length : 0;
                     const mainBox = document.querySelector('.spf-main')?.getBoundingClientRect();
-                    const desksBox = document.querySelector('.nf-desks')?.getBoundingClientRect();
-                    const aligned = mainBox && desksBox ? Math.abs(mainBox.top - desksBox.top) < 2 : false;
-                    return { cols, latestHidden, aligned };
+                    const headlinesBox = document.querySelector('.tc-headlines-col')?.getBoundingClientRect();
+                    const desks = document.querySelector('.nf-desks');
+                    const desksBox = desks?.getBoundingClientRect();
+                    const desksBorderTop = desks ? getComputedStyle(desks).borderTopStyle : '';
+                    const aligned = mainBox && headlinesBox ? Math.abs(mainBox.top - headlinesBox.top) < 4 : false;
+                    const desksBelow = mainBox && desksBox ? desksBox.top >= mainBox.bottom - 2 : false;
+                    return { cols, latestCount, aligned, desksBelow, desksBorderTop };
                 });
                 assert.equal(wideCheck.cols, 4, 'Tech front has 4 columns at 1920+');
-                assert.equal(wideCheck.latestHidden, true, 'Latest headlines hidden at 1920+');
-                assert.equal(wideCheck.aligned, true, 'Desks share top offset with main column at 1920+');
+                assert.equal(wideCheck.latestCount, 5, 'Latest headlines has 5 items at 1920+');
+                assert.equal(wideCheck.aligned, true, 'Latest headlines shares top offset with main column at 1920+');
+                assert.equal(wideCheck.desksBelow, true, 'Desks sit below main column at 1920+');
+                assert.equal(wideCheck.desksBorderTop, 'double', 'Desks sit under double rule at 1920+');
+            } else {
+                const below1920 = await page.evaluate(() => {
+                    const mainBox = document.querySelector('.spf-main')?.getBoundingClientRect();
+                    const headlinesBox = document.querySelector('.tc-headlines-col')?.getBoundingClientRect();
+                    const below = mainBox && headlinesBox ? headlinesBox.top >= mainBox.top : false;
+                    return { below };
+                });
+                assert.equal(below1920.below, true, 'Latest headlines sits below lead at <1920');
             }
 
             await page.screenshot({

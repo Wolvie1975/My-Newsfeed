@@ -80,17 +80,19 @@
                 </article>
 
                 <CoveredList Items="@covered.Take(2).ToList()" />
+            }
+        </div>
 
-                @if (stories.Count > 1)
-                {
-                    <h3 class="ef-label">Latest headlines</h3>
-                    <ul class="ef-headlines tc-latest-grid">
-                        @foreach (var item in stories.Skip(1).Take(4)) { @Headline(item, withCategory: true) }
-                    </ul>
-                }
+        <section class="ef-headlines-col tc-headlines-col" aria-labelledby="tc-latest-title">
+            <h3 id="tc-latest-title" class="ef-label@(stories.Count > 1 ? "" : " sr-only")">Latest headlines</h3>
+            @if (stories.Count > 1)
+            {
+                <ul class="ef-headlines tc-latest-grid">
+                    @foreach (var item in stories.Skip(1).Take(5)) { @Headline(item, withCategory: true) }
+                </ul>
             }
             <a class="ef-more" href="tech/news">All tech headlines <span aria-hidden="true">→</span></a>
-        </div>
+        </section>
 
         <aside class="ef-side spf-side">
             <TechJustReleased />

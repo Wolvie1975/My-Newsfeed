@@ -2960,6 +2960,20 @@ a.tvc-row__show:hover {
     .pub .tc-front > .spf-cols {
         grid-template-columns: 280px minmax(0, 2fr) minmax(280px, 1fr);
     }
+    .pub .tc-front > .spf-cols > .tc-headlines-col {
+        grid-column: 2;
+        grid-row: 2;
+        padding: 24px 24px 0;
+        border-right: 1px solid var(--row-border);
+    }
+    .pub .tc-front > .spf-cols > .spf-upcoming {
+        grid-column: 1;
+        grid-row: 1 / span 2;
+    }
+    .pub .tc-front > .spf-cols > .spf-side {
+        grid-column: 3;
+        grid-row: 1 / span 2;
+    }
     .pub .spf-front > .spf-cols > .spf-upcoming {
         padding-right: 0;
         border-right: 0;
@@ -5978,7 +5992,7 @@ a.tvc-row__show:hover {
     }
 }
 
-/* ---------- Tech front, 1920px and up: day so far · lead · desks · Just released + videos (docs/tech/tech-05-front-wide.md) ---------- */
+/* ---------- Tech front, 1920px and up: day so far · lead · headlines · Just released + videos (docs/tech/tech-05-front-wide.md) ---------- */
 @media (min-width: 1920px) {
     .pub .tc-front {
         display: grid;
@@ -5989,7 +6003,7 @@ a.tvc-row__show:hover {
         grid-column: 1 / -1;
     }
     .pub .tc-front > .spf-cols {
-        display: contents; /* its three children join the .tc-front grid */
+        display: contents; /* its four children join the .tc-front grid */
     }
 
     /* Row 2: the four columns. */
@@ -6004,16 +6018,12 @@ a.tvc-row__show:hover {
         padding: 20px 26px 0;
         border-left: 1px solid var(--row-border);
     }
-    .pub .tc-front > .nf-desks {
+    .pub .tc-front > .spf-cols > .tc-headlines-col {
         grid-column: 3;
         grid-row: 2;
-        display: flex;
-        flex-direction: column;
-        gap: 24px;
-        margin: 0;
         padding: 20px 24px 0;
-        border-top: 0;
         border-left: 1px solid var(--row-border);
+        border-right: 0;
     }
     .pub .tc-front > .spf-cols > .spf-side {
         grid-column: 4;
@@ -6028,13 +6038,22 @@ a.tvc-row__show:hover {
         padding-left: 0; /* the shared rule indents the second box as a second column */
         border-left: 0;
     }
-    .pub .tc-front > .tc-week-banner {
+    .pub .tc-front > .nf-desks {
+        grid-column: 1 / -1;
         grid-row: 3;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        column-gap: 48px;
+        margin-top: 32px;
+        padding: 16px 0 0;
+        border-top: 3px double var(--text);
+        border-left: 0;
     }
-
-    /* Latest headlines: the desks beside the lead already show the newest stories. */
-    .pub .tc-front .spf-main :is(.tc-latest-grid, .ef-label:has(+ .tc-latest-grid)) {
-        display: none;
+    .pub .tc-front > .nf-desks > :only-child {
+        grid-column: 1 / -1;
+    }
+    .pub .tc-front > .tc-week-banner {
+        grid-row: 4;
     }
 
     /* Tech videos in a ~460px column: thumbnail above the text rather than beside it. */
