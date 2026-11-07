@@ -6,9 +6,15 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
+## Section fronts: wider left column across all four fronts — November 7, 2026 (America/Chicago)
+
+Commit:
+- Section fronts: wider left column across all four fronts. Left column tracks unified across Sports, Entertainment, News, and Tech: 280px at 1024–1279px, 320px at 1280–1919px, 360px at 1920–2559px, and 400px from 2560px. Entertainment's right column (Next weekend) narrows to 260px at 1024–1279px and 280px from 1280px, with `white-space: nowrap` on predicted box office totals. Lead photo caps preserved at 640×320. Tested in `section-fronts.browser.cjs` across 1024, 1280, 1440, 1920, and 2560px viewports.
+
 ## News and Tech fronts: The day so far as a vertical timeline — November 7, 2026 (America/Chicago)
 
-Commit: The day so far on News and Tech fronts moves to the vertical timeline markup (`.spf-timeline .nf-day__line`), matching Entertainment's On screen and Sports' Upcoming games. Uses `spf-timeline__item` with category color indicators via `PhoneColors.ForCategory(item.CategoryName)`, right-aligned event times with accessible `.sr-only` repetition handling, and category · source meta lines. Added `white-space: nowrap` to `.ef-head a` so "All headlines →" never breaks onto two lines. Removed unused `.nf-agate` CSS rules. Updated `news-front.browser.cjs` and `tech-front.browser.cjs`.
+Commit:
+- `f49b3de` News and Tech fronts: The day so far as a vertical timeline. The day so far on News and Tech fronts moves to the vertical timeline markup (`.spf-timeline .nf-day__line`), matching Entertainment's On screen and Sports' Upcoming games. Uses `spf-timeline__item` with category color indicators via `PhoneColors.ForCategory(item.CategoryName)`, right-aligned event times with accessible `.sr-only` repetition handling, and category · source meta lines. Added `white-space: nowrap` to `.ef-head a` so "All headlines →" never breaks onto two lines. Removed unused `.nf-agate` CSS rules. Updated `news-front.browser.cjs` and `tech-front.browser.cjs`.
 
 ## YouTube phone channel picker: Categories and Channels headings — November 7, 2026 (America/Chicago)
 

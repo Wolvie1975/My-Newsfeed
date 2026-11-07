@@ -8,7 +8,7 @@ const base = lib.base;
     const b = await chromium.launch();
     try {
         const p = await lib.readerPage(b);
-        const widths = lib.widths([390, 768, 1024, 1440, 1920, 2560]);
+        const widths = lib.widths([390, 768, 1024, 1280, 1440, 1920, 2560]);
         for (const theme of lib.THEMES) {
             for (const width of widths) {
                 await p.setViewportSize({ width, height: 1100 });
@@ -89,6 +89,18 @@ const base = lib.base;
 
                     // Sports, 1024px and up:
                     if (route === 'sports' && width >= 1024) {
+                        const expectedLeft = width >= 2560 ? 400 : width >= 1920 ? 360 : width >= 1280 ? 320 : 280;
+                        const upcoming = p.locator('.spf-front > .spf-cols > .spf-upcoming');
+                        if (await upcoming.isVisible()) {
+                            const box = await upcoming.boundingBox();
+                            if (box) {
+                                assert(
+                                    Math.abs(box.width - expectedLeft) <= 1.5,
+                                    `Sports left column is ${expectedLeft}px at ${width} (got ${box.width})`,
+                                );
+                            }
+                        }
+
                         // .spf-tables sits below .spf-cols at full width
                         const tables = p.locator('.spf-tables');
                         const cols = p.locator('.spf-cols');
@@ -159,8 +171,15 @@ const base = lib.base;
                         // On screen vertical timeline
                         const onScreen = p.locator('.ef-onscreen-col');
                         if (await onScreen.isVisible()) {
-                            const lead = p.locator('.ef-main');
+                            const expectedLeft = width >= 2560 ? 400 : width >= 1920 ? 360 : width >= 1280 ? 320 : 280;
                             const osBox = await onScreen.boundingBox();
+                            if (osBox) {
+                                assert(
+                                    Math.abs(osBox.width - expectedLeft) <= 1.5,
+                                    `Entertainment left column is ${expectedLeft}px at ${width} (got ${osBox.width})`,
+                                );
+                            }
+                            const lead = p.locator('.ef-main');
                             const leadBox = await lead.boundingBox();
                             if (osBox && leadBox) {
                                 assert(osBox.x + osBox.width <= leadBox.x + 8, 'On screen sits left of lead');
@@ -169,6 +188,19 @@ const base = lib.base;
                             const items = onScreen.locator('.ef-onscreen__item');
                             const count = await items.count();
                             assert(count <= 6, `At most 6 On screen items (got ${count})`);
+                        }
+
+                        // Right column width
+                        const side = p.locator('.ef-cols > .ef-side');
+                        if (await side.isVisible()) {
+                            const box = await side.boundingBox();
+                            const expectedRight = width === 1024 ? 260 : 280;
+                            if (box) {
+                                assert(
+                                    Math.abs(box.width - expectedRight) <= 1.5,
+                                    `Entertainment right column is ${expectedRight}px at ${width} (got ${box.width})`,
+                                );
+                            }
                         }
 
                         // Right column has no ef-tv and no ef-theaters
@@ -200,13 +232,32 @@ const base = lib.base;
                     }
                 }
 
-                // Tech front unchanged: its spf-cols geometry matches the current check
+                // News and Tech fronts left column width checks:
                 if (width >= 1024) {
+                    const expectedLeft = width >= 2560 ? 400 : width >= 1920 ? 360 : width >= 1280 ? 320 : 280;
+
+                    await p.goto(base + '/news', { waitUntil: 'networkidle' });
+                    const newsDay = p.locator('.nf .spf-cols > .nf-day');
+                    if (await newsDay.isVisible()) {
+                        const box = await newsDay.boundingBox();
+                        if (box) {
+                            assert(
+                                Math.abs(box.width - expectedLeft) <= 1.5,
+                                `News left column is ${expectedLeft}px at ${width} (got ${box.width})`,
+                            );
+                        }
+                    }
+
                     await p.goto(base + '/tech', { waitUntil: 'networkidle' });
-                    const techCols = p.locator('.tc-front > .spf-cols');
-                    if (await techCols.isVisible()) {
-                        const colsBox = await techCols.boundingBox();
-                        assert(colsBox && colsBox.width > 0, 'Tech spf-cols is visible and rendered');
+                    const techDay = p.locator('.tc-front .spf-cols > .spf-upcoming');
+                    if (await techDay.isVisible()) {
+                        const box = await techDay.boundingBox();
+                        if (box) {
+                            assert(
+                                Math.abs(box.width - expectedLeft) <= 1.5,
+                                `Tech left column is ${expectedLeft}px at ${width} (got ${box.width})`,
+                            );
+                        }
                     }
                 }
             }

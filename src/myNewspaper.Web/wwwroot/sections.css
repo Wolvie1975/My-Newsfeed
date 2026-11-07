@@ -381,7 +381,7 @@
     }
     .pub .ef-cols {
         display: grid;
-        grid-template-columns: 250px minmax(0, 1fr) 280px;
+        grid-template-columns: 280px minmax(0, 1fr) 260px;
         column-gap: 32px;
         row-gap: 24px;
         padding-top: 20px;
@@ -408,15 +408,19 @@
         margin-left: 0;
         margin-right: 0;
     }
+    :root .pub .ef-cols .ef-lead__image,
     .pub .ef-lead__image {
         max-width: 640px;
+        max-height: 320px;
         height: auto;
         aspect-ratio: 2 / 1;
         margin: 0;
     }
+    :root .pub .ef-cols .ef-lead__image img,
     .pub .ef-lead__image img {
         width: 100%;
         height: 100%;
+        max-height: 320px;
         object-fit: cover;
     }
     .pub .ef-headlines-col .ef-headlines {
@@ -542,6 +546,7 @@
         display: table-cell;
         padding-left: 10px !important;
         color: var(--text-2);
+        white-space: nowrap;
     }
     .pub .ef-tv .ef-label,
     .pub .ef-theaters .ef-label {
@@ -569,7 +574,7 @@
 }
 @media (min-width: 1280px) {
     .pub .ef-cols {
-        grid-template-columns: 270px minmax(0, 640px) minmax(0, 1fr) 300px;
+        grid-template-columns: 320px minmax(0, 640px) minmax(0, 1fr) 280px;
     }
     .pub .ef-cols .ef-headlines-col {
         grid-column: auto;
@@ -2946,8 +2951,14 @@ a.tvc-row__show:hover {
         padding-top: 20px;
     }
     .pub .spf-front > .spf-cols {
-        grid-template-columns: 250px minmax(0, 640px) minmax(0, 1fr);
+        grid-template-columns: 280px minmax(0, 640px) minmax(0, 1fr);
         column-gap: 28px;
+    }
+    .pub .nf .spf-cols {
+        grid-template-columns: 280px minmax(0, 2fr) minmax(280px, 1fr);
+    }
+    .pub .tc-front > .spf-cols {
+        grid-template-columns: 280px minmax(0, 2fr) minmax(280px, 1fr);
     }
     .pub .spf-front > .spf-cols > .spf-upcoming {
         padding-right: 0;
@@ -3118,6 +3129,17 @@ a.tvc-row__show:hover {
     .pub .spf-table td {
         padding: 6px 4px;
         border-top: 1px dotted var(--row-border);
+    }
+}
+@media (min-width: 1280px) {
+    .pub .spf-front > .spf-cols {
+        grid-template-columns: 320px minmax(0, 640px) minmax(0, 1fr);
+    }
+    .pub .nf .spf-cols {
+        grid-template-columns: 320px minmax(0, 2fr) minmax(280px, 1fr);
+    }
+    .pub .tc-front > .spf-cols {
+        grid-template-columns: 320px minmax(0, 2fr) minmax(280px, 1fr);
     }
 }
 
@@ -5880,7 +5902,13 @@ a.tvc-row__show:hover {
 /* ---------- News and Sports fronts, 1920px and up (wide-screens-4k-handoff.md) ---------- */
 @media (min-width: 1920px) {
     .pub .nf .spf-cols {
-        grid-template-columns: 300px minmax(0, 1.8fr) minmax(0, 1.6fr);
+        grid-template-columns: 360px minmax(0, 1.8fr) minmax(0, 1.6fr);
+    }
+    .pub .spf-front > .spf-cols {
+        grid-template-columns: 360px minmax(0, 640px) minmax(0, 1fr);
+    }
+    .pub .ef-cols {
+        grid-template-columns: 360px minmax(0, 640px) minmax(0, 1fr) 280px;
     }
     .pub .spf-side {
         display: grid;
@@ -5895,7 +5923,13 @@ a.tvc-row__show:hover {
 }
 @media (min-width: 2560px) {
     .pub .nf .spf-cols {
-        grid-template-columns: 320px minmax(0, 1.6fr) minmax(0, 2.4fr);
+        grid-template-columns: 400px minmax(0, 1.6fr) minmax(0, 2.4fr);
+    }
+    .pub .spf-front > .spf-cols {
+        grid-template-columns: 400px minmax(0, 640px) minmax(0, 1fr);
+    }
+    .pub .ef-cols {
+        grid-template-columns: 400px minmax(0, 640px) minmax(0, 1fr) 280px;
     }
     .pub .spf-side {
         grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -5948,7 +5982,7 @@ a.tvc-row__show:hover {
 @media (min-width: 1920px) {
     .pub .tc-front {
         display: grid;
-        grid-template-columns: 300px minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1fr);
+        grid-template-columns: 360px minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1fr);
         align-items: start;
     }
     .pub .tc-front > :is(.nf-brief, .tc-week-banner) {
@@ -6030,6 +6064,9 @@ a.tvc-row__show:hover {
     }
 }
 @media (min-width: 2560px) {
+    .pub .tc-front {
+        grid-template-columns: 400px minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1fr);
+    }
     :root:is([data-color-scheme], :not([data-color-scheme])) .pub .video-front .videos {
         grid-template-columns: repeat(6, minmax(0, 1fr));
     }
