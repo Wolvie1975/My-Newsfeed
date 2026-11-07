@@ -545,52 +545,31 @@
         border-radius: 0;
         background: none;
     }
-    .pub .tab-desktop .ef-screen {
-        padding: 2px 0 18px;
-        border-bottom: 1px solid var(--text);
-    }
-    .pub .tab-desktop .ef-screen .ef-head h2 {
-        font-family: var(--font-serif);
-        font-size: 26px;
-        font-weight: 700;
-    }
-    .pub .tab-desktop .ef-screen__list {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-        gap: 18px;
-        margin-top: 4px;
-    }
-    .pub .tab-desktop .ef-screen__item {
-        grid-template-columns: 64px minmax(0, 1fr);
-        padding: 0;
-        border: 0;
-    }
-    .pub .tab-desktop .ef-screen__item .ef-poster {
-        width: 64px;
-    }
-    .pub .tab-desktop .ef-screen__item .ef-when {
-        font-size: 12px;
-    }
-    .pub .tab-desktop .ef-screen__title {
-        margin-top: 2px;
-        font-size: 17px;
-    }
-    .pub .tab-desktop .ef-screen__item .ef-where {
-        margin-top: 2px;
-        font-size: 13px;
-    }
     .pub .tab-desktop .ef-cols {
         display: grid;
-        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-        gap: 0;
+        grid-template-columns: 250px minmax(0, 1fr);
+        column-gap: 24px;
+        row-gap: 24px;
         padding-top: 20px;
     }
-    .pub .tab-desktop .ef-main {
+    .pub .tab-desktop .ef-cols .ef-onscreen-col {
+        grid-column: 1;
+        grid-row: 1 / span 3;
+    }
+    .pub .tab-desktop .ef-cols .ef-main {
+        grid-column: 2;
+        grid-row: 1;
         gap: 0;
         padding-right: 0;
         border-right: 0;
     }
-    .pub .tab-desktop .ef-side {
+    .pub .tab-desktop .ef-cols .ef-headlines-col {
+        grid-column: 2;
+        grid-row: 2;
+    }
+    .pub .tab-desktop .ef-cols .ef-side {
+        grid-column: 2;
+        grid-row: 3;
         gap: 26px;
         padding-left: 0;
     }
@@ -780,63 +759,6 @@
     /* Scroll the current tab into view: see the note below. */
 
     /* ---------- Entertainment (docs/ipad/ipad-03-entertainment.md) ---------- */
-    .pub .tab-desktop .ef-screen__list {
-        display: flex;
-        flex-wrap: nowrap;
-        gap: 16px;
-        margin-inline: -24px;
-        padding: 2px 24px 10px;
-        overflow-x: auto;
-        scroll-snap-type: x proximity;
-        scroll-padding-inline: 24px;
-        scrollbar-width: none;
-        -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 56px), transparent);
-        mask-image: linear-gradient(90deg, #000 calc(100% - 56px), transparent);
-    }
-    .pub .tab-desktop .ef-screen__list > li {
-        flex: 0 0 168px;
-        scroll-snap-align: start;
-    }
-    .pub .tab-desktop .ef-screen__item {
-        display: flex;
-        flex-direction: column; /* tall poster on top, text under it */
-        gap: 8px;
-    }
-    .pub .tab-desktop .ef-screen__item .ef-poster {
-        width: 100%;
-        height: auto;
-        aspect-ratio: 2 / 3;
-        border-radius: 10px;
-    }
-
-    /* Lead full width, then two equal columns. */
-    .pub .tab-desktop .ef-cols {
-        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    }
-    /* .ef-main holds article.ef-lead. Unwrapping it lets the lead span both columns. */
-    .pub .tab-desktop .ef-main {
-        display: contents;
-    }
-    .pub .tab-desktop .ef-cols .ef-lead {
-        grid-column: 1 / -1;
-        grid-row: 1;
-        padding-bottom: 20px;
-        margin-bottom: 4px;
-        border-bottom: 1px solid var(--text);
-    }
-    .pub .tab-desktop .ef-cols > .ef-headlines-col {
-        grid-column: 1;
-        padding-right: 20px;
-    }
-    .pub .tab-desktop .ef-cols > .ef-side {
-        grid-column: 2;
-        grid-row: 2;
-        padding-left: 20px;
-        border-left: 1px solid var(--row-border);
-    }
-    .pub .tab-desktop .ef-tv {
-        display: block; /* sections.css hides it below 1024 */
-    }
     .pub .tab-desktop .ef-lead__image {
         width: 100%;
         height: auto;
@@ -857,7 +779,6 @@
     .pub .tab-desktop .ef-headlines {
         grid-template-columns: minmax(0, 1fr);
     }
-    .pub .tab-desktop .ef-screen__list::-webkit-scrollbar,
     .pub .tab-desktop .section-tabs::-webkit-scrollbar {
         display: none;
     }

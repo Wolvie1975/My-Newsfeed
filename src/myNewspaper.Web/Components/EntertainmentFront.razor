@@ -16,37 +16,45 @@
         <div class="nf-brief__tiles">@Tiles</div>
     </section>
 
-    <section class="ef-screen" aria-labelledby="ef-screen-title">
-        <div class="ef-head"><h2 id="ef-screen-title">On screen</h2><a href="movies">All releases <span aria-hidden="true">→</span></a></div>
-        @if (agendaUnavailable)
-        {
-            <p class="updated" role="status">Schedules are temporarily unavailable. Please try again.</p>
-        }
-        else if (onScreen.Count == 0)
-        {
-            <p class="ef-empty">No movie or tracked TV highlights are listed yet.</p>
-        }
-        else
-        {
-            <ul class="ef-screen__list">
-                @foreach (var item in onScreen)
-                {
-                    <li>
-                        <a class="ef-screen__item" href="@item.Href">
-                            <MoviePoster Url="@item.Poster" Title="@item.Title" Class="ef-poster" />
-                            <span class="ef-screen__text">
-                                <span class="ef-when @(item.Tonight ? "ef-when--tonight" : null)">@item.When</span>
-                                <b class="ef-screen__title">@item.Title</b>
-                                <span class="ef-where">@item.Where</span>
-                            </span>
-                        </a>
-                    </li>
-                }
-            </ul>
-        }
-    </section>
-
     <div class="ef-cols">
+        <section class="ef-onscreen-col ef-screen" aria-labelledby="ef-onscreen-h">
+            <div class="ef-onscreen__head">
+                <h2 id="ef-onscreen-h">On screen</h2>
+                <a href="movies">All releases <span aria-hidden="true">→</span></a>
+            </div>
+            <span class="ef-onscreen__sub">Tonight and the week ahead · CT</span>
+            @if (agendaUnavailable)
+            {
+                <p class="updated" role="status">Schedules are temporarily unavailable. Please try again.</p>
+            }
+            else if (onScreen.Count == 0)
+            {
+                <p class="ef-empty">No movie or tracked TV highlights are listed yet.</p>
+            }
+            else
+            {
+                <ol class="ef-onscreen">
+                    @foreach (var item in onScreen)
+                    {
+                        <li class="ef-onscreen__item @item.Color">
+                            <span class="ef-onscreen__date @(item.Tonight ? "ef-onscreen__date--tonight" : null)"
+                                  aria-hidden="@(item.FirstOfDay ? null : "true")">
+                                @(item.FirstOfDay ? item.DateLabel : null)
+                            </span>
+                            <span class="ef-onscreen__body">
+                                @if (!item.FirstOfDay) { <span class="sr-only">@item.DateLabel: </span> }
+                                <a class="ef-screen__item" href="@item.Href">
+                                    <MoviePoster Url="@item.Poster" Title="@item.Title" Class="ef-poster" />
+                                    <span class="ef-screen__text"><b class="ef-screen__title">@item.Title</b>
+                                        <span class="ef-onscreen__meta"><span class="ef-onscreen__kind">@item.Kind</span> · @item.Where</span></span>
+                                </a>
+                            </span>
+                        </li>
+                    }
+                </ol>
+            }
+        </section>
+
         <div class="ef-main">
             @if (newsUnavailable)
             {
@@ -174,25 +182,6 @@
                     }
                 }
                 <p class="ef-links"><a href="box-office/weekend-preview">Weekend predictions <span aria-hidden="true">→</span></a><a href="box-office/movie-forecasts">Forecasts <span aria-hidden="true">→</span></a></p>
-            </section>
-
-            <section class="ef-tv" aria-labelledby="ef-tv-title">
-                <h2 id="ef-tv-title" class="ef-label">Tonight on TV</h2>
-                @if (episodes.Count == 0)
-                {
-                    <p class="ef-empty">No tracked episodes are listed tonight.</p>
-                }
-                @foreach (var show in EntertainmentEpisodeBatch.Group(episodes).Take(4))
-                {
-                    var first = show.First;
-                    <a class="ef-tv__item" href="tv">
-                        <MoviePoster Url="@first.Poster" Title="@first.SeriesTitle" Class="ef-poster" />
-                        <span><b>@first.SeriesTitle</b><span class="ef-where">@(show.Count > 1
-                            ? string.Join(" · ", new[] { first.Platform, $"{show.Count} new episodes", show.Range }.Where(p => !string.IsNullOrEmpty(p)))
-                            : EpisodeLine(first))</span></span>
-                    </a>
-                }
-                <a class="ef-more" href="tv">Track a series <span aria-hidden="true">→</span></a>
             </section>
         </aside>
     </div>
@@ -365,7 +354,19 @@
 </div>
 
 @code {
-    private sealed record ScreenItem(string Title, string? Poster, string When, string Where, string Href, bool Tonight, DateOnly? Date = null);
+    private sealed record ScreenItem(
+        string Title,
+        string? Poster,
+        string Where,
+        string Href,
+        bool Tonight,
+        DateOnly? Day,
+        string Kind,
+        string Color,
+        string DateLabel,
+        DateTime? TimeSort = null,
+        bool FirstOfDay = false
+    );
 
     private DateTime nowUtc;
     private IReadOnlyList<FeedItem> stories = [];
@@ -414,50 +415,114 @@
         catch (Exception ex) when (DataFailures.IsReadFailure(ex))
         { desks = []; Log.LogError(ex, "Could not read entertainment category headlines."); }
 
-        // On screen: one card per tracked show, then the next releases, five in all.
+        // On screen: up to 6 items as a vertical timeline: tonight's episodes first, then movies and Friday theatricals.
         try
         {
             episodes = await TvQuery.GetOnDateAsync(db, Reader.Viewer, Dates, today, Ct);
-            var movies = (await MoviesQuery.GetAsync(db, today, null, null, null, null, take: 4, ct: Ct)).Items;
+            var movies = (await MoviesQuery.GetAsync(db, today, null, null, null, null, take: 12, ct: Ct)).Items;
             weekMovies = movies;
-            // Phones: the same items as a timeline, tonight's episodes first.
-            screenLine = episodes.Take(2)
+            theaterFriday = MoviesQuery.HomeTheatricalFriday(today);
+            theatrical = await MoviesQuery.GetFridayTheatricalAsync(db, today, ct: Ct);
+
+            // Phones: deduplicate releases for the phone timeline
+            var phoneCandidates = episodes.Take(2)
                 .Select(e => new TimelineItem("Tonight", e.SeriesTitle,
                     string.Join(" · ", new[] { EpisodeCode(e), e.StartsUtc is { } start ? Dates.Time(start) : null }.Where(p => !string.IsNullOrEmpty(p))),
                     e.Platform, "tv", PhoneColors.ForRelease("tv")))
                 .Concat(movies.Select(m => new TimelineItem(ShortDate(m.Date), m.Title, MoviesQuery.Types.GetValueOrDefault(m.Type, m.Type),
-                    m.Platform, "movies", PhoneColors.ForRelease(m.Type))))
+                    m.Platform, "movies", PhoneColors.ForRelease(m.Type))));
+            screenLine = EntertainmentReleases.Deduplicate(phoneCandidates, i => i.Title, i => i.Time == "Tonight" ? today : null, _ => null)
                 .Take(4).ToList();
-            theaterFriday = MoviesQuery.HomeTheatricalFriday(today);
-            theatrical = await MoviesQuery.GetFridayTheatricalAsync(db, today, ct: Ct);
-            var screenItems = EntertainmentEpisodeBatch.Group(episodes).Take(2)
-                .Select(show =>
-                {
-                    var e = show.First;
-                    var where = show.Count > 1
-                        ? string.Join(" · ", new[] { e.Platform, $"{show.Count} episodes" }.Where(p => !string.IsNullOrEmpty(p)))
-                        : EpisodeWhere(e);
-                    return new ScreenItem(e.SeriesTitle, e.Poster,
-                        "Tonight" + (e.StartsUtc is { } start ? " · " + Dates.Time(start) : ""), where, "tv", true);
-                })
-                .Concat(movies.Select(m => new ScreenItem(m.Title, m.Poster,
-                    m.Date?.ToString("ddd, MMM d", System.Globalization.CultureInfo.InvariantCulture) ?? "Date to be announced",
-                    m.Platform ?? MoviesQuery.Types.GetValueOrDefault(m.Type, m.Type), "movies", false, m.Date)))
-                .Take(5).ToList();
+
+            // Desktop On screen: build candidates from episodes, upcoming movies, and Friday theatrical releases.
+            var episodeItems = EntertainmentEpisodeBatch.Group(episodes).Select(show =>
+            {
+                var e = show.First;
+                var where = show.Count > 1
+                    ? string.Join(" · ", new[] { e.Platform, $"{show.Count} episodes", show.Range }.Where(p => !string.IsNullOrEmpty(p)))
+                    : EpisodeWhere(e);
+                var timeLabel = e.StartsUtc is { } start ? "\n" + Dates.Time(start) : "";
+                return new ScreenItem(
+                    e.SeriesTitle,
+                    e.Poster,
+                    where,
+                    "tv",
+                    Tonight: true,
+                    Day: today,
+                    Kind: "TV",
+                    Color: PhoneColors.ForRelease("tv"),
+                    DateLabel: "Tonight" + timeLabel,
+                    TimeSort: e.StartsUtc);
+            });
+
+            var movieItems = movies.Select(m =>
+            {
+                var isStreamer = m.Type == "subscription" && !string.IsNullOrWhiteSpace(m.Platform);
+                var kind = isStreamer ? m.Platform! : MoviesQuery.Types.GetValueOrDefault(m.Type, m.Type);
+                var where = m.Type == "theatrical" ? "In theaters"
+                    : m.Type.StartsWith("digital", StringComparison.Ordinal) ? "Buy or rent"
+                    : isStreamer ? "Streaming"
+                    : m.Type == "disc" ? "4K, Blu-ray, DVD"
+                    : (m.Platform ?? kind);
+                var dateLabel = m.Date?.ToString("ddd\nMMM d", System.Globalization.CultureInfo.InvariantCulture) ?? "TBA";
+                return new ScreenItem(
+                    m.Title,
+                    m.Poster,
+                    where,
+                    "movies",
+                    Tonight: false,
+                    Day: m.Date,
+                    Kind: kind,
+                    Color: PhoneColors.ForRelease(m.Type),
+                    DateLabel: dateLabel);
+            });
+
+            var candidates = episodeItems.Concat(movieItems);
             if (theaterFriday is not null)
             {
-                foreach (var m in theatrical)
+                var theatricalItems = theatrical.Select(m =>
                 {
-                    if (screenItems.Count >= 8) break;
-                    if (!screenItems.Any(s => string.Equals(s.Title, m.Title, StringComparison.OrdinalIgnoreCase) && s.Date == m.Date))
-                    {
-                        screenItems.Add(new ScreenItem(m.Title, m.Poster,
-                            m.Date?.ToString("ddd, MMM d", System.Globalization.CultureInfo.InvariantCulture) ?? "Date to be announced",
-                            "In theaters", "movies?type=theatrical", false, m.Date));
-                    }
-                }
+                    var dateLabel = m.Date?.ToString("ddd\nMMM d", System.Globalization.CultureInfo.InvariantCulture) ?? "TBA";
+                    return new ScreenItem(
+                        m.Title,
+                        m.Poster,
+                        "In theaters",
+                        "movies?type=theatrical",
+                        Tonight: false,
+                        Day: m.Date,
+                        Kind: "In theaters",
+                        Color: PhoneColors.ForRelease("theatrical"),
+                        DateLabel: dateLabel);
+                });
+                candidates = candidates.Concat(theatricalItems);
             }
-            onScreen = screenItems;
+
+            var deduped = EntertainmentReleases.Deduplicate(
+                candidates,
+                s => s.Title,
+                s => s.Day,
+                s => s.Poster,
+                s => s.Tonight);
+
+            var sorted = deduped
+                .OrderBy(s => !s.Tonight)
+                .ThenBy(s => s.Day is null)
+                .ThenBy(s => s.Day)
+                .ThenBy(s => s.TimeSort)
+                .Take(6)
+                .ToList();
+
+            var finalItems = new List<ScreenItem>();
+            DateOnly? lastDay = null;
+            bool? lastTonight = null;
+            foreach (var item in sorted)
+            {
+                var isFirst = item.Tonight != lastTonight || item.Day != lastDay;
+                lastTonight = item.Tonight;
+                lastDay = item.Day;
+                finalItems.Add(item with { FirstOfDay = isFirst });
+            }
+            onScreen = finalItems;
         }
         catch (Exception ex) when (DataFailures.IsReadFailure(ex))
         { agendaUnavailable = true; onScreen = []; screenLine = []; weekMovies = []; episodes = []; theatrical = []; Log.LogError(ex, "Could not read entertainment schedules."); }

@@ -125,6 +125,102 @@
     display: block;
     font-size: 15px;
 }
+.pub .ef-onscreen-col {
+    display: flex;
+    flex-direction: column;
+}
+.pub .ef-onscreen__head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+}
+.pub .ef-onscreen__head h2 {
+    font-family: var(--font-serif);
+    font-size: 26px;
+    font-weight: 700;
+}
+.pub .ef-onscreen__sub {
+    display: block;
+    padding: 4px 0 12px;
+    border-bottom: 2px solid var(--text);
+    color: var(--text-2);
+    font-size: 12px;
+}
+.pub .ef-onscreen {
+    margin: 0;
+    padding: 12px 0 0;
+    list-style: none;
+}
+.pub .ef-onscreen__item {
+    display: grid;
+    grid-template-columns: 64px minmax(0, 1fr);
+}
+.pub .ef-onscreen__date {
+    padding: 3px 10px 0 0;
+    color: var(--text-2);
+    font-size: 12px;
+    font-weight: 800;
+    line-height: 1.3;
+    text-align: right;
+    white-space: pre-line;
+}
+.pub .ef-onscreen__date--tonight {
+    color: var(--live, #b0001e);
+}
+:root[data-theme='dark'] .pub .ef-onscreen__date--tonight {
+    color: #ff8a99;
+}
+.pub .ef-onscreen__body {
+    position: relative;
+    padding: 0 0 18px 14px;
+    border-left: 2px solid var(--row-border);
+}
+.pub .ef-onscreen__item:last-child .ef-onscreen__body {
+    padding-bottom: 0;
+}
+.pub .ef-onscreen__body::before {
+    content: '';
+    position: absolute;
+    top: 4px;
+    left: -6px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--dot);
+}
+.pub .ef-onscreen__body .ef-screen__item {
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr);
+    align-items: start;
+    gap: 10px;
+    padding: 0;
+    border: 0;
+    color: var(--text);
+    text-decoration: none;
+}
+.pub .ef-onscreen__body .ef-poster {
+    width: 34px;
+    height: 50px;
+    border-radius: 3px;
+}
+.pub .ef-onscreen__body .ef-screen__title {
+    display: block;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.3;
+    white-space: normal;
+}
+.pub .ef-onscreen__meta {
+    display: block;
+    margin-top: 2px;
+    color: var(--text-2);
+    font-size: 12px;
+}
+.pub .ef-onscreen__kind {
+    color: var(--dot);
+    font-size: 12px;
+    font-weight: 800;
+}
 .pub .ef-cols,
 .pub .ef-main,
 .pub .ef-side {
@@ -282,45 +378,21 @@
         border-radius: 0;
         background: none;
     }
-    .pub .ef-screen {
-        padding: 2px 0 18px;
-        border-bottom: 1px solid var(--text);
-    }
-    .pub .ef-screen .ef-head h2 {
-        font-family: var(--font-serif);
-        font-size: 26px;
-        font-weight: 700;
-    }
-    .pub .ef-screen__list {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-        gap: 18px;
-        margin-top: 4px;
-    }
-    .pub .ef-screen__item {
-        grid-template-columns: 64px minmax(0, 1fr);
-        padding: 0;
-        border: 0;
-    }
-    .pub .ef-screen__item .ef-poster {
-        width: 64px;
-    }
-    .pub .ef-screen__item .ef-when {
-        font-size: 12px;
-    }
-    .pub .ef-screen__title {
-        margin-top: 2px;
-        font-size: 17px;
-    }
-    .pub .ef-screen__item .ef-where {
-        margin-top: 2px;
-        font-size: 13px;
-    }
     .pub .ef-cols {
         display: grid;
-        grid-template-columns: minmax(0, 640px) minmax(0, 1fr) 340px;
+        grid-template-columns: 250px minmax(0, 1fr) 280px;
         column-gap: 32px;
+        row-gap: 24px;
         padding-top: 20px;
+    }
+    .pub .ef-cols .ef-headlines-col {
+        grid-column: 2;
+    }
+    .pub .ef-cols .ef-side {
+        grid-column: 3;
+        grid-row: 1 / span 2;
+        gap: 26px;
+        padding-left: 0;
     }
     .pub .ef-main {
         gap: 0;
@@ -492,6 +564,18 @@
     .pub .ef-tv__item .ef-where {
         margin-top: 2px;
         font-size: 13px;
+    }
+}
+@media (min-width: 1280px) {
+    .pub .ef-cols {
+        grid-template-columns: 270px minmax(0, 640px) minmax(0, 1fr) 300px;
+    }
+    .pub .ef-cols .ef-headlines-col {
+        grid-column: auto;
+    }
+    .pub .ef-cols .ef-side {
+        grid-column: auto;
+        grid-row: auto;
     }
 }
 
@@ -2939,6 +3023,66 @@ a.tvc-row__show:hover {
         background: none;
         font-size: 13px;
         text-align: right;
+    }
+    .pub .spf-timeline {
+        margin: 12px 0 0;
+        padding: 0;
+        list-style: none;
+    }
+    .pub .spf-timeline__item {
+        display: grid;
+        grid-template-columns: 60px minmax(0, 1fr);
+    }
+    .pub .spf-timeline__time {
+        padding: 3px 10px 0 0;
+        color: var(--text-2);
+        font-size: 12px;
+        font-weight: 800;
+        text-align: right;
+        white-space: nowrap;
+    }
+    .pub .spf-timeline__body {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        min-height: 44px;
+        padding: 0 0 16px 14px;
+        border-left: 2px solid var(--row-border);
+    }
+    .pub .spf-timeline__item:last-child .spf-timeline__body {
+        padding-bottom: 0;
+    }
+    .pub .spf-timeline__body::before {
+        content: '';
+        position: absolute;
+        top: 4px;
+        left: -6px;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--dot);
+    }
+    .pub .spf-timeline__body a {
+        display: block;
+        color: var(--text);
+        font-size: 14px;
+        font-weight: 700;
+        line-height: 1.3;
+        text-decoration: none;
+    }
+    .pub .spf-timeline__meta {
+        color: var(--text-2);
+        font-size: 12px;
+    }
+    .pub .spf-timeline__sport {
+        color: var(--dot);
+        font-size: 12px;
+        font-weight: 800;
+    }
+    .pub .spf-timeline__meta b {
+        color: var(--text);
+        font-size: 12px;
     }
     .pub .spf-main {
         padding: 0 24px;
@@ -5867,12 +6011,6 @@ a.tvc-row__show:hover {
 
 /* ---------- Entertainment front, 1920px and up (wide-screens-4k-handoff.md) ---------- */
 @media (min-width: 1920px) {
-    .pub .ef-screen__list {
-        grid-template-columns: repeat(
-            auto-fill,
-            minmax(380px, 1fr)
-        ); /* kept from the old block: 4 at 1920, 6 at 2560 */
-    }
     .pub .ef-cols > .ef-main .ef-lead__title {
         font-size: 34px;
         line-height: 1.1;

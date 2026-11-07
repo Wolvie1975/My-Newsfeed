@@ -31,6 +31,20 @@ public class EventsTests
         Assert.Equal((city, venue), EventsText.SplitLocation(location));
 
     [Theory]
+    [InlineData("NHL Net, ESPN, ABC, CBS", "NHL Net +3", " (also ESPN, ABC, CBS)")]
+    [InlineData("TNT and HBO Max", "TNT and HBO Max", null)]
+    [InlineData("Prime Video", "Prime Video", null)]
+    [InlineData("Fox, FS1", "Fox +1", " (also FS1)")]
+    [InlineData("", "", null)]
+    [InlineData(null, "", null)]
+    public void ShortTv_formats_broadcast_list(string? tv, string expectedDisplay, string? expectedAlso)
+    {
+        var res = EventsText.ShortTv(tv!);
+        Assert.Equal(expectedDisplay, res.Display);
+        Assert.Equal(expectedAlso, res.Also);
+    }
+
+    [Theory]
     [InlineData("Grand Canyon", "GC")]
     [InlineData("Arizona State", "AS")]
     [InlineData("Texas Tech University", "TTU")]

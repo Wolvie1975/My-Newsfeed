@@ -260,6 +260,23 @@ public static class EventsText
         StatusLabel(item.ScheduleStatus) is { } status ? $"{status} · Time TBD"
         : item.TimeTbd || item.StartsAtUtc is null ? "Time TBD" : dates.EventTime(item.StartsAtUtc.Value);
 
+    public sealed record FormattedTv(string Display, string? Also);
+
+    /// <summary>
+    /// Formats a broadcast list into a compact display label and an accessible expansion for screen readers.
+    /// Splits on ", ". A single network stays whole; multiple networks become "{first} +{n}".
+    /// </summary>
+    public static FormattedTv ShortTv(string tv)
+    {
+        if (string.IsNullOrWhiteSpace(tv)) return new FormattedTv("", null);
+        var parts = tv.Split(new[] { ", " }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (parts.Length <= 1) return new FormattedTv(tv.Trim(), null);
+        var first = parts[0];
+        var count = parts.Length - 1;
+        var rest = string.Join(", ", parts.Skip(1));
+        return new FormattedTv($"{first} +{count}", $" (also {rest})");
+    }
+
     /// <summary>
     /// A logo address safe to load: http(s) only, and http upgraded to https (some logos are stored as http, which
     /// browsers block on an https site). A logo that then fails to load falls back to the initials badge.

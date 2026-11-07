@@ -27,33 +27,41 @@
             <div class="ef-head"><h2 id="spf-up-title">Upcoming games</h2><a href="events">Schedule <span aria-hidden="true">→</span></a></div>
             <p class="ef-note">Today · @(Dates.ZoneLabel ?? "local") time · TV in bold</p>
             @if (upcoming.Count == 0) { <p class="ef-empty">No remaining games today. See the schedule for what’s next.</p> }
-            <ul class="spf-agate">
+            <ol class="spf-timeline">
+                @{ string? previousUpcomingTime = null; }
                 @foreach (var item in upcoming)
                 {
-                    <li>
-                        <a href="@(item.Url ?? "events")" target="@(item.Url is null ? null : "_blank")" rel="@(item.Url is null ? null : "noopener noreferrer")">
-                            <span class="spf-agate__time">@(item.StartsUtc is { } starts ? Dates.Time(starts) : item.TimeLabel)</span>
-                            <span class="spf-agate__match"><TonightMatchup Item="item" /> <span class="spf-agate__sport">(@item.Kind)</span></span>
-                            @if (item.Tv is not null) { <b class="spf-agate__tv">@item.Tv</b> }
-                        </a>
+                    var time = item.StartsUtc is { } starts ? Dates.Time(starts) : item.TimeLabel;
+                    var sameAsPrevious = time == previousUpcomingTime;
+                    previousUpcomingTime = time;
+                    <li class="spf-timeline__item @PhoneColors.ForSport(item.Kind)">
+                        <span class="spf-timeline__time">@if (!sameAsPrevious) { @time } else { <span class="sr-only">@time</span> }</span>
+                        <span class="spf-timeline__body">
+                            <a href="@(item.Url ?? "events")" target="@(item.Url is null ? null : "_blank")" rel="@(item.Url is null ? null : "noopener noreferrer")"><TonightMatchup Item="item" /></a>
+                            <span class="spf-timeline__meta"><span class="spf-timeline__sport">@item.Kind</span>@if (item.Tv is not null) { var tv = EventsText.ShortTv(item.Tv); <span aria-hidden="true"> · </span><b title="@item.Tv">@tv.Display@if (tv.Also is not null) { <span class="sr-only">@tv.Also</span> }</b> }</span>
+                        </span>
                     </li>
                 }
-            </ul>
+            </ol>
             @if (upcoming.Count < 4 && tomorrow.Count > 0)
             {
                 <h3 class="ef-label spf-tomorrow-head">Tomorrow · @(today.AddDays(1).ToString("ddd, MMM d", CultureInfo.InvariantCulture))</h3>
-                <ul class="spf-agate">
+                <ol class="spf-timeline">
+                    @{ string? previousTomorrowTime = null; }
                     @foreach (var item in tomorrow)
                     {
-                        <li>
-                            <a href="@(item.Url ?? "events")" target="@(item.Url is null ? null : "_blank")" rel="@(item.Url is null ? null : "noopener noreferrer")">
-                                <span class="spf-agate__time">@(item.StartsUtc is { } starts ? Dates.Time(starts) : item.TimeLabel)</span>
-                                <span class="spf-agate__match"><TonightMatchup Item="item" /> <span class="spf-agate__sport">(@item.Kind)</span></span>
-                                @if (item.Tv is not null) { <b class="spf-agate__tv">@item.Tv</b> }
-                            </a>
+                        var time = item.StartsUtc is { } starts ? Dates.Time(starts) : item.TimeLabel;
+                        var sameAsPrevious = time == previousTomorrowTime;
+                        previousTomorrowTime = time;
+                        <li class="spf-timeline__item @PhoneColors.ForSport(item.Kind)">
+                            <span class="spf-timeline__time">@if (!sameAsPrevious) { @time } else { <span class="sr-only">@time</span> }</span>
+                            <span class="spf-timeline__body">
+                                <a href="@(item.Url ?? "events")" target="@(item.Url is null ? null : "_blank")" rel="@(item.Url is null ? null : "noopener noreferrer")"><TonightMatchup Item="item" /></a>
+                                <span class="spf-timeline__meta"><span class="spf-timeline__sport">@item.Kind</span>@if (item.Tv is not null) { var tv = EventsText.ShortTv(item.Tv); <span aria-hidden="true"> · </span><b title="@item.Tv">@tv.Display@if (tv.Also is not null) { <span class="sr-only">@tv.Also</span> }</b> }</span>
+                            </span>
                         </li>
                     }
-                </ul>
+                </ol>
             }
         </section>
 

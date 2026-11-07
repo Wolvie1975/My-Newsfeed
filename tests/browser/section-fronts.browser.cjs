@@ -108,6 +108,18 @@ const base = lib.base;
                                 assert(imgBox.height <= 322, `Lead image height <= 320 (got ${imgBox.height})`);
                             }
                         }
+
+                        // Upcoming games timeline
+                        const timeline = p.locator('.spf-timeline');
+                        if (await timeline.isVisible()) {
+                            const items = timeline.locator('.spf-timeline__item');
+                            const itemCount = await items.count();
+                            for (let i = 0; i < itemCount; i++) {
+                                const item = items.nth(i);
+                                const text = await item.innerText();
+                                assert(!text.includes('…'), 'Matchup text does not cut off with ellipsis');
+                            }
+                        }
                     }
 
                     // Entertainment, 1024px and up:
@@ -124,6 +136,29 @@ const base = lib.base;
                                 'Entertainment .ef-desk-row sits below .ef-cols',
                             );
                         }
+
+                        // On screen vertical timeline
+                        const onScreen = p.locator('.ef-onscreen-col');
+                        if (await onScreen.isVisible()) {
+                            const lead = p.locator('.ef-main');
+                            const osBox = await onScreen.boundingBox();
+                            const leadBox = await lead.boundingBox();
+                            if (osBox && leadBox) {
+                                assert(osBox.x + osBox.width <= leadBox.x + 8, 'On screen sits left of lead');
+                                assert(Math.abs(osBox.y - leadBox.y) <= 12, 'On screen tops aligned with lead');
+                            }
+                            const items = onScreen.locator('.ef-onscreen__item');
+                            const count = await items.count();
+                            assert(count <= 6, `At most 6 On screen items (got ${count})`);
+                        }
+
+                        // Right column has no ef-tv and no ef-theaters
+                        assert.equal(await p.locator('.ef-side .ef-tv').count(), 0, 'No ef-tv in side column');
+                        assert.equal(
+                            await p.locator('.ef-side .ef-theaters').count(),
+                            0,
+                            'No ef-theaters in side column',
+                        );
 
                         // There is no ef-theaters section
                         assert.equal(await p.locator('.ef-theaters').count(), 0, 'No ef-theaters section in DOM');
