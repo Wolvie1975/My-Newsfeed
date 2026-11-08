@@ -6,6 +6,20 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
+## Sports front: keep standings divisions intact and align stat columns — November 7, 2026 (America/Chicago)
+
+Commits:
+- `ed55110` Sports front: keep standings divisions intact and align stat columns. Fixed the division splitting bug in `.spf-standings` on the Sports front (`SportsFront.razor`). For multi-division leagues (NFL, NHL, MLS), complete division tables are partitioned across the two `.spf-table-split` columns (NFC/Eastern in column 1, AFC/Western in column 2 for NFL/NHL) with explicit division captions and column headers, instead of slicing individual 4-team divisions in half with phantom headers. Single-group leagues (e.g. Premier League or single conference) retain the 2-table split for long lists. Added CSS in `sections.css` for `.pub .spf-table-col` and `.pub .spf-standings .spf-table`: set `table-layout: fixed; width: 100%`, team name ellipsis, and 38px fixed width with `text-align: right` on stat headers and data cells (`W`, `L`, `T`, `GP`, `D`, etc.) so stat values line up in a clean vertical line across all divisions.
+- `9248468` Sports front: use flexible grid track for middle column at 1024px to prevent overflow. In `sections.css`, changed `.pub .spf-front > .spf-cols` from `280px minmax(0, 640px) minmax(0, 1fr)` to `280px minmax(0, 2fr) minmax(0, 1fr)` at base desktop (1024–1279px). At 1024px, the rigid 640px max sizing starved the third column (Latest headlines) down to 0px, causing its contents to overflow the document width (scrollWidth 1137px). Using `2fr` allows middle and right columns to share space proportionally below 1280px; 1280px+ continues to cap the middle column at 640px.
+
+Verification: full `tools/verify.sh` passed (6/6 steps: dotnet build 0 warnings, 1,154 tests, js unit tests, css check, lint, format check); quick `tools/verify.sh` in deploy.sh passed; browser tests `sports-panels.browser.cjs` (all 8 viewports 320–3840px × light/dark) and `ipad-sports.browser.cjs` (all 11 viewports 320–1920px × light/dark) passed; `tools/live-check.cjs`: health 2/2, admin 55/55, public 176/176 (22 pages × 320/390/430/1440px × light/dark); household check verified clean (0 `zz`, 0 unassigned devices).
+
+Deployment: commits `ed551105a0f5` (web, admin) and `9248468bcd3a` (web) via `deployment/deploy.sh` at 2026-11-08T00:36:40Z and 2026-11-08T02:42:53Z.
+- mynewspaper-web:9248468bcd3a (`738e5accfa64`): healthy, env unchanged, /version {"commit":"9248468bcd3adfb3db5c360c15b938b1fe10af80","builtAt":"2026-11-08T02:42:53Z"}
+  Rollback: `deployment/rollback.sh 9248468bcd3a web` → mynewspaper-web:before-9248468bcd3a (`ab598260a25d`)
+- mynewspaper-admin:ed551105a0f5 (`ede6f284209b`): healthy, env unchanged, /version {"commit":"ed551105a0f58610fec2b1a5ad44008513fab5bb","builtAt":"2026-11-08T00:36:40Z"}
+  Rollback: `deployment/rollback.sh ed551105a0f5 admin` → mynewspaper-admin:before-ed551105a0f5 (`99f066901d18`)
+
 ## Home: align side column cards and add forecasts accent line — November 7, 2026 (America/Chicago)
 
 Commit:
