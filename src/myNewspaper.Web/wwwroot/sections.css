@@ -2951,7 +2951,7 @@ a.tvc-row__show:hover {
         padding-top: 20px;
     }
     .pub .spf-front > .spf-cols {
-        grid-template-columns: 280px minmax(0, 640px) minmax(0, 1fr);
+        grid-template-columns: 280px minmax(0, 2fr) minmax(0, 1fr);
         column-gap: 28px;
     }
     .pub .nf .spf-cols {
