@@ -6,6 +6,19 @@ not permanent acceptance totals. Recorded rollback tags describe those deploymen
 verify an image still exists before using it. Runtime configuration and persistent
 keys were preserved by the documented releases unless otherwise stated.
 
+## Home: align side column cards and add forecasts accent line — November 7, 2026 (America/Chicago)
+
+Commit:
+- `76c55c1` Home: align side column cards with lead and Today & Tonight; add forecasts accent line. Removed 40px top margin on `.boxoffice-forecasts` when rendered as a `.d-card` on the homepage (`.pub .boxoffice-forecasts:not(.d-card)` in `public.css`), ensuring `.d-forecasts` inside `.bs-col` aligns its top border with the lead story and Today & Tonight across all responsive widths. Added `[data-home-section='forecasts']` to `broadsheet.css` so Weekend preview / Weekend results receives the magenta/pink Entertainment section accent line (`#be185d` light, `#f472b6` dark). Added assertion in `home-columns.browser.cjs` verifying that Today & Tonight and the side column card tops remain aligned within 1.5px.
+
+Verification: full `tools/verify.sh` passed (6/6 steps: dotnet build 0 warnings, 1,154 tests, js unit tests, css check, lint, format check); quick `tools/verify.sh` in deploy.sh passed; browser test `home-columns.browser.cjs` passed; `tools/live-check.cjs`: health 2/2, admin 55/55, public 176/176 (22 pages × 320/390/430/1440px × light/dark); household check verified clean (0 `zz`, 0 unassigned devices).
+
+Deployment: commit `76c55c1ae94c` via `deployment/deploy.sh web admin` at 2026-11-07T23:58:50Z.
+- mynewspaper-web:76c55c1ae94c (`b9dbd6582b9f`): healthy, env unchanged, /version {"commit":"76c55c1ae94cfe0b89c87f2165b31a22bae8caf4","builtAt":"2026-11-07T23:58:50Z"}
+  Rollback: `deployment/rollback.sh 76c55c1ae94c web` → mynewspaper-web:before-76c55c1ae94c (`5b8b71f54f55`)
+- mynewspaper-admin:76c55c1ae94c (`99f066901d18`): healthy, env unchanged, /version {"commit":"76c55c1ae94cfe0b89c87f2165b31a22bae8caf4","builtAt":"2026-11-07T23:58:50Z"}
+  Rollback: `deployment/rollback.sh 76c55c1ae94c admin` → mynewspaper-admin:before-76c55c1ae94c (`450d28b82b3e`)
+
 ## Tech front: Tech videos as a bottom row under the desks — November 7, 2026 (America/Chicago)
 
 Commit:
