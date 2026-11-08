@@ -3003,6 +3003,32 @@ a.tvc-row__show:hover {
         grid-template-columns: repeat(2, minmax(0, 1fr));
         column-gap: 24px;
     }
+    .pub .spf-table-col {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+    }
+    .pub .spf-table-col .spf-table + .spf-table {
+        margin-top: 10px;
+    }
+    .pub .spf-standings .spf-table {
+        table-layout: fixed;
+        width: 100%;
+    }
+    .pub .spf-standings .spf-table thead th:first-child,
+    .pub .spf-standings .spf-table tbody th {
+        text-align: left;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .pub .spf-standings .spf-table thead th:not(:first-child),
+    .pub .spf-standings .spf-table tbody td {
+        width: 38px;
+        text-align: right;
+        padding-right: 6px;
+        padding-left: 2px;
+    }
     .pub .spf-upcoming,
     .pub .spf-standings,
     .pub .spf-rankings {

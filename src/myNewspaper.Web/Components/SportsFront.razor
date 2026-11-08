@@ -123,8 +123,52 @@
         {
             <section class="spf-standings" aria-labelledby="spf-stand-title">
                 <div class="ef-head"><h2 id="spf-stand-title" class="ef-label">@table.DisplayName standings</h2></div>
-                @foreach (var group in standingsGroups)
+                @if (standingsGroups.Count > 1)
                 {
+                    IReadOnlyList<StandingGroup> firstGroups;
+                    IReadOnlyList<StandingGroup> secondGroups;
+                    if (table.ProviderKey is "espn-nfl" or "espn-nhl")
+                    {
+                        var confGroups = standingsGroups
+                            .GroupBy(g => table.ProviderKey == "espn-nfl" ? StandingsQuery.NflConference(g) : StandingsQuery.NhlConference(g))
+                            .OrderBy(g => g.Key is "National Football Conference" or "Eastern Conference" ? 0 : 1)
+                            .ToList();
+                        if (confGroups.Count == 2)
+                        {
+                            firstGroups = confGroups[0].OrderBy(g => g.Name, StringComparer.Ordinal).ToList();
+                            secondGroups = confGroups[1].OrderBy(g => g.Name, StringComparer.Ordinal).ToList();
+                        }
+                        else
+                        {
+                            var half = (int)Math.Ceiling(standingsGroups.Count / 2.0);
+                            firstGroups = standingsGroups.Take(half).ToList();
+                            secondGroups = standingsGroups.Skip(half).ToList();
+                        }
+                    }
+                    else
+                    {
+                        var half = (int)Math.Ceiling(standingsGroups.Count / 2.0);
+                        firstGroups = standingsGroups.Take(half).ToList();
+                        secondGroups = standingsGroups.Skip(half).ToList();
+                    }
+                    <div class="spf-table-split">
+                        <div class="spf-table-col">
+                            @foreach (var group in firstGroups)
+                            {
+                                @RenderStandingsGroup(group)
+                            }
+                        </div>
+                        <div class="spf-table-col">
+                            @foreach (var group in secondGroups)
+                            {
+                                @RenderStandingsGroup(group)
+                            }
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    var group = standingsGroups[0];
                     var columns = group.Columns.Take(3).ToList();
                     var half = (int)Math.Ceiling(group.Teams.Count / 2.0);
                     var firstHalf = group.Teams.Take(half).ToList();
@@ -464,6 +508,24 @@
         if (columns.Count(c => c.Label == label) < 2) return label;
         return columns.Take(index).Any(c => c.Label == label) ? "All" : "Conf";
     }
+
+    private RenderFragment RenderStandingsGroup(StandingGroup group) => __builder =>
+    {
+        var columns = group.Columns.Take(3).ToList();
+        <table class="spf-table">
+            <caption>@group.Name</caption>
+            <thead><tr><th scope="col">Team</th>@foreach (var (column, index) in columns.Select((c, i) => (c, i))) { <th scope="col">@ColumnLabel(columns, index)</th> }</tr></thead>
+            <tbody>
+                @foreach (var team in group.Teams)
+                {
+                    <tr data-sports-teams="@SportsTeamPreferences.Keys(team.Row.TeamName)">
+                        <th scope="row">@team.Row.TeamName</th>
+                        @foreach (var column in columns) { <td>@StandingsQuery.StatisticValue(team, column.Name)</td> }
+                    </tr>
+                }
+            </tbody>
+        </table>
+    };
 
     private static string Title(FeedItem item) => FeedText.StripEmoji(item.Title) is { Length: > 0 } title ? title : item.Title;
 
