@@ -1,0 +1,29 @@
+@inject IDbContextFactory<WebScraperContext> Factory
+@inherits DataComponentBase
+@if (Provider is "espn-championship" or "espn-epl" or "espn-mls")
+{
+    <SectionSelect Id="league-view" Label="League view" Choices="@Options" />
+}
+@code {
+    [Parameter] public string? Provider { get; set; }
+    private int? scheduleId;
+    private int? tableId;
+    private IReadOnlyList<NavigationChoice> Options {
+        get {
+            var choices = new List<NavigationChoice>();
+            if (scheduleId is {} feed) choices.Add(new($"events?school={feed}", "Schedule"));
+            if (tableId is {} table) choices.Add(new($"standings?sourceId={table}", "Table"));
+            if (scheduleId is not null && Provider == "espn-championship") choices.Add(new("championship/results", "Season results"));
+            if (scheduleId is not null && Provider == "espn-mls") choices.Add(new("mls/results", "Season results"));
+            return choices;
+        }
+    }
+    protected override async Task OnParametersSetAsync()
+    {
+        scheduleId = tableId = null;
+        if (Provider is not ("espn-championship" or "espn-epl" or "espn-mls")) return;
+        await using var db = await Factory.CreateDbContextAsync(Ct);
+        scheduleId = await EventsQuery.FirstScheduleIdAsync(db, Provider, Ct);
+        tableId = await StandingsQuery.FirstSourceIdAsync(db, Provider, Ct);
+    }
+}

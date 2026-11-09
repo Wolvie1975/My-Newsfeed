@@ -1,0 +1,143 @@
+@page "/admin/sports-events/{Id:int}/edit"
+@rendermode InteractiveServer
+@inject IDbContextFactory<WebScraperContext> Factory
+@inject NavigationManager Nav
+@inherits DataComponentBase
+
+<PageTitle>Edit event</PageTitle>
+
+<AdminContent>
+    <AdminPageHeader Eyebrow="Sports" Title="Edit event">
+        <Crumbs><a href="admin/sports-events">Events</a><span aria-hidden="true">/</span>Edit</Crumbs>
+    </AdminPageHeader>
+
+@if (notFound)
+{
+    <div class="alert alert-warning">That event no longer exists. <a href="admin/sports-events">Back to events</a></div>
+}
+else if (existing is null)
+{
+    <p><em>Loading…</em></p>
+}
+else
+{
+    <EditForm Model="form" OnValidSubmit="SaveAsync" class="adm-card" style="max-width: 46rem;">
+        @if (error is not null) { <div class="alert alert-danger" role="alert">@error</div> }
+        <dl class="row small">
+            <dt class="col-sm-3">Game</dt>
+            <dd class="col-sm-9">
+                @if (FeedQuery.SafeHref(existing.Url) is { } href)
+                {
+                    <a href="@href" target="_blank" rel="noopener noreferrer">@existing.Title</a>
+                }
+                else
+                {
+                    @existing.Title
+                }
+            </dd>
+            <dt class="col-sm-3">Sport</dt>
+            <dd class="col-sm-9">@(existing.Sport ?? "—")</dd>
+            <dt class="col-sm-3">Opponent</dt>
+            <dd class="col-sm-9">@(existing.Opponent ?? "—") @(existing.IsAway is bool away ? (away ? "(away)" : "(home)") : "")</dd>
+            <dt class="col-sm-3">Date</dt>
+            <dd class="col-sm-9">
+                @existing.EventDate.ToString("yyyy-MM-dd")
+                @(existing.TimeTbd ? "(time TBD)" : existing.StartsAtUtc is DateTime start ? $"· {Dates.TimeWithOffset(start)}" : "")
+            </dd>
+            <dt class="col-sm-3">Location</dt>
+            <dd class="col-sm-9">@(existing.Location ?? "—")</dd>
+            <dt class="col-sm-3">TV</dt>
+            <dd class="col-sm-9">@(existing.Tv ?? "—")</dd>
+            <dt class="col-sm-3">First seen</dt>
+            <dd class="col-sm-9">@Dates.Stamp(existing.FirstSeenAt)</dd>
+            <dt class="col-sm-3">Last seen</dt>
+            <dd class="col-sm-9">@Dates.Stamp(existing.LastSeenAt)</dd>
+        </dl>
+
+        <div class="mb-3">
+            <label for="type" class="form-label">Type</label>
+            <InputSelect id="type" disabled="@attributionLocked" class="form-select" @bind-Value="form.TypeId">
+                <option value="">No type</option>
+                @foreach (var type in types)
+                {
+                    <option value="@type.Id">@type.Name</option>
+                }
+            </InputSelect>
+            @if (types.Count == 0)
+            {
+                <div class="form-text">There are no types yet. <a href="admin/sports-event-types/new">Add one.</a></div>
+            }
+        </div>
+
+        <div class="alert alert-secondary small" role="note">
+            @(attributionLocked ? "This event’s feed attribution is managed by the scraper and is read-only. Disable the feed to hide its events." : "The scraper rewrites the game details. Only a legacy type can be assigned here.")
+        </div>
+
+        <button type="submit" class="btn btn-primary me-2" disabled="@(saving || attributionLocked)">Save</button>
+        <a class="btn btn-secondary" href="admin/sports-events">Cancel</a>
+    </EditForm>
+}
+
+</AdminContent>
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    public sealed class EventForm
+    {
+        // Bound to a <select>, so it is text; "" means no type.
+        public string? TypeId { get; set; }
+    }
+
+    
+
+    private readonly EventForm form = new();
+    private AdminEventDetail? existing;
+    private IReadOnlyList<EventTypeOption> types = [];
+    private bool notFound;
+    private bool saving;
+    private string? error;
+    private bool attributionLocked;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        notFound = false;
+        error = null;
+        await using var db = await Factory.CreateDbContextAsync(Ct);
+        existing = await AdminQuery.EventAsync(db, Id, Ct);
+        if (existing is null)
+        {
+            notFound = true;
+            return;
+        }
+
+        attributionLocked = existing.AttributionLocked;
+        types = await AdminQuery.EventTypeOptionsAsync(db, legacyOnly: true, legacyOnlyExcept: existing.SportsEventsTypeId, Ct);
+        form.TypeId = existing.SportsEventsTypeId?.ToString();
+    }
+
+    private async Task SaveAsync()
+    {
+        error = null;
+        saving = true;
+        try
+        {
+            await using var db = await Factory.CreateDbContextAsync(CancellationToken.None);
+            
+
+            if (!await AdminStore.AssignSportsEventTypeAsync(db, Id, int.TryParse(form.TypeId, out var typeId) ? typeId : null, CancellationToken.None))
+            { notFound = true; return; }
+            Nav.NavigateTo("admin/sports-events");
+        }
+        catch (InvalidOperationException ex) { error = ex.Message; }
+        catch (Exception ex) when (AdminStore.IsForeignKeyViolation(ex))
+        {
+            // The chosen type was deleted after this form loaded.
+            error = "That type no longer exists. Reload and choose another type.";
+        }
+        finally
+        {
+            saving = false;
+        }
+    }
+}

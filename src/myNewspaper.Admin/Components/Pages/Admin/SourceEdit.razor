@@ -1,0 +1,312 @@
+@page "/admin/sources/new"
+@page "/admin/sources/{Id:int}/edit"
+@rendermode InteractiveServer
+@using System.Globalization
+@inject IDbContextFactory<WebScraperContext> Factory
+@inject NavigationManager Nav
+@inject IConfiguration Config
+@inherits DataComponentBase
+@inject TimeProvider Clock
+
+<PageTitle>@(IsNew ? "Add source" : $"Edit {SourceName}")</PageTitle>
+
+<AdminContent>
+    @if (notFound)
+    {
+        <AdminPageHeader Eyebrow="Edit source" Title="Source not found" />
+        <div class="adm-card"><p>That source no longer exists. <a href="admin/sources">Back to sources</a></p></div>
+    }
+    else if (form is null)
+    {
+        <p class="adm-help">Loading…</p>
+    }
+    else
+    {
+        <AdminPageHeader Eyebrow="@(IsNew ? "Add source" : "Edit source")" Title="@(IsNew ? "New source" : SourceName)">
+            <Crumbs><a href="admin/sources">Sources</a><span aria-hidden="true">/</span>@(IsNew ? "New" : SourceName)</Crumbs>
+            <Badge>
+                @if (existing is not null)
+                {
+                    @if (!existing.Enabled) { <span class="adm-pill adm-pill--off">Disabled</span> }
+                    else { <StatusBadge Level="@(string.IsNullOrEmpty(existing.LastError) ? HealthLevel.Ok : HealthLevel.Problem)" /> }
+                }
+            </Badge>
+            <Actions>
+                <span class="adm-head__meta">@(existing is not null ? $"Added {Dates.Stamp(existing.CreatedAt)} · " : "")changes apply on the scraper’s next run</span>
+            </Actions>
+        </AdminPageHeader>
+
+        @if (pendingDelete)
+        {
+            <section class="adm-confirm" role="alert" aria-labelledby="confirm-title">
+                <div class="adm-confirm__text">
+                    <h2 id="confirm-title">Delete @SourceName?</h2>
+                    <p>
+                        @(pageCount == 0 ? "It has no collected pages. This can’t be undone." : $"It has {pageCount:N0} collected {(pageCount == 1 ? "page" : "pages")}, and deleting the source deletes them too.")
+                        @(existing?.Enabled == true && pageCount > 0 ? " Disabling is safer: the pages stay and you can turn it back on." : "")
+                    </p>
+                </div>
+                <div class="adm-confirm__actions">
+                    @if (existing?.Enabled == true && pageCount > 0)
+                    {
+                        <button type="button" class="btn btn-dark" @onclick="DisableAsync">Disable instead</button>
+                    }
+                    <button type="button" class="btn btn-outline-danger" @onclick="DeleteAsync">@(pageCount == 0 ? "Delete source" : $"Delete source and {pageCount:N0} {(pageCount == 1 ? "page" : "pages")}")</button>
+                    <button type="button" class="btn btn-link" @onclick="() => pendingDelete = false">Cancel</button>
+                </div>
+            </section>
+        }
+
+        <div class="adm-cols">
+            <EditForm EditContext="editContext" OnValidSubmit="SaveAsync" class="adm-form adm-col-wide">
+                <DataAnnotationsValidator />
+                <div class="adm-form__body">
+                    <h2 class="adm-kicker">Details</h2>
+                    @if (error is not null) { <div class="alert alert-danger" role="alert">@error</div> }
+
+                    <div class="adm-field">
+                        <label for="url">Feed or website URL</label>
+                        <InputText id="url" class="form-control" @bind-Value="form.Url" aria-describedby="url-help" placeholder="https://example.com/feed" />
+                        <span id="url-help" class="adm-help">Starts with http:// or https://. Each URL can only be added once.</span>
+                        <ValidationMessage For="() => form.Url" />
+                    </div>
+
+                    <div class="adm-field">
+                        <label for="label">Display name <span class="adm-field__opt">(optional)</span></label>
+                        <InputText id="label" class="form-control" @bind-Value="form.Label" aria-describedby="label-help" />
+                        <span id="label-help" class="adm-help">Shown on articles and in filters. Leave empty to show the URL.</span>
+                    </div>
+
+                    <div class="adm-field">
+                        <label for="category">Category</label>
+                        <InputSelect id="category" class="form-select" @bind-Value="form.SourceCategoryId" aria-describedby="cat-help">
+                            <option value="">No category</option>
+                            @foreach (var c in categories) { <option value="@c.Id">@c.Name</option> }
+                        </InputSelect>
+                        <span id="cat-help" class="adm-help">@HubHelp <a href="admin/categories">Manage categories</a></span>
+                    </div>
+
+                    <div class="adm-toggle-row">
+                        <span>
+                            <span id="en-l" class="adm-label d-block">Scraper reads this source</span>
+                            <span id="en-d" class="adm-help d-block">Turn off to stop collecting and hide its articles from the site. Nothing is deleted.</span>
+                        </span>
+                        <AdminSwitch Checked="form.Enabled" LabelledBy="en-l" DescribedBy="en-d" OnChange="SetEnabled" />
+                    </div>
+                </div>
+
+                <div class="adm-savebar">
+                    <span class="adm-savebar__state @(Dirty ? null : "is-clean")" role="status">@SaveState</span>
+                    <a class="btn btn-link" href="admin/sources">Cancel</a>
+                    <button type="submit" class="btn btn-primary" disabled="@(saving || (!IsNew && !Dirty))">@(IsNew ? "Add source" : "Save changes")</button>
+                </div>
+            </EditForm>
+
+            @if (existing is not null)
+            {
+                <aside class="adm-col-side">
+                    <section class="adm-card" aria-labelledby="health-title">
+                        <h2 class="adm-kicker" id="health-title">Source health</h2>
+                        <dl class="adm-dl">
+                            <dt>Last scraped</dt>
+                            <dd class="@(Stale ? "is-bad" : null)">@Dates.Stamp(existing.LastScrapedAt)@(existing.LastScrapedAt is { } last ? $" ({ScraperHealth.Age(Clock.GetUtcNow().UtcDateTime - DateTime.SpecifyKind(last, DateTimeKind.Utc))} ago)" : "")</dd>
+                            <dt>Articles</dt>
+                            <dd><a href="admin/pages?sourceId=@existing.Id">@pageCount.ToString("N0", CultureInfo.InvariantCulture) @(pageCount == 1 ? "page" : "pages") →</a></dd>
+                            <dt>Newest article</dt>
+                            <dd>@(newest is null ? "None yet" : Dates.Stamp(newest))</dd>
+                        </dl>
+                        @if (!string.IsNullOrEmpty(existing.LastError))
+                        {
+                            <div class="adm-errorbox">
+                                <span class="adm-errorbox__title">Last error</span>
+                                <code class="adm-code">@existing.LastError</code>
+                            </div>
+                        }
+                    </section>
+                    <section class="adm-card" aria-labelledby="remove-title">
+                        <h2 class="adm-kicker" id="remove-title">Remove this source</h2>
+                        <p class="adm-help">Disabling keeps its @pageCount.ToString("N0", CultureInfo.InvariantCulture) @(pageCount == 1 ? "page" : "pages") and can be undone. Deleting removes the source and every page it collected.</p>
+                        <div class="adm-panel-actions">
+                            @if (existing.Enabled)
+                            {
+                                <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="DisableAsync">Disable source</button>
+                            }
+                            <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => pendingDelete = true">Delete source…</button>
+                        </div>
+                    </section>
+                </aside>
+            }
+        </div>
+    }
+</AdminContent>
+
+@code {
+    [Parameter] public int? Id { get; set; }
+
+    public sealed class SourceForm
+    {
+        [Required, StringLength(2048)]
+        public string Url { get; set; } = "";
+
+        [StringLength(200)]
+        public string? Label { get; set; }
+
+        public bool Enabled { get; set; } = true;
+
+        // Bound to a <select>, so it is text; "" means no category.
+        public string? SourceCategoryId { get; set; }
+    }
+
+    private IReadOnlyList<CategoryOption> categories = [];
+    private SourceForm? form;
+    private EditContext editContext = default!;
+    private DateTime? newest;
+    private bool pendingDelete;
+    private AdminSourceDetail? existing;
+    private int pageCount;
+    private bool notFound;
+    private bool saving;
+    private string? error;
+
+    private bool IsNew => Id is null;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await using var db = await Factory.CreateDbContextAsync(Ct);
+        categories = await AdminQuery.CategoryOptionsAsync(db, Ct);
+
+        if (Id is not { } id)
+        {
+            form = new SourceForm();
+            editContext = new EditContext(form);
+            return;
+        }
+
+        existing = await AdminQuery.SourceAsync(db, id, Ct);
+        if (existing is null)
+        {
+            notFound = true;
+            return;
+        }
+
+        (pageCount, newest) = (existing.PageCount, existing.NewestPublished);
+        form = new SourceForm
+        {
+            Url = existing.Url,
+            Label = existing.Label,
+            Enabled = existing.Enabled,
+            SourceCategoryId = existing.SourceCategoryId?.ToString(CultureInfo.InvariantCulture),
+        };
+        editContext = new EditContext(form);
+    }
+
+    private async Task SaveAsync()
+    {
+        if (form is null)
+        {
+            return;
+        }
+
+        error = null;
+        var url = form.Url.Trim();
+        var label = string.IsNullOrWhiteSpace(form.Label) ? null : form.Label.Trim();
+        int? categoryId = int.TryParse(form.SourceCategoryId, out var parsedCategoryId) ? parsedCategoryId : null;
+
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri)
+            || (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
+        {
+            error = "Enter a full URL that starts with http:// or https://.";
+            return;
+        }
+
+        saving = true;
+        try
+        {
+            await using var db = await Factory.CreateDbContextAsync(CancellationToken.None);
+            if (!await AdminStore.SaveSourceAsync(db, Id, url, label, form.Enabled, categoryId, CancellationToken.None))
+            {
+                notFound = true;
+                return;
+            }
+
+            Nav.NavigateTo("admin/sources");
+        }
+        catch (DbUpdateException ex) when (AdminStore.IsUniqueViolation(ex))
+        {
+            error = "That URL is already a source.";
+        }
+        catch (DbUpdateException ex) when (AdminStore.IsForeignKeyViolation(ex))
+        {
+            // The chosen category was deleted after this form loaded.
+            error = "That category no longer exists. Pick another one.";
+            await using var db = await Factory.CreateDbContextAsync(CancellationToken.None);
+            categories = await AdminQuery.CategoryOptionsAsync(db, Ct);
+            form.SourceCategoryId = null;
+        }
+        finally
+        {
+            saving = false;
+        }
+    }
+
+    private string SourceName => existing is null ? "" : string.IsNullOrWhiteSpace(existing.Label) ? existing.Url : existing.Label;
+
+    private bool Stale => existing?.Enabled == true && ScraperHealth.IsStale(existing.LastScrapedAt, Clock.GetUtcNow().UtcDateTime,
+        ScraperHealth.StaleAfter(Config["Scraper:StaleAfterHours"]));
+
+    private void SetEnabled(bool value)
+    {
+        form!.Enabled = value;
+        editContext.NotifyFieldChanged(new FieldIdentifier(form, nameof(SourceForm.Enabled)));
+    }
+
+    private bool Dirty => editContext?.IsModified() == true;
+
+    private string SaveState
+    {
+        get
+        {
+            if (!Dirty) return "No unsaved changes";
+            var names = new List<string>();
+            if (editContext.IsModified(new FieldIdentifier(form!, nameof(SourceForm.Url)))) names.Add("URL");
+            if (editContext.IsModified(new FieldIdentifier(form!, nameof(SourceForm.Label)))) names.Add("name");
+            if (editContext.IsModified(new FieldIdentifier(form!, nameof(SourceForm.SourceCategoryId)))) names.Add("category");
+            if (editContext.IsModified(new FieldIdentifier(form!, nameof(SourceForm.Enabled)))) names.Add("enabled");
+            return names.Count == 0 ? "Unsaved changes" : $"Unsaved {(names.Count == 1 ? "change" : "changes")}: {string.Join(", ", names)}";
+        }
+    }
+
+    // Uncategorized sources still show in Headlines' "All categories" (FeedQuery's headlines-only feed includes them).
+    private string HubHelp => categories.FirstOrDefault(c => c.Id.ToString(CultureInfo.InvariantCulture) == form?.SourceCategoryId) is { } c
+        ? $"{c.Name} appears in the {char.ToUpperInvariant(c.Hub[0])}{c.Hub[1..]} hub."
+        : "Uncategorized sources appear in Headlines under All categories.";
+
+    private async Task DisableAsync()
+    {
+        await using var db = await Factory.CreateDbContextAsync(CancellationToken.None);
+        if (Id is not { } id || !await AdminStore.SetSourceEnabledAsync(db, id, enabled: false, CancellationToken.None)) { notFound = true; return; }
+        existing = await AdminQuery.SourceAsync(db, id, Ct);
+        if (form is not null)
+        {
+            form.Enabled = false;
+            editContext = new EditContext(form);
+        }
+        pendingDelete = false;
+    }
+
+    private async Task DeleteAsync()
+    {
+        var name = SourceName;
+        try
+        {
+            await using var db = await Factory.CreateDbContextAsync(CancellationToken.None);
+            await AdminStore.DeleteSourceAsync(db, Id!.Value, includePages: pageCount > 0, CancellationToken.None);
+            Nav.NavigateTo("admin/sources?deleted=" + Uri.EscapeDataString(name));
+        }
+        catch (Exception ex) when (AdminStore.IsForeignKeyViolation(ex))
+        {
+            pendingDelete = false;
+            error = "The source gained pages since this page loaded, so it was not deleted. Reload and try again.";
+        }
+    }
+}

@@ -1,0 +1,12 @@
+@inject FeedDates Dates
+@if ((BoxOfficeChartQuery.SafeUrl(Movie.StatusEvidenceUrl) ?? BoxOfficeChartQuery.SafeUrl(Movie.SourceUrl)) is not null)
+{
+    <p class="updated">Status source: <a href="@(BoxOfficeChartQuery.SafeUrl(Movie.StatusEvidenceUrl) ?? BoxOfficeChartQuery.SafeUrl(Movie.SourceUrl))" target="_blank" rel="noopener noreferrer">The Numbers</a></p>
+}
+@if (Movie.StatusAsOfUtc is { } updated)
+{
+    <p class="updated">Provider updated @Dates.PublishedFull(updated)</p>
+}
+@code {
+    [Parameter, EditorRequired] public BoxOfficeMovie Movie { get; set; } = default!;
+}

@@ -1,0 +1,11 @@
+@* A profile's initial on its color, as on the edition picker. Decorative: the name beside it carries the meaning. The
+   color is validated as #RRGGBB before it's stored (ProfileRules.NormalizeColor), so it's safe in the style attribute. *@
+<span class="adm-avatar @(Large ? "adm-avatar--lg" : null)" style="background: @Color" aria-hidden="true">@Initial</span>
+
+@code {
+    [Parameter, EditorRequired] public string Name { get; set; } = "";
+    [Parameter, EditorRequired] public string Color { get; set; } = "";
+    [Parameter] public bool Large { get; set; }
+
+    private string Initial => Name.Trim() is { Length: > 0 } n ? char.ToUpperInvariant(n[0]).ToString() : "?";
+}

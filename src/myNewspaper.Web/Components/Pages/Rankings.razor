@@ -1,0 +1,227 @@
+@layout PublicLayout
+@using myNewspaper.Web.Components.Feed
+@using myNewspaper.Shared.Data.Models
+@inject IDbContextFactory<WebScraperContext> Factory
+@inject FeedDates Dates
+@inject ILogger<Rankings> Log
+@inherits DataComponentBase
+@inject TimeProvider Clock
+
+@{
+    var sportDef = CollegeHub.Resolve(CollegeSport);
+    var sportKey = sportDef.Key;
+    var sportName = sportDef.Name;
+}
+
+<PageTitle>@($"College Sports · {sportName} rankings · myNewspaper")</PageTitle>
+
+@* Desktop & iPad: 2 columns with .cl-cols, .cl-main and .cl-side rail *@
+<div class="mx-desktop tab-desktop">
+    <div class="cl-cols">
+        <section class="cl-main" aria-labelledby="cl-rankings-title">
+            <div class="st-head">
+                <div class="d-flex align-items-baseline gap-3 flex-wrap">
+                    <h2 id="cl-rankings-title">@(sportName) rankings</h2>
+                    @if (data.Sources.Count > 1)
+                    {
+                        <nav class="sec-pills" aria-label="Polls">
+                            @foreach (var source in data.Sources)
+                            {
+                                <a href="@($"college/rankings?sport={sportKey}&sourceId={source.Id}")" aria-current="@(data.Selected?.Id == source.Id ? "page" : null)">@source.DisplayName</a>
+                            }
+                        </nav>
+                    }
+                </div>
+                @if (data.Poll is { } poll)
+                {
+                    <span class="mv-updated">@poll.PollName · @poll.SeasonLabel · @(RankingsQuery.OldPoll(poll, Clock.GetUtcNow().UtcDateTime) ? "Latest available poll dated" : "Poll dated") @Dates.Published(poll.PublishedAtUtc) · first-place votes in parentheses · Big 12 highlighted · data via ESPN</span>
+                    @if (FeedQuery.SafeHref(poll.SourceUrl) is { } pollUrl) { <a class="rk-source" href="@pollUrl" target="_blank" rel="noopener noreferrer">View source <span aria-hidden="true">↗</span></a> }
+                }
+            </div>
+
+            @if (data.AvailabilityError is { } unavailable)
+            {
+                <p class="empty" role="status">@unavailable <a href="@RetryHref">Try again</a></p>
+            }
+            else if (data.Selected is null)
+            {
+                <p class="empty">No ranking sources are enabled for this selection.</p>
+            }
+            else if (data.Poll is null || data.Teams.Count == 0)
+            {
+                <p class="empty">Rankings not available yet.</p>
+            }
+            else
+            {
+                @if (RankingsQuery.Freshness(data.Selected, Clock.GetUtcNow().UtcDateTime) is { } warning) { <p class="standing-status" role="status">@warning</p> }
+                <div class="rk-cols">
+                    @foreach (var column in data.Teams.Chunk((data.Teams.Count + 1) / 2))
+                    {
+                        <ol class="rk-list" aria-label="@data.Poll.PollName">
+                            <li class="rk-row rk-row--head" aria-hidden="true"><span>Rk</span><span>School</span><span>Rec</span><span>Move</span></li>
+                            @foreach (var team in column)
+                            {
+                                var move = RankingsQuery.Movement(team);
+                                <li class="rk-row @(team.IsBig12 == true ? "ranking-big12" : null)">
+                                    <b class="rk-row__rank">@(team.Rank?.ToString() ?? "—")</b>
+                                    <span class="rk-row__school">
+                                        @if (FeedQuery.SafeHref(team.TeamUrl) is { } teamUrl) { <a href="@teamUrl" target="_blank" rel="noopener noreferrer">@team.TeamName</a> }
+                                        else { <span>@team.TeamName</span> }
+                                        @if (team.FirstPlaceVotes is > 0) { <span class="poll-votes">(@team.FirstPlaceVotes)</span> }
+                                        @if (team.IsBig12 == true) { <span class="big12-badge">Big 12</span> }
+                                    </span>
+                                    <span class="rk-row__rec">@(team.Record ?? "—")</span>
+                                    <span class="rk-row__move @(move.StartsWith("Up") ? "rk-up" : move.StartsWith("Down") ? "rk-down" : move == "New" ? "rk-new" : null)" title="@($"Previous: {RankingsQuery.Previous(team)}")">@MoveLabel(move)</span>
+                                </li>
+                            }
+                        </ol>
+                    }
+                </div>
+            }
+        </section>
+
+        <aside class="cl-side">
+            @if (OtherPolls.Count > 0)
+            {
+                <section aria-labelledby="cl-other-polls-title">
+                    <h2 id="cl-other-polls-title" class="ef-label">Other sports' polls</h2>
+                    <ol class="cl-list cl-list--standings">
+                        @foreach (var (otherSport, source) in OtherPolls)
+                        {
+                            <li>
+                                <span>@otherSport.Name</span>
+                                <a href="@CollegeHub.RankingsHref(source)">@source.DisplayName <span aria-hidden="true">→</span></a>
+                            </li>
+                        }
+                    </ol>
+                </section>
+            }
+            @if (Big12News.Count > 0)
+            {
+                <section aria-labelledby="cl-news-title">
+                    <h2 id="cl-news-title" class="ef-label">Big 12 headlines</h2>
+                    <ul class="ef-headlines spf-headlines">
+                        @foreach (var item in Big12News)
+                        {
+                            <HeadlineRow Item="item" Kicker="@FeedText.SourceName(item.SourceLabel, item.SourceUrl)" />
+                        }
+                    </ul>
+                    <a class="ef-more" href="sports/news/big12">More in Headlines <span aria-hidden="true">→</span></a>
+                </section>
+            }
+        </aside>
+    </div>
+</div>
+
+@* Phone layout *@
+<div class="mx-phone" data-phone-sports="college-rankings">
+    @if (data.Sources.Count > 1)
+    {
+        @if (data.Sources.Count <= 3)
+        {
+            <nav class="sec-pills mb-3" aria-label="Polls">
+                @foreach (var source in data.Sources)
+                {
+                    <a href="@($"college/rankings?sport={sportKey}&sourceId={source.Id}")" aria-current="@(data.Selected?.Id == source.Id ? "page" : null)">@source.DisplayName</a>
+                }
+            </nav>
+        }
+        else
+        {
+            <form class="catselect st-select mb-3" method="get" action="@BasePath">
+                <input type="hidden" name="sport" value="@sportKey" />
+                <label class="sr-only" for="ranking-source">Sport and poll</label>
+                <select id="ranking-source" name="sourceId" onchange="this.form.requestSubmit()">
+                    @foreach (var source in data.Sources) { <option value="@source.Id" selected="@(data.Selected?.Id == source.Id)">@source.DisplayName</option> }
+                </select>
+                <noscript><button class="nf-btn nf-btn--secondary" type="submit">Apply</button></noscript>
+            </form>
+        }
+    }
+    @if (data.AvailabilityError is { } error)
+    {
+        <p class="mx-note" role="status">@error <a href="@RetryHref">Try again</a></p>
+    }
+    else if (data.Selected is null)
+    {
+        <p class="mx-note">No ranking sources are enabled for this selection.</p>
+    }
+    else if (data.Poll is not { } phonePoll || data.Teams.Count == 0)
+    {
+        <p class="mx-note">Rankings not available yet.</p>
+    }
+    else
+    {
+        @if (RankingsQuery.Freshness(data.Selected, Clock.GetUtcNow().UtcDateTime) is { } warning) { <p class="mx-note" role="status">@warning</p> }
+        @if (RankingsQuery.OldPoll(phonePoll, Clock.GetUtcNow().UtcDateTime)) { <p class="mx-note">Latest available poll; published more than two weeks ago.</p> }
+        <ol class="rk-list" aria-label="@phonePoll.PollName">
+            <li class="rk-row rk-row--head" aria-hidden="true"><span>Rk</span><span>School</span><span>Rec</span><span>Move</span></li>
+            @foreach (var team in data.Teams)
+            {
+                var move = RankingsQuery.Movement(team);
+                <li class="rk-row @(team.IsBig12 == true ? "ranking-big12" : null)">
+                    <b class="rk-row__rank">@(team.Rank?.ToString() ?? "—")</b>
+                    <span class="rk-row__school">
+                        @if (FeedQuery.SafeHref(team.TeamUrl) is { } teamUrl) { <a href="@teamUrl" target="_blank" rel="noopener noreferrer">@team.TeamName</a> }
+                        else { <span>@team.TeamName</span> }
+                        @if (team.FirstPlaceVotes is > 0) { <span class="poll-votes">(@team.FirstPlaceVotes)</span> }
+                        @if (team.IsBig12 == true) { <span class="big12-badge">Big 12</span> }
+                    </span>
+                    <span class="rk-row__rec">@(team.Record ?? "—")</span>
+                    <span class="rk-row__move @(move.StartsWith("Up") ? "rk-up" : move.StartsWith("Down") ? "rk-down" : move == "New" ? "rk-new" : null)" title="@($"Previous: {RankingsQuery.Previous(team)}")">@MoveLabel(move)</span>
+                </li>
+            }
+        </ol>
+        <p class="mx-note">@(RankingsQuery.OldPoll(phonePoll, Clock.GetUtcNow().UtcDateTime) ? "Latest available poll dated" : "Poll dated") @Dates.Published(phonePoll.PublishedAtUtc) · Big 12 highlighted · data via ESPN</p>
+        @if (FeedQuery.SafeHref(phonePoll.SourceUrl) is { } sourceUrl)
+        {
+            <a class="mx-more" href="@sourceUrl" target="_blank" rel="noopener noreferrer">View source table ↗</a>
+        }
+        <FoldGroup Name="college-rankings-more" Heading="More in College Sports">
+            @if (Big12News.Count > 0)
+            {
+                <Fold Title="Big 12 headlines" Gist="@Big12News[0].Title" Open="false" AllHref="sports/news/big12" AllText="More in Headlines">
+                    @foreach (var item in Big12News)
+                    {
+                        var href = FeedQuery.SafeHref(item.Url);
+                        var title = FeedText.StripEmoji(item.Title) is { Length: > 0 } t ? t : item.Title;
+                        var source = FeedText.SourceName(item.SourceLabel, item.SourceUrl);
+                        <a class="mx-fold__row" href="@href" target="_blank" rel="noopener noreferrer">
+                            <span><b>@title</b><small>@source@(item.Undated ? "" : " · " + Dates.Time(item.Date))</small></span>
+                        </a>
+                    }
+                </Fold>
+            }
+            @if (OtherPolls.Count > 0)
+            {
+                <Fold Title="Other sports' polls" Gist="@($"{OtherPolls.Count} other polls")" Open="false">
+                    @foreach (var (otherSport, source) in OtherPolls)
+                    {
+                        <a class="mx-fold__row" href="@CollegeHub.RankingsHref(source)">
+                            <span><b>@otherSport.Name</b><small>@source.DisplayName</small></span>
+                            <span aria-hidden="true">→</span>
+                        </a>
+                    }
+                </Fold>
+            }
+        </FoldGroup>
+    }
+</div>
+
+@code {
+    [Parameter] public string? CollegeSport { get; set; }
+    [Parameter] public IReadOnlyList<FeedItem> Big12News { get; set; } = [];
+    [Parameter] public IReadOnlyList<(CollegeSport Sport, SportsRankingSource Source)> OtherPolls { get; set; } = [];
+    private string BasePath => "college/rankings";
+    [SupplyParameterFromQuery(Name = "sourceId")] private string? SourceId { get; set; }
+    private RankingsPage data = new([], null, null, []);
+    /// <summary>"Up 4" → "▲ 4", "Down 2" → "▼ 2"; "New" and "Unchanged" (—) as they are.</summary>
+    private static string MoveLabel(string move) => move.StartsWith("Up ") ? "▲ " + move[3..] : move.StartsWith("Down ") ? "▼ " + move[5..] : move == "Unchanged" ? "—" : move;
+    private string RetryHref => BasePath + (CollegeSport is not null ? "?sport=" + CollegeHub.Resolve(CollegeSport).Key + "&" : "?") + (data.Selected is { } selected ? $"sourceId={selected.Id}" : "");
+    protected override async Task OnParametersSetAsync()
+    {
+        try { await using var db = await Factory.CreateDbContextAsync(Ct); data = await RankingsQuery.GetAsync(db, StandingsQuery.ParseSourceId(SourceId), Log, Dates.Today, CollegeSport, Ct); }
+        catch (Exception ex) when (DataFailures.IsReadFailure(ex))
+        { Log.LogError(ex, "Rankings source read failed."); data = new([], null, null, [], "Rankings are temporarily unavailable."); }
+    }
+}

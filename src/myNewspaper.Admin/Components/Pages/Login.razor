@@ -1,0 +1,38 @@
+@page "/login"
+@using myNewspaper.Shared.Auth
+
+<PageTitle>Sign in</PageTitle>
+
+<div class="adm-login">
+    <div class="adm-login__card">
+        <a class="adm-brand" href="/">
+            <img src="img/brand/mark.svg" alt="" width="40" height="40" />
+            <span><span class="adm-brand__name">myNewspaper</span><span class="adm-brand__tag">Admin</span></span>
+        </a>
+        <h1>Admin sign in</h1>
+
+        @if (!string.IsNullOrEmpty(Error))
+        {
+            <div class="adm-notice adm-notice--bad" role="alert">Incorrect password.</div>
+        }
+
+        @* Static (non-interactive) page: posts to /account/login, which validates the antiforgery token. *@
+        <form method="post" action="/account/login" class="d-flex flex-column gap-3">
+            <AntiforgeryToken />
+            <input type="hidden" name="returnUrl" value="@SafeReturnUrl" />
+            <div class="adm-field">
+                <label for="password">Password</label>
+                <input id="password" name="password" type="password" class="form-control"
+                       autocomplete="current-password" autofocus required />
+            </div>
+            <button type="submit" class="btn btn-primary">Sign in</button>
+        </form>
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromQuery] private string? ReturnUrl { get; set; }
+    [SupplyParameterFromQuery] private string? Error { get; set; }
+
+    private string SafeReturnUrl => AdminAuth.SafeReturnUrl(ReturnUrl);
+}

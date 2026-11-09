@@ -1,0 +1,8 @@
+@if (Identity is { Valid: true } id && Labels.TryGetValue(id.Key, out var label)) {
+    <a class="box-score-link" href="@id.Href" data-box-score data-enhance-nav="false" aria-haspopup="dialog" aria-label="@($"{label}: {Context ?? id.League + " game " + id.EventId}")">@label</a>
+}
+@code {
+    [Parameter] public string? Context {get;set;}
+    [Parameter] public BoxIdentity? Identity {get;set;}
+    [Parameter] public IReadOnlyDictionary<string,string> Labels {get;set;} = new Dictionary<string,string>();
+}

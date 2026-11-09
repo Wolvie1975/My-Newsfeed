@@ -1,0 +1,197 @@
+@page "/admin/pages"
+@rendermode InteractiveServer
+@inject IDbContextFactory<WebScraperContext> Factory
+@inherits DataComponentBase
+
+<PageTitle>Pages</PageTitle>
+
+<AdminContent>
+    <AdminPageHeader Eyebrow="News" Title="Pages" />
+
+@if (message is not null)
+{
+    <div class="alert alert-success" role="alert">@message</div>
+}
+
+<form class="row g-2 mb-3" @onsubmit="SearchAsync">
+    <div class="col-md-4">
+        <label for="source" class="visually-hidden">Source</label>
+        <select id="source" class="form-select" @bind="sourceFilter" @bind:after="ApplyFilterAsync">
+            <option value="">All sources</option>
+            @foreach (var source in sources)
+            {
+                <option value="@source.Id">@source.Name</option>
+            }
+        </select>
+    </div>
+    <div class="col-md-5">
+        <label for="search" class="visually-hidden">Search</label>
+        <input id="search" class="form-control" placeholder="Search title, URL or description" @bind="searchInput" />
+    </div>
+    <div class="col-md-3">
+        <button type="submit" class="btn btn-primary">Search</button>
+        @if (!string.IsNullOrEmpty(search) || sourceFilter is not null)
+        {
+            <button type="button" class="btn btn-outline-secondary ms-1" @onclick="ClearAsync">Clear</button>
+        }
+    </div>
+</form>
+
+@if (pendingDelete is { } target)
+{
+    <div class="alert alert-warning" role="alert">
+        <p class="mb-2">Delete the page <strong>@target.Title</strong>? This cannot be undone.</p>
+        <button class="btn btn-danger btn-sm me-2" @onclick="ConfirmDeleteAsync">Delete page</button>
+        <button class="btn btn-secondary btn-sm" @onclick="() => pendingDelete = null">Cancel</button>
+    </div>
+}
+
+@if (rows is null)
+{
+    <p><em>Loading…</em></p>
+}
+else if (rows.Count == 0)
+{
+    <p>No pages match.</p>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-sm align-middle">
+            <thead>
+                <tr>
+                    <th><button class="btn btn-link p-0 fw-bold text-decoration-none" @onclick='() => SortByAsync("title")'>Title@(SortMark("title"))</button></th>
+                    <th>Source</th>
+                    <th>Source ID</th>
+                    <th class="text-nowrap"><button class="btn btn-link p-0 fw-bold text-decoration-none" @onclick='() => SortByAsync("published")'>Published@(SortMark("published"))</button></th>
+                    <th class="text-nowrap"><button class="btn btn-link p-0 fw-bold text-decoration-none" @onclick='() => SortByAsync("scraped")'>Scraped@(SortMark("scraped"))</button></th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in rows)
+                {
+                    <tr>
+                        <td>
+                            <div class="fw-semibold">@row.Title</div>
+                            <a href="@row.Url" target="_blank" rel="noopener noreferrer" class="small text-break">@row.Url</a>
+                        </td>
+                        <td>@row.SourceName</td>
+                        <td>@row.SourceId</td>
+                        <td class="text-nowrap">@Dates.Stamp(row.Published)</td>
+                        <td class="text-nowrap">@Dates.Stamp(row.ScrapedAt)</td>
+                        <td class="text-nowrap text-end">
+                            <a class="btn btn-outline-primary btn-sm" href="admin/pages/@row.Id/edit">Edit</a>
+                            <button class="btn btn-outline-danger btn-sm" @onclick="() => StartDelete(row)">Delete</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <AdminPager Total="total" PageIndex="pageIndex" PageSize="PageSize" Noun="pages" PageChanged="GoToAsync" />
+}
+
+</AdminContent>
+
+@code {
+    private const int PageSize = 25;
+
+    [SupplyParameterFromQuery(Name = "sourceId")] private string? SourceIdText { get; set; }
+
+    private int? SourceIdQuery => int.TryParse(SourceIdText, out var id) ? id : null;
+
+    private IReadOnlyList<SourceOption> sources = [];
+    private IReadOnlyList<AdminPageRow>? rows;
+    private AdminPageRow? pendingDelete;
+    private string? message;
+
+    // sourceFilter is bound to the <select>, so it is a string ("" = all sources).
+    private string? sourceFilter;
+    private string searchInput = "";
+    private string search = "";
+    private string sortColumn = "scraped";
+    private bool sortDescending = true;
+    private int pageIndex;
+    private int total;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await using var db = await Factory.CreateDbContextAsync(Ct);
+        sources = await AdminQuery.SourceOptionsAsync(db, Ct);
+
+        if (SourceIdQuery is int id && sources.Any(s => s.Id == id))
+        {
+            sourceFilter = id.ToString();
+        }
+
+        await LoadAsync();
+    }
+
+    private int? SelectedSourceId => int.TryParse(sourceFilter, out var id) ? id : null;
+
+    private async Task LoadAsync()
+    {
+        await using var db = await Factory.CreateDbContextAsync(Ct);
+        var list = await AdminQuery.PagesAsync(db, SelectedSourceId, search, sortColumn, sortDescending, pageIndex, PageSize, Ct);
+        (rows, total, pageIndex) = (list.Rows, list.Total, list.PageIndex);
+    }
+
+    private async Task SearchAsync()
+    {
+        search = searchInput.Trim();
+        pageIndex = 0;
+        await LoadAsync();
+    }
+
+    private async Task ApplyFilterAsync()
+    {
+        pageIndex = 0;
+        await LoadAsync();
+    }
+
+    private async Task ClearAsync()
+    {
+        searchInput = search = "";
+        sourceFilter = null;
+        pageIndex = 0;
+        await LoadAsync();
+    }
+
+    private async Task SortByAsync(string column)
+    {
+        sortDescending = sortColumn == column ? !sortDescending : column != "title";
+        sortColumn = column;
+        pageIndex = 0;
+        await LoadAsync();
+    }
+
+    private string SortMark(string column) => sortColumn != column ? "" : sortDescending ? " ▼" : " ▲";
+
+    private async Task GoToAsync(int index)
+    {
+        pageIndex = Math.Max(0, index);
+        await LoadAsync();
+    }
+
+    private void StartDelete(AdminPageRow row)
+    {
+        message = null;
+        pendingDelete = row;
+    }
+
+    private async Task ConfirmDeleteAsync()
+    {
+        if (pendingDelete is not { } target)
+        {
+            return;
+        }
+
+        await using var db = await Factory.CreateDbContextAsync(CancellationToken.None);
+        await AdminStore.DeletePageAsync(db, target.Id, CancellationToken.None);
+        message = $"Deleted “{target.Title}”.";
+        pendingDelete = null;
+        await LoadAsync();
+    }
+}

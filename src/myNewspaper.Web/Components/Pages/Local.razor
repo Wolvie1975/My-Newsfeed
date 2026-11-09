@@ -1,0 +1,87 @@
+@page "/news/kansas-city"
+@layout PublicLayout
+@using myNewspaper.Web.Components.Feed
+@inject IDbContextFactory<WebScraperContext> Factory
+@inject ILogger<Local> Logger
+@inherits DataComponentBase
+<PageTitle>Kansas City · News · myNewspaper</PageTitle>
+<div class="mx-life-layout">
+<div class="mx-desktop">
+<PageHeading Section="news" Choices="newsTabs" SectionCurrent="news/kansas-city"
+             Title="Kansas City" Eyebrow="News · closer to home" Description="" />
+@* Layout as in the approved concept: the forecast across the top, then local news beside things to do. *@
+<nav class="lc-jump" aria-label="On this page">
+    <a href="news/kansas-city#local-weather">Forecast</a>
+    <a href="news/kansas-city#local-news">Local news</a>
+    <a href="news/kansas-city#local-events">Things to do</a>
+</nav>
+</div>
+<div class="mx-phone"><PhoneRibbon Section="news" Title="Kansas City" Kicker="News · closer to home">
+    <SectionSelect Id="news-section-m" Label="Section" Choices="newsTabs" Current="news/kansas-city" AlwaysSelect="true" />
+</PhoneRibbon></div>
+<section class="local-panel mx-local-weather" id="local-weather" data-local-weather>
+    <div class="d-card__head"><h2 data-weather-title>Kansas City forecast</h2><a data-weather-link href="https://forecast.weather.gov/MapClick.php?lat=39.0997&amp;lon=-94.5786" target="_blank" rel="noopener noreferrer">National Weather Service ↗</a></div>
+    <div class="mx-phone mx-weather-feature" data-weather-feature></div>
+    <div class="mx-phone mx-tiles" data-weather-tiles></div>
+    <div class="weather-location-controls">
+        <button type="button" class="nf-btn nf-btn--secondary" data-weather-locate hidden>Use my location</button>
+        <button type="button" class="nf-btn nf-btn--secondary" data-weather-reset hidden>Use Kansas City</button>
+    </div>
+    <p class="updated" data-weather-location-status role="status" aria-live="polite"></p>
+    <p class="updated" data-weather-status aria-live="polite">Open the official forecast for current weather.</p>
+    <div class="weather-grid" data-weather-periods></div>
+    <section class="hw" data-weather-hourly aria-labelledby="hw-title" hidden>
+        <div class="hw__head">
+            <h3 class="hw__title" id="hw-title">Next 8 hours</h3>
+            <p class="hw__summary" data-weather-hourly-summary></p>
+            <p class="hw__zone" data-weather-hourly-zone></p>
+        </div>
+        <ol class="hw__hours" data-weather-hourly-list></ol>
+        <p class="hw__unavailable" data-weather-hourly-unavailable hidden>Hourly forecast unavailable.</p>
+    </section>
+    <noscript><p>Use the National Weather Service link to view the forecast.</p></noscript>
+</section>
+<PhoneLocalNews Data="feed" Dedicated="dedicated" Error="@error" After="@After" Section="@LocalSection" Expanded="@(ViewQuery == "news")" />
+<div class="mx-desktop"><div class="lc-cols">
+    <section id="local-news" class="lc-news"><h2 class="ef-label">Kansas City news</h2>
+        <p class="ef-note">@(dedicated ? "From enabled Kansas City News publishers." : "Stories mentioning Kansas City in the collected news feed. These are keyword matches, including sports; this is not a complete local news service.")</p>
+        @if (error is not null) { <p class="empty" role="status">@error</p> }
+        else if (feed.Items.Count == 0) { <p class="empty">No matching stories available. Check back after the next collection.</p> }
+        else
+        {
+            @* The newest story leads with its picture; the rest are compact rows from 1024px and picture cards on phones. *@
+            <section class="feed paper-feed lc-feed" aria-label="Kansas City stories">
+                <div class="paper-lead"><FeedArticles Items="@feed.Items.Take(1).ToArray()" LeadFirst="true" /></div>
+                <div class="paper-rows"><FeedArticles Items="@feed.Items.Skip(1).ToArray()" /></div>
+            </section>
+        }
+        <nav class="personal-links" aria-label="Local news pages">@if (After is not null) { <a href="news/kansas-city#local-news">Newest stories</a> } @if (feed.Next is {} next) { <a href="@($"news/kansas-city?after={Uri.EscapeDataString(next.ToToken())}#local-news")">Older stories →</a> }</nav>
+    </section>
+    <aside class="local-panel lc-events" id="local-events"><h2 class="ef-label">Find something to do</h2>
+        <p>Browse these calendars for community events and current details.</p>
+        <div class="lc-links">
+            <a href="https://www.visitkc.com/visitors/events" target="_blank" rel="noopener noreferrer">Visit KC events <span aria-hidden="true">↗</span></a>
+            <a href="https://www.kcmo.gov/i-want-to/city-calendar" target="_blank" rel="noopener noreferrer">City of Kansas City calendar <span aria-hidden="true">↗</span></a>
+        </div>
+    </aside>
+</div>
+</div>
+</div>
+
+@code {
+    [SupplyParameterFromQuery(Name="view")] private string? ViewQuery {get;set;}
+    [SupplyParameterFromQuery(Name="section")] private string? LocalSection {get;set;}
+    [SupplyParameterFromQuery(Name="after")] private string? After {get;set;}
+    private FeedPage feed = new([],0,0,null);
+    // If the database can't be read, the tabs still lead home, to every headline and back here.
+    private IReadOnlyList<NavigationChoice> newsTabs = SectionChoices.News([new FeedCategory(0, SectionChoices.NewsKansasCityCategory)]);
+    private bool dedicated;
+    private string? error;
+    protected override async Task OnParametersSetAsync() {
+        error = null;
+        try { await using var db = await Factory.CreateDbContextAsync(Ct); (feed, dedicated) = await LocalNewsQuery.GetAsync(db, FeedCursor.Parse(After), Ct); newsTabs = await SectionChoices.NewsAsync(db); }
+        catch (Exception ex) when (DataFailures.IsReadFailure(ex)) {
+            Logger.LogWarning(ex,"Local news unavailable"); error = "Local news is temporarily unavailable. Weather and event links remain available.";
+        }
+    }
+}

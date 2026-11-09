@@ -1,0 +1,242 @@
+@page "/f1"
+@page "/f1/results"
+@page "/f1/standings"
+@layout PublicLayout
+@using myNewspaper.Web.Components.F1
+@inject IDbContextFactory<WebScraperContext> Factory
+@inject FeedDates Dates
+@inject NavigationManager Nav
+@inject ILogger<F1> Log
+@inherits DataComponentBase
+@inject TimeProvider Clock
+
+<PageTitle>F1 · @ViewLabel · myNewspaper</PageTitle>
+<div class="mx-desktop">
+<PageHeading Section="sports" Title="F1" Eyebrow="@($"Formula 1{(data.Season is { } year ? " · " + year + " season" : "")}")" Description="" />
+<F1Tabs Current="@view" />
+</div>
+@if (view != "schedule") { <div class="mx-phone"><PhoneF1Ribbon Season="data.Season" View="@view" /></div> }
+<div class="@(view == "schedule" ? "mx-desktop" : "mx-contents")">
+@if (error is not null)
+{
+    <p class="empty" role="status">@error</p>
+}
+else if (data.Source?.Enabled != true)
+{
+    <p class="empty">F1 data is not enabled.</p>
+}
+else
+{
+    @if (F1Query.Freshness(data, Clock.GetUtcNow().UtcDateTime) is { } warning) { <p class="updated" role="status">@warning</p> }
+    @if (view == "schedule")
+    {
+        @* Schedule as in the approved concept: the next race weekend as a banner, the following rounds as agate rows
+           and the drivers’ championship beside them. *@
+        var next = FullCalendar ? null : visibleRaces.FirstOrDefault();
+        @if (next is { } race)
+        {
+            var raceSession = new F1Session("Grand Prix", race.RaceDate, F1Query.StartsUtc(race.RaceDate, race.RaceTimeUtc));
+            var raceDay = F1Query.LocalDate(raceSession, Dates) == Dates.Today;
+            var published = data.Choices.Any(c => c.Round == race.Round && c.SessionType == "Race");
+            <section class="f1-banner f1-weekend" aria-labelledby="f1-round-@race.Round" data-f1-round="@race.Round">
+                <div class="f1-banner__text">
+                    <p class="f1-banner__kicker">@(raceDay ? "Race day" : "Next race") · Round @race.Round</p>
+                    <h2 id="f1-round-@race.Round">@race.RaceName</h2>
+                    <p class="f1-banner__where">@race.CircuitName · @string.Join(", ", new[] { race.Locality, race.Country }.Where(x => !string.IsNullOrWhiteSpace(x)))</p>
+                </div>
+                <div class="f1-banner__when">
+                    <span class="f1-banner__time"><SessionTime Session="raceSession" /></span>
+                    <div class="f1-banner__links">
+                        @if (published) { <a href="@($"f1/results?race={race.Round}:Race")">Race results <span aria-hidden="true">→</span></a> }
+                        @if (FeedQuery.SafeHref(race.RaceUrl) is { } reference) { <a href="@reference" target="_blank" rel="noopener noreferrer">Race reference</a> }
+                        @* F1 news lives in Sports headlines (the F1 page's own News tab was retired October 26, 2026). *@
+                        <a href="sports/news/f1">F1 headlines <span aria-hidden="true">→</span></a>
+                    </div>
+                    <details class="f1-sessions">
+                        <summary>Weekend timetable</summary>
+                        <ul>
+                            @foreach (var session in F1Query.Sessions(race))
+                            { <li><strong>@session.Name</strong><span><SessionTime Session="session" /></span></li> }
+                        </ul>
+                    </details>
+                </div>
+            </section>
+        }
+        <div class="f1-cols">
+            <section class="f1-rounds" aria-labelledby="f1-rounds-title">
+                <div class="ef-head">
+                    <h2 id="f1-rounds-title" class="ef-label">@(FullCalendar ? "Full calendar" : "Upcoming weekends")</h2>
+                    <a href="@(FullCalendar ? "f1" : "f1?calendar=all")">@(FullCalendar ? "Upcoming weekends" : "Full calendar") <span aria-hidden="true">→</span></a>
+                </div>
+                @if (visibleRaces.Count == 0)
+                { <p class="ef-empty">@(data.Races.Count == 0 ? "No race calendar available yet. Please check back soon." : "No upcoming race weekends in the collected season. View the full calendar for past races.")</p> }
+                <ol class="f1-list">
+                    @foreach (var round in visibleRaces.Where(r => r != next))
+                    {
+                        var raceSession = new F1Session("Grand Prix", round.RaceDate, F1Query.StartsUtc(round.RaceDate, round.RaceTimeUtc));
+                        var published = data.Choices.Any(c => c.Round == round.Round && c.SessionType == "Race");
+                        <li class="f1-round f1-weekend" data-f1-round="@round.Round">
+                            <span class="f1-round__rd">RD @round.Round</span>
+                            <span class="f1-round__name"><b id="f1-round-@round.Round">@round.RaceName</b><span>@round.CircuitName</span></span>
+                            <span class="f1-round__when"><SessionTime Session="raceSession" /></span>
+                            <span class="f1-round__links">
+                                @if (published) { <a href="@($"f1/results?race={round.Round}:Race")">Results <span aria-hidden="true">→</span></a> }
+                                <details class="f1-sessions">
+                                    <summary>Timetable</summary>
+                                    <ul>
+                                        @foreach (var session in F1Query.Sessions(round))
+                                        { <li><strong>@session.Name</strong><span><SessionTime Session="session" /></span></li> }
+                                    </ul>
+                                </details>
+                            </span>
+                        </li>
+                    }
+                </ol>
+            </section>
+            @if (drivers.Count > 0)
+            {
+                <section class="f1-drivers" aria-labelledby="f1-drivers-title">
+                    <div class="ef-head">
+                        <h2 id="f1-drivers-title" class="ef-label">Drivers’ championship@(drivers[0].StandingsRound is var after && after > 0 ? $" · after round {after}" : "")</h2>
+                        <a href="f1/standings?table=constructors">Constructors <span aria-hidden="true">→</span></a>
+                    </div>
+                    <ol class="f1-list">
+                        @foreach (var row in drivers)
+                        {
+                            <li class="f1-driver">
+                                <b class="f1-driver__pos">@F1Query.Position(row.Position, row.PositionText)</b>
+                                <span class="f1-driver__name">@row.GivenName @row.FamilyName<span class="f1-driver__team">@F1Query.Constructors(row.ConstructorsJson)</span></span>
+                                <b class="f1-driver__pts">@F1Query.Points(row.Points)</b>
+                                <span class="f1-driver__wins">@(row.Wins)W</span>
+                            </li>
+                        }
+                    </ol>
+                    <a class="ef-more" href="f1/standings">Full standings <span aria-hidden="true">→</span></a>
+                </section>
+            }
+        </div>
+        @if (data.FetchedAt is { } updated)
+        { <p class="ef-note">Snapshot updated <time datetime="@updated.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'")">@Dates.PublishedFull(updated)</time></p> }
+    }
+    else if (view == "results")
+    {
+        <h2>Results</h2>
+        @if (data.Choices.Count == 0)
+        { <p class="empty">No race or sprint classifications published yet.</p> }
+        else
+        {
+            <form class="catselect f1-selector" method="get" action="f1/results">
+                <label for="f1-race" class="sr-only">Race or sprint</label>
+                <select id="f1-race" name="race" onchange="this.form.requestSubmit()">
+                    @foreach (var choice in data.Choices)
+                    { <option value="@choice.Value" selected="@(choice == data.Selected)">@ChoiceLabel(choice)</option> }
+                </select>
+                <noscript><button type="submit" class="nf-btn nf-btn--secondary">Apply</button></noscript>
+            </form>
+            @if (selectedRace is { } race)
+            {
+                <h3>@race.RaceName · @(data.Selected?.SessionType == "Sprint" ? "Sprint" : "Grand Prix")</h3>
+                <p class="updated">Round @race.Round · @race.CircuitName · Race date @FeedDates.LongDate(race.RaceDate)</p>
+            }
+            @if (data.Results.Count == 0) { <p class="empty">Results are not available for this session.</p> }
+            else
+            {
+                <p class="updated f1-scroll-hint">Scroll the table horizontally to see all columns.</p>
+                <div class="f1-table-scroll" role="region" aria-label="F1 classification" tabindex="0">
+                    <table class="f1-table">
+                        <caption class="sr-only">@selectedRace?.RaceName @data.Selected?.SessionType classification</caption>
+                        <thead><tr><th scope="col">Pos.</th><th scope="col">Driver</th><th scope="col">Team</th><th scope="col">Grid</th><th scope="col">Laps</th><th scope="col">Time / gap</th><th scope="col">Status</th><th scope="col">Points</th></tr></thead>
+                        <tbody>@foreach (var row in data.Results)
+                        {
+                            <tr data-f1-driver="@row.DriverId">
+                                <td>@F1Query.Position(row.Position, row.PositionText)</td>
+                                <th scope="row">@row.GivenName @row.FamilyName @if (!string.IsNullOrWhiteSpace(row.DriverCode)) { <span class="f1-driver-code">@row.DriverCode</span> }
+                                    @if (row.FastestLapTime is not null || row.FastestLapRank is not null || row.TimeMillis is not null)
+                                    { <details class="f1-detail"><summary>Timing details</summary>
+                                        @if (row.FastestLapTime is { } lap) { <div>Fastest lap: @lap</div> }
+                                        @if (row.FastestLapRank is { } rank) { <div>Fastest-lap rank: @rank</div> }
+                                        @if (row.TimeMillis is { } milliseconds) { <div>Recorded time: @milliseconds ms</div> }
+                                    </details> }
+                                </th>
+                                <td>@row.ConstructorName</td><td>@F1Query.Grid(row.Grid)</td><td>@row.Laps</td>
+                                <td>@(row.TimeDisplay ?? "—")</td><td>@(row.Status ?? "—")</td><td>@F1Query.Points(row.Points)</td>
+                            </tr>
+                        }</tbody>
+                    </table>
+                </div>
+            }
+        }
+    }
+    else
+    {
+        <h2>Championship standings</h2>
+        <SectionSelect Id="f1-table" Label="Championship table" AlwaysSelect="true" Current="@(Constructors ? "f1/standings?table=constructors" : "f1/standings")"
+            Choices="@(new NavigationChoice[] { new("f1/standings", "Drivers"), new("f1/standings?table=constructors", "Constructors") })" />
+        @if (standingsRound is { } round) { <p class="updated">Championship as of round @round</p> }
+        @if (Constructors ? data.Constructors.Count == 0 : data.Drivers.Count == 0)
+        { <p class="empty">No championship standings published yet.</p> }
+        else
+        {
+            <p class="updated f1-scroll-hint">Scroll the table horizontally to see all columns.</p>
+            <div class="f1-table-scroll" role="region" aria-label="@(Constructors ? "Constructor standings" : "Driver standings")" tabindex="0">
+                <table class="f1-table">
+                    <caption class="sr-only">Season @data.Season @(Constructors ? "Constructors" : "Drivers") standings</caption>
+                    <thead><tr><th scope="col">Pos.</th><th scope="col">@(Constructors ? "Constructor" : "Driver")</th><th scope="col">@(Constructors ? "Nationality" : "Team(s)")</th><th scope="col">Points</th><th scope="col">Wins</th></tr></thead>
+                    <tbody>
+                        @if (Constructors)
+                        {
+                            @foreach (var row in data.Constructors)
+                            { <tr><td>@F1Query.Position(row.Position, row.PositionText)</td><th scope="row">@row.ConstructorName</th><td>@(row.Nationality ?? "—")</td><td>@F1Query.Points(row.Points)</td><td>@row.Wins</td></tr> }
+                        }
+                        else
+                        {
+                            @foreach (var row in data.Drivers)
+                            { <tr><td>@F1Query.Position(row.Position, row.PositionText)</td><th scope="row">@row.GivenName @row.FamilyName @if (row.DriverCode is { } driverCode) { <span class="f1-driver-code">@driverCode</span> }</th><td>@F1Query.Constructors(row.ConstructorsJson)</td><td>@F1Query.Points(row.Points)</td><td>@row.Wins</td></tr> }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    }
+}
+<p class="updated f1-credit">Data: <a href="https://github.com/jolpica/jolpica-f1" target="_blank" rel="noopener noreferrer">Jolpica F1</a>. Periodically collected published data; not live timing or an official F1 feed. Confirmed times use @Dates.Zone.Id; date-only sessions retain their calendar date.</p>
+
+</div>
+@if (view == "schedule") { <PhoneF1 Data="data" Championship="championship" Error="@error" FullCalendar="FullCalendar" /> }
+
+@code {
+    [SupplyParameterFromQuery(Name = "calendar")] private string? Calendar { get; set; }
+    [SupplyParameterFromQuery(Name = "race")] private string? Race { get; set; }
+    [SupplyParameterFromQuery(Name = "table")] private string? Table { get; set; }
+    private bool FullCalendar => Calendar == "all";
+    private bool Constructors => Table == "constructors";
+    private string view = "schedule";
+    private string ViewLabel => view == "results" ? "Results" : view == "standings" ? "Standings" : "Schedule";
+    private F1Page championship = F1Page.Empty;
+    private F1Page data = F1Page.Empty;
+    private IReadOnlyList<myNewspaper.Shared.Data.Models.F1Race> visibleRaces = [];
+    private myNewspaper.Shared.Data.Models.F1Race? selectedRace;
+    private int? standingsRound;
+    private IReadOnlyList<myNewspaper.Shared.Data.Models.F1DriverStanding> drivers = [];
+    private string? error;
+    private string ChoiceLabel(F1ResultChoice choice) => $"Round {choice.Round} · {data.Races.First(r => r.Round == choice.Round).RaceName} · {(choice.SessionType == "Race" ? "Grand Prix" : "Sprint")}";
+
+    protected override async Task OnParametersSetAsync()
+    {
+        view = Nav.ToBaseRelativePath(Nav.Uri).Split('?')[0].TrimEnd('/').ToLowerInvariant() switch { "f1/results" => "results", "f1/standings" => "standings", _ => "schedule" };
+        error = null; data = F1Page.Empty; selectedRace = null; standingsRound = null; visibleRaces = [];
+        try
+        {
+            await using var db = await Factory.CreateDbContextAsync(Ct);
+            data = await F1Query.GetAsync(db, view, Race, Ct);
+            visibleRaces = data.Races.Where(r => FullCalendar || F1Query.Upcoming(r, Dates, Dates.Today)).ToList();
+            championship = view == "schedule" ? await F1Query.GetAsync(db, "standings", null, Ct) : F1Page.Empty;
+            drivers = championship.Drivers.Take(10).ToList();
+            selectedRace = data.Races.FirstOrDefault(r => r.Round == data.Selected?.Round);
+            standingsRound = Constructors ? data.Constructors.Select(r => (int?)r.StandingsRound).FirstOrDefault()
+                : data.Drivers.Select(r => (int?)r.StandingsRound).FirstOrDefault();
+        }
+        catch (Exception ex) when (DataFailures.IsReadFailure(ex))
+        { Log.LogError(ex, "Could not read F1 {View}.", view); error = "F1 data is temporarily unavailable. Please try again."; }
+    }
+}

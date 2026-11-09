@@ -5,25 +5,32 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
 # Restore first so the package layer is cached until a .csproj changes.
-COPY MyNewsFeed.sln ./
-COPY src/MyNewsFeed.Web/MyNewsFeed.Web.csproj src/MyNewsFeed.Web/
-COPY tests/MyNewsFeed.Tests/MyNewsFeed.Tests.csproj tests/MyNewsFeed.Tests/
-RUN dotnet restore src/MyNewsFeed.Web/MyNewsFeed.Web.csproj
+COPY myNewspaper.sln Directory.Build.props .editorconfig BannedSymbols.txt ./
+COPY src/myNewspaper.Web/myNewspaper.Web.csproj src/myNewspaper.Web/
+COPY src/myNewspaper.Shared/myNewspaper.Shared.csproj src/myNewspaper.Shared/
+RUN dotnet restore src/myNewspaper.Web/myNewspaper.Web.csproj
 
 COPY src/ src/
 # No --no-restore: the early restore above only saw the .csproj, not the .razor files, and skips the package that
 # supplies _framework/blazor.web.js. Restoring again with the full source picks it up.
-RUN dotnet publish src/MyNewsFeed.Web/MyNewsFeed.Web.csproj -c Release -o /app/publish
+# The commit and build time for /version and the image label (deployment/deploy.sh passes both). Declared here, after
+# restore, so changing them doesn't invalidate the cached package layer.
+ARG GIT_COMMIT=""
+ARG BUILD_TIME=""
+RUN dotnet publish src/myNewspaper.Web/myNewspaper.Web.csproj -c Release -o /app/publish \
+      ${GIT_COMMIT:+-p:SourceRevisionId=$GIT_COMMIT} ${BUILD_TIME:+-p:BuildTime=$BUILD_TIME}
 
 # Guard: fail the build if the published site cannot serve the Blazor script. Without it the admin pages are not
 # interactive and every form post is rejected with a 400, and nothing else would notice until someone used the site.
-RUN grep -q "_framework/blazor.web.js" /app/publish/MyNewsFeed.Web.staticwebassets.endpoints.json || { \
+RUN grep -q "_framework/blazor.web.js" /app/publish/myNewspaper.Web.staticwebassets.endpoints.json || { \
       echo "ERROR: _framework/blazor.web.js is missing from the published static assets." >&2; \
-      echo "The admin pages would not be interactive. Check that restore ran with the full source (see the publish step)." >&2; \
+      echo "The interactive pages would not be available. Check that restore ran with the full source (see the publish step)." >&2; \
       exit 1; }
 
 # ---- runtime ----
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
+ARG GIT_COMMIT=""
+LABEL org.opencontainers.image.revision="${GIT_COMMIT}"
 WORKDIR /app
 
 # Persistent home for the cookie-signing keys (mounted as a volume); owned by the non-root app user.
@@ -37,4 +44,4 @@ ENV ASPNETCORE_URLS=http://+:8080 \
 
 EXPOSE 8080
 USER $APP_UID
-ENTRYPOINT ["dotnet", "MyNewsFeed.Web.dll"]
+ENTRYPOINT ["dotnet", "myNewspaper.Web.dll"]

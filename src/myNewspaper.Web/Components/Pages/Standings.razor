@@ -1,0 +1,127 @@
+@page "/standings"
+@layout PublicLayout
+@using myNewspaper.Web.Components.Standings
+@inject IDbContextFactory<WebScraperContext> Factory
+@inject FeedDates Dates
+@inject IConfiguration Config
+@inject ILogger<Standings> Log
+@inherits DataComponentBase
+@inject TimeProvider Clock
+
+<div class="@(CollegeSport is null ? "mx-desktop" : "mx-contents")">
+@if (CollegeSport is null)
+{
+<PageTitle>Standings · myNewspaper</PageTitle>
+<PageHeading Section="sports" Title="Standings" Eyebrow="The league picture" Description="" />
+}
+@if (CollegeSport is null && page.Sources.Count > 0)
+{
+    @* Leagues as pills on desktop (as in the approved concept); the dropdown below serves phones. *@
+    <nav class="sec-pills sec-pills--desktop st-leagues" aria-label="Leagues">
+        @foreach (var source in page.Sources)
+        { <a href="@($"standings?sourceId={source.Id}")" aria-current="@(page.Selected?.Id == source.Id ? "page" : null)">@source.DisplayName</a> }
+    </nav>
+    <form class="catselect st-select" method="get" action="@BasePath">
+        @if (CollegeSport is not null) { <input type="hidden" name="sport" value="@CollegeHub.Resolve(CollegeSport).Key" /> }
+        <label class="sr-only" for="standings-source">League or sport</label>
+        <select id="standings-source" name="sourceId" onchange="this.form.requestSubmit()">
+            @foreach (var source in page.Sources)
+            { <option value="@source.Id" selected="@(page.Selected?.Id == source.Id)">@source.DisplayName</option> }
+        </select>
+        <noscript><button class="nf-btn nf-btn--secondary" type="submit">Apply</button></noscript>
+    </form>
+}
+@if (page.AvailabilityError is { } unavailable)
+{
+    <p class="empty" role="status">@unavailable <a href="@RetryHref">Try again</a></p>
+}
+else if (page.Selected is null)
+{
+    <p class="empty">No standings sources are enabled for this selection.</p>
+}
+else
+{
+    var selected = page.Selected;
+    var rows = page.Groups.SelectMany(g => g.Teams).Select(t => t.Row).ToList();
+    var seasons = rows.Select(r => r.Season).Where(s => !string.IsNullOrWhiteSpace(s)).Distinct().ToList();
+    if (seasons.Count == 0 && selected.LatestSeason is { Length: > 0 } season) seasons.Add(season);
+    <div class="st-head">
+        <h2>@selected.DisplayName</h2>
+        <span class="mv-updated">@(seasons.Count > 0 ? string.Join(" · ", seasons) + " season · " : "")provider order@(selected.LastSuccessAt is { } checkedAt ? " · refreshed " + Dates.Time(checkedAt) : "")</span>
+    </div>
+    <SoccerLeagueLinks Provider="@selected.ProviderKey" />
+    @if (selected.ProviderKey == "big12" && selected.Sport == "Soccer")
+    { <p class="updated">Conference and overall standings.</p> }
+    @if (selected.ProviderKey == "espn-championship") { <p class="updated">Wrexham AFC is highlighted; the full league table remains visible.</p> }
+    <details class="ranking-info"><summary>About these standings</summary>
+    @if (selected.LastSuccessAt is { } refreshed)
+    { <p class="updated">Last refreshed <time datetime="@refreshed.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'")">@Dates.PublishedFull(refreshed)</time></p> }
+    @if (rows.Select(r => FeedQuery.SafeHref(r.SourceUrl)).FirstOrDefault(u => u is not null) is { } sourceUrl)
+    { <p><a href="@sourceUrl" target="_blank" rel="noopener noreferrer">View source table ↗</a></p> }
+    <p class="updated">Tables retain the published season and provider order. Refresh times describe collection by myNewspaper.</p>
+    </details>
+    @if (page.Groups.Count == 0)
+    { <p class="empty">@(selected.ProviderKey == "big12" ? "Current-season standings are not available yet. This college feed is enabled." : "Standings not available yet.")</p> }
+    else
+    {
+        @if (StandingsQuery.Freshness(selected, Clock.GetUtcNow().UtcDateTime) is { } message)
+        { <p class="standing-status" role="status">@message</p> }
+        <div class="standings-view">
+        @{ var index = 0; }
+        @if (selected.ProviderKey is "espn-nhl" or "espn-nfl")
+        {
+            @foreach (var conference in page.Groups.GroupBy(g => selected.ProviderKey == "espn-nfl" ? StandingsQuery.NflConference(g) : StandingsQuery.NhlConference(g)).OrderBy(g => g.Key is "Eastern Conference" or "American Football Conference" ? 0 : g.Key is "Western Conference" or "National Football Conference" ? 1 : 2))
+            {
+                <section class="nhl-conference" aria-labelledby="@($"nhl-conference-{index}")">
+                    <h3 id="@($"nhl-conference-{index}")">@conference.Key</h3>
+                    @foreach (var group in conference.OrderBy(g => g.Name, StringComparer.Ordinal))
+                    { <StandingsTable Sport="@selected.Sport" Group="group" Provider="@selected.ProviderKey" SourceName="@selected.DisplayName" HeadingId="@($"standings-group-{index++}")" /> }
+                </section>
+            }
+        }
+        else
+        {
+            @if (selected.ProviderKey is not ("espn-nwsl" or "espn-mls" or "espn-championship" or "espn-epl") && !(selected.ProviderKey == "big12" && (selected.Sport is "Soccer" or "Football" or "Volleyball" || selected.Sport.Contains("Basketball", StringComparison.OrdinalIgnoreCase))))
+            { <label class="ranking-detail-toggle"><input type="checkbox" /> Show all statistics</label> }
+            @foreach (var group in page.Groups)
+            { <StandingsTable Sport="@selected.Sport" Group="group" Provider="@selected.ProviderKey" SourceName="@selected.DisplayName" HeadingId="@($"standings-group-{index++}")" /> }
+        }
+        </div>
+    }
+}
+
+</div>
+@if (CollegeSport is null) { <PhoneStandings Data="page" Games="phoneGames" Poll="phonePoll" RetryHref="@RetryHref" /> }
+
+@code {
+    [Parameter] public string? CollegeSport { get; set; }
+    private string BasePath => CollegeSport is null ? "standings" : "college/standings";
+    [SupplyParameterFromQuery(Name = "sourceId")] private string? SourceId { get; set; }
+    private IReadOnlyList<EventItem> phoneGames = [];
+    private RankingsPage phonePoll = new([], null, null, []);
+    private StandingsPage page = new([], null, []);
+    private string RetryHref => BasePath + (CollegeSport is not null ? "?sport=" + CollegeHub.Resolve(CollegeSport).Key + "&" : "?") + (page.Selected is { } source ? $"sourceId={source.Id}" : "");
+    protected override async Task OnParametersSetAsync()
+    {
+        try
+        {
+            await using var db = await Factory.CreateDbContextAsync(Ct);
+            page = await StandingsQuery.GetAsync(db, StandingsQuery.ParseSourceId(SourceId), Log, Dates.Today, Config.GetSection("Standings:HiddenProviders").Get<string[]>(), CollegeSport, Ct);
+            phoneGames = []; phonePoll = new([], null, null, []);
+            if (CollegeSport is null && page.Selected is { } selected)
+            {
+                try
+                {
+                    phoneGames = (await EventsQuery.GetUpcomingAsync(db, Dates.Today, selected.Sport, null, provider: selected.ProviderKey, to: Dates.Today.AddDays(7), ct: Ct)).Items;
+                    if (selected.ProviderKey == "big12") phonePoll = await RankingsQuery.GetAsync(db, null, Log, Dates.Today, selected.Sport, Ct);
+                }
+                catch (Exception ex) when (DataFailures.IsReadFailure(ex)) { Log.LogWarning(ex, "Supplemental standings schedule/poll unavailable."); }
+            }
+        }
+        catch (Exception ex) when (DataFailures.IsReadFailure(ex))
+        {
+            Log.LogError(ex, "Standings database read failed.");
+            page = new([], null, [], "Standings are temporarily unavailable. Please try again.");
+        }
+    }
+}

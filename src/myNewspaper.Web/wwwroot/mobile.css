@@ -1,0 +1,2024 @@
+/* =====================================================================================================================
+   Phone refresh (docs/mobile-refresh-handoff.md). Everything is .mx-prefixed and shows below 1024px, including iPad portrait; wider screens retain desktop. Uses the public.css tokens (--text, --text-2, --surface, --bg, --border, --accent) so color
+   schemes and dark mode carry over.
+   ===================================================================================================================== */
+.pub {
+    /* Each scheme supplies a contrast-paired secondary color; future schemes inherit this too. */
+    --mx-ribbon-bg: var(--selection-bg);
+    --mx-ribbon-fg: var(--selection-fg);
+    --mx-ribbon-kicker: var(--mx-ribbon-fg);
+    --mx-live: var(--mx-ribbon-fg);
+    --mx-block-bg: #141b2b;
+    --mx-block-fg: #ffffff;
+    --mx-block-2: #c9d6ee;
+    --mx-block-3: #9fb0d0;
+    --mx-block-tile: #1f2940;
+    --mx-block-line: #4f5d80;
+    --mx-block-accent: #ffd34d;
+    --mx-band: var(--bg);
+    --mx-world: #0051ba;
+    --mx-us: #b0001e;
+    --mx-local: #0f766e;
+    --mx-business: #b45309;
+    --mx-tech: #6d28d9;
+    --mx-gain: #15803d;
+    --mx-alert: #b45309;
+    --mx-serif: 'Newsreader', Georgia, serif;
+}
+:root[data-theme='dark'] .pub {
+    --mx-ribbon-bg: color-mix(in srgb, var(--selection-bg) 25%, var(--surface));
+    --mx-ribbon-fg: var(--text);
+    --mx-block-bg: #050b17;
+    --mx-block-tile: #111f36;
+    --mx-block-line: #3b5278;
+    --mx-world: #8bbcff;
+    --mx-us: #ff8590;
+    --mx-local: #5eead4;
+    --mx-business: #fbbf24;
+    --mx-tech: #c4b5fd;
+    --mx-gain: #4ade80;
+    --mx-alert: #fbbf24;
+}
+
+/* Phone-only and desktop-only wrappers. The desktop wrapper takes no box of its own, so the page's flex gaps still
+   apply to what's inside it; .mx-contents is the same wrapper on a page whose phone version isn't in use. */
+.mx-phone {
+    display: none;
+}
+.mx-desktop,
+.mx-contents {
+    display: contents;
+}
+@media (max-width: 1023px) {
+    .mx-phone {
+        display: block;
+    }
+    .mx-desktop {
+        display: none !important;
+    }
+    /* Edge to edge: cancel the page's phone padding (public.css: 12px 20px 40px). */
+    /* The Scoreboard's phone copy sits inside its panel, so the five-minute refresh replaces both copies together. */
+    .pub .page > .mx-phone,
+    .pub .page > [data-scoreboard] > .mx-phone {
+        margin: -12px -20px -40px;
+        padding-bottom: 24px;
+        background: var(--surface);
+    }
+}
+
+/* A Home section hidden in Settings (personal.js sets [hidden]) stays hidden whatever its display. */
+.mx-phone [hidden] {
+    display: none !important;
+}
+
+/* ---------------------------------------------------------------- Ribbon */
+.mx-ribbon {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+    background: var(--mx-ribbon-bg);
+    color: var(--mx-ribbon-fg);
+}
+.mx-ribbon__kicker {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--mx-ribbon-kicker);
+}
+.mx-ribbon__kicker::before {
+    content: '';
+    flex: none;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: var(--mx-live);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--mx-live) 18%, transparent);
+}
+.pub .mx-ribbon h1 {
+    margin: 4px 0 0;
+    font-family: var(--mx-serif);
+    font-size: 44px;
+    font-weight: 800;
+    line-height: 0.95;
+    letter-spacing: -0.02em;
+    color: inherit;
+    overflow-wrap: anywhere;
+}
+/* Blazor focuses the first h1 after navigation; it is not interactive. */
+.pub .mx-ribbon h1:focus {
+    outline: none;
+}
+/* "Entertainment" fits whole on a 320px phone. */
+@media (max-width: 359px) {
+    .pub .mx-ribbon h1 {
+        font-size: 36px;
+    }
+}
+/* SectionSelect's own phone rules (broadsheet.css, sections.css) are as specific, so the ribbon repeats .section-nav. */
+.mx-ribbon__field,
+.pub .mx-ribbon .section-nav .section-select {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    max-width: none;
+    gap: 10px;
+    margin: 0;
+}
+/* SectionSelect's desktop tabs */
+.pub .mx-ribbon .section-nav .section-tabs {
+    display: none;
+}
+.pub .mx-ribbon label,
+.pub .mx-ribbon .section-nav .section-select label {
+    flex: none;
+    margin: 0;
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--mx-ribbon-kicker);
+}
+.pub .mx-ribbon select,
+.pub .mx-ribbon input,
+.pub .mx-ribbon .section-nav .section-select select {
+    flex: 1 1 auto;
+    min-width: 0;
+    width: 100%;
+    min-height: 48px;
+    padding: 0 12px;
+    font: inherit;
+    font-size: 16px;
+    font-weight: 700; /* 16px stops iOS zooming on focus */
+    text-align: left;
+    color: #141b2b;
+    background: #ffffff;
+    border: 2px solid #141b2b;
+    border-radius: 10px;
+}
+.pub .mx-ribbon .nf-btn {
+    flex: none;
+    min-height: 48px;
+}
+
+/* ---------------------------------------------------------------- Dark block */
+.mx-block {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 18px 16px;
+    background: var(--mx-block-bg);
+    color: var(--mx-block-fg);
+}
+.pub .mx-block a {
+    color: inherit;
+}
+.mx-block__kicker {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--mx-block-accent);
+}
+.pub .mx-block__title {
+    margin: 0;
+    font-family: var(--mx-serif);
+    font-size: 27px;
+    font-weight: 800;
+    line-height: 1.1;
+    color: inherit;
+    overflow-wrap: anywhere;
+}
+/* A one- or two-line title link still makes a 44px target (release 5 started this for its own pages). */
+.pub :is(.mx-block__title, .mx-top__title) > a {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+}
+.mx-block__quote {
+    margin: 0;
+    font-family: var(--mx-serif);
+    font-style: italic;
+    font-size: 17px;
+    line-height: 1.4;
+    color: var(--mx-block-2);
+}
+.mx-block__media {
+    position: relative;
+    display: grid;
+    place-items: center;
+    height: 200px;
+    border-radius: 14px;
+    overflow: hidden;
+    background: var(--mx-block-tile);
+}
+.mx-block__media img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.mx-block__badge {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    padding: 5px 10px;
+    border-radius: 6px;
+    background: #b0001e;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+.mx-block__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+/* Save and Share keep their public.js hooks; here they're outlined buttons with a word beside the icon. */
+.pub .mx-block__actions button,
+.pub .mx-block__ghost {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: auto;
+    height: auto;
+    min-height: 44px;
+    margin: 0;
+    padding: 0 14px;
+    border: 1px solid var(--mx-block-line);
+    border-radius: 10px;
+    background: transparent;
+    color: var(--mx-block-fg);
+    font: inherit;
+    font-size: 14px;
+    font-weight: 700;
+}
+.pub .mx-block__actions button[hidden] {
+    display: none;
+}
+.pub .mx-block__actions button:hover {
+    background: var(--mx-block-tile);
+    color: var(--mx-block-fg);
+}
+.pub .mx-block__actions .save[aria-pressed='true'] {
+    color: var(--mx-block-accent);
+    border-color: var(--mx-block-accent);
+}
+.mx-block__cta {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 48px;
+    border-radius: 10px;
+    background: var(--mx-block-accent);
+    color: #141b2b !important;
+    font-size: 15px;
+    font-weight: 800;
+    text-decoration: none;
+}
+.mx-big {
+    font-family: var(--mx-serif);
+    font-weight: 800;
+    line-height: 0.85;
+    color: var(--mx-block-accent);
+}
+
+/* Small cards inside the dark block. */
+.mx-tiles {
+    display: grid;
+    grid-template-columns: repeat(var(--mx-tile-cols, 3), minmax(0, 1fr));
+    gap: 8px;
+}
+.mx-tile {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: var(--mx-block-tile);
+    min-width: 0;
+}
+.mx-tile__label {
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: var(--mx-block-3);
+}
+.mx-tile__value {
+    font-family: var(--mx-serif);
+    font-size: 22px;
+    font-weight: 800;
+    line-height: 1;
+}
+.mx-tile__sub {
+    font-size: 12px;
+    color: var(--mx-block-2);
+}
+
+/* ---------------------------------------------------------------- Section heading (double rule) */
+.mx-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 0 0 4px;
+    padding-bottom: 6px;
+    border-bottom: 3px solid var(--text);
+}
+.pub .mx-head h2 {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text);
+}
+.pub .mx-head a {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--accent);
+}
+.mx-section {
+    padding: 20px 16px 4px;
+}
+
+/* ---------------------------------------------------------------- Timeline */
+.mx-timeline {
+    padding: 20px 16px 8px;
+    background: var(--mx-band);
+}
+.mx-timeline__top {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+}
+.pub .mx-timeline__top h2 {
+    margin: 0;
+    font-family: var(--mx-serif);
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--text);
+}
+.mx-timeline__top span {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-2);
+}
+.mx-timeline ol {
+    list-style: none;
+    margin: 14px 0 0 7px;
+    padding: 0 0 0 18px;
+    border-left: 2px solid var(--border);
+}
+.mx-timeline li {
+    position: relative;
+    padding: 8px 0 8px 10px;
+}
+.mx-timeline li::before {
+    content: '';
+    position: absolute;
+    left: -26px;
+    top: 15px;
+    width: 14px;
+    height: 14px;
+    border-radius: 999px;
+    background: var(--dot, var(--mx-world));
+    border: 3px solid var(--mx-band);
+}
+.pub .mx-timeline li > a {
+    display: grid;
+    grid-template-columns: 74px minmax(0, 1fr) auto;
+    gap: 8px;
+    align-items: baseline;
+    min-height: 44px;
+    color: var(--text);
+    text-decoration: none;
+}
+.mx-timeline__time {
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--dot, var(--mx-world));
+}
+.mx-timeline__title {
+    display: block;
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+}
+.mx-timeline__sub {
+    display: block;
+    font-size: 12px;
+    color: var(--text-3);
+}
+.mx-timeline__tag {
+    max-width: 84px;
+    text-align: right;
+    overflow-wrap: anywhere;
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--text-2);
+}
+.pub .mx-more {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 48px;
+    margin: 10px 0 8px;
+    border: 2px solid var(--text);
+    border-radius: 10px;
+    background: var(--surface);
+    color: var(--text);
+    font-size: 15px;
+    font-weight: 800;
+    text-decoration: none;
+}
+
+/* ---------------------------------------------------------------- Top list */
+.mx-top {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+.mx-top li {
+    display: grid;
+    grid-template-columns: 40px minmax(0, 1fr) 44px;
+    gap: 8px;
+    align-items: start;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--row-border);
+}
+.mx-top__n {
+    font-family: var(--mx-serif);
+    font-size: 38px;
+    font-weight: 800;
+    line-height: 0.9;
+    color: var(--accent);
+}
+.pub .mx-top__title {
+    display: block;
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1.3;
+    color: var(--text);
+    overflow-wrap: anywhere;
+}
+.mx-top__meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 4px;
+    font-size: 12px;
+    color: var(--text-3);
+}
+.mx-top__meta::before {
+    content: '';
+    flex: none;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: var(--dot, var(--mx-world));
+}
+/* Save, with Share under it: one 44px column, so the headline keeps its width. */
+.mx-top__actions {
+    display: flex;
+    flex-direction: column;
+    margin-top: -6px;
+}
+.pub .mx-top :is(.save, .share-button) {
+    width: 44px;
+    height: 44px;
+    margin: 0;
+}
+
+/* ---------------------------------------------------------------- Fold group (native <details>, one open at a time) */
+.mx-folds {
+    padding: 22px 16px 8px;
+}
+.mx-fold {
+    border-bottom: 1px solid var(--row-border);
+}
+.mx-fold > summary {
+    display: grid;
+    grid-template-columns: 6px minmax(0, 1fr) 24px;
+    gap: 12px;
+    align-items: center;
+    min-height: 64px;
+    padding: 8px 0;
+    cursor: pointer;
+    list-style: none;
+    color: var(--text);
+}
+.mx-fold > summary::-webkit-details-marker {
+    display: none;
+}
+.mx-fold > summary::before {
+    content: '';
+    align-self: stretch;
+    border-radius: 3px;
+    background: var(--edge, var(--mx-world));
+}
+.mx-fold > summary::after {
+    content: '';
+    display: block;
+    width: 20px;
+    height: 20px;
+    justify-self: center;
+    background: var(--text);
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")
+        center / 20px no-repeat;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")
+        center / 20px no-repeat;
+}
+.mx-fold[open] > summary::after {
+    transform: rotate(180deg);
+}
+@media (prefers-reduced-motion: no-preference) {
+    .mx-fold > summary::after {
+        transition: transform 0.15s ease;
+    }
+}
+.mx-fold__text {
+    min-width: 0;
+}
+.mx-fold__name {
+    display: block;
+    font-family: var(--mx-serif);
+    font-size: 20px;
+    font-weight: 800;
+    line-height: 1.1;
+}
+.mx-fold__gist {
+    display: block;
+    font-size: 13px;
+    color: var(--text-2);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.mx-fold__body {
+    margin: 0 0 14px 18px;
+    padding: 4px 0 4px 12px;
+    border-left: 3px solid var(--edge, var(--mx-world));
+}
+.pub .mx-fold__row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+    align-items: baseline;
+    min-height: 44px;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--row-border);
+    color: var(--text);
+    text-decoration: none;
+}
+.mx-fold__row b {
+    display: block;
+    font-size: 15px;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
+}
+.mx-fold__row small {
+    display: block;
+    font-size: 12px;
+    color: var(--text-3);
+}
+.mx-fold__value {
+    font-family: var(--mx-serif);
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--edge, var(--mx-world));
+}
+.pub .mx-fold__all {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--edge, var(--mx-world));
+}
+
+/* Category helpers for --dot / --edge. */
+.mx-c-world {
+    --dot: var(--mx-world);
+    --edge: var(--mx-world);
+}
+.mx-c-us {
+    --dot: var(--mx-us);
+    --edge: var(--mx-us);
+}
+.mx-c-local {
+    --dot: var(--mx-local);
+    --edge: var(--mx-local);
+}
+.mx-c-business {
+    --dot: var(--mx-business);
+    --edge: var(--mx-business);
+}
+.mx-c-tech {
+    --dot: var(--mx-tech);
+    --edge: var(--mx-tech);
+}
+.mx-c-games {
+    --dot: var(--mx-business);
+    --edge: var(--mx-business);
+}
+.mx-c-linux {
+    --dot: var(--mx-local);
+    --edge: var(--mx-local);
+}
+.mx-c-gain {
+    --dot: var(--mx-gain);
+    --edge: var(--mx-gain);
+}
+.mx-c-ink {
+    --dot: var(--text);
+    --edge: var(--text);
+}
+.mx-c-alert {
+    --dot: var(--mx-alert, #b45309);
+    --edge: var(--mx-alert, #b45309);
+}
+
+/* ---------------------------------------------------------------- Release 2: Home, Sports, Scoreboard */
+/* Live scores: dark cards on a light band, lighter cards (two across, bigger scores) inside the dark block. */
+.mx-scores {
+    display: grid;
+    grid-template-columns: repeat(var(--mx-score-cols, 3), minmax(0, 1fr));
+    gap: 8px;
+    margin: 6px 0 4px;
+}
+.mx-block .mx-scores {
+    --mx-score-cols: 2;
+    margin: 0;
+}
+.pub .mx-score {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+    min-height: 44px;
+    padding: 10px;
+    border-radius: 12px;
+    background: var(--mx-block-bg);
+    color: var(--mx-block-fg);
+    text-decoration: none;
+}
+.pub .mx-block .mx-score {
+    padding: 12px;
+    background: var(--mx-block-tile);
+}
+/* Live tiles: four fixed lines (league, clock, away, home), so every tile is the same height. The one column may
+   shrink below its content (minmax(0, 1fr)), so a long team name ends in an ellipsis instead of pushing the score
+   past the tile's edge. */
+.pub .mx-score {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: 16px 18px 24px 24px;
+    row-gap: 4px;
+}
+.mx-score__league,
+.mx-score__clock {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+.mx-score__league {
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    color: var(--mx-block-3);
+}
+.mx-score__clock {
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    color: var(--mx-block-accent);
+}
+.mx-score__team b {
+    font-variant-numeric: tabular-nums; /* 1 and 45 line up across tiles */
+}
+
+/* The strip: fixed-width tiles you swipe sideways, running to the screen edge with a fade. */
+.mx-scores--strip {
+    display: flex;
+    gap: 8px;
+    margin-right: -16px; /* to the screen edge… */
+    padding-right: 16px; /* …while the last tile can still clear it */
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+    -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 40px), transparent);
+    mask-image: linear-gradient(90deg, #000 calc(100% - 40px), transparent);
+}
+.mx-scores--strip::-webkit-scrollbar {
+    display: none;
+}
+.mx-scores--strip > .mx-score {
+    flex: none;
+    width: 150px;
+    scroll-snap-align: start;
+}
+.mx-block .mx-scores--strip > .mx-score {
+    width: 170px; /* the dark lead block's bigger scores */
+}
+/* One or two games: no fade (nothing to scroll to). */
+.mx-scores--strip:not(:has(> :nth-child(3))) {
+    -webkit-mask-image: none;
+    mask-image: none;
+}
+.mx-score__team {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 600;
+}
+.mx-score__team > span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.mx-score__team b {
+    font-family: var(--mx-serif);
+    font-size: 16px;
+}
+.mx-block .mx-score__team {
+    font-size: 15px;
+}
+.mx-block .mx-score__team b {
+    font-size: 22px;
+}
+/* "Live now" with a red dot (the word carries the meaning). */
+.pub .mx-live {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 12px 0 6px;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--mx-us);
+}
+.mx-live::before {
+    content: '';
+    flex: none;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: currentColor;
+    box-shadow: 0 0 0 4px color-mix(in srgb, currentColor 18%, transparent);
+}
+.pub .mx-block .mx-live {
+    margin: 0;
+    color: #ff8a98;
+}
+.pub .mx-subhead {
+    margin: 14px 0 0;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-2);
+}
+.mx-block__note {
+    margin: 0;
+    font-size: 13px;
+    color: var(--mx-block-2);
+}
+.mx-empty {
+    margin: 0;
+    padding: 20px 16px;
+    font-size: 15px;
+    color: var(--text-2);
+}
+
+/* Home: today's weather as one line of four inside the ribbon. */
+.pub .mx-weather {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+    color: var(--mx-ribbon-fg);
+    text-decoration: none;
+}
+.mx-weather__period {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+    padding: 8px;
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--mx-ribbon-fg) 9%, transparent);
+}
+.mx-weather__name,
+.mx-weather__summary {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.mx-weather__name {
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: var(--mx-ribbon-kicker);
+}
+.mx-weather__temp {
+    font-family: var(--mx-serif);
+    font-size: 22px;
+    font-weight: 800;
+    line-height: 1.1;
+}
+.mx-weather__summary {
+    font-size: 11px;
+}
+
+/* Home: the Where to watch search in place of a select. */
+.mx-ribbon__search {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 0;
+}
+.mx-ribbon__search > div {
+    display: flex;
+    gap: 8px;
+}
+.pub .mx-ribbon__search button {
+    flex: none;
+    min-height: 48px;
+    padding: 0 16px;
+    border: 2px solid var(--mx-ribbon-fg);
+    border-radius: 10px;
+    background: #141b2b;
+    color: #ffffff;
+    font: inherit;
+    font-size: 15px;
+    font-weight: 800;
+}
+
+/* Scoreboard: previous day · date · next day, 48px buttons. */
+.mx-stepper {
+    display: grid;
+    grid-template-columns: 48px minmax(0, 1fr) 48px;
+    align-items: center;
+    gap: 8px;
+}
+.pub .mx-stepper__btn {
+    display: grid;
+    place-items: center;
+    min-height: 48px;
+    border: 2px solid #141b2b;
+    border-radius: 10px;
+    background: #ffffff;
+    color: #141b2b;
+}
+span.mx-stepper__btn {
+    visibility: hidden;
+}
+.mx-stepper__day {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    font-size: 16px;
+    font-weight: 800;
+}
+.pub .mx-stepper__day a {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    margin: -10px 0;
+    font-size: 13px;
+    color: var(--mx-ribbon-kicker);
+    text-decoration: underline;
+}
+
+/* Release 3: poll numerals, league rows, college fixtures and F1 weekend details. */
+.mx-note {
+    padding: 12px 16px;
+    margin: 0;
+    color: var(--text-2);
+    font-size: 13px;
+    overflow-wrap: anywhere;
+}
+.mx-note a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+}
+.mx-sport-list {
+    padding: 18px 16px;
+}
+.mx-number {
+    font-family: var(--mx-serif);
+    font-weight: 800;
+    font-size: 104px;
+    line-height: 1;
+}
+.mx-number--record {
+    font-size: 60px;
+    overflow-wrap: anywhere;
+}
+.mx-race-time {
+    font-family: var(--mx-serif);
+    font-size: 50px;
+    line-height: 1.1;
+    font-weight: 800;
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+.mx-rank-list,
+.mx-standing-list {
+    padding: 0;
+    margin: 0;
+    list-style: none;
+}
+.mx-rank-list li,
+.mx-standing-list li {
+    display: grid;
+    grid-template-columns: 35px minmax(0, 1fr) auto;
+    gap: 10px;
+    align-items: center;
+    min-height: 64px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--row-border);
+}
+.mx-rank-list__rank {
+    font-family: var(--mx-serif);
+    font-size: 32px;
+    color: var(--accent);
+}
+.mx-rank-list small,
+.mx-standing-list small {
+    display: block;
+    font-size: 12px;
+    color: var(--text-3);
+    overflow-wrap: anywhere;
+}
+.mx-rank-list a,
+.mx-standing-list a {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    color: var(--text);
+    font-weight: 700;
+    overflow-wrap: anywhere;
+}
+.mx-rank-list__move {
+    font-size: 13px;
+    white-space: nowrap;
+}
+.mx-ranked-big12 {
+    background: color-mix(in srgb, var(--accent) 9%, transparent);
+}
+.mx-standing-list li > strong {
+    text-align: right;
+    font-family: var(--mx-serif);
+    font-size: 20px;
+}
+.mx-standing-list li > span > b {
+    display: block;
+    overflow-wrap: anywhere;
+}
+.mx-meter {
+    display: block;
+    height: 5px;
+    margin-top: 8px;
+    background: var(--border);
+}
+.mx-meter > span {
+    display: block;
+    height: 100%;
+    background: var(--accent);
+}
+.mx-weekend {
+    font-size: 13px;
+}
+.mx-weekend summary {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    cursor: pointer;
+    font-weight: 700;
+    text-decoration: underline;
+}
+.mx-weekend summary::after {
+    content: ' +';
+    padding-left: 8px;
+}
+.mx-weekend[open] summary::after {
+    content: ' −';
+}
+.mx-weekend ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+.mx-weekend li {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--border);
+}
+.mx-sport-links {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    padding: 12px 16px;
+}
+.mx-sport-links a,
+.mx-touch {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+}
+.mx-sport-links a[aria-current='page'] {
+    font-weight: 800;
+    text-decoration: underline;
+}
+.mx-phone [data-phone-team-only][hidden],
+.mx-phone [data-phone-team-section][hidden],
+.mx-phone [data-phone-your-team][hidden] {
+    display: none !important;
+}
+
+/* Personal team summaries need room for the next fixture even on a 320px phone. */
+.mx-block [data-phone-team-section] .mx-tiles {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+/* Release 5: Watch, Local and YouTube. Layout overrides stay below the phone breakpoint. */
+.mx-watch-rail {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 154px;
+    gap: 12px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    counter-reset: watch-rank;
+    margin: 16px 0 0;
+    padding: 0 0 12px;
+    list-style: none;
+}
+.pub .mx-watch-rail .watch-card {
+    counter-increment: watch-rank;
+    scroll-snap-align: start;
+    border-color: var(--mx-block-line);
+    background: var(--mx-block-tile);
+}
+.mx-watch-rail .watch-card::before {
+    content: counter(watch-rank);
+    display: block;
+    padding: 6px 10px;
+    font: 800 36px/1 var(--mx-serif);
+    color: var(--mx-block-accent);
+}
+.pub .mx-watch-rail .watch-card > a,
+.pub .mx-watch-rail .watch-card h3 {
+    color: var(--mx-block-fg);
+}
+.pub .mx-watch-rail .watch-card p {
+    color: var(--mx-block-2);
+    font-size: 13px;
+}
+.pub .mx-watch-rail .watch-card h3 {
+    font-size: 16px;
+    line-height: 1.3;
+    margin: 0 0 8px;
+}
+.mx-watch-options,
+.mx-local-pages,
+.mx-video-pages {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 16px;
+    padding: 12px 16px;
+}
+.pub .mx-watch-options a,
+.pub .mx-local-pages a,
+.pub .mx-video-pages a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+}
+.mx-video-play {
+    position: relative;
+    display: grid;
+    place-items: center;
+    aspect-ratio: 16 / 9;
+    margin: 12px 0;
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--mx-block-tile);
+}
+.mx-video-play img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.mx-video-play > span {
+    position: absolute;
+    display: grid;
+    place-items: center;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: #141b2b;
+    color: #ffffff;
+    font-size: 24px;
+}
+.pub .mx-video-feature .mx-block__title a {
+    color: var(--mx-block-fg);
+}
+.mx-video-row,
+.mx-local-story {
+    padding: 12px 0;
+    border-bottom: 1px solid var(--row-border);
+}
+.pub .mx-video-row h3,
+.pub .mx-local-story h3 {
+    font-size: 17px;
+    line-height: 1.35;
+    margin: 4px 0 8px;
+    overflow-wrap: anywhere;
+}
+.pub .mx-item-meta {
+    color: var(--text-3);
+    font-size: 12px;
+}
+.mx-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.pub .mx-actions button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-width: 44px;
+    min-height: 44px;
+    width: auto;
+    height: auto;
+    padding: 6px 10px;
+    margin: 0;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--text);
+}
+.pub .mx-actions button[hidden] {
+    display: none;
+}
+.mx-weather-feature__temperature {
+    margin: 4px 0;
+    font: 800 80px/1 var(--mx-serif);
+}
+.mx-weather-feature__summary {
+    font-size: 20px;
+    font-weight: 700;
+}
+.mx-local-forecast {
+    display: grid;
+    gap: 12px;
+}
+.pub .mx-local-forecast .weather-period {
+    margin: 0;
+    padding: 12px 0;
+    border: 0;
+    border-bottom: 1px solid var(--row-border);
+    border-radius: 0;
+    background: transparent;
+    color: var(--text);
+    box-shadow: none;
+}
+.pub .mx-local-forecast .weather-temperature {
+    font-family: var(--mx-serif);
+    font-size: 32px;
+}
+@media (max-width: 1023px) {
+    .pub .page > .mx-life-layout,
+    .pub .watch-page:has([data-phone-watch-ribbon]) {
+        margin: -12px -20px -40px;
+        padding-bottom: 24px;
+        background: var(--surface);
+    }
+    .pub
+        .watch-page:has([data-phone-watch-ribbon])
+        > :is(.watch-results-bar, .watch-grid, .watch-results, .watch-tabs, p) {
+        margin-left: 16px;
+        margin-right: 16px;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub #local-weather.mx-local-weather {
+        margin: 0;
+        padding: 20px 16px;
+        border: 0;
+        border-radius: 0;
+        background: var(--mx-block-bg);
+        color: var(--mx-block-fg);
+        display: flex;
+        flex-direction: column;
+    }
+    .pub #local-weather.mx-local-weather .d-card__head {
+        order: 1;
+        flex-wrap: wrap;
+    }
+    .pub #local-weather.mx-local-weather .mx-weather-feature {
+        order: 2;
+    }
+    .pub #local-weather.mx-local-weather .mx-tiles {
+        order: 3;
+    }
+    .pub #local-weather.mx-local-weather .hw {
+        order: 4;
+        margin-top: 14px;
+        padding-top: 12px;
+        border-top: 1px solid var(--mx-block-line);
+    }
+    .pub #local-weather.mx-local-weather .weather-location-controls {
+        order: 5;
+    }
+    .pub #local-weather.mx-local-weather > .updated {
+        order: 6;
+    }
+    .pub #local-weather.mx-local-weather .d-card__head h2,
+    .pub #local-weather.mx-local-weather .d-card__head a,
+    .pub #local-weather.mx-local-weather > .updated {
+        color: var(--mx-block-2);
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub #local-weather.mx-local-weather .weather-grid {
+        display: none;
+    }
+    .pub #local-weather.mx-local-weather .mx-tiles {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        margin-bottom: 16px;
+    }
+    .pub #local-weather.mx-local-weather .mx-tiles:empty {
+        display: none;
+    }
+    .pub #local-weather.mx-local-weather .weather-location-controls button {
+        min-height: 44px;
+        border-color: var(--mx-block-line);
+        background: var(--mx-block-tile);
+        color: var(--mx-block-fg);
+    }
+    .pub .hw__head {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 4px;
+        margin-bottom: 6px;
+    }
+    .pub .hw__title {
+        margin: 0;
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--mx-block-2);
+    }
+    .pub .hw__zone {
+        margin: 0;
+        font-size: 11px;
+        color: var(--mx-block-2);
+    }
+    .pub .hw__summary {
+        width: 100%;
+        margin: 4px 0 6px;
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--mx-block-fg);
+        display: flex;
+        align-items: center;
+    }
+    .pub .hw__summary::before {
+        content: '';
+        display: inline-block;
+        width: 14px;
+        height: 14px;
+        margin-right: 6px;
+        flex-shrink: 0;
+        background-color: var(--accent);
+        -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8 1.5C8 1.5 2.5 8 2.5 11a5.5 5.5 0 0 0 11 0c0-3-5.5-9.5-5.5-9.5z'/%3E%3C/svg%3E")
+            no-repeat center / contain;
+        mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8 1.5C8 1.5 2.5 8 2.5 11a5.5 5.5 0 0 0 11 0c0-3-5.5-9.5-5.5-9.5z'/%3E%3C/svg%3E")
+            no-repeat center / contain;
+    }
+    .pub .hw__hours {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+    }
+    .pub .hw__hour {
+        display: grid;
+        grid-template-columns: 46px 24px 34px minmax(0, 1fr) 36px;
+        align-items: center;
+        min-height: 40px;
+        border-bottom: 1px solid var(--mx-block-line);
+        gap: 6px;
+    }
+    .pub .hw__time {
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: var(--mx-block-2);
+        white-space: nowrap;
+    }
+    .pub .hw__hour .weather-icon {
+        width: 24px;
+        height: 24px;
+        justify-self: center;
+    }
+    .pub .hw__temp {
+        font-family: Newsreader, Georgia, serif;
+        font-size: 19px;
+        font-weight: 700;
+        color: var(--mx-block-fg);
+        white-space: nowrap;
+    }
+    .pub .hw__cond {
+        display: none;
+    }
+    .pub .hw__bar {
+        height: 8px;
+        border-radius: 4px;
+        background: color-mix(in srgb, var(--accent) 14%, var(--mx-block-bg));
+        overflow: hidden;
+        margin: 0 4px;
+    }
+    .pub .hw__bar span {
+        display: block;
+        height: 100%;
+        background: var(--accent);
+        border-radius: 4px;
+    }
+    .pub .hw__pop {
+        font-size: 12px;
+        text-align: right;
+        color: var(--mx-block-2);
+        white-space: nowrap;
+    }
+    .pub .hw__hour.is-likely .hw__pop {
+        font-weight: 800;
+        color: var(--mx-block-fg);
+    }
+    .pub .hw__pop::before {
+        display: none;
+    }
+    .pub .hw__unavailable {
+        margin: 8px 0;
+        font-size: 13px;
+        color: var(--mx-block-2);
+    }
+    .pub .mx-watch-feature + .mx-folds .watch-row__head {
+        flex-wrap: wrap;
+    }
+}
+/* Combined utility classes must not reveal phone-only content at larger widths. */
+.mx-phone.mx-tiles,
+.mx-phone.mx-video-pages {
+    display: none;
+}
+@media (max-width: 1023px) {
+    .mx-phone.mx-video-pages {
+        display: flex;
+    }
+}
+.pub .mx-watch-rail .watch-card > a {
+    height: auto;
+}
+.pub .mx-watch-rail .watch-card a > div {
+    padding: 10px;
+}
+.pub .mx-watch-rail .watch-card p {
+    margin: 0 0 6px;
+}
+.pub .mx-watch-rail .watch-match,
+.mx-local-weather .mx-tile__sub {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    overflow: hidden;
+}
+/* Short titles remain a full touch target, just like multiline headlines. */
+.pub [data-phone-life] :is(.mx-top__title, .mx-video-row h3, .mx-local-story h3, .mx-block__title) > a {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+}
+@media (max-width: 1023px) {
+    .pub .watch-page:has([data-phone-watch-ribbon]) > .watch-credits {
+        margin-left: 16px;
+        margin-right: 16px;
+    }
+}
+/* The retained Watch layout uses a grid whose original direct children now sit in a display:contents wrapper. */
+@media (min-width: 1024px) {
+    .pub .watch-page > .mx-desktop > * {
+        grid-column: 1 / -1;
+    }
+    .pub .watch-page > .mx-desktop > .page-heading {
+        grid-column: 1;
+        grid-row: 1;
+        margin: 0;
+        padding: 0 0 22px;
+        border: 0;
+    }
+}
+
+/* Release 6: ribbons around shared long lists and Settings tools; no duplicate forms or saved lists. */
+.mx-tool-page,
+.mx-tool-content {
+    display: contents;
+}
+@media (max-width: 1023px) {
+    .pub .page > .mx-tool-page {
+        display: block;
+        margin: -12px -20px -40px;
+        padding-bottom: 24px;
+        background: var(--surface);
+    }
+    .pub .mx-tool-content {
+        display: block;
+        padding: 16px;
+    }
+    .pub .page > .mx-section-news {
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+    .mx-section-news > .mx-phone {
+        margin: 0 -16px 16px;
+    }
+    .pub [data-phone-settings] .set-index {
+        display: none;
+    }
+    .pub [data-phone-settings] :is(h2, section[id]) {
+        scroll-margin-top: 80px;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .mx-list-feature {
+        padding: 16px;
+        border: 0;
+        border-radius: 16px;
+        background: var(--mx-block-bg);
+        color: var(--mx-block-fg);
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .mx-list-feature :is(.title, .title a, .more) {
+        color: var(--mx-block-fg);
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .mx-list-feature :is(.title a, .more, .cat) {
+        display: inline-flex;
+        align-items: center;
+        min-height: 44px;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .mx-list-feature .cat {
+        background: transparent;
+        color: var(--mx-block-accent);
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .mx-list-feature
+        :is(.summary, .src, .src__name, time, .publication-unavailable, .pubdate__day, .pubdate__time) {
+        color: var(--mx-block-2);
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .mx-list-feature .src__mark {
+        background: var(--mx-block-tile);
+        color: var(--mx-block-fg);
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .mx-list-feature :is(.save, .share-button) {
+        width: 44px;
+        height: 44px;
+        min-height: 44px;
+        border: 1px solid var(--mx-block-line);
+        border-radius: 8px;
+        background: transparent;
+        color: var(--mx-block-fg);
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .mx-list-feature :is(.save, .share-button):hover {
+        background: var(--mx-block-tile);
+        color: var(--mx-block-fg);
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .mx-list-feature .save[aria-pressed='true'] {
+        color: var(--mx-block-accent);
+        border-color: var(--mx-block-accent);
+    }
+}
+
+/* Release 4: Movies' week strip. Today is the dark day; a dot marks days with releases (the count is in the text). */
+.mx-days {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 4px;
+    padding: 12px;
+    border-bottom: 1px solid var(--row-border);
+    background: var(--surface);
+}
+.pub .mx-days a {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    min-height: 60px;
+    padding: 8px 0;
+    border-radius: 10px;
+    color: var(--text);
+    text-decoration: none;
+}
+.pub .mx-days a[aria-current='date'] {
+    background: var(--mx-block-bg);
+    color: var(--mx-block-fg);
+}
+.mx-days__dow {
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+.mx-days b {
+    font-family: var(--mx-serif);
+    font-size: 22px;
+    line-height: 1;
+}
+.mx-days a::after {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+}
+.mx-days a.mx-days__has::after {
+    background: var(--mx-us);
+}
+.mx-days a[aria-current='date'].mx-days__has::after {
+    background: var(--mx-block-accent);
+}
+.pub .mx-more--inset {
+    margin: 0 16px 16px;
+}
+/* Source attribution and list notes under a phone front. */
+.mx-source-note {
+    margin: 0;
+    padding: 0 16px 20px;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--text-2);
+}
+.pub .mx-source-note a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    color: inherit;
+}
+.mx-source-note--top {
+    padding-top: 16px;
+}
+/* The Digital releases empty state: stacked actions inside the dark block. */
+.mx-block > .mx-block__cta,
+.pub .mx-block > .mx-block__ghost {
+    width: 100%;
+}
+
+/* Box office: the complete weekend chart, with changes shown in words. */
+.mx-gross {
+    font-family: var(--mx-serif);
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--mx-block-accent);
+}
+.mx-chart {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+.mx-chart li {
+    display: grid;
+    grid-template-columns: 42px minmax(0, 1fr) auto;
+    column-gap: 10px;
+    row-gap: 4px;
+    align-items: baseline;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--row-border);
+}
+.mx-chart__rank {
+    grid-row: span 2;
+    font-family: var(--mx-serif);
+    font-size: 30px;
+    font-weight: 800;
+    line-height: 0.9;
+    color: var(--accent);
+}
+.mx-chart__title {
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1.3;
+}
+.mx-chart__new {
+    margin-left: 6px;
+    padding: 1px 6px;
+    border-radius: 4px;
+    background: var(--mx-us);
+    color: var(--surface);
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    vertical-align: 2px;
+}
+.mx-chart__gross {
+    font-family: var(--mx-serif);
+    font-size: 18px;
+}
+.mx-chart__change {
+    grid-column: 2 / 4;
+    font-size: 12px;
+    color: var(--text-2);
+}
+.mx-chart__change--up {
+    color: var(--mx-gain);
+}
+.mx-chart__change--down {
+    color: var(--mx-us);
+}
+.pub .mx-theater-link {
+    margin-top: 16px;
+}
+
+/* Forecast icons inherit the ribbon's contrast in either theme. */
+.pub .mx-weather__period .weather-icon {
+    width: 28px;
+    height: 28px;
+    margin-block: 3px;
+    color: inherit;
+}
+
+/* Standings retain team identity without win-percentage meters. */
+.mx-standing-name,
+.mx-standing-leader {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+.mx-standing-name > :is(a, b, span) {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+.mx-standing-logo {
+    flex: none;
+    box-sizing: border-box;
+    padding: 2px;
+    border-radius: 4px;
+    background: #fff;
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+}
+.mx-standing-leader .mx-standing-logo {
+    width: 40px;
+    height: 40px;
+}
+.mx-standing-leader .mx-block__title {
+    margin: 0;
+}
+
+/* Section colors: one hue per section, shared by the phone ribbons and the menu's group markers.
+   --sec is the light-mode band (white text on it); --sec-glow is mixed into the surface in dark mode,
+   the same way the scheme ribbons are. Desk ribbons (below) still override their section. */
+.pub [data-section='news'] {
+    --sec: #1d4ed8;
+    --sec-kicker: #dbeafe;
+    --sec-glow: #3b82f6;
+    --sec-kicker-dark: #93c5fd;
+}
+.pub [data-section='sports'] {
+    --sec: #166534;
+    --sec-kicker: #bbf7d0;
+    --sec-glow: #22c55e;
+    --sec-kicker-dark: #86efac;
+}
+.pub [data-section='entertainment'] {
+    --sec: #be185d;
+    --sec-kicker: #fce7f3;
+    --sec-glow: #ec4899;
+    --sec-kicker-dark: #f9a8d4;
+}
+.pub [data-section='tech'] {
+    --sec: #5b21b6;
+    --sec-kicker: #ddd6fe;
+    --sec-glow: #7c3aed;
+    --sec-kicker-dark: #c4b5fd;
+}
+.pub [data-section='watch'] {
+    --sec: #b45309;
+    --sec-kicker: #fef3c7;
+    --sec-glow: #f59e0b;
+    --sec-kicker-dark: #fde68a;
+}
+.pub [data-section='tools'] {
+    --sec: #475569;
+    --sec-kicker: #e2e8f0;
+    --sec-glow: #94a3b8;
+    --sec-kicker-dark: #cbd5e1;
+}
+.mx-ribbon:is(
+    [data-section='news'],
+    [data-section='sports'],
+    [data-section='entertainment'],
+    [data-section='tech'],
+    [data-section='watch'],
+    [data-section='tools']
+) {
+    --mx-ribbon-bg: var(--sec);
+    --mx-ribbon-fg: #ffffff;
+    --mx-ribbon-kicker: var(--sec-kicker);
+    --mx-live: var(--sec-kicker);
+}
+:root[data-theme='dark']
+    .pub
+    .mx-ribbon:is(
+        [data-section='news'],
+        [data-section='sports'],
+        [data-section='entertainment'],
+        [data-section='tech'],
+        [data-section='watch'],
+        [data-section='tools']
+    ) {
+    --mx-ribbon-bg: color-mix(in srgb, var(--sec-glow) 32%, var(--surface));
+    --mx-ribbon-fg: var(--text);
+    --mx-ribbon-kicker: var(--sec-kicker-dark);
+    --mx-live: var(--sec-kicker-dark);
+}
+
+/* Menu: completely highlighted section header row with the section color. */
+:root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+    .pub
+    .mobile-nav-group
+    .nav-group-label {
+    display: flex;
+    align-items: center;
+    padding: 6px 10px;
+    margin: 8px 0 6px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    background: color-mix(in srgb, var(--text) 8%, var(--surface));
+    color: var(--text-2);
+}
+:root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+    .pub
+    .mobile-nav-group[data-section]
+    > .nav-group-label {
+    background: var(--sec);
+    color: #ffffff;
+}
+:root[data-theme='dark']:is([data-color-scheme], :not([data-color-scheme]))
+    .pub
+    .mobile-nav-group[data-section]
+    > .nav-group-label {
+    background: color-mix(in srgb, var(--sec-glow) 28%, var(--surface));
+    color: var(--sec-kicker-dark);
+}
+.pub .mobile-nav-group > .nav-group-label::before {
+    content: none !important;
+}
+
+/* Tech section: 2×2 briefing tiles and swipeable Tech videos rail. */
+.mx-ribbon[data-desk='video-games'] {
+    --mx-ribbon-bg: #b45309;
+    --mx-ribbon-fg: #ffffff;
+    --mx-ribbon-kicker: #fef3c7;
+    --mx-live: #fef3c7;
+}
+:root[data-theme='dark'] .pub .mx-ribbon[data-desk='video-games'] {
+    --mx-ribbon-bg: color-mix(in srgb, #f59e0b 32%, var(--surface));
+    --mx-ribbon-fg: var(--text);
+    --mx-ribbon-kicker: #fde68a;
+    --mx-live: #fde68a;
+}
+.mx-ribbon[data-desk='linux'] {
+    --mx-ribbon-bg: #0f766e;
+    --mx-ribbon-fg: #ffffff;
+    --mx-ribbon-kicker: #ccfbf1;
+    --mx-live: #ccfbf1;
+}
+:root[data-theme='dark'] .pub .mx-ribbon[data-desk='linux'] {
+    --mx-ribbon-bg: color-mix(in srgb, #2dd4bf 32%, var(--surface));
+    --mx-ribbon-fg: var(--text);
+    --mx-ribbon-kicker: #99f6e4;
+    --mx-live: #99f6e4;
+}
+.pub .td-pills--phone {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 8px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+}
+.pub .td-tracker-list {
+    display: flex;
+    flex-direction: column;
+    margin: 8px 0 0;
+    padding: 0;
+    list-style: none;
+}
+.pub .td-tracker-list__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 48px;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border);
+}
+.pub .td-tracker-list__row--today {
+    background: color-mix(in srgb, var(--dot, #0f766e) 10%, var(--surface));
+}
+.pub .td-tracker-list__left,
+.pub .td-tracker-list__right {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.pub .td-tracker-list__right {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+.pub .td-tracker-list__left span,
+.pub .td-tracker-list__right span {
+    color: var(--text-2);
+    font-size: 12px;
+}
+.pub .td-tracker-list__ver {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    min-height: 44px;
+    color: var(--text);
+    font-weight: 700;
+    text-decoration: none;
+}
+.pub .tc-status--phone {
+    margin: 10px 16px 0;
+    padding: 6px 12px;
+    font-size: 12px;
+}
+.pub .tc-status--phone .tc-status__text {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.pub .tw-m-days {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 8px 0 0;
+    padding: 0;
+    list-style: none;
+}
+.pub .tw-m-days__row {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+}
+.pub .tw-m-days__meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 13px;
+}
+.pub .tw-m-days__meta span {
+    color: var(--text-2);
+}
+.pub .tw-m-days__top a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    color: var(--text);
+    font-family: var(--mx-serif);
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1.3;
+    text-decoration: none;
+}
+/* The Tech week summary reuses the tile grid outside .nf-brief--phone; the fronts' briefings get two per row from
+   .nf-brief--phone in sections.css. */
+.pub .tc-brief--phone .nf-brief__tiles {
+    grid-auto-flow: row;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.tc-video-rail {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 220px;
+    gap: 12px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    margin: 10px 0 0;
+    padding: 0 0 8px;
+    list-style: none;
+}
+.tc-video-card {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+    scroll-snap-align: start;
+}
+.tc-video-card__thumb {
+    position: relative;
+    display: block;
+    overflow: hidden;
+    aspect-ratio: 16 / 9;
+    border-radius: 10px;
+    background: var(--mx-block-tile);
+}
+.tc-video-card__thumb img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.tc-video-card__thumb .play {
+    position: absolute;
+    right: 8px;
+    bottom: 8px;
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgb(0 0 0 / 0.65);
+    color: #ffffff;
+}
+.tc-video-card__thumb .play svg {
+    width: 15px;
+    height: 15px;
+}
+.tc-video-card__channel {
+    margin-top: 2px;
+    color: var(--dot, var(--accent));
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+.pub .tc-video-card__title {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    color: var(--text);
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
+    text-decoration: none;
+}
+.tc-video-card__when {
+    color: var(--text-3);
+    font-size: 12px;
+}
+
+/* News front: Trending in headlines (phone) */
+.pub .nw-trending--phone {
+    padding: 16px 16px 4px;
+}
+.pub .nw-trending--phone .mx-head {
+    margin-bottom: 8px;
+}
+.pub .nw-chips-rail {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    padding: 2px 0 8px;
+    margin: 0;
+    list-style: none;
+    -webkit-overflow-scrolling: touch;
+}
+.pub .nw-chips-rail .nw-chip {
+    flex: none;
+}

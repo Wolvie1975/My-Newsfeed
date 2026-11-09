@@ -1,0 +1,9 @@
+@* Components/BriefTile.razor: one briefing tile, a link with a label, a big value and a short line. *@
+<a class="nf-tile @Color" href="@Href"><span class="nf-tile__label">@Label</span><b class="nf-tile__value">@Value</b><span class="nf-tile__sub">@Sub</span></a>
+@code {
+    [Parameter, EditorRequired] public string Href { get; set; } = "";
+    [Parameter, EditorRequired] public string Color { get; set; } = "";
+    [Parameter, EditorRequired] public string Label { get; set; } = "";
+    [Parameter, EditorRequired] public string Value { get; set; } = "";
+    [Parameter] public string Sub { get; set; } = "";
+}

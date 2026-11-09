@@ -1,0 +1,72 @@
+@inject FeedDates Dates
+@inject TimeProvider Clock
+
+<section data-home-section="rankings" class="d-card d-rankings" aria-labelledby="h-home-rankings">
+    <div class="d-card__head">
+        <h2 class="d-card__title" id="h-home-rankings">Top 25</h2>
+        <a class="d-more" href="@CollegeHub.RankingsHref(Data.Selected)">View all <span aria-hidden="true">→</span></a>
+    </div>
+    <div class="d-rankings__body">
+        @if (Data.Sources.Count > 0)
+        {
+            @* Sports as pills on desktop (1024px and up); phones and iPad portrait keep the dropdown below. *@
+            <nav class="sec-pills sec-pills--desktop d-rankings__pills" aria-label="Sport">
+                @foreach (var source in Data.Sources)
+                { <a href="@($"?rankingSourceId={source.Id}")" data-ranking-source="@source.Id" aria-current="@(source.Id == Data.Selected?.Id ? "page" : null)">@PillLabel(source)</a> }
+            </nav>
+            <form class="catselect" method="get" action="">
+                <label for="home-ranking-source">Sport and poll</label>
+                <select id="home-ranking-source" name="rankingSourceId" onchange="this.form.requestSubmit()">
+                    @foreach (var source in Data.Sources)
+                    { <option value="@source.Id" selected="@(source.Id == Data.Selected?.Id)">@source.DisplayName</option> }
+                </select>
+                <noscript><button class="nf-btn nf-btn--secondary" type="submit">Apply</button></noscript>
+            </form>
+        }
+        @if (Data.AvailabilityError is { } error)
+        { <p class="empty" role="status">@error <a href="">Try again</a></p> }
+        else if (Data.Selected is null)
+        { <p class="empty">No ranking sources are available.</p> }
+        else if (Data.Poll is not { } poll || !RankedTeams.Any())
+        { <p class="empty">Rankings not available yet for @Data.Selected.DisplayName.</p> }
+        else
+        {
+            <p class="updated d-rankings__meta"><span>@poll.PollName</span><span>@poll.SeasonLabel</span><span>@(RankingsQuery.OldPoll(poll, Clock.GetUtcNow().UtcDateTime) ? "Latest available poll dated" : "Poll dated") @Dates.Published(poll.PublishedAtUtc)</span></p>
+            @if (RankingsQuery.Freshness(Data.Selected, Clock.GetUtcNow().UtcDateTime) is { } warning)
+            { <p class="updated" role="status">@warning</p> }
+            <div class="standings-scroll d-rankings__table" role="region" aria-label="Top 25 teams" tabindex="0">
+                <table class="standings-table rankings-table">
+                    <caption class="sr-only">@Data.Selected.Sport · @poll.PollName</caption>
+                    <colgroup><col class="home-rank" /><col class="home-school" /><col class="home-record" /><col class="home-previous" /></colgroup>
+                    <thead><tr><th scope="col">Rank</th><th scope="col" class="standing-team">School</th><th scope="col">Record</th><th scope="col">Previous</th></tr></thead>
+                    <tbody>
+                    @foreach (var team in RankedTeams)
+                    {
+                        <tr class="@(team.IsBig12 == true ? "ranking-big12" : null)">
+                            <td>@team.Rank</td>
+                            <th scope="row" class="standing-team"><span class="standing-team-name">
+                                @if (EventsText.LogoUrl(team.LogoUrl) is { } logo)
+                                { <img src="@logo" alt="" width="22" height="22" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()" /> }
+                                <span>@team.TeamName</span>
+                            </span></th>
+                            <td>@(team.Record ?? "—")</td>
+                            <td>@RankingsQuery.Previous(team)</td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+            <p class="updated">Data via ESPN · Big 12 members highlighted</p>
+        }
+    </div>
+</section>
+
+@code {
+    [Parameter] public RankingsPage Data { get; set; } = new([], null, null, []);
+    private IEnumerable<myNewspaper.Shared.Data.Models.SportsRankingTeam> RankedTeams =>
+        Data.Teams.Where(t => t.Rank is >= 1 and <= 25).OrderBy(t => t.Rank).ThenBy(t => t.TeamName);
+
+    // The short sport name, unless two polls share a sport; then the full name tells them apart.
+    private string PillLabel(myNewspaper.Shared.Data.Models.SportsRankingSource source) =>
+        !string.IsNullOrWhiteSpace(source.Sport) && Data.Sources.Count(s => s.Sport == source.Sport) == 1 ? source.Sport : source.DisplayName;
+}

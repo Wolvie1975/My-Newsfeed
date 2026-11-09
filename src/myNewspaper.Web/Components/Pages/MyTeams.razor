@@ -1,0 +1,134 @@
+@page "/settings"
+@page "/sports/teams"
+@layout PublicLayout
+@inject IDbContextFactory<WebScraperContext> Factory
+@inject ILogger<MyTeams> Log
+@inject myNewspaper.Shared.Profiles.ProfileContext Reader
+@inherits DataComponentBase
+
+<PageTitle>Settings · myNewspaper</PageTitle>
+<div class="mx-tool-page" data-phone-settings>
+<div class="mx-desktop"><PageHeading Section="tools" Title="Settings" Eyebrow="Make it yours" Description="Appearance, streaming services and teams. Everything saves as you tap." /></div>
+<div class="mx-phone" data-phone-tools="settings"><PhoneRibbon Section="tools" Title="Settings" Kicker="@(Reader.HasProfile ? "Make it yours · saved to your edition" : "Make it yours · saved in this browser")">
+<form class="mx-ribbon__field" method="get" action="navigate"><label for="settings-jump-m">Jump to</label><select id="settings-jump-m" name="to" required onchange="location.hash = this.value.slice(this.value.indexOf('#'))">
+<option value="" selected disabled>Choose a section</option>
+@if (Reader.HasProfile) { <option value="/settings#profile">Your profile</option> }
+<option value="/settings#appearance-heading">Light and dark mode</option><option value="/settings#color-scheme-heading">Color scheme</option><option value="/settings#my-services">My services</option><option value="/settings#my-teams-heading">My Teams</option>
+@if (Reader.HasProfile) { <option value="/settings#shows">TV shows</option><option value="/settings#channels">YouTube channels</option><option value="/settings#requests">Requests</option> }
+</select><noscript><button class="nf-btn nf-btn--secondary" type="submit">Go</button></noscript></form>
+</PhoneRibbon></div>
+<div class="mx-tool-content">
+<div class="set-layout">
+@* Section index as in the approved concept (a column on desktop, a row of links on phones). *@
+<nav class="set-index" aria-label="Settings sections">
+    @if (Reader.HasProfile) { <a href="settings#profile">Your profile</a> }
+    <a href="settings#appearance-heading">Light and dark mode</a>
+    <a href="settings#color-scheme-heading">Color scheme</a>
+    <a href="settings#my-services">My services</a>
+    <a href="settings#my-teams-heading">My Teams</a>
+    @if (Reader.HasProfile)
+    {
+        <a href="settings#shows">TV shows</a>
+        <a href="settings#channels">YouTube channels</a>
+        <a href="settings#requests">Requests</a>
+    }
+</nav>
+<div class="set-main">
+<MyProfileSettings Done="@Done" Error="@Error" TriesLeft="TriesLeft" />
+<details class="settings-arrange"><summary>Arrange Settings sections</summary><p>Move sections up or down. @SavesTo</p><div data-settings-order-controls></div><button type="button" data-settings-order-reset class="nf-btn nf-btn--secondary">Restore default Settings order</button><p role="status" data-settings-order-status></p><noscript><p>Enable JavaScript to arrange Settings sections.</p></noscript></details>
+<div data-settings-sections>
+<details class="settings-panel" data-settings-section="appearance" aria-labelledby="appearance-heading">
+    <summary id="appearance-heading"><h2>Light and dark mode</h2></summary>
+    <p class="updated">Automatic mode follows sunrise and sunset in Kansas City, Missouri. @SavesTo</p>
+    <fieldset class="settings-schemes">
+        <legend class="sr-only">Choose when to use light and dark mode</legend>
+        <label class="settings-scheme"><input type="radio" name="theme-mode" value="system" data-theme-mode /> <span>Follow device</span></label>
+        <label class="settings-scheme"><input type="radio" name="theme-mode" value="sun" data-theme-mode /> <span>Automatic · Kansas City sunrise/sunset</span></label>
+        <label class="settings-scheme"><input type="radio" name="theme-mode" value="light" data-theme-mode /> <span>Light</span></label>
+        <label class="settings-scheme"><input type="radio" name="theme-mode" value="dark" data-theme-mode /> <span>Dark</span></label>
+    </fieldset>
+    <p class="updated" role="status" data-theme-status></p>
+    <p class="updated">The header toggle selects Light or Dark. Select Automatic here to resume sunrise/sunset switching.</p>
+    <noscript><p class="empty">Enable JavaScript to change and save your light and dark mode.</p></noscript>
+</details>
+<details class="settings-panel" data-settings-section="colors" aria-labelledby="color-scheme-heading">
+    <summary id="color-scheme-heading"><h2>Color scheme</h2></summary>
+    <p class="updated">@SavesTo Light and dark mode work with every scheme.</p>
+    <fieldset class="settings-schemes">
+        <legend class="sr-only">Choose a color scheme</legend>
+        @foreach (var scheme in schemes)
+        {
+            <label class="settings-scheme">
+                <input type="radio" name="color-scheme" value="@scheme.Key" data-color-scheme />
+                <span class="scheme-swatch" style="@($"--swatch-primary:{scheme.Primary};--swatch-secondary:{scheme.Secondary}")" aria-hidden="true"></span>
+                <span>@scheme.Name</span>
+            </label>
+        }
+    </fieldset>
+    <p class="updated" role="status" data-scheme-status></p>
+    <noscript><p class="empty">Enable JavaScript to change and save your color scheme.</p></noscript>
+</details>
+<p class="updated" data-personal-status role="status"></p>
+<WatchServiceSettings Selection="@ServiceSelection" />
+<details class="settings-panel" data-settings-section="teams" aria-labelledby="my-teams-heading">
+<summary id="my-teams-heading"><h2>My Teams</h2></summary>
+<p>Choose professional teams and Big 12 schools to highlight in schedules, results and standings. Full tables remain visible.</p>
+<p class="updated">@SavesTo Selecting a Big 12 school highlights it across sports.</p>
+@if (error is not null) { <p role="status" class="empty">@error</p> }
+<noscript><p class="empty">Enable JavaScript to save team selections and display highlights.</p></noscript>
+    <div data-sports-preferences>
+        <label for="team-search">Find a team or school</label>
+        <input id="team-search" type="search" placeholder="Search teams and schools" data-sports-search />
+        <button type="button" class="nf-btn nf-btn--secondary" data-sports-clear>Clear selections</button>
+        <p class="updated" role="status" data-sports-status>Loading selections…</p>
+        @foreach (var group in choices.GroupBy(c => c.Group))
+        {
+            @* One collapsible group per league keeps the page short; searching opens every group. *@
+            <details class="sports-team-group">
+            <summary>@group.Key <span class="sports-team-group__count">@group.Count() teams</span></summary>
+            <fieldset>
+                <legend class="sr-only">@group.Key</legend>
+                <div class="sports-team-options">
+                @foreach (var team in group)
+                {
+                    <label class="sports-team-option" data-sports-option data-search-name="@team.Name.ToLowerInvariant()">
+                        <input type="checkbox" value="@team.Key" data-sports-choice /> <span>@team.Name</span>
+                    </label>
+                }
+                </div>
+            </fieldset>
+            </details>
+        }
+        <p class="updated" data-sports-no-matches hidden>No teams match your search.</p>
+    </div>
+
+</details>
+
+</div>
+<MyFollowsSettings Done="@Done" Error="@Error" TvQuery="@TvQuery" />
+</div>
+</div>
+</div>
+</div>
+@code {
+    [SupplyParameterFromQuery(Name = "done")] private string? Done { get; set; }
+    [SupplyParameterFromQuery(Name = "error")] private string? Error { get; set; }
+    [SupplyParameterFromQuery(Name = "triesLeft")] private int? TriesLeft { get; set; }
+    [SupplyParameterFromQuery(Name = "tvq")] private string? TvQuery { get; set; }
+
+    // With a profile open, choices follow the person to every device; otherwise they stay in this browser.
+    private string SavesTo => Reader.HasProfile ? $"Changes save to {Reader.Profile!.Name}’s edition." : "Changes save in this browser.";
+
+    [SupplyParameterFromQuery(Name="service")]public int[]? ChosenServices {get;set;}
+    [SupplyParameterFromQuery(Name="services")]public string? Services {get;set;}
+    private string ServiceSelection=>string.Join(",",new[]{Services??"",string.Join(",",ChosenServices??[])});
+    private readonly IReadOnlyList<myNewspaper.Shared.Profiles.SiteDefaults.SchemeChoice> schemes = myNewspaper.Shared.Profiles.SiteDefaults.ColorSchemeChoices;
+    private IReadOnlyList<SportsTeamChoice> choices = SportsTeamPreferences.GetChoices();
+    private string? error;
+    protected override async Task OnInitializedAsync()
+    {
+        try { await using var db = await Factory.CreateDbContextAsync(Ct); choices = await SportsTeamPreferences.GetChoicesAsync(db, Ct); }
+        catch (Exception ex) when (DataFailures.IsReadFailure(ex))
+        { Log.LogError(ex, "Could not read team and category choices."); error = "Professional teams are temporarily unavailable. Reload to try again."; }
+    }
+}

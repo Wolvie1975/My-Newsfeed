@@ -5,6 +5,26 @@ public/admin pages, routing/authentication, EF/query helpers, score sync, browse
 scripts, PWA and Docker configuration. The earlier audit excluded Rust scraper
 implementation and vendored Bootstrap; it was not a penetration or load test.
 
+## October 18 feature status
+
+The deployed updates include current team records with league-wide playoff
+suppression, compact college overall (conference) labels such as `12-4 (5-2)`,
+and removal of the explanatory paragraph from Home. See
+[record coverage and freshness](sports.md#team-records-beside-matchups).
+
+F1 now has its own Sports section, a separate Home card outside Today & Tonight,
+and a publisher News tab. Structured F1 data is periodic and limited to the latest
+collected season; its source enablement does not control the RSS news feed. See
+[F1 coverage](sports.md#f1-section) and [F1 News behavior](interface.md#f1-news).
+
+College Sports now groups the existing four covered sports under a shared
+selector, with Schedule, Results, Standings, Rankings and conference-wide News tabs. See
+[college hub coverage](sports.md#college-sports-hub).
+
+Verification results, release images and rollback references are recorded in
+[release history](release-history.md). The earlier Top Headlines collection
+follow-up below remains a dated observation pending a new collection check.
+
 ## Completed audit repairs
 
 | Original finding | Current repair |
@@ -24,6 +44,53 @@ The college schedule's past-fixture season gate was subsequently removed and
 regression-tested for all five supported sports. MLS schedule and season-results
 integration is also now deployed, including shootout handling; see [Sports](sports.md).
 
+## Top Headlines collection follow-up — October 17, 2026
+
+The frontend integration and category-order follow-up are deployed. At release
+verification, all six new sources were enabled under Top Headlines but had zero
+article rows and no recorded LastError. Registration does not establish successful
+collection. After the scheduled collector runs, verify per-source article availability
+and actual Top Headlines cards on desktop and mobile, including publisher labels,
+article links, source filtering and pagination. Keep any ingestion failures separate
+from frontend rendering results. BBC News and NPR remain in General. No seed
+script rerun or scraper deployment was part of the frontend rollout. See
+[interface behavior](interface.md#top-headlines-and-news-source-filtering) and
+[deployment evidence](release-history.md#top-headlines-and-news-source-selector--october-17-2026).
+
+## Code standards review — October 25, 2026
+
+A whole-codebase review against current .NET 10, Blazor and JavaScript practice. The
+architecture was already sound (DbContextFactory, static SSR with targeted interactivity,
+filtered exception handling, parameterized SQL); the work addressed consistency and the
+lack of enforced standards. Changes, all deployed in `mynewspaper-web:code-standards-20261025`:
+
+- Tooling: `.editorconfig`, `Directory.Build.props` (AnalysisLevel latest-recommended,
+  EnforceCodeStyleInBuild, TreatWarningsAsErrors except NU190x advisories), `global.json`,
+  ESLint, Prettier and `package.json`. Formatting-only commits are separate.
+- Security: `appsettings.json` no longer holds the `sa` connection string (user secrets
+  locally, container variable in production); `System.Security.Cryptography.Pkcs` pinned
+  to 10.0.13 to clear the advisories inherited from Microsoft.Data.SqlClient.
+- Code: Program.cs endpoints moved to `Endpoints/`; built-in health checks; configured
+  display zone instead of hard-coded `America/Chicago`; one `DataFailures.IsReadFailure`
+  filter; culture-invariant parsing; disposable singletons; generated regexes; modern
+  JavaScript (no `var`, strict mode); nine merged CSS rules and `--gain`/`--loss` tokens
+  (verified identical computed styles on 45,652 elements).
+- Tests: xUnit v3 on Microsoft.Testing.Platform, one `TestDatabase` helper, and a browser
+  runner (`npm run test:browser`). Thirteen browser checks that had drifted from approved
+  designs were repaired; one exposed a real no-JavaScript ordering bug on desktop Home.
+
+Deliberately not changed, with reasons:
+
+- Analyzer rules CA1848/CA1873 (logging delegates), CA1859, CA1861, CA1822, CA1720 and
+  xUnit1051 are suggestions, not errors: micro-optimisations or noise for this app.
+- `public.css` keeps 833 colour literals because they are palette definitions for the
+  22 colour schemes; only ~50 one-off literals remain outside tokens. Eleven far-apart
+  duplicate selectors are later theme sections overriding earlier ones and were left.
+- Razor markup in about 19 components uses long single lines. `dotnet format` does not
+  format Razor and hand-reflowing inline markup can change rendered whitespace.
+- Box-score lookups filter on `Sport+'|'+League+'|'+EventId`, but `dbo.SportsBoxScores`
+  (scraper-owned, ~1,500 rows) has no index, so rewriting the predicate gains nothing.
+
 ## Remaining engineering follow-ups
 
 - Result synchronization's gate is process-local. Multiple web instances need
@@ -32,16 +99,22 @@ integration is also now deployed, including shootout handling; see [Sports](spor
   the save transaction so an intervening scraper insert cannot invalidate that state.
 - Some edit components retain `notFound` across parameter changes. Reset request-specific
   state when navigating from a missing ID to a valid ID of the same component.
-- Standings and basketball rankings still require a stored past opening fixture.
-  The schedule fix did not remove those gates; upcoming-only retention can make their
-  visibility fail for the same reason. Review season/publication visibility independently
-  rather than documenting the gates as reliable season evidence.
+- Basketball rankings still require a stored past opening fixture and deserve a
+  separate season/publication review. Standings now keep enabled college sources
+  selectable without schedule evidence and filter stale-season rows independently.
 - Interactive admin submission and overlapping sync scenarios deserve targeted
   browser/concurrency coverage in addition to helper and row-rendering tests.
+- The `sa` password was committed in `appsettings.json` from September 20 to October 25,
+  2026 and remains in Git history. Rotate it, and give the web app its own least-privilege
+  SQL login rather than `sa`; then update the container's `ConnectionStrings__DefaultConnection`
+  and local user secrets.
+- Add an index on `dbo.SportsBoxScores (Sport, League, EventId)` in the scraper project if
+  box-score lookups grow; then the web query can match the three columns directly.
+- The admin login has no rate limiting. Low risk while the site is tailnet-only; add
+  ASP.NET Core rate limiting to `/account/login` before any public exposure.
 
 Current implementation evidence is in EventsQuery, StandingsQuery, RankingsQuery,
-ScoresSync and the relevant admin components. The existing two xUnit2031 warnings in
-EventsTests remain analyzer warnings, not build failures.
+ScoresSync and the relevant admin components. The build now has zero warnings (warnings fail it).
 
 ## Big 12 design constraints retained from the expansion review
 

@@ -1,0 +1,225 @@
+using System.Globalization;
+using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
+using myNewspaper.Shared.Scores;
+
+namespace myNewspaper.Shared.Data;
+
+public sealed class ScoreboardGame
+{
+    public long ID { get; set; }
+    public string Provider { get; set; } = "";
+    public string Sport { get; set; } = "";
+    public string League { get; set; } = "";
+    public string EventId { get; set; } = "";
+    public DateOnly ScoreboardDate { get; set; }
+    public DateTime? StartsAtUtc { get; set; }
+    public bool TimeTbd { get; set; }
+    public bool WasRescheduled { get; set; }
+    public string? HomeTeamId { get; set; }
+    public string? AwayTeamId { get; set; }
+    public string HomeName { get; set; } = "TBD";
+    public string AwayName { get; set; } = "TBD";
+    public string? HomeLogoUrl { get; set; }
+    public string? AwayLogoUrl { get; set; }
+    public decimal? HomeScore { get; set; }
+    public decimal? AwayScore { get; set; }
+    public string Status { get; set; } = "unknown";
+    public bool Completed { get; set; }
+    public string ProviderStatus { get; set; } = "";
+    public string? StatusText { get; set; }
+    public int? Period { get; set; }
+    public string? DisplayClock { get; set; }
+    public bool? NeutralSite { get; set; }
+    public int? HomeShootout { get; set; }
+    public int? AwayShootout { get; set; }
+    public string? WinnerSide { get; set; }
+    public string? Venue { get; set; }
+    public string? Broadcasts { get; set; }
+    public string? SourceUrl { get; set; }
+    public string? LiveDetailsJson { get; set; }
+    public DateTime LastObservedAtUtc { get; set; }
+    public bool IsStale { get; set; }
+    public string? RequestAvailability { get; set; }
+    public bool HasBoxScore { get; set; }
+    public byte? HomeRank { get; set; }
+    public byte? AwayRank { get; set; }
+    public string Key => $"{Provider}|{Sport}|{League}|{EventId}";
+    public string? HomePreference => TeamKey(Sport, League, HomeTeamId);
+    public string? AwayPreference => TeamKey(Sport, League, AwayTeamId);
+    public static string? TeamKey(string sport, string league, string? id) => string.IsNullOrWhiteSpace(id) ? null : $"{sport}|{league}|{id}";
+    public static string Score(decimal? value) => value?.ToString("0.###", CultureInfo.InvariantCulture) ?? "—";
+    public string Label => Status switch
+    {
+        "upcoming" => "Upcoming",
+        "final" => StatusText ?? "Final",
+        "live" => StatusText ?? "Live",
+        "postponed" => "Postponed",
+        "cancelled" => "Cancelled",
+        "suspended" => "Suspended",
+        "delayed" => "Delayed",
+        _ => "Status unavailable"
+    };
+    public bool Active => Status is "live" or "delayed" or "suspended";
+    public bool Stale(DateTime nowUtc) => IsStale || Active && nowUtc - DateTime.SpecifyKind(LastObservedAtUtc, DateTimeKind.Utc) > TimeSpan.FromMinutes(25);
+    public string? Details => FormatDetails(LiveDetailsJson, Sport);
+    public static string? FormatDetails(string? json, string sport)
+    {
+        if (string.IsNullOrWhiteSpace(json)) return null;
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+            if (doc.RootElement.ValueKind != JsonValueKind.Object) return null;
+            var root = doc.RootElement;
+            var parts = new List<string>();
+            if (sport == "baseball")
+            {
+                foreach (var (key, label) in new[] { ("outs", "outs"), ("balls", "balls"), ("strikes", "strikes") })
+                    if (root.TryGetProperty(key, out var v) && v.ValueKind == JsonValueKind.Number && v.TryGetInt32(out var number)) parts.Add($"{number} {label}");
+                foreach (var (key, label) in new[] { ("onFirst", "1st occupied"), ("onSecond", "2nd occupied"), ("onThird", "3rd occupied") })
+                    if (root.TryGetProperty(key, out var v) && v.ValueKind == JsonValueKind.True) parts.Add(label);
+            }
+            foreach (var (key, label) in new[] { ("awayPeriods", "Away"), ("homePeriods", "Home") })
+            {
+                if (!root.TryGetProperty(key, out var array) || array.ValueKind != JsonValueKind.Array) continue;
+                var values = new List<string>();
+                foreach (var period in array.EnumerateArray().Take(40))
+                {
+                    if (period.ValueKind != JsonValueKind.Object) continue;
+                    var value = period.TryGetProperty("displayValue", out var display) && display.ValueKind == JsonValueKind.String ? display.GetString()
+                        : period.TryGetProperty("score", out var score) && score.ValueKind == JsonValueKind.Number ? score.GetRawText() : null;
+                    if (value is not null) values.Add(value);
+                }
+                if (values.Count > 0) parts.Add($"{label} periods: {string.Join(" · ", values)}");
+            }
+            return parts.Count > 0 ? string.Join(" · ", parts) : null;
+        }
+        catch (Exception ex) when (ex is JsonException or InvalidOperationException or FormatException) { return null; }
+    }
+}
+public sealed class ScoreboardCoverage
+{
+    public int ID { get; set; }
+    public string SourceKind { get; set; } = "";
+    public int OriginId { get; set; }
+    public string Sport { get; set; } = "";
+    public string League { get; set; } = "";
+    public string Label { get; set; } = "";
+    public DateTime? LastAttemptAt { get; set; }
+    public DateTime? LastSuccessAt { get; set; }
+    public string? Availability { get; set; }
+    public string Key => Sport + "|" + League;
+}
+public sealed record ScoreboardFollow(int Id, string Label, string Sport, string League, string Kind, string? TeamId, IReadOnlySet<string> Members, string? Name = null)
+{
+    public bool Matches(ScoreboardGame game) => game.Provider == "espn" && game.Sport == Sport && game.League == League && Kind switch
+    {
+        "league" => true,
+        "team" => !string.IsNullOrEmpty(TeamId) && (game.HomeTeamId == TeamId || game.AwayTeamId == TeamId),
+        "conference" => game.HomeTeamId is not null && Members.Contains(game.HomeTeamId) || game.AwayTeamId is not null && Members.Contains(game.AwayTeamId),
+        _ => false
+    };
+}
+public sealed record ScoreboardSelection(string Value, string? Competition = null, int? FollowId = null, bool IsTop25 = false, string? Group = null)
+{
+    public static ScoreboardSelection Resolve(string? show, string? competition, int? followId,
+        IReadOnlyList<ScoreboardCoverage> coverage, IReadOnlyList<ScoreboardFollow> follows)
+    {
+        ScoreboardSelection ForFollow(ScoreboardFollow f) => f.Kind == "league"
+            ? new("c:" + f.Sport + "|" + f.League, f.Sport + "|" + f.League)
+            : new("f:" + f.Id, f.Sport + "|" + f.League, f.Id);
+        if (show is not null)
+        {
+            if (string.Equals(show, "top25", StringComparison.OrdinalIgnoreCase)) return new("top25", IsTop25: true);
+            if (show.StartsWith("c:", StringComparison.Ordinal) && coverage.Any(c => c.Key == show[2..])) return new(show, show[2..]);
+            if (show.StartsWith("f:", StringComparison.Ordinal) && int.TryParse(show[2..], out var id) && follows.FirstOrDefault(f => f.Id == id) is { } f) return ForFollow(f);
+            if (show.StartsWith("g:", StringComparison.Ordinal))
+            {
+                var groupName = show[2..];
+                if (!string.IsNullOrEmpty(groupName) && follows.Any(f => f.Kind == "conference" && string.Equals(f.Name, groupName, StringComparison.OrdinalIgnoreCase)))
+                {
+                    var canonical = follows.First(f => f.Kind == "conference" && string.Equals(f.Name, groupName, StringComparison.OrdinalIgnoreCase)).Name ?? groupName;
+                    return new("g:" + canonical, Group: canonical);
+                }
+            }
+            return new("");
+        }
+        // Old bookmarks select their team/conference in preference to a conflicting league.
+        if (follows.FirstOrDefault(f => f.Id == followId) is { } legacy) return ForFollow(legacy);
+        if (string.Equals(competition, "top25", StringComparison.OrdinalIgnoreCase)) return new("top25", IsTop25: true);
+        if (competition is not null && competition.StartsWith("g:", StringComparison.Ordinal))
+        {
+            var groupName = competition[2..];
+            if (!string.IsNullOrEmpty(groupName) && follows.Any(f => f.Kind == "conference" && string.Equals(f.Name, groupName, StringComparison.OrdinalIgnoreCase)))
+            {
+                var canonical = follows.First(f => f.Kind == "conference" && string.Equals(f.Name, groupName, StringComparison.OrdinalIgnoreCase)).Name ?? groupName;
+                return new("g:" + canonical, Group: canonical);
+            }
+        }
+        return coverage.Any(c => c.Key == competition) ? new("c:" + competition, competition) : new("");
+    }
+}
+public sealed record ScoreboardSnapshot(IReadOnlyList<ScoreboardGame> Games, IReadOnlyList<ScoreboardCoverage> Coverage, bool Available, IReadOnlyList<ScoreboardFollow>? Follows = null, IReadOnlyList<ScoreboardGame>? Top25Week = null);
+
+/// <summary>The scoreboard read: a failure is logged and reported as an unavailable snapshot, never thrown.</summary>
+public static class ScoreboardQuery
+{
+    public static async Task<ScoreboardSnapshot> ReadAsync(WebScraperContext db, FeedDates dates, ILogger log, DateOnly day, bool carryOver = false,
+        string? competition = null, int? followId = null, bool finalsOnly = false, string? show = null, CancellationToken ct = default)
+    {
+        try
+        {
+            var coverage = await db.Database.SqlQuery<ScoreboardCoverage>($"SELECT ID,SourceKind,OriginId,Sport,League,Label,LastAttemptAt,LastSuccessAt,Availability FROM dbo.SportsScoreboardCoverage").Where(c => c.League != "womens-college-basketball").ToListAsync(ct);
+            var origins = await db.ResultFollows.AsNoTracking().Where(f => f.Enabled && f.League != "womens-college-basketball").ToListAsync(ct);
+            var originIds = origins.Select(f => f.Id).ToArray();
+            var members = await db.ResultFollowTeams.AsNoTracking().Where(m => originIds.Contains(m.FollowId)).ToListAsync(ct);
+            var follows = origins.Where(f => coverage.Any(c => c.Sport == f.Sport && c.League == f.League))
+                .OrderBy(f => FollowKinds.Order(f.Kind)).ThenBy(f => f.Name).ThenBy(f => f.League)
+                .Select(f => new ScoreboardFollow(f.Id, EspnLeagues.FollowLabel(f.Kind, f.Name, f.Sport, f.League), f.Sport, f.League, f.Kind, f.TeamId,
+                    members.Where(m => m.FollowId == f.Id).Select(m => m.TeamId).ToHashSet(), f.Name)).ToList();
+            var selection = ScoreboardSelection.Resolve(show, competition, followId, coverage, follows);
+            var selectedFollow = follows.FirstOrDefault(f => f.Id == selection.FollowId);
+            var selected = coverage.FirstOrDefault(c => c.Key == selection.Competition);
+            var window = ResultsWindow.ForDay(day, dates.Zone);
+            var query = db.Database.SqlQuery<ScoreboardGame>($"SELECT ID,Provider,Sport,League,EventId,ScoreboardDate,StartsAtUtc,TimeTbd,WasRescheduled,HomeTeamId,AwayTeamId,HomeName,AwayName,HomeLogoUrl,AwayLogoUrl,HomeScore,AwayScore,Status,Completed,ProviderStatus,StatusText,Period,DisplayClock,NeutralSite,HomeShootout,AwayShootout,WinnerSide,Venue,Broadcasts,SourceUrl,LiveDetailsJson,LastObservedAtUtc,IsStale,RequestAvailability,HasBoxScore,HomeRank,AwayRank FROM dbo.SportsScoreboard");
+            query = query.Where(g => g.ScoreboardDate == day && (g.TimeTbd || g.StartsAtUtc >= window.StartUtc && g.StartsAtUtc < window.EndUtc)
+                || carryOver && g.ScoreboardDate < day && (g.Status == "live" || g.Status == "delayed" || g.Status == "suspended"));
+            query = query.Where(g => g.League != "womens-college-basketball");
+            if (selection.IsTop25)
+            {
+                query = query.Where(g => (g.League == "college-football" || g.League == "mens-college-basketball") && (g.HomeRank != null || g.AwayRank != null));
+            }
+            else if (selection.Group is not null)
+            {
+                // Multi-sport conference group: skip the single-league SQL filter.
+            }
+            else if (selected is not null)
+            {
+                query = query.Where(g => g.Sport == selected.Sport && g.League == selected.League);
+            }
+            if (finalsOnly) query = query.Where(g => g.Status == "final" && g.Completed);
+            var games = await query.ToListAsync(ct);
+            if (selection.Group is not null)
+            {
+                var groupFollows = follows.Where(f => f.Kind == "conference" && string.Equals(f.Name, selection.Group, StringComparison.OrdinalIgnoreCase)).ToList();
+                games = games.Where(g => groupFollows.Any(f => f.Matches(g))).ToList();
+            }
+            else if (selectedFollow is not null)
+            {
+                games = games.Where(selectedFollow.Matches).ToList();
+            }
+            List<ScoreboardGame>? top25Week = null;
+            if (selection.IsTop25)
+            {
+                var weekQuery = db.Database.SqlQuery<ScoreboardGame>($"SELECT ID,Provider,Sport,League,EventId,ScoreboardDate,StartsAtUtc,TimeTbd,WasRescheduled,HomeTeamId,AwayTeamId,HomeName,AwayName,HomeLogoUrl,AwayLogoUrl,HomeScore,AwayScore,Status,Completed,ProviderStatus,StatusText,Period,DisplayClock,NeutralSite,HomeShootout,AwayShootout,WinnerSide,Venue,Broadcasts,SourceUrl,LiveDetailsJson,LastObservedAtUtc,IsStale,RequestAvailability,HasBoxScore,HomeRank,AwayRank FROM dbo.SportsScoreboardTop25Week");
+                top25Week = await weekQuery.OrderBy(g => g.ScoreboardDate).ThenBy(g => g.StartsAtUtc).ThenBy(g => g.ID).ToListAsync(ct);
+            }
+            return new(games.DistinctBy(g => g.Key).OrderBy(g => g.Status == "live" ? 0 : g.Active ? 1 : g.Status == "upcoming" ? 2 : 3).ThenBy(g => g.StartsAtUtc).ThenBy(g => g.ID).ToList(), coverage, true, follows, top25Week);
+        }
+        catch (Exception ex) when (DataFailures.IsReadFailure(ex))
+        {
+            log.LogWarning(ex, "Scoreboard read unavailable");
+            return new([], [], false);
+        }
+    }
+}

@@ -1,0 +1,606 @@
+@using System.Globalization
+@using myNewspaper.Web.Components.Feed
+@inject IDbContextFactory<WebScraperContext> Factory
+@inject FeedDates Dates
+@inject IConfiguration Config
+@inject ILogger<SportsFront> Log
+@inherits DataComponentBase
+@inject TimeProvider Clock
+
+
+@* Sports front page as in the approved concept: today's scores across the top, then upcoming games, the lead story and
+   headlines, and a side column of hourly rotating standings and Top 25 polls. Phones get the same sections as cards. *@
+<div class="mx-desktop tab-desktop">
+<div class="ef spf spf-front">
+    <section class="nf-brief" aria-labelledby="sp-brief-title">
+        <h2 id="sp-brief-title" class="ef-label">The briefing · @Dates.TodayLabel(nowUtc)</h2>
+        <div class="nf-brief__tiles">@Tiles</div>
+    </section>
+
+    <section class="spf-scores" aria-labelledby="spf-scores-title">
+        <div class="ef-head"><h2 id="spf-scores-title">Today’s scores</h2><a href="scoreboard">Full scoreboard <span aria-hidden="true">→</span></a></div>
+        <ScoreboardPanel Compact="true" />
+    </section>
+
+    <div class="spf-cols">
+        <section class="spf-upcoming" aria-labelledby="spf-up-title">
+            <div class="ef-head"><h2 id="spf-up-title">Upcoming games</h2><a href="events">Schedule <span aria-hidden="true">→</span></a></div>
+            <p class="ef-note">Today · @(Dates.ZoneLabel ?? "local") time · TV in bold</p>
+            @if (upcoming.Count == 0) { <p class="ef-empty">No remaining games today. See the schedule for what’s next.</p> }
+            <ol class="spf-timeline">
+                @{ string? previousUpcomingTime = null; }
+                @foreach (var item in upcoming)
+                {
+                    var time = item.StartsUtc is { } starts ? Dates.Time(starts) : item.TimeLabel;
+                    var sameAsPrevious = time == previousUpcomingTime;
+                    previousUpcomingTime = time;
+                    <li class="spf-timeline__item @PhoneColors.ForSport(item.Kind)">
+                        <span class="spf-timeline__time">@if (!sameAsPrevious) { @time } else { <span class="sr-only">@time</span> }</span>
+                        <span class="spf-timeline__body">
+                            <a href="@(item.Url ?? "events")" target="@(item.Url is null ? null : "_blank")" rel="@(item.Url is null ? null : "noopener noreferrer")"><TonightMatchup Item="item" /></a>
+                            <span class="spf-timeline__meta"><span class="spf-timeline__sport">@item.Kind</span>@if (item.Tv is not null) { var tv = EventsText.ShortTv(item.Tv); <span aria-hidden="true"> · </span><b title="@item.Tv">@tv.Display@if (tv.Also is not null) { <span class="sr-only">@tv.Also</span> }</b> }</span>
+                        </span>
+                    </li>
+                }
+            </ol>
+            @if (upcoming.Count < 4 && tomorrow.Count > 0)
+            {
+                <h3 class="ef-label spf-tomorrow-head">Tomorrow · @(today.AddDays(1).ToString("ddd, MMM d", CultureInfo.InvariantCulture))</h3>
+                <ol class="spf-timeline">
+                    @{ string? previousTomorrowTime = null; }
+                    @foreach (var item in tomorrow)
+                    {
+                        var time = item.StartsUtc is { } starts ? Dates.Time(starts) : item.TimeLabel;
+                        var sameAsPrevious = time == previousTomorrowTime;
+                        previousTomorrowTime = time;
+                        <li class="spf-timeline__item @PhoneColors.ForSport(item.Kind)">
+                            <span class="spf-timeline__time">@if (!sameAsPrevious) { @time } else { <span class="sr-only">@time</span> }</span>
+                            <span class="spf-timeline__body">
+                                <a href="@(item.Url ?? "events")" target="@(item.Url is null ? null : "_blank")" rel="@(item.Url is null ? null : "noopener noreferrer")"><TonightMatchup Item="item" /></a>
+                                <span class="spf-timeline__meta"><span class="spf-timeline__sport">@item.Kind</span>@if (item.Tv is not null) { var tv = EventsText.ShortTv(item.Tv); <span aria-hidden="true"> · </span><b title="@item.Tv">@tv.Display@if (tv.Also is not null) { <span class="sr-only">@tv.Also</span> }</b> }</span>
+                            </span>
+                        </li>
+                    }
+                </ol>
+            }
+        </section>
+
+        <div class="ef-main spf-main">
+            @if (newsUnavailable)
+            {
+                <p class="updated" role="status">Headlines are temporarily unavailable. Please try again.</p>
+            }
+            else if (stories.Count == 0)
+            {
+                <p class="ef-empty">No recent stories are available yet.</p>
+            }
+            else
+            {
+                var lead = stories[0];
+                var leadHref = FeedQuery.SafeHref(lead.Url);
+                var leadImage = FeedQuery.SafeHref(lead.ImageUrl);
+                var leadTitle = Title(lead);
+                var leadSummary = FeedText.StripEmoji(FeedQuery.Excerpt(lead.Description));
+                var leadSource = FeedText.SourceName(lead.SourceLabel, lead.SourceUrl);
+                <article class="ef-lead" data-article-story="feature" data-image-layout="compact" data-news-url="@leadHref" data-news-source="@leadSource">
+                    @if (leadHref is not null && leadImage is not null)
+                    {
+                        <a class="ef-lead__image" data-article-media href="@leadHref" target="_blank" rel="noopener noreferrer" tabindex="-1" aria-hidden="true">
+                            <img src="@leadImage" alt="" fetchpriority="high" referrerpolicy="no-referrer" onerror="this.parentElement.remove()" />
+                        </a>
+                    }
+                    <p class="ef-kicker">@(lead.CategoryName ?? "Sports") <span aria-hidden="true">·</span> @leadSource</p>
+                    <h2 class="ef-lead__title">
+                        @if (leadHref is not null) { <a href="@leadHref" target="_blank" rel="noopener noreferrer">@leadTitle</a> }
+                        else { @leadTitle }
+                    </h2>
+                    <div class="ef-meta">
+                        <span class="ef-meta__when">@When(lead)</span>
+                        <ShareButton Url="@lead.Url" Title="@leadTitle" />
+                        <SaveButton Item="lead" Title="@leadTitle" Source="@leadSource" Summary="@leadSummary" />
+                    </div>
+                </article>
+            }
+        </div>
+
+        <div class="spf-headlines-col">
+            @if (stories.Count > 1)
+            {
+                <h3 class="ef-label">Latest headlines</h3>
+                <ul class="ef-headlines spf-headlines">
+                    @foreach (var item in stories.Skip(1))
+                    {
+                        <HeadlineRow Item="item" WithCategory="true" />
+                    }
+                </ul>
+            }
+            <a class="ef-more" href="sports/news">All sports headlines <span aria-hidden="true">→</span></a>
+        </div>
+    </div>
+
+    <div class="spf-tables" data-sports-rotation data-rotation-refresh-after="@RotationRefreshAfterMs">
+        @if (standingsGroups.Count > 0 && standingsSource is { } table)
+        {
+            <section class="spf-standings" aria-labelledby="spf-stand-title">
+                <div class="ef-head"><h2 id="spf-stand-title" class="ef-label">@table.DisplayName standings</h2></div>
+                @if (standingsGroups.Count > 1)
+                {
+                    IReadOnlyList<StandingGroup> firstGroups;
+                    IReadOnlyList<StandingGroup> secondGroups;
+                    if (table.ProviderKey is "espn-nfl" or "espn-nhl")
+                    {
+                        var confGroups = standingsGroups
+                            .GroupBy(g => table.ProviderKey == "espn-nfl" ? StandingsQuery.NflConference(g) : StandingsQuery.NhlConference(g))
+                            .OrderBy(g => g.Key is "National Football Conference" or "Eastern Conference" ? 0 : 1)
+                            .ToList();
+                        if (confGroups.Count == 2)
+                        {
+                            firstGroups = confGroups[0].OrderBy(g => g.Name, StringComparer.Ordinal).ToList();
+                            secondGroups = confGroups[1].OrderBy(g => g.Name, StringComparer.Ordinal).ToList();
+                        }
+                        else
+                        {
+                            var half = (int)Math.Ceiling(standingsGroups.Count / 2.0);
+                            firstGroups = standingsGroups.Take(half).ToList();
+                            secondGroups = standingsGroups.Skip(half).ToList();
+                        }
+                    }
+                    else
+                    {
+                        var half = (int)Math.Ceiling(standingsGroups.Count / 2.0);
+                        firstGroups = standingsGroups.Take(half).ToList();
+                        secondGroups = standingsGroups.Skip(half).ToList();
+                    }
+                    <div class="spf-table-split">
+                        <div class="spf-table-col">
+                            @foreach (var group in firstGroups)
+                            {
+                                @RenderStandingsGroup(group)
+                            }
+                        </div>
+                        <div class="spf-table-col">
+                            @foreach (var group in secondGroups)
+                            {
+                                @RenderStandingsGroup(group)
+                            }
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    var group = standingsGroups[0];
+                    var columns = group.Columns.Take(3).ToList();
+                    var half = (int)Math.Ceiling(group.Teams.Count / 2.0);
+                    var firstHalf = group.Teams.Take(half).ToList();
+                    var secondHalf = group.Teams.Skip(half).ToList();
+                    <div class="spf-table-split">
+                        <table class="spf-table">
+                            <caption>@group.Name</caption>
+                            <thead><tr><th scope="col">Team</th>@foreach (var (column, index) in columns.Select((c, i) => (c, i))) { <th scope="col">@ColumnLabel(columns, index)</th> }</tr></thead>
+                            <tbody>
+                                @foreach (var team in firstHalf)
+                                {
+                                    <tr data-sports-teams="@SportsTeamPreferences.Keys(team.Row.TeamName)">
+                                        <th scope="row">@team.Row.TeamName</th>
+                                        @foreach (var column in columns) { <td>@StandingsQuery.StatisticValue(team, column.Name)</td> }
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                        @if (secondHalf.Count > 0)
+                        {
+                            <table class="spf-table">
+                                <caption class="sr-only">@group.Name (continued)</caption>
+                                <thead><tr><th scope="col">Team</th>@foreach (var (column, index) in columns.Select((c, i) => (c, i))) { <th scope="col">@ColumnLabel(columns, index)</th> }</tr></thead>
+                                <tbody>
+                                    @foreach (var team in secondHalf)
+                                    {
+                                        <tr data-sports-teams="@SportsTeamPreferences.Keys(team.Row.TeamName)">
+                                            <th scope="row">@team.Row.TeamName</th>
+                                            @foreach (var column in columns) { <td>@StandingsQuery.StatisticValue(team, column.Name)</td> }
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        }
+                    </div>
+                }
+                <a class="ef-more" href="@($"standings?sourceId={table.Id}")">All standings <span aria-hidden="true">→</span></a>
+            </section>
+        }
+        @if (rankings.Teams.Count > 0)
+        {
+            <section class="spf-rankings" aria-labelledby="spf-rank-title">
+                <h2 id="spf-rank-title" class="ef-label">@rankings.Selected?.Sport · @(rankings.Poll?.PollName ?? "Top 25")</h2>
+                @{
+                    var topTeams = rankings.Teams.Where(t => t.Rank is >= 1 and <= 25).ToList();
+                    var half = (int)Math.Ceiling(topTeams.Count / 2.0);
+                    var firstHalf = topTeams.Take(half).ToList();
+                    var secondHalf = topTeams.Skip(half).ToList();
+                }
+                <div class="spf-table-split">
+                    <table class="spf-table">
+                        <caption class="sr-only">@(rankings.Poll?.PollName ?? "Top 25")</caption>
+                        <thead><tr><th scope="col">Rank</th><th scope="col">School</th><th scope="col">Record</th><th scope="col">Move</th></tr></thead>
+                        <tbody>
+                            @foreach (var team in firstHalf)
+                            {
+                                <tr class="@(team.IsBig12 == true ? "spf-big12" : null)">
+                                    <td class="spf-table__rank">@team.Rank</td>
+                                    <th scope="row">@team.TeamName</th>
+                                    <td>@team.Record</td>
+                                    <td class="spf-move">@Move(team)</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                    @if (secondHalf.Count > 0)
+                    {
+                        <table class="spf-table">
+                            <caption class="sr-only">(continued)</caption>
+                            <thead><tr><th scope="col">Rank</th><th scope="col">School</th><th scope="col">Record</th><th scope="col">Move</th></tr></thead>
+                            <tbody>
+                                @foreach (var team in secondHalf)
+                                {
+                                    <tr class="@(team.IsBig12 == true ? "spf-big12" : null)">
+                                        <td class="spf-table__rank">@team.Rank</td>
+                                        <th scope="row">@team.TeamName</th>
+                                        <td>@team.Record</td>
+                                        <td class="spf-move">@Move(team)</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                </div>
+                <a class="ef-more" href="@CollegeHub.RankingsHref(rankings.Selected)">All rankings <span aria-hidden="true">→</span></a>
+            </section>
+        }
+    </div>
+</div>
+</div>
+
+@* Phones: the folded Sports front (docs/mobile-refresh-handoff.md), from the same data. *@
+<div class="mx-phone tab-phone">
+    <PhoneRibbon Section="sports" Kicker="@($"{Dates.TodayLabel(nowUtc)}{(live.Count > 0 ? $" · {live.Count} live now" : "")}")" Title="Sports" />
+
+    <section class="nf-brief nf-brief--phone" aria-label="The briefing"><div class="nf-brief__tiles">@Tiles</div></section>
+
+    @if (stories.Count > 0)
+    {
+        var lead = stories[0];
+        <article class="mx-block" data-article-story="feature" data-image-layout="compact" aria-label="Lead story">
+            @if (FeedQuery.SafeHref(lead.ImageUrl) is { } image)
+            {
+                <div class="mx-block__media" data-article-media><img src="@image" alt="" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()" /></div>
+            }
+            <span class="mx-block__kicker">@string.Join(" · ", new[] { lead.CategoryName ?? "Sports", Source(lead), lead.Undated ? null : Dates.Time(lead.Date) }.Where(p => !string.IsNullOrEmpty(p)))</span>
+            <h2 class="mx-block__title"><StoryLink Item="lead" /></h2>
+            <div class="mx-block__actions">
+                <SaveButton Item="lead" Title="@Title(lead)" Source="@Source(lead)" Summary="@FeedText.StripEmoji(FeedQuery.Excerpt(lead.Description))" Labelled="true" />
+                <ShareButton Url="@lead.Url" Title="@Title(lead)" Labelled="true" />
+            </div>
+        </article>
+    }
+    else if (newsUnavailable)
+    {
+        <p class="mx-empty" role="status">Headlines are temporarily unavailable. Please try again.</p>
+    }
+
+    @if (live.Count > 0 || upcoming.Count > 0)
+    {
+        <PhoneTimeline Heading="Today’s games" Sub="@(board.Count > 0 ? $"{board.Count} {(board.Count == 1 ? "game" : "games")}" : null)"
+                       Items="@upcoming.Take(5).Select(UpNext).ToList()" MoreText="Full scoreboard and schedule" MoreHref="scoreboard">
+            @if (live.Count > 0)
+            {
+                <h3 class="mx-live">Live now</h3>
+                <PhoneScoreTiles Games="@live.Take(8).ToList()" />
+            }
+            @if (live.Count > 0 && upcoming.Count > 0) { <h3 class="mx-subhead">Up next</h3> }
+        </PhoneTimeline>
+    }
+
+    @if (stories.Count > 1)
+    {
+        <section class="mx-section" aria-labelledby="sports-top-m">
+            <div class="mx-head"><h2 id="sports-top-m">Top sports headlines</h2><a href="sports/news">All headlines →</a></div>
+            <ol class="mx-top">
+                @foreach (var (item, i) in stories.Skip(1).Take(3).Select((s, i) => (s, i)))
+                {
+                    <li class="@PhoneColors.ForSport(item.CategoryName)">
+                        <span class="mx-top__n" aria-hidden="true">@(i + 1)</span>
+                        <span><span class="mx-top__title"><StoryLink Item="item" /></span><span class="mx-top__meta">@string.Join(" · ", new[] { Source(item), item.CategoryName }.Where(p => !string.IsNullOrEmpty(p)))</span></span>
+                        <span class="mx-top__actions"><SaveButton Item="item" Title="@Title(item)" Source="@Source(item)" Summary="@FeedText.StripEmoji(FeedQuery.Excerpt(item.Description))" /><ShareButton Url="@item.Url" Title="@Title(item)" /></span>
+                    </li>
+                }
+            </ol>
+        </section>
+    }
+
+    <FoldGroup Name="sports-more" Heading="More in Sports" Foot="Choose your teams" FootHref="settings#my-teams-heading">
+        @{ var first = true; }
+        @if (standingsGroup is { } table && standingsSource is { } standingsTable && table.Teams.Count > 0)
+        {
+            var columns = table.Columns.Take(3).ToList();
+            var leader = table.Teams[0];
+            <Fold Title="@($"{standingsTable.DisplayName} standings")" Color="mx-c-world" Open="@first" AllHref="@($"standings?sourceId={standingsTable.Id}")" AllText="All standings"
+                  Gist="@($"{leader.Row.TeamName} leads{(columns.Count > 0 ? " at " + StandingsQuery.StatisticValue(leader, columns[0].Name) : "")}")">
+                @foreach (var team in table.Teams.Take(5))
+                {
+                    <div class="mx-fold__row">
+                        <span><b>@team.Row.TeamName</b><small>@string.Join(" · ", columns.Skip(1).Select((c, i) => $"{ColumnLabel(columns, i + 1)} {StandingsQuery.StatisticValue(team, c.Name)}"))</small></span>
+                        @if (columns.Count > 0) { <span class="mx-fold__value">@StandingsQuery.StatisticValue(team, columns[0].Name)</span> }
+                    </div>
+                }
+            </Fold>
+            first = false;
+        }
+        @if (rankings.Teams.Count > 0)
+        {
+            var top = rankings.Teams[0];
+            var riser = rankings.Teams.Where(t => t.PreviousRank > t.Rank).OrderByDescending(t => t.PreviousRank - t.Rank).FirstOrDefault();
+            <Fold Title="@(rankings.Poll?.PollName ?? "Top 25")" Color="mx-c-world" Open="@first" AllHref="@CollegeHub.RankingsHref(rankings.Selected)" AllText="All rankings"
+                  Gist="@($"{top.TeamName} No. {top.Rank}{(riser is null ? "" : $" · {riser.TeamName} up {riser.PreviousRank - riser.Rank} to No. {riser.Rank}")}")">
+                @foreach (var team in rankings.Teams.Take(5))
+                {
+                    <div class="mx-fold__row">
+                        <span><b>@team.TeamName</b><small>@string.Join(" · ", new[] { team.Record, MoveWords(team), team.IsBig12 == true ? "Big 12" : null }.Where(p => !string.IsNullOrEmpty(p)))</small></span>
+                        <span class="mx-fold__value">@team.Rank</span>
+                    </div>
+                }
+            </Fold>
+            first = false;
+        }
+        @if (f1Race is { } race)
+        {
+            var grandPrix = F1Query.Sessions(race).Last();
+            var leaderDriver = f1.Drivers.FirstOrDefault();
+            <Fold Title="F1" Color="mx-c-us" Open="@first" AllHref="f1" AllText="F1 schedule and standings"
+                  Gist="@($"{race.RaceName} {race.RaceDate.ToString("MMM d", System.Globalization.CultureInfo.InvariantCulture)}{(leaderDriver is null ? "" : $" · {leaderDriver.FamilyName} leads")}")">
+                <div class="mx-fold__row">
+                    <span><b>@race.RaceName</b><small>@race.CircuitName · @race.RaceDate.ToString("ddd, MMM d", System.Globalization.CultureInfo.InvariantCulture)</small></span>
+                    @if (grandPrix.StartsUtc is { } starts) { <span class="mx-fold__value">@Dates.Time(starts)</span> }
+                </div>
+                @foreach (var driver in f1.Drivers.Take(2))
+                {
+                    <div class="mx-fold__row">
+                        <span><b>@driver.GivenName @driver.FamilyName</b><small>@driver.Wins @(driver.Wins == 1 ? "win" : "wins")</small></span>
+                        <span class="mx-fold__value">@F1Query.Points(driver.Points)</span>
+                    </div>
+                }
+            </Fold>
+            first = false;
+        }
+        @if (stories.Count > 4)
+        {
+            <Fold Title="More headlines" Color="mx-c-ink" Open="@first" AllHref="sports/news" AllText="All sports headlines"
+                  Gist="@string.Join(" · ", stories.Skip(4).Take(2).Select(Title))">
+                @foreach (var item in stories.Skip(4))
+                {
+                    <a class="mx-fold__row" href="@(FeedQuery.SafeHref(item.Url) ?? "sports/news")" target="_blank" rel="noopener noreferrer">
+                        <span><b>@Title(item)</b><small>@Source(item)</small></span>
+                    </a>
+                }
+            </Fold>
+        }
+    </FoldGroup>
+</div>
+
+@code {
+    private IReadOnlyList<FeedItem> stories = [];
+    private IReadOnlyList<TonightItem> upcoming = [];
+    private IReadOnlyList<TonightItem> tomorrow = [];
+    private DateOnly today;
+    private myNewspaper.Shared.Data.Models.SportsStandingsSource? standingsSource;
+    private IReadOnlyList<StandingGroup> standingsGroups = [];
+    private StandingGroup? standingsGroup => standingsGroups.FirstOrDefault();
+    private RankingsPage rankings = new([], null, null, []);
+    private bool newsUnavailable;
+    private DateTime nowUtc;
+    private long RotationRefreshAfterMs => (long)(TimeSpan.FromHours(1) - TimeSpan.FromTicks(nowUtc.Ticks % TimeSpan.TicksPerHour)).TotalMilliseconds;
+    private IReadOnlyList<myNewspaper.Shared.Data.ScoreboardGame> board = [];
+    private IReadOnlyList<myNewspaper.Shared.Data.ScoreboardGame> live = [];
+    private F1Page f1 = F1Page.Empty;
+    private myNewspaper.Shared.Data.Models.F1Race? f1Race;
+    private int sportsStoriesToday;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        nowUtc = Clock.GetUtcNow().UtcDateTime;
+        today = Dates.TodayAt(nowUtc);
+        newsUnavailable = false;
+        await using var db = await Factory.CreateDbContextAsync(Ct);
+
+        try { stories = await FeedQuery.GetHomeNewsAsync(db, 7, "sports", Ct); }
+        catch (Exception ex) when (DataFailures.IsReadFailure(ex))
+        { newsUnavailable = true; stories = []; Log.LogError(ex, "Could not read sports headlines."); }
+
+        try { sportsStoriesToday = await FeedQuery.CountTodayInHubAsync(db, Dates, "sports", Ct); }
+        catch (Exception ex) when (DataFailures.IsReadFailure(ex))
+        { sportsStoriesToday = 0; Log.LogError(ex, "Could not count sports stories today."); }
+
+        // Upcoming: today's remaining games, the same timeline as the homepage's Today & Tonight.
+        try
+        {
+            var todays = await HomeEventResults.WithoutFinalResultsAsync(db, await EventsQuery.GetOnDateAsync(db, today, Ct), Ct);
+            upcoming = TodayTonight.Build(todays, Dates).Where(i => i.StartsUtc is null || i.StartsUtc > nowUtc).Take(11).ToList();
+        }
+        catch (Exception ex) when (DataFailures.IsReadFailure(ex))
+        { upcoming = []; Log.LogError(ex, "Could not read upcoming games."); }
+
+        if (upcoming.Count < 4)
+        {
+            try
+            {
+                var tomorrows = await HomeEventResults.WithoutFinalResultsAsync(db, await EventsQuery.GetOnDateAsync(db, today.AddDays(1), Ct), Ct);
+                tomorrow = TodayTonight.Build(tomorrows, Dates).Take(8 - upcoming.Count).ToList();
+            }
+            catch (Exception ex) when (DataFailures.IsReadFailure(ex))
+            { tomorrow = []; Log.LogError(ex, "Could not read tomorrow's games."); }
+        }
+        else
+        {
+            tomorrow = [];
+        }
+
+        // Read the existing enabled/season-filtered sources. Empty snapshots never consume a rotation slot.
+        try
+        {
+            var hidden = Config.GetSection("Standings:HiddenProviders").Get<string[]>();
+            var all = await StandingsQuery.GetAsync(db, null, Log, today, hidden, ct: Ct);
+            var available = new List<StandingsPage>();
+            foreach (var source in all.Sources)
+            {
+                var page = source.Id == all.Selected?.Id ? all
+                    : await StandingsQuery.GetAsync(db, source.Id, Log, today, hidden, ct: Ct);
+                if (page.Groups.Any(g => g.Teams.Count > 0)) available.Add(page);
+            }
+            var selected = SportsFrontRotation.Order(available, p => p.Selected!.Id, nowUtc, "standings").FirstOrDefault();
+            standingsSource = selected?.Selected;
+            standingsGroups = selected?.Groups ?? [];
+        }
+        catch (Exception ex) when (DataFailures.IsReadFailure(ex))
+        { standingsSource = null; standingsGroups = []; Log.LogError(ex, "Could not read sports front standings."); }
+
+        try
+        {
+            var all = await RankingsQuery.GetAsync(db, null, Log, today, ct: Ct);
+            var available = new List<RankingsPage>();
+            foreach (var source in all.Sources)
+            {
+                var page = source.Id == all.Selected?.Id ? all
+                    : await RankingsQuery.GetAsync(db, source.Id, Log, today, ct: Ct);
+                if (page.Teams.Any(t => t.Rank is >= 1 and <= 25)) available.Add(page);
+            }
+            rankings = SportsFrontRotation.Order(available, p => p.Selected!.Id, nowUtc, "rankings").FirstOrDefault()
+                ?? new([], null, null, []);
+        }
+        catch (Exception ex) when (DataFailures.IsReadFailure(ex))
+        { rankings = new([], null, null, []); Log.LogError(ex, "Could not read sports front rankings."); }
+
+        // Phones: live scores for the Today's games band, and the next F1 round for its fold. The scoreboard read
+        // reports its own failures; F1 just drops its fold.
+        board = (await ScoreboardQuery.ReadAsync(db, Dates, Log, today, carryOver: true, ct: Ct)).Games;
+        live = board.Where(g => g.Active).ToList();
+        try
+        {
+            f1 = await F1Query.GetAsync(db, "standings", ct: Ct);
+            f1Race = f1.Races.FirstOrDefault(r => F1Query.Upcoming(r, Dates, today));
+        }
+        catch (Exception ex) when (DataFailures.IsReadFailure(ex))
+        { f1 = F1Page.Empty; f1Race = null; Log.LogError(ex, "Could not read sports front F1."); }
+    }
+
+    private static string Source(FeedItem item) => FeedText.SourceName(item.SourceLabel, item.SourceUrl);
+
+    private TimelineItem UpNext(TonightItem item) => new(item.StartsUtc is { } starts ? Dates.Time(starts) : item.TimeLabel,
+        PhoneText.Matchup(item), item.Kind, item.Tv, item.Url ?? "events", PhoneColors.ForSport(item.Kind), External: item.Url is not null);
+
+    private static string? MoveWords(myNewspaper.Shared.Data.Models.SportsRankingTeam team) =>
+        team.PreviouslyUnranked ? "new"
+        : team.PreviousRank is { } previous && team.Rank is { } rank && previous != rank
+            ? previous > rank ? $"up {previous - rank}" : $"down {rank - previous}" : null;
+
+    /// <summary>College tables repeat "W-L" for conference and overall records; the compact table names them.</summary>
+    private static string ColumnLabel(IReadOnlyList<StandingColumn> columns, int index)
+    {
+        var label = columns[index].Label;
+        if (columns.Count(c => c.Label == label) < 2) return label;
+        return columns.Take(index).Any(c => c.Label == label) ? "All" : "Conf";
+    }
+
+    private RenderFragment RenderStandingsGroup(StandingGroup group) => __builder =>
+    {
+        var columns = group.Columns.Take(3).ToList();
+        <table class="spf-table">
+            <caption>@group.Name</caption>
+            <thead><tr><th scope="col">Team</th>@foreach (var (column, index) in columns.Select((c, i) => (c, i))) { <th scope="col">@ColumnLabel(columns, index)</th> }</tr></thead>
+            <tbody>
+                @foreach (var team in group.Teams)
+                {
+                    <tr data-sports-teams="@SportsTeamPreferences.Keys(team.Row.TeamName)">
+                        <th scope="row">@team.Row.TeamName</th>
+                        @foreach (var column in columns) { <td>@StandingsQuery.StatisticValue(team, column.Name)</td> }
+                    </tr>
+                }
+            </tbody>
+        </table>
+    };
+
+    private static string Title(FeedItem item) => FeedText.StripEmoji(item.Title) is { Length: > 0 } title ? title : item.Title;
+
+    private string When(FeedItem item) => item.Undated ? "" : $"{Dates.Published(item.Date)} · {Dates.Time(item.Date)}";
+
+    private static string Move(myNewspaper.Shared.Data.Models.SportsRankingTeam team) =>
+        team.PreviouslyUnranked ? "New"
+        : team.PreviousRank is { } previous && team.Rank is { } rank
+            ? previous > rank ? $"▲{previous - rank}" : previous < rank ? $"▼{rank - previous}" : "—"
+            : "";
+
+    private IReadOnlyList<myNewspaper.Shared.Data.ScoreboardGame> RankedGames =>
+        board.Where(g => (g.HomeRank is >= 1 and <= 25) || (g.AwayRank is >= 1 and <= 25)).ToList();
+
+    private static string RankedTeamsLine(IReadOnlyList<myNewspaper.Shared.Data.ScoreboardGame> games)
+    {
+        var teams = new List<string>();
+        foreach (var g in games)
+        {
+            if (g.AwayRank is >= 1 and <= 25 && !string.IsNullOrWhiteSpace(g.AwayName))
+                teams.Add($"#{g.AwayRank} {g.AwayName}");
+            if (g.HomeRank is >= 1 and <= 25 && !string.IsNullOrWhiteSpace(g.HomeName))
+                teams.Add($"#{g.HomeRank} {g.HomeName}");
+        }
+        var distinct = teams.Distinct().ToList();
+        if (distinct.Count > 3)
+            return $"{string.Join(", ", distinct.Take(3))}…";
+        return string.Join(", ", distinct);
+    }
+
+    private string F1Line(myNewspaper.Shared.Data.Models.F1Race race)
+    {
+        var gp = F1Query.Sessions(race).LastOrDefault();
+        var date = race.RaceDate.ToString("ddd, MMM d", CultureInfo.InvariantCulture);
+        return gp?.StartsUtc is { } starts ? $"{date} · {Dates.Time(starts)}" : date;
+    }
+
+    private RenderFragment Tiles => @<text>
+        @if (board.Count > 0)
+        {
+            @if (live.Count > 0)
+            {
+                <BriefTile Href="scoreboard" Color="@PhoneColors.ForSport(live[0].Sport)" Label="Live now"
+                    Value="@($"{live.Count} live")"
+                    Sub="@($"{board.Count} {(board.Count == 1 ? "game" : "games")} today")" />
+            }
+            else
+            {
+                <BriefTile Href="scoreboard" Color="@PhoneColors.ForSport(board[0].Sport)" Label="Live now"
+                    Value="@($"{board.Count} {(board.Count == 1 ? "game" : "games")}")"
+                    Sub="none live right now" />
+            }
+        }
+        @if (upcoming.Count > 0)
+        {
+            var next = upcoming[0];
+            var match = PhoneText.Matchup(next);
+            var sub = string.IsNullOrEmpty(next.Tv) ? match : $"{match} · {next.Tv}";
+            var time = next.StartsUtc is { } starts ? Dates.Time(starts) : next.TimeLabel;
+            <BriefTile Href="@(next.Url ?? "events")" Color="@PhoneColors.ForSport(next.Kind)" Label="Next up"
+                Value="@time" Sub="@sub" />
+        }
+        @if (RankedGames is { Count: > 0 } ranked)
+        {
+            <BriefTile Href="scoreboard" Color="@PhoneColors.ForSport(ranked[0].Sport)" Label="Top 25 in action"
+                Value="@($"{ranked.Count} {(ranked.Count == 1 ? "game" : "games")}")"
+                Sub="@RankedTeamsLine(ranked)" />
+        }
+        @if (f1Race is { } race)
+        {
+            <BriefTile Href="f1" Color="mx-c-us" Label="F1"
+                Value="@race.RaceName" Sub="@F1Line(race)" />
+        }
+        <BriefTile Href="sports/news" Color="@PhoneColors.ForCategory("sports")" Label="Sports news"
+            Value="@($"{sportsStoriesToday} {(sportsStoriesToday == 1 ? "story" : "stories")}")"
+            Sub="@(sportsStoriesToday == 0 ? "nothing new yet" : "today")" />
+    </text>;
+}

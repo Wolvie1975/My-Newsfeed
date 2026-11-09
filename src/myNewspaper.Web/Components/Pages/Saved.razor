@@ -1,0 +1,40 @@
+@page "/saved"
+@layout PublicLayout
+@inject myNewspaper.Shared.Profiles.ProfileContext Reader
+
+<PageTitle>Saved · myNewspaper</PageTitle>
+
+@* public.js loads the shared server list and safely builds the saved article cards. *@
+
+<div class="mx-tool-page" data-phone-saved>
+<div class="mx-desktop">
+<PageHeading Section="tools" Title="Saved" Eyebrow="Articles &amp; videos" Description="Shared across your devices and with anyone who uses this site. Changes sync automatically." />
+
+@* Which list to show, as in the approved concept; public.js fills in the counts and hides the other list. *@
+<nav class="sec-pills sv-tabs" aria-label="Saved lists">
+    <a href="saved" data-saved-tab="" aria-current="@(List is null ? "page" : null)">Everything<span data-saved-tab-count></span></a>
+    <a href="saved?list=article" data-saved-tab="article" aria-current="@(List == "article" ? "page" : null)">Articles<span data-saved-tab-count></span></a>
+    <a href="saved?list=video" data-saved-tab="video" aria-current="@(List == "video" ? "page" : null)">Videos<span data-saved-tab-count></span></a>
+</nav>
+
+</div>
+<div class="mx-phone" data-phone-tools="saved"><PhoneRibbon Section="tools" Title="Saved" Kicker="@(Reader.HasProfile ? "Saved to your edition · across devices" : "Shared across your devices")">
+<form class="mx-ribbon__field" method="get" action="saved"><label for="saved-show-m">Show</label><select id="saved-show-m" name="list" onchange="this.form.requestSubmit()">
+<option value="" selected="@(List is null)" data-saved-option="" data-label="All">All</option><option value="article" selected="@(List == "article")" data-saved-option="article" data-label="Articles">Articles</option><option value="video" selected="@(List == "video")" data-saved-option="video" data-label="Videos">Videos</option>
+</select><noscript><button class="nf-btn nf-btn--secondary" type="submit">Go</button></noscript></form>
+</PhoneRibbon></div>
+<div class="mx-tool-content">
+<p class="count" data-saved-status aria-live="polite">Connecting to your shared Saved list…</p>
+
+<div class="sv-lists" data-saved-list data-saved-filter="@List"></div>
+
+<section class="empty saved-empty" data-saved-empty hidden><h2 data-saved-empty-title></h2><p data-saved-empty-description></p><a class="nf-btn nf-btn--primary" href="news" data-saved-empty-action>Browse news</a></section>
+
+<noscript><p class="empty">Saved items need JavaScript turned on.</p></noscript>
+
+</div>
+</div>
+@code {
+    [SupplyParameterFromQuery(Name = "list")] private string? ListQuery { get; set; }
+    private string? List => ListQuery is "article" or "video" ? ListQuery : null;
+}

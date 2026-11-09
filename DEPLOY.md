@@ -14,8 +14,9 @@ separately. The reviewed shared environment uses sql2025 / WebScraper; another s
 may use a different database. Always use that deployment's actual runtime connection,
 not an assumed development database or copied numeric source IDs.
 
-Compose reads private `.env` settings: SQL_CONNECTION, ADMIN_PASSWORD, optional
-WEB_PORT, REVERSE_PROXY_IP and DISPLAY_TIMEZONE. Direct container deployments may
+Compose reads private `.env` settings: SQL_CONNECTION (web's login), ADMIN_SQL_CONNECTION
+(admin's login), ADMIN_PASSWORD, optional WEB_PORT, REVERSE_PROXY_IP and DISPLAY_TIMEZONE.
+TEST_SQL_CONNECTION is read only by `tools/verify.sh`. See "SQL logins" below. Direct container deployments may
 have runtime overrides absent from `.env`; inspect and preserve them privately.
 Keep the persistent `/keys` data-protection volume, network, ports, restart policy,
 health check and any existing operational settings. Never print passwords or a full
@@ -23,8 +24,69 @@ connection string. Display:TimeZone defaults to America/Chicago. Scraper:StaleAf
 controls admin freshness; Results:SyncIntervalHours defaults to a ten-minute interval.
 
 The web app requires outbound HTTPS to ESPN and its image CDN for result synchronization.
+Team-record eligibility also uses a background ESPN league-phase check at startup
+and every ten minutes. Records remain hidden until regular season is confirmed;
+unknown or failed checks hide them, and confirmations expire after twenty minutes.
+Check `League phase` log entries after deployment. This needs no database migration
+and runs independently of the results sync interval.
 Rust scraping jobs run separately. A web deployment does not automatically rebuild
 or configure the scraper, register new providers or enable feeds.
+
+## SQL Server container
+
+`sql2025` (SQL Server 2025, `mcr.microsoft.com/mssql/server:2025-latest`, image `2b5b58162112`) is not part of this
+repository's Compose file; it serves every project on `dev-bridge`. Since November 5, 2026 all of `/var/opt/mssql`
+(databases, logs, backups, certificates) lives in the Docker volume **`sql2025-data`**, so removing or recreating the
+container no longer loses data. Before that it lived only in the container's own layer.
+
+It runs as (settings from a private env file with `ACCEPT_EULA`, `MSSQL_PID`, `MSSQL_SA_PASSWORD`,
+`MSSQL_RPC_PORT`; never on the command line):
+
+```bash
+docker run -d --name sql2025 --hostname 6dae60fee94f --restart unless-stopped -p 1433:1433 \
+  --network dev-bridge --ip 172.18.0.6 --env-file <private sql.env> -v sql2025-data:/var/opt/mssql \
+  mcr.microsoft.com/mssql/server:2025-latest
+```
+
+- Keep `--hostname 6dae60fee94f`: SQL Server's `@@SERVERNAME` comes from it. Keep the IP for anything that
+  connects by address; apps use the name `sql2025`.
+- Upgrading the image: back up, stop, recreate with the same command and a newer image; the volume carries the data.
+- To stop it cleanly: `docker update --restart no sql2025`, then `SHUTDOWN` through sqlcmd, and wait until the
+  container has exited (about 2 s); set `--restart unless-stopped` again on the new container. `SHUTDOWN` alone
+  isn't enough (the restart policy starts it again), and plain `docker stop` waits 90 s and then kills SQL Server
+  (its launcher doesn't pass the stop signal on); the next start runs crash recovery, which is safe but avoidable.
+- Changing `sa`: `ALTER LOGIN [sa]`, then update the private `sql.env` (`MSSQL_SA_PASSWORD`; the log-backup job reads
+  it from the container) and anything else you log in with as `sa` (a VS Code connection). Since November 5, 2026 no
+  app or test uses `sa` (see "SQL logins"), so no redeploy is needed.
+- `MSSQL_SA_PASSWORD` is read only when the data directory is first created; with the volume, an `ALTER LOGIN [sa]`
+  change persists and the variable is ignored.
+- Backups inside the volume (`/var/opt/mssql/backup`) survive the container, not the disk: keep copies elsewhere.
+
+### SQL logins
+
+Since November 5, 2026 each runtime has its own login; none is `sysadmin`, `db_owner` of `WebScraper` or in a server
+role. Scripts are in [deployment/sql-logins/](deployment/sql-logins/); run them as `sa`, with passwords passed only as
+environment variables (`MNP_DATABASE`, `MNP_WEB_SQL_PASSWORD`, `MNP_ADMIN_SQL_PASSWORD`, `MNP_TEST_SQL_PASSWORD`).
+
+| Runtime | Login (`.env` setting) | Can do |
+| --- | --- | --- |
+| Web (`mynewsfeed-web`) | `mynewspaper_web` (`SQL_CONNECTION`) | Role `MyNewspaperWebApp`: SELECT on schema `dbo`; INSERT/UPDATE/DELETE on 15 app tables (profiles, devices, follows, topics, Saved, requests, rollouts, `TvTrackedSeries`, Results tables) |
+| Admin (`mynewspaper-admin`) | `mynewspaper_admin` (`ADMIN_SQL_CONNECTION`) | Role `MyNewspaperAdminApp`: SELECT on `dbo`; INSERT/UPDATE/DELETE on 22 tables (the web list plus `Sources`, `SourceCategories`, `Pages`, YouTube feeds/videos, sports events and types) |
+| .NET tests (`tools/verify.sh`) | `mynewspaper_test` (`TEST_SQL_CONNECTION`) | `db_owner` of `WebScraper_Test` only, plus `CREATE ANY DATABASE` for the scratch database in `SharedArticlesTests` |
+| Rust scraper and scoreboard | `webscraper_ingest` | Role `WebScraperIngest` (managed by that project) |
+| Migrations, maintenance, backups | `sa` | You only, from the password manager or the private host file; no app container holds it |
+
+- **A migration that adds a table an app writes** also adds it to `@writes` in `01-app-logins.sql`; re-run `01` and
+  `02` on `WebScraper_Test`, then `WebScraper`. A missing grant shows up as SQL error 229 ("The INSERT permission was
+  denied…") in the app log. Reads need nothing: SELECT is granted on the schema.
+- **After every `create-test-database.sql`** re-run `04`: the restore copies `WebScraper`'s users and roles (so the
+  app logins keep working there) but drops `mynewspaper_test`, which exists only in the copy.
+- `tools/sql/` scripts use `SQL_CONNECTION`, so they run as `mynewspaper_web`: enough for `household-check.sh` and
+  `cleanup-zz.sh`. Anything else (DDL, other tables) needs `sa`.
+- Rotating an app password: `ALTER LOGIN [mynewspaper_web] WITH PASSWORD = …` (from a script, password in an
+  environment variable), update `.env`, then `deployment/deploy.sh --env-change web` (or `admin`).
+- Rollback for one app: put a working connection back in `.env` and `deploy.sh --env-change <service>`.
+  `99-rollback-app-logins.sql` removes the roles and users (and the logins with `MNP_DROP_LOGINS=yes`).
 
 ## Prepare source and database
 
@@ -61,6 +123,13 @@ Keep scraper-owned `sql/` migrations in their separate repository.
 | [015](db/015_seed_big12_womens_soccer.sql) | Big 12 women's soccer; after 013, repeatable |
 | [016](db/016_add_schedule_status.sql) | Nullable ScheduleStatus; apply before web deployment if scraper has not added it; repeatable |
 | [017](db/017_seed_schedule_result_coverage.sql) | WNBA and Big 12 women's basketball coverage; requires conference schema, preserves existing choices |
+| [018](db/018_shared_saved_articles.sql) | App-owned shared Saved list (`MyDailyFeedSavedList`) and browser-import receipts (`MyDailyFeedSavedImports`); guarded, safe to re-run; apply before deploying shared Saved support; keep the tables on rollback (020/021 still read the legacy list) |
+| [019](db/019_news_category_hubs.sql) | Adds saved category Hub assignment, initially places existing sports/entertainment categories; repeatable, preserves later admin changes; apply before deploying dynamic headline hubs |
+| [020](db/020_profiles.sql) | App-owned profile, device, follow, request and household tables, plus web-owned `YoutubeVideoFeed.IsHouseholdPick`; repeatable; back up first and apply before deploying any web build that maps `IsHouseholdPick` |
+| [021](db/021_seed_first_profiles.sql) | Profiles switch-on: gives the household's first profile the shared Saved list and follows every enabled TV series and YouTube channel. Create that profile (with its PIN) in Admin first; the script stops unless exactly one profile exists. Back up first, run before setting `Profiles:Enabled=true`; repeatable |
+| [022](db/022_household_admin_profile.sql) | Nullable `MyDailyFeedHousehold.AdminProfileId` (which profile shows "Admin sign in"); after 020; repeatable. **Required before any web build with profiles on**: the profile gate reads this column on every request |
+| [023](db/023_news_section.sql) | News section: nullable `MyDailyFeedProfiles.PreviousVisitAt` and the app-owned `MyDailyFeedProfileTopics` table (cascades with its profile); additive and repeatable; apply before deploying any web build that maps them |
+| [024](db/024_tech_hub.sql) | Tech hub (`docs/tech/`): extends `CK_SourceCategories_NewsHub` and `CK_MyDailyFeedProfileTopics_Hub` to allow `tech`, and moves `Technology`, `Video Games` and `Linux` from `headlines` to `tech` (preserving later admin changes); additive and repeatable; run after 019 and 023 before deploying the Tech hub |
 
 Feature prerequisites include SELECT access to scraper-owned standings, ranking,
 movie, TV, box-office and Championship result tables. Apply scraper schema/runtime
@@ -85,36 +154,84 @@ For movie releases run [check-movie-schema.sql](deployment/check-movie-schema.sq
 against the target database in read-only, error-on-failure mode. Stop on failed schema
 checks; provision missing scraper schema in the scraper project first.
 
+## F1 read prerequisites
+
+Before deploying F1, the scraper owner must provision and populate F1Source and
+the F1Schedule, F1Results, F1DriverStandings and F1ConstructorStandings views. Verify
+the existing frontend runtime identity can SELECT all five. No new credentials,
+write grants or runtime DDL are needed by the web app. The collector owns
+enablement, schema and atomic snapshot refreshes. Verify `/f1`, `/f1/results`,
+`/f1/standings` and the Constructors view after rollout, including timestamps,
+Grand Prix/Sprint selection and mobile table scrolling.
+
+For the College Sports hub, no additional database objects or collector rollout
+are required. Verify `/college` and its Results, Standings and Rankings tabs for
+all four sports, sport persistence, empty/preseason states and mobile navigation.
+Also verify `/college/news`, its publisher filter, article saving and complete
+pagination. It reads the existing Big 12 News category; no collector restart or
+registration scripts are needed for the frontend rollout.
+
 ## Build and deploy
 
-Run relevant application checks; the full suite is:
+Mobile verification is a required release check for every feature/fix, including
+data/query changes that affect displayed content. Before rollout, verify affected
+flows at 320, 390 and 430px minimum in light/dark mode, inspect screenshots and
+exercise controls. Desktop-only verification is insufficient. See the
+[mobile acceptance checklist](docs/interface.md#required-mobile-verification).
+Record any missing verification as outstanding; do not claim readiness without it.
+
+Run relevant application checks; the full suites are:
 
 ```bash
-dotnet test MyNewsFeed.sln
+tools/verify.sh                                  # build (warnings fail it), .NET tests, JS unit tests, lint, format
+node tools/compare-builds.cjs <old-ref>          # only for a change that claims no behaviour change
+LAYOUT_PAGES=/,admin:/admin node tools/compare-builds.cjs <old-ref> --layout   # CSS: boxes and colours per width/theme
+node tools/check-css.cjs                         # breakpoints, hidden-text pattern, class prefixes (also in verify.sh)
+CLEANUP_DB=<db> BASE_URL=<preview> npm run test:browser   # all Playwright checks, serially; zz clean-up in <db>
 ```
 
-Tests need configured SQL access; use development/staging for integration fixtures.
-Record the current image ID for rollback. For a Compose-managed deployment whose
-private settings reflect all current runtime overrides:
+After the deploy, `node tools/live-check.cjs` runs the standard live checks and cleans up after itself (see
+[coding standards, Releases](docs/coding-standards.md#releases)).
+
+Tests need configured SQL access (user secrets or `ConnectionStrings__DefaultConnection`;
+`appsettings.json` carries no credentials); use development/staging for integration
+fixtures. The Docker build copies `Directory.Build.props` and `.editorconfig` before
+restore, so the image compiles with the same analyzer settings as local builds.
+Both sites deploy through one script, from a commit (commit locally first; AGENTS.md):
 
 ```bash
-docker image tag "$(docker inspect mynewsfeed-web --format '{{.Image}}')" mynewsfeed-web:before-release
-docker compose up -d --build web
-docker compose ps
+deployment/deploy.sh                 # web and admin; or: deployment/deploy.sh web | admin
+deployment/deploy.sh --dry-run       # print the plan, change nothing
+node tools/live-check.cjs            # then the live checks; paste test-results/live/summary.md into release history
 ```
 
-The Dockerfile publishes the app and verifies `_framework/blazor.web.js` is in the
-static-asset manifest. A failed build must not replace the running service. Preserve
-logs and report the build failure. If Compose settings do not match the live runtime,
-recreate from its preserved configuration through the established deployment process
-rather than discarding settings. Never include runtime secrets in a report.
+`deploy.sh` refuses uncommitted changes, runs `tools/verify.sh --quick` (skip with `--skip-verify` when the full
+suite just passed on the same commit), and builds with `GIT_COMMIT`/`BUILD_TIME` so each image is labelled
+`org.opencontainers.image.revision` and serves its commit at `/version`. It tags the new images
+`mynewspaper-{web,admin}:<sha>` (12 characters) and the running ones `before-<sha>`, recreates with Compose, and
+requires each container to be healthy on the new image, with an unchanged environment hash and `/version`
+reporting the commit; otherwise it rolls back by itself and exits 1. It keeps the newest two `before-<sha>` images
+per service; older hand-named tags are never removed by it. It ends with a block for release history.
+
+A deliberate settings change, such as a rotated password, is applied the same way: edit `.env`, then
+`deployment/deploy.sh --env-change [web|admin]`. Without `--env-change` a changed environment counts as a mistake and
+is rolled back; with it, the script lists the changed variable names (never values). A container only reads `.env`
+when it's recreated, so editing the file alone changes nothing on the live site.
+
+Both services run only under Compose. Their settings come from `.env` (ignored by Git) through
+`docker-compose.yml`, never from a hand-started container. The Dockerfile publishes the app and verifies
+`_framework/blazor.web.js` is in the static-asset manifest; a failed build replaces nothing. Never include runtime
+secrets in a report.
 
 ## Validate and troubleshoot
 
-The container should become healthy within about a minute; `/healthz` checks database
-reachability. Verify `/healthz`, `/news`, `/events`, `/results`, `/standings`, `/rankings`,
+The container should become healthy within about a minute; `/healthz` is an ASP.NET Core
+health check (EF database connectivity) returning `Healthy` with 200, or 503. Verify `/healthz`, `/news`, `/events`, `/results`, `/standings`, `/rankings`,
 `/movies`, `/movies/digital`, `/box-office` and affected admin views. Unauthenticated
-admin access should redirect to login. Inspect theme/responsive layout, selected-source
+admin access should redirect to login. Repeat affected mobile flows against the deployed build at the required phone
+widths/themes, including actual controls and screenshot review, before reporting
+the release as verified. Record outcomes and limits in release history/handoff.
+Inspect theme/responsive layout, selected-source
 URLs, paging and no-JavaScript controls relevant to the release. Inspect application
 logs without publishing credentials or connection strings.
 
@@ -142,18 +259,19 @@ Historical row counts and timestamps are evidence for their original run only.
 
 ## Rollback
 
-For the Compose path, restore the recorded image without rebuilding:
+Put back the images that ran before a deploy, without building:
 
 ```bash
-docker image tag mynewsfeed-web:before-release mynewsfeed-web:latest
-docker compose up -d --no-build --pull never --force-recreate web
+deployment/rollback.sh --list            # the before-<sha> images available
+deployment/rollback.sh <sha>             # both services; or: deployment/rollback.sh <sha> web | admin
+node tools/live-check.cjs
 ```
 
-A preserved previous container can instead be restored using its matching runtime
-configuration. Verify health and affected routes after rollback. Leave additive
-schemas and stored data intact; dropping results/fixtures destroys data and is not
-part of an application image rollback. Check recorded rollback tags still exist
-before relying on them. `before-release` is a runbook example, not a guaranteed tag.
+`<sha>` is the 12-character commit `deploy.sh` printed. Record the rollback in release history. Leave additive
+schemas and stored data intact; dropping results/fixtures destroys data and is not part of an application image
+rollback. Images from before November 5, 2026 carry hand-made tags (`mynewspaper-web:before-data-access-20261104`
+…); restore one by tagging it `latest` and running `docker compose up -d --no-build --pull never --force-recreate
+<service>`.
 
 ## Private HTTPS and Android installation
 
@@ -189,3 +307,78 @@ cache version when bundled offline assets change.
 The original movie deployment report targeted `jcarpio@mynewsfeed-prod` at
 `/home/jcarpio/Projects/My-Newsfeed`. Treat that as historical environment context;
 confirm the current target and runtime configuration before operating on another host.
+
+### Personal planning preview
+
+`Results:BackgroundSyncEnabled=false` (environment variable
+`Results__BackgroundSyncEnabled=false`) disables the results-writing background
+worker for a read-only development preview. The default remains `true` for normal
+production collection. League phase checks still run and only update memory.
+Kansas City weather needs outbound HTTPS access to `api.weather.gov`; no new
+credential, database schema or collector configuration is required.
+
+
+## Optional sports box-score cache
+
+The scraper owns `dbo.SportsBoxScores`. The web runtime needs SELECT access only;
+no frontend schema migration, write grant or provider secret is required. Verify
+that the target runtime identity can read the existing view before expecting
+Box score/Game stats actions. Missing/unreadable optional cache data leaves original
+results usable. Do not alter ResultGames or SportsMatchResults to integrate it.
+
+Verify `/results`, College Results, `/mls/results`, `/championship/results` and a
+supported `/box-score/{sport}/{league}/{eventId}` route. Check modal opening,
+Close/Escape/focus return, internal table scrolling, no-JavaScript direct links,
+and missing/unsupported detail fallback. F1 and existing schedule links are separate.
+See [cached statistics](docs/sports.md#cached-box-scores-and-game-stat-modals).
+
+### Where to watch credentials
+
+The /watch feature uses the existing Movies__AccessToken environment setting
+(Movies:AccessToken configuration). Keep it server-side and preserve it during
+container replacement. Missing/invalid credentials leave the page with a retry
+message rather than exposing diagnostics. No new database permission or migration
+is needed. See docs/entertainment.md for provider attribution and cache behavior.
+
+### myNewspaper rename compatibility
+
+Build myNewspaper.sln or src/myNewspaper.Web/myNewspaper.Web.csproj. The published
+entrypoint is dotnet myNewspaper.Web.dll. The existing production container remains
+mynewsfeed-web at the same hostname/port; new release images use mynewspaper-web.
+When cloning runtime config from an older container, explicitly update Entrypoint
+to the renamed DLL. Preserve the existing environment, mounts and key volume.
+The legacy admin cookie name and data-protection discriminator intentionally stay
+MyNewsFeed.Admin and MyNewsFeed to preserve sign-in compatibility. Browser storage
+keys and PWA id/scope remain unchanged. The GitHub repository and checkout folder retain their existing names.
+When building after the rename, use clean bin/obj outputs: Blazor CSS isolation
+identifiers must be regenerated along with the renamed assembly. Validate that the
+new scoped stylesheet loads and matches the rendered component attributes.
+
+### Live scoreboard prerequisites
+
+Before deploying `/scoreboard`, verify the runtime principal can SELECT
+`dbo.SportsScoreboard` and `dbo.SportsScoreboardCoverage`. The independent
+web-scoreboard service owns collection/schema; frontend rollout needs no migration
+or new write permission. Confirm materialized rows, enabled competition filters,
+Home card, sampled/stale labels, cached box-score navigation and visible-only
+refresh. Preserve existing results-worker settings. Application rollback leaves
+all scoreboard storage and the independent collector intact.
+
+### Consolidated daily Results
+
+`/results` now returns a temporary redirect to `/scoreboard?status=final`, retaining
+its day/follow parameters. Verify the redirect and destination rather than expecting
+a direct 200 response from the legacy route. Scoreboard's Show/Games filters
+reuse enabled follow configuration and existing records rules. Keep the results
+worker settings and result tables: college/season pages still use them. No schema
+migration or collector change accompanies this consolidation.
+
+## Public/admin separation
+
+The split build adds a separate Admin host, image, port and key volume. Read
+[the separation runbook](docs/admin-separation.md) before deploying this working
+tree; the old single-container steps alone no longer expose the admin website.
+The split is deployed using the existing Tailscale hostname: public on HTTPS 443,
+admin on HTTPS 8443. `admin.mynewspaper` remains a future hostname. Preserve both
+site URLs, runtime overrides and key volumes; validate both PWAs on each rollout.
+See the separation runbook for the retained combined-container rollback target.

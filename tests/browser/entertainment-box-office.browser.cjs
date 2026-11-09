@@ -1,0 +1,66 @@
+const lib = require('./lib.cjs');
+const assert = require('node:assert/strict'),
+    { chromium } = require('playwright');
+const base = lib.base,
+    root = lib.shotDir;
+(async () => {
+    const browser = await chromium.launch();
+    try {
+        for (const js of [true, false]) {
+            const p = await lib.readerPage(browser, { javaScriptEnabled: js });
+            const errors = [];
+            p.on('pageerror', (e) => errors.push(e.message));
+            for (const route of ['/box-office', '/box-office/weekend-preview', '/box-office/movie-forecasts'])
+                for (const width of [320, 390, 430, 1440])
+                    for (const theme of lib.THEMES) {
+                        await p.setViewportSize({ width, height: 900 });
+                        await p.emulateMedia({ colorScheme: theme });
+                        await p.goto(base + route);
+                        assert(!(await p.locator('#blazor-error-ui').isVisible()));
+                        assert(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+                        if (js) assert.equal(await p.locator('html').getAttribute('data-theme'), theme);
+                        if (width < 768) {
+                            await p.locator('.mobile-nav > summary').click();
+                            const entertainment = p.locator('[aria-labelledby="mobile-entertainment-heading"]');
+                            const link = entertainment.locator('a[href="box-office"]');
+                            await link.scrollIntoViewIfNeeded();
+                            assert.equal(await link.getAttribute('aria-current'), 'page');
+                            assert((await link.boundingBox()).height >= 44);
+                            assert.equal(
+                                await p.locator('[aria-labelledby="mobile-news-heading"] a[href="box-office"]').count(),
+                                0,
+                            );
+                            if (root && js && route === '/box-office')
+                                await p.screenshot({ path: root + '/box-office-menu-' + width + '-' + theme + '.png' });
+                            await p.locator('.mobile-nav > summary').click();
+                        } else {
+                            // Desktop: Entertainment is the current section in the masthead row, not Headlines.
+                            const nav = p.locator('.site-nav--inline');
+                            assert.equal(
+                                await nav.locator('a[href="entertainment"]').getAttribute('aria-current'),
+                                'true',
+                            );
+                            assert.equal(await nav.locator('a[href="news"]').getAttribute('aria-current'), null);
+                            assert.equal(
+                                await p
+                                    .locator('.section-tabs a[href="box-office"][aria-current="page"]:visible')
+                                    .count(),
+                                1,
+                            );
+                        }
+                    }
+            await p.goto(base + '/news/all');
+            assert.equal(await p.locator('main a[href="box-office"]').count(), 0);
+            assert.deepEqual(errors, []);
+            await p.close();
+        }
+        console.log(
+            'Box Office moved to Entertainment on mobile/desktop, active states on all three routes, 44px links, Headlines shortcut removal, light/dark overflow and no-JS checks passed.',
+        );
+    } finally {
+        await browser.close();
+    }
+})().catch((e) => {
+    console.error(e);
+    process.exit(1);
+});

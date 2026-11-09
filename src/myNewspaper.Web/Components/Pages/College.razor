@@ -1,0 +1,256 @@
+@page "/college"
+@page "/college/results"
+@page "/college/standings"
+@page "/college/rankings"
+@layout PublicLayout
+@using myNewspaper.Web.Components.Events
+@using myNewspaper.Web.Components.Feed
+@using myNewspaper.Shared.Data.Models
+@inject NavigationManager Nav
+@inject IDbContextFactory<WebScraperContext> Factory
+@inject FeedDates Dates
+@inject myNewspaper.Shared.Scores.LeaguePhases RecordPhases
+@inject ILogger<College> Log
+@inherits DataComponentBase
+@inject TimeProvider Clock
+
+<PageTitle>College Sports · @selected.Name · myNewspaper</PageTitle>
+<div class="mx-desktop">
+<PageHeading Section="sports" Title="College Sports" Eyebrow="Campus scoreboard" Description="" />
+@* Sports as pills on desktop (as in the approved concept); the dropdown below serves phones. *@
+<nav class="sec-pills sec-pills--desktop cl-sports" aria-label="Sport">
+    @foreach (var sport in CollegeHub.Sports)
+    { <a href="@CollegeHub.Href(view, sport)" aria-current="@(selected.Key == sport.Key ? "page" : null)">@sport.Name</a> }
+</nav>
+<form class="catselect college-sport-select st-select" method="get" action="@BasePath">
+    <label for="college-sport">Sport</label>
+    <select id="college-sport" name="sport" onchange="this.form.requestSubmit()">
+        @foreach (var sport in CollegeHub.Sports)
+        { <option value="@sport.Key" selected="@(selected.Key == sport.Key)">@sport.Name</option> }
+    </select>
+    <noscript><button class="nf-btn nf-btn--secondary" type="submit">Apply</button></noscript>
+</form>
+<SectionSelect Id="college-view" Label="View" Current="@CollegeHub.Href(view, selected)"
+    Choices="@(Tabs.Select(tab => new NavigationChoice(CollegeHub.Href(tab.Key, selected), tab.Label)).ToArray())" />
+</div>
+@if (view != "schedule")
+{
+    <div class="mx-phone" data-phone-sports="college-view">
+        <PhoneCollegeRibbon Selected="selected" View="@view" />
+        <nav class="mx-sport-links" aria-label="College views">
+            @foreach (var (tab, label) in Tabs) { <a href="@CollegeHub.Href(tab, selected)" aria-current="@(view == tab ? "page" : null)">@label</a> }
+        </nav>
+    </div>
+}
+<div class="@(view == "schedule" ? "mx-desktop" : "mx-contents")">
+@if (view == "standings")
+{
+    <Standings CollegeSport="@selected.StandingsSport" @key="selected.Key" />
+}
+else if (view == "rankings")
+{
+    <Rankings CollegeSport="@selected.StandingsSport" Big12News="big12News" OtherPolls="otherPolls" @key="selected.Key" />
+}
+else if (error)
+{ <p class="empty" role="status">College sports are temporarily unavailable. <a href="@CollegeHub.Href(view, selected)">Try again</a></p> }
+else if (view == "schedule")
+{
+    <div class="cl-cols">
+    <section class="cl-main" aria-labelledby="cl-schedule-title">
+    <div class="st-head">
+        <h2 id="cl-schedule-title">@selected.Name schedule</h2>
+        <span class="mv-updated">Big 12 · next seven days · @(Dates.ZoneLabel ?? "local") time@(updatedAt is { } checkedAt ? " · updated " + Dates.Time(checkedAt) : "")</span>
+    </div>
+    @if (events.Items.Count == 0) { <p class="empty">No upcoming games are available for this sport in the next seven days.</p> }
+    @if (events.Items.Count > 0) { <div class="games-head" aria-hidden="true"><span>Sport</span><span>Team / Away</span><span>Team / Home</span><span>Time</span><span>Location</span><span>Links</span></div> }
+    <div class="groups">
+    @foreach (var day in events.Items.GroupBy(e => e.EventDate))
+    {
+        <section class="group">
+            <h3 class="group__bar">@FeedDates.LongDate(day.Key)</h3>
+            <div class="standings-scroll" role="region" aria-label="College schedule" tabindex="0">
+                <table class="games"><caption class="sr-only">@selected.Name · @FeedDates.LongDate(day.Key)</caption>
+                    <thead class="sr-only"><tr><th scope="col">Sport</th><th scope="col">Team / Away</th><th scope="col">Team / Home</th><th scope="col">Time</th><th scope="col">Location</th><th scope="col">Links</th></tr></thead>
+                    <tbody>@foreach (var item in day) { <GameRow Item="item" Records="records" /> }</tbody>
+                </table>
+            </div>
+        </section>
+    }
+    </div>
+    @if (events.Total > events.Items.Count)
+    {
+        <nav class="tv-week" aria-label="College schedule pages">
+            @if (pageIndex > 0) { <a href="@PageHref(pageIndex - 1)">← Earlier</a> }
+            <span>Page @(pageIndex + 1) of @((events.Total + EventsQuery.Limit - 1) / EventsQuery.Limit)</span>
+            @if ((pageIndex + 1) * EventsQuery.Limit < events.Total) { <a href="@PageHref(pageIndex + 1)">Later →</a> }
+        </nav>
+    }
+    </section>
+    <aside class="cl-side">
+        @if (pollTeams.Count > 0)
+        {
+            <section aria-labelledby="cl-poll-title">
+                <h2 id="cl-poll-title" class="ef-label">Big 12 in the @(pollName ?? "national poll")</h2>
+                <ol class="cl-list">
+                    @foreach (var team in pollTeams) { <li><b>@team.Rank</b><span>@team.TeamName</span><span>@team.Record</span></li> }
+                </ol>
+                <a class="ef-more" href="@CollegeHub.Href("rankings", selected)">Full rankings <span aria-hidden="true">→</span></a>
+            </section>
+        }
+        @if (leaders is { } group && group.Teams.Count > 0)
+        {
+            var columns = group.Columns.Take(2).ToList();
+            <section aria-labelledby="cl-lead-title">
+                <h2 id="cl-lead-title" class="ef-label">Conference leaders</h2>
+                <ol class="cl-list cl-list--standings">
+                    @foreach (var team in group.Teams.Take(5))
+                    { <li><span>@team.Row.TeamName</span>@foreach (var column in columns) { <span>@StandingsQuery.StatisticValue(team, column.Name)</span> }</li> }
+                </ol>
+                <a class="ef-more" href="@CollegeHub.Href("standings", selected)">Full standings <span aria-hidden="true">→</span></a>
+            </section>
+        }
+        @if (big12News.Count > 0)
+        {
+            <section aria-labelledby="cl-news-title">
+                <h2 id="cl-news-title" class="ef-label">Big 12 headlines</h2>
+                <ul class="ef-headlines spf-headlines">
+                    @foreach (var item in big12News)
+                    {
+                        <HeadlineRow Item="item" Kicker="@FeedText.SourceName(item.SourceLabel, item.SourceUrl)" />
+                    }
+                </ul>
+                <a class="ef-more" href="sports/news/big12">More in Headlines <span aria-hidden="true">→</span></a>
+            </section>
+        }
+    </aside>
+    </div>
+}
+else
+{
+    <h2>@selected.Name results</h2>
+    <nav class="tv-week" aria-label="College result dates">
+        @if (resultDay == Dates.Today) { <a href="@DayHref(Dates.Today.AddDays(-1))">← Yesterday</a> }
+        <span>@FeedDates.LongDate(resultDay)</span>
+        @if (resultDay < Dates.Today) { <a href="@DayHref(Dates.Today)">Today →</a> }
+    </nav>
+    @if (resultDay == Dates.Today) { <p class="updated" data-results-refresh>Final scores refresh about every 10 minutes. This page checks for updates automatically.</p> }
+    @if (updatedAt is { } synced) { <p class="updated">Results last updated @Dates.PublishedFull(synced)</p> }
+    @if (results.Items.Count == 0) { <p class="empty">No finished games are available for this sport on this date.</p> }
+    else
+    {
+        <div class="results-head" aria-hidden="true"><span>Competition</span><span>Away</span><span>Score</span><span>Home</span><span>Venue</span></div>
+        <div class="results standings-scroll" role="region" aria-label="College results" tabindex="0">
+            <table class="games"><caption class="sr-only">@selected.Name results</caption>
+                <thead class="sr-only"><tr><th scope="col">Competition</th><th scope="col">Away</th><th scope="col">Score</th><th scope="col">Home</th><th scope="col">Venue</th></tr></thead>
+                <tbody>@foreach (var item in results.Items) { <ResultRow Item="item" Records="records" BoxLabels="boxLabels" /> }</tbody>
+            </table>
+        </div>
+        @if (results.Total > results.Items.Count) { <p class="count">Showing the latest @results.Items.Count of @results.Total results.</p> }
+    }
+}
+
+</div>
+@if (view == "schedule") { <PhoneCollege Selected="selected" Events="events" TodayGames="todayGames" Poll="phonePoll" Leaders="leaders" Records="records" Error="error" UpdatedAt="updatedAt" Page="pageIndex" Big12News="big12News" /> }
+
+@code {
+    [SupplyParameterFromQuery(Name = "sport")] private string? Sport { get; set; }
+    [SupplyParameterFromQuery(Name = "day")] private string? Day { get; set; }
+    [SupplyParameterFromQuery(Name = "page")] private string? Page { get; set; }
+    private static readonly (string Key, string Label)[] Tabs = [("schedule", "Schedule"), ("results", "Results"), ("standings", "Standings"), ("rankings", "Rankings")];
+    private CollegeSport selected = CollegeHub.Sports[0];
+    private string view = "schedule";
+    private string BasePath => view == "schedule" ? "college" : "college/" + view;
+    private EventsPage events = new([], 0);
+    private ResultsPage results = new([], 0);
+    private IReadOnlyDictionary<string,string> boxLabels = new Dictionary<string,string>();
+    private TeamRecords records = TeamRecords.Empty;
+    private bool error;
+    private DateTime? updatedAt;
+    private int pageIndex;
+    private DateOnly resultDay;
+    private IReadOnlyList<myNewspaper.Shared.Data.Models.SportsRankingTeam> pollTeams = [];
+    private string? pollName;
+    private IReadOnlyList<EventItem> todayGames = [];
+    private RankingsPage phonePoll = new([], null, null, []);
+    private StandingGroup? leaders;
+    private IReadOnlyList<FeedItem> big12News = [];
+    private IReadOnlyList<(CollegeSport Sport, SportsRankingSource Source)> otherPolls = [];
+    private string PageHref(int page) => CollegeHub.Href(view, selected) + "&page=" + page;
+    private string DayHref(DateOnly day) => CollegeHub.Href("results", selected) + $"&day={day:yyyy-MM-dd}";
+
+    protected override async Task OnParametersSetAsync()
+    {
+        selected = CollegeHub.Resolve(Sport);
+        var path = Nav.ToBaseRelativePath(Nav.Uri).Split('?')[0].TrimEnd('/');
+        view = path.Split('/').Last() is "results" or "standings" or "rankings" ? path.Split('/').Last() : "schedule";
+        error = false;
+        updatedAt = null;
+
+        try
+        {
+            await using var db = await Factory.CreateDbContextAsync(Ct);
+            try
+            {
+                big12News = await Big12NewsQuery.LatestAsync(db, 3, Ct);
+            }
+            catch (Exception ex) when (DataFailures.IsReadFailure(ex))
+            {
+                Log.LogWarning(ex, "Big 12 news headlines unavailable.");
+                big12News = [];
+            }
+
+            if (view == "rankings")
+            {
+                try
+                {
+                    var allPolls = await RankingsQuery.GetAsync(db, null, Log, Dates.Today, collegeSport: null, Ct);
+                    otherPolls = allPolls.Sources
+                        .Where(s => !string.Equals(s.Sport, selected.StandingsSport, StringComparison.OrdinalIgnoreCase))
+                        .GroupBy(s => s.Sport, StringComparer.OrdinalIgnoreCase)
+                        .Select(g => (Sport: CollegeHub.Resolve(g.Key), Source: g.First()))
+                        .Where(x => x.Sport.Key != selected.Key)
+                        .GroupBy(x => x.Sport.Key)
+                        .Select(g => g.First())
+                        .ToList();
+                }
+                catch (Exception ex) when (DataFailures.IsReadFailure(ex))
+                {
+                    Log.LogWarning(ex, "Other college polls unavailable.");
+                    otherPolls = [];
+                }
+                return;
+            }
+
+            if (view == "standings") return;
+
+            records = await TeamRecords.LoadAsync(db, Dates.Today, Clock.GetUtcNow().UtcDateTime, RecordPhases, Ct);
+            if (view == "schedule")
+            {
+                pageIndex = int.TryParse(Page, out var page) ? Math.Clamp(page, 0, 10000) : 0;
+                events = await EventsQuery.GetUpcomingAsync(db, Dates.Today, selected.StandingsSport, null,
+                    provider: "big12", to: Dates.Today.AddDays(7), offset: pageIndex * EventsQuery.Limit, ct: Ct);
+                // Paging the weekly schedule must not replace today's highlight with a later game.
+                todayGames = pageIndex == 0 ? events.Items
+                    : (await EventsQuery.GetUpcomingAsync(db, Dates.Today, selected.StandingsSport, null,
+                        provider: "big12", to: Dates.Today, ct: Ct)).Items;
+                updatedAt = await EventsQuery.LastSeenAsync(db, "big12", selected.StandingsSport, Ct);
+                pageIndex = Math.Min(pageIndex, Math.Max(0, (events.Total - 1) / EventsQuery.Limit));
+                // Side column: Big 12 schools in the national poll and the conference leaders, when published.
+                var poll = await RankingsQuery.GetAsync(db, null, Log, Dates.Today, selected.StandingsSport, Ct);
+                phonePoll = poll;
+                pollName = poll.Poll?.PollName;
+                pollTeams = poll.Teams.Where(t => t.IsBig12 == true).Take(8).ToList();
+                leaders = (await StandingsQuery.GetAsync(db, null, Log, Dates.Today, null, selected.StandingsSport, Ct)).Groups.FirstOrDefault();
+            }
+            else
+            {
+                resultDay = DateOnly.TryParseExact(Day, "yyyy-MM-dd", out var day) && day >= Dates.Today.AddDays(-1) && day <= Dates.Today ? day : Dates.Today;
+                updatedAt = await ResultsQuery.LastSyncedAsync(db, selected.League, Ct);
+                results = await ResultsQuery.GetResultsAsync(db, null, window: ResultsWindow.ForDay(resultDay, Dates.Zone), collegeLeague: selected.League, ct: Ct);
+                boxLabels = await BoxScoreQuery.AvailableAsync(db, results.Items.Select(i=>new BoxIdentity(i.Sport ?? "",i.League ?? "",i.EventId)), Log, Ct);
+            }
+        }
+        catch (Exception ex) when (DataFailures.IsReadFailure(ex))
+        { Log.LogError(ex, "College hub read failed for {Sport} {View}.", selected.Key, view); error = true; }
+    }
+}

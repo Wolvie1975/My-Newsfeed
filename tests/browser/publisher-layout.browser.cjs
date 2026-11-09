@@ -1,0 +1,73 @@
+const lib = require('./lib.cjs');
+const assert = require('node:assert/strict'),
+    fs = require('fs'),
+    { chromium } = require('playwright');
+const base = lib.base,
+    root = lib.screenshots('publisher-layout');
+(async () => {
+    const b = await chromium.launch();
+    try {
+        const p = await lib.readerPage(b);
+        if (process.env.PREVIEW_CSS)
+            await p.route('**/public*.css', (r) =>
+                r.fulfill({ contentType: 'text/css', body: fs.readFileSync(process.env.PREVIEW_CSS, 'utf8') }),
+            );
+        for (const width of [320, 390, 430, 700, 753, 900, 1024, 1150, 1440])
+            for (const theme of lib.THEMES)
+                for (const route of ['news/all', 'sports/news', 'entertainment/news']) {
+                    // Headlines has its own folded phone front (headlines-phone).
+                    if (route === 'news/all' && width < 1024) continue;
+                    await p.setViewportSize({ width, height: 950 });
+                    await p.emulateMedia({ colorScheme: theme });
+                    assert.equal((await p.goto(base + '/' + route)).status(), 200);
+                    assert(
+                        await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
+                        route + ' ' + width + ' overflow',
+                    );
+                    assert(
+                        await p
+                            .locator('.paper-feed .src__name')
+                            .evaluateAll((ns) =>
+                                ns
+                                    .filter((n) => n.textContent.trim() === 'Nerdist')
+                                    .every(
+                                        (n) =>
+                                            n.getBoundingClientRect().height <=
+                                            parseFloat(getComputedStyle(n).lineHeight) + 1,
+                                    ),
+                            ),
+                        'Nerdist wraps ' + width,
+                    );
+                    assert(
+                        await p
+                            .locator('.paper-feed .share-button,.paper-feed .save')
+                            .evaluateAll((ns) =>
+                                ns
+                                    .filter((n) => n.getBoundingClientRect().height > 0)
+                                    .every((n) => n.getBoundingClientRect().height >= 44),
+                            ),
+                    );
+                    if ([320, 390, 430, 753, 1440].includes(width)) {
+                        // The three stories beside the lead (headline cards); on phones they join the one list.
+                        await p.locator(width < 1024 ? '.hc-under .article >> nth=0' : '.hc-under').screenshot({
+                            path: root + route.replaceAll('/', '-') + '-' + width + '-' + theme + '.png',
+                        });
+                    }
+                }
+        await p.goto(base + '/entertainment/news');
+        const button = p.locator('.hc-under [data-share-open]').first();
+        await button.click();
+        await p.getByRole('dialog').waitFor();
+        await p.keyboard.press('Escape');
+        await p.getByRole('dialog').waitFor({ state: 'detached' });
+        assert(await button.evaluate((n) => document.activeElement === n));
+        console.log(
+            '54 page/width/theme checks passed: publisher widths, single-line Nerdist, overflow, 44px actions, screenshots and share dialog/focus.',
+        );
+    } finally {
+        await b.close();
+    }
+})().catch((e) => {
+    console.error(e);
+    process.exit(1);
+});

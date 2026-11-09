@@ -1,0 +1,598 @@
+@page "/tech/technology"
+@page "/tech/video-games"
+@page "/tech/linux"
+@layout PublicLayout
+@using System.Globalization
+@using Microsoft.Extensions.Caching.Memory
+@using myNewspaper.Web.Components.Feed
+@inject NavigationManager Nav
+@inject IDbContextFactory<WebScraperContext> Factory
+@inject FeedDates Dates
+@inject IMemoryCache Cache
+@inject ILogger<TechDesk> Log
+@inherits DataComponentBase
+@inject TimeProvider Clock
+
+<PageTitle>@desk.Title · Tech · myNewspaper</PageTitle>
+
+<div class="mx-desktop tab-desktop @desk.ColorClass">
+    <div class="td-heading @desk.ColorClass">
+        <PageHeading Section="tech" SectionCurrent="@desk.Slug" Title="@desk.Title" Eyebrow="TECH DESK" Description="@desk.Description" />
+    </div>
+
+    <div class="ef spf nf tc td @desk.ColorClass">
+        <div class="td-pills-bar">
+            <nav class="td-pills" aria-label="Desk topics">
+                <a class="td-pill" href="@($"tech/{desk.Slug}")" aria-current="@(activeTopic is null ? "page" : null)">
+                    <span>All</span><b>@todayItems.Count</b>
+                </a>
+                @foreach (var t in desk.Topics)
+                {
+                    var count = topicCounts.GetValueOrDefault(t.Slug, 0);
+                    <a class="td-pill @(count == 0 ? "td-pill--dim" : null)"
+                       href="@($"tech/{desk.Slug}?topic={t.Slug}")"
+                       aria-current="@(activeTopic?.Slug == t.Slug ? "page" : null)">
+                        <span>@t.Label</span><b>@count</b>
+                    </a>
+                }
+            </nav>
+            <span class="td-pills-bar__note">
+                Topics match words in the headline@(lastUpdated is { } u ? $" · updated {Dates.Time(u)}" : "")
+            </span>
+        </div>
+
+        <div class="td-cols">
+            <div class="td-main">
+                @if (desk.Slug == "linux")
+                {
+                    <TechReleaseTracker Compact="false" />
+                }
+
+                @if (filteredStories.Count == 0)
+                {
+                    <p class="ef-empty">
+                        No @desk.Title stories match @(activeTopic is { } t ? $"“{t.Label}”" : "right now").
+                        @if (activeTopic is not null)
+                        {
+                            <a href="@($"tech/{desk.Slug}")">Show all @desk.Title</a>
+                        }
+                    </p>
+                }
+                else
+                {
+                    var lead = filteredStories[0];
+                    var sideList = filteredStories.Skip(1).Take(4).ToList();
+                    <div class="td-top">
+                        <article class="ef-lead td-lead @desk.ColorClass" data-article-story="feature">
+                            @if (FeedQuery.SafeHref(lead.ImageUrl) is { } leadPhoto)
+                            {
+                                <a class="ef-lead__photo" data-article-media href="@(FeedQuery.SafeHref(lead.Url) ?? $"tech/{desk.Slug}")" target="_blank" rel="noopener noreferrer">
+                                    <NoPhoto Source="@Source(lead)" Category="@desk.Category" />
+                                    <img src="@leadPhoto" alt="" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()" />
+                                </a>
+                            }
+                            else
+                            {
+                                <a class="ef-lead__photo td-lead__nophoto @desk.ColorClass" href="@(FeedQuery.SafeHref(lead.Url) ?? $"tech/{desk.Slug}")" target="_blank" rel="noopener noreferrer" aria-hidden="true" tabindex="-1">
+                                    <NoPhoto Source="@Source(lead)" Category="@desk.Category" />
+                                </a>
+                            }
+                            <div class="ef-kicker">@Source(lead) · @When(lead)</div>
+                            <h2 class="ef-lead__title">
+                                <StoryLink Item="lead" />
+                            </h2>
+                            @if (Summary(lead) is { Length: > 0 } summary)
+                            {
+                                <p class="ef-lead__summary">@summary</p>
+                            }
+                            <div class="ef-meta">
+                                <span class="ef-meta__when">@When(lead)</span>
+                                <ShareButton Url="@lead.Url" Title="@Title(lead)" />
+                                <SaveButton Item="lead" Title="@Title(lead)" Source="@Source(lead)" Summary="@Summary(lead)" />
+                            </div>
+                        </article>
+
+                        @if (sideList.Count > 0)
+                        {
+                            <div class="td-top__side">
+                                <h3 class="ef-label">Latest in @desk.Title</h3>
+                                <ul class="ef-headlines spf-headlines td-top__list">
+                                    @foreach (var item in sideList)
+                                    {
+                                        @Headline(item)
+                                    }
+                                </ul>
+                            </div>
+                        }
+                    </div>
+
+                    @if (desk.Slug == "technology" && howToCards.Count > 0)
+                    {
+                        <section class="td-howto" aria-labelledby="td-howto-title">
+                            <div class="ef-head">
+                                <h2 id="td-howto-title">How-to &amp; guides</h2>
+                            </div>
+                            <p class="ef-note">Practical tips, explainers and hands-on tests from the last 7 days</p>
+                            <div class="td-howto-grid">
+                                @foreach (var card in howToCards)
+                                {
+                                    <article class="td-howto-card @desk.ColorClass">
+                                        <span class="td-howto-tag">@card.Tag</span>
+                                        <h3 class="td-howto-card__title"><StoryLink Item="card.Item" /></h3>
+                                        <div class="ef-meta">
+                                            <span class="ef-meta__when">@Source(card.Item) · @When(card.Item)</span>
+                                            <ShareButton Url="@card.Item.Url" Title="@Title(card.Item)" />
+                                            <SaveButton Item="card.Item" Title="@Title(card.Item)" Source="@Source(card.Item)" Summary="@Summary(card.Item)" />
+                                        </div>
+                                    </article>
+                                }
+                            </div>
+                        </section>
+                    }
+
+                    @if (moreStories.Count > 0)
+                    {
+                        <section class="td-more" aria-labelledby="td-more-title">
+                            <div class="ef-head">
+                                <h2 id="td-more-title">More @desk.Title</h2>
+                                <a href="@AllDeskHref">All @desk.Title <span aria-hidden="true">→</span></a>
+                            </div>
+                            <div class="hc-feed td-more-cards">
+                                <div class="hc-grid">
+                                    <FeedArticles Items="moreStories" Cards="true" NoGroupHeadings="true" />
+                                </div>
+                            </div>
+                            <a class="ef-more" href="@AllDeskHref">All @desk.Title <span aria-hidden="true">→</span></a>
+                        </section>
+                    }
+                }
+            </div>
+
+            <aside class="ef-side spf-side td-side">
+                @if (desk.Slug == "technology")
+                {
+                    <TechDevReading />
+                    @BySourceSection
+                    @if (deskVideos.Count > 0)
+                    {
+                        @VideosRailSection("Tech videos", "videos?category=tech", "More Tech videos")
+                    }
+                    @if (alsoInTech.Count > 0)
+                    {
+                        <section class="nf-side" aria-labelledby="td-also-title">
+                            <h2 id="td-also-title" class="ef-label">Also in Tech</h2>
+                            <ul class="ef-headlines spf-headlines">
+                                @foreach (var item in alsoInTech)
+                                {
+                                    @Headline(item, withCategory: true)
+                                }
+                            </ul>
+                        </section>
+                    }
+                }
+                else if (desk.Slug == "video-games")
+                {
+                    @if (dealsStories.Count > 0)
+                    {
+                        <section class="nf-side" aria-labelledby="td-deals-title">
+                            <h2 id="td-deals-title" class="ef-label">Deals &amp; sales</h2>
+                            <p class="ef-note">Game and hardware discounts from the last 3 days</p>
+                            <ul class="ef-headlines spf-headlines">
+                                @foreach (var item in dealsStories)
+                                {
+                                    @Headline(item)
+                                }
+                            </ul>
+                        </section>
+                    }
+                    @if (deskVideos.Count > 0)
+                    {
+                        @VideosRailSection("Gaming videos", "videos?category=video-games", "More Gaming videos")
+                    }
+                    @BySourceSection
+                }
+                else if (desk.Slug == "linux")
+                {
+                    @if (linuxCovered.Count > 0)
+                    {
+                        var cluster = linuxCovered[0];
+                        <section class="nf-side tc-covered" aria-labelledby="td-linux-covered-title">
+                            <h2 id="td-linux-covered-title" class="ef-label">Most covered</h2>
+                            <p class="ef-note">Covered by @cluster.Sources Linux sources</p>
+                            <article class="tc-covered__card @desk.ColorClass">
+                                <div class="ef-kicker">@Source(cluster.Lead) · @When(cluster.Lead)</div>
+                                <h3 class="ef-headlines__title"><StoryLink Item="cluster.Lead" /></h3>
+                                <div class="tc-covered__sources">
+                                    <span class="tc-covered__badges" aria-hidden="true">
+                                        @foreach (var badge in cluster.SourceMarks)
+                                        {
+                                            <span class="tc-badge @desk.ColorClass" title="@badge.Name">@badge.Mark</span>
+                                        }
+                                    </span>
+                                    <span class="tc-covered__names">@cluster.Sources sources · @string.Join(", ", cluster.SourceNames)</span>
+                                    <span class="tc-covered__actions">
+                                        <ShareButton Url="@cluster.Lead.Url" Title="@Title(cluster.Lead)" />
+                                        <SaveButton Item="cluster.Lead" Title="@Title(cluster.Lead)" Source="@Source(cluster.Lead)" Summary="@Summary(cluster.Lead)" />
+                                    </span>
+                                </div>
+                            </article>
+                        </section>
+                    }
+                    @if (linuxGamingStories.Count > 0)
+                    {
+                        <section class="nf-side" aria-labelledby="td-linux-gaming-title">
+                            <h2 id="td-linux-gaming-title" class="ef-label">Linux gaming</h2>
+                            <p class="ef-note">Proton, Steam Deck and Vulkan across Linux and Video Games</p>
+                            <ul class="ef-headlines spf-headlines">
+                                @foreach (var item in linuxGamingStories)
+                                {
+                                    @Headline(item, withCategory: true)
+                                }
+                            </ul>
+                        </section>
+                    }
+                    @BySourceSection
+                }
+
+                <a class="ef-more td-week-link" href="@($"tech/week/{desk.Slug}")">This week in @desk.Title <span aria-hidden="true">→</span></a>
+            </aside>
+        </div>
+    </div>
+</div>
+
+<div class="mx-phone tab-phone @desk.ColorClass">
+    <PhoneRibbon Section="tech" Desk="@desk.Slug"
+                 Kicker="@($"Tech · {Dates.TodayLabel(nowUtc)} · {todayItems.Count} {(todayItems.Count == 1 ? "story" : "stories")} today")"
+                 Title="@desk.Title" />
+
+    <nav class="td-pills td-pills--phone" aria-label="Desk topics">
+        <a class="td-pill" href="@($"tech/{desk.Slug}")" aria-current="@(activeTopic is null ? "page" : null)">
+            <span>All</span><b>@todayItems.Count</b>
+        </a>
+        @foreach (var t in desk.Topics)
+        {
+            var count = topicCounts.GetValueOrDefault(t.Slug, 0);
+            <a class="td-pill @(count == 0 ? "td-pill--dim" : null)"
+               href="@($"tech/{desk.Slug}?topic={t.Slug}")"
+               aria-current="@(activeTopic?.Slug == t.Slug ? "page" : null)">
+                <span>@t.Label</span><b>@count</b>
+            </a>
+        }
+    </nav>
+
+    @if (desk.Slug == "linux")
+    {
+        <TechReleaseTracker Compact="true" />
+    }
+
+    @if (filteredStories.Count > 0)
+    {
+        var lead = filteredStories[0];
+        var top = filteredStories.Skip(1).Take(8).ToArray();
+        <article class="mx-block @desk.ColorClass" data-article-story="feature" data-image-layout="compact" aria-label="Lead story">
+            @if (FeedQuery.SafeHref(lead.ImageUrl) is { } image)
+            {
+                <div class="mx-block__media" data-article-media>
+                    <img src="@image" alt="" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()" />
+                </div>
+            }
+            <span class="mx-block__kicker">@Source(lead) · @When(lead)</span>
+            <h2 class="mx-block__title"><StoryLink Item="lead" /></h2>
+            @if (Summary(lead) is { Length: > 0 } standfirst)
+            {
+                <p class="mx-block__quote">@standfirst</p>
+            }
+            <div class="mx-block__actions">
+                <SaveButton Item="lead" Title="@Title(lead)" Source="@Source(lead)" Summary="@Summary(lead)" Labelled="true" />
+                <ShareButton Url="@lead.Url" Title="@Title(lead)" Labelled="true" />
+            </div>
+        </article>
+
+        @if (top.Length > 0)
+        {
+            <section class="mx-section" aria-labelledby="td-phone-latest-h">
+                <div class="mx-head">
+                    <h2 id="td-phone-latest-h">Latest</h2>
+                    <a href="@AllDeskHref">All @desk.Title →</a>
+                </div>
+                <ol class="mx-top">
+                    @for (var i = 0; i < top.Length; i++)
+                    {
+                        var item = top[i];
+                        <li class="@desk.ColorClass">
+                            <span class="mx-top__n" aria-hidden="true">@(i + 1)</span>
+                            <span>
+                                <span class="mx-top__title"><StoryLink Item="item" /></span>
+                                <span class="mx-top__meta">@Source(item) · @When(item)</span>
+                            </span>
+                            <span class="mx-top__actions">
+                                <SaveButton Item="item" Title="@Title(item)" Source="@Source(item)" Summary="@Summary(item)" />
+                                <ShareButton Url="@item.Url" Title="@Title(item)" />
+                            </span>
+                        </li>
+                    }
+                </ol>
+            </section>
+        }
+    }
+
+    <FoldGroup Name="@($"td-folds-{desk.Slug}")" Heading="@($"More in {desk.Title}")">
+        @if (desk.Slug == "technology" && howToCards.Count > 0)
+        {
+            <Fold Title="How-to & guides" Gist="@($"{howToCards.Count} guides")" Color="@desk.ColorClass" Open="true">
+                @foreach (var card in howToCards)
+                {
+                    <a class="mx-fold__row" href="@(FeedQuery.SafeHref(card.Item.Url) ?? $"tech/{desk.Slug}")" target="_blank" rel="noopener noreferrer">
+                        <span><b>@card.Tag · @Title(card.Item)</b><small>@Source(card.Item) · @When(card.Item)</small></span>
+                    </a>
+                }
+            </Fold>
+        }
+        @if (desk.Slug == "video-games" && dealsStories.Count > 0)
+        {
+            <Fold Title="Deals & sales" Gist="@($"{dealsStories.Count} deals")" Color="@desk.ColorClass" Open="true">
+                @foreach (var item in dealsStories)
+                {
+                    <a class="mx-fold__row" href="@(FeedQuery.SafeHref(item.Url) ?? $"tech/{desk.Slug}")" target="_blank" rel="noopener noreferrer">
+                        <span><b>@Title(item)</b><small>@Source(item) · @When(item)</small></span>
+                    </a>
+                }
+            </Fold>
+        }
+        @if (desk.Slug == "linux" && linuxCovered.Count > 0)
+        {
+            var c = linuxCovered[0];
+            <Fold Title="Most covered" Gist="@($"{c.Sources} sources")" Color="@desk.ColorClass" Open="true">
+                <a class="mx-fold__row" href="@(FeedQuery.SafeHref(c.Lead.Url) ?? "tech/linux")" target="_blank" rel="noopener noreferrer">
+                    <span><b>@Title(c.Lead)</b><small>@c.Sources sources · @string.Join(", ", c.SourceNames)</small></span>
+                </a>
+            </Fold>
+        }
+        @if (desk.Slug == "linux" && linuxGamingStories.Count > 0)
+        {
+            <Fold Title="Linux gaming" Gist="@($"{linuxGamingStories.Count} stories")" Color="@desk.ColorClass">
+                @foreach (var item in linuxGamingStories)
+                {
+                    <a class="mx-fold__row" href="@(FeedQuery.SafeHref(item.Url) ?? "tech/linux")" target="_blank" rel="noopener noreferrer">
+                        <span><b>@Title(item)</b><small>@Source(item) · @When(item)</small></span>
+                    </a>
+                }
+            </Fold>
+        }
+        @if (sourceCounts.Count > 0)
+        {
+            <Fold Title="By source" Gist="@($"{todayItems.Count} today")" Color="@desk.ColorClass">
+                @foreach (var s in sourceCounts)
+                {
+                    <a class="mx-fold__row" href="@($"tech/news?category={categoryId}&source={s.Id}")">
+                        <span><b>@s.Name</b><small>@s.Count @(s.Count == 1 ? "story" : "stories") today</small></span>
+                    </a>
+                }
+            </Fold>
+        }
+        @if (desk.Slug == "technology" && alsoInTech.Count > 0)
+        {
+            <Fold Title="Also in Tech" Gist="@string.Join(" · ", alsoInTech.Select(i => i.CategoryName))" Color="mx-c-tech">
+                @foreach (var item in alsoInTech)
+                {
+                    <a class="mx-fold__row" href="@(FeedQuery.SafeHref(item.Url) ?? "tech")" target="_blank" rel="noopener noreferrer">
+                        <span><b>@Title(item)</b><small>@item.CategoryName · @Source(item) · @When(item)</small></span>
+                    </a>
+                }
+            </Fold>
+        }
+    </FoldGroup>
+</div>
+
+@code {
+    private sealed record HowToCard(FeedItem Item, string Tag);
+    private sealed record SourceCountRow(int Id, string Name, int Count);
+
+    [SupplyParameterFromQuery(Name = "topic")]
+    private string? TopicSlug { get; set; }
+
+    private DateTime nowUtc;
+    private DeskDefinition desk = TechDesks.Technology;
+    private DeskTopic? activeTopic;
+    private int? categoryId;
+    private DateTime? lastUpdated;
+    private IReadOnlyList<FeedItem> todayItems = [];
+    private IReadOnlyList<FeedItem> allDeskStories = [];
+    private IReadOnlyList<FeedItem> filteredStories = [];
+    private IReadOnlyList<FeedItem> moreStories = [];
+    private Dictionary<string, int> topicCounts = new(StringComparer.OrdinalIgnoreCase);
+    private IReadOnlyList<HowToCard> howToCards = [];
+    private IReadOnlyList<FeedItem> dealsStories = [];
+    private IReadOnlyList<CoveredStory> linuxCovered = [];
+    private IReadOnlyList<FeedItem> linuxGamingStories = [];
+    private IReadOnlyList<FeedItem> alsoInTech = [];
+    private IReadOnlyList<VideoItem> deskVideos = [];
+    private IReadOnlyList<SourceCountRow> sourceCounts = [];
+
+    private string AllDeskHref => categoryId is { } id ? $"tech/news?category={id}" : "tech/news";
+
+    protected override async Task OnParametersSetAsync()
+    {
+        nowUtc = Clock.GetUtcNow().UtcDateTime;
+        var path = Nav.ToBaseRelativePath(Nav.Uri).Split('?')[0].TrimEnd('/');
+        var slug = path.Split('/').LastOrDefault() ?? "technology";
+        desk = TechDesks.For(slug) ?? TechDesks.Technology;
+        activeTopic = desk.Topics.FirstOrDefault(t => string.Equals(t.Slug, TopicSlug, StringComparison.OrdinalIgnoreCase));
+
+        try
+        {
+            await using var db = await Factory.CreateDbContextAsync(Ct);
+            var categories = await FeedQuery.GetCategoriesAsync(db, Ct);
+            var cat = categories.FirstOrDefault(c => c.Name == desk.Category);
+            categoryId = cat?.Id;
+            lastUpdated = await FeedQuery.GetLastUpdatedAsync(db, headlinesOnly: false, categoryId: categoryId, hub: "tech", Ct);
+
+            var todayStartUtc = Dates.StartOfDayUtc(Dates.TodayAt(nowUtc));
+            todayItems = await TechQuery.DeskItemsSinceAsync(db, todayStartUtc, desk.Category, take: 500, Ct);
+            allDeskStories = await TechQuery.LatestAsync(db, 60, desk.Category, Ct);
+
+            var counts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            foreach (var topic in desk.Topics)
+            {
+                counts[topic.Slug] = todayItems.Count(i => TechDesks.Matches(topic, i.Title, i.Description));
+            }
+            topicCounts = counts;
+
+            filteredStories = activeTopic is { } selected
+                ? allDeskStories.Where(i => TechDesks.Matches(selected, i.Title, i.Description)).ToList()
+                : allDeskStories;
+            moreStories = filteredStories.Skip(5).Take(9).ToList();
+
+            var sources = await FeedQuery.GetSourcesAsync(db, categoryId, headlinesOnly: false, hub: "tech", Ct);
+            var todayBySourceName = todayItems
+                .GroupBy(Source, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(g => g.Key, g => g.Count(), StringComparer.OrdinalIgnoreCase);
+            var rows = new List<SourceCountRow>();
+            var matchedKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var s in sources)
+            {
+                var cleanName = FeedText.SourceName(s.Name, s.Name);
+                var count = todayBySourceName.GetValueOrDefault(cleanName, 0);
+                matchedKeys.Add(cleanName);
+                rows.Add(new SourceCountRow(s.Id, cleanName, count));
+            }
+            foreach (var kvp in todayBySourceName)
+            {
+                if (!matchedKeys.Contains(kvp.Key))
+                {
+                    rows.Add(new SourceCountRow(0, kvp.Key, kvp.Value));
+                }
+            }
+            sourceCounts = rows.OrderByDescending(r => r.Count).ThenBy(r => r.Name).ToList();
+
+            if (desk.Slug == "technology")
+            {
+                var weekItems = await TechQuery.DeskItemsSinceAsync(db, nowUtc.AddDays(-7), desk.Category, take: 300, Ct);
+                howToCards = weekItems
+                    .Select(i => (Item: i, Tag: TechDesks.HowToTag(i.Title)))
+                    .Where(x => x.Tag is not null)
+                    .Take(4)
+                    .Select(x => new HowToCard(x.Item, x.Tag!))
+                    .ToList();
+                deskVideos = await TechQuery.VideosByCategoryAsync(db, "Tech", 3, Ct);
+                var gamesOne = await TechQuery.LatestAsync(db, 1, NewsSections.VideoGames, Ct);
+                var linuxOne = await TechQuery.LatestAsync(db, 1, NewsSections.Linux, Ct);
+                alsoInTech = gamesOne.Concat(linuxOne).ToList();
+            }
+            else if (desk.Slug == "video-games")
+            {
+                var threeDays = await TechQuery.DeskItemsSinceAsync(db, nowUtc.AddDays(-3), desk.Category, take: 250, Ct);
+                dealsStories = threeDays
+                    .Where(i => TechDesks.IsGamingDeal(i.Title, i.Description))
+                    .Take(4)
+                    .ToList();
+                deskVideos = await TechQuery.VideosByCategoryAsync(db, "Video Games", 4, Ct);
+            }
+            else if (desk.Slug == "linux")
+            {
+                linuxCovered = await TechQuery.MostCoveredAsync(db, Cache, nowUtc, TimeSpan.FromHours(36), minSources: 2, take: 1, category: NewsSections.Linux, Ct);
+                var gamingTopic = desk.Topics.First(t => t.Slug == "gaming");
+                var weekTech = await TechQuery.DeskItemsSinceAsync(db, nowUtc.AddDays(-7), category: null, take: 400, Ct);
+                linuxGamingStories = weekTech
+                    .Where(i => i.CategoryName is NewsSections.Linux or NewsSections.VideoGames
+                        && TechDesks.Matches(gamingTopic, i.Title, i.Description))
+                    .Take(3)
+                    .ToList();
+            }
+        }
+        catch (Exception ex) when (DataFailures.IsReadFailure(ex))
+        {
+            Log.LogWarning(ex, "Tech desk data unavailable for {Desk}.", desk.Slug);
+        }
+    }
+
+    private RenderFragment BySourceSection => __builder =>
+    {
+        if (sourceCounts.Count == 0) return;
+        var max = Math.Max(1, sourceCounts.Max(s => s.Count));
+        <section class="nf-side td-sources @desk.ColorClass" aria-labelledby="td-sources-title">
+            <h2 id="td-sources-title" class="ef-label">By source</h2>
+            <p class="ef-note">Today’s @todayItems.Count @(todayItems.Count == 1 ? "story" : "stories") across @sourceCounts.Count @(sourceCounts.Count == 1 ? "source" : "sources")</p>
+            <ul class="td-sources__list">
+                @foreach (var s in sourceCounts)
+                {
+                    var pct = (int)Math.Round(100.0 * s.Count / max);
+                    <li class="td-sources__row">
+                        <div class="td-sources__top">
+                            @if (s.Id > 0 && categoryId is { } cid)
+                            {
+                                <a class="td-sources__name" href="@($"tech/news?category={cid}&source={s.Id}")">@s.Name</a>
+                            }
+                            else
+                            {
+                                <span class="td-sources__name">@s.Name</span>
+                            }
+                            <b class="td-sources__count">@s.Count</b>
+                        </div>
+                        <div class="td-sources__bar" aria-hidden="true">
+                            <span style="width: @(pct)%"></span>
+                        </div>
+                    </li>
+                }
+            </ul>
+        </section>
+    };
+
+    private RenderFragment VideosRailSection(string heading, string moreHref, string moreLabel) => __builder =>
+    {
+        <section class="nf-side" aria-labelledby="td-videos-title">
+            <h2 id="td-videos-title" class="ef-label">@heading</h2>
+            <ul class="ef-headlines spf-headlines tc-videos">
+                @foreach (var video in deskVideos)
+                {
+                    var href = $"https://www.youtube.com/watch?v={Uri.EscapeDataString(video.VideoId)}";
+                    <li class="@desk.ColorClass">
+                        <div class="tc-video-row">
+                            @if (FeedQuery.SafeHref(video.ThumbnailUrl) is { } thumb)
+                            {
+                                <a class="tc-video-row__thumb" href="@href" target="_blank" rel="noopener noreferrer" aria-hidden="true" tabindex="-1">
+                                    <img src="@thumb" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.parentElement.remove()" />
+                                </a>
+                            }
+                            <div class="tc-video-row__body">
+                                <div class="ef-kicker">@video.ChannelName</div>
+                                <div class="ef-headlines__title">
+                                    <a href="@href" target="_blank" rel="noopener noreferrer">@video.Title</a>
+                                </div>
+                                <div class="ef-meta">
+                                    <span class="ef-meta__when">@Dates.Published(video.PublishedAt)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                }
+            </ul>
+            <a class="ef-more" href="@moreHref">@moreLabel <span aria-hidden="true">→</span></a>
+        </section>
+    };
+
+    private RenderFragment Headline(FeedItem item, bool withCategory = false) => __builder =>
+    {
+        var color = PhoneColors.ForCategory(item.CategoryName);
+        <li class="@color">
+            <div class="ef-kicker">@Kicker(item, withCategory)</div>
+            <div class="ef-headlines__title">
+                <StoryLink Item="item" />
+            </div>
+            <div class="ef-meta">
+                <span class="ef-meta__when">@When(item)</span>
+                <ShareButton Url="@item.Url" Title="@Title(item)" />
+                <SaveButton Item="item" Title="@Title(item)" Source="@Source(item)" Summary="@Summary(item)" />
+            </div>
+        </li>
+    };
+
+    private static string Title(FeedItem item) => FeedText.StripEmoji(item.Title) is { Length: > 0 } t ? t : item.Title;
+    private static string Source(FeedItem item) => FeedText.SourceName(item.SourceLabel, item.SourceUrl);
+    private static string Summary(FeedItem item) => FeedText.StripEmoji(FeedQuery.Excerpt(item.Description, 180));
+    private string When(FeedItem item) => item.Undated ? Source(item)
+        : Dates.TodayAt(item.Date) == Dates.TodayAt(nowUtc) ? Dates.Time(item.Date) : Dates.Published(item.Date);
+    private string Kicker(FeedItem item, bool withCategory) =>
+        withCategory && !string.IsNullOrWhiteSpace(item.CategoryName) ? $"{item.CategoryName} · {Source(item)}" : Source(item);
+}
+

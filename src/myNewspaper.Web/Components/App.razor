@@ -1,0 +1,59 @@
+@inject myNewspaper.Shared.Profiles.ProfileContext Reader
+<!DOCTYPE html>
+@* With a profile open, its light/dark mode and color scheme are on <html> before first paint (theme-init.js reads them). *@
+<html lang="en" data-theme-mode="@myNewspaper.Shared.Profiles.ProfilePageSettings.ThemeMode(Reader)" data-color-scheme="@myNewspaper.Shared.Profiles.ProfilePageSettings.ColorScheme(Reader)">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <base href="/" />
+    <ResourcePreloader />
+    @* Only the parts of Bootstrap the public site uses; the admin site loads the full bootstrap.min.css. *@
+    <link rel="stylesheet" href="@Assets["lib/bootstrap/bootstrap-public-subset.css"]" />
+    <link rel="stylesheet" href="@Assets["app.css"]" />
+    <link rel="stylesheet" href="@Assets["public.css"]" />
+    <link rel="stylesheet" href="@Assets["broadsheet.css"]" />
+    <link rel="stylesheet" href="@Assets["sections.css"]" />
+    <link rel="stylesheet" href="@Assets["mobile.css"]" />
+    <link rel="stylesheet" href="@Assets["article-images.css"]" />
+    <link rel="stylesheet" href="@Assets["headline-cards.css"]" />
+    <link rel="stylesheet" href="@Assets["tablet.css"]" />
+    <noscript><link rel="stylesheet" href="@Assets["article-images-nojs.css"]" /></noscript>
+    <script src="@Assets["solar-times.js"]"></script>
+    <script src="@Assets["theme-init.js"]"></script>
+    <link rel="stylesheet" href="@Assets["myNewspaper.Web.styles.css"]" />
+    <ImportMap />
+    <link rel="icon" type="image/svg+xml" href="img/brand/mark.svg" />
+    <link rel="icon" type="image/png" sizes="192x192" href="icons/newspaper-front-192.png" />
+    <link rel="apple-touch-icon" href="icons/newspaper-front-180.png" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <meta name="theme-color" content="#0051BA" />
+    <HeadOutlet />
+</head>
+
+<body>
+    <Routes />
+    @* Site defaults and the open profile's settings for profiles.js; escaped by System.Text.Json, never concatenated. *@
+    <script id="mnp-profile" type="application/json">@((MarkupString)myNewspaper.Shared.Profiles.ProfilePageSettings.Json(Reader))</script>
+    <ReconnectModal />
+    <script src="@Assets["_framework/blazor.web.js"]"></script>
+    <script src="@Assets["profiles.js"]" defer></script>
+    <script src="@Assets["public.js"]" defer></script>
+    <script src="@Assets["article-images.js"]" defer></script>
+    <script src="@Assets["headline-jump.js"]" defer></script>
+    <script src="@Assets["weather-icons.js"]" defer></script>
+    <script src="@Assets["personal.js"]" defer></script>
+    <script src="@Assets["home-lead.js"]" defer></script>
+    <script src="@Assets["sports-rotation.js"]" defer></script>
+    <script src="@Assets["home-rankings.js"]" defer></script>
+    <script src="@Assets["pwa.js"]" defer></script>
+    <script src="@Assets["box-scores.js"]" defer></script>
+    <script src="@Assets["results-refresh.js"]" defer></script>
+    <script src="@Assets["scoreboard.js"]" defer></script>
+    <script src="@Assets["watch.js"]" defer></script>
+    <script src="@Assets["settings-order.js"]" defer></script>
+    <script src="@Assets["topics.js"]" defer></script>
+    <script src="@Assets["youtube.js"]" defer></script>
+</body>
+
+</html>

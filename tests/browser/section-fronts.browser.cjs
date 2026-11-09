@@ -1,0 +1,268 @@
+// Verification for Sports and Entertainment fronts (concept B & C) and the shared briefing.
+const lib = require('./lib.cjs');
+const assert = require('node:assert/strict');
+const { chromium } = require('playwright');
+const base = lib.base;
+
+(async () => {
+    const b = await chromium.launch();
+    try {
+        const p = await lib.readerPage(b);
+        const widths = lib.widths([390, 768, 1024, 1280, 1440, 1920, 2560]);
+        for (const theme of lib.THEMES) {
+            for (const width of widths) {
+                await p.setViewportSize({ width, height: 1100 });
+                await p.emulateMedia({ colorScheme: theme });
+
+                for (const route of ['sports', 'entertainment']) {
+                    const res = await p.goto(base + '/' + route, { waitUntil: 'networkidle' });
+                    assert.equal(res.status(), 200);
+
+                    // 1. Briefing present on /sports and /entertainment at every width, before the first section
+                    const brief = p.locator(
+                        width < 744 ? '.nf-brief--phone:visible' : '.nf-brief:not(.nf-brief--phone):visible',
+                    );
+                    assert(await brief.isVisible(), `${route} briefing visible at ${width}`);
+
+                    // Before the first section
+                    const firstSection = p.locator(
+                        width < 744
+                            ? route === 'sports'
+                                ? '.mx-section, [data-scoreboard], .spf-scores'
+                                : '.mx-block, .mx-section, .ef-screen'
+                            : route === 'sports'
+                              ? '.spf-scores'
+                              : '.ef-screen',
+                    );
+                    if (await firstSection.first().isVisible()) {
+                        const briefBox = await brief.boundingBox();
+                        const firstBox = await firstSection.first().boundingBox();
+                        if (briefBox && firstBox) {
+                            assert(briefBox.y <= firstBox.y + 2, `${route} briefing sits before first section`);
+                        }
+                    }
+
+                    // No empty tiles and every tile a link
+                    const tiles = brief.locator('.nf-tile');
+                    const tileCount = await tiles.count();
+                    assert(tileCount > 0, `${route} briefing has tiles`);
+                    for (let i = 0; i < tileCount; i++) {
+                        const tile = tiles.nth(i);
+                        const href = await tile.getAttribute('href');
+                        assert(href && href.length > 0, `${route} tile ${i} is a link`);
+                        const text = (await tile.innerText()).trim();
+                        assert(text.length > 0, `${route} tile ${i} is not empty`);
+                    }
+
+                    // Phones: briefing tiles are at least 44px tall and nothing scrolls sideways
+                    if (width < 744) {
+                        for (let i = 0; i < tileCount; i++) {
+                            const box = await tiles.nth(i).boundingBox();
+                            if (box) {
+                                assert(box.height >= 44, `${route} phone tile ${i} height >= 44px (got ${box.height})`);
+                            }
+                        }
+                        const noOverflow = await p.evaluate(
+                            () => document.documentElement.scrollWidth <= innerWidth + 1,
+                        );
+                        assert(noOverflow, `${route} has no horizontal scroll at ${width}`);
+
+                        // Two tiles per row, as on Tech; an odd last tile takes the whole row.
+                        const grid = await brief.evaluate((s) => {
+                            const g = s.querySelector('.nf-brief__tiles');
+                            const t = [...g.querySelectorAll('.nf-tile')].map((n) => n.getBoundingClientRect());
+                            return {
+                                cols: getComputedStyle(g).gridTemplateColumns.split(' ').length,
+                                gw: g.getBoundingClientRect().width,
+                                t,
+                            };
+                        });
+                        assert.equal(grid.cols, 2, `${route} phone briefing is two per row at ${width}`);
+                        if (grid.t.length % 2 === 1) {
+                            const last = grid.t[grid.t.length - 1];
+                            assert(
+                                Math.abs(last.width - grid.gw) <= 1,
+                                `${route} odd last tile spans the row at ${width}`,
+                            );
+                        }
+                    }
+
+                    // Sports, 1024px and up:
+                    if (route === 'sports' && width >= 1024) {
+                        const expectedLeft = width >= 2560 ? 400 : width >= 1920 ? 360 : width >= 1280 ? 320 : 280;
+                        const upcoming = p.locator('.spf-front > .spf-cols > .spf-upcoming');
+                        if (await upcoming.isVisible()) {
+                            const box = await upcoming.boundingBox();
+                            if (box) {
+                                assert(
+                                    Math.abs(box.width - expectedLeft) <= 1.5,
+                                    `Sports left column is ${expectedLeft}px at ${width} (got ${box.width})`,
+                                );
+                            }
+                        }
+
+                        // .spf-tables sits below .spf-cols at full width
+                        const tables = p.locator('.spf-tables');
+                        const cols = p.locator('.spf-cols');
+                        if ((await tables.isVisible()) && (await cols.isVisible())) {
+                            const tablesBox = await tables.boundingBox();
+                            const colsBox = await cols.boundingBox();
+                            assert(tablesBox && colsBox);
+                            assert(
+                                tablesBox.y >= colsBox.y + colsBox.height - 2,
+                                'Sports .spf-tables sits below .spf-cols',
+                            );
+                            assert(Math.abs(tablesBox.width - colsBox.width) < 4, 'Sports .spf-tables is full width');
+                        }
+
+                        // Each table renders as two side-by-side tables
+                        const splits = p.locator('.spf-table-split');
+                        const splitCount = await splits.count();
+                        for (let i = 0; i < splitCount; i++) {
+                            const split = splits.nth(i);
+                            const tableList = split.locator('table');
+                            if ((await tableList.count()) >= 2) {
+                                const t1 = await tableList.nth(0).boundingBox();
+                                const t2 = await tableList.nth(1).boundingBox();
+                                if (t1 && t2) {
+                                    assert(t2.x > t1.x, 'Sports split tables render side by side');
+                                }
+                            }
+                        }
+
+                        // The lead image is no larger than 640 × 320
+                        const leadImg = p.locator('.spf-main .ef-lead__image img');
+                        if (await leadImg.isVisible()) {
+                            const imgBox = await leadImg.boundingBox();
+                            if (imgBox) {
+                                assert(imgBox.width <= 642, `Lead image width <= 640 (got ${imgBox.width})`);
+                                assert(imgBox.height <= 322, `Lead image height <= 320 (got ${imgBox.height})`);
+                            }
+                        }
+
+                        // Upcoming games timeline
+                        const timeline = p.locator('.spf-timeline');
+                        if (await timeline.isVisible()) {
+                            const items = timeline.locator('.spf-timeline__item');
+                            const itemCount = await items.count();
+                            for (let i = 0; i < itemCount; i++) {
+                                const item = items.nth(i);
+                                const text = await item.innerText();
+                                assert(!text.includes('…'), 'Matchup text does not cut off with ellipsis');
+                            }
+                        }
+                    }
+
+                    // Entertainment, 1024px and up:
+                    if (route === 'entertainment' && width >= 1024) {
+                        // .ef-desk-row sits below .ef-cols
+                        const deskRow = p.locator('.ef-desk-row');
+                        const efCols = p.locator('.ef-cols');
+                        if ((await deskRow.isVisible()) && (await efCols.isVisible())) {
+                            const deskBox = await deskRow.boundingBox();
+                            const colsBox = await efCols.boundingBox();
+                            assert(deskBox && colsBox);
+                            assert(
+                                deskBox.y >= colsBox.y + colsBox.height - 2,
+                                'Entertainment .ef-desk-row sits below .ef-cols',
+                            );
+                        }
+
+                        // On screen vertical timeline
+                        const onScreen = p.locator('.ef-onscreen-col');
+                        if (await onScreen.isVisible()) {
+                            const expectedLeft = width >= 2560 ? 400 : width >= 1920 ? 360 : width >= 1280 ? 320 : 280;
+                            const osBox = await onScreen.boundingBox();
+                            if (osBox) {
+                                assert(
+                                    Math.abs(osBox.width - expectedLeft) <= 1.5,
+                                    `Entertainment left column is ${expectedLeft}px at ${width} (got ${osBox.width})`,
+                                );
+                            }
+                            const lead = p.locator('.ef-main');
+                            const leadBox = await lead.boundingBox();
+                            if (osBox && leadBox) {
+                                assert(osBox.x + osBox.width <= leadBox.x + 8, 'On screen sits left of lead');
+                                assert(Math.abs(osBox.y - leadBox.y) <= 12, 'On screen tops aligned with lead');
+                            }
+                            const items = onScreen.locator('.ef-onscreen__item');
+                            const count = await items.count();
+                            assert(count <= 6, `At most 6 On screen items (got ${count})`);
+                        }
+
+                        // Right column width
+                        const side = p.locator('.ef-cols > .ef-side');
+                        if (await side.isVisible()) {
+                            const box = await side.boundingBox();
+                            const expectedRight = width === 1024 ? 260 : 280;
+                            if (box) {
+                                assert(
+                                    Math.abs(box.width - expectedRight) <= 1.5,
+                                    `Entertainment right column is ${expectedRight}px at ${width} (got ${box.width})`,
+                                );
+                            }
+                        }
+
+                        // Right column has no ef-tv and no ef-theaters
+                        assert.equal(await p.locator('.ef-side .ef-tv').count(), 0, 'No ef-tv in side column');
+                        assert.equal(
+                            await p.locator('.ef-side .ef-theaters').count(),
+                            0,
+                            'No ef-theaters in side column',
+                        );
+
+                        // There is no ef-theaters section
+                        assert.equal(await p.locator('.ef-theaters').count(), 0, 'No ef-theaters section in DOM');
+
+                        // Lead image is no larger than 640 × 320
+                        const leadImg = p.locator('.ef-main .ef-lead__image img');
+                        if (await leadImg.isVisible()) {
+                            const imgBox = await leadImg.boundingBox();
+                            if (imgBox) {
+                                assert(
+                                    imgBox.width <= 642,
+                                    `Entertainment lead image width <= 640 (got ${imgBox.width})`,
+                                );
+                                assert(
+                                    imgBox.height <= 322,
+                                    `Entertainment lead image height <= 320 (got ${imgBox.height})`,
+                                );
+                            }
+                        }
+                    }
+                }
+
+                // News and Tech fronts left column width checks:
+                if (width >= 1024) {
+                    const expectedLeft = width >= 2560 ? 400 : width >= 1920 ? 360 : width >= 1280 ? 320 : 280;
+
+                    await p.goto(base + '/news', { waitUntil: 'networkidle' });
+                    const newsDay = p.locator('.nf .spf-cols > .nf-day');
+                    if (await newsDay.isVisible()) {
+                        const box = await newsDay.boundingBox();
+                        if (box) {
+                            assert(
+                                Math.abs(box.width - expectedLeft) <= 1.5,
+                                `News left column is ${expectedLeft}px at ${width} (got ${box.width})`,
+                            );
+                        }
+                    }
+
+                    await p.goto(base + '/tech', { waitUntil: 'networkidle' });
+                    const techDay = p.locator('.tc-front .spf-cols > .spf-upcoming');
+                    if (await techDay.isVisible()) {
+                        const box = await techDay.boundingBox();
+                        if (box) {
+                            assert(
+                                Math.abs(box.width - expectedLeft) <= 1.5,
+                                `Tech left column is ${expectedLeft}px at ${width} (got ${box.width})`,
+                            );
+                        }
+                    }
+                }
+            }
+        }
+    } finally {
+        await b.close();
+    }
+})();

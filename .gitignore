@@ -3,8 +3,13 @@
 ##
 ## Get latest from `dotnet new gitignore`
 
-# dotenv files
+# dotenv files (keep the example tracked)
 .env
+.env.*
+!.env.example
+
+# Local development projects
+/new development/design-backup-before-logo-theme/*.tar.gz
 
 # User-specific files
 *.rsuser

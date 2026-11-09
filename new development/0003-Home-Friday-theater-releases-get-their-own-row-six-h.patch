@@ -1,0 +1,248 @@
+From 2bc6507077aabc6a198bb6773945f40ae6d726da Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Fri, 6 Nov 2026 18:59:49 -0600
+Subject: [PATCH 3/3] Home: Friday theater releases get their own row; six
+ headlines beside the lead
+
+Concept C from the November 6 middle-band review. On Fridays the theater
+releases were the tallest block in the front's side column (a poster and a
+tickets button per film), leaving the lead and More headlines columns
+half-empty. They now sit in their own full-width row between the front and
+More from today, using the existing five-across poster grid (three across on
+tablets). More headlines shows six stories instead of four, so the centre
+reaches the height of Today & Tonight. Phones are unchanged.
+
+The side-column overrides that squeezed the poster grid into a list are
+removed from broadsheet.css and tablet.css. home-columns now checks the
+releases sit below the front at full width and never inside its columns.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01BeSUhTLXvQhUDsTovwqjsi
+---
+ .../Components/Pages/Home.razor               | 99 ++++++++++---------
+ src/myNewspaper.Web/wwwroot/broadsheet.css    | 21 +---
+ src/myNewspaper.Web/wwwroot/tablet.css        | 18 +---
+ tests/browser/home-columns.browser.cjs        | 12 +++
+ 4 files changed, 68 insertions(+), 82 deletions(-)
+
+diff --git a/src/myNewspaper.Web/Components/Pages/Home.razor b/src/myNewspaper.Web/Components/Pages/Home.razor
+index 2630d9e..c6d0d2f 100644
+--- a/src/myNewspaper.Web/Components/Pages/Home.razor
++++ b/src/myNewspaper.Web/Components/Pages/Home.razor
+@@ -222,56 +222,59 @@
+                 }
+                 <p class="d-tv__credit">Episode data and images: <a href="https://www.tvmaze.com" target="_blank" rel="noopener noreferrer">TVmaze</a> · <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener noreferrer">CC BY-SA 4.0</a>. Date-only releases retain their original date; confirmed times use @Dates.Zone.Id.</p>
+             </section>
+-            @if (ShowTheatrical)
+-            {
+-            <section data-home-section="movies" class="d-card d-movies" aria-labelledby="h-movies">
+-                <div class="d-card__head">
+-                    <h2 class="d-card__title" id="h-movies">Friday theater releases</h2>
+-                    <a class="d-more" href="movies?type=theatrical">View all <span aria-hidden="true">→</span></a>
+-                </div>
+-                @if (unavailable.Contains(Movies))
+-                {
+-                    <p class="d-empty">Theater releases are temporarily unavailable.</p>
+-                }
+-                else if (movies.Count == 0)
+-                {
+-                    <p class="d-empty">No theater releases announced for this Friday yet.</p>
+-                }
+-                else
+-                {
+-                    <ul class="d-list" tabindex="0" aria-label="This Friday’s theater releases">
+-                        @foreach (var movie in movies)
+-                        {
+-                            var href = FeedQuery.SafeHref(movie.SourceUrl);
+-                            <li class="d-movie">
+-                                <MoviePoster Url="@movie.Poster" Title="@movie.Title" Class="d-movie__poster" />
+-                                <div class="d-movie__body">
+-                                    @if (movie.Date is { } date)
+-                                    {
+-                                        <p class="d-movie__date"><time datetime="@date.ToString("yyyy-MM-dd")">@date.ToString("ddd, MMM d, yyyy", System.Globalization.CultureInfo.InvariantCulture)</time>@(movie.DateStatus == "estimated" ? " · Estimated" : "")</p>
+-                                    }
+-                                    <h3 class="d-vid__title">
+-                                        @if (href is not null)
+-                                        {
+-                                            <a href="@href" target="_blank" rel="noopener noreferrer">@movie.Title</a>
+-                                        }
+-                                        else
+-                                        {
+-                                            @movie.Title
+-                                        }
+-                                    </h3>
+-                                    <p class="d-vid__meta">@string.Join(" · ", new[] { movie.Certification, movie.Runtime is { } runtime ? $"{runtime} min" : null, movie.ReRelease ? "Re-release" : null }.Where(x => !string.IsNullOrWhiteSpace(x)))</p>
+-                                    <MovieCommerceAction Item="movie" />
+-                                </div>
+-                            </li>
+-                        }
+-                    </ul>
+-                }
+-            </section>
+-            }
+         </div>
+     </div>
+ 
++    @* Fridays only: the new theater releases get their own full-width row between the front and More from today,
++       rather than a tall column that left the front half-empty (concept C, November 6, 2026). *@
++    @if (ShowTheatrical)
++    {
++    <section data-home-section="movies" class="d-card d-movies bs-friday" aria-labelledby="h-movies">
++        <div class="d-card__head">
++            <h2 class="d-card__title" id="h-movies">Friday theater releases</h2>
++            <a class="d-more" href="movies?type=theatrical">View all <span aria-hidden="true">→</span></a>
++        </div>
++        @if (unavailable.Contains(Movies))
++        {
++            <p class="d-empty">Theater releases are temporarily unavailable.</p>
++        }
++        else if (movies.Count == 0)
++        {
++            <p class="d-empty">No theater releases announced for this Friday yet.</p>
++        }
++        else
++        {
++            <ul class="d-list" tabindex="0" aria-label="This Friday’s theater releases">
++                @foreach (var movie in movies)
++                {
++                    var href = FeedQuery.SafeHref(movie.SourceUrl);
++                    <li class="d-movie">
++                        <MoviePoster Url="@movie.Poster" Title="@movie.Title" Class="d-movie__poster" />
++                        <div class="d-movie__body">
++                            @if (movie.Date is { } date)
++                            {
++                                <p class="d-movie__date"><time datetime="@date.ToString("yyyy-MM-dd")">@date.ToString("ddd, MMM d, yyyy", System.Globalization.CultureInfo.InvariantCulture)</time>@(movie.DateStatus == "estimated" ? " · Estimated" : "")</p>
++                            }
++                            <h3 class="d-vid__title">
++                                @if (href is not null)
++                                {
++                                    <a href="@href" target="_blank" rel="noopener noreferrer">@movie.Title</a>
++                                }
++                                else
++                                {
++                                    @movie.Title
++                                }
++                            </h3>
++                            <p class="d-vid__meta">@string.Join(" · ", new[] { movie.Certification, movie.Runtime is { } runtime ? $"{runtime} min" : null, movie.ReRelease ? "Re-release" : null }.Where(x => !string.IsNullOrWhiteSpace(x)))</p>
++                            <MovieCommerceAction Item="movie" />
++                        </div>
++                    </li>
++                }
++            </ul>
++        }
++    </section>
++    }
++
+     <h2 class="bs-band">More from today</h2>
+ 
+     <div class="bs-more">
+@@ -611,7 +614,7 @@
+         catch (Exception ex) when (DataFailures.IsReadFailure(ex))
+         { Log.LogError(ex, "Could not read home lead story."); lead = new(null, nowUtc.Ticks / TimeSpan.TicksPerHour, 60000, true); }
+         news = await ReadSectionAsync(Headlines, () => FeedQuery.GetHomeNewsAsync(db, HomeNewsCount, "headlines", Ct), []);
+-        headlineStories = news.Where(item => item.Id != lead.Article?.Id).Take(4).ToList();
++        headlineStories = news.Where(item => item.Id != lead.Article?.Id).Take(6).ToList();   // six fill the front beside the lead
+         sportsStories = await ReadSectionAsync(SportsNews, () => FeedQuery.GetHomeNewsAsync(db, HomeShelfCount, "sports", Ct), []);
+         entertainmentStories = await ReadSectionAsync(EntertainmentNews, () => FeedQuery.GetHomeNewsAsync(db, HomeShelfCount, "entertainment", Ct), []);
+         techStories = await ReadSectionAsync(TechNews, () => FeedQuery.GetHomeNewsAsync(db, HomeShelfCount, "tech", Ct), []);
+diff --git a/src/myNewspaper.Web/wwwroot/broadsheet.css b/src/myNewspaper.Web/wwwroot/broadsheet.css
+index c4186b6..fb4ddca 100644
+--- a/src/myNewspaper.Web/wwwroot/broadsheet.css
++++ b/src/myNewspaper.Web/wwwroot/broadsheet.css
+@@ -534,6 +534,10 @@
+ .pub .bs-home [hidden] {
+     display: none;
+ }
++/* Friday theater releases: their own full-width row under the front (Fridays only). */
++.pub .bs-friday {
++    margin-top: 32px;
++}
+ .pub .bs-band {
+     display: none;
+ }
+@@ -1094,23 +1098,6 @@
+     .pub .bs-col + .bs-col {
+         border-left: 1px solid var(--row-border);
+     }
+-    /* The side column is too narrow for the five-poster grid: list releases with a thumbnail. */
+-    .pub .bs-col--side .d-movies .d-list {
+-        grid-template-columns: minmax(0, 1fr);
+-        gap: 14px;
+-        padding: 8px 0 0;
+-    }
+-    .pub .bs-col--side .d-movie {
+-        flex-direction: row;
+-        align-items: flex-start;
+-    }
+-    .pub .bs-col--side .d-movie__poster {
+-        flex: none;
+-        width: 56px;
+-    }
+-    .pub .bs-col--side .d-movie__body {
+-        flex: 1 1 auto;
+-    }
+     .pub .bs-band {
+         display: block;
+         margin: 40px 0 0;
+diff --git a/src/myNewspaper.Web/wwwroot/tablet.css b/src/myNewspaper.Web/wwwroot/tablet.css
+index 3b86bc8..2e5bbcc 100644
+--- a/src/myNewspaper.Web/wwwroot/tablet.css
++++ b/src/myNewspaper.Web/wwwroot/tablet.css
+@@ -1174,22 +1174,6 @@
+     .pub .tab-desktop .bs-col + .bs-col {
+         border-left: 1px solid var(--row-border);
+     }
+-    .pub .tab-desktop .bs-col--side .d-movies .d-list {
+-        grid-template-columns: minmax(0, 1fr);
+-        gap: 14px;
+-        padding: 8px 0 0;
+-    }
+-    .pub .tab-desktop .bs-col--side .d-movie {
+-        flex-direction: row;
+-        align-items: flex-start;
+-    }
+-    .pub .tab-desktop .bs-col--side .d-movie__poster {
+-        flex: none;
+-        width: 56px;
+-    }
+-    .pub .tab-desktop .bs-col--side .d-movie__body {
+-        flex: 1 1 auto;
+-    }
+     .pub .tab-desktop .bs-band {
+         display: block;
+         margin: 40px 0 0;
+@@ -2054,7 +2038,7 @@
+     /* Tablet columns need real grids rather than the base phone flex shelves. */
+     .pub .tab-desktop .bs-home .d-movies .d-list {
+         display: grid;
+-        grid-template-columns: minmax(0, 1fr);
++        grid-template-columns: repeat(3, minmax(0, 1fr));
+         overflow: visible;
+     }
+     .pub .tab-desktop .bs-home .d-vids .d-list {
+diff --git a/tests/browser/home-columns.browser.cjs b/tests/browser/home-columns.browser.cjs
+index 70c5d3e..d16a5e8 100644
+--- a/tests/browser/home-columns.browser.cjs
++++ b/tests/browser/home-columns.browser.cjs
+@@ -117,6 +117,18 @@ const phoneOrder = [
+                         1,
+                         'tv in front side column',
+                     );
++                    // Fridays: theater releases are a full-width row under the front, never in its columns.
++                    assert.equal(
++                        await page.locator('.bs-front [data-home-section="movies"]').count(),
++                        0,
++                        'theater releases not in the front columns',
++                    );
++                    const friday = await box('[data-home-section="movies"]');
++                    const front = await box('.bs-front');
++                    if (friday && front) {
++                        assert(friday.y >= front.y + front.height - 1, 'Friday releases below the front');
++                        assert(friday.width >= front.width - 2, 'Friday releases full width');
++                    }
+ 
+                     if (width >= 1920) {
+                         assert(!(await page.locator('.bs-band').isVisible()), 'band hidden at 1920+');
+-- 
+2.43.0
+

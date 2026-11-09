@@ -1,0 +1,81 @@
+@inject IDbContextFactory<WebScraperContext> Factory
+@inject NavigationManager Nav
+@inject FeedDates Dates
+@inherits DataComponentBase
+@inject TimeProvider Clock
+
+@if (stories.Count > 0)
+{
+    <section class="nf-side td-dev mx-c-tech" aria-labelledby="td-dev-title">
+        <h2 id="td-dev-title" class="ef-label">What developers are reading</h2>
+        <p class="ef-note">Top stories right now</p>
+        <nav class="td-dev__tabs" aria-label="Developer communities">
+            <a class="td-dev__tab" href="@TabHref("hn")" aria-current="@(site == "hn" ? "page" : null)">Hacker News</a>
+            <a class="td-dev__tab" href="@TabHref("lobsters")" aria-current="@(site == "lobsters" ? "page" : null)">Lobsters</a>
+        </nav>
+        <ol class="td-dev__list">
+            @foreach (var item in stories)
+            {
+                var primaryHref = FeedQuery.SafeHref(item.Url) ?? FeedQuery.SafeHref(item.DiscussionUrl) ?? "tech/technology";
+                var discussionHref = FeedQuery.SafeHref(item.DiscussionUrl) ?? primaryHref;
+                <li class="td-dev__row">
+                    <span class="td-dev__rank" aria-hidden="true">@item.Rank</span>
+                    <div class="td-dev__body">
+                        <a class="td-dev__title" href="@primaryHref" target="_blank" rel="noopener noreferrer">@item.Title</a>
+                        <div class="td-dev__meta">
+                            @if (!string.IsNullOrWhiteSpace(item.Domain))
+                            {
+                                <span>@item.Domain · </span>
+                            }
+                            <span>@item.Points @(item.Points == 1 ? "point" : "points") · </span>
+                            <a href="@discussionHref" target="_blank" rel="noopener noreferrer">@item.Comments @(item.Comments == 1 ? "comment" : "comments")</a>
+                        </div>
+                    </div>
+                </li>
+            }
+        </ol>
+        @if (snapshotAt is { } snap)
+        {
+            var stale = Clock.GetUtcNow().UtcDateTime - snap > TimeSpan.FromHours(2);
+            <p class="td-dev__foot">
+                Updated @Dates.Time(snap)@(stale ? " · may be out of date" : "")
+            </p>
+        }
+    </section>
+}
+
+@code {
+    private string site = "hn";
+    private IReadOnlyList<DevStory> stories = [];
+    private DateTime? snapshotAt;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var uri = new Uri(Nav.Uri);
+        var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
+        site = query.TryGetValue("dev", out var devVal) && string.Equals(devVal.ToString(), "lobsters", StringComparison.OrdinalIgnoreCase)
+            ? "lobsters"
+            : "hn";
+
+        await using var db = await Factory.CreateDbContextAsync(Ct);
+        stories = await TechQuery.DevReadingAsync(db, site, take: 5, Ct);
+        snapshotAt = stories.FirstOrDefault()?.SnapshotAt;
+    }
+
+    private string TabHref(string targetSite)
+    {
+        var uri = new Uri(Nav.Uri);
+        var basePath = Nav.ToBaseRelativePath(Nav.Uri).Split('?')[0];
+        var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
+        var dict = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
+        foreach (var kvp in query)
+        {
+            if (!string.Equals(kvp.Key, "dev", StringComparison.OrdinalIgnoreCase))
+            {
+                dict[kvp.Key] = kvp.Value.ToString();
+            }
+        }
+        dict["dev"] = targetSite;
+        return Microsoft.AspNetCore.WebUtilities.QueryHelpers.AddQueryString(basePath, dict);
+    }
+}

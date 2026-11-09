@@ -1,0 +1,25 @@
+@using myNewspaper.Shared.Data
+
+@{
+    // One line in agate style: "Away (record) at Home (record)", or "Team vs Opponent" when home/away is unknown or neutral.
+    var known = !Item.IsNeutral && Item.IsAway is not null;
+    var schoolAway = !Item.IsNeutral && Item.IsAway == true;
+    var schoolRecord = Records.Find(Item.ProviderKey, Item.Kind, Item.SchoolName, Item.SchoolId?.ToString());
+    var opponentRecord = Records.Find(Item.ProviderKey, Item.Kind, Item.OpponentName, Item.OpponentSchoolId?.ToString());
+    var (firstName, firstRecord, secondName, secondRecord) = known
+        ? schoolAway
+            ? (Item.SchoolName, schoolRecord, Item.OpponentName, opponentRecord)
+            : (Item.OpponentName, opponentRecord, Item.SchoolName, schoolRecord)
+        : (Item.SchoolName, schoolRecord, Item.OpponentName, opponentRecord);
+}
+
+<span class="tt-match">
+    <span class="tt-team">@firstName<myNewspaper.Web.Components.Events.TeamRecord Value="@firstRecord" /></span>
+    <span class="tt-sep">@(known ? "at" : "vs")</span>
+    <span class="tt-team">@secondName<myNewspaper.Web.Components.Events.TeamRecord Value="@secondRecord" /></span>
+</span>
+
+@code {
+    [Parameter] public TeamRecords Records { get; set; } = TeamRecords.Empty;
+    [Parameter, EditorRequired] public TonightItem Item { get; set; } = default!;
+}

@@ -1,0 +1,26 @@
+<div class="football-box" aria-label="Football player statistics">
+@foreach(var category in Data.Players.GroupBy(g=>g.Name,StringComparer.OrdinalIgnoreCase).OrderBy(g=>Rank(g.Key))) {
+    <section class="football-category">
+        <h3>@Heading(category.Key)</h3>
+        <div class="football-team-grid">
+        @foreach(var team in Data.Teams.Where(t=>category.Any(g=>g.TeamId==t.Id))) {
+            <section class="football-team-panel"><h4>@team.Name</h4>
+            @foreach(var group in category.Where(g=>g.TeamId==team.Id)) {
+                <FootballPlayerTable Group="group" TeamName="@team.Name" />
+            }
+            </section>
+        }
+        </div>
+    </section>
+}
+</div>
+@code {
+    [Parameter,EditorRequired] public BoxData Data {get;set;}=default!;
+    private static readonly string[] Categories=["passing","rushing","receiving","fumbles","defensive","defense","interceptions","kickReturns","puntReturns","kicking","punting"];
+    private static int Rank(string name){var i=Array.FindIndex(Categories,c=>c.Equals(name,StringComparison.OrdinalIgnoreCase));return i<0 ? Categories.Length : i;}
+    private static string Heading(string name)=>name.ToLowerInvariant() switch {
+        "passing"=>"Passing", "rushing"=>"Rushing", "receiving"=>"Receiving", "fumbles"=>"Fumbles",
+        "defensive" or "defense"=>"Defense", "interceptions"=>"Interceptions", "kickreturns"=>"Kick returns",
+        "puntreturns"=>"Punt returns", "kicking"=>"Kicking", "punting"=>"Punting", _=>name
+    };
+}

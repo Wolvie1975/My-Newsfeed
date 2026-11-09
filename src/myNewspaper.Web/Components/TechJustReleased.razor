@@ -1,0 +1,78 @@
+@inject IDbContextFactory<WebScraperContext> Factory
+@inject FeedDates Dates
+@inherits DataComponentBase
+@inject TimeProvider Clock
+
+@if (releases.Count > 0)
+{
+    @if (Compact)
+    {
+        <section class="mx-section mx-c-linux" aria-labelledby="tc-just-m-title">
+            <div class="mx-head">
+                <h2 id="tc-just-m-title">Just released</h2>
+                <a href="tech/linux">Release tracker →</a>
+            </div>
+            <ul class="tc-just-list">
+                @foreach (var r in releases.Take(3))
+                {
+                    <li class="tc-just-row">
+                        <span class="td-tracker__kind">@r.Kind</span>
+                        @if (FeedQuery.SafeHref(r.NotesUrl) is { } href)
+                        {
+                            <a class="tc-just-row__title" href="@href" target="_blank" rel="noopener noreferrer"><b>@r.Project @r.Version</b></a>
+                        }
+                        else
+                        {
+                            <b class="tc-just-row__title">@r.Project @r.Version</b>
+                        }
+                        <span class="tc-just-row__meta">@r.Source · @When(r.ReleasedAt)</span>
+                    </li>
+                }
+            </ul>
+        </section>
+    }
+    else
+    {
+        <section class="nf-side tc-just mx-c-linux" aria-labelledby="tc-just-title">
+            <div class="ef-head">
+                <h2 id="tc-just-title" class="ef-label">Just released</h2>
+                <a href="tech/linux">Release tracker <span aria-hidden="true">→</span></a>
+            </div>
+            <p class="ef-note">From kernel.org and project release feeds · last 48 hours</p>
+            <ul class="tc-just-list">
+                @foreach (var r in releases.Take(4))
+                {
+                    <li class="tc-just-row">
+                        <span class="td-tracker__kind">@r.Kind</span>
+                        @if (FeedQuery.SafeHref(r.NotesUrl) is { } href)
+                        {
+                            <a class="tc-just-row__title" href="@href" target="_blank" rel="noopener noreferrer"><b>@r.Project @r.Version</b></a>
+                        }
+                        else
+                        {
+                            <b class="tc-just-row__title">@r.Project @r.Version</b>
+                        }
+                        <span class="tc-just-row__meta">@r.Source · @When(r.ReleasedAt)</span>
+                    </li>
+                }
+            </ul>
+        </section>
+    }
+}
+
+@code {
+    [Parameter] public bool Compact { get; set; }
+
+    private DateTime nowUtc;
+    private IReadOnlyList<TrackedRelease> releases = [];
+
+    protected override async Task OnParametersSetAsync()
+    {
+        nowUtc = Clock.GetUtcNow().UtcDateTime;
+        await using var db = await Factory.CreateDbContextAsync(Ct);
+        releases = await TechQuery.JustReleasedAsync(db, nowUtc, TimeSpan.FromHours(48), take: 4, Ct);
+    }
+
+    private string When(DateTime utc) =>
+        Dates.TodayAt(utc) == Dates.TodayAt(nowUtc) ? Dates.Time(utc) : Dates.Published(utc);
+}

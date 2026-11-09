@@ -1,0 +1,104 @@
+using System.Globalization;
+using Microsoft.EntityFrameworkCore;
+using myNewspaper.Shared.Data.Models;
+using myNewspaper.Shared.Profiles;
+
+namespace myNewspaper.Shared.Data;
+
+public sealed record TvShowChoice(int Id, string Title);
+public sealed record TvEpisodeItem(int ProviderId, string SeriesTitle, string? Poster, string? Platform,
+    string? Title, int? Season, int? Number, bool Special, DateOnly Date, DateTime? StartsUtc, string Url, int ShowId = 0);
+public sealed record TvSchedule(IReadOnlyList<TvEpisodeItem> Items, int Total, IReadOnlyList<TvShowChoice> Shows,
+    IReadOnlyList<string> Unannounced, DateTime? Updated);
+
+public static class TvQuery
+{
+    /// <summary>TVmaze ids of the enabled tracked series (the shared list used while profiles are off).</summary>
+    public static async Task<IReadOnlyList<int>> TrackedShowIdsAsync(WebScraperContext db, CancellationToken ct = default) =>
+        await db.TvTrackedSeries.AsNoTracking().Where(t => t.Enabled).Select(t => t.TvmazeShowId).ToListAsync(ct);
+
+    public static async Task<TvSchedule> GetAsync(WebScraperContext db, Viewer viewer, FeedDates dates, DateOnly start, int? show, int days = 7, string? search = null, CancellationToken ct = default)
+    {
+        var end = start.AddDays(days);
+        var window = new ResultsWindow(ResultsWindow.ForDay(start, dates.Zone).StartUtc, ResultsWindow.ForDay(end, dates.Zone).StartUtc);
+        // The follow filter comes first, so an unfollowed show ID or search looks exactly like an unknown one.
+        var enabled = FollowQuery.TrackedSeries(db, viewer);
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = QueryText.Term(search);
+            enabled = enabled.Where(t => (t.Series != null ? t.Series.Title : t.ExpectedTitle).Contains(term));
+        }
+        var shows = await enabled.OrderBy(t => t.Series != null ? t.Series.Title : t.ExpectedTitle)
+            .Select(t => new TvShowChoice(t.TvmazeShowId, t.Series != null ? t.Series.Title : t.ExpectedTitle)).ToListAsync(ct);
+        var episodes = db.TvEpisodes.AsNoTracking().Where(e => enabled.Any(t => t.SeriesId == e.SeriesId));
+        if (show is { } id) episodes = episodes.Where(e => e.Series.TvmazeShowId == id);
+        var matching = episodes.Where(e => e.IsDateOnly
+            ? e.Airdate >= start && e.Airdate < end
+            : e.StartsAtUtc >= window.StartUtc && e.StartsAtUtc < window.EndUtc);
+        var count = await matching.CountAsync(ct);
+        // SQL filters before fetching; date-only releases retain their source date, timed releases use the display zone.
+        var rows = await matching.OrderBy(e => e.Airdate).ThenBy(e => e.Series.Title).ThenBy(e => e.SeasonNumber)
+            .ThenBy(e => e.EpisodeNumber).ThenBy(e => e.TvmazeEpisodeId).Take(300)
+            .Select(e => new
+            {
+                e.TvmazeEpisodeId,
+                Show = e.Series.Title,
+                e.Series.PosterUrl,
+                ShowId = e.Series.TvmazeShowId,
+                Platform = e.Series.WebChannelName ?? e.Series.NetworkName,
+                e.Title,
+                e.SeasonNumber,
+                e.EpisodeNumber,
+                e.IsSpecial,
+                e.Airdate,
+                e.IsDateOnly,
+                e.StartsAtUtc,
+                e.SourceUrl
+            }).ToListAsync(ct);
+        var items = rows.Select(e => new TvEpisodeItem(e.TvmazeEpisodeId, e.Show, e.PosterUrl, e.Platform, e.Title,
+            e.SeasonNumber, e.EpisodeNumber, e.IsSpecial, e.IsDateOnly ? e.Airdate!.Value : DateOnly.Parse(dates.DayKey(e.StartsAtUtc!.Value), CultureInfo.InvariantCulture),
+            e.IsDateOnly ? null : e.StartsAtUtc, e.SourceUrl, e.ShowId))
+            .OrderBy(e => e.Date).ThenBy(e => e.StartsUtc is null).ThenBy(e => e.StartsUtc)
+            .ThenBy(e => e.SeriesTitle).ThenBy(e => e.Season).ThenBy(e => e.Number).ThenBy(e => e.ProviderId).ToList();
+        var today = dates.Today;
+        var unannounced = await enabled.Where(t => (show == null || t.TvmazeShowId == show)
+                && !db.TvEpisodes.Any(e => e.SeriesId == t.SeriesId && e.Airdate >= today))
+            .OrderBy(t => t.ExpectedTitle).Select(t => t.Series != null ? t.Series.Title : t.ExpectedTitle).ToListAsync(ct);
+        return new(items, count, shows, unannounced, await enabled.MaxAsync(t => t.LastSuccessAt, ct));
+    }
+
+    public static async Task<IReadOnlyList<TvEpisodeItem>> GetOnDateAsync(WebScraperContext db, Viewer viewer, FeedDates dates, DateOnly day, CancellationToken ct = default) =>
+        (await GetAsync(db, viewer, dates, day, null, days: 1, ct: ct)).Items;
+
+    public static async Task FollowAsync(WebScraperContext db, int providerId, string title, CancellationToken ct = default)
+    {
+        if (providerId <= 0 || string.IsNullOrWhiteSpace(title) || title.Length > 500) throw new ArgumentException("Invalid series.");
+        // Enabled is set in SQL, like SetEnabledAsync, so a stale tracked copy can't make this a no-op.
+        if (await db.TvTrackedSeries.Where(t => t.TvmazeShowId == providerId).ExecuteUpdateAsync(s => s.SetProperty(t => t.Enabled, true), ct) > 0) return;
+        var series = await db.TvSeries.AsNoTracking().SingleOrDefaultAsync(s => s.TvmazeShowId == providerId, ct);
+        var added = new TvTrackedSeries { TvmazeShowId = providerId, ExpectedTitle = title, Enabled = true, SeriesId = series?.Id };
+        db.Add(added);
+        try { await db.SaveChangesAsync(ct); }
+        catch (DbUpdateException ex) when (AdminStore.IsUniqueViolation(ex))
+        {
+            db.Entry(added).State = EntityState.Detached;
+            // Another request may have followed it first; preserve the scraper's cache, lease, and status.
+            await db.TvTrackedSeries.Where(t => t.TvmazeShowId == providerId).ExecuteUpdateAsync(s => s.SetProperty(t => t.Enabled, true), ct);
+        }
+    }
+
+    public static Task<int> SetEnabledAsync(WebScraperContext db, int trackingId, bool enabled, CancellationToken ct = default) =>
+        db.TvTrackedSeries.Where(t => t.Id == trackingId).ExecuteUpdateAsync(s => s.SetProperty(t => t.Enabled, enabled), ct);
+
+    // Removes only the tracking row: the scraper-owned series and episodes stay as history and reattach if the show is
+    // followed again. A row the scraper holds a lease on is left alone so an import in progress can't recreate state.
+    public static async Task<TvRemoveResult> RemoveAsync(WebScraperContext db, int trackingId, DateTime nowUtc, CancellationToken ct = default)
+    {
+        var removed = await db.TvTrackedSeries.Where(t => t.Id == trackingId && (t.LeaseUntil == null || t.LeaseUntil < nowUtc))
+            .ExecuteDeleteAsync(ct);
+        if (removed > 0) return TvRemoveResult.Removed;
+        return await db.TvTrackedSeries.AnyAsync(t => t.Id == trackingId, ct) ? TvRemoveResult.Importing : TvRemoveResult.Missing;
+    }
+}
+
+public enum TvRemoveResult { Removed, Missing, Importing }

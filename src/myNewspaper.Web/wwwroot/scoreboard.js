@@ -1,0 +1,274 @@
+// Read persisted HTML only; collection stays with the scoreboard service.
+(function () {
+    'use strict';
+    const key = 'mydailyfeed-scoreboard-teams-v1';
+    const viewKey = 'mydailyfeed-scoreboard-view';
+    let selected = new Set(),
+        pending = false,
+        generation = 0;
+    function read() {
+        try {
+            const values = JSON.parse((window.myNewspaperPrefs || localStorage).getItem(key) || '[]');
+            selected = new Set(
+                Array.isArray(values)
+                    ? values.filter((v) => typeof v === 'string' && v.length < 300).slice(0, 1000)
+                    : [],
+            );
+        } catch (_) {
+            selected = new Set();
+        }
+    }
+    function readView() {
+        try {
+            return localStorage.getItem(viewKey) || 'cards';
+        } catch (_) {
+            return 'cards';
+        }
+    }
+    function setView(view) {
+        const body = document.querySelector('.sb-body');
+        if (body) {
+            body.classList.toggle('sb-body--list', view === 'list');
+        }
+        document.querySelectorAll('[data-sb-view]').forEach((b) => {
+            b.setAttribute('aria-pressed', String(b.dataset.sbView === view));
+        });
+    }
+    function organizeYourTeams() {
+        const yourTeamsSection = document.getElementById('sb-status-your-teams');
+        const yourTeamsGrid = document.getElementById('sb-grid-your-teams');
+        if (!yourTeamsSection || !yourTeamsGrid) return;
+
+        const cards = [...document.querySelectorAll('.sb-card[data-sb-status]')];
+        cards.forEach((card) => {
+            const isStarred = [...card.querySelectorAll('[data-scoreboard-team]')].some((b) =>
+                selected.has(b.dataset.scoreboardTeam),
+            );
+            const status = card.dataset.sbStatus;
+            const targetGrid = isStarred ? yourTeamsGrid : document.getElementById(`sb-grid-${status}`);
+            if (targetGrid && card.parentElement !== targetGrid) {
+                targetGrid.appendChild(card);
+            }
+        });
+
+        const yourCount = yourTeamsGrid.children.length;
+        yourTeamsSection.hidden = yourCount === 0;
+        const countEl = document.querySelector('[data-your-teams-count]');
+        if (countEl) {
+            countEl.textContent = `${yourCount} ${yourCount === 1 ? 'game' : 'games'}`;
+        }
+
+        ['live', 'upcoming', 'final'].forEach((sKey) => {
+            const grid = document.getElementById(`sb-grid-${sKey}`);
+            const section = document.getElementById(`sb-status-${sKey}`);
+            const countLabel = document.getElementById(`sb-count-${sKey}`);
+            if (grid && section) {
+                const count = grid.children.length;
+                section.hidden = count === 0;
+                if (countLabel) {
+                    countLabel.textContent = `${count} ${count === 1 ? 'game' : 'games'}`;
+                }
+            }
+        });
+
+        const railList = document.getElementById('sb-rail-your-teams-list');
+        if (railList) {
+            // Built with DOM APIs: team names and status come from provider data and must stay text, never markup.
+            const el = (tag, className, text) => {
+                const node = document.createElement(tag);
+                node.className = className;
+                if (text !== undefined) node.textContent = text;
+                return node;
+            };
+            if (yourCount === 0) {
+                railList.replaceChildren(el('p', 'sb-rail__empty', 'Click ☆ next to any team to track them here.'));
+            } else {
+                const list = el('div', 'sb-rail__list');
+                for (const card of yourTeamsGrid.querySelectorAll('.sb-card')) {
+                    const teams = [...card.querySelectorAll('.sb-card__team')];
+                    const matchup = teams
+                        .map((t) => t.querySelector('.team-title')?.textContent.trim() || '')
+                        .filter(Boolean)
+                        .join(' at ');
+                    const statusText =
+                        card.querySelector('.sb-pill--live, .sb-card__time, .sb-card__final')?.textContent.trim() || '';
+                    const item = el('div', 'sb-rail__item');
+                    item.append(el('span', 'sb-rail__name', matchup), el('span', 'sb-rail__status', statusText));
+                    list.append(item);
+                }
+                railList.replaceChildren(list);
+            }
+        }
+    }
+    function apply() {
+        document.querySelectorAll('[data-scoreboard-team]').forEach((button) => {
+            button.hidden = false;
+            const active = selected.has(button.dataset.scoreboardTeam);
+            button.setAttribute('aria-pressed', String(active));
+            button.textContent = active ? '★' : '☆';
+            const teamName = button.dataset.teamName;
+            if (teamName) {
+                const label = active ? `Remove ${teamName} from Your teams` : `Pin ${teamName} to Your teams`;
+                button.setAttribute('title', label);
+                button.setAttribute('aria-label', label);
+            }
+            button.closest('.sb-card__team')?.classList.toggle('sb-card__team--starred', active);
+        });
+        document.querySelectorAll('.scoreboard-game').forEach((game) => {
+            game.classList.toggle(
+                'scoreboard-selected',
+                [...game.querySelectorAll('[data-scoreboard-team]')].some((b) =>
+                    selected.has(b.dataset.scoreboardTeam),
+                ),
+            );
+        });
+        organizeYourTeams();
+        setView(readView());
+    }
+    async function refresh() {
+        if (pending || document.hidden || document.querySelector('dialog[open]')) return;
+        const panels = [...document.querySelectorAll('[data-scoreboard]')];
+        if (!panels.length) return;
+        pending = true;
+        const currentGeneration = generation;
+        try {
+            for (const panel of panels) {
+                const query = new URLSearchParams(location.search);
+                query.set('compact', panel.dataset.scoreboardCompact);
+                if (panel.dataset.scoreboardSportFilter) query.set('sportFilter', 'true');
+                if (panel.dataset.scoreboardPhone) query.set('phone', 'true');
+                try {
+                    const response = await fetch('/scoreboard/fragment?' + query, {
+                        cache: 'no-store',
+                        signal: AbortSignal.timeout(30000),
+                    });
+                    if (!response.ok) throw new Error('Read failed');
+                    const doc = new DOMParser().parseFromString(await response.text(), 'text/html');
+                    const next = doc.querySelector('[data-scoreboard]');
+                    if (!next || next.querySelector('.scoreboard-read-status')?.textContent.trim())
+                        throw new Error('Unavailable');
+                    if (
+                        !panel.isConnected ||
+                        currentGeneration !== generation ||
+                        document.querySelector('dialog[open]')
+                    )
+                        continue;
+                    // Avoid replacing a focused control during keyboard interaction.
+                    if (panel.contains(document.activeElement)) continue;
+                    const expanded = new Set(
+                        [...panel.querySelectorAll('[data-scoreboard-key]')]
+                            .filter((game) => game.querySelector('.scoreboard-info')?.open)
+                            .map((game) => game.dataset.scoreboardKey),
+                    );
+                    // The phone front's folds stay as the reader left them.
+                    const folds = [...panel.querySelectorAll('.mx-fold[data-fold-key]')];
+                    if (folds.length) {
+                        const open = folds.filter((fold) => fold.open).map((fold) => fold.dataset.foldKey);
+                        next.querySelectorAll('.mx-fold[data-fold-key]').forEach((fold) => {
+                            fold.open = open.includes(fold.dataset.foldKey);
+                        });
+                    }
+                    next.querySelectorAll('[data-scoreboard-key]').forEach((game) => {
+                        const info = game.querySelector('.scoreboard-info');
+                        if (info && expanded.has(game.dataset.scoreboardKey)) info.open = true;
+                    });
+                    panel.replaceWith(next);
+                    apply();
+                } catch (_) {
+                    if (panel.isConnected) {
+                        const status = panel.querySelector('.scoreboard-read-status');
+                        if (status)
+                            status.textContent =
+                                'Scores could not be refreshed. Showing the last displayed sample; retrying automatically.';
+                    }
+                }
+            }
+        } finally {
+            pending = false;
+        }
+    }
+    // Homepage sport filter: swap the box in place, so the page keeps its scroll position. Without JavaScript, or if
+    // the fragment can't load, the form's normal GET navigation still works.
+    document.addEventListener('submit', async (event) => {
+        const form = event.target;
+        const panel = form.matches?.('.scoreboard-home-filter') && form.closest('[data-scoreboard]');
+        if (!panel) return;
+        event.preventDefault();
+        const value = new FormData(form).get('scoreboardShow') || '';
+        const mine = ++generation; // A refresh already in flight must not overwrite this choice.
+        const box = panel.closest('[data-home-section]') || panel;
+        box.setAttribute('aria-busy', 'true');
+        try {
+            const query = new URLSearchParams({ compact: 'true', sportFilter: 'true', scoreboardShow: value });
+            const response = await fetch('/scoreboard/fragment?' + query, {
+                cache: 'no-store',
+                signal: AbortSignal.timeout(15000),
+            });
+            if (!response.ok) throw new Error('Read failed');
+            const doc = new DOMParser().parseFromString(await response.text(), 'text/html');
+            const next = doc.querySelector('[data-scoreboard]');
+            if (!next || next.querySelector('.scoreboard-read-status')?.textContent.trim())
+                throw new Error('Unavailable');
+            if (mine !== generation || !panel.isConnected) return;
+            panel.replaceWith(next);
+            apply();
+            const url = new URL(location.href);
+            if (value) url.searchParams.set('scoreboardShow', value);
+            else url.searchParams.delete('scoreboardShow');
+            history.replaceState(history.state, '', url);
+            next.querySelector('#home-scoreboard-show')?.focus({ preventScroll: true });
+        } catch (_) {
+            if (mine === generation) form.submit(); // Fall back to a full load.
+        } finally {
+            box.removeAttribute('aria-busy');
+        }
+    });
+    document.addEventListener('click', (event) => {
+        const viewBtn = event.target.closest('[data-sb-view]');
+        if (viewBtn) {
+            const v = viewBtn.dataset.sbView;
+            try {
+                localStorage.setItem(viewKey, v);
+            } catch (_) {}
+            setView(v);
+            return;
+        }
+        if (!event.target.closest('.scoreboard-info')) {
+            document.querySelectorAll('.sb-card__info[open]').forEach((info) => {
+                info.removeAttribute('open');
+            });
+        }
+        const button = event.target.closest('[data-scoreboard-team]');
+        if (!button) return;
+        const id = button.dataset.scoreboardTeam;
+        selected.has(id) ? selected.delete(id) : selected.add(id);
+        try {
+            (window.myNewspaperPrefs || localStorage).setItem(key, JSON.stringify([...selected]));
+            apply();
+        } catch (_) {
+            read();
+            apply();
+            const status = button.closest('[data-scoreboard]').querySelector('.scoreboard-read-status');
+            if (status) status.textContent = 'Team highlights could not be saved. Allow browser storage and retry.';
+        }
+    });
+    window.addEventListener('storage', (event) => {
+        if (event.key === key || event.key === null) {
+            read();
+            apply();
+        }
+    });
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) refresh();
+    });
+    window.addEventListener('online', refresh);
+    setInterval(refresh, 300000);
+    if (window.Blazor)
+        Blazor.addEventListener('enhancedload', () => {
+            generation++;
+            read();
+            apply();
+        });
+    read();
+    apply();
+})();

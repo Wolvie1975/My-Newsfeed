@@ -1,0 +1,330 @@
+/* Unknown photos start as modest thumbnails, including without JavaScript. */
+:root .pub [data-article-story='row'] [data-article-media] img[data-article-quality='compact'] {
+    object-fit: scale-down;
+}
+/* No photo: the text takes the whole card instead of the thumbnail column (outranks the section and poster grids). */
+:root:is([data-color-scheme], :not([data-color-scheme]))
+    .pub
+    :is(.d-story, .article)[data-article-story='row'][data-image-layout='none']:not(:has(.ph)) {
+    grid-template-columns: minmax(0, 1fr);
+}
+:root .pub [data-article-story='feature'] [data-article-media] {
+    position: relative;
+    float: right;
+    display: block;
+    width: 112px;
+    max-width: 32%;
+    height: 84px;
+    min-height: 0;
+    aspect-ratio: 4 / 3;
+    margin: 0 0 12px 16px;
+    border-radius: 8px;
+    overflow: hidden;
+}
+:root .pub [data-article-story='feature'] [data-article-media] img {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: scale-down;
+}
+:root .pub [data-article-story='feature'] [data-article-media]:not(:has(> img, > .ph)),
+:root .pub [data-image-layout='none'] [data-article-media]:not(:has(> .ph)) {
+    display: none;
+}
+:root .pub :is(.article, .d-lead__story)[data-article-story='feature'] {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+    min-height: 0;
+}
+:root .pub :is(.article, .d-lead__story)[data-article-story='feature'] > [data-article-media] {
+    grid-column: 2;
+    grid-row: 1;
+    margin-top: 16px;
+    max-width: none;
+}
+:root .pub :is(.article, .d-lead__story)[data-article-story='feature'] > :is(.body, .d-lead__body) {
+    grid-column: 1;
+    grid-row: 1;
+    min-width: 0;
+}
+:root .pub .d-lead__story[data-article-story='feature'] > .d-lead__body {
+    display: block;
+    padding: 0;
+}
+:root .pub .d-lead__story[data-article-story='feature']:has([data-article-media] > img) .d-lead__title {
+    font-size: clamp(26px, 2.4vw, 36px);
+}
+:root .pub :is(.article, .d-lead__story)[data-article-story='feature']:not(:has([data-article-media] > img)) {
+    grid-template-columns: minmax(0, 1fr);
+}
+:root .pub .mx-block[data-article-story] :is(.mx-block__quote, .mx-block__actions) {
+    clear: both;
+}
+:root .pub .mx-block[data-image-layout='compact']:has([data-article-media] > img) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 96px;
+}
+:root .pub .mx-block[data-image-layout='compact'] > .mx-block__kicker {
+    grid-column: 1 / -1;
+    grid-row: 1;
+}
+:root .pub .mx-block[data-image-layout='compact'] > .mx-block__title {
+    grid-column: 1;
+    grid-row: 2;
+}
+:root .pub .mx-block[data-image-layout='compact'] > [data-article-media] {
+    float: none;
+    grid-column: 2;
+    grid-row: 2;
+    width: 96px;
+    max-width: none;
+    height: 72px;
+    margin: 0;
+}
+:root .pub .mx-block[data-image-layout='compact'] .mx-block__badge {
+    display: none;
+}
+:root .pub .mx-block[data-image-layout='compact'] > :is(.mx-block__quote, .mx-block__actions) {
+    grid-column: 1 / -1;
+}
+:root .pub [data-article-story='feature'][data-image-layout='wide'] [data-article-media] {
+    float: none;
+    width: 100%;
+    /* Up to 1.5× the source, so a 740px photo fills a lead column instead of stopping short of its edge. */
+    max-width: min(100%, calc(var(--article-image-width, 100%) * 1.5));
+    height: auto;
+    max-height: 220px;
+    aspect-ratio: var(--article-image-ratio, 16 / 9);
+    margin: 0 0 12px;
+}
+:root .pub [data-article-story='feature'][data-image-layout='wide'] [data-article-media] img {
+    object-fit: cover;
+}
+:root .pub [data-article-story='feature'][data-image-layout='wide'] [data-article-media] img.article-image--cropped {
+    object-position: 50% 30%;
+}
+:root .pub :is(.article, .d-lead__story)[data-article-story='feature'][data-image-layout='wide'] {
+    grid-template-columns: minmax(0, 1fr);
+}
+/* Home's top story starts right under the "Top story" rule: keep the photo off it. */
+:root .pub .d-lead__story[data-article-story='feature'][data-image-layout='wide'] {
+    padding-top: 14px;
+}
+:root
+    .pub
+    :is(.article, .d-lead__story)[data-article-story='feature'][data-image-layout='wide']
+    > [data-article-media] {
+    grid-column: 1;
+    grid-row: 1;
+}
+:root
+    .pub
+    :is(.article, .d-lead__story)[data-article-story='feature'][data-image-layout='wide']
+    > :is(.body, .d-lead__body) {
+    grid-row: 2;
+}
+@media (min-width: 900px) {
+    :root .pub [data-article-story='feature'][data-image-layout='wide'] [data-article-media] {
+        max-height: 360px;
+    }
+    :root .pub .article[data-article-story='feature'][data-image-layout='wide'] {
+        grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+        gap: 20px;
+    }
+    :root .pub .article[data-article-story='feature'][data-image-layout='wide'] > .body {
+        grid-column: 2;
+        grid-row: 1;
+    }
+}
+/* Home's top story sits in the middle of three columns: beside its photo only once that column is wide enough. */
+@media (min-width: 1280px) {
+    :root .pub .d-lead__story[data-article-story='feature'][data-image-layout='wide'] {
+        grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+        gap: 20px;
+    }
+    :root .pub .d-lead__story[data-article-story='feature'][data-image-layout='wide'] > .d-lead__body {
+        grid-column: 2;
+        grid-row: 1;
+    }
+}
+
+/* An absent photo still has a full P8 feature frame, including the home lead and phone list feature. */
+:root
+    .pub
+    :is(.article, .d-lead__story)[data-article-story='feature']:has([data-article-media] > .ph):not(
+        :has([data-article-media] > img)
+    ) {
+    grid-template-columns: minmax(0, 1fr);
+}
+:root
+    .pub
+    [data-article-story='feature']:has([data-article-media] > .ph):not(:has([data-article-media] > img))
+    > [data-article-media] {
+    display: block;
+    float: none;
+    width: 100%;
+    max-width: none;
+    height: auto;
+    max-height: none;
+    aspect-ratio: 16 / 9;
+    grid-column: 1;
+    grid-row: 1;
+    margin: 0 0 12px;
+}
+:root
+    .pub
+    :is(.article, .d-lead__story)[data-article-story='feature']:has([data-article-media] > .ph):not(
+        :has([data-article-media] > img)
+    )
+    > :is(.body, .d-lead__body) {
+    grid-column: 1;
+    grid-row: 2;
+}
+
+/* Shared phone lists use small row thumbnails; the first feature keeps its full frame. */
+@media (max-width: 1023px) {
+    :root .pub .article[data-article-story='row']:where(:not(.hc-row), .hc-row--first):has([data-article-media] > .ph) {
+        display: grid;
+        grid-template-columns: 96px minmax(0, 1fr);
+        align-items: start;
+        gap: 12px;
+        padding: 12px;
+    }
+    :root .pub .article[data-article-story='row'] > [data-article-media]:has(> .ph) {
+        width: 96px;
+        height: 72px;
+        margin: 0;
+        border-radius: 8px;
+        aspect-ratio: 4 / 3;
+    }
+    :root
+        .pub
+        .article[data-article-story='row']:where(:not(.hc-row), .hc-row--first):has([data-article-media] > .ph)
+        > .body {
+        min-width: 0;
+        padding: 0;
+    }
+}
+
+@media (max-width: 1023px) {
+    /* Publisher names and 44px actions each need their own line beside a 96px thumbnail. */
+    :root .pub .article[data-article-story='row']:has([data-article-media] > .ph) > .body {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    :root .pub .article[data-article-story='row']:has([data-article-media] > .ph) .src {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+    }
+    :root .pub .article[data-article-story='row']:has([data-article-media] > .ph) .article-publisher {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        width: 100%;
+        min-width: 0;
+    }
+    :root .pub .article[data-article-story='row']:has([data-article-media] > .ph) .src time {
+        flex-basis: 100%;
+    }
+    :root .pub .article[data-article-story='row']:has([data-article-media] > .ph) .article-actions {
+        display: flex;
+        gap: 4px;
+        margin-left: auto;
+    }
+}
+
+@media (max-width: 1023px) {
+    /* A small lead photo shares the category row; the story and publisher use the full card width. */
+    :root .pub .article[data-article-story='feature'] > .body {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-areas: 'cat' 'title' 'summary' 'meta';
+        grid-template-rows: auto auto auto auto;
+    }
+    :root .pub .article.mx-list-feature[data-article-story='feature'] > .body {
+        padding: 0;
+    }
+    :root[data-article-images='enabled']
+        .pub
+        .article[data-article-story='feature'][data-image-layout='compact']:has([data-article-media] > img) {
+        grid-template-columns: minmax(0, 1fr) 96px;
+        gap: 12px;
+        padding: 16px;
+    }
+    :root[data-article-images='enabled']
+        .pub
+        .article[data-article-story='feature'][data-image-layout='compact']:has([data-article-media] > img)
+        > .body {
+        display: contents;
+    }
+    :root[data-article-images='enabled']
+        .pub
+        .article[data-article-story='feature'][data-image-layout='compact']:has([data-article-media] > img)
+        > [data-article-media] {
+        grid-column: 2;
+        grid-row: 1;
+        width: 96px;
+        height: 72px;
+        margin: 0;
+    }
+    :root[data-article-images='enabled']
+        .pub
+        .article[data-article-story='feature'][data-image-layout='compact']:has([data-article-media] > img)
+        .cat {
+        grid-area: 1 / 1;
+        align-self: center;
+    }
+    :root[data-article-images='enabled']
+        .pub
+        .article[data-article-story='feature'][data-image-layout='compact']:has([data-article-media] > img)
+        .title {
+        grid-area: 2 / 1 / auto / -1;
+    }
+    :root[data-article-images='enabled']
+        .pub
+        .article[data-article-story='feature'][data-image-layout='compact']:has([data-article-media] > img)
+        .summary {
+        grid-area: 3 / 1 / auto / -1;
+    }
+    :root[data-article-images='enabled']
+        .pub
+        .article[data-article-story='feature'][data-image-layout='compact']:has([data-article-media] > img)
+        .src {
+        grid-area: 4 / 1 / auto / -1;
+    }
+    :root .pub .article[data-article-story='feature'] .src {
+        grid-area: meta;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
+    }
+    :root[data-article-images='enabled']
+        .pub
+        .article[data-article-story='feature'][data-image-layout='compact']:has([data-article-media] > img)
+        .more {
+        grid-area: 5 / 1 / auto / -1;
+    }
+    :root .pub .article[data-article-story='feature'] .article-publisher {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+        min-width: 0;
+    }
+    :root .pub .article[data-article-story='feature'] .src time {
+        flex-basis: 100%;
+    }
+    :root .pub .article[data-article-story='feature'] .article-actions {
+        display: flex;
+        gap: 4px;
+        margin-left: auto;
+    }
+}

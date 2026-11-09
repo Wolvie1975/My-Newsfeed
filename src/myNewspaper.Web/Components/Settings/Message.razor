@@ -1,0 +1,14 @@
+@* A /me form's result, shown in the section it came back to (the address ends with #section). *@
+@if (Section == CurrentSection && (SettingsMessages.Done(Done) ?? SettingsMessages.Error(Error, TriesLeft)) is { } text)
+{
+    <p class="set-message @(SettingsMessages.Error(Error, TriesLeft) is null ? "is-ok" : "is-bad")" role="@(SettingsMessages.Error(Error, TriesLeft) is null ? "status" : "alert")">@text</p>
+}
+
+@code {
+    [Parameter, EditorRequired] public string Section { get; set; } = "";
+    [Parameter] public string? Done { get; set; }
+    [Parameter] public string? Error { get; set; }
+    [Parameter] public int? TriesLeft { get; set; }
+    // The message codes say which section they belong to.
+    private string? CurrentSection => SettingsMessages.Section(Done ?? Error);
+}

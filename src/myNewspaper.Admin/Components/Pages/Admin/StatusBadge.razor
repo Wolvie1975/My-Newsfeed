@@ -1,0 +1,8 @@
+@* One status word in a pill. The word carries the meaning, not only the colour. Disabled rows use
+   <span class="adm-pill adm-pill--off">Disabled</span> instead. *@
+<span class="adm-pill adm-pill--@(Level switch { HealthLevel.Problem => "bad", HealthLevel.Warning => "warn", _ => "ok" })">@(Text ?? Level switch { HealthLevel.Problem => "Problem", HealthLevel.Warning => "Check", _ => "OK" })</span>
+
+@code {
+    [Parameter] public HealthLevel Level { get; set; }
+    [Parameter] public string? Text { get; set; }
+}

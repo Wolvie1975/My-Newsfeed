@@ -1,0 +1,58 @@
+const { chromium } = require('playwright');
+const lib = require('./lib.cjs');
+const assert = require('node:assert/strict');
+const base = lib.base;
+(async () => {
+    const browser = await chromium.launch();
+    try {
+        const page = await lib.readerPage(browser);
+        await page.goto(base + '/settings#my-services');
+        const choice = page.getByLabel('Paramount Plus Premium', { exact: true });
+        assert(await choice.count());
+        const id = await choice.getAttribute('value');
+        await choice.check();
+        await lib.whileSaving(page, () => page.getByRole('button', { name: 'Save services', exact: true }).click());
+        assert.equal(JSON.parse(await lib.getPreference(page, 'mynewsfeed-watch-services-v1'))[0], Number(id));
+        await page.reload();
+        assert(await choice.isChecked());
+        await page.locator('a[href="watch"]:visible').first().click();
+        await page.waitForURL('**services=*');
+        await page.locator('a[href="settings"]:visible').first().click();
+        await page.waitForURL('**/settings');
+        assert(await choice.isChecked());
+        await page.goto(base + '/watch?q=Arrival');
+        await page.waitForURL('**services=*');
+        assert(await page.locator('.watch-card').first().locator('.watch-match').count());
+        assert.equal(await page.locator('[data-watch-services]').count(), 0);
+        assert.equal(await page.locator('.site-nav--inline > a[href=watch]').count(), 1);
+        await page.goto(base + '/watch');
+        await page.waitForURL('**services=*');
+        await page.getByRole('link', { name: 'TV shows', exact: true }).click();
+        await page.waitForURL((u) => u.searchParams.get('kind') === 'tv');
+        assert.equal(new URL(page.url()).searchParams.get('services'), id);
+        await page.goto(base + '/settings#my-services');
+        await page.setViewportSize({ width: 390, height: 900 });
+        assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
+        await page.locator('#my-services').getByRole('button', { name: 'Clear selections', exact: true }).click();
+        assert.deepEqual(JSON.parse(await lib.getPreference(page, 'mynewsfeed-watch-services-v1')), []);
+        const plain = await lib.readerContext(browser, { javaScriptEnabled: false });
+        const p = await plain.newPage();
+        await p.goto(base + '/settings');
+        await p.locator('#my-services > summary').click();
+        await p.getByLabel('Paramount Plus Premium', { exact: true }).check();
+        await p.getByRole('button', { name: 'Save services', exact: true }).click();
+        await p.locator('[data-watch-settings-link]').click();
+        assert.equal(new URL(p.url()).searchParams.get('services'), id);
+        await p.goto(base + '/watch?q=Arrival&services=' + id);
+        assert(await p.locator('.watch-match').count());
+        await plain.close();
+        console.log(
+            'Settings service selection, persistence, ranking, TV navigation, clear, mobile and no-JavaScript form checks passed.',
+        );
+    } finally {
+        await browser.close();
+    }
+})().catch((e) => {
+    console.error(e);
+    process.exit(1);
+});

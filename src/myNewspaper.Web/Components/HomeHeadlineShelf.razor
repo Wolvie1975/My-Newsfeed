@@ -1,0 +1,56 @@
+@using myNewspaper.Web.Components.Feed
+@using myNewspaper.Shared.Data
+
+<section class="d-card d-headline-shelf @CssClass" data-home-section="@SectionKey" aria-labelledby="@HeadingId">
+    <div class="d-card__head">
+        <h2 class="d-card__title" id="@HeadingId">@Title</h2>
+        <a class="d-more" href="@Href">View all <span aria-hidden="true">→</span></a>
+    </div>
+    @if (Unavailable)
+    {
+        <p class="d-empty">@Title are temporarily unavailable.</p>
+    }
+    else if (Stories.Count == 0)
+    {
+        <p class="d-empty">@EmptyText</p>
+    }
+    else
+    {
+        <ul class="d-headline-shelf__list">
+            @foreach (var item in Stories)
+            {
+                var href = FeedQuery.SafeHref(item.Url);
+                var title = FeedText.StripEmoji(item.Title);
+                var source = FeedText.SourceName(item.SourceLabel, item.SourceUrl);
+                var displayTitle = title.Length > 0 ? title : item.Title;
+                var summary = FeedText.StripEmoji(FeedQuery.Excerpt(item.Description));
+                <li data-news-url="@href" data-news-source="@source">
+                    <div class="d-headline-shelf__body">
+                        @if (ShowCategory && !string.IsNullOrWhiteSpace(item.CategoryName)) { <span class="d-headline-shelf__kicker">@item.CategoryName</span> }
+                        @if (href is not null) { <a href="@href" target="_blank" rel="noopener noreferrer">@displayTitle</a> }
+                        else { <span class="d-headline-shelf__title">@displayTitle</span> }
+                        <span class="d-headline-shelf__source">@source</span>
+                    </div>
+                    <div class="d-headline-shelf__actions" aria-label="Article actions">
+                        <ShareButton Url="@item.Url" Title="@displayTitle" />
+                        <SaveButton Item="item" Title="@displayTitle" Source="@source" Summary="@summary" />
+                    </div>
+                </li>
+            }
+        </ul>
+    }
+</section>
+
+@code {
+    [Parameter, EditorRequired] public string SectionKey { get; set; } = "";
+    [Parameter, EditorRequired] public string Title { get; set; } = "";
+    [Parameter, EditorRequired] public string HeadingId { get; set; } = "";
+    [Parameter, EditorRequired] public string Href { get; set; } = "";
+    [Parameter] public string CssClass { get; set; } = "";
+    [Parameter] public string EmptyText { get; set; } = "No recent stories are available.";
+    [Parameter] public IReadOnlyList<FeedItem> Stories { get; set; } = [];
+    /// <summary>Shows each story’s category above its headline (the front page’s headline grid).</summary>
+    [Parameter] public bool ShowCategory { get; set; }
+    /// <summary>The read failed: says so instead of the empty text, so a failure isn't mistaken for no stories.</summary>
+    [Parameter] public bool Unavailable { get; set; }
+}

@@ -1,0 +1,366 @@
+@page "/news/all"
+@page "/entertainment/news"
+@page "/entertainment/tv-film"
+@page "/sports/news"
+@page "/sports/mens-college-basketball/news"
+@page "/sports/news/{Topic}"
+@page "/entertainment/news/{Topic}"
+@page "/tech/news"
+@page "/tech/news/{Topic}"
+@inject NavigationManager Nav
+@layout PublicLayout
+@using myNewspaper.Web.Components.Feed
+@inject IDbContextFactory<WebScraperContext> Factory
+@inject FeedDates Dates
+@inherits DataComponentBase
+@inject TimeProvider Clock
+
+@if (!SectionNews) {
+}
+<PageTitle>@Title · myNewspaper</PageTitle>
+@* Phones get the folded front (docs/mobile-refresh-handoff.md) for the plain Headlines view; a search, a source filter
+   or a later page keeps this layout on every width. *@
+<div class="@(Phone ? "mx-desktop tab-desktop" : SectionNews ? "mx-tool-page mx-section-news tab-desktop" : "mx-contents tab-desktop")">
+@if (SectionNews) {
+    <div class="mx-phone" data-phone-tools="headlines"><PhoneRibbon Section="@Hub" SectionCurrent="@SectionNewsCurrent" Title="@Title" Kicker="@($"{HubLabel(Hub)} · Every story, every source")" /></div>
+}
+<div class="@(SectionNews ? "mx-desktop" : "mx-contents")">
+<PageHeading Section="@(SectionNews ? Hub : "news")" Choices="@(SectionNews ? (Hub == "tech" ? SectionChoices.Tech : null) : newsTabs)" SectionCurrent="@(SectionNews ? (Hub == "tech" ? "headlines" : SectionNewsCurrent) : NewsCurrent)" Title="@Title" Eyebrow="@((SectionNews ? HubLabel(Hub) : "News") + " · Every story, every source")" Description="" />
+</div>
+@if (SectionNews && HubCategories.Count > 0) {
+    @* Categories as pills on desktop (as in the approved concept); phones use the dropdown beside Source. *@
+    <nav class="sec-pills sec-pills--desktop hn-cats tab-scroll" aria-label="@HubCategoryLabel">
+        @foreach (var item in HubCategories)
+        { <a href="@NewsSections.RouteFor(item)" aria-current="@(Category == item.Id ? "page" : null)">@NewsSections.LabelFor(item.Name)</a> }
+    </nav>
+}
+@if (SectionNews) {
+    <form class="catselect news-category-select" method="get" action="news/all">
+        <label for="hub-category">@HubCategoryLabel</label>
+        <select id="hub-category" name="category" onchange="this.form.requestSubmit()" disabled="@(HubCategories.Count == 0)">
+            @foreach (var item in HubCategories) {
+                <option value="@item.Id" selected="@(Category == item.Id)">@NewsSections.LabelFor(item.Name)</option>
+            }
+        </select>
+        <noscript><button class="nf-btn nf-btn--secondary" type="submit">Apply</button></noscript>
+    </form>
+    <h2 class="sr-only">@NewsSections.LabelFor(SectionCategory)</h2>
+}
+<div class="filters news-front-filters">
+    @if (sources.Count > 0)
+    {
+        <form class="catselect" method="get" action="@BasePath">
+            <input type="hidden" name="category" value="@(Category?.ToString() ?? "all")" />
+            @if (!string.IsNullOrWhiteSpace(Q))
+            { <input type="hidden" name="q" value="@Q" /> }
+            <label class="sr-only" for="source">Source</label>
+            <select id="source" name="source" onchange="this.form.requestSubmit()">
+                <option value="">All sources</option>
+                @foreach (var source in sources)
+                {
+                    <option value="@source.Id" selected="@(Source == source.Id)">@source.Name</option>
+                }
+            </select>
+            <noscript><button class="nf-btn nf-btn--secondary" type="submit">Apply</button></noscript>
+        </form>
+    }
+    @if (feed is not null)
+    {
+        <span class="count count--toolbar">@feed.Total @(feed.Total == 1 ? "article" : "articles")</span>
+    }
+</div>
+
+@if (lastUpdated is { } updated)
+{
+    <p class="updated">
+        Feed last updated
+        <time datetime="@updated.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'")">@Dates.PublishedFull(updated)</time>
+    </p>
+}
+
+@if (feed is null || feed.Items.Count == 0)
+{
+    <p class="empty">
+        @if (Category is not null && Source is null && string.IsNullOrWhiteSpace(Q) && After is null)
+        {
+            <span>No articles available yet. Please check back soon.</span>
+        }
+        else if (!string.IsNullOrWhiteSpace(Q) || Category is not null || Source is not null || After is not null)
+        {
+            <span>No articles match. <a href="@BasePath">Clear filters</a></span>
+        }
+        else
+        {
+            <span>No articles yet. Check back soon.</span>
+        }
+    </p>
+}
+else
+{
+    @if (After is not null)
+    {
+        <p><a href="@Href(Category, null)">← Back to the newest articles</a></p>
+    }
+    @if (jumpBox is not null && (jumpBox.Groups.Count > 0 || jumpBox.Categories.Count > 0))
+    {
+        <JumpBox Box="jumpBox" Title="@Title" />
+    }
+
+    <div id="top-of-list" class="news-front @(Hub == "entertainment" ? "news-front--posters" : null)">
+        <div class="news-front__stories">
+            <section class="feed paper-feed hc-feed" aria-label="Articles" data-last-day="@lastDay" data-feed-cards="1" data-feed-group-by="@groupBy" data-last-group="@lastGroup">
+                <NewspaperFeed Items="feed.Items" Featured="@(After is null)" PhoneFeatureFirst="SectionNews" Total="@(After is null ? feed.Total : null)" Cards="true" GroupBy="@groupBy" />
+            </section>
+        </div>
+    </div>
+
+    <div class="loadmore">
+        @if (feed.Next is { } next)
+        {
+            <a class="nf-btn nf-btn--secondary" data-load-more data-feed-view="@FeedView" data-enhance-nav="false" href="@Href(Category, next.ToToken())">Load more articles</a>
+        }
+        <span class="count" data-shown-total>Showing @feed.Shown of @feed.Total</span>
+        <span class="sr-only" role="status" data-load-status></span>
+    </div>
+}
+</div>
+
+@if (Phone && feed is { } front)
+{
+    var lead = front.Items[0];
+    var top = front.Items.Skip(1).Take(3).ToArray();
+    var latest = front.Items.Skip(4).Take(3).ToArray();
+    var shown = front.Items.Take(7).ToArray();
+    var folds = foldCategories.Where(c => latestByCategory.TryGetValue(c.Id, out var items) && items.Count > 0).ToArray();
+    <div class="mx-phone tab-phone">
+        <PhoneRibbon Section="news" Kicker="@RibbonKicker(front)" Title="@PhoneTitle">
+            <SectionSelect Id="news-section-m" Label="Section" Choices="newsTabs" Current="@NewsCurrent" AlwaysSelect="true" />
+        </PhoneRibbon>
+
+        <article class="mx-block" data-article-story="feature" data-image-layout="compact" aria-label="Lead story">
+            @if (FeedQuery.SafeHref(lead.ImageUrl) is { } image)
+            {
+                <div class="mx-block__media" data-article-media>
+                    <img src="@image" alt="" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()" />
+                    @if (!lead.Undated && Clock.GetUtcNow().UtcDateTime - lead.Date < TimeSpan.FromHours(1)) { <span class="mx-block__badge">Just in</span> }
+                </div>
+            }
+            <span class="mx-block__kicker">@Meta(lead, withCategory: true)</span>
+            <h2 class="mx-block__title"><StoryLink Item="lead" /></h2>
+            @if (FeedText.StripEmoji(FeedQuery.Excerpt(lead.Description, 160)) is { Length: > 0 } standfirst)
+            { <p class="mx-block__quote">@standfirst</p> }
+            <div class="mx-block__actions">
+                <SaveButton Item="lead" Title="@StoryTitle(lead)" Source="@SourceName(lead)" Summary="@FeedText.StripEmoji(FeedQuery.Excerpt(lead.Description))" Labelled="true" />
+                <ShareButton Url="@lead.Url" Title="@StoryTitle(lead)" Labelled="true" />
+            </div>
+        </article>
+
+        @if (top.Length > 0)
+        {
+            @* "Top stories" in feed order: the site doesn't count reads, so it can't say "most read" (handoff open question). *@
+            <section class="mx-section" aria-labelledby="top-stories-h">
+                <div class="mx-head"><h2 id="top-stories-h">Top stories</h2></div>
+                <ol class="mx-top">
+                    @for (var i = 0; i < top.Length; i++)
+                    {
+                        var item = top[i];
+                        <li class="@PhoneColors.ForCategory(item.CategoryName)">
+                            <span class="mx-top__n" aria-hidden="true">@(i + 1)</span>
+                            <span><span class="mx-top__title"><StoryLink Item="item" /></span><span class="mx-top__meta">@Meta(item, withCategory: true)</span></span>
+                            <span class="mx-top__actions"><SaveButton Item="item" Title="@StoryTitle(item)" Source="@SourceName(item)" Summary="@FeedText.StripEmoji(FeedQuery.Excerpt(item.Description))" /><ShareButton Url="@item.Url" Title="@StoryTitle(item)" /></span>
+                        </li>
+                    }
+                </ol>
+            </section>
+        }
+
+        @if (latest.Length > 0)
+        {
+            <PhoneTimeline Heading="Latest" Items="@latest.Select(Timeline).ToArray()"
+                           MoreText="@(front.Total > shown.Length ? "More stories" : null)"
+                           MoreHref="@Href(Category, new FeedCursor(shown[^1].Date, shown[^1].Id, shown[^1].Undated).ToToken())" />
+        }
+
+        @if (folds.Length > 0)
+        {
+            <FoldGroup Name="headlines-more" Heading="By category">
+                @for (var i = 0; i < folds.Length; i++)
+                {
+                    var category = folds[i];
+                    var items = latestByCategory[category.Id];
+                    <Fold Title="@FoldName(category.Name)" Gist="@string.Join(" · ", items.Take(2).Select(StoryTitle))"
+                          Color="@PhoneColors.ForCategory(category.Name)" Open="@(i == 0)" AllHref="@CategoryHref(category)" AllText="@category.Name">
+                        @foreach (var item in items)
+                        {
+                            <a class="mx-fold__row" href="@(FeedQuery.SafeHref(item.Url) ?? CategoryHref(category))" target="_blank" rel="noopener noreferrer">
+                                <span><b>@StoryTitle(item)</b><small>@Meta(item, withCategory: false)</small></span>
+                            </a>
+                        }
+                    </Fold>
+                }
+            </FoldGroup>
+        }
+    </div>
+}
+
+@code {
+    private string CurrentPath => Nav.ToBaseRelativePath(Nav.Uri).Split('?')[0].TrimEnd('/');
+    private string? SectionHubName => CurrentPath.Split('/')[0].ToLowerInvariant() switch
+    {
+        "sports" => "sports", "entertainment" => "entertainment", "tech" => "tech", _ => null
+    };
+    [Parameter] public string? Topic { get; set; }
+    private bool SectionNews => SectionHubName is not null;
+    private string Hub => SectionHubName ?? "headlines";
+    private static string HubLabel(string hub) => hub switch { "sports" => "Sports", "entertainment" => "Entertainment", "tech" => "Tech", _ => "News" };
+    private string HubCategoryLabel => Hub switch { "entertainment" => "Topic", "tech" => "Desk", _ => "Sport" };
+    private string SectionNewsCurrent => Hub + "/news";
+    private IReadOnlyList<FeedCategory> HubCategories = [];
+    private string? SectionCategory => selectedCategory?.Name;
+    private FeedCategory? selectedCategory;
+    private string BasePath => selectedCategory is {} selected && SectionNews && Hub != "tech" ? NewsSections.RouteFor(selected)! : SectionNews ? Hub + "/news" : "news/all";
+    private string FeedView => SectionNews ? Hub + "-hub-news" : "news";
+    private string Title => SectionNews ? $"{HubLabel(Hub)} headlines"
+        : categories.FirstOrDefault(c => c.Id == Category)?.Name ?? "All headlines";
+    private IReadOnlyList<NavigationChoice> newsTabs = [];
+    /// <summary>The News tab for this list: All headlines, or the category's own tab.</summary>
+    private string NewsCurrent => categories.FirstOrDefault(c => c.Id == Category) is { } c ? CategoryHref(c) : "news/all";
+    private static string CategoryHref(FeedCategory category) =>
+        category.Name == SectionChoices.NewsKansasCityCategory ? "news/kansas-city" : $"news/all?category={category.Id}";
+    // Query values arrive as text and are parsed leniently: a hand-edited "?category=abc" must not throw.
+    [SupplyParameterFromQuery(Name = "category")] private string? CategoryQuery { get; set; }
+    [SupplyParameterFromQuery(Name = "q")] private string? Q { get; set; }
+    [SupplyParameterFromQuery(Name = "after")] private string? AfterQuery { get; set; }
+    [SupplyParameterFromQuery(Name = "source")] private string? SourceQuery { get; set; }
+
+    private int? Source { get; set; }
+    private IReadOnlyList<FeedSource> sources = [];
+    private int? Category { get; set; }
+    private FeedCursor? After => FeedCursor.Parse(AfterQuery);
+
+    private IReadOnlyList<FeedCategory> categories = [];
+    private IReadOnlyList<FeedCategory> foldCategories = [];
+    private IReadOnlyDictionary<int, IReadOnlyList<FeedItem>> latestByCategory = new Dictionary<int, IReadOnlyList<FeedItem>>();
+    private FeedPage? feed;
+    private JumpBoxModel? jumpBox;
+    private string? lastDay;
+    // Headline cards: "hour" headings on a busy today, else "day"; and the last card group, for Load more.
+    private string groupBy = "day";
+    private string? lastGroup;
+    private DateTime? lastUpdated;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await using var db = await Factory.CreateDbContextAsync(Ct);
+        var allCategories = await FeedQuery.GetCategoriesAsync(db, Ct);
+        if (!SectionNews && int.TryParse(CategoryQuery, out var oldId)
+            && allCategories.FirstOrDefault(c => c.Id == oldId) is {} oldCategory
+            && NewsSections.RouteFor(oldCategory) is {} destination) {
+            var oldSource = int.TryParse(SourceQuery, out var sid) ? (int?)sid : null;
+            Nav.NavigateTo(destination + FeedQuery.QueryString(null, Q, After?.ToToken(), oldSource), forceLoad: true);
+            return;
+        }
+        categories = allCategories.Where(c => c.Hub == "headlines").ToList();
+        newsTabs = SectionChoices.News(categories);
+        selectedCategory = null;
+        if (SectionNews) {
+            HubCategories = allCategories.Where(c => c.Hub == Hub).OrderBy(NewsSections.Order).ThenBy(c => c.Name).ToList();
+            var topic = Topic?.ToLowerInvariant();
+            var known = topic switch {
+                "tv-film" => NewsSections.TvFilm, "basketball" => NewsSections.MensBasketball,
+                "big12" => Big12NewsQuery.CategoryName, "f1" => F1NewsQuery.CategoryName,
+                "technology" => NewsSections.Technology, "video-games" => NewsSections.VideoGames, "linux" => NewsSections.Linux,
+                _ => CurrentPath.ToLowerInvariant() switch {
+                    "entertainment/tv-film" => NewsSections.TvFilm,
+                    "sports/mens-college-basketball/news" => NewsSections.MensBasketball,
+                    "tech/technology" => NewsSections.Technology,
+                    "tech/video-games" => NewsSections.VideoGames,
+                    "tech/linux" => NewsSections.Linux,
+                    _ => null
+                }
+            };
+            var requested = topic?.StartsWith("category-") == true && int.TryParse(topic[9..], out var id)
+                ? allCategories.FirstOrDefault(c => c.Id == id)
+                : known is not null ? allCategories.FirstOrDefault(c => c.Name == known)
+                : Hub == "tech" && int.TryParse(CategoryQuery, out var techCatId) ? allCategories.FirstOrDefault(c => c.Id == techCatId)
+                : null;
+            if (requested is not null && requested.Hub != Hub) {
+                var assignedDestination = NewsSections.RouteFor(requested) ?? "news/all";
+                Nav.NavigateTo(assignedDestination + FeedQuery.QueryString(requested.Hub == "headlines" ? requested.Id : null, Q, After?.ToToken(), int.TryParse(SourceQuery, out var source) ? source : null), forceLoad: true);
+                return;
+            }
+            selectedCategory = requested ?? (Topic is null && known is null && Hub != "tech" ? HubCategories.FirstOrDefault() : null);
+        }
+        Category = SectionNews ? selectedCategory?.Id
+            : int.TryParse(CategoryQuery, out var categoryId) ? categoryId : null;
+        var emptySection = SectionNews && Category is null && Hub != "tech";
+        var feedHub = SectionNews ? Hub : "headlines";
+        sources = emptySection ? [] : await FeedQuery.GetSourcesAsync(db, Category, headlinesOnly: !SectionNews, hub: feedHub, Ct);
+        Source = int.TryParse(SourceQuery, out var sourceId) && sources.Any(s => s.Id == sourceId) ? sourceId : null;
+        feed = emptySection ? new FeedPage([], 0, 0, null) : await FeedQuery.GetFeedAsync(
+            db, Category, Q, After, After is null ? FeedQuery.FirstBatch : FeedQuery.MoreBatch, Source, headlinesOnly: !SectionNews, hub: feedHub, Ct);
+        lastDay = feed.Items.Count > 0 ? Dates.DayKey(feed.Items[^1]) : null;
+        var nowUtc = Clock.GetUtcNow().UtcDateTime;
+        groupBy = feed.Items.Count > 0 && await FeedQuery.CountPublishedSinceAsync(db, Dates.StartOfDayUtc(Dates.TodayAt(nowUtc)),
+            Category, Q, Source, headlinesOnly: !SectionNews, hub: feedHub, Ct) >= FeedQuery.HourGroupingThreshold ? "hour" : "day";
+        lastGroup = feed.Items.Count > 0 ? Dates.CardGroupKey(feed.Items[^1], groupBy, nowUtc) : null;
+        lastUpdated = emptySection ? null : await FeedQuery.GetLastUpdatedAsync(db, headlinesOnly: !SectionNews, categoryId: Category, hub: feedHub, Ct);
+        if (!emptySection && feed.Items.Count > 0)
+        {
+            var recent = await FeedQuery.GetRecentDatesAsync(db, nowUtc, Category, Q, Source, headlinesOnly: !SectionNews, hub: feedHub, ct: Ct);
+            var hubRecent = Category is null && Source is null && string.IsNullOrWhiteSpace(Q)
+                ? recent
+                : await FeedQuery.GetRecentDatesAsync(db, nowUtc, null, null, null, headlinesOnly: !SectionNews, hub: feedHub, days: 2, ct: Ct);
+            jumpBox = JumpBoxBuilder.Build(recent, hubRecent, SectionNews ? HubCategories : categories, feed.Items, groupBy, feedHub, Category, Href, Dates, nowUtc);
+        }
+        else
+        {
+            jumpBox = null;
+        }
+        // The phone folds: every other headline category, local news first and opinion last.
+        foldCategories = Phone
+            ? categories.Where(c => c.Id != Category).OrderBy(c => PhoneColors.Order(c.Name)).ThenBy(c => c.Name).ToList()
+            : [];
+        latestByCategory = foldCategories.Count > 0
+            ? await FeedQuery.GetLatestByCategoryAsync(db, foldCategories.Select(c => c.Id), ct: Ct)
+            : new Dictionary<int, IReadOnlyList<FeedItem>>();
+    }
+
+    /// <summary>The folded phone front is for the plain Headlines view only.</summary>
+    private bool Phone => !SectionNews && After is null && string.IsNullOrWhiteSpace(Q) && Source is null && feed is { Items.Count: > 0 };
+
+    private string PhoneTitle => categories.FirstOrDefault(c => c.Id == Category)?.Name ?? "All headlines";
+
+    private string RibbonKicker(FeedPage page)
+    {
+        var parts = new List<string>();
+        if (lastUpdated is { } updated)
+        {
+            var minutes = (int)Math.Max(0, (Clock.GetUtcNow().UtcDateTime - updated).TotalMinutes);
+            parts.Add(minutes < 1 ? "Updated just now" : minutes < 60 ? $"Updated {minutes} min ago"
+                : minutes < 24 * 60 ? $"Updated {minutes / 60} hr ago" : $"Updated {Dates.Published(updated)}");
+        }
+        parts.Add($"{page.Total} {(page.Total == 1 ? "story" : "stories")}");
+        if (sources.Count > 0) parts.Add($"{sources.Count} {(sources.Count == 1 ? "source" : "sources")}");
+        return string.Join(" · ", parts);
+    }
+
+    private static string StoryTitle(FeedItem item) => FeedText.StripEmoji(item.Title) is { Length: > 0 } t ? t : item.Title;
+    private static string SourceName(FeedItem item) => FeedText.SourceName(item.SourceLabel, item.SourceUrl);
+
+    /// <summary>"World · The Guardian · 9:41 AM"; undated stories leave the time out.</summary>
+    private string Meta(FeedItem item, bool withCategory) => string.Join(" · ", new[]
+    {
+        withCategory ? item.CategoryName : null, SourceName(item), item.Undated ? null : Dates.Time(item.Date),
+    }.Where(p => !string.IsNullOrEmpty(p)));
+
+    private TimelineItem Timeline(FeedItem item) => new(item.Undated ? "" : Dates.Time(item.Date), StoryTitle(item),
+        string.Join(" · ", new[] { SourceName(item), item.CategoryName }.Where(p => !string.IsNullOrEmpty(p))), null,
+        FeedQuery.SafeHref(item.Url) ?? "news/all", PhoneColors.ForCategory(item.CategoryName), External: FeedQuery.SafeHref(item.Url) is not null);
+
+    /// <summary>"Kansas City News" reads as "Kansas City" on its fold; the See all link keeps the full name.</summary>
+    private static string FoldName(string name) => name.EndsWith(" News", StringComparison.Ordinal) ? name[..^5] : name;
+
+    /// <summary>A link that keeps the current search and switches category and position.</summary>
+    private string Href(int? category, string? after) => BasePath + FeedQuery.QueryString(category, Q, after, Source, allCategories: category is null);
+}

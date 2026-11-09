@@ -1,0 +1,2698 @@
+/* Broadsheet design system (October 2026), loaded after public.css.
+ *
+ * - Newsreader serif for mastheads, page titles and story headlines; Schibsted Grotesk stays the text face.
+ * - The folded-page mark in the header; its ink and corner follow the colour scheme.
+ * - Section navigation: underlined tabs from 1024px; on phones a segmented control (four or fewer choices) or a
+ *   native dropdown (five or more). Nothing scrolls sideways and every target is at least 44px.
+ * - The default scheme is flat royal blue to match the mark; other schemes keep their own colours.
+ *
+ * S = ":root:is([data-color-scheme], :not([data-color-scheme])) .pub" carries the specificity of the per-scheme
+ * rules in public.css, so a rule here applies under every colour scheme without !important.
+ */
+:root {
+    --font-serif: 'Newsreader', Georgia, 'Times New Roman', serif;
+}
+
+/* ---------- Default scheme: flat royal blue, quiet page ---------- */
+:root[data-color-scheme='ribbon'],
+:root:not([data-color-scheme]) {
+    --bg: #f4f6fa;
+    --accent: #0051ba;
+    --btn-bg: #0051ba;
+    --header-bg: #0051ba;
+    --header-border: #00479f;
+    --selection-bg: #ffd34d;
+    --selection-fg: #141b2b;
+}
+:root[data-color-scheme='ribbon'][data-theme='dark'],
+:root:not([data-color-scheme])[data-theme='dark'] {
+    --bg: #09182b;
+    --accent: #8dcbff;
+    --btn-bg: #146ac5;
+    --header-bg: #0b346b;
+}
+:root[data-color-scheme='ribbon'] .pub .site-header,
+:root:not([data-color-scheme]) .pub .site-header,
+:root[data-color-scheme='ribbon'][data-theme='dark'] .pub .site-header,
+:root:not([data-color-scheme])[data-theme='dark'] .pub .site-header {
+    background: var(--header-bg);
+    background-image: none;
+}
+:root[data-color-scheme='ribbon'] .pub .nf-btn--primary {
+    background: var(--btn-bg);
+}
+:root:is([data-color-scheme], :not([data-color-scheme])) .pub .page-heading::after {
+    content: none;
+}
+
+/* ---------- Brand ---------- */
+.pub .brand {
+    width: auto;
+    min-width: 44px;
+    min-height: 44px;
+    gap: 10px;
+    padding-right: 4px;
+    color: var(--header-fg);
+}
+.pub .brand-mark {
+    display: block;
+    flex: none;
+}
+.pub .brand-mark__page {
+    fill: #ffffff;
+}
+.pub .brand-mark__fold {
+    fill: var(--selection-bg, #ffd34d);
+}
+.pub .brand-mark__n {
+    fill: var(--header-bg, #0051ba);
+}
+:root[data-theme='dark'] .pub .brand-mark__page {
+    fill: #e8ecf4;
+}
+.pub .brand-wordmark {
+    display: none;
+    font-family: var(--font-serif);
+    font-size: 23px;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    line-height: 1;
+    white-space: nowrap;
+}
+@media (min-width: 1280px) {
+    .pub:not([data-page='home']) .brand-wordmark {
+        display: inline;
+    }
+}
+
+/* ---------- Page headings: the section masthead ---------- */
+.pub .page-heading h1 {
+    font-family: var(--font-serif);
+    font-weight: 800;
+    font-size: clamp(36px, 6vw, 64px);
+    line-height: 1;
+    letter-spacing: -0.02em;
+}
+.pub .page-heading .page-eyebrow {
+    color: var(--accent);
+    font-weight: 800;
+    letter-spacing: 0.12em;
+}
+@media (min-width: 1024px) {
+    .pub .page-heading {
+        margin-bottom: 22px;
+        padding-bottom: 20px;
+        border-bottom: 4px double var(--text);
+    }
+    .pub .page-heading:has(.section-nav) {
+        padding-bottom: 0;
+    }
+}
+
+/* ---------- Section navigation ---------- */
+.pub .section-nav {
+    margin-top: 16px;
+}
+.pub .section-nav .section-select {
+    margin: 0;
+}
+.pub .section-tabs {
+    display: none;
+}
+@media (min-width: 1024px) {
+    .pub .section-tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0 4px;
+    }
+    .pub .section-tabs a {
+        display: flex;
+        align-items: center;
+        min-height: 46px;
+        padding: 0 14px;
+        border-bottom: 4px solid transparent;
+        color: var(--text);
+        font-size: 15px;
+        font-weight: 600;
+        text-decoration: none;
+    }
+    .pub .section-tabs a:hover {
+        border-bottom-color: var(--row-border);
+    }
+    .pub .section-tabs a[aria-current='page'] {
+        border-bottom-color: var(--accent);
+        color: var(--accent);
+        font-weight: 800;
+    }
+    .pub .section-nav .section-select {
+        display: none;
+    }
+}
+
+/* Page headings: section-colored eyebrow & subnav tabs on desktop */
+:root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+    .pub
+    .page-heading[data-section='news']
+    .page-eyebrow,
+:root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+    .pub
+    .page-heading[data-section='news']
+    .section-tabs
+    a[aria-current='page'] {
+    color: #1d4ed8;
+    border-bottom-color: #1d4ed8;
+}
+:root[data-theme='dark']:is([data-color-scheme], :not([data-color-scheme]))
+    .pub
+    .page-heading[data-section='news']
+    .page-eyebrow,
+:root[data-theme='dark']:is([data-color-scheme], :not([data-color-scheme]))
+    .pub
+    .page-heading[data-section='news']
+    .section-tabs
+    a[aria-current='page'] {
+    color: #60a5fa;
+    border-bottom-color: #60a5fa;
+}
+:root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+    .pub
+    .page-heading[data-section='sports']
+    .page-eyebrow,
+:root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+    .pub
+    .page-heading[data-section='sports']
+    .section-tabs
+    a[aria-current='page'] {
+    color: #166534;
+    border-bottom-color: #166534;
+}
+:root[data-theme='dark']:is([data-color-scheme], :not([data-color-scheme]))
+    .pub
+    .page-heading[data-section='sports']
+    .page-eyebrow,
+:root[data-theme='dark']:is([data-color-scheme], :not([data-color-scheme]))
+    .pub
+    .page-heading[data-section='sports']
+    .section-tabs
+    a[aria-current='page'] {
+    color: #4ade80;
+    border-bottom-color: #4ade80;
+}
+:root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+    .pub
+    .page-heading[data-section='entertainment']
+    .page-eyebrow,
+:root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+    .pub
+    .page-heading[data-section='entertainment']
+    .section-tabs
+    a[aria-current='page'] {
+    color: #be185d;
+    border-bottom-color: #be185d;
+}
+:root[data-theme='dark']:is([data-color-scheme], :not([data-color-scheme]))
+    .pub
+    .page-heading[data-section='entertainment']
+    .page-eyebrow,
+:root[data-theme='dark']:is([data-color-scheme], :not([data-color-scheme]))
+    .pub
+    .page-heading[data-section='entertainment']
+    .section-tabs
+    a[aria-current='page'] {
+    color: #f472b6;
+    border-bottom-color: #f472b6;
+}
+:root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+    .pub
+    .page-heading[data-section='tech']
+    .page-eyebrow,
+:root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+    .pub
+    .page-heading[data-section='tech']
+    .section-tabs
+    a[aria-current='page'] {
+    color: #5b21b6;
+    border-bottom-color: #5b21b6;
+}
+:root[data-theme='dark']:is([data-color-scheme], :not([data-color-scheme]))
+    .pub
+    .page-heading[data-section='tech']
+    .page-eyebrow,
+:root[data-theme='dark']:is([data-color-scheme], :not([data-color-scheme]))
+    .pub
+    .page-heading[data-section='tech']
+    .section-tabs
+    a[aria-current='page'] {
+    color: #c084fc;
+    border-bottom-color: #c084fc;
+}
+:root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+    .pub
+    .page-heading[data-section='watch']
+    .page-eyebrow {
+    color: #b45309;
+}
+:root[data-theme='dark']:is([data-color-scheme], :not([data-color-scheme]))
+    .pub
+    .page-heading[data-section='watch']
+    .page-eyebrow {
+    color: #fbbf24;
+}
+:root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+    .pub
+    .page-heading[data-section='tools']
+    .page-eyebrow {
+    color: #475569;
+}
+:root[data-theme='dark']:is([data-color-scheme], :not([data-color-scheme]))
+    .pub
+    .page-heading[data-section='tools']
+    .page-eyebrow {
+    color: #94a3b8;
+}
+@media (max-width: 1023px) {
+    .pub .section-nav--few .section-tabs {
+        display: grid;
+        grid-auto-flow: column;
+        grid-auto-columns: minmax(0, 1fr);
+        padding: 4px;
+        border-radius: 12px;
+        background: var(--pill-bg);
+    }
+    .pub .section-nav--few .section-tabs a {
+        display: grid;
+        place-items: center;
+        min-height: 44px;
+        padding: 0 6px;
+        border-radius: 9px;
+        color: var(--text-2);
+        font-size: 14px;
+        font-weight: 600;
+        text-align: center;
+        text-decoration: none;
+    }
+    .pub .section-nav--few .section-tabs a[aria-current='page'] {
+        background: var(--surface);
+        color: var(--text);
+        font-weight: 800;
+        box-shadow: 0 1px 2px rgb(0 0 0 / 0.12);
+    }
+    .pub .section-nav--few .section-select {
+        display: none;
+    }
+    .pub .section-nav--many .section-select {
+        flex-direction: row;
+        align-items: center;
+        gap: 10px;
+        max-width: none;
+    }
+    .pub .section-nav--many .section-select label {
+        flex: none;
+        color: var(--text-2);
+        font-size: 13px;
+        font-weight: 700;
+    }
+    .pub .section-nav--many .section-select select {
+        flex: 1 1 auto;
+        min-height: 48px;
+        font-size: 16px;
+        font-weight: 600;
+    }
+}
+
+/* ---------- Headlines in the serif ---------- */
+.pub .feed .title,
+.pub .d-lead__title,
+.pub .d-story__title,
+.pub .d-headline-shelf__title,
+.pub .front-strip h2,
+.pub .d-hello h1 {
+    font-family: var(--font-serif);
+    letter-spacing: -0.005em;
+}
+.pub .feed .title {
+    font-weight: 700;
+}
+.pub .paper-label {
+    padding-bottom: 4px;
+    border-bottom: 2px solid var(--text);
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+/* ---------- Cards: flat paper instead of the ribbon's soft shadows ---------- */
+:root:is([data-color-scheme], :not([data-color-scheme])) .pub .d-card {
+    border-radius: 14px;
+    box-shadow: none;
+}
+@media (min-width: 1024px) {
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .d-card__title {
+        font-size: 13px;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .d-card__head {
+        border-bottom: 2px solid var(--text);
+    }
+
+    /* Home section headings: section-colored left accent line on broadsheet cards */
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .bs-home
+        :is([data-home-section='news'], [data-home-section='lead'], [data-home-section='opinion'])
+        .d-card__title {
+        border-left: 3px solid #1d4ed8;
+        padding-left: 7px;
+    }
+    :root[data-theme='dark']:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .bs-home
+        :is([data-home-section='news'], [data-home-section='lead'], [data-home-section='opinion'])
+        .d-card__title {
+        border-left-color: #60a5fa;
+    }
+
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .bs-home
+        :is(
+            [data-home-section='sports'],
+            [data-home-section='scoreboard'],
+            [data-home-section='sports-news'],
+            [data-home-section='rankings']
+        )
+        .d-card__title {
+        border-left: 3px solid #166534;
+        padding-left: 7px;
+    }
+    :root[data-theme='dark']:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .bs-home
+        :is(
+            [data-home-section='sports'],
+            [data-home-section='scoreboard'],
+            [data-home-section='sports-news'],
+            [data-home-section='rankings']
+        )
+        .d-card__title {
+        border-left-color: #4ade80;
+    }
+
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .bs-home
+        :is(
+            [data-home-section='entertainment-news'],
+            [data-home-section='movies'],
+            [data-home-section='tv'],
+            [data-home-section='digital'],
+            [data-home-section='forecasts']
+        )
+        .d-card__title {
+        border-left: 3px solid #be185d;
+        padding-left: 7px;
+    }
+    :root[data-theme='dark']:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .bs-home
+        :is(
+            [data-home-section='entertainment-news'],
+            [data-home-section='movies'],
+            [data-home-section='tv'],
+            [data-home-section='digital'],
+            [data-home-section='forecasts']
+        )
+        .d-card__title {
+        border-left-color: #f472b6;
+    }
+
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .bs-home
+        [data-home-section='tech-news']
+        .d-card__title {
+        border-left: 3px solid #5b21b6;
+        padding-left: 7px;
+    }
+    :root[data-theme='dark']:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .bs-home
+        [data-home-section='tech-news']
+        .d-card__title {
+        border-left-color: #c084fc;
+    }
+
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .bs-home
+        :is([data-home-section='watch'], [data-home-section='videos'])
+        .d-card__title {
+        border-left: 3px solid #b45309;
+        padding-left: 7px;
+    }
+    :root[data-theme='dark']:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .bs-home
+        :is([data-home-section='watch'], [data-home-section='videos'])
+        .d-card__title {
+        border-left-color: #fbbf24;
+    }
+}
+
+/* ---------- Home: phone order ---------- */
+/* Column wrappers vanish on phones so every section joins one list, ordered for the phone layout. */
+.pub .bs-home {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+.pub .bs-masthead,
+.pub .bs-front,
+.pub .bs-more,
+.pub .bs-col {
+    display: contents;
+}
+:root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-home [data-home-section],
+.pub .bs-home > section,
+.pub .bs-title,
+.pub .bs-live {
+    order: 50;
+}
+.pub .bs-home .bs-title {
+    order: 0;
+}
+:root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-home [data-home-section='watch'] {
+    order: 1;
+}
+.pub .bs-home .bs-glance {
+    order: 2;
+}
+.pub .bs-home .bs-live {
+    order: 3;
+}
+:root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-home [data-home-section='sports'] {
+    order: 4;
+}
+:root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-home [data-home-section='lead'] {
+    order: 5;
+}
+:root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-home [data-home-section='news'] {
+    order: 6;
+}
+:root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-home [data-home-section='opinion'] {
+    order: 7;
+}
+:root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-home [data-home-section='sports-news'] {
+    order: 8;
+}
+:root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-home [data-home-section='entertainment-news'],
+:root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-home [data-home-section='tech-news'] {
+    order: 9;
+}
+:root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-home [data-home-section='scoreboard'] {
+    order: 10;
+}
+:root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-home [data-home-section='rankings'] {
+    order: 11;
+}
+:root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-home [data-home-section='videos'] {
+    order: 12;
+}
+:root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-home [data-home-section='forecasts'] {
+    order: 13;
+}
+:root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-home [data-home-section='tv'] {
+    order: 14;
+}
+:root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-home [data-home-section='movies'] {
+    order: 15;
+}
+:root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-home [data-home-section='digital'] {
+    order: 16;
+}
+.pub .bs-home [hidden] {
+    display: none;
+}
+/* Friday theater releases: their own full-width row under the front (Fridays only). */
+.pub .bs-friday {
+    margin-top: 32px;
+}
+.pub .bs-band {
+    display: none;
+}
+
+/* Title block: greeting and date on phones (the header carries the mark). */
+.pub .bs-title {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 2px 12px;
+}
+.pub .bs-title__name {
+    display: none;
+}
+.pub .bs-title__greeting {
+    margin: 0;
+    font-family: var(--font-serif);
+    font-size: 30px;
+    font-weight: 800;
+    line-height: 1.1;
+}
+.pub .bs-title__date {
+    grid-column: 1;
+    margin: 0;
+    color: var(--text-2);
+    font-size: 14px;
+}
+.pub .bs-title .home-refresh {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+}
+
+/* Ears: Where to watch and live scores (from 1024px Where to watch is a band under the masthead). */
+.pub .bs-ear {
+    padding: 14px 16px 16px;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: var(--surface);
+}
+.pub .bs-ear__title {
+    margin: 0 0 10px;
+    font-size: 20px;
+    font-weight: 800;
+}
+.pub .bs-watch__search label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+}
+.pub .bs-watch .watch-search-row {
+    display: flex;
+    gap: 8px;
+}
+.pub .bs-watch input {
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 52px;
+    font-size: 17px;
+}
+.pub .bs-watch .nf-btn {
+    min-height: 52px;
+}
+.pub .bs-live .bs-ear__title {
+    color: var(--live, #b0001e);
+    font-size: 13px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+:root[data-theme='dark'] .pub .bs-live .bs-ear__title {
+    color: #ff8a99;
+}
+.pub .bs-live__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+.pub .bs-live__list a {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 48px;
+    padding: 6px 0;
+    border-top: 1px solid var(--row-border);
+    color: var(--text);
+    text-decoration: none;
+}
+.pub .bs-live__score {
+    font-size: 15px;
+    font-weight: 700;
+}
+.pub .bs-live__clock {
+    color: var(--text-2);
+    font-size: 12px;
+}
+
+/* At a glance: the forecast as a lead period (with the night's low) and the periods after it. Stacked in the
+   desktop ear; a row on tablets and from 1920px. */
+.pub .bs-glance {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-content: start;
+    gap: 12px;
+    min-width: 0;
+}
+.pub .bs-glance__lead {
+    display: grid;
+    align-content: start;
+    gap: 8px;
+    min-width: 0;
+}
+.pub .bs-glance__title {
+    margin: 0;
+    color: var(--text-2);
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+.pub .bs-glance__now {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 0;
+    font-family: var(--font-serif);
+    font-weight: 700;
+    line-height: 1;
+}
+/* One ink for every icon in the strip; the coloured sun, storm and snow tints stay on the full forecast. */
+.pub .bs-glance .weather-icon {
+    color: var(--text);
+}
+.pub .bs-glance__now .weather-icon {
+    flex: none;
+    width: 44px;
+    height: 44px;
+}
+.pub .bs-glance__temp {
+    font-size: 48px;
+}
+.pub .bs-glance__low {
+    color: var(--text-2);
+    font-size: 26px;
+}
+.pub .bs-glance__summary {
+    max-width: 46ch;
+    margin: 0;
+    font-family: var(--font-serif);
+    font-size: 16px;
+    line-height: 1.4;
+}
+.pub .bs-glance__next {
+    display: grid;
+    align-content: start;
+    min-width: 0;
+}
+.pub .bs-glance__periods {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border-top: 1px solid var(--row-border);
+}
+.pub .bs-glance__periods li {
+    display: grid;
+    grid-template-columns: 24px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--row-border);
+}
+.pub .bs-glance__periods .weather-icon {
+    width: 24px;
+    height: 24px;
+}
+.pub .bs-glance__period {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+}
+.pub .bs-glance__name {
+    font-size: 14px;
+    font-weight: 700;
+}
+.pub .bs-glance__reading {
+    color: var(--text-2);
+    font-size: 13px;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
+}
+.pub .bs-glance__high {
+    font-family: var(--font-serif);
+    font-size: 24px;
+    font-variant-numeric: tabular-nums;
+}
+.pub .bs-glance__next > .d-more {
+    justify-self: start;
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+}
+
+.pub .tt-team {
+    font-weight: 650;
+}
+.pub .tt-team .team-record {
+    margin-left: 4px;
+    color: var(--text-2);
+    font-size: 12px;
+    font-weight: 400;
+}
+.pub .tt-sep {
+    margin: 0 4px;
+    color: var(--text-2);
+    font-size: 13px;
+}
+
+/* Today & Tonight: the day-part headings, each over Sports' Upcoming timeline (spf-timeline in sections.css). */
+.pub .bs-tonight__groups {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+.pub .bs-tonight__match {
+    display: block;
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.3;
+}
+/* The network as the stream link: one line in the meta, a play mark before it, the row's own tap target. */
+.pub .spf-timeline__meta .bs-tonight__stream {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 800;
+    line-height: inherit;
+    text-decoration: none;
+}
+.pub .spf-timeline__meta .bs-tonight__stream:hover {
+    text-decoration: underline;
+}
+.pub .bs-tonight__stream svg {
+    flex: none;
+    width: 8px;
+    height: 8px;
+}
+.pub .bs-tonight__note {
+    margin: 0 0 4px;
+    padding: 0 16px;
+    color: var(--text-2);
+    font-size: 12px;
+}
+.pub .bs-tonight__group > .spf-timeline {
+    margin: 8px 0 4px;
+}
+.pub .bs-tonight__group:not(:has(.spf-timeline__item:not([hidden]))) {
+    display: none;
+}
+.pub .bs-tonight__heading {
+    margin: 12px 0 2px;
+    padding-bottom: 3px;
+    border-bottom: 2px solid var(--text);
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+/* Today & Tonight: rows past the fifth, and any heading left with nothing to show. */
+.pub .bs-tonight [data-home-over] {
+    display: none;
+}
+.pub .bs-tonight .bs-tonight__group:not(:has(.spf-timeline__item:not([hidden], [data-home-over]))) {
+    display: none;
+}
+.pub .bs-tonight__more {
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
+    margin-top: 4px;
+}
+.pub .d-headline-shelf__kicker {
+    display: block;
+    margin-bottom: 2px;
+    color: var(--accent);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+/* ---------- Home: desktop broadsheet ---------- */
+@media (min-width: 1024px) {
+    .pub .bs-home {
+        display: block;
+    }
+    .pub .bs-masthead {
+        display: grid;
+        grid-template-columns: minmax(300px, 1fr) minmax(0, 1.5fr) minmax(300px, 1fr);
+        align-items: center;
+        gap: 24px;
+        padding: 6px 0 22px;
+        border-bottom: 4px double var(--text);
+    }
+    .pub .bs-masthead > .bs-glance {
+        grid-column: 1;
+        grid-row: 1;
+    }
+    .pub .bs-masthead > .bs-title {
+        grid-column: 2;
+        grid-row: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+    /* The two ears match in height either side of the title. */
+    .pub .bs-masthead > .bs-live {
+        grid-column: 3;
+        grid-row: 1;
+        align-self: stretch;
+    }
+    .pub .bs-title__name {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+        margin: 0;
+        font-family: var(--font-serif);
+        font-size: clamp(52px, 5.4vw, 76px);
+        font-weight: 800;
+        line-height: 1;
+        letter-spacing: -0.02em;
+    }
+    .pub .bs-title__mark {
+        flex: none;
+        width: 0.9em;
+        height: 0.9em;
+    }
+    .pub .bs-title__greeting {
+        margin-top: 10px;
+        font-size: 20px;
+        font-style: italic;
+        font-weight: 500;
+    }
+    .pub .bs-title__date {
+        margin-top: 2px;
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+    }
+    .pub .bs-title .home-refresh {
+        margin-top: 10px;
+        min-height: 44px;
+    }
+    /* Where to watch: a full-width band under the masthead, the title beside the search. */
+    .pub .bs-watch {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        align-items: center;
+        gap: 24px;
+        margin-top: 18px;
+        padding: 16px 20px;
+        border: 0;
+        background: var(--btn-bg);
+        color: var(--btn-fg, #ffffff);
+    }
+    .pub .bs-watch .bs-ear__title {
+        margin: 0;
+        color: var(--btn-fg, #ffffff);
+        font-size: 22px;
+    }
+    .pub .bs-watch__search {
+        max-width: none;
+        margin: 0;
+    }
+    .pub .bs-watch input {
+        border: 0;
+        min-height: 50px;
+        font-size: 16px;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-watch .nf-btn--primary {
+        min-height: 50px;
+        background: var(--selection-bg, #ffd34d);
+        color: var(--selection-fg, #141b2b);
+        font-weight: 800;
+    }
+    .pub .bs-live {
+        border: 2px solid var(--text);
+        background: transparent;
+    }
+    /* The forecast is the masthead's left ear, outlined like Coming up. */
+    .pub .bs-glance {
+        align-self: stretch;
+        padding: 14px 16px 4px;
+        border: 2px solid var(--text);
+        border-radius: 16px;
+    }
+    .pub .bs-front {
+        display: grid;
+        grid-template-columns: minmax(280px, 1fr) minmax(0, 2fr) minmax(280px, 1fr);
+        padding-top: 20px;
+    }
+    /* .bs-more has no side column (docs/home-wide-rebalance-handoff.md §1.4). */
+    .pub .bs-more {
+        display: grid;
+        grid-template-columns: minmax(280px, 1fr) minmax(0, 3fr);
+        padding-top: 20px;
+    }
+    .pub .bs-col {
+        display: flex;
+        flex-direction: column;
+        gap: 28px;
+        min-width: 0;
+        padding: 0 24px;
+    }
+    .pub .bs-col:first-child {
+        padding-left: 0;
+    }
+    .pub .bs-col:last-child {
+        padding-right: 0;
+    }
+    .pub .bs-col + .bs-col {
+        border-left: 1px solid var(--row-border);
+    }
+    .pub .bs-band {
+        display: block;
+        margin: 40px 0 0;
+        padding: 10px 0;
+        border-top: 4px double var(--text);
+        border-bottom: 1px solid var(--text);
+        font-family: var(--font-serif);
+        font-size: 28px;
+        font-weight: 800;
+    }
+
+    /* Sections become ruled newspaper columns rather than boxed cards. */
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-home .d-card {
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        overflow: visible;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-home .d-card__head {
+        min-height: 44px;
+        padding: 0 0 4px;
+    }
+    .pub .bs-home .bs-tonight__note,
+    .pub .bs-home .d-headline-shelf__list {
+        padding-left: 0;
+        padding-right: 0;
+    }
+    .pub .bs-home .d-tonight-title,
+    .pub .bs-home .bs-tonight .d-card__title {
+        font-family: var(--font-serif);
+        font-size: 28px;
+        letter-spacing: 0;
+        text-transform: none;
+    }
+    .pub .bs-home .bs-tonight .d-card__head {
+        border-bottom: 0;
+    }
+    .pub .bs-home .d-headline-shelf__title,
+    .pub .bs-home .d-headline-shelf__list a {
+        font-family: var(--font-serif);
+        font-size: 19px;
+        font-weight: 700;
+    }
+}
+
+/* ---------- Home: refinements ---------- */
+.pub .bs-mark-tile,
+.pub .bs-mark-n {
+    fill: var(--header-bg, #0051ba);
+}
+.pub .bs-mark-page {
+    fill: #ffffff;
+}
+.pub .bs-mark-fold {
+    fill: var(--selection-bg, #ffd34d);
+}
+:root[data-theme='dark'] .pub .bs-mark-page {
+    fill: #e8ecf4;
+}
+.pub .bs-title__greeting:focus {
+    outline: none;
+} /* Blazor focuses the first h1 after navigation; it is not interactive */
+:root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-home .d-card__title {
+    border-left: 0;
+    padding-left: 0;
+}
+.pub .tt-team .team-record {
+    display: inline;
+    margin-top: 0;
+}
+@media (min-width: 1024px) {
+    .pub .bs-title__name {
+        font-size: clamp(44px, 4.3vw, 64px);
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-home .d-card__count {
+        font-size: 12px;
+        font-weight: 400;
+        letter-spacing: 0;
+        text-transform: none;
+    }
+    /* Lead story as on the front page concept: kicker, headline, summary, then the picture and tools. */
+    .pub .bs-home .d-lead__story {
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        padding-top: 16px;
+    }
+    .pub .bs-home .d-lead__body {
+        display: contents;
+    }
+    .pub .bs-home .d-lead__source {
+        order: 1;
+        margin: 4px 0 8px;
+    }
+    .pub .bs-home .d-lead__title {
+        order: 2;
+        margin: 0 0 10px;
+        font-size: 48px;
+        line-height: 1.05;
+    }
+    .pub .bs-home .d-lead__summary {
+        order: 3;
+        margin: 0 0 14px;
+        font-family: var(--font-serif);
+        font-size: 20px;
+        line-height: 1.45;
+    }
+    .pub .bs-home .d-lead__image {
+        order: 4;
+        height: 300px;
+        min-height: 0;
+        aspect-ratio: auto;
+    }
+    .pub .bs-home .d-lead__image:not(:has(img, .ph)) {
+        display: none;
+    }
+    .pub .bs-home .d-lead__meta {
+        order: 5;
+        margin-top: 6px;
+    }
+    /* Opinion in the side column is text only: the piece, its publisher and the tools. */
+    .pub .bs-home .d-opinion .d-story {
+        display: block;
+        padding: 8px 0 0;
+    }
+    .pub .bs-home .d-opinion .d-thumb {
+        display: none;
+    }
+    /* Keep the existing photo treatment, but give an absent opinion photo its P8 thumbnail. */
+    .pub .bs-home .d-opinion .d-thumb:has(> .ph):not(:has(> img)) {
+        display: block;
+        float: right;
+        width: 96px;
+        height: 72px;
+        margin: 8px 0 8px 12px;
+    }
+
+    .pub .bs-home .d-opinion .d-src {
+        padding: 0;
+        background: none;
+        color: var(--text-2);
+        font-size: 12px;
+    }
+    /* Headlines under the lead: two columns, each with its category above it. */
+    .pub .bs-home .bs-col--main .d-headline-shelf__list {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        column-gap: 24px;
+    }
+    .pub .bs-home .bs-col--main .d-headline-shelf__list > li {
+        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-rows: auto auto;
+        align-items: end;
+        align-content: start;
+        padding: 14px 0 6px;
+    }
+    .pub .bs-home .bs-col--main .d-headline-shelf__body {
+        display: contents;
+    }
+    .pub .bs-home .bs-col--main .d-headline-shelf__body > :not(.d-headline-shelf__source) {
+        grid-column: 1 / -1;
+    }
+    .pub .bs-home .bs-col--main .d-headline-shelf__source {
+        align-self: center;
+    }
+    /* Sports briefs closing the side column: plain agate lines, not serif headlines. */
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .bs-home
+        .bs-col--side
+        [data-home-section='sports-news'] {
+        order: 14;
+    }
+    .pub .bs-home .bs-col--side .d-headline-shelf__list a {
+        font-family: inherit;
+        font-size: 14px;
+        font-weight: 600;
+        line-height: 1.35;
+    }
+    /* F1 folded into Today & Tonight takes a section label, not a second serif title. */
+    .pub .bs-home .bs-tonight .d-f1--embedded .d-card__title {
+        font-family: inherit;
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+    }
+    .pub .bs-home .bs-tonight .d-f1--embedded .d-card__head {
+        margin-top: 16px;
+        border-bottom: 2px solid var(--text);
+    }
+    .pub .bs-home .d-opinion .d-story__title {
+        font-size: 22px;
+        font-style: italic;
+        font-weight: 500;
+        line-height: 1.3;
+    }
+}
+@media (min-width: 1024px) {
+    /* Box office reads as a three-line agate table: rank, title, weekend gross. */
+    .pub .bs-home :is(.bs-col--side, .bs-col--left) .boxoffice-movie:nth-child(n + 6),
+    .pub .bs-home :is(.bs-col--side, .bs-col--left) .d-forecasts > .updated,
+    .pub .bs-home :is(.bs-col--side, .bs-col--left) .boxoffice-movie-body > :not(h4, dl),
+    .pub .bs-home :is(.bs-col--side, .bs-col--left) .boxoffice-stats > :not(:first-child),
+    .pub .bs-home :is(.bs-col--side, .bs-col--left) .boxoffice-stats dt {
+        display: none;
+    }
+    .pub .bs-home :is(.bs-col--side, .bs-col--left) .boxoffice-chart {
+        padding: 0;
+    }
+    .pub .bs-home :is(.bs-col--side, .bs-col--left) .boxoffice-forecast-date {
+        margin: 8px 0 2px;
+        color: var(--text-2);
+        font-size: 13px;
+        font-weight: 700;
+    }
+    .pub .bs-home :is(.bs-col--side, .bs-col--left) .boxoffice-movie-body {
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+        min-width: 0;
+    }
+    .pub .bs-home :is(.bs-col--side, .bs-col--left) .boxoffice-movie-body h4 {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+    .pub .bs-home :is(.bs-col--side, .bs-col--left) .boxoffice-chart {
+        gap: 0;
+    }
+    .pub .bs-home :is(.bs-col--side, .bs-col--left) .boxoffice-movie {
+        align-items: baseline;
+        gap: 10px;
+        padding: 9px 0;
+        border: 0;
+        border-bottom: 1px dotted var(--row-border);
+        border-radius: 0;
+        background: transparent;
+    }
+    .pub .bs-home :is(.bs-col--side, .bs-col--left) .boxoffice-poster,
+    .pub .bs-home :is(.bs-col--side, .bs-col--left) .boxoffice-movie .updated {
+        display: none;
+    }
+    .pub .bs-home :is(.bs-col--side, .bs-col--left) .boxoffice-rank {
+        width: 22px;
+        color: var(--accent);
+        font-family: var(--font-serif);
+        font-size: 18px;
+        font-weight: 800;
+    }
+    .pub .bs-home :is(.bs-col--side, .bs-col--left) .boxoffice-movie h4 {
+        margin: 0 0 2px;
+        font-size: 15px;
+    }
+    .pub .bs-home :is(.bs-col--side, .bs-col--left) .boxoffice-stats {
+        display: block;
+        margin: 0;
+        font-variant-numeric: tabular-nums;
+    }
+    .pub .bs-home :is(.bs-col--side, .bs-col--left) .boxoffice-stats dt {
+        margin: 0;
+        font-size: 11px;
+    }
+    .pub .bs-home :is(.bs-col--side, .bs-col--left) .boxoffice-stats dd {
+        font-size: 14px;
+    }
+    /* Videos: two up, thumbnail above the title. */
+    .pub .bs-home .d-vids .d-list {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0 24px;
+    }
+    .pub .bs-home .d-vid {
+        grid-template-columns: minmax(0, 1fr);
+        padding: 14px 0;
+    }
+    /* F1 race weekend folded into Today & Tonight: one race per row. */
+    .pub .bs-home .bs-col--left .d-f1__body {
+        grid-template-columns: minmax(0, 1fr);
+        padding: 12px 0;
+    }
+}
+
+.pub .tt-team .team-record {
+    white-space: nowrap;
+}
+/* Phones and tablets: as on the phone concept, Where to watch sits right under the header. The greeting and Refresh
+   share one short row (the header already shows the date). The forecast is a 2 × 2 grid on phones, which holds up
+   with large system text, and a four-across strip on tablets. */
+@media (max-width: 1023px) {
+    .pub .bs-title__greeting {
+        font-size: 22px;
+    }
+    .pub .bs-title__date {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+    }
+    .pub .bs-title .home-refresh {
+        grid-row: 1;
+    }
+    .pub .bs-watch__search {
+        margin: 0;
+    }
+    .pub .bs-watch__search label {
+        margin: 0;
+    }
+}
+/* ---------- Desktop paper ---------- */
+@media (min-width: 1024px) {
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub {
+        background: var(--surface);
+    }
+}
+
+/* Box office: room for the Predicted figure beside the reported ones. */
+.pub .boxoffice-stats {
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+}
+
+/* TV: a batch drop lists its episode titles on demand. */
+.pub .tv-batch summary {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    color: var(--accent);
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+}
+.pub .tv-batch ul {
+    margin: 0 0 4px;
+    padding-left: 18px;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+/* ---------- "More from today" on desktop: the same ruled-column style as the front page ---------- */
+@media (min-width: 1024px) {
+    /* Content starts at the column edge, like the front page; the phone cards' inner padding goes. */
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-more .d-scoreboard .scoreboard-note,
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-more .d-scoreboard p.updated,
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-more .d-scoreboard .scoreboard-home-filter,
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-more .d-rankings__body,
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-more .d-tv__credit {
+        margin-left: 0;
+        margin-right: 0;
+        padding-left: 0;
+        padding-right: 0;
+    }
+    /* Top 25 fits the column without sideways scrolling. */
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-more .d-rankings__table table {
+        width: 100%;
+        min-width: 0;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-more .d-rankings__table th,
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-more .d-rankings__table td {
+        padding-left: 4px;
+        padding-right: 4px;
+        font-size: 13px;
+    }
+    /* Scoreboard as agate: competition and status, one line per team with its score, the state of play. */
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-more .d-scoreboard .scoreboard-games {
+        display: block;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-more .d-scoreboard .scoreboard-game {
+        margin: 0;
+        padding: 8px 0;
+        border: 0;
+        border-bottom: 1px dotted var(--row-border);
+        border-radius: 0;
+        background: transparent;
+        box-shadow: none;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-more .d-scoreboard .scoreboard-game-heading,
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-more .d-scoreboard .scoreboard-matchup,
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-more .d-scoreboard .scoreboard-context,
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-more .d-scoreboard .scoreboard-footer {
+        margin: 0;
+        padding: 0;
+        border: 0;
+        background: transparent;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-more .d-scoreboard .scoreboard-game-heading {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 2px;
+        color: var(--text-2);
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-more .d-scoreboard .scoreboard-status {
+        padding: 0;
+        border-radius: 0;
+        background: none;
+        color: var(--text-2);
+        font-size: 11px;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-more .d-scoreboard .scoreboard-live {
+        color: var(--live, #b0001e);
+    }
+    :root[data-theme='dark'] .pub .bs-more .d-scoreboard .scoreboard-live {
+        color: #ff8a99;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-more .d-scoreboard .scoreboard-matchup {
+        display: grid;
+        gap: 0;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-more .d-scoreboard .scoreboard-team {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 8px;
+        min-height: 0;
+        padding: 1px 0;
+        font-size: 14px;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-more .d-scoreboard .team-badge {
+        width: 18px;
+        height: 18px;
+        flex: none;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-more .d-scoreboard .team__name {
+        font-size: 14px;
+        font-weight: 600;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-more .d-scoreboard .scoreboard-winner .team__name,
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .bs-more
+        .d-scoreboard
+        .scoreboard-winner
+        .scoreboard-score {
+        font-weight: 800;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-more .d-scoreboard .scoreboard-score {
+        font-size: 15px;
+        font-variant-numeric: tabular-nums;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-more .d-scoreboard .team-record,
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-more .d-scoreboard .scoreboard-favorite,
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-more .d-scoreboard .scoreboard-context p + p,
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-more .d-scoreboard .scoreboard-updated {
+        display: none;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-more .d-scoreboard .scoreboard-context p {
+        margin: 2px 0 0;
+        color: var(--text-2);
+        font-size: 12px;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-more .d-scoreboard .scoreboard-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0 14px;
+        margin-top: 2px;
+        font-size: 12px;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-more .d-scoreboard .scoreboard-actions a {
+        min-height: 0;
+        padding: 0;
+    }
+}
+
+/* A theater or digital releases section with nothing to list is left out rather than showing an empty state. */
+:root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-home .d-movies:not(:has(.d-list)) {
+    display: none;
+}
+
+/* ---------- Site header, as in the approved concepts ---------- */
+/* Phones and tablets: a coloured bar with the page mark, the date and time, Saved, a theme toggle and a Menu button. The menu is a
+   native disclosure that opens a full-height sheet of every section below the bar. The header keeps this bar up to
+   1023px even though page layouts switch to desktop at 1024px (iPad portrait): seven section links and the actions do
+   not fit in one row below 1024px. */
+@media (max-width: 1023px) {
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme])) .pub .site-header {
+        flex-wrap: nowrap;
+        gap: 10px;
+        min-height: 64px;
+        height: auto;
+        padding: 10px 16px;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme])) .pub .brand-tile,
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme])) .pub .brand-wordmark,
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+        .pub
+        .site-nav--inline,
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+        .pub
+        .header-actions
+        > .settings-link,
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+        .pub
+        .header-actions
+        > .adm-link {
+        display: none;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme])) .pub .header-clock {
+        order: 0;
+        flex: 1 1 auto;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0;
+        min-width: 0;
+        padding: 0;
+        font-size: 12px;
+        line-height: 1.3;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+        .pub
+        .header-clock__date {
+        display: none;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+        .pub
+        .header-clock__date-compact {
+        display: inline;
+        font-size: 13px;
+        font-weight: 700;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+        .pub
+        .header-clock__time {
+        opacity: 0.85;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme])) .pub .header-actions {
+        display: flex;
+        flex: none;
+        align-items: center;
+        gap: 8px;
+        margin-left: auto;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme])) .pub .saved-link,
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+        .pub
+        .header-actions
+        > .theme-toggle {
+        position: relative;
+        display: grid;
+        place-items: center;
+        width: 44px;
+        height: 44px;
+        border: 1px solid var(--header-line);
+        border-radius: 10px;
+        color: var(--header-fg);
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+        .pub
+        .header-actions
+        > .theme-toggle {
+        background: transparent;
+        order: -1;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme])) .pub .saved-link {
+        order: -2;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+        .pub
+        .saved-link__label {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme])) .pub .mobile-nav {
+        padding: 0;
+        border: 0;
+        background: none;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+        .pub
+        .mobile-nav
+        > summary {
+        display: grid;
+        place-items: center;
+        width: 44px;
+        height: 44px;
+        min-height: 44px;
+        padding: 0;
+        border: 1px solid var(--header-line);
+        border-radius: 10px;
+        color: var(--header-fg);
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+        .pub
+        .mobile-nav__close,
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+        .pub
+        .mobile-nav[open]
+        .mobile-nav__open {
+        display: none;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+        .pub
+        .mobile-nav[open]
+        .mobile-nav__close {
+        display: block;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+        .pub
+        .mobile-nav__links {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        height: calc(100dvh - 100%);
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        gap: 0;
+        padding: 8px 16px 64px;
+        background: var(--surface);
+        color: var(--text);
+        box-shadow: 0 1px 0 var(--row-border);
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+        .pub
+        .mobile-nav__links
+        a,
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+        .pub
+        .mobile-nav__theme {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        min-height: 48px;
+        padding: 0 4px;
+        border: 0;
+        border-bottom: 1px solid var(--row-border);
+        border-radius: 0;
+        background: none;
+        color: var(--text);
+        font: inherit;
+        font-size: 17px;
+        font-weight: 600;
+        text-align: left;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+        .pub
+        .mobile-nav__links
+        a:hover {
+        background: none;
+        color: var(--accent);
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+        .pub
+        .mobile-nav__links
+        a[aria-current='page'] {
+        background: none;
+        color: var(--accent);
+        font-weight: 800;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+        .pub
+        .mobile-nav-group {
+        margin-top: 14px;
+        padding: 0;
+        border: 0;
+        border-top: 2px solid var(--text);
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+        .pub
+        .mobile-nav-group
+        .nav-group-label {
+        display: block;
+        padding: 8px 4px 2px;
+        color: var(--text-2);
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme])) .pub .mobile-subnav {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        column-gap: 16px;
+        padding: 0;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+        .pub
+        .mobile-nav__links
+        :focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: -2px;
+    }
+    .pub .mobile-nav__theme .when-dark,
+    :root[data-theme='dark'] .pub .mobile-nav__theme .when-light {
+        display: none;
+    }
+    :root[data-theme='dark'] .pub .mobile-nav__theme .when-dark {
+        display: inline;
+    }
+    body:has(.mobile-nav[open]) {
+        overflow: hidden;
+    }
+}
+@media (max-width: 359px) {
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme])) .pub .mobile-subnav {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+/* Desktop: a plain masthead row on the paper: tile mark and wordmark, the sections as text links, then Saved and
+   Settings. Home leaves the mark to its own masthead. */
+@media (min-width: 1024px) {
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme])) .pub .site-header {
+        flex-wrap: nowrap;
+        gap: 22px;
+        min-height: 0;
+        height: auto;
+        padding: 10px max(48px, calc((100% - 1344px) / 2));
+        border-bottom: 1px solid var(--row-border);
+        background: var(--surface);
+        background-image: none;
+        color: var(--text);
+        box-shadow: none;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+        .pub
+        .site-header
+        :focus-visible {
+        outline-color: var(--accent);
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme])) .pub .brand {
+        color: var(--text);
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme])) .pub .brand-mark,
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme])) .pub .header-clock,
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme])) .pub .mobile-nav {
+        display: none;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme])) .pub .brand-tile {
+        display: block;
+        flex: none;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme])) .pub .brand-wordmark {
+        display: inline;
+        font-size: 22px;
+    }
+    .pub[data-page='home'] .brand {
+        display: none;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+        .pub
+        .site-nav--inline {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0 22px;
+        margin: 0;
+        padding: 0;
+        background: none;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+        .pub
+        .site-nav--inline
+        a {
+        display: flex;
+        align-items: center;
+        min-height: 44px;
+        padding: 0;
+        border: 0;
+        border-radius: 0;
+        background: none;
+        color: var(--text);
+        font-size: 14px;
+        font-weight: 600;
+        text-decoration: none;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+        .pub
+        .site-nav--inline
+        a:hover {
+        color: var(--accent);
+        text-decoration: underline;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+        .pub
+        .site-nav--inline
+        a[aria-current] {
+        color: var(--accent);
+        font-weight: 800;
+    }
+
+    /* Section-colored top navigation on desktop */
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+        .pub
+        .site-nav--inline
+        a[href='news']:is(:hover, [aria-current]) {
+        color: #1d4ed8;
+    }
+    :root[data-theme='dark']:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .site-nav--inline
+        a[href='news']:is(:hover, [aria-current]) {
+        color: #60a5fa;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+        .pub
+        .site-nav--inline
+        a[href='sports']:is(:hover, [aria-current]) {
+        color: #166534;
+    }
+    :root[data-theme='dark']:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .site-nav--inline
+        a[href='sports']:is(:hover, [aria-current]) {
+        color: #4ade80;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+        .pub
+        .site-nav--inline
+        a[href='entertainment']:is(:hover, [aria-current]) {
+        color: #be185d;
+    }
+    :root[data-theme='dark']:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .site-nav--inline
+        a[href='entertainment']:is(:hover, [aria-current]) {
+        color: #f472b6;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+        .pub
+        .site-nav--inline
+        a[href='tech']:is(:hover, [aria-current]) {
+        color: #5b21b6;
+    }
+    :root[data-theme='dark']:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .site-nav--inline
+        a[href='tech']:is(:hover, [aria-current]) {
+        color: #c084fc;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+        .pub
+        .site-nav--inline
+        a:is([href='watch'], [href='videos']):is(:hover, [aria-current]) {
+        color: #b45309;
+    }
+    :root[data-theme='dark']:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .site-nav--inline
+        a:is([href='watch'], [href='videos']):is(:hover, [aria-current]) {
+        color: #fbbf24;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+        .pub
+        :is(.saved-link, .settings-link):is(:hover, [aria-current]) {
+        color: #475569;
+    }
+    :root[data-theme='dark']:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        :is(.saved-link, .settings-link):is(:hover, [aria-current]) {
+        color: #94a3b8;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme])) .pub .header-actions {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        margin-left: auto;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme])) .pub .saved-link,
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme])) .pub .settings-link,
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme])) .pub .adm-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        width: auto;
+        min-height: 44px;
+        padding: 0;
+        border: 0;
+        border-radius: 0;
+        background: none;
+        color: var(--text);
+        font-size: 14px;
+        font-weight: 600;
+        text-decoration: none;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme])) .pub .saved-link svg {
+        display: none;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+        .pub
+        .saved-link[aria-current],
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+        .pub
+        .settings-link[aria-current] {
+        color: var(--accent);
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme])) .pub .adm-link {
+        color: var(--text-2);
+        font-size: 13px;
+        font-weight: 500;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme])) .pub .theme-toggle {
+        width: 40px;
+        height: 40px;
+        border: 0;
+        background: none;
+        color: var(--text);
+    }
+}
+
+/* The menu sheet replaces the old dropdown's capped height, rounded groups and indented sub-lists. */
+@media (max-width: 1023px) {
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+        .pub
+        .mobile-nav__links {
+        max-height: none;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+        .pub
+        .mobile-nav-group {
+        border-radius: 0;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme])) .pub .mobile-subnav {
+        margin: 0;
+        padding: 0;
+        border: 0;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+        .pub
+        .mobile-subnav
+        a {
+        padding-left: 4px;
+    }
+}
+@media (min-width: 1024px) {
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+        .pub
+        .saved-link__count {
+        position: static;
+    }
+}
+@media (min-width: 1024px) and (max-width: 1279px) {
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme])) .pub .site-header,
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+        .pub
+        .site-nav--inline {
+        gap: 0 16px;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme])) .pub .brand-wordmark {
+        display: none;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme])) .pub .header-actions {
+        gap: 14px;
+    }
+}
+
+/* Keep header actions at 44px and the date/time readable on narrow phones. */
+@media (max-width: 374px) {
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme])) .pub .site-header {
+        gap: 2px;
+        padding-inline: 6px;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme])) .pub .header-actions {
+        gap: 4px;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+        .pub
+        .header-clock__date-compact {
+        font-size: 12px;
+    }
+}
+
+/* Four header actions keep the clock on its own row on narrow phones. */
+@media (max-width: 479px) {
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme])) .pub .site-header {
+        flex-wrap: wrap;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+        .pub
+        .site-header
+        .header-clock {
+        order: 1;
+        flex-basis: 100%;
+        flex-direction: row;
+        justify-content: center;
+        gap: 8px;
+    }
+}
+
+/* Header color-scheme shortcut and native modal. */
+.pub .scheme-toggle {
+    display: inline-grid;
+    place-items: center;
+    flex: none;
+    width: 44px;
+    height: 44px;
+    border: 1px solid var(--header-line);
+    border-radius: 10px;
+    color: inherit;
+}
+.pub .scheme-toggle:hover {
+    text-decoration: none;
+}
+@media (max-width: 1023px) {
+    .pub .scheme-toggle {
+        order: -1;
+    }
+}
+.pub .scheme-picker {
+    width: min(680px, calc(100% - 24px));
+    max-width: none;
+    max-height: calc(100dvh - 24px);
+    padding: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: var(--surface);
+    color: var(--text);
+    box-shadow: 0 20px 70px #0005;
+}
+.pub .scheme-picker:not([open]) {
+    display: none;
+}
+.pub .scheme-picker::backdrop {
+    background: #0009;
+}
+.pub .scheme-picker__head {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+}
+.pub .scheme-picker h2 {
+    margin: 0;
+    font: 800 26px/1.2 var(--font-serif);
+}
+.pub .scheme-picker__close {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 44px;
+    height: 44px;
+    border: 1px solid var(--field-border);
+    border-radius: 10px;
+    background: var(--surface);
+    color: var(--text);
+}
+.pub .scheme-picker > p {
+    margin: 16px 20px 0;
+    color: var(--text-2);
+}
+.pub .scheme-picker__choices {
+    margin: 16px 20px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.pub .scheme-picker .settings-scheme {
+    min-width: 0;
+    min-height: 60px;
+    gap: 10px;
+    padding: 12px;
+}
+.pub .scheme-picker .settings-scheme > span:last-child {
+    overflow-wrap: anywhere;
+}
+.pub .scheme-picker__footer {
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 16px 20px;
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+}
+.pub .scheme-picker__footer p {
+    width: 100%;
+    margin: 0;
+    color: var(--text-2);
+    font-size: 14px;
+}
+.pub .scheme-picker [hidden] {
+    display: none;
+}
+@media (max-width: 479px) {
+    .pub .scheme-picker__choices {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+body:has([data-scheme-dialog][open]) {
+    overflow: hidden;
+}
+
+.pub .home-latest-video__story {
+    padding-top: 16px;
+}
+.pub .home-latest-video__image {
+    position: relative;
+    display: grid;
+    place-items: center;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    border-radius: 8px;
+    background: var(--surface-2, var(--surface));
+}
+.pub .home-latest-video__image img {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.pub .home-latest-video__play {
+    z-index: 1;
+    padding: 8px 16px;
+    border-radius: 10px;
+    background: #000b;
+    color: white;
+    font-size: 24px;
+}
+.pub .home-latest-video__channel,
+.pub .home-latest-video__date {
+    margin: 12px 0 8px;
+    color: var(--text-2);
+    font-size: 13px;
+    overflow-wrap: anywhere;
+}
+.pub .home-latest-video__title {
+    margin: 0;
+    font-family: var(--font-serif);
+    font-size: 24px;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+}
+.pub .home-latest-video__title a {
+    color: inherit;
+}
+.pub .home-latest-video__actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+}
+.pub .home-latest-video :is(.save, .share-button) {
+    margin: 0;
+    flex: none;
+    min-width: 44px;
+    min-height: 44px;
+}
+.pub .home-latest-video .d-empty a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+}
+.pub .home-latest-video--embedded {
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+}
+.pub .home-latest-video--embedded .home-latest-video__story {
+    padding: 0;
+}
+.pub .home-latest-video--embedded .d-empty {
+    padding: 8px 0;
+    text-align: left;
+}
+
+/* ---------- Home, 1920px and up: four bands whose columns end together (docs/home-wide-rebalance-handoff.md) ---------- */
+@media (min-width: 1920px) {
+    .pub .bs-sheet {
+        display: block;
+        padding-top: 20px;
+    }
+    .pub .bs-sheet .bs-band {
+        display: none; /* each band's sections carry their own headings */
+    }
+
+    /* Band 1: Today & Tonight + F1 · Top story + More headlines · Box office + Today's episodes + In theaters */
+    .pub .bs-sheet .bs-front {
+        grid-template-columns: 300px minmax(0, 1fr) 380px;
+        padding: 6px 0 30px;
+        border-bottom: 2px solid var(--text);
+    }
+
+    /* The middle column splits in two: the lead (60%) and More headlines as a list beside it. */
+    .pub .bs-sheet .bs-front > .bs-col--main {
+        display: grid;
+        grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+        column-gap: 32px;
+        align-items: start;
+        padding: 0 32px;
+    }
+
+    /* The lead: photo above the headline at a sensible size (about 680 px wide at 2000), summary capped at 3 lines. */
+    .pub .bs-sheet .d-lead__image {
+        display: block;
+        width: 100%;
+        height: auto;
+        max-height: none;
+        aspect-ratio: 16 / 9;
+        overflow: hidden;
+        border-radius: 10px;
+    }
+    .pub .bs-sheet .d-lead__image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .pub .bs-sheet .d-lead__title {
+        font-size: 34px;
+        line-height: 1.1;
+    }
+    .pub .bs-sheet .d-lead__summary {
+        display: -webkit-box;
+        max-width: none;
+        overflow: hidden;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 3;
+        line-clamp: 3;
+    }
+
+    /* More headlines beside the lead: one column of five. */
+    .pub .bs-home .bs-sheet .bs-front .d-news .d-headline-shelf__list {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    /* Bands 2–4 share one 12-column grid. The left and main columns dissolve so each section is a grid item. */
+    .pub .bs-sheet .bs-more {
+        display: grid;
+        grid-template-columns: repeat(12, minmax(0, 1fr));
+        padding-top: 0;
+    }
+    .pub .bs-sheet .bs-more > :is(.bs-col--left, .bs-col--main) {
+        display: contents;
+    }
+    .pub .bs-sheet .bs-more > .bs-col > .d-card {
+        margin: 0;
+        padding: 26px 26px 30px;
+        border-left: 1px solid var(--row-border);
+    }
+
+    /* Band 2: the three desks. */
+    .pub .bs-sheet .bs-more [data-home-section='sports-news'] {
+        grid-column: 1 / span 4;
+        grid-row: 1;
+    }
+    .pub .bs-sheet .bs-more [data-home-section='entertainment-news'] {
+        grid-column: 5 / span 4;
+        grid-row: 1;
+    }
+    .pub .bs-sheet .bs-more [data-home-section='tech-news'] {
+        grid-column: 9 / span 4;
+        grid-row: 1;
+    }
+
+    /* Band 3: Scoreboard · Top 25 (the wider one: five columns of schools). */
+    .pub .bs-sheet .bs-more [data-home-section='scoreboard'] {
+        grid-column: 1 / span 5;
+        grid-row: 2;
+    }
+    .pub .bs-sheet .bs-more [data-home-section='rankings'] {
+        grid-column: 6 / span 7;
+        grid-row: 2;
+    }
+
+    /* Band 4: videos, full width. */
+    .pub .bs-sheet .bs-more [data-home-section='videos'] {
+        grid-column: 1 / -1;
+        grid-row: 3;
+    }
+
+    /* Rules: each band ends with a heavy rule; the first item in each row has no left rule. */
+    .pub
+        .bs-sheet
+        .bs-more
+        :is(
+            [data-home-section='sports-news'],
+            [data-home-section='entertainment-news'],
+            [data-home-section='tech-news'],
+            [data-home-section='scoreboard'],
+            [data-home-section='rankings']
+        ) {
+        border-bottom: 2px solid var(--text);
+    }
+    .pub
+        .bs-sheet
+        .bs-more
+        :is([data-home-section='sports-news'], [data-home-section='scoreboard'], [data-home-section='videos']) {
+        padding-left: 0;
+        border-left: 0;
+    }
+    .pub
+        .bs-sheet
+        .bs-more
+        :is([data-home-section='tech-news'], [data-home-section='rankings'], [data-home-section='videos']) {
+        padding-right: 0;
+    }
+
+    /* Scoreboard: the six compact games as cards, three across. */
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .bs-sheet .bs-more .d-scoreboard .scoreboard-games {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+    }
+
+    /* Top 25: a 5 × 5 grid that reads down each column, instead of a 25-row table. */
+    .pub .bs-sheet .d-rankings .d-rankings__table {
+        overflow: visible;
+    }
+    .pub .bs-sheet .d-rankings .rankings-table,
+    .pub .bs-sheet .d-rankings .rankings-table tbody {
+        display: block;
+        width: 100%;
+    }
+    .pub .bs-sheet .d-rankings .rankings-table :is(colgroup, thead) {
+        display: none;
+    }
+    .pub .bs-sheet .d-rankings .rankings-table tbody {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        grid-template-rows: repeat(5, auto);
+        grid-auto-flow: column;
+        column-gap: 12px;
+    }
+    .pub .bs-sheet .d-rankings .rankings-table tr {
+        display: grid;
+        grid-template-columns: 24px minmax(0, 1fr);
+        grid-template-areas: 'rank team' 'rank meta';
+        column-gap: 6px;
+        align-items: baseline;
+        padding: 7px 8px;
+        border-bottom: 1px solid var(--row-border);
+    }
+    .pub .bs-sheet .d-rankings .rankings-table :is(td, th) {
+        display: block;
+        padding: 0;
+        border: 0;
+        text-align: left;
+    }
+    .pub .bs-sheet .d-rankings .rankings-table tr > td:first-child {
+        grid-area: rank;
+        font-family: var(--font-serif);
+        font-size: 16px;
+        font-weight: 700;
+    }
+    .pub .bs-sheet .d-rankings .rankings-table tr > th {
+        grid-area: team;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .pub .bs-sheet .d-rankings .rankings-table tr > td:nth-child(3),
+    .pub .bs-sheet .d-rankings .rankings-table tr > td:nth-child(4) {
+        grid-area: meta;
+        font-size: 11px;
+        color: var(--text-2);
+    }
+    .pub .bs-sheet .d-rankings .rankings-table tr > td:nth-child(4) {
+        justify-self: end;
+    }
+    .pub .bs-sheet .d-rankings .rankings-table tr > td:nth-child(4)::before {
+        content: 'was ';
+    }
+
+    /* Videos: one row of six. */
+    .pub .bs-home .bs-sheet .d-vids .d-list {
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        gap: 20px;
+    }
+    .pub .bs-home .bs-sheet .d-vids .d-vid:nth-child(n + 7) {
+        display: none;
+    }
+}
+
+/* The desktop masthead has its own higher-specificity padding rule. */
+@media (min-width: 1920px) {
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme])) .pub .site-header {
+        padding-left: var(--page-pad);
+        padding-right: var(--page-pad);
+    }
+}
+
+/* ---------- Home masthead, 1920px and up: logo on the navigation line (wide-screens-4k-handoff.md) ---------- */
+@media (min-width: 1920px) {
+    /* Same specificity as the 1024px rule that hides it, and later in the file, so this wins. */
+    .pub[data-page='home'] .brand {
+        display: flex;
+    }
+    .pub .bs-title__name {
+        display: none;
+    }
+    .pub .bs-masthead {
+        grid-template-columns: minmax(620px, 1fr) minmax(0, 1.8fr) minmax(280px, 360px); /* greeting · weather row · Coming up */
+        align-items: end;
+        gap: 24px;
+        padding: 18px 0 18px;
+    }
+    .pub .bs-masthead > .bs-title {
+        grid-column: 1;
+        display: grid;
+        grid-template-columns: minmax(0, auto) auto;
+        min-width: 0;
+        grid-template-areas: 'date date' 'greeting refresh';
+        justify-content: start;
+        align-items: end;
+        gap: 4px 20px;
+        text-align: left;
+    }
+    .pub .bs-title__date {
+        grid-area: date;
+        margin: 0;
+        color: var(--accent);
+    }
+    .pub .bs-title__greeting {
+        grid-area: greeting;
+        white-space: nowrap;
+        margin: 0;
+        font-size: clamp(48px, 2.8vw, 72px);
+        font-style: normal;
+        font-weight: 800;
+        line-height: 1;
+        letter-spacing: -0.02em;
+    }
+    .pub .bs-title .home-refresh {
+        grid-area: refresh;
+        margin: 0 0 8px;
+    }
+    .pub .bs-masthead > .bs-glance {
+        align-self: end;
+        grid-column: 2;
+    }
+    .pub .bs-masthead > .bs-live {
+        grid-column: 3;
+    }
+}
+
+/* ---------- Home masthead polish, 1920px and up (wide-screens-4k-handoff.md 2.4) ---------- */
+@media (min-width: 1920px) {
+    .pub .bs-masthead {
+        grid-template-columns: minmax(480px, 1fr) minmax(0, auto);
+        grid-template-rows: auto auto;
+        align-items: center;
+        row-gap: 0;
+        padding: 18px 0 0;
+        border-bottom: 0;
+    }
+    /* 2: greeting smaller; date and Refresh share a line. */
+    .pub .bs-masthead > .bs-title {
+        grid-template-areas: 'date refresh' 'greeting greeting';
+        grid-template-columns: auto 1fr;
+        gap: 4px 12px;
+        align-items: center;
+    }
+    .pub .bs-title__greeting {
+        font-size: 56px;
+        font-weight: 700;
+        letter-spacing: -0.015em;
+    }
+    .pub .bs-title .home-refresh {
+        justify-self: start;
+        min-height: 44px;
+        margin: 0;
+        padding: 0 10px;
+        border: 0;
+        border-radius: 8px;
+        background: color-mix(in srgb, var(--accent) 10%, transparent);
+        font-size: 13px;
+        position: relative;
+    }
+    .pub .bs-title .home-refresh::after {
+        /* Preserve the button footprint. */
+        content: '';
+        position: absolute;
+        inset: 0;
+    }
+    /* 3: weather to the right edge, tight. */
+    .pub .bs-masthead > .bs-glance {
+        grid-column: 2;
+        grid-row: 1;
+        justify-self: end;
+    }
+    /* 1: Live now becomes one line under the double rule. */
+    .pub .bs-masthead > .bs-live {
+        grid-column: 1 / -1;
+        grid-row: 2;
+        display: flex;
+        align-items: center;
+        gap: 0;
+        margin-top: 16px;
+        padding: 10px 0;
+        border: 0;
+        border-top: 4px double var(--text);
+        border-bottom: 1px solid var(--row-border);
+        border-radius: 0;
+        font-size: 14px;
+    }
+    .pub .bs-live .bs-ear__title {
+        order: 0;
+        margin: 0;
+        padding-right: 16px;
+        font-size: 12px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--live, #b0001e);
+    }
+    .pub .bs-live__list {
+        order: 1;
+        display: flex;
+        margin: 0;
+        padding: 0;
+    }
+    .pub .bs-live__list li {
+        padding: 0 16px;
+        border: 0;
+        border-left: 1px solid var(--row-border);
+    }
+    .pub .bs-live__list a {
+        display: flex;
+        gap: 6px;
+        white-space: nowrap;
+    }
+    .pub .bs-live__score {
+        font-weight: 700;
+    }
+    .pub .bs-live__clock {
+        color: var(--text-2);
+    }
+    .pub .bs-live__clock::before {
+        content: '· ';
+    }
+    .pub .bs-live > .d-more {
+        order: 3;
+        margin-left: auto;
+    }
+    .pub .bs-live__list li:nth-child(n + 4) {
+        display: none;
+    } /* three games max on the line */
+}
+
+/* broadsheet.css: 4, the band goes from 1920 (the header has the search now) */
+@media (min-width: 1920px) {
+    .pub .bs-watch {
+        display: none;
+    }
+}
+
+/* ---------- Home columns polish (wide-screens-4k-handoff.md 2.4) ---------- */
+@media (min-width: 1920px) {
+    /* 7: one heading style for every column. */
+    .pub .bs-home .bs-sheet .bs-tonight .d-card__title {
+        font-family: inherit;
+        font-size: 13px;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+    }
+    .pub .bs-home .bs-sheet .bs-tonight .d-card__head {
+        border-bottom: 2px solid var(--text); /* the 1024px rule removed it; match the other columns */
+    }
+    /* 5: the top story: photo on top, headline under it. */
+    :root .pub[data-page='home'] .bs-home .bs-sheet .d-lead__story {
+        display: flex;
+        flex-direction: column;
+    }
+    :root .pub[data-page='home'] .bs-home .bs-sheet .d-lead__image {
+        order: 0;
+        width: 100%;
+        height: auto;
+        aspect-ratio: 16 / 9;
+        margin: 0 0 14px;
+    }
+    :root .pub[data-page='home'] .bs-home .bs-sheet .d-lead__image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    :root .pub[data-page='home'] .bs-home .bs-sheet .d-lead__source {
+        order: 1;
+        margin: 0 0 6px;
+    }
+    :root .pub[data-page='home'] .bs-home .bs-sheet .d-lead__title {
+        order: 2;
+        font-size: 46px;
+        line-height: 1.06;
+    }
+    :root .pub[data-page='home'] .bs-home .bs-sheet .d-lead__summary {
+        order: 3;
+    }
+    :root .pub[data-page='home'] .bs-home .bs-sheet .d-lead__meta {
+        order: 4;
+    }
+    /* 6: the video headline stops competing. */
+    .pub .bs-home .bs-sheet .home-latest-video__title {
+        font-size: 20px;
+        line-height: 1.25;
+    }
+}
+@media (min-width: 2560px) {
+    /* 5 and 8: the top story takes the extra width; side columns never drop below 340px. Replaces 2.2's 2560 template. */
+    .pub .bs-sheet {
+        grid-template-columns: 300px minmax(0, 2.4fr) repeat(4, minmax(340px, 1fr));
+    }
+}
+
+@media (min-width: 1920px) {
+    .pub .bs-masthead > .bs-glance {
+        align-self: center;
+        min-width: 0;
+    }
+    .pub .bs-live {
+        min-width: 0;
+    }
+    .pub .bs-live .d-empty {
+        order: 1;
+        margin: 0;
+    }
+    .pub .bs-live__list {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+    .pub .bs-live__list li {
+        flex: 1 1 0;
+        min-width: 0;
+    }
+    .pub .bs-live__list a {
+        min-height: 44px;
+        align-items: center;
+    }
+    .pub .bs-live__score,
+    .pub .bs-live__clock {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .pub .bs-live > .d-more,
+    .pub .bs-live .bs-ear__title {
+        flex-shrink: 0;
+    }
+    :root .pub[data-page='home'] .bs-home .bs-sheet .d-lead__story {
+        gap: 0;
+    }
+    :root .pub[data-page='home'] .bs-home .bs-sheet .d-lead__body {
+        display: contents;
+    }
+    :root .pub[data-page='home'] .bs-home .bs-sheet .d-lead__image {
+        max-height: none;
+        margin-top: 0;
+    }
+}
+
+@media (min-width: 1920px) {
+    /* Outrank the existing per-game grid and the photo classifier's headline rule. */
+    .pub .bs-masthead > .bs-live .bs-live__list li a {
+        display: flex;
+        flex-direction: row;
+        padding: 0;
+        border-top: 0;
+        align-items: center;
+        gap: 6px;
+        min-width: 0;
+        min-height: 44px;
+        white-space: nowrap;
+    }
+    :root .pub[data-page='home'] .bs-home .bs-sheet .d-lead__story[data-article-story] .d-lead__title {
+        font-size: 46px;
+        line-height: 1.06;
+    }
+}
+
+.pub .bs-episodes-count {
+    display: none;
+}
+@media (min-width: 2560px) {
+    .pub .bs-home .bs-sheet .bs-col > .d-card:first-child .d-card__head {
+        min-width: 0;
+    }
+    .pub .bs-home .bs-sheet .bs-col > .d-card:first-child .d-card__title {
+        font-size: 12px;
+        letter-spacing: 0.06em;
+        white-space: nowrap;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .pub .bs-home .bs-sheet .bs-col > .d-card:first-child .d-card__head > .d-more {
+        font-size: 12px;
+        flex-shrink: 0;
+    }
+    .pub .bs-home .d-episodes .d-card__title .d-card__count {
+        display: none;
+    }
+    .pub .bs-episodes-count {
+        display: block;
+        margin: 8px 0;
+        color: var(--text-2);
+        font-size: 12px;
+    }
+}
+
+/* From 1920px the forecast is the masthead's right-hand ear: no box, the lead beside the later periods. */
+@media (min-width: 1920px) {
+    .pub .bs-glance {
+        grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
+        column-gap: 32px;
+        width: min(860px, 100%);
+        padding: 0;
+        border: 0;
+        border-radius: 0;
+    }
+    .pub .bs-glance__next {
+        padding-left: 28px;
+        border-left: 1px solid var(--row-border);
+    }
+    .pub .bs-glance__temp {
+        font-size: 64px;
+    }
+    .pub .bs-glance__now .weather-icon {
+        width: 52px;
+        height: 52px;
+    }
+    .pub .bs-glance__summary {
+        font-size: 18px;
+    }
+}

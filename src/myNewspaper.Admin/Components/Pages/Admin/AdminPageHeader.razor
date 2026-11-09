@@ -1,0 +1,32 @@
+@* The admin page heading: optional breadcrumb, eyebrow, serif title (with an optional status badge), description and
+   actions on the right, over a double rule. *@
+@if (Crumbs is not null)
+{
+    <nav class="adm-crumbs" aria-label="Breadcrumb">@Crumbs</nav>
+}
+<header class="adm-head">
+    <div>
+        <p class="adm-head__eyebrow">@Eyebrow</p>
+        <div class="adm-head__title-row">
+            <h1>@Title</h1>
+            @Badge
+        </div>
+        @if (!string.IsNullOrEmpty(Description))
+        {
+            <p class="adm-head__desc">@Description</p>
+        }
+    </div>
+    @if (Actions is not null)
+    {
+        <div class="adm-head__actions">@Actions</div>
+    }
+</header>
+
+@code {
+    [Parameter, EditorRequired] public string Eyebrow { get; set; } = "";
+    [Parameter, EditorRequired] public string Title { get; set; } = "";
+    [Parameter] public string? Description { get; set; }
+    [Parameter] public RenderFragment? Badge { get; set; }
+    [Parameter] public RenderFragment? Actions { get; set; }
+    [Parameter] public RenderFragment? Crumbs { get; set; }
+}

@@ -1,0 +1,191 @@
+// Complete Sports tables, hourly refresh and mobile/no-JavaScript regressions in a disposable profile.
+const { chromium } = require('playwright');
+const lib = require('./lib.cjs');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const base = lib.base;
+const password = lib.adminPassword;
+const shots = lib.screenshots('ipad-sports');
+(async () => {
+    fs.mkdirSync(shots, { recursive: true });
+    const profiles = (await fetch(base + '/editions')).status !== 404;
+    assert(profiles, 'Use profiles-enabled preview; this test never writes to a household Saved list');
+    const browser = await chromium.launch({ args: ['--disable-web-security'] });
+    let admin, storageState;
+    try {
+        if (profiles) {
+            assert(password, 'ADMIN_PASSWORD is required to create and remove a disposable reader profile');
+            admin = await lib.signInAdmin(browser);
+            const profile = await lib.addProfile(admin, 'iPad Sports', { pin: '3691' });
+            storageState = await lib.openProfile(browser, profile, { path: '/sports', waitUntil: 'domcontentloaded' });
+        }
+
+        const context = await browser.newContext({
+            storageState,
+            hasTouch: true,
+            viewport: { width: 820, height: 1100 },
+        });
+        const page = await context.newPage();
+        const visit = async () => {
+            await page.goto(base + '/sports', { waitUntil: 'networkidle' });
+        };
+        await visit();
+        const layout = async () => {
+            assert(await page.locator('.spf-scores').isVisible());
+            const boxes = await page
+                .locator('.spf-cols, .spf-cols .ef-lead, .spf-upcoming, .spf-tables')
+                .evaluateAll((els) =>
+                    els.map((e) => ({
+                        x: e.getBoundingClientRect().x,
+                        y: e.getBoundingClientRect().y,
+                        w: e.getBoundingClientRect().width,
+                    })),
+                );
+            const [cols, up, lead, tables] = boxes; // DOM order: columns, upcoming, lead, tables
+            assert(Math.abs(lead.w - cols.w) < 2, 'Lead full width');
+            assert(tables.y > up.y, 'Tables below columns');
+            assert.equal(await page.locator('.ef-lead__title').evaluate((e) => getComputedStyle(e).fontSize), '36px');
+            for (const table of await page.locator('.spf-tables tbody').all()) {
+                const rows = table.locator('tr');
+                assert((await rows.count()) > 0, 'Table has rows');
+            }
+        };
+        for (const theme of lib.THEMES) {
+            const saved = page.waitForResponse(
+                (r) => new URL(r.url()).pathname === '/api/me/settings' && r.request().method() === 'PUT',
+            );
+            await page.evaluate((v) => window.myNewspaperPrefs.setItem('theme', v), theme);
+            await saved;
+            for (const width of lib.widths('320,390,430,743,744,820,834,1023,1024,1280,1920')) {
+                await page.setViewportSize({ width, height: 1100 });
+                await visit();
+                assert(
+                    await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1),
+                    'No overflow ' + width,
+                );
+                if (width >= 744 && width < 1024) await layout();
+                else if (width < 744) {
+                    assert(await page.locator('.tab-phone').isVisible());
+                    const fold = page.locator('.tab-phone details').first();
+                    if (await fold.count()) {
+                        const open = await fold.getAttribute('open');
+                        await fold.locator('summary').tap();
+                        assert.notEqual(await fold.getAttribute('open'), open);
+                    }
+                } else {
+                    assert(await page.locator('.spf-scores').isVisible());
+                    assert.equal(await page.locator('.spf-rankings tbody tr:visible').count(), 25);
+                }
+                await page.evaluate(() => scrollTo(0, 0));
+                await page.screenshot({ path: shots + `sports-${width}-${theme}.png`, fullPage: true });
+                console.log('PASS', width, theme);
+            }
+        }
+        await page.setViewportSize({ width: 820, height: 1100 });
+        await visit();
+        const swipe = async () => {
+            const rail = page.locator('.spf-scores .scoreboard-games').first();
+            await page.evaluate(() => scrollTo(0, 0));
+            assert(await rail.evaluate((e) => e.scrollWidth > e.clientWidth));
+            const box = await rail.boundingBox(),
+                x = box.x + box.width - 70,
+                y = box.y + 40;
+            const cdp = await context.newCDPSession(page);
+            await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] });
+            for (let i = 1; i <= 10; i++) {
+                await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: x - i * 30, y }] });
+                await page.waitForTimeout(25);
+            }
+            await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+            await page.waitForFunction(() => document.querySelector('.spf-scores .scoreboard-games').scrollLeft > 50);
+            await cdp.detach();
+        };
+        await swipe();
+        const panel = page.locator('.spf-scores [data-scoreboard]').first();
+        await panel.evaluate((e) => (e.dataset.testOld = 'yes'));
+        const refreshed = page.waitForResponse((r) => r.url().includes('/scoreboard/fragment'));
+        await page.evaluate(() => dispatchEvent(new Event('online')));
+        await refreshed;
+        await page.waitForFunction(() => !document.querySelector('.spf-scores [data-test-old]'));
+        await swipe();
+        await page.route(
+            '**/sports',
+            async (route) => {
+                const response = await route.fetch();
+                await route.fulfill({
+                    response,
+                    body: (await response.text()).replace(
+                        /data-rotation-refresh-after="\d+"/,
+                        'data-rotation-refresh-after="1000"',
+                    ),
+                });
+            },
+            { times: 1 },
+        );
+        const rotated = page.waitForResponse(
+            (r) => new URL(r.url()).pathname === '/sports' && r.request().resourceType() === 'fetch',
+        );
+        await visit();
+        await rotated;
+        await page.waitForFunction(
+            () => Number(document.querySelector('[data-sports-rotation]').dataset.rotationRefreshAfter) > 1000,
+        );
+        await layout();
+        const lower = page.locator('.spf-standings tbody tr').nth(14);
+        const favorite = await lower.evaluate((e) => JSON.parse(e.dataset.sportsTeams)[0]);
+        const favoriteSaved = page.waitForResponse(
+            (r) => new URL(r.url()).pathname === '/api/me/settings' && r.request().method() === 'PUT',
+        );
+        await page.evaluate(
+            (team) => window.myNewspaperPrefs.setItem('mynewsfeed-sports-teams-v1', JSON.stringify([team])),
+            favorite,
+        );
+        await favoriteSaved;
+        await visit();
+        assert(await lower.isVisible(), 'Persisted favorite below row ten remains visible');
+        assert(await lower.evaluate((e) => e.classList.contains('sports-selected')));
+        for (const selector of [
+            '.spf-scores .ef-head a',
+            '.spf-upcoming .ef-head a',
+            '.spf-standings .ef-more',
+            '.spf-rankings .ef-more',
+        ]) {
+            await visit();
+            const link = page.locator(selector),
+                href = await link.getAttribute('href');
+            await link.tap();
+            await page.waitForURL(base + '/' + href);
+            await page.waitForLoadState('networkidle');
+        }
+        for (const route of ['/settings']) {
+            await page.goto(base + route, { waitUntil: 'networkidle' });
+            assert.equal(await page.locator('.tab-desktop').count(), 0);
+        }
+        await page.goto(base + '/entertainment', { waitUntil: 'networkidle' });
+        assert(await page.locator('.ef-lead').isVisible());
+        const plain = await browser.newContext({
+                storageState,
+                javaScriptEnabled: false,
+                viewport: { width: 820, height: 1100 },
+            }),
+            fallback = await plain.newPage();
+        await fallback.goto(base + '/sports', { waitUntil: 'networkidle' });
+        assert(await fallback.locator('.spf-scores').isVisible());
+        await fallback.locator('.spf-rankings .ef-more').click();
+        await fallback.waitForURL('**/rankings?*');
+        await plain.close();
+        await context.close();
+        console.log(
+            'PASS swipe, score replacement, hourly replacement, favorite exception, touch links, isolation, no-JS',
+        );
+    } finally {
+        try {
+            await lib.deleteProfiles();
+        } finally {
+            await browser.close();
+        }
+    }
+})().catch((e) => {
+    console.error(e);
+    process.exitCode = 1;
+});

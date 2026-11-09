@@ -1,0 +1,73 @@
+@inject NavigationManager Navigation
+@* One control, three presentations: underlined tabs on desktop; on phones a full-width segmented control when there
+   are four or fewer choices, otherwise a native dropdown (which also works without JavaScript via /navigate).
+   Choices with a Group get optgroup headings in the dropdown; the tabs ignore groups. *@
+<div class="section-nav @(Choices.Count <= SegmentedLimit && !AlwaysSelect ? "section-nav--few" : "section-nav--many")">
+    <nav class="section-tabs" aria-label="@Label">
+        @foreach (var choice in Choices) {
+            <a href="@choice.Href.TrimStart('/')" aria-current="@(Path(choice.Href) == Selected ? "page" : null)">@choice.Label</a>
+        }
+    </nav>
+    <form class="catselect section-select" method="get" action="navigate">
+        <label for="@Id">@Label</label>
+        <select id="@Id" name="to" required onchange="this.form.requestSubmit()">
+            @if (!Choices.Any(c => Path(c.Href) == Selected)) {
+                <option value="" selected disabled>Choose @Label.ToLowerInvariant()</option>
+            }
+            @foreach (var run in Runs) {
+                if (run.Group is null) {
+                    foreach (var choice in run.Items) { @Option(choice) }
+                }
+                else {
+                    <optgroup label="@run.Group">@foreach (var choice in run.Items) { @Option(choice) }</optgroup>
+                }
+            }
+        </select>
+        <noscript><button class="nf-btn nf-btn--secondary" type="submit">Go</button></noscript>
+    </form>
+</div>
+@code {
+    private const int SegmentedLimit = 4;
+    [Parameter, EditorRequired] public string Id { get; set; } = "";
+    [Parameter, EditorRequired] public string Label { get; set; } = "";
+    [Parameter, EditorRequired] public IReadOnlyList<NavigationChoice> Choices { get; set; } = [];
+    [Parameter] public string? Current { get; set; }
+    /// <summary>When the page path is not itself a choice, select the longest choice it starts with (e.g. /college/standings → College).</summary>
+    [Parameter] public bool MatchPrefix { get; set; }
+    /// <summary>Phones: always show the dropdown (the ribbon has no room for pills or segments).</summary>
+    [Parameter] public bool AlwaysSelect { get; set; }
+
+    private string Selected
+    {
+        get
+        {
+            var current = Path(Current ?? Navigation.ToBaseRelativePath(Navigation.Uri));
+            if (!MatchPrefix || Choices.Any(c => Path(c.Href) == current)) return current;
+            var bare = current.Split('?', '#')[0];
+            return Choices.Select(c => Path(c.Href))
+                .Where(p => bare == p || bare.StartsWith(p + "/", StringComparison.OrdinalIgnoreCase))
+                .OrderByDescending(p => p.Length).FirstOrDefault() ?? current;
+        }
+    }
+
+    private static string Path(string href) => "/" + href.TrimStart('/');
+
+    private RenderFragment Option(NavigationChoice choice) =>
+        @<option value="@Path(choice.Href)" selected="@(Path(choice.Href) == Selected)">@choice.Label</option>;
+
+    /// <summary>Consecutive choices that share a group, in order, so each group gets one optgroup heading.</summary>
+    private IEnumerable<(string? Group, List<NavigationChoice> Items)> Runs
+    {
+        get
+        {
+            (string? Group, List<NavigationChoice> Items)? run = null;
+            foreach (var choice in Choices)
+            {
+                if (run is { } r && r.Group == choice.Group) { r.Items.Add(choice); continue; }
+                if (run is { } done) yield return done;
+                run = (choice.Group, [choice]);
+            }
+            if (run is { } last) yield return last;
+        }
+    }
+}

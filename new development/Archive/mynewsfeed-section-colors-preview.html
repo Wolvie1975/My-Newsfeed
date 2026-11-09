@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MyNewsFeed section colors</title>
+<style>
+  :root { --bg:#f4f6fa; --surface:#ffffff; --text:#141b2b; --text-2:#4b5567; --header-bg:#0051ba; --header-fg:#ffffff; --header-line:#8ab6ef; --selection-bg:#e8000d; --selection-fg:#fff; }
+  .dark { --bg:#091426; --surface:#111f36; --text:#e8ecf4; --text-2:#a3afc5; --header-bg:#002d72; --header-fg:#e8ecf4; --header-line:#6388bc; --selection-bg:#b81024; }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 32px 24px 48px; background: #e9ecf2; color: #141b2b; font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  h1 { font: 800 28px/1.1 Georgia, serif; margin: 0 0 4px; }
+  .lede { color: #4b5567; margin: 0 0 28px; max-width: 760px; }
+  h2 { font-size: 13px; letter-spacing: .12em; text-transform: uppercase; color: #4b5567; margin: 28px 0 12px; }
+  .row { display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start; }
+  .phone { width: 300px; border-radius: 22px; overflow: hidden; background: var(--surface); color: var(--text); box-shadow: 0 6px 20px rgb(20 27 43 / 14%); }
+  .phone__body { padding: 14px 16px 18px; background: var(--surface); }
+  .phone__body p { margin: 0 0 8px; font-size: 13px; color: var(--text-2); }
+  .bar { height: 10px; border-radius: 6px; background: color-mix(in srgb, var(--text) 10%, transparent); margin-bottom: 8px; }
+  .bar.s { width: 60%; }
+
+  /* Ribbon, as in mobile.css */
+  .ribbon { display: flex; flex-direction: column; gap: 10px; padding: 16px; background: var(--rb); color: var(--rf); }
+  .kicker { display: flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--rk); }
+  .kicker::before { content: ""; width: 8px; height: 8px; border-radius: 999px; background: var(--rk); box-shadow: 0 0 0 4px color-mix(in srgb, var(--rk) 18%, transparent); }
+  .ribbon h3 { margin: 4px 0 0; font: 800 38px/.95 Georgia, serif; letter-spacing: -.02em; }
+  .select { height: 40px; border-radius: 10px; border: 1px solid color-mix(in srgb, var(--rf) 35%, transparent); display: flex; align-items: center; padding: 0 12px; font-size: 14px; }
+
+  [data-s=news]          { --sec:#1e293b; --sk:#cbd5e1; --glow:#94a3b8; --skd:#cbd5e1; }
+  [data-s=sports]        { --sec:#166534; --sk:#bbf7d0; --glow:#22c55e; --skd:#86efac; }
+  [data-s=entertainment] { --sec:#be185d; --sk:#fce7f3; --glow:#ec4899; --skd:#f9a8d4; }
+  [data-s=tech]          { --sec:#5b21b6; --sk:#ddd6fe; --glow:#7c3aed; --skd:#c4b5fd; }
+  .ribbon[data-s] { --rb: var(--sec); --rf: #fff; --rk: var(--sk); }
+  .dark .ribbon[data-s] { --rb: color-mix(in srgb, var(--glow) 32%, var(--surface)); --rf: var(--text); --rk: var(--skd); }
+  .ribbon.default { --rb: var(--selection-bg); --rf: var(--selection-fg); --rk: var(--selection-fg); }
+  .dark .ribbon.default { --rb: color-mix(in srgb, var(--selection-bg) 25%, var(--surface)); --rf: var(--text); --rk: var(--text); }
+
+  /* Menu, as in public.css + the new dot */
+  .menu { width: 300px; border-radius: 22px; overflow: hidden; background: var(--header-bg); color: var(--header-fg); padding: 12px; box-shadow: 0 6px 20px rgb(20 27 43 / 14%); }
+  .menu a { display: flex; align-items: center; min-height: 40px; padding: 0 12px; border-radius: 8px; color: var(--header-fg); text-decoration: none; font-size: 15px; }
+  .menu a.on { background: var(--selection-bg); color: var(--selection-fg); font-weight: 700; }
+  .menu a.on::after { content: "✓"; margin-left: auto; }
+  .grp { margin: 8px 0; border: 1px solid var(--header-line); border-radius: 10px; padding: 8px; }
+  .lbl { display: flex; align-items: center; gap: 10px; padding: 6px 8px 8px; font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+  .grp[data-s] .lbl::before { content: ""; width: 10px; height: 10px; border-radius: 999px; background: var(--glow); box-shadow: 0 0 0 2px var(--header-fg); }
+  .sub { margin-left: 12px; padding-left: 8px; border-left: 2px solid var(--header-line); display: flex; flex-direction: column; gap: 2px; }
+  .new { outline: 2px dashed #ffd34d; outline-offset: 3px; }
+  .tag { display: inline-block; margin-left: 8px; padding: 1px 6px; border-radius: 4px; background: #ffd34d; color: #141b2b; font-size: 10px; font-weight: 800; letter-spacing: .06em; vertical-align: middle; }
+
+  .swatches { display: grid; grid-template-columns: repeat(4, minmax(0, 170px)); gap: 12px; }
+  .sw { background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgb(20 27 43 / 10%); font-size: 12px; }
+  .sw div { height: 44px; }
+  .sw p { margin: 0; padding: 8px 10px; }
+  code { font: 12px ui-monospace, Menlo, monospace; }
+  @media (max-width: 760px) { .swatches { grid-template-columns: repeat(2, 1fr); } }
+</style>
+</head>
+<body>
+  <h1>Section colors, side by side</h1>
+  <p class="lede">One color per section: News ink, Sports green, Entertainment rose and Tech purple (unchanged). Each one shows up as the phone title band and as a dot in the menu. Pages outside the four sections keep the color scheme's red band, shown at the end of each row.</p>
+
+  <div class="swatches">
+    <div class="sw"><div style="background:#1e293b"></div><p><b>News</b> <code>#1e293b</code><br>dark mix <code>#94a3b8</code></p></div>
+    <div class="sw"><div style="background:#166534"></div><p><b>Sports</b> <code>#166534</code><br>dark mix <code>#22c55e</code></p></div>
+    <div class="sw"><div style="background:#be185d"></div><p><b>Entertainment</b> <code>#be185d</code><br>dark mix <code>#ec4899</code></p></div>
+    <div class="sw"><div style="background:#5b21b6"></div><p><b>Tech</b> <code>#5b21b6</code><br>dark mix <code>#7c3aed</code></p></div>
+  </div>
+
+  <h2>Phone title bands · light</h2>
+  <div class="row">
+    <div class="phone"><header class="ribbon" data-s="news"><span class="kicker">Updated 9:12 AM</span><h3>News</h3><div class="select">All headlines</div></header><div class="phone__body"><div class="bar"></div><div class="bar s"></div></div></div>
+    <div class="phone"><header class="ribbon" data-s="sports"><span class="kicker">Live · 3 games</span><h3>Scoreboard</h3><div class="select">College football</div></header><div class="phone__body"><div class="bar"></div><div class="bar s"></div></div></div>
+    <div class="phone"><header class="ribbon" data-s="entertainment"><span class="kicker">This weekend</span><h3>Box Office</h3><div class="select">Weekend estimates</div></header><div class="phone__body"><div class="bar"></div><div class="bar s"></div></div></div>
+    <div class="phone"><header class="ribbon" data-s="tech"><span class="kicker">Tech desk</span><h3>This Week</h3><div class="select">All tech</div></header><div class="phone__body"><div class="bar"></div><div class="bar s"></div></div></div>
+    <div class="phone"><header class="ribbon default"><span class="kicker">Your list</span><h3>Saved</h3><div class="select">All saved</div></header><div class="phone__body"><div class="bar"></div><div class="bar s"></div></div></div>
+  </div>
+
+  <h2>Phone title bands · dark</h2>
+  <div class="row dark">
+    <div class="phone"><header class="ribbon" data-s="news"><span class="kicker">Updated 9:12 AM</span><h3>News</h3><div class="select">All headlines</div></header><div class="phone__body"><div class="bar"></div><div class="bar s"></div></div></div>
+    <div class="phone"><header class="ribbon" data-s="sports"><span class="kicker">Live · 3 games</span><h3>Scoreboard</h3><div class="select">College football</div></header><div class="phone__body"><div class="bar"></div><div class="bar s"></div></div></div>
+    <div class="phone"><header class="ribbon" data-s="entertainment"><span class="kicker">This weekend</span><h3>Box Office</h3><div class="select">Weekend estimates</div></header><div class="phone__body"><div class="bar"></div><div class="bar s"></div></div></div>
+    <div class="phone"><header class="ribbon" data-s="tech"><span class="kicker">Tech desk</span><h3>This Week</h3><div class="select">All tech</div></header><div class="phone__body"><div class="bar"></div><div class="bar s"></div></div></div>
+    <div class="phone"><header class="ribbon default"><span class="kicker">Your list</span><h3>Saved</h3><div class="select">All saved</div></header><div class="phone__body"><div class="bar"></div><div class="bar s"></div></div></div>
+  </div>
+
+  <h2>Menu · light and dark (the new Watch group is outlined in yellow)</h2>
+  <div class="row">
+    <nav class="menu" aria-label="Menu preview, light">
+      <a href="#">Home</a>
+      <div class="grp" data-s="news"><span class="lbl">News</span><div class="sub"><a href="#">News home</a><a href="#">All headlines</a><a href="#">Kansas City</a></div></div>
+      <div class="grp" data-s="sports"><span class="lbl">Sports</span><div class="sub"><a href="#">Sports home</a><a href="#" class="on">Scoreboard</a><a href="#">Standings</a></div></div>
+      <div class="grp" data-s="entertainment"><span class="lbl">Entertainment</span><div class="sub"><a href="#">Entertainment home</a><a href="#">Movies</a><a href="#">Box Office</a></div></div>
+      <div class="grp" data-s="tech"><span class="lbl">Tech</span><div class="sub"><a href="#">Tech home</a><a href="#">Headlines</a></div></div>
+      <div class="grp new"><span class="lbl">Watch <span class="tag">NEW</span></span><div class="sub"><a href="#">Where to watch</a><a href="#">YouTube</a></div></div>
+      <div class="grp"><span class="lbl">Tools</span><div class="sub"><a href="#">Saved</a><a href="#">Settings</a></div></div>
+    </nav>
+    <nav class="menu dark" aria-label="Menu preview, dark">
+      <a href="#">Home</a>
+      <div class="grp" data-s="news"><span class="lbl">News</span><div class="sub"><a href="#">News home</a><a href="#">All headlines</a><a href="#">Kansas City</a></div></div>
+      <div class="grp" data-s="sports"><span class="lbl">Sports</span><div class="sub"><a href="#">Sports home</a><a href="#" class="on">Scoreboard</a><a href="#">Standings</a></div></div>
+      <div class="grp" data-s="entertainment"><span class="lbl">Entertainment</span><div class="sub"><a href="#">Entertainment home</a><a href="#">Movies</a><a href="#">Box Office</a></div></div>
+      <div class="grp" data-s="tech"><span class="lbl">Tech</span><div class="sub"><a href="#">Tech home</a><a href="#">Headlines</a></div></div>
+      <div class="grp new"><span class="lbl">Watch <span class="tag">NEW</span></span><div class="sub"><a href="#">Where to watch</a><a href="#">YouTube</a></div></div>
+      <div class="grp"><span class="lbl">Tools</span><div class="sub"><a href="#">Saved</a><a href="#">Settings</a></div></div>
+    </nav>
+  </div>
+</body>
+</html>

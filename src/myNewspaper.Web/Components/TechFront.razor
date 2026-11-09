@@ -1,0 +1,370 @@
+@using System.Globalization
+@using Microsoft.Extensions.Caching.Memory
+@using myNewspaper.Web.Components.Feed
+@using myNewspaper.Shared.Profiles
+@inject IDbContextFactory<WebScraperContext> Factory
+@inject FeedDates Dates
+@inject IMemoryCache Cache
+@inject ILogger<TechFront> Log
+@inject ProfileContext Reader
+@inherits DataComponentBase
+@inject TimeProvider Clock
+
+@* Tech front page (/tech, docs/tech/tech-02-front.md), sharing the News and Sports fronts' column layout on desktop
+   and iPad, and the folded phone layout below 744px. *@
+<div class="mx-desktop tab-desktop">
+<div class="ef spf nf tc-front">
+    <section class="nf-brief" aria-labelledby="tc-brief-title">
+        <h2 id="tc-brief-title" class="ef-label">The briefing · @Dates.TodayLabel(nowUtc)</h2>
+        <div class="nf-brief__tiles">@Tiles</div>
+    </section>
+
+    <div class="spf-cols">
+        <section class="spf-upcoming nf-day" aria-labelledby="tc-day-title">
+            <div class="ef-head"><h2 id="tc-day-title">The day so far</h2><a href="tech/news">All headlines <span aria-hidden="true">→</span></a></div>
+            <p class="ef-note">Newest first, every tech source</p>
+            @if (day.Count == 0) { <p class="ef-empty">No stories yet today.</p> }
+            <ol class="spf-timeline nf-day__line">
+                @{ string? previousTime = null; }
+                @foreach (var item in day)
+                {
+                    var time = item.Undated ? "" : Dates.Time(item.Date);
+                    var sameAsPrevious = time == previousTime;
+                    previousTime = time;
+                    <li class="spf-timeline__item @PhoneColors.ForCategory(item.CategoryName)">
+                        <span class="spf-timeline__time">@if (!sameAsPrevious) { @time } else { <span class="sr-only">@time</span> }</span>
+                        <span class="spf-timeline__body">
+                            <a href="@Href(item)" target="_blank" rel="noopener noreferrer">@Title(item)</a>
+                            <span class="spf-timeline__meta"><span class="spf-timeline__sport">@item.CategoryName</span><span aria-hidden="true"> · </span>@Source(item)</span>
+                        </span>
+                    </li>
+                }
+            </ol>
+        </section>
+
+        <div class="ef-main spf-main">
+            @if (unavailable)
+            {
+                <p class="updated" role="status">Headlines are temporarily unavailable. Please try again.</p>
+            }
+            else if (stories.Count == 0)
+            {
+                <p class="ef-empty">No recent stories are available yet.</p>
+            }
+            else
+            {
+                var lead = stories[0];
+                var leadHref = FeedQuery.SafeHref(lead.Url);
+                var leadImage = FeedQuery.SafeHref(lead.ImageUrl);
+                <article class="ef-lead @PhoneColors.ForCategory(lead.CategoryName)" data-article-story="feature" data-image-layout="compact" data-news-url="@leadHref" data-news-source="@Source(lead)">
+                    @if (leadHref is not null && leadImage is not null)
+                    {
+                        <a class="ef-lead__image" data-article-media href="@leadHref" target="_blank" rel="noopener noreferrer" tabindex="-1" aria-hidden="true">
+                            <img src="@leadImage" alt="" fetchpriority="high" referrerpolicy="no-referrer" onerror="this.parentElement.remove()" />
+                        </a>
+                    }
+                    <p class="ef-kicker @PhoneColors.ForCategory(lead.CategoryName)">@Desk(lead) <span aria-hidden="true">·</span> @Source(lead)</p>
+                    <h2 class="ef-lead__title">
+                        @if (leadHref is not null) { <a href="@leadHref" target="_blank" rel="noopener noreferrer">@Title(lead)</a> }
+                        else { @Title(lead) }
+                    </h2>
+                    @if (Summary(lead) is { Length: > 0 } leadSummary)
+                    {
+                        <p class="ef-lead__summary">@leadSummary</p>
+                    }
+                    <div class="ef-meta">
+                        <span class="ef-meta__when">@When(lead)</span>
+                        <ShareButton Url="@lead.Url" Title="@Title(lead)" />
+                        <SaveButton Item="lead" Title="@Title(lead)" Source="@Source(lead)" Summary="@Summary(lead)" />
+                    </div>
+                </article>
+
+                <CoveredList Items="@covered.Take(2).ToList()" />
+            }
+        </div>
+
+        <section class="ef-headlines-col tc-headlines-col" aria-labelledby="tc-latest-title">
+            <h3 id="tc-latest-title" class="ef-label@(stories.Count > 1 ? "" : " sr-only")">Latest headlines</h3>
+            @if (stories.Count > 1)
+            {
+                <ul class="ef-headlines tc-latest-grid">
+                    @foreach (var item in stories.Skip(1).Take(5)) { @Headline(item, withCategory: true) }
+                </ul>
+            }
+            <a class="ef-more" href="tech/news">All tech headlines <span aria-hidden="true">→</span></a>
+        </section>
+
+        <aside class="ef-side spf-side">
+            <TechJustReleased />
+        </aside>
+    </div>
+
+    @if (NewsSections.TechCategories.Any(c => DeskStories(c).Count > 0))
+    {
+        <div class="nf-desks">
+            @foreach (var category in NewsSections.TechCategories)
+            {
+                var items = DeskStories(category);
+                if (items.Count == 0) continue;
+                var slug = CategorySlug(category);
+                <section class="nf-desk @PhoneColors.ForCategory(category)" aria-labelledby="@($"tc-desk-{slug}")">
+                    <h2 id="@($"tc-desk-{slug}")" class="ef-label">@category</h2>
+                    <ul class="ef-headlines spf-headlines">
+                        @foreach (var item in items) { @Headline(item) }
+                    </ul>
+                    <a class="ef-more" href="@DeskHref(category)">All @category <span aria-hidden="true">→</span></a>
+                </section>
+            }
+        </div>
+    }
+    @* Tech videos: their own row under the desks, three across (six from 1920px), rather than a tall side column. *@
+    <section class="tc-videos tc-video-band" aria-labelledby="tc-videos-title">
+        <h2 id="tc-videos-title" class="ef-label">Tech videos</h2>
+        @if (videos.Count == 0)
+        {
+            <p class="ef-empty">No recent tech videos yet.</p>
+        }
+        else
+        {
+            <div class="tc-videos__list">
+                @foreach (var video in videos)
+                {
+                    var href = FeedQuery.SafeHref(video.Url);
+                    var picture = VideosText.Thumbnail(video.ThumbnailUrl, video.VideoId);
+                    <article class="yt-row">
+                        <a class="yt-row__thumb" href="@href" target="_blank" rel="noopener noreferrer" tabindex="-1" aria-hidden="true">
+                            @if (picture is not null) { <img src="@picture" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()" /> }
+                        </a>
+                        <div class="yt-row__body">
+                            <p class="yt-kicker @PhoneColors.ForCategory(video.Category)">@video.ChannelName</p>
+                            <h3 class="yt-row__title">@if (href is not null) { <a href="@href" target="_blank" rel="noopener noreferrer">@video.Title</a> } else { @video.Title }</h3>
+                            <p class="vmeta"><time datetime="@video.PublishedAt.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'")" title="@Dates.PublishedFull(video.PublishedAt)">@Dates.Published(video.PublishedAt)</time></p>
+                        </div>
+                    </article>
+                }
+            </div>
+        }
+        <a class="ef-more" href="videos?categories=tech,video-games">All tech videos <span aria-hidden="true">→</span></a>
+    </section>
+    @if (weekLinkSummary is { } wk)
+    {
+        <p class="tc-week-banner">
+            <a href="tech/week">
+                This week in Tech: @wk.Stories @(wk.Stories == 1 ? "story" : "stories")@(wk.Releases > 0 ? $", {wk.Releases} {(wk.Releases == 1 ? "release" : "releases")}" : "") <span aria-hidden="true">→</span>
+            </a>
+        </p>
+    }
+</div>
+</div>
+
+@* Phones: the folded Tech front, from the same data. *@
+<div class="mx-phone tab-phone">
+    <PhoneRibbon Section="tech" Kicker="@RibbonKicker" Title="Tech" />
+
+    <section class="nf-brief nf-brief--phone tc-brief--phone" aria-label="The briefing">
+        <div class="nf-brief__tiles">@Tiles</div>
+    </section>
+
+    @if (stories.Count > 0)
+    {
+        var lead = stories[0];
+        <article class="mx-block" data-article-story="feature" data-image-layout="compact" aria-label="Lead story">
+            @if (FeedQuery.SafeHref(lead.ImageUrl) is { } image)
+            {
+                <div class="mx-block__media" data-article-media><img src="@image" alt="" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()" /></div>
+            }
+            <span class="mx-block__kicker">@string.Join(" · ", new[] { Desk(lead), Source(lead), lead.Undated ? null : Dates.Time(lead.Date) }.Where(p => !string.IsNullOrEmpty(p)))</span>
+            <h2 class="mx-block__title"><StoryLink Item="lead" /></h2>
+            @if (Summary(lead) is { Length: > 0 } summary) { <p class="mx-block__quote">@summary</p> }
+            <div class="mx-block__actions">
+                <SaveButton Item="lead" Title="@Title(lead)" Source="@Source(lead)" Summary="@Summary(lead)" Labelled="true" />
+                <ShareButton Url="@lead.Url" Title="@Title(lead)" Labelled="true" />
+            </div>
+        </article>
+    }
+    else if (unavailable)
+    {
+        <p class="mx-empty" role="status">Headlines are temporarily unavailable. Please try again.</p>
+    }
+
+    @if (stories.Count > 1)
+    {
+        <section class="mx-section" aria-labelledby="tech-top-m">
+            <div class="mx-head"><h2 id="tech-top-m">Top tech</h2><a href="tech/news">All headlines →</a></div>
+            <ol class="mx-top">
+                @foreach (var (item, i) in stories.Skip(1).Take(5).Select((s, i) => (s, i)))
+                {
+                    <li class="@PhoneColors.ForCategory(item.CategoryName)">
+                        <span class="mx-top__n" aria-hidden="true">@(i + 1)</span>
+                        <span><span class="mx-top__title"><StoryLink Item="item" /></span><span class="mx-top__meta">@Meta(item)</span></span>
+                        <span class="mx-top__actions"><SaveButton Item="item" Title="@Title(item)" Source="@Source(item)" Summary="@Summary(item)" /><ShareButton Url="@item.Url" Title="@Title(item)" /></span>
+                    </li>
+                }
+            </ol>
+        </section>
+    }
+
+    @if (covered.Count > 0)
+    {
+        <section class="mx-section" aria-labelledby="tech-covered-m">
+            <div class="mx-head"><h2 id="tech-covered-m">Most covered</h2></div>
+            <CoveredList Items="@covered.Take(1).ToList()" ShowHeading="false" />
+        </section>
+    }
+
+    <TechJustReleased Compact="true" />
+
+    <FoldGroup Name="tech-desks" Heading="Desks" Foot="All tech headlines" FootHref="tech/news">
+        @foreach (var category in NewsSections.TechCategories)
+        {
+            var items = DeskStories(category);
+            if (items.Count == 0) continue;
+            <Fold Title="@category" Color="@PhoneColors.ForCategory(category)" Open="@(category == NewsSections.Linux)"
+                  AllHref="@DeskHref(category)" AllText="@($"All {category}")"
+                  Gist="@string.Join(" · ", items.Take(2).Select(Title))">
+                @foreach (var item in items) { @FoldRow(item) }
+            </Fold>
+        }
+    </FoldGroup>
+
+    @if (videos.Count > 0)
+    {
+        <section class="mx-section tc-videos-phone" aria-labelledby="tech-videos-m">
+            <div class="mx-head"><h2 id="tech-videos-m">Tech videos</h2><a href="videos?categories=tech,video-games">All videos →</a></div>
+            <ul class="tc-video-rail">
+                @foreach (var video in videos)
+                {
+                    var href = FeedQuery.SafeHref(video.Url);
+                    var picture = VideosText.Thumbnail(video.ThumbnailUrl, video.VideoId);
+                    <li class="tc-video-card">
+                        <a class="tc-video-card__thumb" href="@href" target="_blank" rel="noopener noreferrer" tabindex="-1" aria-hidden="true">
+                            @if (picture is not null) { <img src="@picture" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()" /> }
+                            <span class="play"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15a1 1 0 0 0 1.5.86l12-7.5a1 1 0 0 0 0-1.72l-12-7.5A1 1 0 0 0 7 4.5z"></path></svg></span>
+                        </a>
+                        <span class="tc-video-card__channel @PhoneColors.ForCategory(video.Category)">@video.ChannelName</span>
+                        <a class="tc-video-card__title" href="@href" target="_blank" rel="noopener noreferrer">@video.Title</a>
+                        <span class="tc-video-card__when">@Dates.Published(video.PublishedAt)</span>
+                    </li>
+                }
+            </ul>
+        </section>
+    }
+</div>
+
+@code {
+    private DateTime nowUtc;
+    private bool unavailable;
+    private TechBriefing briefing = new(0, 0, 0, 0);
+    private IReadOnlyList<FeedItem> stories = [];
+    private IReadOnlyList<FeedItem> day = [];
+    private IReadOnlyList<CoveredStory> covered = [];
+    private IReadOnlyList<VideoItem> videos = [];
+    private readonly Dictionary<string, IReadOnlyList<FeedItem>> desks = new(StringComparer.Ordinal);
+    private WeekSummary? weekLinkSummary;
+    private int total, sourceCount;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        nowUtc = Clock.GetUtcNow().UtcDateTime;
+        unavailable = false;
+        try
+        {
+            await using var db = await Factory.CreateDbContextAsync(Ct);
+            briefing = await TechQuery.BriefingAsync(db, Dates, Ct);
+
+            var candidates = await FeedQuery.GetLatestPerSourceAsync(db, int.MaxValue, hub: "tech", ct: Ct);
+            var rotation = FeedQuery.SelectHomeNews(candidates,
+                await FeedQuery.GetLastUpdatedAsync(db, ct: Ct) ?? DateTime.UnixEpoch, 7);
+            stories = rotation.Count > 0 ? rotation : await TechQuery.LatestAsync(db, 7, ct: Ct);
+
+            var shown = stories.Select(s => s.Id).ToHashSet();
+            var latestAll = await TechQuery.LatestAsync(db, 10 + shown.Count, ct: Ct);
+            day = latestAll.Where(i => !shown.Contains(i.Id)).Take(10).ToList();
+
+            covered = await TechQuery.MostCoveredAsync(db, Cache, nowUtc, TimeSpan.FromHours(24), minSources: 3, take: 2, ct: Ct);
+            videos = await TechQuery.VideosAsync(db, 6, Ct);
+
+            desks.Clear();
+            foreach (var category in NewsSections.TechCategories)
+                desks[category] = await TechQuery.LatestAsync(db, 4, category, Ct);
+
+            total = await FeedQuery.CountHubStoriesAsync(db, "tech", Ct);
+            sourceCount = await TechQuery.SourceCountAsync(db, Ct);
+
+            var todayDow = Dates.TodayAt(nowUtc).DayOfWeek;
+            if (todayDow is DayOfWeek.Sunday or DayOfWeek.Monday or DayOfWeek.Tuesday)
+            {
+                var latestWeek = TechQuery.LatestWeekStart(nowUtc, Dates);
+                weekLinkSummary = await TechQuery.WeekAsync(db, Cache, Dates, latestWeek, "all", ct: Ct);
+            }
+            else
+            {
+                weekLinkSummary = null;
+            }
+        }
+        catch (Exception ex) when (DataFailures.IsReadFailure(ex))
+        {
+            unavailable = true;
+            stories = day = [];
+            covered = [];
+            videos = [];
+            desks.Clear();
+            Log.LogError(ex, "Could not read the Tech front.");
+        }
+    }
+
+    private IReadOnlyList<FeedItem> DeskStories(string category) =>
+        desks.TryGetValue(category, out var items) ? items : [];
+
+    private static string DeskHref(string category) =>
+        NewsSections.RouteFor(category) ?? "tech/news";
+
+    private static string CategorySlug(string category) =>
+        category.ToLowerInvariant().Replace(' ', '-');
+
+    private string RibbonKicker => string.Join(" · ", new[]
+    {
+        Dates.TodayAt(nowUtc).ToString("ddd, MMM d", CultureInfo.InvariantCulture),
+        total > 0 ? $"{total} {(total == 1 ? "story" : "stories")}" : null,
+        sourceCount > 0 ? $"{sourceCount} {(sourceCount == 1 ? "source" : "sources")}" : null,
+    }.Where(p => p is not null));
+
+    private RenderFragment Tiles => @<text>
+        <BriefTile Href="tech/technology" Color="@PhoneColors.ForCategory(NewsSections.Technology)" Label="Technology"
+            Value="@briefing.Technology.ToString("N0", CultureInfo.InvariantCulture)" Sub="@StoriesSub(briefing.Technology)" />
+        <BriefTile Href="tech/video-games" Color="@PhoneColors.ForCategory(NewsSections.VideoGames)" Label="Video Games"
+            Value="@briefing.VideoGames.ToString("N0", CultureInfo.InvariantCulture)" Sub="@StoriesSub(briefing.VideoGames)" />
+        <BriefTile Href="tech/linux" Color="@PhoneColors.ForCategory(NewsSections.Linux)" Label="Linux"
+            Value="@briefing.Linux.ToString("N0", CultureInfo.InvariantCulture)" Sub="@StoriesSub(briefing.Linux)" />
+        <BriefTile Href="videos?categories=tech,video-games" Color="mx-c-tech" Label="Tech videos"
+            Value="@briefing.Videos.ToString("N0", CultureInfo.InvariantCulture)" Sub="@VideosSub(briefing.Videos)" />
+    </text>;
+
+    private static string StoriesSub(int count) => count == 1 ? "story today" : "stories today";
+    private static string VideosSub(int count) => count == 1 ? "video today" : "videos today";
+
+    private RenderFragment Headline(FeedItem item, bool withCategory = false) =>
+        @<li class="@PhoneColors.ForCategory(item.CategoryName)" data-news-url="@FeedQuery.SafeHref(item.Url)" data-news-source="@Source(item)">
+            @if (withCategory && !string.IsNullOrWhiteSpace(item.CategoryName)) { <span class="ef-headlines__kicker @PhoneColors.ForCategory(item.CategoryName)">@item.CategoryName</span> }
+            @if (FeedQuery.SafeHref(item.Url) is { } href) { <a class="ef-headlines__title" href="@href" target="_blank" rel="noopener noreferrer">@Title(item)</a> }
+            else { <span class="ef-headlines__title">@Title(item)</span> }
+            <div class="ef-meta">
+                <span class="ef-meta__when">@Source(item)@(item.Undated ? "" : " · " + Dates.Published(item.Date))</span>
+                <ShareButton Url="@item.Url" Title="@Title(item)" />
+                <SaveButton Item="item" Title="@Title(item)" Source="@Source(item)" Summary="@Summary(item)" />
+            </div>
+        </li>;
+
+    private RenderFragment FoldRow(FeedItem item) =>
+        @<a class="mx-fold__row" href="@Href(item)" target="_blank" rel="noopener noreferrer">
+            <span><b>@Title(item)</b><small>@string.Join(" · ", new[] { Source(item), item.Undated ? null : Dates.Time(item.Date) }.Where(p => p is not null))</small></span>
+        </a>;
+
+    private static string Href(FeedItem item) => FeedQuery.SafeHref(item.Url) ?? "tech/news";
+    private static string Desk(FeedItem item) => item.CategoryName ?? "Tech";
+    private static string Title(FeedItem item) => FeedText.StripEmoji(item.Title) is { Length: > 0 } title ? title : item.Title;
+    private static string Source(FeedItem item) => FeedText.SourceName(item.SourceLabel, item.SourceUrl);
+    private static string Summary(FeedItem item) => FeedText.StripEmoji(FeedQuery.Excerpt(item.Description));
+    private static string Meta(FeedItem item) => string.Join(" · ", new[] { Source(item), item.CategoryName }.Where(p => !string.IsNullOrEmpty(p)));
+    private string When(FeedItem item) => item.Undated ? "" : $"{Dates.Published(item.Date)} · {Dates.Time(item.Date)}";
+}

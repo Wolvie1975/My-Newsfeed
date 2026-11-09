@@ -1,0 +1,240 @@
+@page "/admin/youtube-videos"
+@rendermode InteractiveServer
+@inject IDbContextFactory<WebScraperContext> Factory
+@inherits DataComponentBase
+
+<PageTitle>YouTube videos</PageTitle>
+
+<AdminContent>
+    <AdminPageHeader Eyebrow="Videos" Title="YouTube videos" />
+
+@if (message is not null)
+{
+    <div class="alert alert-success" role="alert">@message</div>
+}
+
+<form class="row g-2 mb-3" @onsubmit="SearchAsync">
+    <div class="col-md-4">
+        <label for="feed" class="visually-hidden">Feed</label>
+        <select id="feed" class="form-select" @bind="feedFilter" @bind:after="ApplyFilterAsync">
+            <option value="">All feeds</option>
+            <option value="none">No feed</option>
+            @foreach (var feed in feeds)
+            {
+                <option value="@feed.Id">@feed.Name</option>
+            }
+        </select>
+    </div>
+    <div class="col-md-5">
+        <label for="search" class="visually-hidden">Search</label>
+        <input id="search" class="form-control" placeholder="Search title, channel or video ID" @bind="searchInput" />
+    </div>
+    <div class="col-md-3">
+        <button type="submit" class="btn btn-primary">Search</button>
+        @if (!string.IsNullOrEmpty(search) || !string.IsNullOrEmpty(feedFilter))
+        {
+            <button type="button" class="btn btn-outline-secondary ms-1" @onclick="ClearAsync">Clear</button>
+        }
+    </div>
+</form>
+
+@if (pendingDelete is { } target)
+{
+    <div class="alert alert-warning" role="alert">
+        <p class="mb-2">Delete the video <strong>@target.Title</strong>? This cannot be undone.</p>
+        <button class="btn btn-danger btn-sm me-2" @onclick="ConfirmDeleteAsync">Delete video</button>
+        <button class="btn btn-secondary btn-sm" @onclick="() => pendingDelete = null">Cancel</button>
+    </div>
+}
+
+@if (rows is null)
+{
+    <p><em>Loading…</em></p>
+}
+else if (rows.Count == 0)
+{
+    <p>No videos match.</p>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-sm align-middle">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th><button class="btn btn-link p-0 fw-bold text-decoration-none" @onclick='() => SortByAsync("title")'>Video@(SortMark("title"))</button></th>
+                    <th><button class="btn btn-link p-0 fw-bold text-decoration-none" @onclick='() => SortByAsync("channel")'>Channel@(SortMark("channel"))</button></th>
+                    <th class="text-nowrap"><button class="btn btn-link p-0 fw-bold text-decoration-none" @onclick='() => SortByAsync("published")'>Published@(SortMark("published"))</button></th>
+                    <th class="text-end"><button class="btn btn-link p-0 fw-bold text-decoration-none" @onclick='() => SortByAsync("views")'>Views@(SortMark("views"))</button></th>
+                    <th>Rating</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in rows)
+                {
+                    <tr>
+                        <td style="width: 84px;">
+                            @if (FeedQuery.SafeHref(row.ThumbnailUrl) is { } thumb)
+                            {
+                                <img src="@thumb" alt="" width="80" height="45" loading="lazy" referrerpolicy="no-referrer"
+                                     style="object-fit: cover; border-radius: 4px;" />
+                            }
+                        </td>
+                        <td>
+                            @if (FeedQuery.SafeHref(row.Url) is { } href)
+                            {
+                                <a href="@href" target="_blank" rel="noopener noreferrer" class="fw-semibold">@row.Title</a>
+                            }
+                            else
+                            {
+                                <span class="fw-semibold">@row.Title</span>
+                            }
+                            <div class="small text-muted">@row.VideoId</div>
+                        </td>
+                        <td>
+                            @* The channel name is the feed's. The video's own author name can differ (it is YouTube's), so it is only a note. *@
+                            @if (row.FeedId is int feedId)
+                            {
+                                <a href="admin/youtube-feeds/@feedId/edit">@row.FeedName</a>
+                            }
+                            else
+                            {
+                                <span class="badge text-bg-secondary">No feed</span>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(row.ChannelName) && !string.Equals(row.ChannelName, row.FeedName, StringComparison.OrdinalIgnoreCase))
+                            {
+                                <div class="small text-muted">YouTube author: @row.ChannelName</div>
+                            }
+                        </td>
+                        <td class="text-nowrap">@Dates.Stamp(row.PublishedAt)</td>
+                        <td class="text-end">@(row.Views?.ToString("N0") ?? "—")</td>
+                        <td class="text-nowrap">
+                            @if (row.RatingAverage is decimal average)
+                            {
+                                <span>@average.ToString("0.00")</span>
+                                <span class="small text-muted">(@(row.RatingCount?.ToString("N0") ?? "0"))</span>
+                            }
+                            else
+                            {
+                                <span>—</span>
+                            }
+                        </td>
+                        <td class="text-nowrap text-end">
+                            <a class="btn btn-outline-primary btn-sm" href="admin/youtube-videos/@row.Id/edit">Edit</a>
+                            <button class="btn btn-outline-danger btn-sm" @onclick="() => StartDelete(row)">Delete</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <AdminPager Total="total" PageIndex="pageIndex" PageSize="PageSize" Noun="videos" PageChanged="GoToAsync" />
+}
+
+</AdminContent>
+
+@code {
+    private const int PageSize = 25;
+
+    
+
+    
+
+    // Query values arrive as text and are parsed leniently: a hand-edited "?feedId=abc" must not throw.
+    [SupplyParameterFromQuery(Name = "feedId")] private string? FeedIdText { get; set; }
+
+    private int? FeedIdQuery => int.TryParse(FeedIdText, out var id) ? id : null;
+
+    private IReadOnlyList<YoutubeFeedOption> feeds = [];
+    private IReadOnlyList<AdminYoutubeVideoRow>? rows;
+    private AdminYoutubeVideoRow? pendingDelete;
+    private string? message;
+
+    // feedFilter is bound to the <select>: "" = all feeds, "none" = videos with no feed, otherwise a feed ID.
+    private string? feedFilter;
+    private string searchInput = "";
+    private string search = "";
+    private string sortColumn = "published";
+    private bool sortDescending = true;
+    private int pageIndex;
+    private int total;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await using var db = await Factory.CreateDbContextAsync(Ct);
+        feeds = await AdminQuery.YoutubeFeedOptionsAsync(db, ct: Ct);
+
+        if (FeedIdQuery is int id && feeds.Any(f => f.Id == id))
+        {
+            feedFilter = id.ToString();
+        }
+
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        await using var db = await Factory.CreateDbContextAsync(Ct);
+        var list = await AdminQuery.YoutubeVideosAsync(db, feedFilter, search, sortColumn, sortDescending, pageIndex, PageSize, Ct);
+        (rows, total, pageIndex) = (list.Rows, list.Total, list.PageIndex);
+    }
+
+    private async Task SearchAsync()
+    {
+        search = searchInput.Trim();
+        pageIndex = 0;
+        await LoadAsync();
+    }
+
+    private async Task ApplyFilterAsync()
+    {
+        pageIndex = 0;
+        await LoadAsync();
+    }
+
+    private async Task ClearAsync()
+    {
+        searchInput = search = "";
+        feedFilter = null;
+        pageIndex = 0;
+        await LoadAsync();
+    }
+
+    private async Task SortByAsync(string column)
+    {
+        sortDescending = sortColumn == column ? !sortDescending : column is not ("title" or "channel");
+        sortColumn = column;
+        pageIndex = 0;
+        await LoadAsync();
+    }
+
+    private string SortMark(string column) => sortColumn != column ? "" : sortDescending ? " ▼" : " ▲";
+
+    private async Task GoToAsync(int index)
+    {
+        pageIndex = Math.Max(0, index);
+        await LoadAsync();
+    }
+
+    private void StartDelete(AdminYoutubeVideoRow row)
+    {
+        message = null;
+        pendingDelete = row;
+    }
+
+    private async Task ConfirmDeleteAsync()
+    {
+        if (pendingDelete is not { } target)
+        {
+            return;
+        }
+
+        await using var db = await Factory.CreateDbContextAsync(CancellationToken.None);
+        await AdminStore.DeleteYoutubeVideoAsync(db, target.Id, CancellationToken.None);
+        message = $"Deleted “{target.Title}”.";
+        pendingDelete = null;
+        await LoadAsync();
+    }
+}

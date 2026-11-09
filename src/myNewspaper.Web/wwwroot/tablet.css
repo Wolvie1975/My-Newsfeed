@@ -1,0 +1,2020 @@
+/* iPad portrait foundation: 744–1023px. Page content opts in separately; see docs/ipad/. */
+@media (min-width: 744px) and (max-width: 1023px) {
+    /* ---------- The switch: opted-in pages show their desktop markup on a tablet ---------- */
+    .mx-desktop.tab-desktop {
+        display: contents !important; /* beats mobile.css's `.mx-desktop { display: none !important }` (more specific) */
+    }
+    .mx-phone.tab-phone {
+        display: none !important;
+    }
+    /* Shared components with their own phone/desktop halves (e.g. ScoreboardPanel) follow the page they sit in. */
+    .tab-desktop .mx-desktop {
+        display: contents !important;
+    }
+    .tab-desktop .mx-phone {
+        display: none !important;
+    }
+    /* Continue the tablet paper through the gutters and behind edge-to-edge strips. */
+    .pub:has(.page .tab-desktop) {
+        background: var(--surface);
+    }
+    /* The page frame on an opted-in page: 24px sides, no 1280 cap. */
+    .pub .page:has(.tab-desktop) {
+        max-width: none;
+        padding: 16px 24px 40px;
+        gap: 16px;
+    }
+
+    /* ---------- Header: two rows ---------- */
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme])) .pub .site-header {
+        flex-wrap: wrap;
+        gap: 0 8px;
+        min-height: 0;
+        height: auto;
+        padding: 6px 16px 0 24px;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme])) .pub .brand {
+        display: inline-flex;
+        width: auto;
+        gap: 10px;
+        min-height: 48px;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme])) .pub .brand-mark,
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme])) .pub .header-clock,
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme])) .pub .mobile-nav,
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme])) .pub .header-watch,
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+        .pub
+        .header-actions
+        > .adm-link,
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+        .pub
+        .edition-chip__name {
+        display: none;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme])) .pub .brand-tile {
+        display: block;
+        flex: none;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme])) .pub .brand-wordmark {
+        display: inline;
+        font-size: 22px;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme])) .pub .header-actions {
+        margin-left: auto;
+        gap: 4px;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+        .pub
+        .header-actions
+        > .settings-link {
+        display: inline-flex;
+        align-items: center;
+        min-height: 44px;
+        padding: 0 8px;
+    }
+    .pub .header-search-link {
+        display: grid;
+        place-items: center;
+        width: 44px;
+        height: 44px;
+        border-radius: 10px;
+        color: inherit;
+    }
+    /* Row 2: the sections. */
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+        .pub
+        .site-nav--inline {
+        display: flex;
+        order: 10;
+        flex: 0 0 100%;
+        gap: 0 22px;
+        margin: 0;
+        padding: 0;
+        overflow-x: auto;
+        scrollbar-width: none;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+        .pub
+        .site-nav--inline
+        a {
+        display: inline-flex;
+        align-items: center;
+        min-height: 44px;
+        padding: 0 2px;
+        border-bottom: 3px solid transparent;
+        border-radius: 0;
+        background: none;
+        font-size: 15px;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+        .pub
+        .site-nav--inline
+        a[aria-current] {
+        border-bottom-color: currentColor;
+        color: inherit;
+        background: none;
+        font-weight: 700;
+    }
+
+    /* ---------- Helper: a strip you swipe sideways (scores, posters, pills, section tabs) ---------- */
+    .pub .tab-desktop .tab-scroll {
+        display: flex;
+        flex-wrap: nowrap;
+        gap: 12px;
+        margin-inline: -24px; /* runs to the screen edge... */
+        padding: 2px 24px 10px; /* ...but starts in line with the page */
+        overflow-x: auto;
+        overscroll-behavior-x: contain;
+        scroll-snap-type: x proximity;
+        scroll-padding-inline: 24px;
+        scrollbar-width: none;
+        -webkit-mask-image: linear-gradient(
+            90deg,
+            #000 calc(100% - 56px),
+            transparent
+        ); /* the fade says "there's more" */
+        mask-image: linear-gradient(90deg, #000 calc(100% - 56px), transparent);
+    }
+    .pub .tab-desktop .tab-scroll::-webkit-scrollbar {
+        display: none;
+    }
+    .pub .tab-desktop .tab-scroll > * {
+        flex: none;
+        scroll-snap-align: start;
+    }
+
+    /* ---------- Helper: two equal columns with a rule between ---------- */
+    .pub .tab-desktop .tab-two {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 0;
+        align-items: start;
+    }
+    .pub .tab-desktop .tab-two > * {
+        min-width: 0;
+    }
+    .pub .tab-desktop .tab-two > :first-child {
+        padding-right: 20px;
+    }
+    .pub .tab-desktop .tab-two > :last-child {
+        padding-left: 20px;
+        border-left: 1px solid var(--row-border);
+    }
+
+    /* ---------- Helper: touch targets ---------- */
+    .pub .tab-desktop :is(a, button, select, summary):not(.tab-inline) {
+        min-height: 44px;
+    }
+
+    /* Tablet actions keep the same 44px targets, including the edition switch. */
+    .pub .settings-link__label {
+        display: none;
+    }
+    .pub .settings-link__icon {
+        display: block;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+        .pub
+        .header-actions
+        > .settings-link {
+        justify-content: center;
+        width: 44px;
+        padding: 0;
+        color: inherit;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])):is([data-theme], :not([data-theme]))
+        .pub
+        .header-actions
+        > :is(.saved-link, .theme-toggle, .scheme-toggle) {
+        order: 0;
+    }
+    .pub .header-actions > .header-search-link {
+        order: -3;
+    }
+    .pub .edition-chip {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 44px;
+        height: 44px;
+        order: 2;
+        color: inherit;
+    }
+    .pub .edition-chip__tile {
+        display: grid;
+        place-items: center;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: var(--ed);
+        color: #fff;
+        font-weight: 800;
+    }
+    .pub .settings-panel,
+    .pub .settings-panel > summary,
+    .pub .settings-panel > summary > h2,
+    .pub [data-phone-settings] :is(h2, section[id]) {
+        scroll-margin-top: 120px;
+    }
+    /* ---------- Where to watch (docs/ipad/ipad-01-where-to-watch.md) ---------- */
+    .pub .watch-page .tab-desktop .page-heading > p:last-child {
+        display: block; /* keep the description (the <= 600px rule hides it) */
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .watch-page .tab-desktop .watch-controls {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 14px 16px;
+    }
+    .pub .watch-page .tab-desktop .watch-search {
+        grid-column: 1 / -1; /* full width */
+    }
+    .pub .watch-page .tab-desktop .watch-filters,
+    .pub .watch-page .tab-desktop .watch-mine {
+        border-top: 4px double var(--text);
+        padding-top: 6px;
+    }
+    .pub .watch-page .tab-desktop .watch-mine {
+        justify-self: end;
+    }
+    .pub .watch-page .tab-desktop .watch-mine__logos li {
+        width: 34px;
+        height: 34px;
+    }
+    .pub .watch-page .tab-desktop .watch-controls-note {
+        grid-column: 1 / -1;
+    }
+
+    /* Shelves: swipe, no arrows, run to the screen edge, fade on the right. */
+    .pub .watch-page .tab-desktop .watch-shelf {
+        grid-auto-columns: 150px;
+        gap: 16px;
+        margin-inline: -24px;
+        padding: 2px 24px 10px;
+        scroll-padding-inline: 24px;
+        scroll-snap-type: x proximity;
+        scrollbar-width: none;
+        -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 56px), transparent);
+        mask-image: linear-gradient(90deg, #000 calc(100% - 56px), transparent);
+    }
+    .pub .watch-page .tab-desktop .watch-row__arrow {
+        display: none !important;
+    }
+    .pub .watch-page .tab-desktop .watch-row__head h2 {
+        font-size: 26px;
+    }
+
+    .pub .watch-page .tab-desktop .page-heading h1 {
+        font-size: 48px;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .watch-page .tab-desktop .watch-search-row {
+        flex-direction: row;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .watch-page .tab-desktop .watch-search input {
+        min-width: 0;
+        min-height: 48px;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .watch-page .tab-desktop .watch-search button {
+        min-height: 48px;
+    }
+    .pub .watch-page .tab-desktop .watch-filters,
+    .pub .watch-page .tab-desktop .watch-mine {
+        align-self: stretch;
+        padding: 6px 0 0;
+        border: 0;
+        border-top: 4px double var(--text);
+        border-radius: 0;
+        background: none;
+    }
+    .pub .watch-page .tab-desktop .watch-mine {
+        flex-wrap: wrap;
+        gap: 4px 10px;
+    }
+    .pub .watch-page .tab-desktop .watch-toggle {
+        display: inline-flex;
+        width: auto;
+    }
+
+    /* Cancel the phone ribbon's edge-to-edge frame once Watch has opted in. */
+    .pub .watch-page:has(.tab-desktop) {
+        margin: 0;
+        padding-bottom: 0;
+        min-width: 0;
+    }
+    .pub
+        .watch-page:has(.tab-desktop)
+        > :is(.watch-results-bar, .watch-grid, .watch-results, .watch-tabs, .watch-credits, p) {
+        margin-left: 0;
+        margin-right: 0;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .watch-page .tab-desktop .watch-toggle {
+        display: inline-flex;
+        width: auto;
+    }
+    .pub .watch-page .tab-desktop .watch-filters {
+        min-width: 0;
+    }
+    .pub .watch-page .tab-desktop .watch-mine {
+        max-width: 100%;
+    }
+    .pub .watch-page .tab-desktop .watch-services-link:has(.watch-services-compact) .watch-services-label {
+        display: none;
+    }
+    .pub .watch-page .tab-desktop .watch-services-compact {
+        display: inline;
+    }
+    /* ---------- YouTube (docs/ipad/ipad-02-youtube.md) ---------- */
+    /* Pills + channel menu on one row under a double rule; the pills scroll sideways. */
+    .pub .tab-desktop .yt-cats {
+        display: flex;
+        flex-wrap: nowrap;
+        gap: 8px;
+        margin: 14px -24px 0 0; /* run off the right edge... */
+        padding: 12px 24px 4px 0;
+        border-top: 4px double var(--text);
+        overflow-x: auto;
+        scrollbar-width: none;
+        -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 48px), transparent);
+        mask-image: linear-gradient(90deg, #000 calc(100% - 48px), transparent);
+    }
+    .pub .tab-desktop .yt-cats a {
+        flex: none;
+        display: inline-flex;
+        align-items: center;
+        min-height: 40px;
+        padding: 0 14px;
+        border: 1px solid var(--row-border);
+        border-radius: 999px;
+        color: var(--text);
+        font-size: 14px;
+        font-weight: 600;
+        white-space: nowrap;
+        text-decoration: none;
+    }
+    .pub .tab-desktop .yt-cats a[aria-current='page'] {
+        border-color: var(--text);
+        background: var(--text);
+        color: var(--surface);
+    }
+    .pub .tab-desktop .filters--videos {
+        flex-wrap: wrap;
+        gap: 6px 12px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid var(--row-border);
+    }
+    .pub .tab-desktop .filters--videos .count--toolbar {
+        flex-basis: 100%;
+        margin: 0;
+        font-size: 12px;
+    }
+
+    /* Featured full width, then Latest | By channel + Watch later. */
+    .pub .tab-desktop .yt-top {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 0;
+    }
+    .pub .tab-desktop .yt-feature {
+        grid-column: 1 / -1;
+        padding: 0 0 20px;
+        border-right: 0;
+        border-bottom: 1px solid var(--text);
+        margin-bottom: 4px;
+    }
+    .pub .tab-desktop .yt-latest {
+        padding: 0 20px 0 0;
+    }
+    .pub .tab-desktop .yt-top:not(:has(.yt-aside)) .yt-latest {
+        grid-column: 1 / -1; /* no aside (no saved videos, no categories): Latest takes the width */
+        padding-right: 0;
+    }
+    .pub .tab-desktop .yt-aside {
+        display: block; /* the 4K guide hides it below 2560 */
+        padding: 0 0 0 20px;
+        border-left: 1px solid var(--row-border);
+    }
+    .pub .tab-desktop .yt-slide__title {
+        font-size: 30px;
+        line-height: 1.1;
+    }
+    .pub .tab-desktop .yt-tabs {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 12px;
+    }
+    .pub .tab-desktop .yt-btn {
+        width: 44px;
+        height: 44px;
+    }
+    .pub .tab-desktop .yt-row {
+        grid-template-columns: 132px minmax(0, 1fr);
+    }
+
+    /* More videos: three across. */
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .tab-desktop .video-front .videos {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 20px 16px;
+    }
+    .pub .tab-desktop .video-front .video--featured {
+        grid-column: span 1;
+    }
+
+    .pub .tab-desktop .yt-aside > section + section {
+        margin-top: 32px;
+    }
+    .pub .tab-desktop .yt-channel-counts a {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        min-height: 44px;
+        padding: 8px 0;
+        border-bottom: 1px solid var(--row-border);
+        color: var(--text);
+        text-decoration: none;
+    }
+    .pub .tab-desktop .yt-channel-counts a[aria-current='page'] {
+        color: var(--accent);
+        font-weight: 800;
+    }
+    .pub .tab-desktop .yt-category-count {
+        font-variant-numeric: tabular-nums;
+        color: var(--text-2);
+    }
+    .pub .tab-desktop .yt-watch-list {
+        margin: 12px 0 0;
+        padding: 0;
+        list-style: none;
+    }
+    .pub .tab-desktop .yt-watch-list li {
+        padding: 12px 0;
+        border-bottom: 1px solid var(--row-border);
+        overflow-wrap: anywhere;
+    }
+    .pub .tab-desktop .yt-watch-list a {
+        display: block;
+        padding: 8px 0;
+        color: var(--text);
+        font-family: var(--font-serif);
+        font-size: 20px;
+        font-weight: 700;
+        line-height: 1.2;
+    }
+    .pub .tab-desktop .yt-watch-list li > span {
+        color: var(--text-2);
+        font-size: 12px;
+    }
+
+    .pub .mx-life-layout:has(> .tab-desktop) {
+        margin: 0;
+        padding-bottom: 0;
+        min-width: 0;
+    }
+    .pub .tab-desktop .yt-browse {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(180px, 240px);
+        gap: 6px 16px;
+        border-top: 4px double var(--text);
+        margin: 14px 0 0;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--row-border);
+        min-width: 0;
+    }
+    .pub .tab-desktop .yt-cats {
+        grid-column: 1;
+        grid-row: 1;
+        margin: 0;
+        padding: 0 24px 0 0;
+        border: 0;
+        align-items: center;
+    }
+    .pub .tab-desktop .yt-cats a {
+        min-height: 44px;
+    }
+    .pub .tab-desktop .yt-cats::-webkit-scrollbar {
+        display: none;
+    }
+    .pub .tab-desktop .filters--videos {
+        display: contents;
+    }
+    .pub .tab-desktop .filters--videos .catselect {
+        grid-column: 2;
+        grid-row: 1;
+        min-width: 0;
+        align-self: center;
+    }
+    .pub .tab-desktop .filters--videos #channel {
+        width: 100%;
+        min-width: 0;
+        min-height: 44px;
+    }
+    .pub .tab-desktop .filters--videos .count--toolbar {
+        grid-column: 1 / -1;
+        grid-row: 2;
+        display: block;
+    }
+    .pub .tab-desktop .yt-aside {
+        min-width: 0;
+    }
+    .pub .tab-desktop .yt-aside > section + section {
+        margin-top: 24px;
+    }
+    .pub .tab-desktop .yt-watch-list a {
+        font-size: 18px;
+    }
+    .pub .tab-desktop .yt-aside .ef-more {
+        display: flex;
+        align-items: center;
+        min-height: 44px;
+    }
+
+    /* Entertainment desktop rules copied here to keep phone News untouched. */
+
+    .pub .tab-desktop .ef {
+        gap: 0;
+    }
+    .pub .tab-desktop .ef-screen,
+    .pub .tab-desktop .ef-lead,
+    .pub .tab-desktop .ef-headlines,
+    .pub .tab-desktop .ef-box,
+    .pub .tab-desktop .ef-tv,
+    .pub .tab-desktop .ef-theaters {
+        padding: 0;
+        border: 0;
+        border-radius: 0;
+        background: none;
+    }
+    .pub .tab-desktop .ef-cols {
+        display: grid;
+        grid-template-columns: 250px minmax(0, 1fr);
+        column-gap: 24px;
+        row-gap: 24px;
+        padding-top: 20px;
+    }
+    .pub .tab-desktop .ef-cols .ef-onscreen-col {
+        grid-column: 1;
+        grid-row: 1 / span 3;
+    }
+    .pub .tab-desktop .ef-cols .ef-main {
+        grid-column: 2;
+        grid-row: 1;
+        gap: 0;
+        padding-right: 0;
+        border-right: 0;
+    }
+    .pub .tab-desktop .ef-cols .ef-headlines-col {
+        grid-column: 2;
+        grid-row: 2;
+    }
+    .pub .tab-desktop .ef-cols .ef-side {
+        grid-column: 2;
+        grid-row: 3;
+        gap: 26px;
+        padding-left: 0;
+    }
+    .pub .tab-desktop .ef-desk-row {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+        margin-top: 32px;
+        padding-top: 16px;
+        border-top: 3px double var(--text);
+    }
+    .pub .tab-desktop .ef-desk-row .ef-headlines {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        column-gap: 28px;
+    }
+    .pub .tab-desktop .ef-lead > :not(.ef-lead__image) {
+        margin-left: 0;
+        margin-right: 0;
+    }
+    .pub .tab-desktop .ef-lead__image {
+        height: 300px;
+        margin: 0;
+    }
+    .pub .tab-desktop .ef-kicker,
+    .pub .tab-desktop .ef-lead__image + .ef-kicker {
+        margin-top: 12px;
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+    }
+    .pub .tab-desktop .ef-lead__title {
+        margin: 6px 0 8px;
+        font-size: 40px;
+        line-height: 1.08;
+    }
+    .pub .tab-desktop .ef-lead__summary {
+        display: block;
+        margin: 0;
+        color: var(--text-2);
+        font-family: var(--font-serif);
+        font-size: 19px;
+        line-height: 1.5;
+    }
+    .pub .tab-desktop .ef-lead .ef-meta {
+        margin-top: 8px;
+    }
+    .pub .tab-desktop .ef-lead .ef-meta__when {
+        font-size: 13px;
+    }
+    .pub .tab-desktop .ef-main > .ef-label {
+        display: block;
+        margin-top: 20px;
+    }
+    .pub .tab-desktop .ef-headlines {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        column-gap: 24px;
+        padding: 0;
+    }
+    .pub .tab-desktop .ef-headlines li,
+    .pub .tab-desktop .ef-headlines li:last-child {
+        padding: 12px 0 4px;
+        border-bottom: 1px solid var(--row-border);
+    }
+    .pub .tab-desktop .ef-headlines__kicker {
+        display: block;
+        color: var(--accent);
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+    .pub .tab-desktop .ef-headlines__title {
+        margin-top: 3px;
+        font-family: var(--font-serif);
+        font-size: 19px;
+        font-weight: 700;
+        line-height: 1.22;
+    }
+    .pub .tab-desktop .ef-main > .ef-more {
+        margin-top: 8px;
+    }
+    .pub .tab-desktop .ef-box .ef-head h2 {
+        font-family: var(--font-serif);
+        font-size: 28px;
+    }
+    .pub .tab-desktop .ef-box .ef-note {
+        margin: 0 0 8px;
+        font-size: 12px;
+    }
+    .pub .tab-desktop .ef-table {
+        font-size: 14px;
+    }
+    .pub .tab-desktop .ef-table thead {
+        display: table-header-group;
+    }
+    .pub .tab-desktop .ef-table thead th {
+        padding: 4px 0;
+        border-top: 0;
+        border-bottom: 2px solid var(--text);
+        color: var(--text-2);
+        font-size: 11px;
+        font-weight: 800;
+        text-transform: uppercase;
+    }
+    .pub .tab-desktop .ef-table thead th:nth-child(2) {
+        text-align: left;
+    }
+    .pub .tab-desktop .ef-table tbody th,
+    .pub .tab-desktop .ef-table tbody td {
+        padding: 8px 0;
+        border-top: 0;
+        border-bottom: 1px dotted var(--row-border);
+    }
+    .pub .tab-desktop .ef-table tbody th {
+        font-weight: 600;
+    }
+    .pub .tab-desktop .ef-table__rank {
+        font-family: inherit;
+        font-size: 14px;
+        color: var(--text);
+    }
+    .pub .tab-desktop .ef-table__total {
+        display: table-cell;
+        padding-left: 10px !important;
+        color: var(--text-2);
+    }
+    .pub .tab-desktop .ef-tv .ef-label,
+    .pub .tab-desktop .ef-theaters .ef-label {
+        padding-bottom: 4px;
+        border-bottom: 2px solid var(--text);
+        font-size: 12px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+    }
+    .pub .tab-desktop .ef-tv__item {
+        grid-template-columns: 60px minmax(0, 1fr);
+        padding: 8px 0;
+        border: 0;
+    }
+    .pub .tab-desktop .ef-tv__item .ef-poster {
+        width: 60px;
+    }
+    .pub .tab-desktop .ef-tv__item b {
+        font-size: 16px;
+    }
+    .pub .tab-desktop .ef-tv__item .ef-where {
+        margin-top: 2px;
+        font-size: 13px;
+    }
+    /* ---------- Section tabs on opted-in section pages (shared by parts 3–5) ---------- */
+    .pub .tab-desktop .section-tabs {
+        display: flex;
+        flex-wrap: nowrap;
+        gap: 0 4px;
+        margin-inline: -24px;
+        padding: 0 12px;
+        border-bottom: 1px solid var(--text);
+        overflow-x: auto;
+        scrollbar-width: none;
+        -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 56px), transparent);
+        mask-image: linear-gradient(90deg, #000 calc(100% - 56px), transparent);
+    }
+    .pub .tab-desktop .section-tabs a {
+        flex: none;
+        display: flex;
+        align-items: center;
+        min-height: 44px;
+        padding: 0 12px;
+        border-bottom: 3px solid transparent;
+        color: var(--text);
+        font-size: 15px;
+        font-weight: 600;
+        white-space: nowrap;
+        text-decoration: none;
+    }
+    .pub .tab-desktop .section-tabs a[aria-current='page'] {
+        border-bottom-color: var(--accent);
+        color: var(--accent);
+        font-weight: 800;
+    }
+    .pub .tab-desktop .section-nav .section-select {
+        display: none;
+    }
+    /* Scroll the current tab into view: see the note below. */
+
+    /* ---------- Entertainment (docs/ipad/ipad-03-entertainment.md) ---------- */
+    .pub .tab-desktop .ef-lead__image {
+        width: 100%;
+        height: auto;
+        aspect-ratio: 16 / 9;
+        border-radius: 12px;
+        overflow: hidden;
+    }
+    .pub .tab-desktop .ef-lead__image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .pub .tab-desktop .ef-lead__title {
+        font-size: 36px;
+        line-height: 1.08;
+    }
+
+    .pub .tab-desktop .ef-headlines {
+        grid-template-columns: minmax(0, 1fr);
+    }
+    .pub .tab-desktop .section-tabs::-webkit-scrollbar {
+        display: none;
+    }
+
+    /* The retained lead photo must outrank article-images' compact thumbnail geometry. */
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .tab-desktop
+        .ef-lead[data-article-story='feature']
+        > .ef-lead__image {
+        float: none;
+        width: 100%;
+        max-width: none;
+        max-height: none;
+        height: auto;
+        aspect-ratio: 16 / 9;
+        margin: 0;
+        border-radius: 12px;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .tab-desktop .ef-lead__image img {
+        object-fit: cover;
+    }
+    /* ---------- Sports and News fronts: the shared .spf-cols frame (docs/ipad/ipad-04-sports.md) ---------- */
+    /* .spf-cols = .spf-upcoming | .ef-main.spf-main (lead, label, headlines, more link) | .ef-side.spf-side
+       Tablet: lead across both columns; Upcoming + headlines on the left; the side column on the right. */
+    .pub .tab-desktop .spf-cols {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        grid-auto-flow: row dense;
+    }
+    .pub .tab-desktop .spf-main {
+        display: contents;
+    }
+    .pub .tab-desktop .spf-cols .ef-lead {
+        grid-column: 1 / -1;
+        grid-row: 1;
+        padding: 0 0 20px;
+        margin-bottom: 4px;
+        border: 0;
+        border-bottom: 1px solid var(--text);
+    }
+    .pub .tab-desktop .spf-cols > .spf-upcoming {
+        grid-column: 1;
+        grid-row: 2;
+        padding: 0 20px 0 0;
+        border: 0;
+    }
+    .pub .tab-desktop .spf-cols > .spf-main > :not(.ef-lead) {
+        grid-column: 1;
+        padding-right: 20px;
+    }
+    .pub .tab-desktop .spf-cols > .spf-side {
+        grid-column: 2;
+        grid-row: 2 / span 5;
+        padding: 0 0 0 20px;
+        border-left: 1px solid var(--row-border);
+    }
+    .pub .tab-desktop .spf-main .ef-lead__image {
+        height: auto;
+        aspect-ratio: 16 / 9;
+    }
+    .pub .tab-desktop .spf-main .ef-lead__title {
+        font-size: 36px;
+        line-height: 1.08;
+    }
+
+    /* ---------- Sports only ---------- */
+    /* Today's scores: swipe sideways, about three cards visible. */
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .tab-desktop .spf-scores .scoreboard-games {
+        display: flex;
+        flex-wrap: nowrap;
+        gap: 12px;
+        margin-inline: -24px;
+        padding: 2px 24px 10px;
+        overflow-x: auto;
+        scroll-snap-type: x proximity;
+        scroll-padding-inline: 24px;
+        scrollbar-width: none;
+        -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 56px), transparent);
+        mask-image: linear-gradient(90deg, #000 calc(100% - 56px), transparent);
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .tab-desktop .spf-scores .scoreboard-game {
+        flex: 0 0 236px;
+        scroll-snap-align: start;
+    }
+    .pub .tab-desktop .spf-scores .scoreboard-games::-webkit-scrollbar {
+        display: none;
+    }
+    .pub .tab-desktop .spf-agate a {
+        min-height: 44px;
+        grid-template-columns: 64px minmax(0, 1fr);
+        column-gap: 8px;
+        row-gap: 2px;
+    }
+    .pub .tab-desktop .spf-agate__time {
+        grid-row: 1 / span 2;
+        align-self: start;
+    }
+    .pub .tab-desktop .spf-agate__tv {
+        grid-column: 2;
+        overflow-wrap: anywhere;
+    }
+    /* Standings and Top 25: first 10 rows; the section's link goes to the full table. */
+    .pub .tab-desktop .spf-standings .spf-table tbody tr:nth-child(n + 11):not(.sports-selected),
+    .pub .tab-desktop .spf-rankings .spf-table tbody tr:nth-child(n + 11):not(.sports-selected) {
+        display: none;
+    }
+    .pub .tab-desktop .spf-front .spf-standings .spf-table tbody tr,
+    .pub .tab-desktop .spf-front .spf-rankings .spf-table tbody tr {
+        display: table-row;
+    }
+    .pub .tab-desktop .spf-front > .spf-cols {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        column-gap: 28px;
+    }
+    .pub .tab-desktop .spf-front > .spf-cols > .ef-main.spf-main {
+        grid-column: 1 / -1;
+        grid-row: 1;
+        display: block;
+        padding: 0 0 20px;
+        margin-bottom: 4px;
+        border: 0;
+        border-bottom: 1px solid var(--text);
+    }
+    .pub .tab-desktop .spf-front > .spf-cols > .spf-upcoming {
+        grid-column: 1;
+        grid-row: 2;
+        padding: 0;
+        border: 0;
+    }
+    .pub .tab-desktop .spf-front > .spf-cols > .spf-headlines-col {
+        grid-column: 2;
+        grid-row: 2;
+        padding: 0;
+    }
+    .pub .tab-desktop .spf-front > .spf-tables {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+        margin-top: 32px;
+        padding-top: 16px;
+        border-top: 3px double var(--text);
+    }
+    @media (min-width: 900px) {
+        .pub .tab-desktop .spf-front .spf-table-split {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            column-gap: 24px;
+        }
+    }
+    .pub .tab-desktop .spf-side {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+    }
+
+    /* News: desktop details copied into opted-in tablet scope to preserve phone briefing. */
+    .pub .tab-desktop .nf-brief {
+        padding: 2px 0 16px;
+        border-bottom: 1px solid var(--text);
+    }
+    .pub .tab-desktop .nf-brief .ef-label {
+        margin-bottom: 10px;
+        padding: 0;
+        border: 0;
+    }
+    .pub .tab-desktop .nf-tile {
+        padding: 12px 14px;
+    }
+    .pub .tab-desktop .nf-tile__value {
+        font-size: 30px;
+    }
+    .pub .tab-desktop .nf-side .ef-note a {
+        color: var(--text-2);
+    }
+    .pub .tab-desktop .nf-pictures,
+    .pub .tab-desktop .nf-desks {
+        margin-top: 12px;
+        padding-top: 20px;
+        border-top: 1px solid var(--text);
+    }
+    /* ---------- News (docs/ipad/ipad-05-news.md) ---------- */
+    /* The briefing: tiles two across. */
+    .pub .tab-desktop .nf-brief__tiles {
+        display: grid;
+        grid-auto-flow: row;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+    }
+
+    /* Top headlines below both columns, as a two-column list. */
+    .pub .tab-desktop .spf-cols:has(.nf-day) > .spf-side {
+        grid-row: 2; /* only beside The day so far */
+    }
+    .pub .tab-desktop .spf-cols:has(.nf-day) > .spf-main > :not(.ef-lead) {
+        grid-column: 1 / -1;
+        padding-right: 0;
+    }
+    .pub .tab-desktop .spf-cols:has(.nf-day) > .spf-main > .ef-label {
+        margin-top: 24px;
+        padding-top: 4px;
+        border-top: 1px solid var(--text);
+    }
+    .pub .tab-desktop .spf-cols:has(.nf-day) > .spf-main > .ef-headlines {
+        display: block;
+        columns: 2;
+        column-gap: 28px;
+    }
+    .pub .tab-desktop .spf-cols:has(.nf-day) > .ef-headlines-col.tc-headlines-col {
+        grid-column: 1 / -1;
+        grid-row: 3;
+        padding-right: 0;
+        border: 0;
+    }
+    .pub .tab-desktop .spf-cols:has(.nf-day) > .tc-headlines-col > .ef-label {
+        margin-top: 24px;
+        padding-top: 4px;
+        border-top: 1px solid var(--text);
+    }
+    .pub .tab-desktop .spf-cols:has(.nf-day) > .tc-headlines-col > .ef-headlines {
+        display: block;
+        columns: 2;
+        column-gap: 28px;
+    }
+    .pub .tab-desktop .spf-cols:has(.nf-day) > .tc-headlines-col > .ef-headlines > li {
+        break-inside: avoid;
+    }
+
+    /* Side column: the three boxes stacked with room between. */
+    .pub .tab-desktop .spf-cols:has(.nf-day) > .spf-side {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+    }
+    .pub .tab-desktop .nw-cascade {
+        column-count: 1;
+    }
+    .pub .tab-desktop .nw-cascade > .nf-desk {
+        display: none;
+    }
+    .pub .tab-desktop .nf-side + .nf-side {
+        padding-top: 0;
+        border-top: 0;
+    }
+
+    /* In pictures and the desks: two across. */
+    .pub .tab-desktop .nf-pictures__grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .pub .tab-desktop .nf-desks {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .pub .tab-desktop .nf-brief--phone {
+        display: none;
+    }
+    .pub .tab-desktop .nf-topics > .ef-more {
+        display: inline-flex;
+        min-height: 44px;
+        align-items: center;
+        padding: 0 14px;
+        border: 1px solid var(--accent);
+        border-radius: 10px;
+    }
+
+    /* Home: scoped desktop column details; desktop templates and header stay in broadsheet.css. */
+    .pub .tab-desktop .bs-title__greeting {
+        margin-top: 10px;
+        font-size: 20px;
+        font-style: italic;
+        font-weight: 500;
+    }
+    .pub .tab-desktop .bs-title__date {
+        margin-top: 2px;
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+    }
+    .pub .tab-desktop .bs-title .home-refresh {
+        margin-top: 10px;
+        min-height: 44px;
+    }
+    .pub .tab-desktop .bs-watch {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        align-items: center;
+        gap: 24px;
+        margin-top: 18px;
+        padding: 16px 20px;
+        border: 0;
+        background: var(--btn-bg);
+        color: var(--btn-fg, #ffffff);
+    }
+    .pub .tab-desktop .bs-watch .bs-ear__title {
+        margin: 0;
+        color: var(--btn-fg, #ffffff);
+        font-size: 22px;
+    }
+    .pub .tab-desktop .bs-watch__search {
+        max-width: none;
+        margin: 0;
+    }
+    .pub .tab-desktop .bs-watch input {
+        border: 0;
+        min-height: 50px;
+        font-size: 16px;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .tab-desktop .bs-watch .nf-btn--primary {
+        min-height: 50px;
+        background: var(--selection-bg, #ffd34d);
+        color: var(--selection-fg, #141b2b);
+        font-weight: 800;
+    }
+    .pub .tab-desktop .bs-live {
+        border: 2px solid var(--text);
+        background: transparent;
+    }
+    .pub .tab-desktop .bs-col {
+        display: flex;
+        flex-direction: column;
+        gap: 28px;
+        min-width: 0;
+        padding: 0 24px;
+    }
+    .pub .tab-desktop .bs-col:first-child {
+        padding-left: 0;
+    }
+    .pub .tab-desktop .bs-col:last-child {
+        padding-right: 0;
+    }
+    .pub .tab-desktop .bs-col + .bs-col {
+        border-left: 1px solid var(--row-border);
+    }
+    .pub .tab-desktop .bs-band {
+        display: block;
+        margin: 40px 0 0;
+        padding: 10px 0;
+        border-top: 4px double var(--text);
+        border-bottom: 1px solid var(--text);
+        font-family: var(--font-serif);
+        font-size: 28px;
+        font-weight: 800;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .tab-desktop .bs-home .d-card {
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        overflow: visible;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .tab-desktop .bs-home .d-card__head {
+        min-height: 44px;
+        padding: 0 0 4px;
+    }
+    .pub .tab-desktop .bs-home .bs-tonight__note,
+    .pub .tab-desktop .bs-home .d-headline-shelf__list {
+        padding-left: 0;
+        padding-right: 0;
+    }
+    .pub .tab-desktop .bs-home .d-tonight-title,
+    .pub .tab-desktop .bs-home .bs-tonight .d-card__title {
+        font-family: var(--font-serif);
+        font-size: 28px;
+        letter-spacing: 0;
+        text-transform: none;
+    }
+    .pub .tab-desktop .bs-home .bs-tonight .d-card__head {
+        border-bottom: 0;
+    }
+    .pub .tab-desktop .bs-home .d-headline-shelf__title,
+    .pub .tab-desktop .bs-home .d-headline-shelf__list a {
+        font-family: var(--font-serif);
+        font-size: 19px;
+        font-weight: 700;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .tab-desktop .bs-home .d-card__count {
+        font-size: 12px;
+        font-weight: 400;
+        letter-spacing: 0;
+        text-transform: none;
+    }
+    .pub .tab-desktop .bs-home .d-lead__story {
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        padding-top: 16px;
+    }
+    .pub .tab-desktop .bs-home .d-lead__body {
+        display: contents;
+    }
+    .pub .tab-desktop .bs-home .d-lead__source {
+        order: 1;
+        margin: 4px 0 8px;
+    }
+    .pub .tab-desktop .bs-home .d-lead__title {
+        order: 2;
+        margin: 0 0 10px;
+        font-size: 48px;
+        line-height: 1.05;
+    }
+    .pub .tab-desktop .bs-home .d-lead__summary {
+        order: 3;
+        margin: 0 0 14px;
+        font-family: var(--font-serif);
+        font-size: 20px;
+        line-height: 1.45;
+    }
+    .pub .tab-desktop .bs-home .d-lead__image {
+        order: 4;
+        height: 300px;
+        min-height: 0;
+        aspect-ratio: auto;
+    }
+    .pub .tab-desktop .bs-home .d-lead__image:not(:has(img, .ph)) {
+        display: none;
+    }
+    .pub .tab-desktop .bs-home .d-lead__meta {
+        order: 5;
+        margin-top: 6px;
+    }
+    .pub .tab-desktop .bs-home .d-opinion .d-story {
+        display: block;
+        padding: 8px 0 0;
+    }
+    .pub .tab-desktop .bs-home .d-opinion .d-thumb {
+        display: none;
+    }
+    .pub .tab-desktop .bs-home .d-opinion .d-thumb:has(> .ph):not(:has(> img)) {
+        display: block;
+        float: right;
+        width: 96px;
+        height: 72px;
+        margin: 8px 0 8px 12px;
+    }
+    .pub .tab-desktop .bs-home .d-opinion .d-src {
+        padding: 0;
+        background: none;
+        color: var(--text-2);
+        font-size: 12px;
+    }
+    .pub .tab-desktop .bs-home .bs-col--main .d-headline-shelf__list {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        column-gap: 24px;
+    }
+    .pub .tab-desktop .bs-home .bs-col--main .d-headline-shelf__list > li {
+        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-rows: auto auto;
+        align-items: end;
+        align-content: start;
+        padding: 14px 0 6px;
+    }
+    .pub .tab-desktop .bs-home .bs-col--main .d-headline-shelf__body {
+        display: contents;
+    }
+    .pub .tab-desktop .bs-home .bs-col--main .d-headline-shelf__body > :not(.d-headline-shelf__source) {
+        grid-column: 1 / -1;
+    }
+    .pub .tab-desktop .bs-home .bs-col--main .d-headline-shelf__source {
+        align-self: center;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .tab-desktop
+        .bs-home
+        .bs-col--side
+        [data-home-section='sports-news'] {
+        order: 14;
+    }
+    .pub .tab-desktop .bs-home .bs-col--side .d-headline-shelf__list a {
+        font-family: inherit;
+        font-size: 14px;
+        font-weight: 600;
+        line-height: 1.35;
+    }
+    .pub .tab-desktop .bs-home .bs-tonight .d-f1--embedded .d-card__title {
+        font-family: inherit;
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+    }
+    .pub .tab-desktop .bs-home .bs-tonight .d-f1--embedded .d-card__head {
+        margin-top: 16px;
+        border-bottom: 2px solid var(--text);
+    }
+    .pub .tab-desktop .bs-home .d-opinion .d-story__title {
+        font-size: 22px;
+        font-style: italic;
+        font-weight: 500;
+        line-height: 1.3;
+    }
+    .pub .tab-desktop .bs-home .bs-col--side .boxoffice-movie:nth-child(n + 4),
+    .pub .tab-desktop .bs-home .bs-col--side .d-forecasts > .updated,
+    .pub .tab-desktop .bs-home .bs-col--side .boxoffice-movie-body > :not(h4, dl),
+    .pub .tab-desktop .bs-home .bs-col--side .boxoffice-stats > :not(:first-child),
+    .pub .tab-desktop .bs-home .bs-col--side .boxoffice-stats dt {
+        display: none;
+    }
+    .pub .tab-desktop .bs-home .bs-col--side .boxoffice-chart {
+        padding: 0;
+    }
+    .pub .tab-desktop .bs-home .bs-col--side .boxoffice-forecast-date {
+        margin: 8px 0 2px;
+        color: var(--text-2);
+        font-size: 13px;
+        font-weight: 700;
+    }
+    .pub .tab-desktop .bs-home .bs-col--side .boxoffice-movie-body {
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+        min-width: 0;
+    }
+    .pub .tab-desktop .bs-home .bs-col--side .boxoffice-movie-body h4 {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+    .pub .tab-desktop .bs-home .bs-col--side .boxoffice-chart {
+        gap: 0;
+    }
+    .pub .tab-desktop .bs-home .bs-col--side .boxoffice-movie {
+        align-items: baseline;
+        gap: 10px;
+        padding: 9px 0;
+        border: 0;
+        border-bottom: 1px dotted var(--row-border);
+        border-radius: 0;
+        background: transparent;
+    }
+    .pub .tab-desktop .bs-home .bs-col--side .boxoffice-poster,
+    .pub .tab-desktop .bs-home .bs-col--side .boxoffice-movie .updated {
+        display: none;
+    }
+    .pub .tab-desktop .bs-home .bs-col--side .boxoffice-rank {
+        width: 22px;
+        color: var(--accent);
+        font-family: var(--font-serif);
+        font-size: 18px;
+        font-weight: 800;
+    }
+    .pub .tab-desktop .bs-home .bs-col--side .boxoffice-movie h4 {
+        margin: 0 0 2px;
+        font-size: 15px;
+    }
+    .pub .tab-desktop .bs-home .bs-col--side .boxoffice-stats {
+        display: block;
+        margin: 0;
+        font-variant-numeric: tabular-nums;
+    }
+    .pub .tab-desktop .bs-home .bs-col--side .boxoffice-stats dt {
+        margin: 0;
+        font-size: 11px;
+    }
+    .pub .tab-desktop .bs-home .bs-col--side .boxoffice-stats dd {
+        font-size: 14px;
+    }
+    .pub .tab-desktop .bs-home .d-vids .d-list {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0 24px;
+    }
+    .pub .tab-desktop .bs-home .d-vid {
+        grid-template-columns: minmax(0, 1fr);
+        padding: 14px 0;
+    }
+    .pub .tab-desktop .bs-home .bs-col--left .d-f1__body {
+        grid-template-columns: minmax(0, 1fr);
+        padding: 12px 0;
+    }
+
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .tab-desktop .bs-more .d-scoreboard .scoreboard-note,
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .tab-desktop .bs-more .d-scoreboard p.updated,
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .tab-desktop
+        .bs-more
+        .d-scoreboard
+        .scoreboard-home-filter,
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .tab-desktop .bs-more .d-rankings__body,
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .tab-desktop .bs-more .d-tv__credit {
+        margin-left: 0;
+        margin-right: 0;
+        padding-left: 0;
+        padding-right: 0;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .tab-desktop .bs-more .d-rankings__table table {
+        width: 100%;
+        min-width: 0;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .tab-desktop .bs-more .d-rankings__table th,
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .tab-desktop .bs-more .d-rankings__table td {
+        padding-left: 4px;
+        padding-right: 4px;
+        font-size: 13px;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .tab-desktop
+        .bs-more
+        .d-scoreboard
+        .scoreboard-games {
+        display: block;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .tab-desktop .bs-more .d-scoreboard .scoreboard-game {
+        margin: 0;
+        padding: 8px 0;
+        border: 0;
+        border-bottom: 1px dotted var(--row-border);
+        border-radius: 0;
+        background: transparent;
+        box-shadow: none;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .tab-desktop
+        .bs-more
+        .d-scoreboard
+        .scoreboard-game-heading,
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .tab-desktop
+        .bs-more
+        .d-scoreboard
+        .scoreboard-matchup,
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .tab-desktop
+        .bs-more
+        .d-scoreboard
+        .scoreboard-context,
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .tab-desktop
+        .bs-more
+        .d-scoreboard
+        .scoreboard-footer {
+        margin: 0;
+        padding: 0;
+        border: 0;
+        background: transparent;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .tab-desktop
+        .bs-more
+        .d-scoreboard
+        .scoreboard-game-heading {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 2px;
+        color: var(--text-2);
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .tab-desktop
+        .bs-more
+        .d-scoreboard
+        .scoreboard-status {
+        padding: 0;
+        border-radius: 0;
+        background: none;
+        color: var(--text-2);
+        font-size: 11px;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .tab-desktop .bs-more .d-scoreboard .scoreboard-live {
+        color: var(--live, #b0001e);
+    }
+    :root[data-theme='dark'] .pub .tab-desktop .bs-more .d-scoreboard .scoreboard-live {
+        color: #ff8a99;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .tab-desktop
+        .bs-more
+        .d-scoreboard
+        .scoreboard-matchup {
+        display: grid;
+        gap: 0;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .tab-desktop .bs-more .d-scoreboard .scoreboard-team {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 8px;
+        min-height: 0;
+        padding: 1px 0;
+        font-size: 14px;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .tab-desktop .bs-more .d-scoreboard .team-badge {
+        width: 18px;
+        height: 18px;
+        flex: none;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .tab-desktop .bs-more .d-scoreboard .team__name {
+        font-size: 14px;
+        font-weight: 600;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .tab-desktop
+        .bs-more
+        .d-scoreboard
+        .scoreboard-winner
+        .team__name,
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .tab-desktop
+        .bs-more
+        .d-scoreboard
+        .scoreboard-winner
+        .scoreboard-score {
+        font-weight: 800;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .tab-desktop
+        .bs-more
+        .d-scoreboard
+        .scoreboard-score {
+        font-size: 15px;
+        font-variant-numeric: tabular-nums;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .tab-desktop .bs-more .d-scoreboard .team-record,
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .tab-desktop
+        .bs-more
+        .d-scoreboard
+        .scoreboard-favorite,
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .tab-desktop
+        .bs-more
+        .d-scoreboard
+        .scoreboard-context
+        p
+        + p,
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .tab-desktop
+        .bs-more
+        .d-scoreboard
+        .scoreboard-updated {
+        display: none;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .tab-desktop
+        .bs-more
+        .d-scoreboard
+        .scoreboard-context
+        p {
+        margin: 2px 0 0;
+        color: var(--text-2);
+        font-size: 12px;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .tab-desktop
+        .bs-more
+        .d-scoreboard
+        .scoreboard-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0 14px;
+        margin-top: 2px;
+        font-size: 12px;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .tab-desktop
+        .bs-more
+        .d-scoreboard
+        .scoreboard-actions
+        a {
+        min-height: 0;
+        padding: 0;
+    }
+
+    /* ---------- Home (docs/ipad/ipad-06-home.md) ---------- */
+    /* Header: the big centred logo isn't shown; the header's logo is on row 1. */
+    .pub .tab-desktop .bs-title__name {
+        display: none;
+    }
+
+    /* Masthead: date + Refresh, greeting, weather four across. */
+    .pub .tab-desktop .bs-title {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        grid-template-areas: 'date refresh' 'greeting greeting';
+        align-items: center;
+        gap: 4px 10px;
+        text-align: left;
+    }
+    .pub .tab-desktop .bs-title__date {
+        grid-area: date;
+        margin: 0;
+        color: var(--accent);
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+    }
+    .pub .tab-desktop .bs-title__greeting {
+        grid-area: greeting;
+        margin: 0;
+        font-size: 48px;
+        font-style: normal;
+        font-weight: 700;
+        line-height: 1;
+        letter-spacing: -0.015em;
+    }
+    .pub .tab-desktop .bs-title .home-refresh {
+        grid-area: refresh;
+        justify-self: start;
+        min-height: 32px;
+        margin: 0;
+        padding: 0 10px;
+        border: 0;
+        border-radius: 8px;
+        background: color-mix(in srgb, var(--accent) 10%, transparent);
+        font-size: 13px;
+        position: relative;
+    }
+    .pub .tab-desktop .bs-title .home-refresh::after {
+        /* 44px tap target around the 32px pill */
+        content: '';
+        position: absolute;
+        inset: -6px;
+    }
+    /* Weather: no box, the lead beside the later periods. */
+    .pub .tab-desktop .bs-glance {
+        grid-template-columns: minmax(0, 1fr) minmax(240px, 300px);
+        column-gap: 28px;
+    }
+    .pub .tab-desktop .bs-glance__next {
+        padding-left: 24px;
+        border-left: 1px solid var(--row-border);
+    }
+
+    /* Order: title, weather, Where to watch, Live now, then the sheet. */
+    .pub .tab-desktop .bs-home .bs-title {
+        order: 0;
+    }
+    .pub .tab-desktop .bs-home .bs-glance {
+        order: 1;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .tab-desktop .bs-home [data-home-section='watch'] {
+        order: 2;
+    }
+    .pub .tab-desktop .bs-home .bs-live {
+        order: 3;
+    }
+    .pub .tab-desktop .bs-home .bs-sheet {
+        order: 4;
+    }
+
+    /* Live now: cards you swipe sideways; New tonight under them. */
+    .pub .tab-desktop .bs-live {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        align-items: center;
+        gap: 8px 0;
+        padding: 12px 0 14px;
+        border: 0;
+        border-top: 4px double var(--text);
+        border-bottom: 1px solid var(--row-border);
+        border-radius: 0;
+    }
+    .pub .tab-desktop .bs-live .bs-ear__title {
+        margin: 0;
+        color: var(--live, #b0001e);
+        font-size: 12px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+    }
+    .pub .tab-desktop .bs-live__list {
+        grid-column: 1 / -1;
+        display: flex;
+        gap: 12px;
+        margin: 0 -24px;
+        padding: 0 24px 4px;
+        overflow-x: auto;
+        scroll-snap-type: x proximity;
+        scroll-padding-inline: 24px;
+        scrollbar-width: none;
+        -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 56px), transparent);
+        mask-image: linear-gradient(90deg, #000 calc(100% - 56px), transparent);
+    }
+    .pub .tab-desktop .bs-live__list li {
+        flex: 0 0 230px;
+        scroll-snap-align: start;
+        border: 0;
+    }
+    .pub .tab-desktop .bs-live__list a {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        height: 100%;
+        padding: 10px 12px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: var(--surface);
+    }
+    .pub .tab-desktop .bs-live__score {
+        font-weight: 700;
+    }
+    .pub .tab-desktop .bs-live__clock {
+        color: var(--text-2);
+        font-size: 12px;
+    }
+
+    /* The sheet: lead across both columns, then two columns, then More from today. */
+    .pub .tab-desktop .bs-sheet {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        align-items: start;
+        padding-top: 20px;
+    }
+    .pub .tab-desktop .bs-sheet .bs-front,
+    .pub .tab-desktop .bs-sheet .bs-more,
+    .pub .tab-desktop .bs-sheet .bs-front > .bs-col--main {
+        display: contents;
+    }
+    .pub .tab-desktop .bs-sheet .bs-col {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+        min-width: 0;
+        padding: 0;
+        border: 0;
+    }
+    .pub .tab-desktop .bs-sheet .d-lead {
+        /* HomeLeadStory */
+        grid-column: 1 / -1;
+        grid-row: 1;
+        padding-bottom: 20px;
+        margin-bottom: 4px;
+        border-bottom: 1px solid var(--text);
+    }
+    .pub .tab-desktop .bs-sheet .bs-front > .bs-col--left {
+        grid-column: 1;
+        grid-row: 2 / span 2;
+        padding-right: 20px;
+    }
+    .pub .tab-desktop .bs-sheet .bs-front > .bs-col--main > :not(.d-lead) {
+        /* More headlines */
+        grid-column: 2;
+        grid-row: 2;
+        padding-left: 20px;
+        border-left: 1px solid var(--row-border);
+    }
+    .pub .tab-desktop .bs-sheet .bs-front > .bs-col--side {
+        grid-column: 2;
+        grid-row: 3;
+        padding: 24px 0 0 20px;
+        border-left: 1px solid var(--row-border);
+    }
+    .pub .tab-desktop .bs-sheet .bs-band {
+        display: block;
+        grid-column: 1 / -1;
+        grid-row: 4;
+        margin: 28px 0 8px;
+    }
+    .pub .tab-desktop .bs-sheet .bs-more > .bs-col--main {
+        grid-column: 1;
+        grid-row: 5 / span 2;
+        padding-right: 20px;
+    }
+    .pub .tab-desktop .bs-sheet .bs-more > .bs-col--side {
+        grid-column: 2;
+        grid-row: 5;
+        padding-left: 20px;
+        border-left: 1px solid var(--row-border);
+    }
+    .pub .tab-desktop .bs-sheet .bs-more > .bs-col--left {
+        /* Scoreboard + Top 25 */
+        grid-column: 2;
+        grid-row: 6;
+        padding: 24px 0 0 20px;
+        border-left: 1px solid var(--row-border);
+    }
+
+    /* Lead: photo on top, 36px headline. */
+    .pub .tab-desktop .bs-home .d-lead__story {
+        display: flex;
+        flex-direction: column;
+    }
+    .pub .tab-desktop .bs-home .d-lead__image {
+        order: 0;
+        width: 100%;
+        height: auto;
+        aspect-ratio: 16 / 9;
+        margin-bottom: 14px;
+    }
+    .pub .tab-desktop .bs-home .d-lead__image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .pub .tab-desktop .bs-home .d-lead__source {
+        order: 1;
+        margin: 0 0 6px;
+    }
+    .pub .tab-desktop .bs-home .d-lead__title {
+        order: 2;
+        font-size: 36px;
+        line-height: 1.08;
+    }
+    .pub .tab-desktop .bs-home .d-lead__summary {
+        order: 3;
+        font-size: 18px;
+    }
+    .pub .tab-desktop .bs-home .d-lead__meta {
+        order: 4;
+    }
+
+    /* Column headings: one style everywhere (as in the 4K guide 2.4). */
+    .pub .tab-desktop .bs-home .bs-tonight .d-card__title {
+        font-family: inherit;
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+    }
+    .pub .tab-desktop .bs-home .home-latest-video__title {
+        font-size: 19px;
+        line-height: 1.22;
+    }
+
+    .pub .tab-desktop .bs-home {
+        display: flex;
+        flex-direction: column;
+    }
+    .pub .tab-desktop .bs-masthead {
+        display: contents;
+    }
+    .pub .tab-desktop .bs-title__date {
+        position: static;
+        width: auto;
+        height: auto;
+        overflow: visible;
+        clip: auto;
+    }
+    .pub .tab-desktop .bs-home .d-lead__body {
+        display: contents;
+    }
+    .pub .tab-desktop .bs-live {
+        min-width: 0;
+        grid-template-columns: minmax(0, 1fr) auto;
+    }
+    .pub .tab-desktop .bs-live__list {
+        min-width: 0;
+        list-style: none;
+    }
+    .pub .tab-desktop .bs-live__list::-webkit-scrollbar {
+        display: none;
+    }
+    .pub .tab-desktop .bs-live__list a {
+        box-sizing: border-box;
+    }
+    .pub .tab-desktop .bs-live > .d-empty {
+        grid-column: 1 / -1;
+    }
+    .pub .tab-desktop .bs-home .d-card__title {
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+    }
+    .pub .tab-desktop .bs-home .d-card__head {
+        border-bottom: 2px solid var(--text);
+    }
+    .pub .tab-desktop .bs-home .bs-col--main .d-headline-shelf__list {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .pub .tab-desktop .bs-home .scoreboard-actions a {
+        min-height: 44px;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .tab-desktop
+        .bs-home
+        .d-lead__story[data-article-story] {
+        display: flex;
+        flex-direction: column;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .tab-desktop
+        .bs-home
+        .d-lead__image[data-article-media] {
+        float: none;
+        width: 100%;
+        max-width: none;
+        max-height: none;
+        height: auto;
+        aspect-ratio: 16 / 9;
+        margin: 0 0 14px;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .tab-desktop .bs-home .d-lead__image img {
+        object-fit: cover;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .tab-desktop
+        .bs-home
+        .d-lead__story[data-article-story]
+        > .d-lead__body {
+        display: contents;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .tab-desktop
+        .bs-home
+        .d-lead__story[data-article-story]
+        .d-lead__title {
+        font-size: 36px;
+        line-height: 1.08;
+    }
+
+    /* Tablet columns need real grids rather than the base phone flex shelves. */
+    .pub .tab-desktop .bs-home .d-movies .d-list {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        overflow: visible;
+    }
+    .pub .tab-desktop .bs-home .d-vids .d-list {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .pub .tab-desktop .bs-home .d-movie__body {
+        min-width: 0;
+    }
+    .pub .tab-desktop .bs-home .d-movie__body .nf-btn {
+        height: auto;
+        white-space: normal;
+    }
+    .pub .tab-desktop .bs-home .home-limit-mobile {
+        display: none;
+    }
+    .pub .tab-desktop .bs-home .home-limit-desktop {
+        display: inline;
+    }
+    .pub .tab-desktop .bs-home .d-vids > .d-list > li:nth-child(n + 6) {
+        display: grid;
+    }
+    .pub .tab-desktop .bs-sheet {
+        grid-template-rows: auto max-content auto auto max-content auto;
+    }
+
+    /* ---------- Headline sub-pages: All headlines for News, Sports, Entertainment, Tech (docs/tech-fixes-handoff.md §1) ---------- */
+
+    /* The wrapper: undo mobile.css's full-bleed tool-page frame; the foundation's page frame takes over. */
+    .pub .page > .mx-tool-page.tab-desktop {
+        display: contents;
+        margin: 0;
+        padding: 0;
+        background: none;
+    }
+
+    /* One way to pick a desk: the pills. The phone dropdown goes. */
+    .pub .tab-desktop .news-category-select {
+        display: none;
+    }
+    .pub .tab-desktop .hn-cats {
+        gap: 8px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid var(--row-border);
+    }
+    .pub .tab-desktop .hn-cats a {
+        display: inline-flex;
+        align-items: center;
+        min-height: 44px;
+        padding: 0 16px;
+    }
+
+    /* Source filter: compact, on one line with the count. */
+    .pub .tab-desktop .news-front-filters {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 12px;
+    }
+    .pub .tab-desktop .news-front-filters .catselect select {
+        width: 240px;
+        min-height: 44px;
+    }
+    .pub .tab-desktop .news-front-filters .count--toolbar {
+        margin-left: auto;
+    }
+
+    /* Jump to: labels above their rows, not in a column of their own. */
+    .pub .tab-desktop .hc-jump {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 8px;
+    }
+    .pub .tab-desktop .hc-jump__label br {
+        display: none; /* "Today by desk" on one line */
+    }
+    .pub .tab-desktop .hc-jump__row + .hc-jump__label {
+        margin-top: 8px;
+    }
+
+    /* Top section: one column. Lead across the width with a shorter photo, the two "under" cards side by side,
+       Latest as full-width rows. (The desktop 2fr/1fr split leaves a ~250px side column at 820.) */
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .tab-desktop .hc-feed .hc-top {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: none;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .tab-desktop
+        .hc-feed
+        :is(.hc-lead, .hc-under, .hc-latest) {
+        grid-column: 1;
+        grid-row: auto;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme]))
+        .pub
+        .tab-desktop
+        .hc-feed
+        .hc-lead
+        .hc-card
+        [data-article-media] {
+        aspect-ratio: 21 / 9;
+    }
+    :root:is([data-color-scheme], :not([data-color-scheme])) .pub .tab-desktop .hc-feed .hc-lead .hc-card .title {
+        font-size: 32px;
+    }
+
+    /* The pinned Jump to bar: in line with the page's 24px sides. */
+    .pub .hc-bar {
+        padding: 0 24px;
+    }
+}

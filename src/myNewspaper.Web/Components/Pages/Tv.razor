@@ -1,0 +1,235 @@
+@page "/tv"
+@layout PublicLayout
+@inject IDbContextFactory<WebScraperContext> Factory
+@inject FeedDates Dates
+@inject myNewspaper.Shared.Profiles.ProfileContext Reader
+@inherits DataComponentBase
+
+<PageTitle>TV &amp; Streaming · myNewspaper</PageTitle>
+<div class="mx-desktop">
+<PageHeading Section="entertainment" Title="TV &amp; Streaming" Eyebrow="Your episode calendar" Description="" />
+
+@* Episode calendar as in the approved concept: the week's episodes by day beside the tracked series. Phones get one
+   card per day. Batch drops (several episodes of a season at once) stay one entry with their titles expandable. *@
+<nav class="tvc-jump" aria-label="Episode calendar">
+    <a href="#tvc-tracked">Tracked · @schedule.Shows.Count</a>
+    <a href="@Href(start.AddDays(7))">Next week <span aria-hidden="true">→</span></a>
+</nav>
+
+<div class="tvc-cols">
+    <section class="tvc-week" aria-labelledby="tvc-week-title">
+        <div class="ef-head">
+            <h2 id="tvc-week-title">@RangeLabel <span class="mv-range">· @schedule.Total @(schedule.Total == 1 ? "episode" : "episodes")</span></h2>
+            <span class="mv-pager">
+                @if (start != today) { <a href="tv">Today onward</a> }
+                <a href="@Href(start.AddDays(7))">Next week <span aria-hidden="true">→</span></a>
+            </span>
+        </div>
+        @if (showTitle is not null) { <p class="ef-note">Showing @showTitle only · <a href="tv">All tracked series</a></p> }
+        @if (schedule.Items.Count == 0)
+        {
+            <p class="ef-empty">@(schedule.Shows.Count == 0 ? "No series are followed yet." : "No episodes scheduled for this date range.")</p>
+        }
+        @foreach (var group in schedule.Items.GroupBy(e => e.Date))
+        {
+            <section class="tvc-day" aria-label="@FeedDates.LongDate(group.Key)">
+                <h3 class="ef-label">@(group.Key == today ? "Tonight · " : "")@group.Key.ToString("dddd, MMM d", Us)</h3>
+                <ul class="tvc-list">
+                    @foreach (var batch in TvBatches.Group(group))
+                    {
+                        var episode = batch[0];
+                        var href = batch.Count == 1 ? FeedQuery.SafeHref(episode.Url) : null;
+                        <li class="tvc-row">
+                            <MoviePoster Url="@episode.Poster" Title="@episode.SeriesTitle" Class="ef-poster" />
+                            <div class="tvc-row__body">
+                                <span class="tvc-row__net">@(episode.Platform ?? "Network not announced")<span class="tvc-row__net-time"> · @TimeLabel(episode)</span></span>
+                                @if (href is not null) { <a class="tvc-row__show" href="@href" target="_blank" rel="noopener noreferrer">@episode.SeriesTitle</a> }
+                                else { <span class="tvc-row__show">@episode.SeriesTitle</span> }
+                                <span class="ef-where">
+                                    @if (batch.Count > 1) { @TvBatches.Label(batch) }
+                                    else
+                                    {
+                                        @(episode.Special ? "Special" : episode.Season is { } season && episode.Number is { } number ? $"S{season:00} · E{number:00}" : "Episode")
+                                        @if (!string.IsNullOrWhiteSpace(episode.Title)) { <span> · @episode.Title</span> }
+                                    }
+                                </span>
+                                @if (batch.Count > 1)
+                                {
+                                    <details class="tvc-batch">
+                                        <summary>Episode titles</summary>
+                                        <ul>
+                                            @foreach (var item in batch)
+                                            {
+                                                var name = (item.Number is { } n ? $"E{n:00}" : "Episode") + (string.IsNullOrWhiteSpace(item.Title) ? "" : " · " + item.Title);
+                                                <li>@if (FeedQuery.SafeHref(item.Url) is { } link) { <a href="@link" target="_blank" rel="noopener noreferrer">@name</a> } else { @name }</li>
+                                            }
+                                        </ul>
+                                    </details>
+                                }
+                            </div>
+                            <span class="tvc-row__time @(episode.StartsUtc is null ? "tvc-row__time--date" : null)">@TimeLabel(episode)</span>
+                        </li>
+                    }
+                </ul>
+            </section>
+        }
+        @if (schedule.Total > schedule.Items.Count) { <p class="ef-note">Showing @schedule.Items.Count of @schedule.Total episodes. Use Next week to browse further.</p> }
+        <p class="ef-note tvc-attribution">
+            Episode data and images: <a href="https://www.tvmaze.com" target="_blank" rel="noopener noreferrer">TVmaze</a> ·
+            <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener noreferrer">CC BY-SA 4.0</a>.
+            Date-only releases keep their original date; confirmed times are shown in @Dates.Zone.Id.
+            Original release schedules do not guarantee availability on your local streaming service.
+        </p>
+    </section>
+
+    <aside class="tvc-tracked" id="tvc-tracked" aria-labelledby="tvc-tracked-title">
+        <h2 id="tvc-tracked-title" class="ef-label">Tracked series · @schedule.Shows.Count</h2>
+        <ul class="tvc-tracked__list">
+            @foreach (var series in schedule.Shows)
+            {
+                <li>
+                    <a href="@($"tv?show={series.Id}")" aria-current="@(series.Title == showTitle ? "page" : null)">
+                        <span>@series.Title</span><span class="tvc-tracked__next">@NextLabel(series.Id)</span>
+                    </a>
+                </li>
+            }
+        </ul>
+        @if (schedule.Unannounced.Count > 0)
+        {
+            <p class="ef-note">Next release not announced: @string.Join(", ", schedule.Unannounced).</p>
+        }
+        <a class="tvc-cta" href="watch">Track a series from Where to watch</a>
+    </aside>
+</div>
+</div>
+
+@* Phones: the folded episode calendar (docs/mobile-refresh-handoff.md), from the same schedule. *@
+<div class="mx-phone">
+    <PhoneRibbon Kicker="@(showTitle is not null ? $"Showing {showTitle} only" : $"Your episode calendar · {schedule.Shows.Count} tracked")" Title="TV &amp; Streaming" Section="entertainment">
+        @* Weeks start today; the calendar has no past weeks. *@
+        <form class="mx-ribbon__field" method="get" action="navigate">
+            <label for="tv-week-m">Week</label>
+            <select id="tv-week-m" name="to" required onchange="this.form.requestSubmit()">
+                @if (start != today && start != today.AddDays(7) && start != today.AddDays(14))
+                {
+                    <option value="/@Href(start)" selected>Week of @start.ToString("MMM d", Us)</option>
+                }
+                <option value="/@Href(today)" selected="@(start == today)">This week</option>
+                <option value="/@Href(today.AddDays(7))" selected="@(start == today.AddDays(7))">Next week</option>
+                <option value="/@Href(today.AddDays(14))" selected="@(start == today.AddDays(14))">In two weeks</option>
+            </select>
+            <noscript><button class="nf-btn nf-btn--secondary" type="submit">Go</button></noscript>
+        </form>
+    </PhoneRibbon>
+
+    @if (schedule.Items.FirstOrDefault() is { } next)
+    {
+        var nextBatch = TvBatches.Group(schedule.Items.Where(e => e.Date == next.Date))[0];
+        var href = FeedQuery.SafeHref(next.Url);
+        <article class="mx-block" aria-label="@(next.Date == today ? "Tonight" : "Next episode")">
+            <div class="mx-block__media">
+                @if (FeedQuery.SafeHref(next.Poster) is { } poster) { <img src="@poster" alt="" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()" /> }
+                <span class="mx-block__badge">@(next.Special ? "Special" : next.Number == 1 ? "Premiere" : "New episode")</span>
+            </div>
+            <span class="mx-block__kicker">@string.Join(" · ", new[] { DayLabel(next.Date), next.Platform, next.StartsUtc is { } s ? Dates.Time(s) : null }.Where(p => !string.IsNullOrEmpty(p)))</span>
+            <h2 class="mx-block__title">@if (href is not null) { <a href="@href" target="_blank" rel="noopener noreferrer">@next.SeriesTitle</a> } else { @next.SeriesTitle }</h2>
+            <p class="mx-block__quote">@(nextBatch.Count > 1 ? TvBatches.Label(nextBatch) : EpisodeWords(next))</p>
+            @if (next.ShowId > 0 && showTitle is null)
+            {
+                <div class="mx-block__actions"><a class="mx-block__ghost" href="@($"tv?show={next.ShowId}")">Only @next.SeriesTitle</a></div>
+            }
+        </article>
+    }
+
+    @if (schedule.Items.Count == 0)
+    {
+        <p class="mx-empty">@(schedule.Shows.Count == 0 ? "No series are followed yet." : "No episodes scheduled for this week.")</p>
+    }
+    else
+    {
+        <PhoneTimeline Heading="@(start == today ? "This week" : RangeLabel)" Sub="@($"{schedule.Total} {(schedule.Total == 1 ? "episode" : "episodes")}")"
+                       Items="@WeekLine()" MoreText="Next week" MoreHref="@Href(start.AddDays(7))" />
+        @if (schedule.Total > schedule.Items.Count) { <p class="mx-source-note">Showing @schedule.Items.Count of @schedule.Total episodes. Use Next week to browse further.</p> }
+    }
+
+    <FoldGroup Name="tv-more" Heading="More TV" Foot="Add a show" FootHref="watch?kind=tv">
+        @if (schedule.Shows.Count > 0)
+        {
+            var airing = schedule.Shows.Count(s => schedule.Items.Any(e => e.ShowId == s.Id));
+            <Fold Title="Your shows" Color="mx-c-tech" Open="true" AllHref="@(Reader.HasProfile ? "settings#shows" : null)" AllText="Manage your shows"
+                  Gist="@($"{schedule.Shows.Count} tracked · {airing} with episodes this week")">
+                @foreach (var series in schedule.Shows)
+                {
+                    <a class="mx-fold__row" href="@($"tv?show={series.Id}")" aria-current="@(series.Title == showTitle ? "page" : null)"><span><b>@series.Title</b></span><span class="mx-fold__value">@NextLabel(series.Id)</span></a>
+                }
+                @if (schedule.Unannounced.Count > 0) { <p class="mx-fold__row"><small>Next release not announced: @string.Join(", ", schedule.Unannounced).</small></p> }
+                @if (showTitle is not null) { <a class="mx-fold__row" href="tv"><span><b>All tracked series</b></span></a> }
+            </Fold>
+        }
+    </FoldGroup>
+
+    <p class="mx-source-note">
+        Episode data and images: <a href="https://www.tvmaze.com" target="_blank" rel="noopener noreferrer">TVmaze</a> ·
+        <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener noreferrer">CC BY-SA 4.0</a>.
+        Times are shown in @Dates.Zone.Id.
+    </p>
+</div>
+
+@code {
+    private static readonly System.Globalization.CultureInfo Us = System.Globalization.CultureInfo.InvariantCulture;
+
+    [SupplyParameterFromQuery(Name = "from")] private string? From { get; set; }
+    [SupplyParameterFromQuery(Name = "show")] private string? Show { get; set; }
+    private DateOnly today, start;
+    private string? showTitle;
+    private TvSchedule schedule = new([], 0, [], [], null);
+
+    private string RangeLabel => start.Month == start.AddDays(6).Month
+        ? $"{start.ToString("MMM d", Us)} – {start.AddDays(6).Day}"
+        : $"{start.ToString("MMM d", Us)} – {start.AddDays(6).ToString("MMM d", Us)}";
+
+    protected override async Task OnParametersSetAsync()
+    {
+        today = Dates.Today;
+        start = DateOnly.TryParseExact(From, "yyyy-MM-dd", out var parsed)
+            && parsed.Year <= 9998 && parsed >= today ? parsed : today;
+        await using var db = await Factory.CreateDbContextAsync(Ct);
+        var show = int.TryParse(Show, out var id) && id > 0 ? id : (int?)null;
+        schedule = await TvQuery.GetAsync(db, Reader.Viewer, Dates, start, show, ct: Ct);
+        showTitle = show is { } selected ? schedule.Shows.FirstOrDefault(s => s.Id == selected)?.Title : null;
+    }
+
+    private string Href(DateOnly date) => $"tv?from={date:yyyy-MM-dd}" + (int.TryParse(Show, out var show) && show > 0 ? $"&show={show}" : "");
+
+    private string TimeLabel(TvEpisodeItem episode) => episode.StartsUtc is { } time ? Dates.Time(time) : "Date only";
+
+    private string DayLabel(DateOnly date) => date == today ? "Tonight" : date.ToString("ddd, MMM d", Us);
+
+    /// <summary>"Season 13, episode 27 · Title", "Special", or the batch's own label.</summary>
+    private static string EpisodeWords(TvEpisodeItem episode) => string.Join(" · ", new[]
+    {
+        episode.Special ? "Special" : episode.Season is { } season && episode.Number is { } number ? $"Season {season}, episode {number}" : null,
+        string.IsNullOrWhiteSpace(episode.Title) ? null : episode.Title,
+    }.Where(p => p is not null));
+
+    /// <summary>Phones: one timeline row per batch, as the desktop calendar groups them.</summary>
+    private IReadOnlyList<TimelineItem> WeekLine() => schedule.Items.GroupBy(e => e.Date)
+        .SelectMany(day => TvBatches.Group(day))
+        .Select(batch =>
+        {
+            var episode = batch[0];
+            var code = batch.Count > 1 ? TvBatches.Label(batch)
+                : episode.Special ? "Special" : episode.Season is { } season && episode.Number is { } number ? $"S{season:00} · E{number:00}" : "Episode";
+            var href = batch.Count == 1 ? FeedQuery.SafeHref(episode.Url) : null;
+            return new TimelineItem(episode.Date == today ? "Tonight" : episode.Date.ToString("ddd d", Us), episode.SeriesTitle,
+                code + " · " + TimeLabel(episode), episode.Platform, href ?? (episode.ShowId > 0 ? $"tv?show={episode.ShowId}" : "tv"),
+                episode.Date == today ? "mx-c-us" : "mx-c-world", External: href is not null);
+        })
+        .ToList();
+
+    /// <summary>When the series next airs within this week: "Tonight", a weekday, or a dash.</summary>
+    private string NextLabel(int showId) =>
+        schedule.Items.FirstOrDefault(e => e.ShowId == showId) is { } next
+            ? next.Date == today ? "Tonight" : next.Date.ToString("ddd", Us)
+            : "—";
+}

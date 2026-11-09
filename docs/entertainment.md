@@ -1,5 +1,21 @@
 # Entertainment data and public views
 
+## Homepage theatrical release window
+
+Updated October 22, 2026: the homepage shows the current Friday's US theatrical
+releases from Thursday through Sunday, inclusive, using the configured display
+time zone (Central in production). Saturday and Sunday retain that Friday's
+releases. Monday through Wednesday hide the theatrical subsection. Only that
+Friday is queried; later Fridays are not substituted when no releases are stored.
+The existing five-item limit, enabled-source filtering and deduplication remain.
+Digital / VOD stays visible throughout the week, and the full Movies page is unchanged.
+
+The homepage's Upcoming Digital / VOD is a separate card from Friday theater
+releases. It participates independently in the desktop cascading layout and stacks
+after the theatrical card on mobile. Theatrical dates, digital provider selection,
+posters and retailer links retain their existing behavior. A legacy hidden
+Movies & Digital preference continues to hide both cards.
+
 Current contracts consolidated October 13, 2026 (Central). See
 [Deployment](../DEPLOY.md) for rollout and [Release history](release-history.md)
 for historical validation. Rust commands and `sql/` paths refer to the separate
@@ -7,16 +23,48 @@ scraper repository; the web app reads its stored snapshots.
 
 ## Movie releases and Digital/VOD
 
+The In theaters view (`/movies?type=theatrical`) includes a general
+[Visit AMC Theatres](https://www.amctheatres.com/) link immediately above the first release-date heading,
+with a locally served AMC logo. It opens in a new tab with `noopener noreferrer`.
+The Digital rental / purchase page similarly links to
+[Fandango at Home](https://athome.fandango.com/) with its locally served logo,
+below the source summary and above the first release-date heading. Both links
+open in a new tab with `noopener noreferrer`. These page-level links are separate
+from each film's Fandango action and do not change the release calendar or source
+links. The logos and their source attribution are in `src/myNewspaper.Web/wwwroot/images/brands/`.
+
+Movie cards on Movies, Digital and the homepage read retailer actions from
+`dbo.MovieCommerce` by MovieId and Provider through the release's source link.
+Theatrical releases use Fandango; digital, digital purchase and digital rental use
+Fandango at Home. Subscription and disc releases have no retailer action. Verified
+direct links retain the view's ticket/Buy/View label; missing or invalid actions
+use an encoded title search labeled Search. HTTPS retailer hosts, paths and labels
+are validated before rendering. View errors retain normal page error handling;
+expiry and stale identity are handled by the scraper's view. This enrichment does
+not change release selection, grouping, counts, dates, posters or source links.
+On desktop (768 pixels and wider), each movie-card retailer action occupies its
+own line below the source/details link. Mobile retains its existing layout.
+
 `/movies` supports all releases, theatrical and subscription selections. Movies and
 Videos page in deterministic 50-row batches; filters remain in paging URLs.
+Movies and Digital share a News-style dropdown for All releases, In theaters,
+Subscription streaming and Digital rental / purchase. Selection submits a GET
+form; an Apply button remains available without JavaScript. The digital choice
+routes to `/movies/digital`; switching views starts at the first page.
 `/movies/digital` is the provider-specific confirmed rental/purchase list, not a
 subscription catalog. It includes today and all known future release dates, ordered
 soonest first. The old current Monday–Sunday restriction is superseded.
 
 Prefer Movie Insider whenever enabled; otherwise select another enabled source.
-The source dropdown also offers When To Stream and DVDs Release Dates when enabled,
-even if that source has no matching rows. Preserve `?source=`; invalid/disabled keys
-fall back to the preferred enabled source. Do not silently blend providers when a
+The source dropdown offers only enabled providers, even when a source has no
+matching rows. Updated October 22, 2026: Movie Insider, When To Stream and DVDs Release Dates
+are enabled. DVDs Release Dates supplies theatrical and digital dates; its scraper
+CollectDisc policy is disabled and retained scheduled disc rows were withdrawn.
+CollectDisc controls collection, not provider-wide public visibility; the frontend
+does not require CollectDisc=1. Retained records from disabled providers and
+withdrawn releases remain excluded. Default, invalid and disabled `?source=` keys
+resolve to the preferred enabled source, redirecting to its canonical URL. If no
+provider is enabled, remove the stale source parameter and show the empty state. Do not silently blend providers when a
 selected source is empty. Generic digital data does not prove platform, pricing,
 rental versus purchase or subscription availability.
 
@@ -69,8 +117,12 @@ The full digital page retains the complete selected-provider list.
 
 ## Box-office weekend results
 
-`/box-office` keeps Weekend results — Top 10 from The Numbers and adds prediction
-sections below it. Actual results are separate from forecasts, news Pages and RSS.
+`/box-office` shows Weekend results — Top 10 from The Numbers. The News-style
+section dropdown links to `/box-office/weekend-preview` for Upcoming weekend
+preview — Predictions and `/box-office/movie-forecasts` for Upcoming movie
+forecasts — Predictions. Each URL shows only its section. The shared GET selector
+submits automatically, with an Apply button available without JavaScript.
+Actual results are separate from forecasts, news Pages and RSS.
 The source is [The Numbers weekend chart](https://www.the-numbers.com/weekend-box-office-chart).
 
 ```sql
@@ -83,8 +135,16 @@ WeekendStart is Friday, ending Sunday (+2 days). Format labels without convertin
 calendar dates, including both years for a New Year boundary. Display rank, linked
 title, USD integer weekend/total domestic grosses and percentage change. Null change
 means unavailable/new, not zero. FetchedAt is UTC; display it using the site's time
-helper. Attribute The Numbers with SourceUrl and say reported totals may be revised,
-not final actuals. Show a stale warning when Friday is more than ten days old.
+helper. Attribute The Numbers and say reported totals may be revised. Weekend gross
+labels read ResultStatus: estimated → Estimated, final → Final, all other/NULL values
+→ Reported totals. Final denotes provider-reported actuals, subject to correction.
+Do not apply these labels to TotalDomesticGross. StatusSourceUrl falls back to
+SourceUrl; validate links. Show StatusAsOfUtc as provider update time only when
+present, separately from collection time FetchedAt. Read these fields and amounts
+in one query. The homepage binds its expected Friday for Sunday–Tuesday results;
+missing current-weekend data shows a waiting message. The box-office results view
+can show the latest chart with its actual weekend. Show a stale warning when Friday
+is more than ten days old.
 
 Configure scraper schema with `--configure-boxoffice` using migration credentials,
 then collect `--boxoffice` using normal ingestion credentials. Keep that flag in hourly
@@ -140,7 +200,8 @@ LastSuccessAt is within 24 hours (inclusive), not future-dated, and LastError is
 Otherwise it says Preview data is temporarily unavailable. Use equivalent future-film
 empty states. Existing predictions remain visible with a refresh warning after failures
 or stale source metadata. Raw errors stay in logs/admin. Actuals and forecasts load
-independently so a forecast failure does not hide the reported chart.
+on separate pages so a forecast failure does not hide the reported chart. The
+results page only reads chart data; forecast pages only read the forecast snapshot.
 
 `--configure-boxoffice` initializes actuals and forecast schemas. Hourly collection
 adds `--boxoffice-forecasts`; its `--dry-run` validates without writes. The collector
@@ -378,3 +439,277 @@ BEGIN CATCH
 END CATCH;
 ```
 
+
+## Entertainment browsing
+
+Movies and TV retain their individual release/episode schedules, and TV retains
+tracked-series browsing. The combined My Week agenda has been removed. Watchlist, Watch Later and
+episode-progress controls were removed at the user's request; normal source,
+retailer and video playback links remain. See
+[personal planning](interface.md#personal-planning-and-discovery--october-19-2026).
+
+## Where to watch
+
+Entertainment → Where to watch (/watch) is the approved typed-search exception.
+Movie/TV tabs, popular titles and common genres also work without typing. Movie
+release cards link to title lookup; a search result is not a verified title match.
+Titles open in a native modal with Close/Escape/focus return or a normal detail
+page with JavaScript disabled. Search uses GET links/forms with at most 120 query
+characters and ten pages. No local database/schema or collector change is needed.
+
+TMDB API requests are server-side, using the existing Movies:AccessToken setting.
+Never expose that credential in HTML or JavaScript. A bounded 512-entry in-memory
+cache retains listing data for 15 minutes and availability for six hours; transient
+listing failures are cached for 30 seconds. Up to four upstream requests run at
+once. Availability checked time is the fetch time, not a promise of provider
+catalog freshness. Missing credentials/provider failures show a retry message.
+
+US offers are separated into Subscription, Free, Free with ads, Rent and Buy.
+TV availability is series-level and can vary by season. Empty offers are described
+as no options listed, not proof of unavailability everywhere. TMDB does not supply
+full streaming deep links; use the returned HTTPS TMDB viewing-options link.
+Provider names are plain text; no invented service title links or prices.
+
+TMDB logo/API notice and JustWatch attribution are included under Data credits.
+Sources: [TMDB watch providers](https://developer.themoviedb.org/reference/movie-watch-providers),
+[TV watch providers](https://developer.themoviedb.org/reference/tv-series-watch-providers),
+[TMDB attribution FAQ](https://developer.themoviedb.org/docs/faq).
+
+Pending local feedback update: My services offers current US provider checkboxes
+(maximum 20). Browser-local selections survive visits when storage is available;
+plain GET selection also works without JavaScript. Movie/TV tabs, search, genres
+and paging preserve selection. Verified subscription/free/ad-supported matches
+rise to the top of each page with service badges. Rental/purchase-only access
+never counts as included access. This does not filter or rerank the entire TMDB
+catalog; nonmatches stay visible. Service list cache: twelve hours; per-title US
+access cache: six hours (30 seconds for failures). Base cached listing order is
+not mutated. Deployment is on hold pending further user feedback.
+
+Deployment status: the service-preferences feedback update above was deployed
+on October 20, 2026 after the user lifted the hold. See release history for image
+and verification details.
+
+Pending local update: theater/ticketing-only providers are excluded from Where to
+watch service choices, matching and displayed offers. Fandango ticketing (provider
+60) is excluded; Fandango At Home, its free service, AMC/AMC+ television services
+and Cinemax remain eligible. Legacy ticketing selections are ignored. This does
+not change the separate movie-release calendar or its ticketing actions.
+
+Pending local Settings change: My services has moved from the lookup page to
+Settings → My services. Where to watch retains a management shortcut. Browser
+preferences and query-based matching are preserved. Settings sections can be
+reordered independently of homepage sections. This update is not deployed yet.
+
+Deployment status (October 20, 2026): Settings services, section ordering and the
+theater-only provider exclusion are now live. Earlier pending/local-only notes
+are superseded. See release history for verification and rollback details.
+
+### Add a Where to watch TV title to tracked series
+
+Open a TV title and select Add to tracked series. The public /tv/track page needs
+no sign-in: confirm the matching title/premiere year/network in search results,
+then select Follow. This adds to the site's shared tracked-series list. Already
+tracked results show Following; disabled tracking can be re-enabled through this
+flow. Movies have no tracking button. Existing admin management/removal stays
+protected. A TVmaze ID is verified before writing; a TMDB ID is never substituted.
+Opening/searching does not add a show. Following requires JavaScript. Episodes
+appear after the separate scraper's next normal update, not immediately.
+
+### Active series in TV browsing
+
+Where to watch TV browse/genre pages exclude ended/canceled shows through TMDB's
+upstream status filter (returning, planned, in production or pilot). The filter
+applies across pages before service prioritization. Title search includes all
+statuses, so ended shows remain findable. This uses provider classification rather
+than show age and retains the normal 15-minute listing cache. Movies, direct title
+details, episode schedules and existing tracked-series records are unaffected.
+Reference: [TMDB TV discovery](https://developer.themoviedb.org/reference/discover-tv).
+
+### Sort this page
+
+The Where to watch selector orders the current loaded results page: Your services
+first (default), Title A–Z, Newest first or Most popular. The default alphabetizes
+within matched and remaining groups; with no selections all loaded titles are
+alphabetical. Newest uses movie release dates/TV premiere dates, and popular uses
+TMDB popularity; missing metadata sorts last. Service badges remain informational
+in other modes. The GET sort query survives search, tabs, genres and paging.
+This does not reorder the entire provider catalog across pages.
+
+### Hide unavailable US titles in results
+
+Browsing and title search hide titles with confirmed empty US viewing options,
+including theater-only records. Any valid subscription/free/ads/rent/buy option
+keeps a title visible; rental/purchase-only access never counts as an included
+service match. Checks also run without selected services and share the bounded
+six-hour provider cache. Failed/malformed reads are unknown and remain visible
+with a note (30-second failure cache). Filtered logical pages refill from successive provider batches;
+Next/Previous use stable eligible-title boundaries.
+Sorting runs after filtering. Direct detail URLs retain their no-options message
+for old saved links or catalog changes.
+
+### Filled viewing pages
+
+Logical pages contain up to 20 eligible titles, pulling replacements from later
+provider batches and deduplicating IDs. Surplus titles are retained for the next
+page, so Next/Previous do not overlap within the cached query window. Sorting is
+still per logical page. Short final pages are expected when matches run out.
+A bounded 15-minute, 32-query window cache scans at most ten new provider batches
+per request and 50 per query, with ten display pages maximum. Sparse searches or
+source failures can expose Continue loading this page without skipping results.
+A new/expired/evicted query window may reflect updated provider data.
+
+### Combined title search — October 20, 2026
+
+Where to watch now searches movies and TV together for any nonblank title query,
+using TMDB [multi search](https://developer.themoviedb.org/reference/search-multi).
+Person results and adult entries are excluded. Browse without a query retains the
+Movies/TV tabs and existing active-series/genre behavior. Search hides those tabs
+and labels the results as movies and TV; each card still identifies its media type
+and opens the correct movie/TV detail and provider route. Clear search returns to
+the originating browse type. Sorting, selected services, US availability filtering
+and filled logical pages remain. Cache-window deduplication uses (kind, ID) so a
+movie and series sharing the same numeric provider ID both survive.
+
+## Entertainment and TV/Film headlines
+
+Entertainment navigation contains **Entertainment headlines** at
+`/entertainment/news` and **TV/Film headlines** at `/entertainment/tv-film`, on
+desktop and mobile. Each feed reads its existing source category, resolved by name
+rather than a deployment-specific ID. Source selections, article actions and
+cursor pagination reuse the existing feed components; no sources or articles are
+moved or deleted in SQL and no collector configuration changes are required.
+
+Headlines no longer offers Entertainment or TV/Film categories or their sources,
+and its All categories feed/pagination excludes both. Other category-specific
+readers and the Home aggregate remain unchanged. Old `/news?category=...` links
+for the enabled moved categories redirect to their section, retaining source,
+search and valid cursor values. Missing/disabled section coverage shows an empty
+feed rather than broadening to all news. Both new pages work without JavaScript;
+JavaScript enhances pagination while preserving the destination/category scope.
+
+Box Office also belongs to Entertainment navigation on desktop and mobile.
+`/box-office`, `/box-office/weekend-preview` and `/box-office/movie-forecasts`
+retain their existing destinations/data and mark Entertainment as current. The
+News menu entry and Headlines' Weekend box office shortcut have been removed.
+
+Entertainment headlines now uses one menu entry and a hub at
+`/entertainment/news`, with General and TV/Film (`/entertainment/news/tv-film`)
+tabs. Both retain scoped sources, counts, timestamps and JS/no-JS pagination.
+`/entertainment/tv-film` still works as a hub alias. Box Office and other
+Entertainment destinations remain in the menu.
+
+### Provider groups in Where to watch search results
+
+Title search at `/watch?q=...` shows one row per movie or TV series: poster,
+title/year/type, service matches and US provider logos grouped as Stream, Free,
+Free with ads, Rent and Buy when present. Desktop places providers beside the
+poster; phones keep a compact poster/title row and stack provider groups beneath
+it. Browsing without a search retains the poster grid.
+
+The rows reuse the cached provider response already needed for eligibility and
+service matching; they do not fetch every title's detail endpoint. Provider logo
+paths are restricted to the TMDB image CDN, and outbound viewing links remain
+the validated TMDB US viewing-options link. Logos have readable provider-name
+captions and initials if an image is missing or fails. Existing JustWatch/TMDB
+attribution remains. We do not infer prices, season counts, ratings or direct
+provider purchase links from this data.
+
+Poster, title and Viewing details links open the existing dialog, with Escape and
+focus return, or navigate to the title page without JavaScript. Unknown provider
+availability is shown as unavailable to check rather than confirmed absence.
+Sorting, service selection, mixed movie/TV search and stable pagination retain
+existing behavior.
+
+### Deferred: service hyperlinks in Where to watch
+
+User feedback, October 24, 2026 (America/Chicago): the search results layout
+looks good. Consider making each provider logo/name a link to reduce the extra
+clicks through the viewing-options page. The user deferred this decision; revisit
+before implementing.
+
+The current TMDB provider response supplies names/logos and a regional TMDB
+viewing-options link, not direct title links on individual services. Options to
+evaluate are a data source supplying verified direct title links, or supported
+service search URLs as a fallback (which still require choosing the title).
+Reference: [TMDB watch providers](https://developer.themoviedb.org/reference/movie-watch-providers).
+Preserve the existing search results layout when revisiting this idea. The main
+search/browse section redesign remains open while the user considers examples.
+
+This is a planning note only; mobile verification is not applicable because no
+rendered content or interactions changed.
+
+### Compact Where to watch search and browse
+
+The title search, My services link and browse controls share a compact panel.
+Content type and genre sit side by side above 600px and stack on phones. The
+results note and sort form share a wrapping toolbar. Search-result provider rows
+and browse poster cards retain their existing layout and behavior. Service
+hyperlinks remain deferred.
+
+Verification: build and diff whitespace check passed. Browser checks passed 16
+combinations at 320/390/430/1440px in light/dark modes, with and without
+JavaScript: content type, genre, title search, sorting, query service selection,
+refresh, clear search, no horizontal overflow and controls at least 44px tall.
+Phone screenshots at all three widths and desktop screenshots were inspected.
+Additional 768px light/dark checks passed; browser-local saved services restored
+and persisted through refresh, and the browse details dialog opened/closed with
+Escape. Real-device checks were unavailable. Existing Pkcs dependency warnings
+remain. Preview evidence: `/tmp/mynewspaper-watch-compact/`. Deployed as
+`mynewspaper-web:watch-compact-20261024`; the same 16 viewport/theme/JS cases
+and saved-service/tablet/modal checks passed against the live build. Live
+evidence: `/tmp/mynewspaper-watch-compact-deploy/`.
+
+### Where to watch flow — October 25, 2026
+
+Supersedes the content type/genre layout above. - Movies | TV shows toggle links replace the Content type dropdown. The Genre
+  dropdown is gone; old `genre=` links are ignored.
+- All services | My services toggle (shown once services are selected) filters
+  browsing via TMDB discover `with_watch_providers` + flatrate/free/ads, then
+  rechecks each title against cached US offers. Query: `only=1`. Browse only;
+  title search is unaffected. Not saved between visits (URL only).
+- Selected service logos sit beside a Manage/Choose services link to Settings.
+- Browse posters carry up to three logo badges for the viewer's subscription/free
+  services, plus +N.
+- Sort applies on change; Apply sort remains for no-JavaScript browsers.
+- Toolbar note shortened ("Movies with US viewing options · Page 1"); the intro
+  sentence is hidden at 600px and below so posters reach the first phone screen.
+- Desktop puts search and both toggles on one row.
+
+Code: `Components/Pages/Watch.razor`, `Watching/WatchCatalog.cs`
+(`FilledPage(..., onlySelected)`, `WatchTitle.MatchingProviders`, `Service.Logo`),
+`wwwroot/watch.js`, `wwwroot/public.css`. Filtered and unfiltered browsing keep
+separate cached paging windows. Service hyperlinks remain deferred, and the search
+result rows are unchanged.
+
+Verification: see release history, “Where to watch flow”. Mobile checks passed at
+320/390/430px light/dark on preview and live, plus 768/1440px and no-JavaScript.
+
+### Featured rows and search results — October 25, 2026
+
+User approved the streaming-rows mockup: Featured as the default view, four rows,
+a mixed movie/TV services row and 12 titles per row. `/watch` (no `kind`, or
+`kind=featured`) now shows Popular on your services (only with services selected;
+TMDB discover with the viewer's providers, alternating movies and TV), Trending
+movies this week and Trending TV this week (`trending/{kind}/week`), and New movies
+you can watch (discover, released in the last 60 days in the display time zone,
+US monetization types). Each row keeps up to 12 titles with US viewing options,
+scanning at most three upstream pages per kind. Rows are cached for 15 minutes,
+keep upstream order and personalize badges per viewer. A failed row shows its own
+status and doesn't affect the others. See all opens the matching grid (My services, popular or
+newest). The toggle is Featured | Movies | TV shows. Movies/TV keep the grid, sort,
+My services filter and paging. Rows swipe on phones; at 768px and wider JavaScript
+adds 44px arrow buttons. Row cards hide the services text visually (kept for screen
+readers) since poster badges show it. New `WatchPosterCard` and `WatchRow` components.
+
+Search results: (1) **Best match** is the default sort for searches:
+TMDB relevance order, kept through the paging window (FilledPage no longer reorders by
+services; "Your services first" remains a sort option). New searches no longer carry
+the browse sort. "the office" now lists The Office first, where it previously sank below
+titles on the viewer's services. (2) One-line heading "Results for “term”" with count,
+page and Clear search beside it. The sort shares that row on wider screens.
+Each result keeps only Viewing details (the dialog/page still has Open viewing options).
+The TV seasons note appears once below the results. Provider rows are unchanged.
+
+Code: `Watching/WatchCatalog.cs` (`TrendingShelf`, `NewMoviesShelf`, `ServicesShelf`, `SortKey(sort, searching)`),
+`Components/Pages/Watch.razor`, `Components/Watching/WatchRow.razor`, `WatchPosterCard.razor`,
+`WatchResultCard.razor`, `wwwroot/watch.js`, `wwwroot/public.css`. Verification: release history.

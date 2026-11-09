@@ -1,0 +1,91 @@
+@inject IDbContextFactory<WebScraperContext> Factory
+@inject FeedDates Dates
+@inherits DataComponentBase
+
+@if (affected.Count > 0)
+{
+    var isMajor = affected.Any(s => s.Indicator is "major" or "critical");
+    @if (Compact)
+    {
+        var first = affected[0];
+        var href = FeedQuery.SafeHref(first.IncidentUrl) ?? FeedQuery.SafeHref(first.PageUrl) ?? "tech";
+        <div class="tc-status tc-status--phone @(isMajor ? "tc-status--major" : "tc-status--minor")" role="status">
+            <span class="tc-status__text">
+                <span class="tc-status__dot" aria-hidden="true">●</span>
+                <b>@first.Name</b>
+                @if (!string.IsNullOrWhiteSpace(first.Incident) || !string.IsNullOrWhiteSpace(first.Component))
+                {
+                    <span> · @(string.IsNullOrWhiteSpace(first.Component) ? first.Incident : $"{first.Component}: {first.Incident}")</span>
+                }
+                @if (first.Since is { } since)
+                {
+                    <span> since @Dates.Time(since)</span>
+                }
+            </span>
+            <a class="tc-status__link" href="@href" target="_blank" rel="noopener noreferrer">Status <span aria-hidden="true">↗</span></a>
+        </div>
+    }
+    else
+    {
+        <div class="tc-status @(isMajor ? "tc-status--major" : "tc-status--minor")" role="status">
+            <div class="tc-status__affected">
+                @for (var i = 0; i < affected.Count; i++)
+                {
+                    var s = affected[i];
+                    var href = FeedQuery.SafeHref(s.IncidentUrl) ?? FeedQuery.SafeHref(s.PageUrl) ?? "tech";
+                    var host = HostLabel(s.PageUrl);
+                    @if (i > 0)
+                    {
+                        <span class="tc-status__sep">, </span>
+                    }
+                    <span class="tc-status__item">
+                        <span class="tc-status__dot" aria-hidden="true">●</span>
+                        <b>@s.Name</b>
+                        @if (!string.IsNullOrWhiteSpace(s.Incident) || !string.IsNullOrWhiteSpace(s.Component))
+                        {
+                            <span class="tc-status__incident">@(string.IsNullOrWhiteSpace(s.Component) ? s.Incident : $"{s.Component}: {s.Incident}")</span>
+                        }
+                        @if (s.Since is { } since)
+                        {
+                            <span class="tc-status__since">· since @Dates.Time(since)</span>
+                        }
+                        <a class="tc-status__link" href="@href" target="_blank" rel="noopener noreferrer">@host <span aria-hidden="true">↗</span></a>
+                    </span>
+                }
+            </div>
+            @if (healthy.Count > 0)
+            {
+                <div class="tc-status__healthy" aria-label="Operational services">
+                    @foreach (var ok in healthy)
+                    {
+                        <span class="tc-status__ok"><span class="tc-status__ok-dot" aria-hidden="true">●</span> @ok.Name</span>
+                    }
+                </div>
+            }
+        </div>
+    }
+}
+
+@code {
+    [Parameter] public bool Compact { get; set; }
+
+    private IReadOnlyList<ServiceState> affected = [];
+    private IReadOnlyList<ServiceState> healthy = [];
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await using var db = await Factory.CreateDbContextAsync(Ct);
+        var all = await TechQuery.ServiceStatesAsync(db, Ct);
+        affected = all.Where(s => s.Indicator is "minor" or "major" or "critical" or "maintenance").ToList();
+        healthy = all.Where(s => s.Indicator == "none").ToList();
+    }
+
+    private static string HostLabel(string? url)
+    {
+        if (Uri.TryCreate(url, UriKind.Absolute, out var u) && !string.IsNullOrWhiteSpace(u.Host))
+        {
+            return u.Host.StartsWith("www.", StringComparison.OrdinalIgnoreCase) ? u.Host[4..] : u.Host;
+        }
+        return "Status";
+    }
+}

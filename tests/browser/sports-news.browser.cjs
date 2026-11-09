@@ -1,0 +1,211 @@
+const lib = require('./lib.cjs');
+const assert = require('node:assert/strict'),
+    { chromium } = require('playwright');
+const base = lib.base,
+    password = lib.adminPassword,
+    root = lib.shotDir;
+const sections = [
+    ['sports/news', 'Sports headlines', 'sports-news', '#source'],
+    ['sports/news/basketball', 'Sports headlines', 'mens-college-basketball-news', '#source'],
+    ['sports/news/big12', 'Sports headlines', 'sports-big12-news', '#source'],
+    ['sports/news/f1', 'Sports headlines', 'sports-f1-news', '#source'],
+];
+(async () => {
+    const profiles = (await fetch(base + '/editions', { headers: { Accept: 'text/html' } })).status !== 404;
+    if (profiles && !password) {
+        console.log('SKIP: profiles are on here; set ADMIN_PASSWORD so the check can add a throwaway profile.');
+        return;
+    }
+
+    const browser = await chromium.launch({
+        args: ['--disable-web-security', '--unsafely-treat-insecure-origin-as-secure=' + base],
+    });
+    let admin;
+    let storageState = process.env.STORAGE_STATE;
+
+    try {
+        if (profiles && !storageState) {
+            admin = await lib.signInAdmin(browser);
+
+            const profile = await lib.addProfile(admin, 'SportsNews', { pin: '3691' });
+            const context = await browser.newContext({ viewport: { width: 390, height: 900 } });
+            const p = await context.newPage();
+            await lib.openProfileIn(p, profile, '/sports/news');
+            const saved = p.waitForResponse(
+                (r) => new URL(r.url()).pathname === '/api/me/settings' && r.request().method() === 'PUT',
+            );
+            await p.evaluate(() => {
+                window.myNewspaperPrefs.setItem('theme', 'system');
+            });
+            await saved;
+            storageState = await context.storageState();
+            await context.close();
+        }
+
+        // Phone width: the category dropdown (desktop shows category pills instead).
+        const context = await browser.newContext({ storageState, viewport: { width: 390, height: 900 } });
+        const p = await context.newPage();
+        const errors = [];
+        p.on('pageerror', (e) => errors.push(e.message));
+        const movedSources = new Set();
+        for (const [route, title, , selector] of sections) {
+            console.log('Testing section:', route);
+            await p.setViewportSize({ width: 390, height: 900 });
+            await p.goto(base + '/' + route);
+            assert.equal(await p.locator('h1:visible').innerText(), title);
+            assert.equal(
+                await p.locator('#hub-category').inputValue(),
+                await p.locator('form input[name="category"]').inputValue(),
+            );
+            await p.selectOption('#hub-category', { label: 'F1' });
+            await p.waitForURL(base + '/sports/news/f1');
+            await p.getByRole('heading', { name: 'F1', exact: true }).waitFor();
+            assert.equal(await p.locator('h2').first().innerText(), 'F1');
+            await p.goto(base + '/' + route);
+            const ids = await p
+                .locator(selector + ' option')
+                .evaluateAll((ns) => ns.map((n) => n.value).filter(Boolean));
+            assert(ids.length);
+            ids.forEach((id) => movedSources.add(id));
+            if (selector === '#source') {
+                const category = await p.locator('form input[name="category"]').inputValue();
+                const alias = await p.request.get(base + '/sports/news/category-' + category);
+                assert.equal(alias.status(), 200);
+
+                const redirect = await p.request.get(base + '/news/all?category=' + category + '&source=' + ids[0], {
+                    maxRedirects: 0,
+                });
+                assert.equal(redirect.status(), 302);
+                const url = new URL(redirect.headers().location, base);
+                assert.equal(url.pathname, '/' + route);
+                assert.equal(url.searchParams.get('source'), ids[0]);
+            }
+            const before = await p.locator('.feed .article:visible').count(),
+                more = p.locator('[data-load-more]');
+            if (await more.count()) {
+                const promise = p.waitForResponse((r) => r.url().includes('/feed/more?'));
+                await more.click();
+                const response = await promise;
+                assert.equal(new URL(response.url()).searchParams.get('view'), 'sports-hub-news');
+                assert.equal(response.status(), 200);
+                const result = await response.json();
+                if (result.nextHref) assert(result.nextHref.startsWith(route + '?'));
+                await p.waitForFunction(
+                    (n) => document.querySelectorAll('.feed .article:not([style*="display: none"])').length > n,
+                    before,
+                );
+                const allIds = await p
+                    .locator('.feed .article:visible')
+                    .evaluateAll((ns) => ns.map((n) => n.dataset.articleId));
+                assert.equal(allIds.length, new Set(allIds).size);
+                if (selector === '#source') {
+                    const params = new URL(response.url()).searchParams;
+                    params.set('view', 'entertainment-hub-news');
+                    assert.equal((await p.request.get(base + '/feed/more?' + params)).status(), 404);
+                    params.set('view', 'news');
+                    const suppressed = await p.request.get(base + '/feed/more?' + params);
+                    assert.equal((await suppressed.json()).total, 0);
+                }
+            }
+            await p.selectOption(selector, ids[0]);
+            await p.waitForURL((u) => u.searchParams.get('source') === ids[0]);
+            assert.equal(new URL(p.url()).pathname, '/' + route);
+            for (const width of [320, 390, 430, 768, 1440])
+                for (const theme of lib.THEMES) {
+                    await p.setViewportSize({ width, height: 900 });
+                    await p.emulateMedia({ colorScheme: theme });
+                    await p.goto(base + '/' + route);
+                    assert.equal(await p.locator('html').getAttribute('data-theme'), theme);
+                    assert(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+                    assert(!(await p.locator('#blazor-error-ui').isVisible()));
+                    if (width < 768) {
+                        await p.locator('.mobile-nav > summary').click();
+                        const group = p.locator('[aria-labelledby="mobile-sports-heading"]'),
+                            link = group.locator('a[href="sports/news"]');
+                        await link.scrollIntoViewIfNeeded();
+                        assert.equal(await link.getAttribute('aria-current'), 'page');
+                        assert((await link.boundingBox()).height >= 44);
+                        assert.equal(
+                            await p.locator('[aria-labelledby="mobile-news-heading"] a[href="' + route + '"]').count(),
+                            0,
+                        );
+                        assert.equal(await p.locator('.mobile-nav a[aria-current="page"]').count(), 1);
+                        assert(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+                        await p.locator('.mobile-nav > summary').click();
+                        await p.waitForTimeout(250);
+                    } else if (width >= 1024) {
+                        // Desktop: the Sports link in the masthead row marks the section.
+                        assert.equal(
+                            await p.locator('.site-nav--inline a[href="sports"]').getAttribute('aria-current'),
+                            'true',
+                        );
+                    }
+                    if (root && width < 768)
+                        await p.screenshot({
+                            path: root + '/' + route.replaceAll('/', '-') + '-' + width + '-' + theme + '.png',
+                        });
+                }
+        }
+        await p.goto(base + '/sports/mens-college-basketball/news');
+        assert((await p.locator('main').innerText()).includes('Men’s college basketball'));
+
+        // college/news was retired: 301 redirects to /sports/news/big12 preserving query parameters.
+        await p.goto(base + '/college/news?q=utah');
+        assert.equal(new URL(p.url()).pathname, '/sports/news/big12');
+        assert.equal(new URL(p.url()).searchParams.get('q'), 'utah');
+        assert.equal(await p.locator('#hub-category option:checked').innerText(), 'Big 12');
+        // F1 › News was retired (October 26, 2026): old links land on the F1 topic of Sports headlines.
+        await p.goto(base + '/f1/news');
+        assert.equal(new URL(p.url()).pathname, '/sports/news/f1');
+        assert.equal(await p.locator('#hub-category option:checked').innerText(), 'F1');
+        await p.goto(base + '/f1');
+        assert.equal(await p.locator('a[href="f1/news"]').count(), 0);
+        await p.goto(base + '/news/all');
+        const names = await p.locator('#news-section option').allTextContents();
+        for (const name of [
+            'Sports',
+            'Big 12 News',
+            'F1 News',
+            "Men's College Basketball News",
+            'Entertainment',
+            'TV/Film',
+        ])
+            assert(!names.includes(name), name);
+        assert(
+            (await p.locator('#source option').evaluateAll((ns) => ns.map((n) => n.value))).every(
+                (id) => !movedSources.has(id),
+            ),
+        );
+        const plain = await (
+            await browser.newContext({ storageState, javaScriptEnabled: false, viewport: { width: 390, height: 900 } })
+        ).newPage();
+        for (const [route] of sections) {
+            await plain.goto(base + '/' + route);
+            const current = await plain.locator('#hub-category').inputValue();
+            await plain.selectOption('#hub-category', current);
+            await plain.locator('.news-category-select button').click();
+            await plain.waitForURL((u) => u.pathname === '/' + route);
+            const more = plain.locator('[data-load-more]');
+            if (await more.count()) {
+                await more.click();
+                await plain.waitForURL((u) => u.searchParams.has('after'));
+                assert.equal(new URL(plain.url()).pathname, '/' + route);
+                assert((await plain.locator('.feed .article').count()) > 0);
+            }
+            assert(await plain.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+            await plain.locator('.mobile-nav > summary').click();
+            assert(await plain.locator('[aria-labelledby="mobile-sports-heading"] a[href="sports/news"]').count());
+        }
+        assert.deepEqual(errors, []);
+        await plain.close();
+        console.log(
+            'Sports headline category dropdown, existing F1/Big12 readers, legacy links, source filters, scoped JS/no-JS paging, Headlines exclusion and mobile light/dark navigation passed.',
+        );
+    } finally {
+        await lib.deleteProfiles();
+        await browser.close();
+    }
+})().catch((e) => {
+    console.error(e);
+    process.exit(1);
+});

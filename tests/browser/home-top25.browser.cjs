@@ -1,0 +1,209 @@
+// Folded phone layouts are covered by phone-fronts.browser.cjs; these checks exercise the retained tablet/desktop controls.
+const { chromium } = require('playwright');
+const lib = require('./lib.cjs');
+const assert = require('node:assert/strict');
+const base = lib.base;
+const password = lib.adminPassword;
+
+(async () => {
+    const profiles = (await fetch(base + '/editions', { headers: { Accept: 'text/html' } })).status !== 404;
+    if (profiles && !password) {
+        console.log('SKIP: profiles are on here; set ADMIN_PASSWORD so the check can add a throwaway profile.');
+        return;
+    }
+
+    const browser = await chromium.launch({
+        args: ['--disable-web-security', '--unsafely-treat-insecure-origin-as-secure=' + base],
+    });
+    let admin;
+    let storageState = process.env.STORAGE_STATE;
+
+    try {
+        if (profiles && !storageState) {
+            admin = await lib.signInAdmin(browser);
+
+            const profile = await lib.addProfile(admin, 'HomeTop25', { pin: '3691' });
+
+            storageState = await lib.openProfile(browser, profile, { path: '/' });
+        }
+
+        const context = await browser.newContext({ storageState });
+        const page = await context.newPage();
+        const errors = [];
+        page.on('pageerror', (e) => errors.push(e.message));
+        await page.goto(base + '/');
+        const saved = page.waitForResponse(
+            (r) => new URL(r.url()).pathname === '/api/me/settings' && r.request().method() === 'PUT',
+        );
+        await page.evaluate(() => {
+            window.myNewspaperPrefs.setItem('mynewsfeed-personal-v1', JSON.stringify({ order: [], hidden: [] }));
+        });
+        await saved;
+        await page.reload({ waitUntil: 'networkidle' });
+        assert.equal(await page.locator('[data-home-section="f1"]').count(), 0);
+        const card = page.locator('section[data-home-section="rankings"]');
+        await card.waitFor();
+        const options = await card
+            .locator('select option')
+            .evaluateAll((ns) => ns.map((n) => ({ value: n.value, text: n.textContent })));
+        assert(options.length, 'Production ranking sources expected');
+        // Desktop (1024px and up): one pill per sport, short names, and the dropdown hidden.
+        await page.setViewportSize({ width: 1440, height: 900 });
+        const pills = card.locator('.d-rankings__pills a');
+        assert.equal(await pills.count(), options.length);
+        assert(await card.locator('.d-rankings__pills').isVisible());
+        assert(!(await card.locator('select').isVisible()));
+        assert(
+            (await pills.allTextContents()).every((t) => !t.includes('—')),
+            'Pills use short sport names',
+        );
+        // Switching polls swaps only this card: no reload, and the page stays where it is. Let late content above the
+        // card (images, weather, lead story) finish first, and measure the card on screen, which is what a jump moves.
+        await page.waitForLoadState('networkidle');
+        await card.scrollIntoViewIfNeeded();
+        await page.evaluate(() => (window.__top25NoReload = true));
+        for (const option of options) {
+            // Bring the pill into view first, so the click itself doesn't scroll.
+            const pill = card.locator(`.d-rankings__pills a[data-ranking-source="${option.value}"]`);
+            await pill.scrollIntoViewIfNeeded();
+            const scrollBefore = await page.evaluate(() => scrollY);
+            const topBefore = (await card.boundingBox()).y;
+            await pill.click();
+            await page.waitForURL((u) => u.searchParams.get('rankingSourceId') === option.value);
+            await page.waitForFunction(
+                (value) =>
+                    document
+                        .querySelector(`[data-home-section="rankings"] a[data-ranking-source="${value}"]`)
+                        ?.getAttribute('aria-current') === 'page' &&
+                    !document.querySelector('[data-home-section="rankings"][aria-busy]'),
+                option.value,
+            );
+            assert.equal(await page.evaluate(() => window.__top25NoReload), true, 'Poll switch reloaded the page');
+            const scrollAfter = await page.evaluate(() => scrollY);
+            const topAfter = (await card.boundingBox()).y;
+            const moved = `scrollY ${scrollBefore}->${scrollAfter}, card top ${Math.round(topBefore)}->${Math.round(topAfter)}`;
+            assert(Math.abs(scrollAfter - scrollBefore) <= 1, 'Poll switch moved the page: ' + moved);
+            assert(Math.abs(topAfter - topBefore) <= 1, 'Poll switch moved the card on screen: ' + moved);
+            assert.equal(await card.locator('.d-rankings__pills a[aria-current="page"]').count(), 1);
+            assert.equal(
+                await page.evaluate(() => document.activeElement?.dataset.rankingSource),
+                option.value,
+                'Focus stays on the chosen pill',
+            );
+            assert.equal(await card.locator('select').inputValue(), option.value);
+            assert.match(
+                await card.locator('.d-more').getAttribute('href'),
+                new RegExp(`^college/rankings\\?sport=[\\w-]+&sourceId=${option.value}$`),
+            );
+            const ranks = await card.locator('tbody tr td:first-child').allTextContents();
+            assert(ranks.every((r) => +r >= 1 && +r <= 25));
+            if (!ranks.length) assert((await card.innerText()).includes('Rankings not available yet'));
+            else {
+                assert.deepEqual(await card.locator('thead th').allTextContents(), [
+                    'Rank',
+                    'School',
+                    'Record',
+                    'Previous',
+                ]);
+                assert.equal(await card.locator('tbody .big12-badge').count(), 0);
+                assert((await card.locator('tbody img').count()) > 0);
+                assert(
+                    await card
+                        .locator('tbody img')
+                        .evaluateAll((ns) => ns.every((n) => n.width === 22 && n.height === 22)),
+                );
+                const highlighted = card.locator('tr.ranking-big12');
+                if (await highlighted.count()) {
+                    assert(
+                        await highlighted
+                            .first()
+                            .locator('td')
+                            .first()
+                            .evaluate((n) => getComputedStyle(n).boxShadow !== 'none'),
+                    );
+                }
+                const scroll = await card.locator('.d-rankings__table').boundingBox();
+                if (page.viewportSize().width < 1024) assert(scroll.height <= 441);
+                else
+                    assert(
+                        await card.locator('.d-rankings__table').evaluate((n) => n.scrollHeight <= n.clientHeight + 1),
+                    );
+            }
+        }
+        for (const width of [768, 1024, 1440, 1920]) {
+            await page.setViewportSize({ width, height: 900 });
+            await page.waitForTimeout(250);
+            assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+            const table = card.locator('.d-rankings__table');
+            if (await table.count()) {
+                if (width >= 1024) {
+                    assert(await table.evaluate((n) => n.scrollHeight <= n.clientHeight + 1));
+                    const last = await card.locator('tbody tr').last().boundingBox();
+                    const area = await table.boundingBox();
+                    assert(last.y + last.height <= area.y + area.height + 1);
+                } else assert((await table.boundingBox()).height <= 441);
+            }
+        }
+        // Phones and iPad portrait keep the dropdown, which also switches in place.
+        for (const width of [820]) {
+            await page.setViewportSize({ width, height: 900 });
+            await page.waitForTimeout(250);
+            assert(!(await card.locator('.d-rankings__pills').isVisible()), `No pills at ${width}px`);
+            assert(await card.locator('select').isVisible(), `Dropdown at ${width}px`);
+            await card.locator('select').scrollIntoViewIfNeeded();
+            const value =
+                options[0].value === (await card.locator('select').inputValue())
+                    ? options.at(-1).value
+                    : options[0].value;
+            const scrollBefore = await page.evaluate(() => scrollY);
+            const topBefore = (await card.boundingBox()).y;
+            await card.locator('select').selectOption(value);
+            await page.waitForFunction(
+                (v) =>
+                    document.querySelector('[data-home-section="rankings"] select')?.value === v &&
+                    !document.querySelector('[data-home-section="rankings"][aria-busy]'),
+                value,
+            );
+            assert.equal(await page.evaluate(() => window.__top25NoReload), true, 'Dropdown switch reloaded the page');
+            const scrollAfter = await page.evaluate(() => scrollY);
+            const topAfter = (await card.boundingBox()).y;
+            assert(
+                Math.abs(scrollAfter - scrollBefore) <= 25 && Math.abs(topAfter - topBefore) <= 1,
+                'Dropdown switch moved the card on screen',
+            );
+        }
+        await page.locator('#home-ranking-source').focus();
+        assert.deepEqual(errors, []);
+        await card.screenshot({ path: process.env.TOP25_SCREENSHOT || 'test-results/home-top25.png' });
+        const plain = await browser.newContext({
+            storageState,
+            javaScriptEnabled: false,
+            viewport: { width: 820, height: 900 },
+        });
+        const p = await plain.newPage();
+        await p.goto(base + '/');
+        await p.locator('#home-ranking-source').selectOption(options.at(-1).value);
+        await p.locator('section[data-home-section="rankings"]').getByRole('button', { name: 'Apply' }).click();
+        assert.equal(new URL(p.url()).searchParams.get('rankingSourceId'), options.at(-1).value);
+        assert.equal(await p.locator('#home-ranking-source').inputValue(), options.at(-1).value);
+        // Without JavaScript, desktop pills are plain links to the same address.
+        await p.setViewportSize({ width: 1440, height: 900 });
+        await p.locator(`.d-rankings__pills a[data-ranking-source="${options[0].value}"]`).click();
+        await p.waitForURL((u) => u.searchParams.get('rankingSourceId') === options[0].value);
+        assert.equal(
+            await p.locator('.d-rankings__pills a[aria-current="page"]').getAttribute('data-ranking-source'),
+            options[0].value,
+        );
+        await plain.close();
+        assert.equal((await page.request.get(base + '/healthz')).status(), 200);
+        console.log(
+            'Homepage Top 25: desktop sport pills (short names, none on phone/iPad), in-place switch by pill and dropdown (no reload, scroll kept), available source selection, matching full-page link, ranks 1–25, expanded desktop/scrolling mobile table, no standalone F1, responsive widths, no-JS Apply, no JS errors, health 200 passed.',
+        );
+    } finally {
+        await lib.deleteProfiles();
+        await browser.close();
+    }
+})().catch((e) => {
+    console.error(e);
+    process.exit(1);
+});

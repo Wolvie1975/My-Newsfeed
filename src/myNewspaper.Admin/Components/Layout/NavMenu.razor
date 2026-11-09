@@ -1,0 +1,107 @@
+@inject myNewspaper.Shared.Hosting.SiteLinks SiteLinks
+@inject IDbContextFactory<WebScraperContext> Factory
+@inject IConfiguration Config
+@inject FeedDates Dates
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.EntityFrameworkCore
+@using myNewspaper.Shared.Data
+@inherits DataComponentBase
+@inject TimeProvider Clock
+
+@* The admin menu. It renders on the server with each page request, so the red counts (from the same report as Scraper
+   status) refresh as you move between pages. A failed count never breaks the menu. *@
+<nav class="adm-nav" aria-label="Administration">
+    <div class="adm-nav__group">
+        <span class="adm-nav__label">Overview</span>
+        <NavLink class="adm-nav__link" href="admin" Match="NavLinkMatch.All">
+            <AdminIcon Name="status" /><span class="adm-nav__text">Scraper status</span>
+            @if (counts.Total > 0) { <span class="adm-nav__count" aria-label="@($"{counts.Total} need attention")">@counts.Total</span> }
+        </NavLink>
+        <NavLink class="adm-nav__link" href="admin/schedule-coverage"><AdminIcon Name="coverage" /><span class="adm-nav__text">Schedule coverage</span></NavLink>
+    </div>
+    <div class="adm-nav__group">
+        <span class="adm-nav__label">News</span>
+        <NavLink class="adm-nav__link" href="admin/sources">
+            <AdminIcon Name="sources" /><span class="adm-nav__text">Sources</span>
+            @if (counts.Sources > 0) { <span class="adm-nav__count" aria-label="@($"{counts.Sources} with problems")">@counts.Sources</span> }
+        </NavLink>
+        <NavLink class="adm-nav__link" href="admin/categories"><AdminIcon Name="categories" /><span class="adm-nav__text">Categories</span></NavLink>
+        <NavLink class="adm-nav__link" href="admin/pages"><AdminIcon Name="pages" /><span class="adm-nav__text">Pages</span></NavLink>
+    </div>
+    <div class="adm-nav__group">
+        <span class="adm-nav__label">Videos</span>
+        <NavLink class="adm-nav__link" href="admin/youtube-feeds">
+            <AdminIcon Name="feeds" /><span class="adm-nav__text">YouTube feeds</span>
+            @if (counts.Channels > 0) { <span class="adm-nav__count" aria-label="@($"{counts.Channels} with problems")">@counts.Channels</span> }
+        </NavLink>
+        <NavLink class="adm-nav__link" href="admin/youtube-videos"><AdminIcon Name="videos" /><span class="adm-nav__text">YouTube videos</span></NavLink>
+    </div>
+    <div class="adm-nav__group">
+        <span class="adm-nav__label">Sports</span>
+        <NavLink class="adm-nav__link" href="admin/sports-event-types">
+            <AdminIcon Name="event-feeds" /><span class="adm-nav__text">Event feeds</span>
+            @if (counts.EventFeeds > 0) { <span class="adm-nav__count" aria-label="@($"{counts.EventFeeds} with problems")">@counts.EventFeeds</span> }
+        </NavLink>
+        <NavLink class="adm-nav__link" href="admin/sports-events"><AdminIcon Name="events" /><span class="adm-nav__text">Events</span></NavLink>
+        <NavLink class="adm-nav__link" href="admin/results"><AdminIcon Name="results" /><span class="adm-nav__text">Results follows</span></NavLink>
+    </div>
+    <div class="adm-nav__group">
+        <span class="adm-nav__label">Television</span>
+        <NavLink class="adm-nav__link" href="admin/tv-series">
+            <AdminIcon Name="tv" /><span class="adm-nav__text">TV series</span>
+            @if (counts.TvSeries > 0) { <span class="adm-nav__count" aria-label="@($"{counts.TvSeries} with problems")">@counts.TvSeries</span> }
+        </NavLink>
+    </div>
+    <div class="adm-nav__group">
+        <span class="adm-nav__label">Household</span>
+        <NavLink class="adm-nav__link" href="admin/profiles">
+            <AdminIcon Name="profiles" /><span class="adm-nav__text">Profiles</span>
+            @if (lockedProfiles > 0) { <span class="adm-nav__count" aria-label="@($"{lockedProfiles} locked")">@lockedProfiles</span> }
+        </NavLink>
+        <NavLink class="adm-nav__link" href="admin/requests">
+            <AdminIcon Name="requests" /><span class="adm-nav__text">Requests</span>
+            @if (waitingRequests > 0) { <span class="adm-nav__count" aria-label="@($"{waitingRequests} waiting")">@waitingRequests</span> }
+        </NavLink>
+    </div>
+</nav>
+
+<div class="adm-side__foot">
+    <a class="adm-nav__link" href="@SiteLinks.Public" target="_blank" rel="noopener noreferrer"><AdminIcon Name="external" /><span class="adm-nav__text">View site</span></a>
+    <form method="post" action="/account/logout">
+        <AntiforgeryToken />
+        <button type="submit" class="adm-nav__link"><AdminIcon Name="signout" /><span class="adm-nav__text">Sign out</span></button>
+    </form>
+</div>
+
+@code {
+    [CascadingParameter] private Task<AuthenticationState>? AuthState { get; set; }
+    private AdminNavCounts counts = AdminNavCounts.None;
+    private int lockedProfiles;
+    private int waitingRequests;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (AuthState is null || (await AuthState).User.Identity?.IsAuthenticated != true) return;
+        try
+        {
+            var now = Clock.GetUtcNow().UtcDateTime;
+            await using var db = await Factory.CreateDbContextAsync(Ct);
+            var report = await ScraperHealth.GetReportAsync(
+                db, now, Dates.TodayAt(now), ScraperHealth.StaleAfter(Config["Scraper:StaleAfterHours"]), Ct);
+            counts = AdminNavCounts.From(report);
+        }
+        catch (Exception ex) when (DataFailures.IsReadFailure(ex))
+        {
+            counts = AdminNavCounts.None; // the menu still renders; the status page shows the real error
+        }
+        try
+        {
+            await using var db = await Factory.CreateDbContextAsync(Ct);
+            (lockedProfiles, waitingRequests) = await AdminQuery.AlertCountsAsync(db, Ct);
+        }
+        catch (Exception ex) when (DataFailures.IsReadFailure(ex))
+        {
+            lockedProfiles = waitingRequests = 0;
+        }
+    }
+}

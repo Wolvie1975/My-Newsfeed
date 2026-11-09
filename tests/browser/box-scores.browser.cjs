@@ -1,0 +1,86 @@
+const { chromium } = require('playwright');
+const lib = require('./lib.cjs');
+const assert = require('node:assert/strict');
+const base = lib.base;
+(async () => {
+    const browser = await chromium.launch();
+    try {
+        const page = await lib.readerPage(browser);
+        const errors = [];
+        page.on('pageerror', (e) => errors.push(e.message));
+        const resultsPath =
+            process.env.RESULTS_PATH ||
+            '/scoreboard?status=final&day=' +
+                new Intl.DateTimeFormat('en-CA', {
+                    timeZone: 'America/Chicago',
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                }).format(new Date(Date.now() - 86400000));
+        const paths = [resultsPath, '/mls/results', '/championship/results'];
+        for (const path of paths) {
+            await page.goto(base + path);
+            const links = page.locator('[data-box-score]:visible');
+            assert(await links.count(), path);
+            const href = await links.first().getAttribute('href');
+            await links.first().click();
+            await page.waitForSelector('.box-score-dialog[open] .box-score-content table:visible');
+            assert.equal(
+                new URL(page.url()).pathname,
+                path.split('?')[0] === '/results' ? '/scoreboard' : path.split('?')[0],
+            );
+            assert(await page.locator('.box-score-dialog[open] [role=region]').count());
+            await page.keyboard.press('Escape');
+            await page.waitForSelector('.box-score-dialog', { state: 'detached' });
+            assert.equal(await page.evaluate(() => document.activeElement?.getAttribute('href')), href);
+            assert.equal((await page.request.get(base + '/' + href)).status(), 200);
+        }
+        // Use a player-stat game for width/theme checks, preserving native dialog keyboard behaviour.
+        await page.goto(base + resultsPath);
+        const link = page.locator('[data-box-score]:visible').filter({ hasText: 'Box score' }).first();
+        assert(await link.count());
+        const href = await link.getAttribute('href');
+        for (const theme of lib.THEMES)
+            for (const width of [768, 1440]) {
+                await page.setViewportSize({ width, height: 900 });
+                await page.evaluate((t) => localStorage.setItem('theme', t), theme);
+                await page.reload();
+                await page.locator(`[href="${href}"]`).click();
+                await page.waitForSelector('.box-score-dialog[open] .box-score-content table:visible');
+                assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
+                const rect = await page.locator('.box-score-dialog').boundingBox();
+                assert(rect.width <= width);
+                assert(await page.locator('.box-score-dialog .box-score-content td').count());
+                if (lib.shotDir) await page.screenshot({ path: `${lib.shotDir}/box-${width}-${theme}.png` });
+                await page.locator('.box-score-dialog button').click();
+                await page.waitForSelector('.box-score-dialog', { state: 'detached' });
+            }
+        // An error is announced inside the modal and the original link remains usable.
+        await page.route('**/box-score/**', (route) => route.fulfill({ status: 503, body: 'Unavailable' }));
+        await page.locator(`[href="${href}"]`).click();
+        await page.waitForFunction(() =>
+            document.querySelector('.box-score-dialog [role=status]')?.textContent.includes('could not'),
+        );
+        assert(await page.locator('.box-score-dialog a').count());
+        await page.keyboard.press('Escape');
+        await page.unroute('**/box-score/**');
+        assert.equal((await page.request.get(base + '/box-score/football/nfl/not-an-id')).status(), 404);
+        assert.equal((await page.request.get(base + '/box-score/football/nfl/99999999999999999999')).status(), 404);
+        const plain = await lib.readerContext(browser, { javaScriptEnabled: false });
+        const p = await plain.newPage();
+        await p.goto(base + '/mls/results');
+        const normal = p.locator('[data-box-score]:visible').first();
+        await normal.click();
+        assert(await p.locator('[data-box-content] table').count());
+        await plain.close();
+        assert.deepEqual(errors, []);
+        console.log(
+            'Results/MLS/Championship modal, direct-page fallback, keyboard/focus, six theme/width layouts, error/invalid identity and no-JavaScript checks passed.',
+        );
+    } finally {
+        await browser.close();
+    }
+})().catch((e) => {
+    console.error(e);
+    process.exit(1);
+});

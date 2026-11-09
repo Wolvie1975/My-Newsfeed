@@ -1,0 +1,52 @@
+const { chromium } = require('playwright');
+const lib = require('./lib.cjs');
+const assert = require('node:assert/strict');
+const base = lib.base;
+(async () => {
+    const browser = await chromium.launch();
+    try {
+        const page = await lib.readerPage(browser);
+        const read = () =>
+            page
+                .locator('[data-settings-sections]>[data-settings-section]')
+                .evaluateAll((ns) => ns.map((n) => n.dataset.settingsSection));
+        await page.goto(base + '/');
+        await page.locator('a[href="settings"]:visible').first().click();
+        await page.waitForURL('**/settings');
+        await page.waitForSelector('[data-settings-move]', { state: 'attached' });
+        assert.equal(await page.locator('[data-settings-move]').count(), 8);
+        const original = await read();
+        assert.equal(original.length, 4);
+        await page.locator('.settings-arrange summary').click();
+        await lib.whileSaving(page, () => page.locator('[data-settings-move="teams:-1"]').click());
+        assert.deepEqual((await read()).slice(-2), ['teams', 'services']);
+        await page.reload();
+        assert.deepEqual((await read()).slice(-2), ['teams', 'services']);
+        await page.locator('.settings-arrange summary').click();
+        await page.setViewportSize({ width: 390, height: 900 });
+        assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
+        await lib.whileSaving(page, () => page.locator('[data-settings-order-reset]').click());
+        assert.deepEqual(await read(), original);
+        // A malformed order: with profiles on the server refuses to store it; in localStorage the page ignores it.
+        if (await page.evaluate(() => !!window.myNewspaperPrefs?.profile))
+            await assert.rejects(lib.setPreference(page, 'mynewsfeed-settings-order-v1', '{"bad":true}'), /400/);
+        else await page.evaluate(() => localStorage.setItem('mynewsfeed-settings-order-v1', '{"bad":true}'));
+        await page.reload();
+        assert.deepEqual(await read(), original);
+        await page.goto(base + '/watch');
+        // On phones Settings is in the Menu sheet.
+        await page.locator('.mobile-nav > summary').click();
+        await page.locator('a[href="settings"]:visible').first().click();
+        await page.waitForURL('**/settings');
+        await page.waitForSelector('[data-settings-move]', { state: 'attached' });
+        assert.equal(await page.locator('[data-settings-move]').count(), 8);
+        console.log(
+            'In-site navigation and four Settings sections reorder, persist, reset and handle malformed storage with no phone overflow.',
+        );
+    } finally {
+        await browser.close();
+    }
+})().catch((e) => {
+    console.error(e);
+    process.exit(1);
+});

@@ -1,0 +1,5 @@
+{
+  "$schema": "https://xunit.net/schema/current/xunit.runner.schema.json",
+  "//": "The integration tests share one live SQL Server database and take row/range locks inside their transactions; running test classes in parallel makes them deadlock each other.",
+  "parallelizeTestCollections": false
+}

@@ -1,0 +1,489 @@
+/* Personal homepage, teams and weather. Saved to the open profile (profiles.js), or in this browser without one. */
+(function () {
+    'use strict';
+    const PREFS = 'mynewsfeed-personal-v1',
+        TEAMS = 'mynewsfeed-sports-teams-v1';
+    // The site defaults the page carries (SiteDefaults.HomeOrder); the list below is only a fallback.
+    const defaults = window.myNewspaperPrefs?.defaults?.homeOrder || [
+        'lead',
+        'watch',
+        'opinion',
+        'news',
+        'sports-news',
+        'entertainment-news',
+        'tech-news',
+        'sports',
+        'scoreboard',
+        'tv',
+        'videos',
+        'rankings',
+        'forecasts',
+        'movies',
+    ];
+    let storage = true,
+        pending = false,
+        weatherController;
+    try {
+        (window.myNewspaperPrefs || localStorage).setItem('mynewsfeed-personal-probe', '1');
+        (window.myNewspaperPrefs || localStorage).removeItem('mynewsfeed-personal-probe');
+    } catch (_) {
+        storage = false;
+    }
+    const txt = (value) => (typeof value === 'string' ? value.slice(0, 2048) : '');
+    function load(key, fallback) {
+        try {
+            return JSON.parse((window.myNewspaperPrefs || localStorage).getItem(key)) ?? fallback;
+        } catch (_) {
+            return fallback;
+        }
+    }
+    function list(value) {
+        return Array.isArray(value) ? value : [];
+    }
+    function prefs() {
+        const raw = load(PREFS, {}),
+            p = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
+        const order = [...new Set(list(p.order).filter((k) => defaults.includes(k)))];
+        const arranged = order.concat(defaults.filter((k) => !order.includes(k)));
+        // Keep the sports overview before its detailed scoreboard in saved layouts too.
+        if (arranged.indexOf('scoreboard') < arranged.indexOf('sports')) {
+            arranged.splice(arranged.indexOf('scoreboard'), 1);
+            arranged.splice(arranged.indexOf('sports') + 1, 0, 'scoreboard');
+        }
+        return {
+            order: arranged,
+            hidden: list(p.hidden).filter((k) => defaults.includes(k) || k === 'f1'),
+            teamsOnly: p.teamsOnly === true,
+        };
+    }
+    function announce(message) {
+        let targets = [...document.querySelectorAll('[data-personal-status]')];
+        if (!targets.length) {
+            const main = document.querySelector('.pub main.page');
+            if (main) {
+                const status = node('p', '', 'updated');
+                status.setAttribute('data-personal-status', '');
+                status.setAttribute('role', 'status');
+                main.prepend(status);
+                targets = [status];
+            }
+        }
+        targets.forEach((n) => (n.textContent = message));
+    }
+    function save(key, value, message) {
+        try {
+            (window.myNewspaperPrefs || localStorage).setItem(key, JSON.stringify(value));
+            sync();
+            announce(
+                message || (window.myNewspaperPrefs?.profile ? 'Saved to your edition.' : 'Saved in this browser.'),
+            );
+            return true;
+        } catch (_) {
+            announce('Could not save. Browser storage is full or blocked. Your previous choices are unchanged.');
+            sync();
+            return false;
+        }
+    }
+    function node(tag, text, className) {
+        const n = document.createElement(tag);
+        if (text) n.textContent = text;
+        if (className) n.className = className;
+        return n;
+    }
+    function teams() {
+        return new Set(list(load(TEAMS, [])).filter((k) => typeof k === 'string'));
+    }
+    function matchesTeams(element, selected) {
+        try {
+            return list(JSON.parse(element.dataset.sportsTeams || '[]')).some((k) => selected.has(k));
+        } catch (_) {
+            return false;
+        }
+    }
+    function renderHome(p, selected) {
+        const grid = document.querySelector('[data-home-grid]');
+        if (grid) {
+            grid.classList.toggle(
+                'is-customized',
+                p.hidden.length > 0 || JSON.stringify(p.order) !== JSON.stringify(defaults),
+            );
+            // The broadsheet layout fixes where each section sits; saved preferences only hide sections. Phones have a
+            // second copy of the page (the folded front, its own [data-home-grid]), so every match is hidden.
+            defaults.forEach((key) => {
+                document.querySelectorAll(`[data-home-grid] [data-home-section="${key}"]`).forEach((section) => {
+                    section.hidden = p.hidden.includes(key);
+                });
+            });
+            grid.querySelectorAll('[data-home-f1]').forEach((section) => (section.hidden = p.hidden.includes('f1')));
+            const empty = document.querySelector('[data-home-empty]');
+            if (empty) empty.hidden = grid.querySelector('[data-home-section]:not([hidden])') !== null;
+            const rows = [...grid.querySelectorAll('[data-home-team-item]')];
+            rows.forEach((row) => (row.hidden = p.teamsOnly && !matchesTeams(row, selected)));
+            // Today & Tonight: the first five rows still shown, then "N more today" (docs/home-wide-rebalance-handoff.md §3).
+            const TONIGHT_LIMIT = 5;
+            let shown = 0;
+            grid.querySelectorAll('.bs-tonight [data-home-team-item]').forEach((row) => {
+                row.toggleAttribute('data-home-over', !row.hidden && ++shown > TONIGHT_LIMIT);
+            });
+            const more = grid.querySelector('[data-home-tonight-more]');
+            if (more) {
+                const extra = Math.max(0, shown - TONIGHT_LIMIT);
+                more.hidden = extra === 0;
+                more.firstChild.textContent = `${extra} more today `;
+            }
+            const noTeams = document.querySelector('[data-home-teams-empty]');
+            if (noTeams) noTeams.hidden = !p.teamsOnly || !rows.length || rows.some((row) => !row.hidden);
+        }
+        document.querySelectorAll('[data-home-teams-only]').forEach((n) => (n.checked = p.teamsOnly));
+    }
+    function renderPhoneTeams(selected) {
+        document.querySelectorAll('[data-phone-team-only]').forEach((row) => {
+            row.hidden = !matchesTeams(row, selected);
+        });
+        document.querySelectorAll('[data-phone-your-team]').forEach((label) => {
+            label.hidden = !matchesTeams(label.closest('[data-sports-teams]'), selected);
+        });
+        document.querySelectorAll('[data-phone-team-section]').forEach((section) => {
+            const count = section.querySelectorAll('[data-phone-team-only]:not([hidden])').length;
+            const wasHidden = section.hidden;
+            section.hidden = count === 0;
+            if (section.matches('details')) {
+                const gist = section.querySelector('.mx-fold__gist');
+                if (gist) gist.textContent = count + (count === 1 ? ' upcoming game' : ' upcoming games');
+                if (wasHidden && count) section.open = true;
+            }
+        });
+        document.querySelectorAll('[data-phone-sports] .mx-folds').forEach((group) => {
+            const folds = [...group.querySelectorAll('.mx-fold:not([hidden])')];
+            if (folds.length && !folds.some((fold) => fold.open)) folds[0].open = true;
+        });
+    }
+    function sync() {
+        document.querySelectorAll('[data-personal-control]').forEach((n) => (n.hidden = !storage));
+        if (!storage) {
+            announce('Browser storage is unavailable. Enable site storage to save personal preferences.');
+            return;
+        }
+        const p = prefs(),
+            selected = teams();
+        renderHome(p, selected);
+        renderPhoneTeams(selected);
+    }
+    document.addEventListener('click', (e) => {
+        const p = prefs();
+        if (e.target.closest('[data-home-reset]')) {
+            p.order = defaults;
+            p.hidden = [];
+            p.teamsOnly = false;
+            save(PREFS, p, 'Default homepage restored.');
+        }
+    });
+    document.addEventListener('change', (e) => {
+        const p = prefs(),
+            n = e.target;
+        if (n.matches('[data-home-teams-only]')) {
+            p.teamsOnly = n.checked;
+            save(PREFS, p);
+        } else if (n.matches('[data-sports-choice]')) sync();
+    });
+    let weatherLocation = null,
+        weatherLocationRequest = 0;
+    function weatherNotice(host, message) {
+        const notice = host.querySelector('[data-weather-location-status]');
+        if (notice) notice.textContent = message;
+    }
+    function resetWeather(host, message) {
+        weatherLocationRequest++;
+        weatherLocation = null;
+        const button = host.querySelector('[data-weather-locate]');
+        if (button) button.disabled = false;
+        weatherNotice(host, message || 'Showing Kansas City.');
+        weather(true);
+    }
+    function locateWeather(host) {
+        const request = ++weatherLocationRequest;
+        if (!window.isSecureContext || !navigator.geolocation) {
+            resetWeather(
+                host,
+                'Location is unavailable in this browser. Open the site over HTTPS to use your location. Showing Kansas City.',
+            );
+            return;
+        }
+        host.querySelector('[data-weather-locate]').disabled = true;
+        host.querySelector('[data-weather-reset]').hidden = false;
+        weatherNotice(host, 'Finding your location…');
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                if (request !== weatherLocationRequest || !host.isConnected) return;
+                host.querySelector('[data-weather-locate]').disabled = false;
+                const lat = Number(position.coords.latitude.toFixed(2)),
+                    lon = Number(position.coords.longitude.toFixed(2));
+                if (!Number.isFinite(lat) || !Number.isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180) {
+                    resetWeather(host, 'Your location could not be determined. Showing Kansas City.');
+                    return;
+                }
+                weatherLocation = { lat, lon };
+                weatherNotice(host, 'Using your approximate location for this tab.');
+                weather(true);
+            },
+            (error) => {
+                if (request !== weatherLocationRequest || !host.isConnected) return;
+                resetWeather(
+                    host,
+                    error.code === 1
+                        ? 'Location access was declined. Showing Kansas City.'
+                        : error.code === 3
+                          ? 'Location request timed out. Showing Kansas City.'
+                          : 'Your location is unavailable. Showing Kansas City.',
+                );
+            },
+            { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 },
+        );
+    }
+    document.addEventListener('click', (event) => {
+        const button = event.target.closest('[data-weather-locate], [data-weather-reset]');
+        if (!button) return;
+        const host = button.closest('[data-local-weather]');
+        if (!host) return;
+        if (button.matches('[data-weather-locate]')) locateWeather(host);
+        else resetWeather(host);
+    });
+    async function weather(force = false) {
+        const host = document.querySelector('[data-local-weather]');
+        if (!host || (host.dataset.loading && !force)) return;
+        host.dataset.loading = 'true';
+        const point = weatherLocation;
+        const locate = host.querySelector('[data-weather-locate]');
+        if (locate) locate.hidden = false;
+        const reset = host.querySelector('[data-weather-reset]');
+        if (reset) reset.hidden = !point;
+        weatherController?.abort();
+        const controller = new AbortController();
+        weatherController = controller;
+        const status = host.querySelector('[data-weather-status]'),
+            periods = host.querySelector('[data-weather-periods]');
+        const title = host.querySelector('[data-weather-title]'),
+            official = host.querySelector('[data-weather-link]');
+        if (title) title.textContent = point ? 'Your local forecast' : 'Kansas City forecast';
+        if (official)
+            official.href =
+                'https://forecast.weather.gov/MapClick.php?lat=' +
+                (point?.lat ?? 39.0997) +
+                '&lon=' +
+                (point?.lon ?? -94.5786);
+        const feature = host.querySelector('[data-weather-feature]'),
+            tiles = host.querySelector('[data-weather-tiles]'),
+            forecast = document.querySelector('[data-phone-forecast]'),
+            hourlyHost = host.querySelector('[data-weather-hourly]');
+        feature?.replaceChildren();
+        tiles?.replaceChildren();
+        if (forecast) forecast.textContent = 'Loading the National Weather Service forecast…';
+        periods.replaceChildren();
+        status.textContent = 'Loading the National Weather Service forecast…';
+        if (hourlyHost) {
+            hourlyHost.hidden = true;
+            (async () => {
+                const query = point ? '?' + new URLSearchParams(point) : '';
+                const hourlyList = hourlyHost.querySelector('[data-weather-hourly-list]');
+                const hourlySummary = hourlyHost.querySelector('[data-weather-hourly-summary]');
+                const hourlyZone = hourlyHost.querySelector('[data-weather-hourly-zone]');
+                const hourlyUnavailable = hourlyHost.querySelector('[data-weather-hourly-unavailable]');
+                try {
+                    const response = await fetch('local/weather/hourly' + query, { signal: controller.signal });
+                    if (!response.ok) throw Error('Hourly unavailable');
+                    const data = await response.json();
+                    if (!host.isConnected || controller.signal.aborted) return;
+                    if (!Array.isArray(data.hours) || data.hours.length !== 8) throw Error('Fewer than 8 hours');
+
+                    hourlyList.replaceChildren();
+                    data.hours.forEach((h) => {
+                        const item = node('li', '', 'hw__hour');
+                        if (h.rainChance !== null && h.rainChance !== undefined && h.rainChance >= 30) {
+                            item.classList.add('is-likely');
+                        }
+                        const timeSpan = node('span', txt(h.label), 'hw__time');
+                        timeSpan.setAttribute('aria-hidden', 'true');
+
+                        let iconWrap = null;
+                        if (window.myNewspaperWeatherIcons) {
+                            iconWrap = window.myNewspaperWeatherIcons.create(h.summary, h.isDaytime !== false);
+                            iconWrap.setAttribute('aria-hidden', 'true');
+                        }
+
+                        const tempSpan = node('span', `${h.temperature}°`, 'hw__temp');
+                        tempSpan.setAttribute('aria-hidden', 'true');
+
+                        const condSpan = node('span', txt(h.summary), 'hw__cond');
+                        condSpan.setAttribute('title', txt(h.summary));
+                        condSpan.setAttribute('aria-hidden', 'true');
+
+                        const barSpan = node('span', '', 'hw__bar');
+                        barSpan.setAttribute('aria-hidden', 'true');
+                        const fill = document.createElement('span');
+                        const pct =
+                            h.rainChance !== null && h.rainChance !== undefined
+                                ? Math.max(0, Math.min(100, h.rainChance))
+                                : 0;
+                        fill.style.width = pct + '%';
+                        barSpan.append(fill);
+
+                        const popText = h.rainChance !== null && h.rainChance !== undefined ? `${h.rainChance}%` : '—';
+                        const popSpan = node('span', popText, 'hw__pop');
+                        popSpan.setAttribute('aria-hidden', 'true');
+
+                        const condLower = (txt(h.summary) || 'fair').toLowerCase();
+                        const rainPart =
+                            h.rainChance !== null && h.rainChance !== undefined
+                                ? `${h.rainChance} percent chance of rain.`
+                                : 'chance of rain not given.';
+                        const srSentence = `${txt(h.label)}, ${h.temperature} degrees, ${condLower}, ${rainPart}`;
+                        const srSpan = node('span', srSentence, 'sr-only');
+
+                        item.append(timeSpan);
+                        if (iconWrap) item.append(iconWrap);
+                        item.append(tempSpan, condSpan, barSpan, popSpan, srSpan);
+                        hourlyList.append(item);
+                    });
+
+                    if (data.rainSummary) {
+                        hourlySummary.textContent = data.rainSummary;
+                        hourlySummary.hidden = false;
+                    } else {
+                        hourlySummary.textContent = '';
+                        hourlySummary.hidden = true;
+                    }
+
+                    let zoneLabel = '';
+                    if (data.timeZone) {
+                        try {
+                            const parts = new Intl.DateTimeFormat('en-US', {
+                                timeZone: data.timeZone,
+                                timeZoneName: 'short',
+                            }).formatToParts(new Date());
+                            const tz = parts.find((p) => p.type === 'timeZoneName');
+                            if (tz?.value) zoneLabel = 'Times in ' + tz.value;
+                        } catch {
+                            zoneLabel = '';
+                        }
+                    }
+                    if (zoneLabel) {
+                        hourlyZone.textContent = zoneLabel;
+                        hourlyZone.hidden = false;
+                    } else {
+                        hourlyZone.textContent = '';
+                        hourlyZone.hidden = true;
+                    }
+
+                    hourlyUnavailable.hidden = true;
+                    hourlyList.hidden = false;
+                    hourlyHost.hidden = false;
+                } catch (_) {
+                    if (!host.isConnected || controller.signal.aborted) return;
+                    hourlyList.replaceChildren();
+                    hourlyList.hidden = true;
+                    if (hourlySummary) {
+                        hourlySummary.textContent = '';
+                        hourlySummary.hidden = true;
+                    }
+                    if (hourlyZone) {
+                        hourlyZone.textContent = '';
+                        hourlyZone.hidden = true;
+                    }
+                    hourlyUnavailable.hidden = false;
+                    hourlyHost.hidden = false;
+                }
+            })();
+        }
+        try {
+            const query = point ? '?' + new URLSearchParams(point) : '';
+            const response = await fetch('local/weather' + query, { signal: controller.signal });
+            if (!response.ok) throw Error('Forecast unavailable');
+            const data = await response.json();
+            if (!host.isConnected || controller.signal.aborted) return;
+            if (!Array.isArray(data.periods) || !data.periods.length) throw Error('No forecast');
+            if (title)
+                title.textContent = (txt(data.location) || (point ? 'Your location' : 'Kansas City')) + ' forecast';
+            data.periods.forEach((p) => {
+                const card = node('article', '', 'weather-period');
+                const reading = node('div', '', 'weather-reading');
+                if (window.myNewspaperWeatherIcons)
+                    reading.append(window.myNewspaperWeatherIcons.create(p.summary, p.isDaytime !== false));
+                reading.append(node('p', `${p.temperature}°${txt(p.unit)}`, 'weather-temperature'));
+                card.append(
+                    node('h3', txt(p.name)),
+                    reading,
+                    node('p', txt(p.summary)),
+                    node('p', 'Wind ' + txt(p.wind), 'updated'),
+                );
+                periods.append(card);
+            });
+            // One request feeds both layouts. The first forecast period is labelled honestly, not current conditions.
+            if (feature) {
+                const first = data.periods[0];
+                feature.append(
+                    node('h3', txt(first.name), 'mx-block__kicker'),
+                    node('p', `${first.temperature}°${txt(first.unit)}`, 'mx-weather-feature__temperature'),
+                    node('p', txt(first.summary), 'mx-weather-feature__summary'),
+                    node('p', 'Wind ' + txt(first.wind), 'mx-block__note'),
+                );
+            }
+            if (tiles)
+                data.periods.slice(1, 4).forEach((p) => {
+                    const tile = node('article', '', 'mx-tile');
+                    tile.append(
+                        node('h3', txt(p.name), 'mx-tile__label'),
+                        node('b', `${p.temperature}°${txt(p.unit)}`, 'mx-tile__value'),
+                        node('p', txt(p.summary), 'mx-tile__sub'),
+                    );
+                    tiles.append(tile);
+                });
+            if (forecast) forecast.replaceChildren(...[...periods.children].map((card) => card.cloneNode(true)));
+            const date = new Date(data.updated);
+            status.textContent =
+                (data.stale ? 'Last available forecast · may be out of date. ' : '') +
+                'National Weather Service · updated ' +
+                (Number.isNaN(date.getTime())
+                    ? 'time unavailable'
+                    : date.toLocaleString('en-US', { timeZone: 'America/Chicago', timeZoneName: 'short' }));
+        } catch (_) {
+            if (!host.isConnected || controller.signal.aborted) return;
+            if (point) {
+                weatherLocation = null;
+                weatherNotice(host, 'A forecast is unavailable for this location. Showing Kansas City.');
+                return weather(true);
+            }
+            status.textContent =
+                'Forecast temporarily unavailable. Open the National Weather Service link for current conditions.';
+            if (forecast) forecast.textContent = status.textContent;
+        }
+    }
+    function schedule() {
+        if (pending) return;
+        pending = true;
+        requestAnimationFrame(() => {
+            pending = false;
+            sync();
+            weather();
+        });
+    }
+    const markers =
+        '[data-phone-sports], [data-home-grid], [data-home-preferences], [data-local-weather], [data-personal-control]';
+    new MutationObserver((records) => {
+        if (
+            records.some((r) =>
+                [...r.addedNodes].some((n) => n.nodeType === 1 && (n.matches(markers) || n.querySelector(markers))),
+            )
+        )
+            schedule();
+    }).observe(document.body, { childList: true, subtree: true });
+    // Enhanced navigation can patch an existing element into a marker (News tab → Kansas City), which adds no node.
+    if (window.Blazor) Blazor.addEventListener('enhancedload', schedule);
+    window.addEventListener('storage', (e) => {
+        if ([PREFS, TEAMS, null].includes(e.key)) schedule();
+    });
+    document.addEventListener('click', (e) => {
+        if (e.target.closest('[data-sports-clear]')) schedule();
+    });
+    sync();
+    weather();
+})();

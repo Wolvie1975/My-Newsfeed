@@ -1,0 +1,112 @@
+@inject IDbContextFactory<WebScraperContext> Factory
+@inject FeedDates Dates
+@inject myNewspaper.Shared.Hosting.SiteLinks SiteLinks
+@inherits DataComponentBase
+@inject TimeProvider Clock
+
+@if (releases.Count > 0)
+{
+    var today = Dates.TodayAt(nowUtc);
+    @if (Compact)
+    {
+        <section class="mx-section td-tracker-phone mx-c-linux" aria-labelledby="td-tracker-m-title">
+            <div class="mx-head">
+                <h2 id="td-tracker-m-title">Release tracker</h2>
+                <a href="tech/linux/releases">All →</a>
+            </div>
+            <ul class="td-tracker-list">
+                @foreach (var r in releases.OrderByDescending(x => x.ReleasedAt).Take(5))
+                {
+                    var relDay = Dates.TodayAt(r.ReleasedAt);
+                    var isToday = relDay == today;
+                    <li class="td-tracker-list__row @(isToday ? "td-tracker-list__row--today" : null)">
+                        <div class="td-tracker-list__left">
+                            <b>@r.Project</b>
+                            <span>@r.Kind · @r.Source</span>
+                        </div>
+                        <div class="td-tracker-list__right">
+                            @if (FeedQuery.SafeHref(r.NotesUrl) is { } notesHref)
+                            {
+                                <a class="td-tracker-list__ver" href="@notesHref" target="_blank" rel="noopener noreferrer">@r.Version ↗</a>
+                            }
+                            else
+                            {
+                                <b class="td-tracker-list__ver">@r.Version</b>
+                            }
+                            <span class="@(isToday ? "td-tracker-today" : null)">@FormatReleased(relDay, today)</span>
+                        </div>
+                    </li>
+                }
+            </ul>
+        </section>
+    }
+    else
+    {
+        <section class="td-tracker mx-c-linux" aria-labelledby="td-tracker-title">
+            <div class="ef-head">
+                <h2 id="td-tracker-title">Release tracker</h2>
+                <a href="tech/linux/releases">Release history <span aria-hidden="true">→</span></a>
+            </div>
+            <p class="ef-note">Straight from each project: kernel.org, GitHub releases, KDE and GNOME announcements, distro feeds</p>
+            <div class="td-tracker-wrap">
+                <table class="td-tracker-table">
+                    <thead>
+                        <tr>
+                            <th scope="col">Project</th>
+                            <th scope="col">Latest</th>
+                            <th scope="col">Released</th>
+                            <th scope="col">Source</th>
+                            <th scope="col">Type</th>
+                            <th scope="col"><span class="sr-only">Notes</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var r in releases)
+                        {
+                            var relDay = Dates.TodayAt(r.ReleasedAt);
+                            var isToday = relDay == today;
+                            <tr class="@(isToday ? "td-tracker-row--today" : null)">
+                                <td class="td-tracker__proj"><b>@r.Project</b></td>
+                                <td class="td-tracker__ver">@r.Version</td>
+                                <td class="td-tracker__when @(isToday ? "td-tracker-today" : null)">@FormatReleased(relDay, today)</td>
+                                <td class="td-tracker__src">@r.Source</td>
+                                <td><span class="td-tracker__kind">@r.Kind</span></td>
+                                <td class="td-tracker__link">
+                                    @if (FeedQuery.SafeHref(r.NotesUrl) is { } notesHref)
+                                    {
+                                        <a href="@notesHref" target="_blank" rel="noopener noreferrer">@r.NotesLabel <span aria-hidden="true">↗</span></a>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            <p class="td-tracker__foot">
+                Checked hourly@(oldestChecked is { } c ? $" · {Dates.Time(c)}" : "") · <a href="@($"{SiteLinks.Admin}#tech-releases")">Add a project</a>
+            </p>
+        </section>
+    }
+}
+
+@code {
+    [Parameter] public bool Compact { get; set; }
+
+    private DateTime nowUtc;
+    private IReadOnlyList<TrackedRelease> releases = [];
+    private DateTime? oldestChecked;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        nowUtc = Clock.GetUtcNow().UtcDateTime;
+        await using var db = await Factory.CreateDbContextAsync(Ct);
+        releases = await TechQuery.TrackerAsync(db, Ct);
+        var checkedTimes = releases.Where(r => r.LastCheckedAt is not null).Select(r => r.LastCheckedAt!.Value).ToList();
+        oldestChecked = checkedTimes.Count > 0 ? checkedTimes.Min() : null;
+    }
+
+    private static string FormatReleased(DateOnly relDay, DateOnly today) =>
+        relDay == today ? "Today"
+        : relDay == today.AddDays(-1) ? "Yesterday"
+        : relDay.ToString("MMM d", System.Globalization.CultureInfo.InvariantCulture);
+}

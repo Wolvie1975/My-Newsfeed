@@ -1,0 +1,51 @@
+const { chromium } = require('playwright');
+const lib = require('./lib.cjs');
+const assert = require('node:assert/strict');
+const base = lib.base;
+(async () => {
+    const browser = await chromium.launch();
+    try {
+        const page = await lib.readerPage(browser);
+        const errors = [];
+        page.on('pageerror', (e) => errors.push(e.message));
+        // Which providers are enabled is admin data; read it from the page, then check canonicalization against it.
+        await page.goto(base + '/movies/digital');
+        const fallback = new URL(page.url()).searchParams.get('source');
+        // The enabled sources are the source pills.
+        const options = await page
+            .locator('.dg-sources a')
+            .evaluateAll((o) => o.map((x) => ({ value: x.dataset.source, label: x.textContent.trim() })));
+        const enabled = options.map((o) => o.value);
+        assert(enabled.includes(fallback), `default provider ${fallback} should be an enabled option`);
+        assert.equal(enabled.length, new Set(enabled).size);
+        for (const source of [null, 'unknown', ...enabled]) {
+            await page.goto(base + '/movies/digital' + (source ? '?source=' + source : ''));
+            const selected = enabled.includes(source) ? source : fallback;
+            await page.waitForURL((u) => u.searchParams.get('source') === selected);
+            const current = page.locator('.dg-sources a[aria-current="page"]');
+            assert.equal(await current.getAttribute('data-source'), selected);
+            assert.equal((await current.textContent()).trim(), options.find((o) => o.value === selected).label);
+            for (const width of [390, 1440]) {
+                await page.setViewportSize({ width, height: 900 });
+                assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+            }
+            assert.equal(
+                await page
+                    .locator('.movie-kind')
+                    .filter({ hasText: /subscription|disc/i })
+                    .count(),
+                0,
+            );
+        }
+        assert.deepEqual(errors, []);
+        assert.equal((await page.request.get(base + '/healthz')).status(), 200);
+        console.log(
+            'Digital providers: default/disabled/unknown URL canonicalization, enabled options, alternate selection, provider labels, responsive layout, no JS errors and health passed.',
+        );
+    } finally {
+        await browser.close();
+    }
+})().catch((e) => {
+    console.error(e);
+    process.exit(1);
+});

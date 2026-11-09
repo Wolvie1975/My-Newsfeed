@@ -1,0 +1,294 @@
+From 980e21355b20a954a5a2c4c1d413426f8b2a95fe Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Fri, 6 Nov 2026 14:30:04 -0600
+Subject: [PATCH 2/3] YouTube: featured picture beside its title, Latest videos
+ as a grid under it
+
+Concept C from the November 6 featured-video review. From 1024px the featured
+picture is capped at 720px (60% of the width at narrow desktops) with its
+kicker, title and meta beside it; Latest videos becomes a two-, then (from
+1440px) three-across grid under it. From 1920px the five picks sit at the foot
+of the title column; from 2560px By channel and Watch later run down the right
+of both. Tablets and phones are unchanged.
+
+youtube.js swaps a shown featured picture from hqdefault (480x360) to
+maxresdefault (1280x720), else sddefault (640x480), once the larger one loads
+at full size; YouTube answers a missing size with a 120x90 placeholder. Without
+JavaScript the page keeps hqdefault. The sidebar check now asserts the one- and
+two-column grid, the 720px cap and the picture-beside-title layout.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01BeSUhTLXvQhUDsTovwqjsi
+---
+ src/myNewspaper.Shared/Data/VideosQuery.cs    |   3 +-
+ .../Components/Pages/Videos.razor             |   6 +-
+ src/myNewspaper.Web/wwwroot/sections.css      | 106 ++++++++++++++----
+ src/myNewspaper.Web/wwwroot/youtube.js        |  26 +++++
+ tests/browser/youtube-sidebar.browser.cjs     |  14 ++-
+ 5 files changed, 131 insertions(+), 24 deletions(-)
+
+diff --git a/src/myNewspaper.Shared/Data/VideosQuery.cs b/src/myNewspaper.Shared/Data/VideosQuery.cs
+index cbd89cc..00318fe 100644
+--- a/src/myNewspaper.Shared/Data/VideosQuery.cs
++++ b/src/myNewspaper.Shared/Data/VideosQuery.cs
+@@ -278,7 +278,8 @@ public static class VideosText
+     /// The picture for a video: YouTube's standard thumbnail built from the video id, which every video has, else the
+     /// stored one. Stored addresses (hq720 and custom crops) can point at a grey "no image" placeholder that YouTube
+     /// serves without an error, so they are only a fallback. <paramref name="size"/> is "mqdefault" (320 × 180, the
+-    /// grid) or "hqdefault" (480 × 360, the featured video).
++    /// grid) or "hqdefault" (480 × 360, the featured video, which youtube.js swaps for "maxresdefault" or "sddefault"
++    /// once it has checked the larger picture exists; a missing one comes back as a 120 × 90 placeholder).
+     /// </summary>
+     public static string? Thumbnail(string? stored, string? videoId, string size = "mqdefault") =>
+         !string.IsNullOrWhiteSpace(videoId) && videoId.All(c => char.IsAsciiLetterOrDigit(c) || c is '-' or '_')
+diff --git a/src/myNewspaper.Web/Components/Pages/Videos.razor b/src/myNewspaper.Web/Components/Pages/Videos.razor
+index d6ed7f7..bae4acb 100644
+--- a/src/myNewspaper.Web/Components/Pages/Videos.razor
++++ b/src/myNewspaper.Web/Components/Pages/Videos.razor
+@@ -9,8 +9,8 @@
+ <PageTitle>YouTube · myNewspaper</PageTitle>
+ 
+ 
+-@* YouTube as in the approved v2 concept: a featured carousel (still until Play is pressed) beside Latest videos, then
+-   More videos. Without JavaScript the first featured video shows and the carousel controls stay hidden. Filters are
++@* YouTube: a featured carousel (still until Play is pressed); from 1024px the picture sits beside its title, with Latest
++   videos as a grid under it (concept C, November 6, 2026), then More videos. Without JavaScript the first featured video shows and the carousel controls stay hidden. Filters are
+    plain links and a GET form, so every view has a shareable URL. *@
+ 
+ <div class="mx-life-layout">
+@@ -101,7 +101,7 @@ else
+                         var picture = VideosText.Thumbnail(video.ThumbnailUrl, video.VideoId, "hqdefault");
+                         <article class="yt-slide" data-yt-slide hidden="@(index > 0)" aria-roledescription="slide" aria-label="@($"{index + 1} of {featured.Count}")">
+                             <a class="yt-slide__thumb" href="@href" target="_blank" rel="noopener noreferrer" tabindex="-1" aria-hidden="true">
+-                                @if (picture is not null) { <img src="@picture" alt="" loading="@(index == 0 ? "eager" : "lazy")" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()" /> }
++                                @if (picture is not null) { <img src="@picture" alt="" loading="@(index == 0 ? "eager" : "lazy")" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()" data-yt-sharpen /> }
+                                 <span class="play"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15a1 1 0 0 0 1.5.86l12-7.5a1 1 0 0 0 0-1.72l-12-7.5A1 1 0 0 0 7 4.5z"></path></svg></span>
+                                 <span class="yt-progress"><span data-yt-bar></span></span>
+                             </a>
+diff --git a/src/myNewspaper.Web/wwwroot/sections.css b/src/myNewspaper.Web/wwwroot/sections.css
+index e690c07..30da17d 100644
+--- a/src/myNewspaper.Web/wwwroot/sections.css
++++ b/src/myNewspaper.Web/wwwroot/sections.css
+@@ -5726,24 +5726,11 @@ a.tvc-row__show:hover {
+ 
+ /* ---------- YouTube, 1920px and up (wide-screens-4k-handoff.md) ---------- */
+ @media (min-width: 1920px) {
+-    .pub .yt-top {
+-        grid-template-columns: minmax(0, 2.2fr) minmax(400px, 1fr);
+-    }
+-    .pub .yt-slide__title {
+-        font-size: 40px;
+-        line-height: 1.08;
+-    }
+     :root:is([data-color-scheme], :not([data-color-scheme])) .pub .video-front .videos {
+         grid-template-columns: repeat(5, minmax(0, 1fr));
+     }
+ }
+ @media (min-width: 2560px) {
+-    .pub .yt-top {
+-        grid-template-columns: minmax(0, 1fr) 460px; /* phase 2 adds a third column of 380px */
+-    }
+-    .pub .yt-slide__title {
+-        font-size: 48px;
+-    }
+     :root:is([data-color-scheme], :not([data-color-scheme])) .pub .video-front .videos {
+         grid-template-columns: repeat(6, minmax(0, 1fr));
+     }
+@@ -5764,18 +5751,12 @@ a.tvc-row__show:hover {
+     display: none;
+ }
+ @media (min-width: 2560px) {
+-    .pub .yt-top:has(.yt-aside) {
+-        grid-template-columns: minmax(0, 1fr) 460px 380px;
+-    }
+     .pub .yt-aside {
+         display: block;
+         min-width: 0;
+         padding-left: 28px;
+         border-left: 1px solid var(--row-border);
+     }
+-    .pub .yt-top:has(.yt-aside) .yt-latest {
+-        padding-right: 28px;
+-    }
+     .pub .yt-aside > section + section {
+         margin-top: 32px;
+     }
+@@ -5833,6 +5814,93 @@ a.tvc-row__show:hover {
+     }
+ }
+ 
++/* ---------- YouTube from 1024px: concept C (November 6, 2026) ----------
++   The featured picture beside its title, capped at 720px so YouTube's larger thumbnails stay sharp (youtube.js swaps
++   them in), then Latest videos as a grid under it. From 2560px By channel and Watch later run down the right of both. */
++@media (min-width: 1024px) {
++    .pub .yt-top {
++        grid-template-columns: minmax(0, 1fr);
++        grid-template-areas: 'feature' 'latest';
++        row-gap: 28px;
++    }
++    .pub .yt-feature {
++        grid-area: feature;
++        padding-right: 0;
++        border-right: 0;
++    }
++    .pub .yt-slide:not([hidden]) {
++        display: grid;
++        grid-template-columns: min(720px, 60%) minmax(0, 1fr);
++        grid-template-rows: auto auto 1fr;
++        align-items: start;
++        column-gap: 32px;
++    }
++    .pub .yt-slide__thumb {
++        grid-row: 1 / -1;
++    }
++    .pub .yt-slide .yt-kicker {
++        margin-top: 0;
++    }
++    .pub .yt-slide__title {
++        font-size: clamp(30px, 2.4vw, 44px);
++        line-height: 1.08;
++    }
++    .pub .yt-latest {
++        grid-area: latest;
++        display: grid;
++        grid-template-columns: repeat(2, minmax(0, 1fr));
++        align-content: start;
++        column-gap: 32px;
++        padding-left: 0;
++    }
++    .pub .yt-latest .ef-label {
++        grid-column: 1 / -1;
++    }
++}
++@media (min-width: 1440px) {
++    .pub .yt-latest {
++        grid-template-columns: repeat(3, minmax(0, 1fr));
++    }
++    .pub .yt-row {
++        grid-template-columns: 192px minmax(0, 1fr);
++        gap: 14px;
++    }
++}
++/* Wide screens: the five picks sit at the foot of the title column instead of a full-width row under the picture. */
++@media (min-width: 1920px) {
++    .pub .yt-feature {
++        display: grid;
++        grid-template-columns: 720px minmax(0, 1fr);
++        column-gap: 32px;
++    }
++    .pub .yt-feature__head,
++    .pub .yt-feature__slides {
++        grid-column: 1 / -1;
++    }
++    .pub .yt-feature__slides {
++        grid-row: 2;
++    }
++    .pub .yt-tabs {
++        grid-column: 2;
++        grid-row: 2;
++        align-self: end;
++        margin-top: 0;
++    }
++}
++@media (min-width: 2560px) {
++    .pub .yt-top:has(.yt-aside) {
++        grid-template-columns: minmax(0, 1fr) 420px;
++        grid-template-areas: 'feature aside' 'latest aside';
++    }
++    .pub .yt-aside {
++        grid-area: aside;
++        margin-left: 32px;
++    }
++    .pub .yt-slide__title {
++        font-size: 48px;
++    }
++}
++
+ .pub .spf-table caption {
+     caption-side: top;
+     padding: 12px 4px 6px;
+diff --git a/src/myNewspaper.Web/wwwroot/youtube.js b/src/myNewspaper.Web/wwwroot/youtube.js
+index a84c6b2..f49e9f9 100644
+--- a/src/myNewspaper.Web/wwwroot/youtube.js
++++ b/src/myNewspaper.Web/wwwroot/youtube.js
+@@ -1,12 +1,36 @@
+ // The YouTube page's featured carousel. It holds still until Play is pressed; then it advances every seven seconds
+ // with a progress bar, and pauses while the page is hidden. Arrows and the title tabs switch videos at any time.
+ // Without JavaScript the first featured video shows and the controls stay hidden.
++// Featured pictures are rendered as YouTube's 480 × 360 "hqdefault", which every video has. A shown one is swapped for
++// the 1280 × 720 "maxresdefault", else the 640 × 480 "sddefault", once that loads at full size: YouTube answers a size
++// a video lacks with a 120 × 90 placeholder rather than an error.
+ (function () {
+     'use strict';
+     const SECONDS = 7;
+     const TICK = 250;
++    const SHARPER = ['maxresdefault', 'sddefault'];
+     const state = new WeakMap();
+ 
++    function sharpen(slide) {
++        const img = slide && slide.querySelector('img[data-yt-sharpen]');
++        if (!img || img.dataset.ytSharpened) return;
++        img.dataset.ytSharpened = 'pending';
++        const match = /^(https:\/\/i\.ytimg\.com\/vi\/[\w-]+\/)hqdefault\.jpg$/.exec(img.currentSrc || img.src);
++        if (!match) return;
++        const attempt = (i) => {
++            if (i >= SHARPER.length) return;
++            const probe = new Image();
++            probe.referrerPolicy = 'no-referrer';
++            probe.onload = () => {
++                if (probe.naturalWidth > 120) img.src = probe.src;
++                else attempt(i + 1);
++            };
++            probe.onerror = () => attempt(i + 1);
++            probe.src = match[1] + SHARPER[i] + '.jpg';
++        };
++        attempt(0);
++    }
++
+     function show(carousel, index) {
+         const s = state.get(carousel);
+         const slides = carousel.querySelectorAll('[data-yt-slide]');
+@@ -15,6 +39,7 @@
+         slides.forEach((slide, i) => {
+             slide.hidden = i !== s.index;
+         });
++        sharpen(slides[s.index]);
+         carousel.querySelectorAll('[data-yt-pick]').forEach((tab, i) => {
+             tab.setAttribute('aria-current', String(i === s.index));
+         });
+@@ -45,6 +70,7 @@
+ 
+     function init() {
+         document.querySelectorAll('[data-yt-carousel]').forEach((carousel) => {
++            sharpen(carousel.querySelector('[data-yt-slide]:not([hidden])'));
+             // A single featured video (a one-channel category) is rendered without controls: nothing to rotate.
+             if (state.has(carousel) || !carousel.querySelector('[data-yt-toggle]')) return;
+             state.set(carousel, { index: 0, ticks: 0, playing: false });
+diff --git a/tests/browser/youtube-sidebar.browser.cjs b/tests/browser/youtube-sidebar.browser.cjs
+index bd60e01..4b0dca5 100644
+--- a/tests/browser/youtube-sidebar.browser.cjs
++++ b/tests/browser/youtube-sidebar.browser.cjs
+@@ -148,7 +148,19 @@ const shots = lib.screenshots('youtube-sidebar');
+                     const columns = await page
+                         .locator('.yt-top')
+                         .evaluate((n) => getComputedStyle(n).gridTemplateColumns.split(' ').length);
+-                    assert.equal(columns, width >= 2560 ? 3 : 2, 'Featured, Latest and optional sidebar');
++                    assert.equal(columns, width >= 2560 ? 2 : 1, 'Featured over Latest, plus the sidebar from 2560px');
++                    const shape = await page.evaluate(() => {
++                        const box = (q) => document.querySelector(q).getBoundingClientRect();
++                        return {
++                            thumb: box('[data-yt-slide]:not([hidden]) .yt-slide__thumb'),
++                            title: box('[data-yt-slide]:not([hidden]) .yt-slide__title'),
++                            feature: box('.yt-feature'),
++                            latest: box('.yt-latest'),
++                        };
++                    });
++                    assert(shape.thumb.width <= 721, 'Featured picture capped at 720px');
++                    assert(shape.title.x >= shape.thumb.right, 'Featured title beside the picture');
++                    assert(shape.latest.y >= shape.feature.bottom - 1, 'Latest videos under the featured video');
+                     if (width >= 2560) {
+                         await waitList(expected);
+                         assert(
+-- 
+2.43.0
+

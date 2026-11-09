@@ -1,0 +1,35 @@
+@using myNewspaper.Web.Components.Feed
+@inject FeedDates Dates
+<section class="d-card d-opinion" data-home-section="opinion" data-home-opinion
+         data-opinion-hour="@Snapshot.Hour" data-opinion-refresh-after="@Snapshot.RefreshAfterMs" aria-labelledby="h-opinion">
+    <div class="d-card__head">
+        <h2 class="d-card__title" id="h-opinion">Opinion <span class="d-card__count">Publisher spotlight · rotates hourly</span></h2>
+        @if (Snapshot.CategoryId is {} categoryId) { <a class="d-more" href="news/all?category=@categoryId">View all →</a> }
+    </div>
+    @if (Snapshot.Failed) { <p class="d-empty" role="status">Opinion is temporarily unavailable. Please try again.</p> }
+    else if (Snapshot.Article is {} item) {
+        var href = FeedQuery.SafeHref(item.Url);
+        var title = FeedText.StripEmoji(item.Title);
+        var summary = FeedText.StripEmoji(FeedQuery.Excerpt(item.Description));
+        var image = FeedQuery.SafeHref(item.ImageUrl);
+        var source = FeedText.SourceName(item.SourceLabel, item.SourceUrl);
+        <ul class="d-list"><li class="d-story @PhoneColors.ForCategory("Opinion")" data-article-story="row" data-image-layout="compact" data-news-url="@href" data-news-source="@source" data-opinion-article="@item.Id">
+            <a class="d-thumb" data-article-media href="@href" target="_blank" rel="noopener noreferrer" tabindex="-1" aria-hidden="true">
+                <NoPhoto Source="@source" Category="Opinion" />
+                @if (image is not null) { <img src="@image" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()" /> }
+            </a>
+            <div class="d-story__body">
+                <div class="d-story__top"><span class="d-src">@source</span><span class="d-story__tools">
+                    <ShareButton Url="@item.Url" Title="@title" />
+                    <SaveButton Item="item" Title="@title" Source="@source" Summary="@summary" />
+                </span></div>
+                <h3 class="d-story__title">@if(href is not null) { <a href="@href" target="_blank" rel="noopener noreferrer">@title</a> } else { @title }</h3>
+                @if(!item.Undated) { <p class="d-story__date"><time datetime="@item.Date.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'")" title="@Dates.PublishedFull(item.Date)">Published @Dates.Published(item.Date) · @Dates.Time(item.Date)</time></p> }
+                @if(!string.IsNullOrEmpty(summary)) { <p class="d-story__sum">@summary</p> }
+            </div>
+        </li></ul>
+    } else { <p class="d-empty">No Opinion articles available yet. Check back soon.</p> }
+</section>
+@code {
+    [Parameter, EditorRequired] public HomeOpinion Snapshot { get; set; } = new(null,null,0,60000);
+}

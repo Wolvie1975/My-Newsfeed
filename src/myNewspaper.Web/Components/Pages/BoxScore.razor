@@ -1,0 +1,21 @@
+@page "/box-score/{Sport}/{League}/{EventId}"
+@layout PublicLayout
+@inject IDbContextFactory<WebScraperContext> Factory
+@inject ILogger<BoxScore> Log
+@inherits DataComponentBase
+<PageTitle>Game statistics · myNewspaper</PageTitle>
+<PageHeading Section="sports" SectionCurrent="scoreboard" Title="Game statistics" Eyebrow="SPORTS RESULTS" Description="Available collected team and player statistics." />
+<p><a href="scoreboard">← Scoreboard</a></p>
+<myNewspaper.Web.Components.BoxScores.BoxScoreContent Detail="detail" />
+@code {
+    [Parameter] public string Sport {get;set;}="";
+    [Parameter] public string League {get;set;}="";
+    [Parameter] public string EventId {get;set;}="";
+    [CascadingParameter] private HttpContext? Http {get;set;}
+    private BoxDetail? detail;
+    protected override async Task OnParametersSetAsync() {
+        await using var db = await Factory.CreateDbContextAsync(Ct);
+        detail = await BoxScoreQuery.GetAsync(db, new(Sport, League, EventId), Log, Ct);
+        if(detail is null && Http is not null && !Http.Response.HasStarted)Http.Response.StatusCode=404;
+    }
+}
